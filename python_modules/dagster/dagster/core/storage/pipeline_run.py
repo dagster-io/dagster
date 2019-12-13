@@ -1,3 +1,4 @@
+import datetime
 from collections import namedtuple
 from enum import Enum
 
@@ -42,8 +43,8 @@ class PipelineRunStatsSnapshot(
             steps_failed=check.int_param(steps_failed, 'steps_failed'),
             materializations=check.int_param(materializations, 'materializations'),
             expectations=check.int_param(expectations, 'expectations'),
-            start_time=check.opt_float_param(start_time, 'start_time'),
-            end_time=check.opt_float_param(end_time, 'end_time'),
+            start_time=check.opt_inst_param(start_time, 'start_time', datetime.datetime),
+            end_time=check.opt_inst_param(end_time, 'end_time', datetime.datetime),
         )
 
 

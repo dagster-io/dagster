@@ -1,14 +1,18 @@
+import datetime
 import multiprocessing
 import threading
 import time
 import warnings
 from collections import namedtuple
+from contextlib import contextmanager
 
+import sqlalchemy as db
 from dagster_postgres.utils import get_conn
 from six.moves.queue import Empty
 
 from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
     ConfigurableClass,
@@ -16,25 +20,20 @@ from dagster.core.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.core.storage.event_log import EventLogStorage
+from dagster.core.storage.event_log import (
+    SqlEventLogStorage,
+    SqlEventLogStorageMetadata,
+    SqlEventLogStorageTable,
+)
+from dagster.core.storage.sql import (
+    check_alembic_revision,
+    create_engine,
+    get_alembic_config,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
+)
 
 from ..pynotify import await_pg_notifications
-
-CREATE_EVENT_LOG_SQL = '''
-CREATE TABLE IF NOT EXISTS event_log (
-    id BIGSERIAL PRIMARY KEY,
-    run_id VARCHAR(255) NOT NULL,
-    event_body VARCHAR NOT NULL
-)
-'''
-
-WIPE_EVENT_LOG_SQL = 'DELETE FROM event_log'
-
-DELETE_EVENT_LOG_SQL = 'DELETE FROM event_log WHERE run_id = %s'
-
-DROP_EVENT_LOG_SQL = 'DROP TABLE IF EXISTS event_log'
-
-SELECT_EVENT_LOG_SQL = 'SELECT event_body FROM event_log WHERE id = %s'
 
 CHANNEL_NAME = 'run_events'
 
@@ -42,13 +41,31 @@ CHANNEL_NAME = 'run_events'
 WATCHER_POLL_INTERVAL = 0.2
 
 
-class PostgresEventLogStorage(EventLogStorage, ConfigurableClass):
+class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
         self.conn_string = check.str_param(postgres_url, 'postgres_url')
         self._event_watcher = create_event_watcher(self.conn_string)
-        conn = get_conn(self.conn_string)
-        conn.cursor().execute(CREATE_EVENT_LOG_SQL)
+        self._engine = create_engine(self.conn_string)
+        SqlEventLogStorageMetadata.create_all(self.engine)
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            db_revision, head_revision = check_alembic_revision(alembic_config, conn)
+        # Fresh database
+        if db_revision is None:
+            stamp_alembic_rev(alembic_config, self.engine)
+        elif db_revision != head_revision:
+            raise DagsterInstanceMigrationRequired(
+                msg='PostgresEventLogStorage', db_revision=db_revision, head_revision=head_revision
+            )
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @property
+    def engine(self):
+        return self._engine
+
+    def upgrade(self):
+        alembic_config = get_alembic_config(__file__)
+        run_alembic_upgrade(alembic_config, self.engine)
 
     @property
     def inst_data(self):
@@ -64,64 +81,47 @@ class PostgresEventLogStorage(EventLogStorage, ConfigurableClass):
 
     @staticmethod
     def create_clean_storage(conn_string):
-        check.str_param(conn_string, 'conn_string')
-
-        conn = get_conn(conn_string)
-        conn.cursor().execute(DROP_EVENT_LOG_SQL)
-        return PostgresEventLogStorage(conn_string)
-
-    def get_logs_for_run(self, run_id, cursor=-1):
-        '''Get all of the logs corresponding to a run.
-
-        Args:
-            run_id (str): The id of the run for which to fetch logs.
-            cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
-                i.e., if cursor is -1, all logs will be returned. (default: -1)
-        '''
-        check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
-        check.invariant(cursor >= -1, 'Cursor must be -1 or greater')
-
-        with get_conn(self.conn_string).cursor() as curs:
-            FETCH_SQL = (
-                'SELECT event_body FROM event_log WHERE run_id = %s ORDER BY id ASC OFFSET %s;'
-            )
-            curs.execute(FETCH_SQL, (run_id, cursor + 1))
-
-            rows = curs.fetchall()
-            return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
+        inst = PostgresEventLogStorage(conn_string)
+        inst.wipe()
+        return inst
 
     def store_event(self, event):
         '''Store an event corresponding to a pipeline run.
-
         Args:
-            run_id (str): The id of the run that generated the event.
             event (EventRecord): The event to store.
         '''
-
         check.inst_param(event, 'event', EventRecord)
 
-        with get_conn(self.conn_string).cursor() as curs:
-            event_body = serialize_dagster_namedtuple(event)
-            curs.execute(
-                '''INSERT INTO event_log (run_id, event_body) VALUES (%s, %s) RETURNING run_id, id;''',
-                (event.run_id, event_body),
+        dagster_event_type = None
+        if event.is_dagster_event:
+            dagster_event_type = event.dagster_event.event_type_value
+
+        run_id = event.run_id
+
+        with self.connect() as conn:
+            # https://stackoverflow.com/a/54386260/324449
+            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+                run_id=run_id,
+                event=serialize_dagster_namedtuple(event),
+                dagster_event_type=dagster_event_type,
+                timestamp=datetime.datetime.fromtimestamp(event.timestamp),
             )
-            res = curs.fetchone()
-            curs.execute(
+            result_proxy = conn.execute(
+                event_insert.returning(
+                    SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
+                )
+            )
+            res = result_proxy.fetchone()
+
+        with get_conn(self.conn_string).cursor() as conn:
+            conn.execute(
                 '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
                 (res[0] + '_' + str(res[1]),),
             )
 
-    def wipe(self):
-        '''Clear the log storage.'''
-
-        with get_conn(self.conn_string).cursor() as curs:
-            curs.execute(WIPE_EVENT_LOG_SQL)
-
-    def delete_events(self, run_id):
-        with get_conn(self.conn_string).cursor() as curs:
-            curs.execute(DELETE_EVENT_LOG_SQL, (run_id,))
+    @contextmanager
+    def connect(self, run_id=None):
+        yield self.engine.connect()
 
     def watch(self, run_id, start_cursor, callback):
         self._event_watcher.watch_run(run_id, start_cursor, callback)
@@ -206,7 +206,8 @@ def watcher_thread(conn_string, queue, handlers_dict, dict_lock, watcher_thread_
         event_list = []
         while not queue.empty():
             try:
-                event_list.append(queue.get_nowait())
+                evt = queue.get_nowait()
+                event_list.append(evt)
             except Empty:
                 pass
 
@@ -227,9 +228,13 @@ def watcher_thread(conn_string, queue, handlers_dict, dict_lock, watcher_thread_
                 with dict_lock:
                     handlers = handlers_dict.get(run_id, [])
 
-                with get_conn(conn_string).cursor() as curs:
-                    curs.execute(SELECT_EVENT_LOG_SQL, (index,))
-                    dagster_event = deserialize_json_to_dagster_namedtuple(curs.fetchone()[0])
+                engine = create_engine(conn_string)
+                res = engine.execute(
+                    db.select([SqlEventLogStorageTable.c.event]).where(
+                        SqlEventLogStorageTable.c.id == index
+                    )
+                )
+                dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
 
                 for (cursor, callback) in handlers:
                     if index >= cursor:

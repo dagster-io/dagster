@@ -82,7 +82,6 @@ def await_pg_notifications(
         while True:
             try:
                 r, w, x = select.select(listen_on, [], [], max(0, timeout))
-
                 if (r, w, x) == ([], [], []):
                     if yield_on_timeout:
                         yield None

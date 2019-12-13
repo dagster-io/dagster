@@ -253,3 +253,21 @@ class DagsterSubprocessError(DagsterError):
 class DagsterLaunchFailedError(DagsterError):
     '''Indicates an error while attempting to launch a pipeline run.
     '''
+
+
+class DagsterInstanceMigrationRequired(DagsterError):
+    '''Indicates that the dagster instance must be migrated.'''
+
+    def __init__(self, msg=None, db_revision=None, head_revision=None):
+        super(DagsterInstanceMigrationRequired, self).__init__(
+            'Instance is out of date and must be migrated{additional_msg}.'
+            '{revision_clause} Please run `dagster instance migrate`.'.format(
+                additional_msg=' ({msg})'.format(msg=msg) if msg else '',
+                revision_clause=(
+                    ' Database is at revision {db_revision}, head is '
+                    '{head_revision}.'.format(db_revision=db_revision, head_revision=head_revision)
+                    if db_revision or head_revision
+                    else ''
+                ),
+            )
+        )

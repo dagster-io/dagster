@@ -1,7 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 
-import gevent.lock
 import pyrsistent
 import six
 
@@ -11,10 +9,10 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import build_stats_from_events
 
 
-class EventLogInvalidForRun(DagsterError):
+class DagsterEventLogInvalidForRun(DagsterError):
     def __init__(self, *args, **kwargs):
         self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
-        super(EventLogInvalidForRun, self).__init__(*args, **kwargs)
+        super(DagsterEventLogInvalidForRun, self).__init__(*args, **kwargs)
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
@@ -63,48 +61,3 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def end_watch(self, run_id, handler):
         '''Call this method to stop watching.'''
-
-
-class InMemoryEventLogStorage(EventLogStorage):
-    def __init__(self):
-        self._logs = defaultdict(EventLogSequence)
-        self._lock = defaultdict(gevent.lock.Semaphore)
-        self._handlers = defaultdict(set)
-
-    def get_logs_for_run(self, run_id, cursor=-1):
-        check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
-        check.invariant(
-            cursor >= -1,
-            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
-        )
-
-        cursor = cursor + 1
-        with self._lock[run_id]:
-            return self._logs[run_id][cursor:]
-
-    def store_event(self, event):
-        check.inst_param(event, 'event', EventRecord)
-        run_id = event.run_id
-        with self._lock[run_id]:
-            self._logs[run_id] = self._logs[run_id].append(event)
-            for handler in self._handlers[run_id]:
-                handler(event)
-
-    def delete_events(self, run_id):
-        with self._lock[run_id]:
-            del self._logs[run_id]
-        del self._lock[run_id]
-
-    def wipe(self):
-        self._logs = defaultdict(EventLogSequence)
-        self._lock = defaultdict(gevent.lock.Semaphore)
-
-    def watch(self, run_id, start_cursor, callback):
-        with self._lock[run_id]:
-            self._handlers[run_id].add(callback)
-
-    def end_watch(self, run_id, handler):
-        with self._lock[run_id]:
-            if handler in self._handlers[run_id]:
-                self._handlers[run_id].remove(handler)

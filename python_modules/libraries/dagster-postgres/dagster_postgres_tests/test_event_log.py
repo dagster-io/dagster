@@ -1,5 +1,6 @@
 import time
 import uuid
+from collections import Counter
 
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
@@ -45,7 +46,7 @@ def gather_events(solids_fn, run_config=None):
 def fetch_all_events(conn_string):
     conn = get_conn(conn_string)
     with conn.cursor() as curs:
-        curs.execute('SELECT event_body from event_log')
+        curs.execute('SELECT event from event_logs')
         return curs.fetchall()
 
 
@@ -68,7 +69,19 @@ def test_basic_event_store(conn_string):
 
     out_events = list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    assert list(map(lambda e: e.dagster_event.event_type, out_events)) == [
+    # messages can come out of order
+    assert Counter(event_types(out_events)) == Counter(
+        [
+            DagsterEventType.PIPELINE_START,
+            DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.STEP_START,
+            DagsterEventType.STEP_SUCCESS,
+            DagsterEventType.PIPELINE_SUCCESS,
+            DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.ENGINE_EVENT,
+        ]
+    )
+    assert (sorted_event_types(out_events)) == [
         DagsterEventType.PIPELINE_START,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
@@ -81,6 +94,10 @@ def test_basic_event_store(conn_string):
 
 def event_types(out_events):
     return list(map(lambda e: e.dagster_event.event_type, out_events))
+
+
+def sorted_event_types(out_events):
+    return event_types(sorted(out_events, key=lambda x: x.timestamp))
 
 
 def test_basic_get_logs_for_run(conn_string):
@@ -191,7 +208,7 @@ def test_basic_get_logs_for_run_cursor(conn_string):
         event_log_storage.store_event(event)
 
     assert event_types(event_log_storage.get_logs_for_run(result.run_id, cursor=0)) == [
-        # DagsterEventType.PIPELINE_START,
+        DagsterEventType.PIPELINE_START,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
@@ -201,8 +218,8 @@ def test_basic_get_logs_for_run_cursor(conn_string):
     ]
 
     assert event_types(event_log_storage.get_logs_for_run(result.run_id, cursor=1)) == [
-        # DagsterEventType.PIPELINE_START,
-        # DagsterEventType.ENGINE_EVENT,
+        DagsterEventType.PIPELINE_START,
+        DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
         DagsterEventType.STEP_SUCCESS,
@@ -283,12 +300,12 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
         event_log_storage.store_event(event)
 
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id, cursor=1)
-    assert len(out_events_one) == 5
+    assert len(out_events_one) == 7
 
     assert set(event_types(out_events_one)) == set(
         [
-            # DagsterEventType.PIPELINE_START,
-            # DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_START,
+            DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_START,
             DagsterEventType.STEP_OUTPUT,
             DagsterEventType.STEP_SUCCESS,
@@ -300,13 +317,13 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id, cursor=2)
-    assert len(out_events_two) == 4
+    assert len(out_events_two) == 7
     assert set(event_types(out_events_two)) == set(
         [
-            # DagsterEventType.PIPELINE_START,
-            # DagsterEventType.ENGINE_EVENT,
+            DagsterEventType.PIPELINE_START,
+            DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_OUTPUT,
-            # DagsterEventType.STEP_START,
+            DagsterEventType.STEP_START,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.PIPELINE_SUCCESS,

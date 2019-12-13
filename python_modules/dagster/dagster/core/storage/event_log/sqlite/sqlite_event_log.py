@@ -4,60 +4,53 @@ import sqlite3
 from contextlib import contextmanager
 
 import six
+import sqlalchemy as db
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventRecord
-from dagster.core.serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
+from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.types import String
 from dagster.core.types.config import Field
 from dagster.utils import mkdir_p
 
-from ...pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
-from ..event_log import EventLogInvalidForRun, EventLogStorage
-
-CREATE_EVENT_LOG_SQL = '''
-CREATE TABLE IF NOT EXISTS event_logs (
-    row_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event TEXT NOT NULL,
-    dagster_event_type TEXT,
-    timestamp TEXT
+from ...pipeline_run import PipelineRunStatus
+from ...sql import (
+    create_engine,
+    get_alembic_config,
+    handle_schema_errors,
+    run_alembic_upgrade,
+    stamp_alembic_rev,
 )
-'''
-
-FETCH_EVENTS_SQL = '''
-SELECT event FROM event_logs WHERE row_id > ? ORDER BY row_id ASC
-'''
-
-FETCH_STATS_SQL = '''
-SELECT dagster_event_type, COUNT(1), MAX(timestamp) FROM event_logs GROUP BY dagster_event_type
-'''
-
-INSERT_EVENT_SQL = '''
-INSERT INTO event_logs (event, dagster_event_type, timestamp) VALUES (?, ?, ?)
-'''
+from ..base import DagsterEventLogInvalidForRun
+from ..schema import SqlEventLogStorageMetadata
+from ..sql_event_log import SqlEventLogStorage
 
 
-class SqliteEventLogStorage(EventLogStorage, ConfigurableClass):
+class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, base_dir, inst_data=None):
         '''Note that idempotent initialization of the SQLite database is done on a per-run_id
-        basis in the body of store_event, since each run is stored in a separate database.'''
-        self._base_dir = check.str_param(base_dir, 'base_dir')
+        basis in the body of connect, since each run is stored in a separate database.'''
+        self._base_dir = os.path.abspath(check.str_param(base_dir, 'base_dir'))
         mkdir_p(self._base_dir)
 
-        self._known_run_ids = set([])
         self._watchers = {}
         self._obs = Observer()
         self._obs.start()
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    def upgrade(self):
+        all_run_ids = self.get_all_run_ids()
+        print(
+            'Updating event log storage for {n_runs} runs on disk...'.format(
+                n_runs=len(all_run_ids)
+            )
+        )
+        alembic_config = get_alembic_config(__file__)
+        for run_id in all_run_ids:
+            with self.connect(run_id) as conn:
+                run_alembic_upgrade(alembic_config, conn, run_id)
 
     @property
     def inst_data(self):
@@ -71,125 +64,52 @@ class SqliteEventLogStorage(EventLogStorage, ConfigurableClass):
     def from_config_value(inst_data, config_value, **kwargs):
         return SqliteEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
 
-    @contextmanager
-    def _connect(self, run_id):
-        try:
-            with sqlite3.connect(self.filepath_for_run_id(run_id)) as conn:
-                yield conn
-        finally:
-            conn.close()
+    def get_all_run_ids(self):
+        all_filenames = glob.glob(os.path.join(self._base_dir, '*.db'))
+        return [os.path.splitext(filename)[1][:-3] for filename in all_filenames]
 
-    def filepath_for_run_id(self, run_id):
-        check.str_param(run_id, 'run_id')
+    def path_for_run_id(self, run_id):
         return os.path.join(self._base_dir, '{run_id}.db'.format(run_id=run_id))
 
-    def store_event(self, event):
-        check.inst_param(event, 'event', EventRecord)
-        run_id = event.run_id
-        if not run_id in self._known_run_ids:
-            with self._connect(run_id) as conn:
-                conn.cursor().execute(CREATE_EVENT_LOG_SQL)
-                conn.cursor().execute('PRAGMA journal_mode=WAL;')
-                self._known_run_ids.add(run_id)
-        with self._connect(run_id) as conn:
-            dagster_event_type = None
-            if event.is_dagster_event:
-                dagster_event_type = event.dagster_event.event_type_value
-
-            conn.cursor().execute(
-                INSERT_EVENT_SQL,
-                (serialize_dagster_namedtuple(event), dagster_event_type, event.timestamp),
-            )
-
-    def get_logs_for_run(self, run_id, cursor=-1):
+    def conn_string_for_run_id(self, run_id):
         check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
-        check.invariant(
-            cursor >= -1,
-            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
-        )
+        return 'sqlite:///{}'.format(self.path_for_run_id(run_id))
 
-        events = []
-        if not os.path.exists(self.filepath_for_run_id(run_id)):
-            return events
-
-        cursor += 1  # adjust from 0 based offset to 1
+    def _initdb(self, engine, run_id):
         try:
-            with self._connect(run_id) as conn:
-                results = conn.cursor().execute(FETCH_EVENTS_SQL, (str(cursor),)).fetchall()
-        except sqlite3.Error as err:
-            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+            SqlEventLogStorageMetadata.create_all(engine)
+        except (db.exc.DatabaseError, sqlite3.DatabaseError) as exc:
+            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
 
-        try:
-            for (json_str,) in results:
-                events.append(
-                    check.inst_param(
-                        deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
-                    )
-                )
-        except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+        alembic_config = get_alembic_config(__file__)
+        stamp_alembic_rev(alembic_config, engine.connect())
 
-        return events
+    @contextmanager
+    def connect(self, run_id=None):
+        check.str_param(run_id, 'run_id')
 
-    def get_stats_for_run(self, run_id):
-        if not os.path.exists(self.filepath_for_run_id(run_id)):
-            return PipelineRunStatsSnapshot(
-                run_id=run_id,
-                steps_succeeded=0,
-                steps_failed=0,
-                materializations=0,
-                expectations=0,
-                start_time=None,
-                end_time=None,
-            )
+        conn_string = self.conn_string_for_run_id(run_id)
+        engine = create_engine(conn_string)
 
-        try:
-            with self._connect(run_id) as conn:
-                results = conn.cursor().execute(FETCH_STATS_SQL).fetchall()
-        except sqlite3.Error as err:
-            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+        if not os.path.exists(self.path_for_run_id(run_id)):
+            self._initdb(engine, run_id)
 
-        try:
-            counts = {}
-            times = {}
-            for result in results:
-                if result[0]:
-                    counts[result[0]] = result[1]
-                    times[result[0]] = result[2]
+        conn = engine.connect()
+        with handle_schema_errors(
+            conn,
+            get_alembic_config(__file__),
+            msg='SqliteEventLogStorage for run {run_id}'.format(run_id=run_id),
+        ):
+            yield conn
 
-            return PipelineRunStatsSnapshot(
-                run_id=run_id,
-                steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
-                steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
-                materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
-                expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                start_time=float(times.get(DagsterEventType.PIPELINE_START.value, 0.0)),
-                end_time=float(
-                    times.get(
-                        DagsterEventType.PIPELINE_SUCCESS.value,
-                        times.get(DagsterEventType.PIPELINE_FAILURE.value, 0.0),
-                    )
-                ),
-            )
-        except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(EventLogInvalidForRun(run_id=run_id), err)
+        conn.close()
 
     def wipe(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.db')):
             os.unlink(filename)
 
-    def delete_events(self, run_id):
-        path = self.filepath_for_run_id(run_id)
-        if os.path.exists(path):
-            os.unlink(path)
-
-    @property
-    def is_persistent(self):
-        return True
-
     def watch(self, run_id, start_cursor, callback):
-        watchdog = EventLogStorageWatchdog(self, run_id, callback, start_cursor)
+        watchdog = SqliteEventLogStorageWatchdog(self, run_id, callback, start_cursor)
         self._watchers[run_id] = self._obs.schedule(watchdog, self._base_dir, True)
 
     def end_watch(self, run_id, handler):
@@ -197,16 +117,16 @@ class SqliteEventLogStorage(EventLogStorage, ConfigurableClass):
         del self._watchers[run_id]
 
 
-class EventLogStorageWatchdog(PatternMatchingEventHandler):
+class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
         self._event_log_storage = check.inst_param(
-            event_log_storage, 'event_log_storage', EventLogStorage
+            event_log_storage, 'event_log_storage', SqliteEventLogStorage
         )
         self._run_id = check.str_param(run_id, 'run_id')
         self._cb = check.callable_param(callback, 'callback')
-        self._log_path = event_log_storage.filepath_for_run_id(run_id)
+        self._log_path = event_log_storage.path_for_run_id(run_id)
         self._cursor = start_cursor
-        super(EventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
+        super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
 
     def _process_log(self):
         events = self._event_log_storage.get_logs_for_run(self._run_id, self._cursor)
