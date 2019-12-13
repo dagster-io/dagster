@@ -11,7 +11,7 @@ from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.loggers import colored_console_logger
 
-TEST_TIMEOUT = 3
+TEST_TIMEOUT = 5
 
 
 def mode_def(event_callback):

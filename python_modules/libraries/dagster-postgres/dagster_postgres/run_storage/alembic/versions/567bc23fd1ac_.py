@@ -38,8 +38,6 @@ def upgrade():
         )
 
     has_tables = inspector.get_table_names()
-    if 'event_logs' in has_tables:
-        return
 
     if 'event_log' in has_tables:
         op.drop_column(
