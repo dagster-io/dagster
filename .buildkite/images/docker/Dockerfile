@@ -160,6 +160,9 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
         gnupg2 \
         pandoc \
         sbt \
+        rabbitmq-server \
+        postgresql \
+        postgresql-contrib \
 # Clean up after install process
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
