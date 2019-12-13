@@ -3,21 +3,9 @@ import subprocess
 
 import pytest
 from dagster_postgres.run_storage import PostgresRunStorage
-from dagster_postgres.utils import get_conn, get_conn_string, wait_for_connection
+from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 from dagster.utils import pushd, script_relative_path
-
-CREATE_TABLE_SQL = '''
-CREATE TABLE IF NOT EXISTS run_events (
-    message_id varchar(255) NOT NULL,
-    run_id varchar(255) NOT NULL,
-    timestamp timestamp NOT NULL,
-    event_body varchar NOT NULL
-)
-'''
-
-DROP_TABLE_SQL = 'DROP TABLE IF EXISTS run_events'
-
 
 BUILDKITE = bool(os.getenv('BUILDKITE'))
 
@@ -113,16 +101,13 @@ def _conn_string(**kwargs):
 
 
 @pytest.fixture(scope='function')
-def conn_string(postgres):  # pylint: disable=redefined-outer-name, unused-argument
-    return _conn_string()
+def hostname(postgres):  # pylint: disable=redefined-outer-name, unused-argument
+    return get_hostname()
 
 
 @pytest.fixture(scope='function')
-def conn(conn_string):  # pylint: disable=redefined-outer-name
-    cxn = get_conn(conn_string)
-    cxn.cursor().execute(DROP_TABLE_SQL)
-    cxn.cursor().execute(CREATE_TABLE_SQL)
-    return cxn
+def conn_string(postgres):  # pylint: disable=redefined-outer-name, unused-argument
+    return _conn_string()
 
 
 @pytest.fixture(scope='function')

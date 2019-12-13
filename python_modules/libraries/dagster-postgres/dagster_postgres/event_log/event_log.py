@@ -8,7 +8,6 @@ from dagster_postgres.utils import get_conn
 
 from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
-from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
     ConfigurableClass,
@@ -21,13 +20,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster.core.storage.sql import (
-    check_alembic_revision,
-    create_engine,
-    get_alembic_config,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
+from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 
 from ..pynotify import await_pg_notifications
 
@@ -43,16 +36,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         self._event_watcher = PostgresEventWatcher(self.conn_string)
         self._engine = create_engine(self.conn_string)
         SqlEventLogStorageMetadata.create_all(self.engine)
-        alembic_config = get_alembic_config(__file__)
-        with self.connect() as conn:
-            db_revision, head_revision = check_alembic_revision(alembic_config, conn)
-        # Fresh database
-        if db_revision is None:
-            stamp_alembic_rev(alembic_config, self.engine)
-        elif db_revision != head_revision:
-            raise DagsterInstanceMigrationRequired(
-                msg='PostgresEventLogStorage', db_revision=db_revision, head_revision=head_revision
-            )
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
     @property

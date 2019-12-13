@@ -5,11 +5,11 @@
 **Breaking**
 
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-- The implementation of SQL-based event log storages has been consolidated,
-  which has entailed a schema change. If you have event logs stored in a
-  Postgres- or SQLite-backed event log storage, and you would like to maintain
-  access to these logs, you should run `dagster instance migrate`. To check
-  what event log storages you are using, run `dagster instance info`.
+- The implementation of SQL-based event log and run storages has been consolidated, which has
+  entailed a schema change. If you have event logs stored in a Postgres- or SQLite-backed event
+  log storage, and you would like to maintain access to these logs, you should run
+  `dagster instance migrate`. To check what event log storages you are using, run
+  `dagster instance info`.
 
 **Dagit**
 

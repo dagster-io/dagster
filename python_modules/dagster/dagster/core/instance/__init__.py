@@ -119,6 +119,8 @@ class DagsterInstance:
 
         self._subscribers = defaultdict(list)
 
+    # ctors
+
     @staticmethod
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -179,6 +181,8 @@ class DagsterInstance:
             ref=instance_ref,
         )
 
+    # flags
+
     @property
     def is_persistent(self):
         return self._instance_type == InstanceType.PERSISTENT
@@ -193,14 +197,15 @@ class DagsterInstance:
 
         check.failed('Can not produce an instance reference for {t}'.format(t=self))
 
+    @property
+    def root_directory(self):
+        return self._local_artifact_storage.base_dir
+
     @staticmethod
     def temp_storage():
         if DagsterInstance._PROCESS_TEMPDIR is None:
             DagsterInstance._PROCESS_TEMPDIR = seven.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
-
-    def root_directory(self):
-        return self._local_artifact_storage.base_dir
 
     def info_str(self):
         def _info(component):
@@ -233,6 +238,13 @@ class DagsterInstance:
     @property
     def compute_log_manager(self):
         return self._compute_log_manager
+
+    def upgrade(self, print_fn=lambda _: None):
+        print_fn('Updating run storage...')
+        self._run_storage.upgrade()
+
+        print_fn('Updating event storage...')
+        self._event_storage.upgrade()
 
     # run storage
 

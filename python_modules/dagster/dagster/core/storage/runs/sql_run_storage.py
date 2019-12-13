@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from collections import defaultdict
 from datetime import datetime
 
 import sqlalchemy as db
@@ -195,16 +196,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def get_run_tags(self):
-        result = dict()
+        result = defaultdict(set)
         query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(RunTagsTable.c.value)
         with self.connect() as conn:
             rows = conn.execute(query).fetchall()
         for r in rows:
-            if r[0] not in result:
-                result[r[0]] = [r[1]]
-            else:
-                result[r[0]].append(r[1])
-        return result.items()
+            result[r[0]].add(r[1])
+        return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')

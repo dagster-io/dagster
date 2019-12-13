@@ -1,3 +1,5 @@
+import os
+import shutil
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
@@ -14,6 +16,7 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    seven,
 )
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -303,3 +306,15 @@ def check_dagster_type(dagster_type, value):
             )
         )
     return type_check
+
+
+@contextmanager
+def restore_directory(src):
+    with seven.TemporaryDirectory() as temp_dir:
+        dst = os.path.join(temp_dir, os.path.basename(src))
+        shutil.copytree(src, dst)
+        try:
+            yield
+        finally:
+            shutil.rmtree(src)
+            shutil.copytree(dst, src)

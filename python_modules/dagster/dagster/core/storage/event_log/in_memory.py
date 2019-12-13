@@ -51,3 +51,7 @@ class InMemoryEventLogStorage(EventLogStorage):
         with self._lock[run_id]:
             if handler in self._handlers[run_id]:
                 self._handlers[run_id].remove(handler)
+
+    @property
+    def is_persistent(self):
+        return False

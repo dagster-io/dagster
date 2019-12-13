@@ -131,7 +131,6 @@ def test_dataframe_csv_missing_inputs():
         execute_pipeline(missing_inputs)
 
     assert len(exc_info.value.errors) == 1
-    print(exc_info.value.errors[0].message)
 
     assert exc_info.value.errors[0].message == (
         '''Missing required field "solids" at document config root. '''

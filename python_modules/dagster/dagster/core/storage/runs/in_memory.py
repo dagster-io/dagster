@@ -10,6 +10,7 @@ from .base import RunStorage
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
         self._runs = OrderedDict()
+        self._run_tags = defaultdict(set)
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -19,6 +20,10 @@ class InMemoryRunStorage(RunStorage):
         )
 
         self._runs[pipeline_run.run_id] = pipeline_run
+        if pipeline_run.tags and len(pipeline_run.tags) > 0:
+            for k, v in pipeline_run.tags.items():
+                self._run_tags[k].add(v)
+
         return pipeline_run
 
     def handle_run_event(self, run_id, event):
@@ -77,12 +82,7 @@ class InMemoryRunStorage(RunStorage):
         return self._runs.get(run_id)
 
     def get_run_tags(self):
-        result = defaultdict(set)
-        for r in self.all_runs():
-            for k, v in r.tags:
-                result[k].add(v)
-
-        return result.items()
+        return sorted([(k, v) for k, v in self._run_tags.items()], key=lambda x: x[0])
 
     def get_runs_with_status(self, run_status, cursor=None, limit=None):
         check.inst_param(run_status, 'run_status', PipelineRunStatus)
