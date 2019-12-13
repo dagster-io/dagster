@@ -39,8 +39,12 @@ export function handleStartExecutionResult(
     } else {
       window.location.href = url;
     }
+  } else if (obj.__typename === "PythonError") {
+    console.log(obj);
+    const message = `${obj.message}`;
+    showCustomAlert({ body: message });
   } else {
-    let message = `${pipelineName} cannot not be executed with the provided config.`;
+    let message = `${pipelineName} cannot be executed with the provided config.`;
 
     if ("errors" in obj) {
       message += ` Please fix the following errors:\n\n${obj.errors
@@ -109,6 +113,10 @@ export const HANDLE_START_EXECUTION_FRAGMENT = gql`
       errors {
         message
       }
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 `;
