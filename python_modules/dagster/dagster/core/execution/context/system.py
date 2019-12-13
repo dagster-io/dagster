@@ -232,7 +232,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
 class SystemComputeExecutionContext(SystemStepExecutionContext):
     '''The ``context`` object available to solid compute logic.
-    
+
     Attributes:
         solid_config (Any): The parsed config specific to this solid.
         log (DagsterLogManager): Centralized log dispatch from user code.

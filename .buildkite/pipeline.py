@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import StepBuilder
+from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -44,10 +44,6 @@ def check_for_release():
         return True
 
     return False
-
-
-def wait_step():
-    return "wait"
 
 
 def network_buildkite_container(network_name):
@@ -206,7 +202,6 @@ def publish_airflow_images():
     return [
         StepBuilder("[dagster-airflow] images", key="dagster-airflow-images")
         .run(
-            "pip install awscli",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
             + GCP_CREDS_LOCAL_FILE,
@@ -241,7 +236,6 @@ def airflow_tests():
         tests.append(
             StepBuilder("[dagster-airflow] ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install awscli",
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
@@ -371,7 +365,6 @@ def gcp_tests():
         tests.append(
             StepBuilder("libraries-dagster-gcp tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install awscli",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
@@ -492,7 +485,6 @@ def pipenv_smoke_tests():
         is_release = check_for_release()
         smoke_test_steps = (
             [
-                "pip install pipenv",
                 "mkdir /tmp/pipenv_smoke_tests",
                 "pushd /tmp/pipenv_smoke_tests",
                 "pipenv install -e /workdir/python_modules/dagster",
