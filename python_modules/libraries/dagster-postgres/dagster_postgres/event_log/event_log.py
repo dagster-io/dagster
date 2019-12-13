@@ -1,14 +1,10 @@
 import datetime
-import multiprocessing
 import threading
-import time
-import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
 import sqlalchemy as db
 from dagster_postgres.utils import get_conn
-from six.moves.queue import Empty
 
 from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
@@ -44,7 +40,7 @@ WATCHER_POLL_INTERVAL = 0.2
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
         self.conn_string = check.str_param(postgres_url, 'postgres_url')
-        self._event_watcher = create_event_watcher(self.conn_string)
+        self._event_watcher = PostgresEventWatcher(self.conn_string)
         self._engine = create_engine(self.conn_string)
         SqlEventLogStorageMetadata.create_all(self.engine)
         alembic_config = get_alembic_config(__file__)
@@ -156,146 +152,88 @@ EventWatcherThreadEndEvents = (EventWatchFailed, EventWatcherEnd)
 
 POLLING_CADENCE = 0.25
 
-
-def _postgres_event_watcher_event_loop(conn_string, queue, run_id_dict):
-    init_called = False
-    queue.put(EventWatcherProcessStartedEvent())
-    try:
-        for notif in await_pg_notifications(
-            conn_string, channels=[CHANNEL_NAME], timeout=POLLING_CADENCE, yield_on_timeout=True
-        ):
-            if not init_called:
-                init_called = True
-                queue.put(EventWatcherStart())
-
-            if notif is not None:
-                run_id, index = notif.payload.split('_')
-                if run_id in run_id_dict:
-                    queue.put(EventWatcherEvent((run_id, index)))
-            else:
-                # The polling window has timed out
-                pass
-
-    except Exception as e:  # pylint: disable=broad-except
-        queue.put(EventWatchFailed(message=str(e)))
-    finally:
-        queue.put(EventWatcherEnd())
+TERMINATE_EVENT_LOOP = 'TERMINATE_EVENT_LOOP'
 
 
-def create_event_watcher(conn_string):
-    check.str_param(conn_string, 'conn_string')
+def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_thread_exit):
 
-    queue = multiprocessing.Queue()
-    m_dict = multiprocessing.Manager().dict()
-    process = multiprocessing.Process(
-        target=_postgres_event_watcher_event_loop, args=(conn_string, queue, m_dict)
-    )
-
-    process.start()
-
-    # block and ensure that the process has actually started. This was required
-    # to get processes to start in linux in buildkite.
-    check.inst(queue.get(block=True), EventWatcherProcessStartedEvent)
-
-    return PostgresEventWatcher(process, queue, m_dict, conn_string)
-
-
-def watcher_thread(conn_string, queue, handlers_dict, dict_lock, watcher_thread_exit):
-    done = False
-    while not done and not watcher_thread_exit.is_set():
-        event_list = []
-        while not queue.empty():
-            try:
-                evt = queue.get_nowait()
-                event_list.append(evt)
-            except Empty:
-                pass
-
-        for event in event_list:
-            if not isinstance(event, EventWatcherThreadEvents):
-                warnings.warn(
-                    'Event watcher thread got unexpected event {event}'.format(event=event)
-                )
+    for notif in await_pg_notifications(
+        conn_string, channels=[CHANNEL_NAME], timeout=POLLING_CADENCE, yield_on_timeout=True,
+    ):
+        if notif is None:
+            if watcher_thread_exit.is_set():
+                return
+        else:
+            run_id, index_str = notif.payload.split('_')
+            if run_id not in run_id_dict:
                 continue
-            if isinstance(event, EventWatcherThreadNoopEvents):
-                continue
-            elif isinstance(event, EventWatcherThreadEndEvents):
-                done = True
-            else:
-                assert isinstance(event, EventWatcherEvent)
-                run_id, index_str = event.payload
-                index = int(index_str)
-                with dict_lock:
-                    handlers = handlers_dict.get(run_id, [])
 
-                engine = create_engine(conn_string)
-                res = engine.execute(
-                    db.select([SqlEventLogStorageTable.c.event]).where(
-                        SqlEventLogStorageTable.c.id == index
-                    )
+            index = int(index_str)
+            with dict_lock:
+                handlers = handlers_dict.get(run_id, [])
+
+            engine = create_engine(conn_string)
+            res = engine.execute(
+                db.select([SqlEventLogStorageTable.c.event]).where(
+                    SqlEventLogStorageTable.c.id == index
                 )
-                dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
+            )
+            dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
 
-                for (cursor, callback) in handlers:
-                    if index >= cursor:
-                        callback(dagster_event)
-        time.sleep(WATCHER_POLL_INTERVAL)
+            for (cursor, callback) in handlers:
+                if index >= cursor:
+                    callback(dagster_event)
 
 
 class PostgresEventWatcher(object):
-    def __init__(self, process, queue, run_id_dict, conn_string):
-        self.process = check.inst_param(process, 'process', multiprocessing.Process)
-        self.run_id_dict = check.inst_param(
-            run_id_dict, 'run_id_dict', multiprocessing.managers.DictProxy
-        )
-        self.handlers_dict = {}
-        self.dict_lock = threading.Lock()
-        self.queue = check.inst_param(queue, 'queue', multiprocessing.queues.Queue)
-        self.conn_string = conn_string
-        self.watcher_thread_exit = threading.Event()
-        self.watcher_thread = threading.Thread(
+    def __init__(self, conn_string):
+        self._run_id_dict = {}
+        self._handlers_dict = {}
+        self._dict_lock = threading.Lock()
+        self._conn_string = conn_string
+        self._watcher_thread_exit = threading.Event()
+        self._watcher_thread = threading.Thread(
             target=watcher_thread,
             args=(
-                self.conn_string,
-                self.queue,
-                self.handlers_dict,
-                self.dict_lock,
-                self.watcher_thread_exit,
+                self._conn_string,
+                self._run_id_dict,
+                self._handlers_dict,
+                self._dict_lock,
+                self._watcher_thread_exit,
             ),
         )
-        self.watcher_thread.start()
+        self._watcher_thread.daemon = True
+        self._watcher_thread.start()
 
     def has_run_id(self, run_id):
-        with self.dict_lock:
-            _has_run_id = run_id in self.run_id_dict
+        with self._dict_lock:
+            _has_run_id = run_id in self._run_id_dict
         return _has_run_id
 
     def watch_run(self, run_id, start_cursor, callback):
-        with self.dict_lock:
-            if run_id in self.run_id_dict:
-                self.handlers_dict[run_id].append((start_cursor, callback))
+        with self._dict_lock:
+            if run_id in self._run_id_dict:
+                self._handlers_dict[run_id].append((start_cursor, callback))
             else:
                 # See: https://docs.python.org/2/library/multiprocessing.html#multiprocessing.managers.SyncManager
-                run_id_dict = self.run_id_dict
+                run_id_dict = self._run_id_dict
                 run_id_dict[run_id] = None
-                self.run_id_dict = run_id_dict
-                self.handlers_dict[run_id] = [(start_cursor, callback)]
+                self._run_id_dict = run_id_dict
+                self._handlers_dict[run_id] = [(start_cursor, callback)]
 
     def unwatch_run(self, run_id, handler):
-        with self.dict_lock:
-            if run_id in self.run_id_dict:
-                self.handlers_dict[run_id] = [
+        with self._dict_lock:
+            if run_id in self._run_id_dict:
+                self._handlers_dict[run_id] = [
                     (start_cursor, callback)
-                    for (start_cursor, callback) in self.handlers_dict[run_id]
+                    for (start_cursor, callback) in self._handlers_dict[run_id]
                     if callback != handler
                 ]
-            if not self.handlers_dict[run_id]:
-                del self.handlers_dict[run_id]
-                run_id_dict = self.run_id_dict
+            if not self._handlers_dict[run_id]:
+                del self._handlers_dict[run_id]
+                run_id_dict = self._run_id_dict
                 del run_id_dict[run_id]
-                self.run_id_dict = run_id_dict
+                self._run_id_dict = run_id_dict
 
     def close(self):
-        self.process.terminate()
-        self.process.join()
-        self.watcher_thread_exit.set()
+        self._watcher_thread_exit.set()
