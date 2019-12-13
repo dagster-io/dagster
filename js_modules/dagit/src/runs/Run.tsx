@@ -28,7 +28,7 @@ import {
   RunPipelineRunEventFragment
 } from "./types/RunPipelineRunEventFragment";
 import { CANCEL_MUTATION } from "./RunUtils";
-import { SharedToaster } from "../Util";
+import { SharedToaster } from "../DomUtils";
 
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 const REEXECUTE_PIPELINE_UNKNOWN =

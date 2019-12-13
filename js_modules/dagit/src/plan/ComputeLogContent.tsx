@@ -8,7 +8,7 @@ import { Spinner, Intent } from "@blueprintjs/core";
 import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
-import { ROOT_SERVER_URI } from "../Util";
+import { ROOT_SERVER_URI } from "../DomUtils";
 import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
 
 interface IComputeLogContentProps {

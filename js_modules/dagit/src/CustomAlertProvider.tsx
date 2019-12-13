@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components";
 import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
-import { copyValue } from "./Util";
+import { copyValue } from "./DomUtils";
 
 const CURRENT_ALERT_CHANGED = "alert-changed";
 

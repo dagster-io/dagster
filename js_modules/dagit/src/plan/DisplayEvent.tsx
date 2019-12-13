@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Tag } from "@blueprintjs/core";
 import { IStepDisplayEvent } from "../RunMetadataProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { copyValue } from "../Util";
+import { copyValue } from "../DomUtils";
 
 interface DisplayEventProps {
   event: IStepDisplayEvent;

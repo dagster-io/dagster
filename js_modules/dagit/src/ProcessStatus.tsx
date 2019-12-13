@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
-import { SharedToaster } from "./Util";
+import { SharedToaster } from "./DomUtils";
 
 export default () => {
   const apollo = useApolloClient();

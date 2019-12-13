@@ -30,12 +30,9 @@ import {
   DELETE_MUTATION,
   CANCEL_MUTATION
 } from "./RunUtils";
-import {
-  formatElapsedTime,
-  SharedToaster,
-  unixTimestampToString
-} from "../Util";
-import {} from "../Util";
+import { formatElapsedTime, unixTimestampToString } from "../Util";
+import { SharedToaster } from "../DomUtils";
+
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { Link } from "react-router-dom";
 import { RunTableRunFragment } from "./types/RunTableRunFragment";
