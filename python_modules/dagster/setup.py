@@ -63,9 +63,7 @@ def _do_setup(name='dagster'):
             'click>=5.0',
             'coloredlogs>=6.1',
             'graphviz>=0.8.4',
-            # pyyaml pinned for compatibility with docker-compose
-            # https://github.com/docker/compose/blob/master/setup.py#L35
-            'PyYAML>=3.10,<5',
+            'PyYAML',
             # core (not explicitly expressed atm)
             'alembic>=1.2.1',
             'gevent',
