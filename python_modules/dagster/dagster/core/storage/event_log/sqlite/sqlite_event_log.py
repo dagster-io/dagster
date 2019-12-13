@@ -5,6 +5,7 @@ from contextlib import contextmanager
 
 import six
 import sqlalchemy as db
+from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
@@ -82,27 +83,32 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
 
         alembic_config = get_alembic_config(__file__)
-        stamp_alembic_rev(alembic_config, engine.connect())
+        conn = engine.connect()
+        try:
+            stamp_alembic_rev(alembic_config, conn)
+        finally:
+            conn.close()
 
     @contextmanager
     def connect(self, run_id=None):
         check.str_param(run_id, 'run_id')
 
         conn_string = self.conn_string_for_run_id(run_id)
-        engine = create_engine(conn_string)
+        engine = create_engine(conn_string, poolclass=NullPool)
 
         if not os.path.exists(self.path_for_run_id(run_id)):
             self._initdb(engine, run_id)
 
         conn = engine.connect()
-        with handle_schema_errors(
-            conn,
-            get_alembic_config(__file__),
-            msg='SqliteEventLogStorage for run {run_id}'.format(run_id=run_id),
-        ):
-            yield conn
-
-        conn.close()
+        try:
+            with handle_schema_errors(
+                conn,
+                get_alembic_config(__file__),
+                msg='SqliteEventLogStorage for run {run_id}'.format(run_id=run_id),
+            ):
+                yield conn
+        finally:
+            conn.close()
 
     def wipe(self):
         for filename in glob.glob(os.path.join(self._base_dir, '*.db')):
