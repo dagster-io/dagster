@@ -10,7 +10,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface StartPipelineExecution_startPipelineExecution_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError" | "PythonError";
+  __typename: "InvalidStepError" | "InvalidOutputError";
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {
@@ -44,7 +44,13 @@ export interface StartPipelineExecution_startPipelineExecution_PipelineConfigVal
   errors: StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid_errors[];
 }
 
-export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_InvalidStepError | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid;
+export interface StartPipelineExecution_startPipelineExecution_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_InvalidStepError | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid | StartPipelineExecution_startPipelineExecution_PythonError;
 
 export interface StartPipelineExecution {
   startPipelineExecution: StartPipelineExecution_startPipelineExecution;
