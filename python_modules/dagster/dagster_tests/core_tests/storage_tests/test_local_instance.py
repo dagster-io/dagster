@@ -55,7 +55,7 @@ def test_fs_stores():
         ]
         stats = event_store.get_stats_for_run(run.run_id)
         assert stats.steps_succeeded == 1
-        assert stats.end_time > 0.0
+        assert stats.end_time is not None
 
 
 def test_init_compute_log_with_bad_config():

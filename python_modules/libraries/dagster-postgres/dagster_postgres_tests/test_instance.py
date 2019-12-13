@@ -51,4 +51,4 @@ def test_postgres_instance(multi_postgres):
         ]
         stats = event_storage.get_stats_for_run(run.run_id)
         assert stats.steps_succeeded == 1
-        assert stats.end_time > 0.0
+        assert stats.end_time is not None

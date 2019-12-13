@@ -1,7 +1,10 @@
+from contextlib import contextmanager
+
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.storage.runs.sqlite import RunStorageSqlMetadata, SqlRunStorage, create_engine
+from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
+from dagster.core.storage.sql import create_engine
 from dagster.core.types import Field, String
 
 
@@ -29,5 +32,6 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         RunStorageSqlMetadata.drop_all(engine)
         return PostgresRunStorage(postgres_url)
 
-    def connect(self):
-        return self.engine.connect()
+    @contextmanager
+    def connect(self, _run_id=None):  # pylint: disable=arguments-differ
+        yield self.engine.connect()
