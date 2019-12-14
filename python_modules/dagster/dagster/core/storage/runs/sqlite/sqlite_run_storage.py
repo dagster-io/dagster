@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+from sqlalchemy.pool import NullPool
+
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -15,7 +17,7 @@ from ..sql_run_storage import SqlRunStorage
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, 'conn_string')
-        self.engine = create_engine(conn_string)
+        self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
     @property
@@ -35,12 +37,22 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         check.str_param(base_dir, 'base_dir')
         mkdir_p(base_dir)
         conn_string = 'sqlite:///{}'.format('/'.join([base_dir, 'runs.db']))
-        engine = create_engine(conn_string)
+        engine = create_engine(conn_string, poolclass=NullPool)
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
-        stamp_alembic_rev(alembic_config, engine.connect())
+        conn = engine.connect()
+        try:
+            stamp_alembic_rev(alembic_config, conn)
+        finally:
+            conn.close()
+
         return SqliteRunStorage(conn_string, inst_data)
 
     @contextmanager
     def connect(self):
-        yield self.engine.connect()
+        engine = create_engine(self._conn_string, poolclass=NullPool)
+        conn = engine.connect()
+        try:
+            yield conn
+        finally:
+            conn.close()

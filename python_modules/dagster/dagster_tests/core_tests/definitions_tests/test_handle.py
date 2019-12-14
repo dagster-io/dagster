@@ -49,11 +49,11 @@ def define_not_a_pipeline_or_repo():
 
 def test_exc_target_handle():
     res = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'foo_pipeline')
-    assert res.data.python_file == __file__
+    assert os.path.abspath(res.data.python_file) == os.path.abspath(__file__)
     assert res.data.fn_name == 'foo_pipeline'
 
     res = ExecutionTargetHandle.from_dict(res.to_dict())
-    assert res.data.python_file == __file__
+    assert os.path.abspath(res.data.python_file) == os.path.abspath(__file__)
     assert res.data.fn_name == 'foo_pipeline'
 
 
