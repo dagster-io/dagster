@@ -1,5 +1,7 @@
 import * as React from "react";
 import animate from "amator";
+import styled from "styled-components";
+import { Slider, Icon, Colors } from "@blueprintjs/core";
 
 export interface SVGViewportInteractor {
   onMouseDown(
@@ -7,7 +9,7 @@ export interface SVGViewportInteractor {
     event: React.MouseEvent<HTMLDivElement>
   ): void;
   onWheel(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
-  render?(props: SVGViewportProps): React.ReactElement<any> | null;
+  render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
 
 interface SVGViewportProps {
@@ -33,13 +35,21 @@ interface Point {
 }
 
 export const DETAIL_ZOOM = 0.75;
-export const MAX_OVERVIEW_ZOOM = 0.39;
-export const MIN_OVERVIEW_ZOOM = 0.15;
+export const MAX_AUTOCENTER_ZOOM = 0.39;
+export const MIN_AUTOCENTER_ZOOM = 0.15;
+export const MIN_ZOOM = 0.015;
 
 const PanAndZoomInteractor: SVGViewportInteractor = {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
     if (viewport._animation) {
       viewport._animation.cancel();
+    }
+
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("#zoom-slider-container")
+    ) {
+      return;
     }
 
     const start = viewport.getOffsetXY(event);
@@ -67,18 +77,35 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   },
 
   onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
-    const offset = viewport.screenToSVGCoords(viewport.getOffsetXY(event));
-    let { x, y, scale } = viewport.state;
-    const oldScale = scale;
+    const cursorPosition = viewport.getOffsetXY(event);
+    const targetScale = viewport.state.scale * (1 - event.deltaY * 0.0025);
+    const scale = Math.max(MIN_ZOOM, Math.min(DETAIL_ZOOM, targetScale));
+    viewport.adjustZoomRelativeToScreenPoint(scale, cursorPosition);
+  },
 
-    scale = Math.max(
-      0.015,
-      Math.min(DETAIL_ZOOM, scale * (1 - event.deltaY * 0.0025))
+  render(viewport: SVGViewport) {
+    return (
+      <ZoomSliderContainer id="zoom-slider-container">
+        <Icon
+          iconSize={17}
+          icon="zoom-in"
+          style={{ color: Colors.LIGHT_GRAY1, marginBottom: 12 }}
+        />
+        <Slider
+          vertical
+          min={MIN_ZOOM}
+          max={DETAIL_ZOOM}
+          stepSize={0.001}
+          value={viewport.state.scale}
+          labelRenderer={false}
+          onChange={(scale: number) => {
+            const x = viewport.element.current!.clientWidth / 2;
+            const y = viewport.element.current!.clientHeight / 2;
+            viewport.adjustZoomRelativeToScreenPoint(scale, { x, y });
+          }}
+        />
+      </ZoomSliderContainer>
     );
-    x = x + (offset.x * oldScale - offset.x * scale);
-    y = y + (offset.y * oldScale - offset.y * scale);
-
-    viewport.setState({ x, y, scale });
   }
 };
 
@@ -108,6 +135,12 @@ export default class SVGViewport extends React.Component<
     this.autocenter();
   }
 
+  cancelAnimations() {
+    if (this._animation) {
+      this._animation.cancel();
+    }
+  }
+
   autocenter(animate = false) {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
@@ -116,14 +149,14 @@ export default class SVGViewport extends React.Component<
     const dh = ownerRect.height / this.props.graphHeight;
     const desiredScale = Math.min(dw, dh);
     const boundedScale = Math.max(
-      Math.min(desiredScale, MAX_OVERVIEW_ZOOM),
-      MIN_OVERVIEW_ZOOM
+      Math.min(desiredScale, MAX_AUTOCENTER_ZOOM),
+      MIN_AUTOCENTER_ZOOM
     );
 
     if (
       this.state.scale < boundedScale &&
       desiredScale !== boundedScale &&
-      boundedScale === MIN_OVERVIEW_ZOOM
+      boundedScale === MIN_AUTOCENTER_ZOOM
     ) {
       // If the user is zoomed out past where they're going to land, AND where they're going to land
       // is not a view of the entire DAG but instead a view of some zoomed section, autocentering is
@@ -156,6 +189,15 @@ export default class SVGViewport extends React.Component<
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
     return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
+  }
+
+  public adjustZoomRelativeToScreenPoint(nextScale: number, point: Point) {
+    const centerSVGCoord = this.screenToSVGCoords(point);
+    const { scale } = this.state;
+    let { x, y } = this.state;
+    x = x + (centerSVGCoord.x * scale - centerSVGCoord.x * nextScale);
+    y = y + (centerSVGCoord.y * scale - centerSVGCoord.y * nextScale);
+    this.setState({ x, y, scale: nextScale });
   }
 
   public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
@@ -226,7 +268,7 @@ export default class SVGViewport extends React.Component<
         >
           {children(this.state)}
         </div>
-        {interactor.render && interactor.render(this.props)}
+        {interactor.render && interactor.render(this)}
       </div>
     );
   }
@@ -243,3 +285,12 @@ const SVGViewportStyles: React.CSSProperties = {
   overflow: "hidden",
   userSelect: "none"
 };
+
+const ZoomSliderContainer = styled.div`
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  padding: 16px 8px;
+  background: rgba(245, 248, 250, 0.4);
+`;
