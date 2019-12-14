@@ -1,6 +1,6 @@
 import gql from "graphql-tag";
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import Loading from "../Loading";
 import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";

@@ -10,7 +10,7 @@ import ProcessStatus from "./ProcessStatus";
 import WebsocketStatus from "./WebsocketStatus";
 import gql from "graphql-tag";
 import navBarImage from "./images/nav-logo.png";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 export const TopNav = ({
   pipelines

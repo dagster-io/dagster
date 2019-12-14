@@ -6,7 +6,7 @@ import {
   IFullPipelineLayout,
   IFullSolidLayout
 } from "./getFullSolidLayout";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { weakmapMemoize } from "../Util";
 
 export type Edge = { a: string; b: string };
@@ -63,6 +63,6 @@ SolidLinks.displayName = "SolidLinks";
 
 const StyledPath = styled("path")`
   stroke-width: 6;
-  stroke: ${Colors.BLACK}
+  stroke: ${Colors.BLACK};
   fill: none;
 `;
