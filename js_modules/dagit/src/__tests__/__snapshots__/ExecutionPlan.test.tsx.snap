@@ -2,28 +2,28 @@
 
 exports[`renders given an execution plan 1`] = `
 <div
-  className="sc-jlyJG cNKhFs"
+  className="ExecutionPlan__ExecutionPlanContainer-sc-1gu1caw-0 jvnsoS"
 >
   <div
-    className="sc-gipzik gMsTtM"
+    className="ExecutionPlan__ExecutionPlanContainerInner-sc-1gu1caw-1 cIQpcx"
   >
     <div
-      className="sc-Rmtcm ioUZsW"
+      className="ExecutionPlan__ExecutionTimeline-sc-1gu1caw-3 jVhIJc"
     />
     <div
-      className="sc-csuQGl ifZPDQ"
+      className="ExecutionPlan__ExecutionTimelineMessage-sc-1gu1caw-2 fIocxs"
     >
       <div
-        className="sc-bRBYWo ggMRvZ"
+        className="ExecutionPlan__ExecutionTimelineDot-sc-1gu1caw-4 idBHWu"
       />
        
     </div>
     <div>
       <div
-        className="sc-cvbbAY hfeZiW"
+        className="ExecutionPlanBox__ExecutionPlanRowContainer-sc-1bacjj9-5 kaLnAx"
       >
         <div
-          className="sc-jWBwVP dKDMQm waiting"
+          className="ExecutionPlanBox__ExecutionPlanBoxContainer-sc-1bacjj9-6 lhblCw waiting"
           onClick={[Function]}
           style={
             Object {
@@ -32,7 +32,7 @@ exports[`renders given an execution plan 1`] = `
           }
         >
           <div
-            className="sc-eHgmQL eKNJUR"
+            className="ExecutionPlanBox__ExecutionFinishedFlash-sc-1bacjj9-4 bGNKzx"
             style={
               Object {
                 "transitionDelay": "-100ms",
@@ -48,11 +48,11 @@ exports[`renders given an execution plan 1`] = `
             }
           >
             <div
-              className="sc-kEYyzF cqxKEW"
+              className="ExecutionPlanBox__ExecutionStateWrap-sc-1bacjj9-0 fipiZp"
               onClick={[Function]}
             >
               <div
-                className="sc-htoDjs eGkjMF"
+                className="ExecutionStateDot-bprv14-0 fGCtEf"
                 style={
                   Object {
                     "transitionDelay": "-100ms",
@@ -69,7 +69,7 @@ exports[`renders given an execution plan 1`] = `
               />
             </div>
             <div
-              className="sc-hSdWYo ehFkqL"
+              className="ExecutionPlanBox__ExecutionPlanBoxName-sc-1bacjj9-3 hFUwrq"
               title="raw_file_event_admins.compute"
             >
               raw_file_event_admins.compute

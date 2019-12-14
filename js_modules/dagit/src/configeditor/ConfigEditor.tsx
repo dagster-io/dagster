@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createGlobalStyle } from "styled-components";
+import { createGlobalStyle } from "styled-components/macro";
 import "codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
@@ -106,6 +106,13 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   }
 
   render() {
+    // Unfortunately, CodeMirror is too intense to be simulated in the JSDOM "virtual" DOM.
+    // Until we run tests against something like selenium, trying to render the editor in
+    // tests have to stop here.
+    if (process.env.NODE_ENV === "test") {
+      return <span />;
+    }
+
     return (
       <div style={{ flex: 1, position: "relative" }}>
         <CodeMirrorShimStyle />

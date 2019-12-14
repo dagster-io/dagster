@@ -6,7 +6,7 @@ import { RouteComponentProps } from "react-router";
 
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { SolidCard } from "./SolidCard";
 import {
   SolidsRootQuery,

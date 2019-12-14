@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { createGlobalStyle } from "styled-components";
+import { createGlobalStyle } from "styled-components/macro";
 import ApolloClient from "apollo-client";
 import { ApolloLink } from "apollo-link";
 import { onError } from "apollo-link-error";

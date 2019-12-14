@@ -1,6 +1,8 @@
 import { execSync } from "child_process";
+import { addTypenameToDocument } from "apollo-utilities";
 import { print } from "graphql/language/printer";
 import path from "path";
+import fs from "fs";
 
 /*
 Why is this script structured as a Jest test? Jest goes to great lengths to
@@ -18,7 +20,7 @@ const dagsterRoot = path.resolve(path.join(__dirname, "..", "..", "..", ".."));
 
 it(`builds mocks`, () => {
   for (const mock of [...SVGMocks, ...AppMocks]) {
-    const query = print(mock.query)
+    const query = print(addTypenameToDocument(mock.query))
       .replace(/[\n\r]/g, "")
       .replace(/[ ][ ]+/g, " ");
     const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
@@ -28,6 +30,11 @@ it(`builds mocks`, () => {
       `dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`
     );
 
+    if (JSON.parse(fs.readFileSync(mock.filepath).toString()).errors) {
+      throw new Error(
+        `Failed to generate ${mock.filepath}. See file for GraphQL error.`
+      );
+    }
     console.log(`Saved ${mock.filepath}`);
   }
 

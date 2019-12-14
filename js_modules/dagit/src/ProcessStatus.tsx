@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useQuery, useMutation, useApolloClient } from "react-apollo";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";

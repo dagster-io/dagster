@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Icon, IconName, Colors } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
 import { TypeExplorerContainer } from "./typeexplorer/TypeExplorerContainer";

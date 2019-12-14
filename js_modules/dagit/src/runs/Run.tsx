@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { IconNames } from "@blueprintjs/icons";
 import { Colors, Button, Intent, Tooltip, Position } from "@blueprintjs/core";
 import { MutationFunction, Mutation, useMutation } from "react-apollo";
