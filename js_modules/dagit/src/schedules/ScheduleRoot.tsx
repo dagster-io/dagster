@@ -21,7 +21,7 @@ import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { unixTimestampToString } from "../Util";
 import { RunStatus } from "../runs/RunUtils";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;

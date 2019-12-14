@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import { SolidCardSolidDefinitionFragment } from "./types/SolidCardSolidDefinitionFragment";
 import { layoutSolid } from "../graph/getFullSolidLayout";
 import SolidNode from "../graph/SolidNode";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 interface SolidCardProps {
   definition: SolidCardSolidDefinitionFragment;

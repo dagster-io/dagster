@@ -37,10 +37,13 @@ export class MockedProvider extends React.Component<
 
     const { mocks, addTypename, defaultOptions, cache } = this.props;
 
-    const responses: ReadonlyArray<MockedResponse> = mocks.map(mock => ({
-      request: mock,
-      response: JSON.parse(fs.readFileSync(mock.filepath).toString())
-    }));
+    const responses: ReadonlyArray<MockedResponse> = mocks.map(
+      mock =>
+        ({
+          request: mock,
+          result: JSON.parse(fs.readFileSync(mock.filepath).toString())
+        } as MockedResponse)
+    );
 
     const client = new ApolloClient({
       cache: cache || new Cache({ addTypename }),

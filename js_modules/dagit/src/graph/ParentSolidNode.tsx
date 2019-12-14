@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 import { IFullPipelineLayout } from "./getFullSolidLayout";
 import { PipelineGraphParentSolidFragment } from "./types/PipelineGraphParentSolidFragment";

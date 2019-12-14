@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Dialog, Spinner, Intent } from "@blueprintjs/core";
 import { RunContext } from "../runs/RunContext";
 import { IStepState } from "../RunMetadataProvider";

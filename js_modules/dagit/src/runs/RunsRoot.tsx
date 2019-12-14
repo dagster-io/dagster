@@ -20,7 +20,7 @@ import {
   tokenizedValuesFromString,
   stringFromValue
 } from "../TokenizingField";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
 
 const PAGE_SIZE = 50;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
 import { PipelineExplorerSolidHandleFragment_solid } from "./types/PipelineExplorerSolidHandleFragment";
 

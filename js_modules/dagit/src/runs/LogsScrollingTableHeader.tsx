@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 
 const ColumnWidthsStorageKey = "ColumnWidths";

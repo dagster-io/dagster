@@ -25,7 +25,7 @@ import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { unixTimestampToString } from "../Util";
 import { copyValue } from "../DomUtils";
 

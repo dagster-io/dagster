@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 import SVGViewport, { DETAIL_ZOOM, SVGViewportInteractor } from "./SVGViewport";
 import { SolidNameOrPath } from "../PipelineExplorer";

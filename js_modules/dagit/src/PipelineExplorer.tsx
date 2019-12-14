@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import Color from "color";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { History } from "history";
 import { Icon, Colors, InputGroup } from "@blueprintjs/core";
 import { Route } from "react-router";
