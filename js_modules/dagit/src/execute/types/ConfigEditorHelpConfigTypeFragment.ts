@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface ConfigEditorHelpConfigTypeFragment_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

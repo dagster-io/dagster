@@ -42,7 +42,7 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_outputDef
 }
 
 export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -71,7 +71,7 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configFie
 export type SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes = SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   name: string | null;
   description: string | null;
   key: string;
@@ -89,7 +89,7 @@ export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configFie
 }
 
 export interface SolidsRootQuery_usedSolids_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

@@ -119,7 +119,7 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_def
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -148,7 +148,7 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_def
 export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -166,7 +166,7 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_def
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

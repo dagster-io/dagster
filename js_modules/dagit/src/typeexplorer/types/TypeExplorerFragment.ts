@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -37,7 +37,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_
 export type TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -55,7 +55,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields
 }
 
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -97,7 +97,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType {
 export type TypeExplorerFragment_inputSchemaType = TypeExplorerFragment_inputSchemaType_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -126,7 +126,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes
 export type TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -144,7 +144,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_field
 }
 
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

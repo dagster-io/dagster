@@ -47,7 +47,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_requiredResource
 }
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -76,7 +76,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
 export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_innerTypes = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -94,7 +94,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
 }
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

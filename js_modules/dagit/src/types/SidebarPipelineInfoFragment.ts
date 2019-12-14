@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarPipelineInfoFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -37,7 +37,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
 export type SidebarPipelineInfoFragment_modes_resources_configField_configType_EnumConfigType_innerTypes = SidebarPipelineInfoFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarPipelineInfoFragment_modes_resources_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -55,7 +55,7 @@ export interface SidebarPipelineInfoFragment_modes_resources_configField_configT
 }
 
 export interface SidebarPipelineInfoFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -109,7 +109,7 @@ export interface SidebarPipelineInfoFragment_modes_resources {
 }
 
 export interface SidebarPipelineInfoFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -138,7 +138,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
 export type SidebarPipelineInfoFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes = SidebarPipelineInfoFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarPipelineInfoFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
 
 export interface SidebarPipelineInfoFragment_modes_loggers_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -156,7 +156,7 @@ export interface SidebarPipelineInfoFragment_modes_loggers_configField_configTyp
 }
 
 export interface SidebarPipelineInfoFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;

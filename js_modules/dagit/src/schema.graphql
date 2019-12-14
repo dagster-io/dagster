@@ -83,8 +83,6 @@ type ConfigTypeNotFoundError implements Error {
   configTypeName: String!
 }
 
-union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
-
 scalar Cursor
 
 union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
@@ -134,7 +132,6 @@ scalar EnvironmentConfigData
 type EnvironmentSchema {
   rootEnvironmentType: ConfigType!
   allConfigTypes: [ConfigType!]!
-  configTypeOrError(configTypeName: String!): ConfigTypeOrError!
   isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
 }
 
@@ -819,7 +816,6 @@ type Query {
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
-  configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
