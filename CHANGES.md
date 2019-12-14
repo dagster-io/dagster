@@ -17,6 +17,8 @@
   query bar that accepts terms like `solid_name+*` and `+solid_name+`. When viewing
   very large DAGs, nothing is displayed by default and `*` produces the original behavior.
 
+- The Explore UI now includes a zoom slider that makes it easier to navigate large DAGs.
+
 ## 0.6.6
 
 **Breaking**

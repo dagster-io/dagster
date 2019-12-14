@@ -288,6 +288,7 @@ export default class PipelineGraph extends React.Component<
 
   componentDidUpdate(prevProps: IPipelineGraphProps) {
     if (prevProps.parentSolid !== this.props.parentSolid) {
+      this.viewportEl.current!.cancelAnimations();
       this.viewportEl.current!.autocenter();
     }
     if (prevProps.layout !== this.props.layout) {
@@ -323,19 +324,21 @@ export default class PipelineGraph extends React.Component<
         onDoubleClick={this.unfocusOutsideContainer}
       >
         {({ scale }: any) => (
-          <SVGContainer
-            width={layout.width}
-            height={layout.height + 200}
-            onClick={onClickBackground}
-            onDoubleClick={this.unfocus}
-          >
-            <PipelineGraphContents
-              layout={layout}
-              minified={scale < DETAIL_ZOOM - 0.01}
-              onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
-              {...this.props}
-            />
-          </SVGContainer>
+          <>
+            <SVGContainer
+              width={layout.width}
+              height={layout.height + 200}
+              onClick={onClickBackground}
+              onDoubleClick={this.unfocus}
+            >
+              <PipelineGraphContents
+                layout={layout}
+                minified={scale < DETAIL_ZOOM - 0.01}
+                onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
+                {...this.props}
+              />
+            </SVGContainer>
+          </>
         )}
       </SVGViewport>
     );
