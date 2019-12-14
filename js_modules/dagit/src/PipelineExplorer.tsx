@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import * as querystring from "query-string";
 
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
+import { PipelineGraphContainer } from "./graph/PipelineGraphContainer";
 import PipelineGraph from "./graph/PipelineGraph";
 import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
@@ -243,24 +244,18 @@ export default class PipelineExplorer extends React.Component<
               </SearchOverlay>
               {queryResultSolids.all.length === 0 &&
                 !visibleSolidsQuery.length && <LargeDAGNotice />}
-              <PipelineGraph
+              <PipelineGraphContainer
                 pipelineName={pipeline.name}
                 backgroundColor={backgroundColor}
                 solids={queryResultSolids.all}
                 focusSolids={queryResultSolids.focus}
                 highlightedSolids={highlightedSolids}
-                selectedHandleID={selectedHandle && selectedHandle.handleID}
-                selectedSolid={selectedHandle && selectedHandle.solid}
-                parentHandleID={parentHandle && parentHandle.handleID}
-                parentSolid={parentHandle && parentHandle.solid}
+                selectedHandle={selectedHandle}
+                parentHandle={parentHandle}
                 onClickSolid={this.handleClickSolid}
                 onClickBackground={this.handleClickBackground}
                 onEnterCompositeSolid={this.handleEnterCompositeSolid}
                 onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
-                layout={this.getLayout(
-                  queryResultSolids.all,
-                  parentHandle && parentHandle.solid
-                )}
               />
             </>
           }
