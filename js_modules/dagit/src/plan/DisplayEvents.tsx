@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors, Tag, Intent, Divider } from "@blueprintjs/core";
 import { DisplayEvent } from "./DisplayEvent";
 import { DisclosureTriangle } from "./ExecutionPlanBox";

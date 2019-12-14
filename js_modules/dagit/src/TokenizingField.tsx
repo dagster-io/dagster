@@ -1,6 +1,6 @@
 import React from "react";
 import { TagInput, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 export interface SuggestionProvider {
   token: string;

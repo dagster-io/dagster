@@ -4,6 +4,7 @@ import { App } from "../App";
 import AppCache from "../AppCache";
 import { MOCKS } from "./AppMocks";
 import { MockedProvider } from "./MockedProvider";
+import { PipelineGraphContainer } from "../graph/PipelineGraphContainer";
 
 function createNodeMock(element: any) {
   if (element.type === "div") {
@@ -32,19 +33,22 @@ function createNodeMock(element: any) {
 }
 
 async function testApp() {
-  const component = TestRenderer.create(
-    <MockedProvider mocks={MOCKS} addTypename={true} cache={AppCache}>
-      <App />
-    </MockedProvider>,
-    { createNodeMock }
-  );
+  let component: TestRenderer.ReactTestRenderer;
+  await TestRenderer.act(async () => {
+    component = TestRenderer.create(
+      <MockedProvider mocks={MOCKS} addTypename={true} cache={AppCache}>
+        <App />
+      </MockedProvider>,
+      { createNodeMock }
+    );
+    // wait for the graphql promises to settle. Usually one tick is enough for us,
+    // except when a query resolves and triggers another query lower in the tree.
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  });
 
-  // wait for the graphql promises to settle. Usually one tick is enough for us,
-  // except when a query resolves and triggers another query lower in the tree.
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  const tree = component.toJSON();
+  const tree = component!.toJSON();
   expect(tree).toMatchSnapshot();
+  return component!.root;
 }
 
 it("renders without error", async () => {
@@ -52,55 +56,48 @@ it("renders without error", async () => {
 });
 
 it("renders pipeline page", async () => {
-  beforeEach(() => {
-    window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/explore");
-  });
-  await testApp();
+  window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/explore");
+  const app = await testApp();
+
+  // Sanity check that the pipeline page actually rendered the graph container. This ensures
+  // we don't accidentally update the snapshots to a "correct" state that is loading / broken.
+  const graphEls = app.findAllByType(PipelineGraphContainer, { deep: true });
+  expect(graphEls.length).toBe(1);
 });
 
 it("renders pipeline solid page", async () => {
-  beforeEach(() => {
-    window.history.pushState(
-      {},
-      "",
-      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather"
-    );
-  });
+  window.history.pushState(
+    {},
+    "",
+    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather"
+  );
   await testApp();
 });
 
 it("renders type page", async () => {
-  beforeEach(() => {
-    window.history.pushState(
-      {},
-      "",
-      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?types=true"
-    );
-  });
+  window.history.pushState(
+    {},
+    "",
+    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?types=true"
+  );
   await testApp();
 });
 
 it("renders type page", async () => {
-  beforeEach(() => {
-    window.history.pushState(
-      {},
-      "",
-      "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?typeExplorer=PandasDataFrame"
-    );
-  });
+  window.history.pushState(
+    {},
+    "",
+    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?typeExplorer=PySparkDataFrame"
+  );
   await testApp();
 });
 
 it("renders solids explorer", async () => {
-  beforeEach(() => {
-    window.history.pushState({}, "", "/solids/s3_to_df");
-  });
+  window.history.pushState({}, "", "/solids/s3_to_df");
   await testApp();
 });
 
 it("renders execution", async () => {
-  beforeEach(() => {
-    window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/execute");
-  });
+  window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/execute");
   await testApp();
 });

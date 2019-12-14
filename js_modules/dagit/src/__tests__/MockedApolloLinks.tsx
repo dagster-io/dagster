@@ -16,13 +16,21 @@ export interface CachedGraphQLRequest extends GraphQLRequest {
   repo?: string;
 }
 
-export interface MockedResponse {
-  request: GraphQLRequest;
-  result?: FetchResult;
-  error?: Error;
-  delay?: number;
-  newData?: () => FetchResult;
-}
+export type MockedResponse =
+  | {
+      request: GraphQLRequest;
+      result: FetchResult;
+      error?: Error;
+      delay?: number;
+      newData?: () => FetchResult;
+    }
+  | {
+      request: GraphQLRequest;
+      result?: FetchResult;
+      error: Error;
+      delay?: number;
+      newData?: () => FetchResult;
+    };
 
 export interface MockedSubscriptionResult {
   result?: FetchResult;
@@ -84,18 +92,22 @@ export class MockLink extends ApolloLink {
       );
     }
 
-    this.mockedResponsesByKey[key].splice(responseIndex, 1);
+    // this.mockedResponsesByKey[key].splice(responseIndex, 1);
 
-    const { result, error, delay, newData } = response;
+    const { newData } = response;
 
     if (newData) {
       response.result = newData();
       this.mockedResponsesByKey[key].push(response);
     }
 
+    const { result, error, delay } = response;
+
     if (!result && !error) {
       throw new Error(
-        `Mocked response should contain either result or error: ${key}`
+        `Mocked response should contain either result or error. Got ${Object.keys(
+          response
+        )}. ${key}`
       );
     }
 

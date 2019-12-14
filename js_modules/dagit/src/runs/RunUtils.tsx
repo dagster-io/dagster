@@ -5,7 +5,7 @@ import { Colors, Spinner } from "@blueprintjs/core";
 import { HandleStartExecutionFragment } from "./types/HandleStartExecutionFragment";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 export type IRunStatus =
   | "SUCCESS"

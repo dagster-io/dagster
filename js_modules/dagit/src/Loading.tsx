@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { QueryResult } from "react-apollo";
 import { ProgressBar, NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";

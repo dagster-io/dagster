@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 
 type ConfigTypeSchemaTheme = "dark" | "light";

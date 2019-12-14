@@ -2,10 +2,10 @@
 
 exports[`renders given materializations and passing expectations 1`] = `
 <div
-  className="sc-cvbbAY hfeZiW"
+  className="ExecutionPlanBox__ExecutionPlanRowContainer-sc-1bacjj9-5 kaLnAx"
 >
   <div
-    className="sc-jWBwVP hWwbFH succeeded"
+    className="ExecutionPlanBox__ExecutionPlanBoxContainer-sc-1bacjj9-6 hyOQyw succeeded"
     onClick={[Function]}
     style={
       Object {
@@ -14,7 +14,7 @@ exports[`renders given materializations and passing expectations 1`] = `
     }
   >
     <div
-      className="sc-eHgmQL cqcnQe"
+      className="ExecutionPlanBox__ExecutionFinishedFlash-sc-1bacjj9-4 bRVdHa"
       style={
         Object {
           "transitionDelay": "200ms",
@@ -30,11 +30,11 @@ exports[`renders given materializations and passing expectations 1`] = `
       }
     >
       <div
-        className="sc-kEYyzF cqxKEW"
+        className="ExecutionPlanBox__ExecutionStateWrap-sc-1bacjj9-0 fipiZp"
         onClick={[Function]}
       >
         <div
-          className="sc-htoDjs liUGcD"
+          className="ExecutionStateDot-bprv14-0 gPIOyE"
           style={
             Object {
               "transitionDelay": "200ms",
@@ -50,18 +50,18 @@ exports[`renders given materializations and passing expectations 1`] = `
           }
         />
         <div
-          className="sc-kkGfuU jBLgdJ"
+          className="ExecutionPlanBox__DisclosureTriangle-sc-1bacjj9-1 jOyxhL"
           onClick={[Function]}
         />
       </div>
       <div
-        className="sc-hSdWYo ehFkqL"
+        className="ExecutionPlanBox__ExecutionPlanBoxName-sc-1bacjj9-3 hFUwrq"
         title="many_materializations_and_passing_expectations"
       >
         many_materializations_and_passing_expectations
       </div>
       <div
-        className="sc-iAyFgw cwQFkd"
+        className="ExecutionPlanBox__ExecutionTimeContainer-sc-1bacjj9-2 dabeHx"
         style={
           Object {
             "minWidth": 47.6,
@@ -77,10 +77,10 @@ exports[`renders given materializations and passing expectations 1`] = `
 
 exports[`renders given materializations and passing expectations 2`] = `
 <div
-  className="sc-cvbbAY hfeZiW"
+  className="ExecutionPlanBox__ExecutionPlanRowContainer-sc-1bacjj9-5 kaLnAx"
 >
   <div
-    className="sc-jWBwVP hWwbFH succeeded"
+    className="ExecutionPlanBox__ExecutionPlanBoxContainer-sc-1bacjj9-6 hyOQyw succeeded"
     onClick={[Function]}
     style={
       Object {
@@ -89,7 +89,7 @@ exports[`renders given materializations and passing expectations 2`] = `
     }
   >
     <div
-      className="sc-eHgmQL cqcnQe"
+      className="ExecutionPlanBox__ExecutionFinishedFlash-sc-1bacjj9-4 bRVdHa"
       style={
         Object {
           "transitionDelay": "200ms",
@@ -105,11 +105,11 @@ exports[`renders given materializations and passing expectations 2`] = `
       }
     >
       <div
-        className="sc-kEYyzF cqxKEW"
+        className="ExecutionPlanBox__ExecutionStateWrap-sc-1bacjj9-0 fipiZp"
         onClick={[Function]}
       >
         <div
-          className="sc-htoDjs liUGcD"
+          className="ExecutionStateDot-bprv14-0 gPIOyE"
           style={
             Object {
               "transitionDelay": "200ms",
@@ -125,18 +125,18 @@ exports[`renders given materializations and passing expectations 2`] = `
           }
         />
         <div
-          className="sc-kkGfuU jBLgdJ"
+          className="ExecutionPlanBox__DisclosureTriangle-sc-1bacjj9-1 jOyxhL"
           onClick={[Function]}
         />
       </div>
       <div
-        className="sc-hSdWYo ehFkqL"
+        className="ExecutionPlanBox__ExecutionPlanBoxName-sc-1bacjj9-3 hFUwrq"
         title="many_materializations_and_passing_expectations"
       >
         many_materializations_and_passing_expectations
       </div>
       <div
-        className="sc-iAyFgw cwQFkd"
+        className="ExecutionPlanBox__ExecutionTimeContainer-sc-1bacjj9-2 dabeHx"
         style={
           Object {
             "minWidth": 47.6,
