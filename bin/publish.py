@@ -28,7 +28,8 @@ import requests
 import slackclient
 import virtualenv
 
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, BASE_PATH)
 
 from git_tag import get_git_tag, get_most_recent_git_tag, set_git_tag  # isort:skip
 from pypirc import ConfigFileError, RCParser  # isort:skip
@@ -100,26 +101,9 @@ MODULE_NAMES = [
     'dagster-dask',
 ]
 
-LIBRARY_MODULES = [
-    'dagster-aws',
-    'dagster-bash',
-    'dagster-cron',
-    'dagster-datadog',
-    'dagster-dbt',
-    'dagster-gcp',
-    'dagster-ge',
-    'dagster-pagerduty',
-    'dagster-papertrail',
-    'dagster-pandas',
-    'dagster-postgres',
-    'dagster-prometheus',
-    'dagster-pyspark',
-    'dagster-slack',
-    'dagster-snowflake',
-    'dagster-spark',
-    'dagster-ssh',
-    'dagster-twilio',
-]
+# Removed hard-coded list in favor of automatic scan of libraries folder
+# List of subdirectories in directory: https://stackoverflow.com/a/973488
+LIBRARY_MODULES = next(os.walk(os.path.join(BASE_PATH, '..', 'python_modules', 'libraries')))[1]
 
 EXPECTED_PYTHON_MODULES = ['automation', 'lakehouse', 'libraries'] + MODULE_NAMES
 
