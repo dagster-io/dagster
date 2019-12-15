@@ -280,11 +280,8 @@ def test_none_string_input_schema_failure():
 
     error = exc_info.value.errors[0]
 
-    print(error.message)
-
-    assert error.message == (
-        '''Must specify a field at path root:solids:take_string:inputs:string '''
-        '''if more than one field is defined. Defined fields: ['json', 'pickle', 'value']'''
+    assert (
+        'Value at path root:solids:take_string:inputs:string must be not be None.' in error.message
     )
 
 

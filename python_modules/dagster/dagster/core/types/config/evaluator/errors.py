@@ -349,3 +349,16 @@ def create_selector_unspecified_value_error(context):
         ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
         error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
     )
+
+
+def create_none_not_allowed_error(context):
+    check.inst_param(context, 'context', ValidationContext)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} must be not be None.'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type, repr(None)),
+    )

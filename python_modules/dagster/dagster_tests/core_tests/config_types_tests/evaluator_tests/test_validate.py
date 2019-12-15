@@ -480,9 +480,7 @@ def test_nullable_dict():
 def test_bare_permissive_dict():
     assert _validate(PermissiveDict(), {}).success
     assert _validate(PermissiveDict(), {'some_key': 1}).success
-    # should this be correct?
-    # https://github.com/dagster-io/dagster/issues/1988
-    assert _validate(PermissiveDict(), None).success
+    assert not _validate(PermissiveDict(), None).success
     assert not _validate(PermissiveDict(), 1).success
 
 

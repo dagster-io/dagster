@@ -537,12 +537,7 @@ def test_multilevel_default_handling():
     assert execute_pipeline(pipeline_def).success
     assert execute_pipeline(pipeline_def, environment_dict=None).success
     assert execute_pipeline(pipeline_def, environment_dict={}).success
-    assert execute_pipeline(pipeline_def, environment_dict={'solids': None}).success
     assert execute_pipeline(pipeline_def, environment_dict={'solids': {}}).success
-    assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': None}}
-    ).success
-
     assert execute_pipeline(
         pipeline_def, environment_dict={'solids': {'has_default_value': {}}}
     ).success
@@ -674,8 +669,17 @@ def test_required_resource_not_given():
     def pipeline_def():
         pass
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, environment_dict={'resources': None})
+
+    assert len(not_none_pe_info.value.errors) == 1
+    assert (
+        'Value at path root:resources must be not be None.'
+        in not_none_pe_info.value.errors[0].message
+    )
+
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+        execute_pipeline(pipeline_def, environment_dict={'resources': {}})
 
     pe = pe_info.value
     error = pe.errors[0]
@@ -695,11 +699,19 @@ def test_multilevel_good_error_handling_solids():
     def pipeline_def():
         good_error_handling()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': None})
 
-    assert len(pe_info.value.errors) == 1
-    assert pe_info.value.errors[0].message == (
+    assert len(not_none_pe_info.value.errors) == 1
+    assert (
+        'Value at path root:solids must be not be None.' in not_none_pe_info.value.errors[0].message
+    )
+
+    with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
+        execute_pipeline(pipeline_def, environment_dict={'solids': {}})
+
+    assert len(missing_field_pe_info.value.errors) == 1
+    assert missing_field_pe_info.value.errors[0].message == (
         '''Missing required field "good_error_handling" at path root:solids '''
         '''Available Fields: "['good_error_handling']".'''
     )

@@ -24,6 +24,7 @@ from .errors import (
     create_list_error,
     create_missing_required_field_error,
     create_missing_required_fields_error,
+    create_none_not_allowed_error,
     create_scalar_error,
     create_selector_multiple_fields_error,
     create_selector_multiple_fields_no_field_selected_error,
@@ -77,8 +78,8 @@ def _validate_config(context, config_value):
     if kind == ConfigTypeKind.ANY:
         return EvaluateValueResult.for_value(config_value)  # yolo
 
-    # TODO: Consider blanket check against None here
-    # https://github.com/dagster-io/dagster/issues/1988
+    if config_value is None:
+        return EvaluateValueResult.for_error(create_none_not_allowed_error(context))
 
     if kind == ConfigTypeKind.SCALAR:
         if not is_config_scalar_valid(context.config_type, config_value):
@@ -101,6 +102,7 @@ def _validate_config(context, config_value):
 def validate_selector_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.SELECTOR, 'selector_type')
+    check.not_none_param(config_value, 'config_value')
 
     if config_value:
         if not isinstance(config_value, dict):
@@ -133,7 +135,19 @@ def validate_selector_config(context, config_value):
     field_def = context.config_type.fields[field_name]
 
     child_evaluate_value_result = _validate_config(
-        context.for_field(field_def, field_name), incoming_field_value
+        context.for_field(field_def, field_name),
+        # This is a very particular special case where we want someone
+        # to be able to select a selector key *without* a value
+        #
+        # e.g.
+        # storage:
+        #   filesystem:
+        #
+        # And we want the default values of the child elementls of filesystem:
+        # to "fill in"
+        {}
+        if incoming_field_value is None and field_def.config_type.has_fields
+        else incoming_field_value,
     )
 
     if child_evaluate_value_result.success:
@@ -170,25 +184,21 @@ def _validate_fields(context, config_value, errors):
 def validate_permissive_dict_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.PERMISSIVE_DICT)
+    check.not_none_param(config_value, 'config_value')
 
     if config_value and not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
 
-    # coercion and temp variable required because:
-    # https://github.com/dagster-io/dagster/issues/1988
-    config_dict_value = config_value or {}
     fields = context.config_type.fields
 
     errors = []
     _append_if_error(
         errors,
-        _compute_missing_fields_error(
-            context, fields, incoming_fields=set(config_dict_value.keys())
-        ),
+        _compute_missing_fields_error(context, fields, incoming_fields=set(config_value.keys())),
     )
 
     # copy to prevent default application from smashing original values
-    evr = _validate_fields(context, copy.copy(config_dict_value), errors)
+    evr = _validate_fields(context, copy.copy(config_value), errors)
     if not evr.success:
         return evr
 
@@ -196,30 +206,28 @@ def validate_permissive_dict_config(context, config_value):
     # The merge ensures that extra keys not in the field dictionary
     # are returned back, but that an modifications (e.g. default values)
     # as a result of validation are also returned
-    return EvaluateValueResult.for_value(merge_dicts(config_dict_value, evr.value))
+    return EvaluateValueResult.for_value(merge_dicts(config_value, evr.value))
 
 
 def validate_dict_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.DICT)
+    check.not_none_param(config_value, 'config_value')
 
     if config_value and not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
 
-    # coercion and temp variable required because:
-    # https://github.com/dagster-io/dagster/issues/1988
-    config_dict_value = config_value or {}
     fields = context.config_type.fields
 
     defined_fields = set(fields.keys())
-    incoming_fields = set(config_dict_value.keys())
+    incoming_fields = set(config_value.keys())
 
     errors = []
 
     _append_if_error(errors, _compute_extra_fields(context, defined_fields, incoming_fields))
     _append_if_error(errors, _compute_missing_fields_error(context, fields, incoming_fields))
 
-    return _validate_fields(context, config_dict_value, errors)
+    return _validate_fields(context, config_value, errors)
 
 
 def _append_if_error(errors, maybe_error):
@@ -254,6 +262,7 @@ def _compute_missing_fields_error(context, field_defs, incoming_fields):
 def validate_list_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.LIST)
+    check.not_none_param(config_value, 'config_value')
 
     if not isinstance(config_value, list):
         return EvaluateValueResult.for_error(create_list_error(context, config_value))
@@ -277,6 +286,7 @@ def validate_list_config(context, config_value):
 def validate_enum_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.ENUM)
+    check.not_none_param(config_value, 'config_value')
 
     if not isinstance(config_value, six.string_types):
         return EvaluateValueResult.for_error(create_enum_type_mismatch_error(context, config_value))

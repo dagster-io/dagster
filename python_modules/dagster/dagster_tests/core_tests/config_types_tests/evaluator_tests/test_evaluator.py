@@ -528,6 +528,6 @@ def test_nullable_dict():
 
 def test_any_with_default_value():
     dict_with_any = Dict({'any_field': Field(Any, default_value='foo', is_optional=True)})
-    result = eval_config_value_from_dagster_type(dict_with_any, None)
+    result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {'any_field': 'foo'}

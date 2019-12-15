@@ -67,7 +67,7 @@ class EnvironmentConfig(
         from dagster.core.types.config.evaluator.validate import validate_config
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        check.opt_dict_param(environment_dict, 'environment')
+        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
         run_config = check.opt_inst_param(run_config, 'run_config', IRunConfig, default=RunConfig())
 
         mode = run_config.mode or pipeline.get_default_mode_name()

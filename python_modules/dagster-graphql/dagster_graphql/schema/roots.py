@@ -441,7 +441,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 
     return ExecutionParams(
         selector=graphql_execution_params['selector'].to_selector(),
-        environment_dict=graphql_execution_params.get('environmentConfigData'),
+        environment_dict=graphql_execution_params.get('environmentConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get('executionMetadata')
@@ -681,7 +681,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             graphene_info,
             self._environment_schema,
             self._dagster_pipeline,
-            kwargs.get('environmentConfigData'),
+            kwargs.get('environmentConfigData', {}),
         )
 
 
