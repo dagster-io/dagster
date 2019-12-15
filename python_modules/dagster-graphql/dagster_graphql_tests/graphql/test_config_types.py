@@ -546,7 +546,7 @@ fragment configTypeFragment on ConfigType {
   isBuiltin
   isSystemGenerated
   typeParamKeys
-  innerTypes {
+  recursiveConfigTypes {
     key
     name
     description

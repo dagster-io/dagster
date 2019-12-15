@@ -39,7 +39,7 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
-                innerTypes {
+                recursiveConfigTypes {
                   ...ConfigTypeSchemaFragment
                 }
               }
@@ -51,7 +51,7 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
-                innerTypes {
+                recursiveConfigTypes {
                   ...ConfigTypeSchemaFragment
                 }
               }
@@ -101,7 +101,7 @@ export default class SidebarPipelineInfo extends React.Component<
                       <ConfigTypeSchema
                         type={resource.configField.configType}
                         typesInScope={
-                          resource.configField.configType.innerTypes
+                          resource.configField.configType.recursiveConfigTypes
                         }
                       />
                     )}
@@ -123,7 +123,9 @@ export default class SidebarPipelineInfo extends React.Component<
                     {logger.configField && (
                       <ConfigTypeSchema
                         type={logger.configField.configType}
-                        typesInScope={logger.configField.configType.innerTypes}
+                        typesInScope={
+                          logger.configField.configType.recursiveConfigTypes
+                        }
                       />
                     )}
                   </div>

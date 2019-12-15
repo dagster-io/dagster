@@ -6,15 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_success_config_type_not_found 1'] = {
-    'environmentSchemaOrError': {
-        '__typename': 'EnvironmentSchema',
-        'configTypeOrError': {
-            '__typename': 'ConfigTypeNotFoundError'
-        }
-    }
-}
-
 snapshots['test_basic_valid_config_on_environment_schema 1'] = {
     'environmentSchemaOrError': {
         'isEnvironmentConfigValid': {

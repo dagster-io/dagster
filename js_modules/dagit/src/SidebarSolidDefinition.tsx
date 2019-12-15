@@ -73,7 +73,7 @@ export class SidebarSolidDefinition extends React.Component<
           configField {
             configType {
               ...ConfigTypeSchemaFragment
-              innerTypes {
+              recursiveConfigTypes {
                 ...ConfigTypeSchemaFragment
               }
             }
@@ -179,7 +179,7 @@ export class SidebarSolidDefinition extends React.Component<
           <SidebarSection title={"Config"}>
             <ConfigTypeSchema
               type={configField.configType}
-              typesInScope={configField.configType.innerTypes}
+              typesInScope={configField.configType.recursiveConfigTypes}
             />
           </SidebarSection>
         )}

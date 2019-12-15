@@ -13,7 +13,7 @@ type CompositeConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
@@ -59,7 +59,7 @@ interface ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
@@ -112,7 +112,7 @@ type EnumConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
@@ -403,7 +403,7 @@ type ListConfigType implements ConfigType & WrappingConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
@@ -522,7 +522,7 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
@@ -833,7 +833,7 @@ type RegularConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!

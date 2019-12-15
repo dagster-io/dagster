@@ -38,7 +38,7 @@ fragment schemaTypeFragment on ConfigType {
         name
       }
     }
-    innerTypes {
+    recursiveConfigTypes {
       key
       name
     }

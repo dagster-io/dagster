@@ -7,7 +7,7 @@
 // GraphQL fragment: SidebarTabbedContainerPipelineFragment
 // ====================================================
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -16,7 +16,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   typeParamKeys: string[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -24,17 +24,17 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
@@ -43,7 +43,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_innerTypes[];
+  recursiveConfigTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields {
@@ -54,7 +54,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -63,7 +63,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   typeParamKeys: string[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -71,17 +71,17 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -91,7 +91,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
   isSelector: boolean;
   typeParamKeys: string[];
   fields: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_fields[];
-  innerTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_innerTypes[];
+  recursiveConfigTypes: SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
 export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType;
@@ -108,7 +108,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources {
   configField: SidebarTabbedContainerPipelineFragment_modes_resources_configField | null;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -117,7 +117,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   typeParamKeys: string[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -125,17 +125,17 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
@@ -144,7 +144,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  innerTypes: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_innerTypes[];
+  recursiveConfigTypes: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_fields {
@@ -155,7 +155,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -164,7 +164,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   typeParamKeys: string[];
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -172,17 +172,17 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -192,7 +192,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
   isSelector: boolean;
   typeParamKeys: string[];
   fields: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_fields[];
-  innerTypes: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_innerTypes[];
+  recursiveConfigTypes: SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
 export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType;

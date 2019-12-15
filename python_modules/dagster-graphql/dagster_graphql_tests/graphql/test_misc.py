@@ -101,7 +101,7 @@ fragment innerInfo on ConfigType {
   name
   isList
   isNullable
-  innerTypes {
+  recursiveConfigTypes {
     name
   }
   ... on CompositeConfigType {
@@ -127,7 +127,7 @@ fragment innerInfo on ConfigType {
             configField {
               configType {
                 ...innerInfo
-                innerTypes {
+                recursiveConfigTypes {
                   ...innerInfo
                 }
               }

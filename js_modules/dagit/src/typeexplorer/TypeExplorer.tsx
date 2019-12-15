@@ -24,13 +24,13 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
         description
         inputSchemaType {
           ...ConfigTypeSchemaFragment
-          innerTypes {
+          recursiveConfigTypes {
             ...ConfigTypeSchemaFragment
           }
         }
         outputSchemaType {
           ...ConfigTypeSchemaFragment
-          innerTypes {
+          recursiveConfigTypes {
             ...ConfigTypeSchemaFragment
           }
         }
@@ -63,7 +63,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Input"}>
             <ConfigTypeSchema
               type={inputSchemaType}
-              typesInScope={inputSchemaType.innerTypes}
+              typesInScope={inputSchemaType.recursiveConfigTypes}
             />
           </SidebarSection>
         )}
@@ -71,7 +71,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Output"}>
             <ConfigTypeSchema
               type={outputSchemaType}
-              typesInScope={outputSchemaType.innerTypes}
+              typesInScope={outputSchemaType.recursiveConfigTypes}
             />
           </SidebarSection>
         )}

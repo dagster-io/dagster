@@ -7,7 +7,7 @@
 // GraphQL fragment: TypeExplorerFragment
 // ====================================================
 
-export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -16,7 +16,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -24,17 +24,17 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
+export type TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
@@ -43,7 +43,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  innerTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_innerTypes[];
+  recursiveConfigTypes: TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields {
@@ -54,7 +54,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -63,7 +63,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerT
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -71,17 +71,17 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerT
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes = TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -91,12 +91,12 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   fields: TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields[];
-  innerTypes: TypeExplorerFragment_inputSchemaType_CompositeConfigType_innerTypes[];
+  recursiveConfigTypes: TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
 export type TypeExplorerFragment_inputSchemaType = TypeExplorerFragment_inputSchemaType_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType;
 
-export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType {
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -105,7 +105,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -113,17 +113,17 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes = TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes_CompositeConfigType;
+export type TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
@@ -132,7 +132,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  innerTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_innerTypes[];
+  recursiveConfigTypes: TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
 }
 
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields {
@@ -143,7 +143,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_field
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType {
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
   __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
@@ -152,7 +152,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_inner
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -160,17 +160,17 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_inner
   configTypeKey: string;
 }
 
-export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType {
+export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes = TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes_CompositeConfigType;
+export type TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -180,7 +180,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType {
   isSelector: boolean;
   typeParamKeys: string[];
   fields: TypeExplorerFragment_outputSchemaType_CompositeConfigType_fields[];
-  innerTypes: TypeExplorerFragment_outputSchemaType_CompositeConfigType_innerTypes[];
+  recursiveConfigTypes: TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
 export type TypeExplorerFragment_outputSchemaType = TypeExplorerFragment_outputSchemaType_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType;

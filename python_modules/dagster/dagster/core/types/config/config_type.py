@@ -127,7 +127,7 @@ class ConfigType(object):
         return self.kind == ConfigTypeKind.ANY
 
     @property
-    def inner_types(self):
+    def recursive_config_types(self):
         return []
 
     @property
@@ -225,8 +225,8 @@ class Nullable(ConfigType):
         )
 
     @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+    def recursive_config_types(self):
+        return [self.inner_type] + self.inner_type.recursive_config_types
 
 
 class List(ConfigType):
@@ -249,8 +249,8 @@ class List(ConfigType):
         )
 
     @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+    def recursive_config_types(self):
+        return [self.inner_type] + self.inner_type.recursive_config_types
 
 
 class EnumValue(object):

@@ -87,14 +87,14 @@ class _ConfigHasFields(ConfigType):
         super(_ConfigHasFields, self).__init__(**kwargs)
 
     @property
-    def inner_types(self):
-        return list(set(self._yield_inner_types()))
+    def recursive_config_types(self):
+        return list(set(self._yield_recursive_config_types()))
 
-    def _yield_inner_types(self):
+    def _yield_recursive_config_types(self):
         for field in self.fields.values():
             yield field.config_type
-            for inner_type in field.config_type.inner_types:
-                yield inner_type
+            for recursive_config_type in field.config_type.recursive_config_types:
+                yield recursive_config_type
 
     def debug_str(self):
         def left_pad(line, n=2, char=" "):
