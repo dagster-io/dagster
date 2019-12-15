@@ -7,7 +7,7 @@ from dagster import (
     solid,
 )
 from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
-from dagster.core.types.config.evaluator.validate import validate_config
+from dagster.core.types.config.evaluator.validate import process_config
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
@@ -62,7 +62,7 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
 # error. Existing test logic was written assuming structure to this is still
 # around to avoid having to port all the unit tests.
 def throwing_validate_config_value(config_type, config_value):
-    result = validate_config(config_type, config_value)
+    result = process_config(config_type, config_value)
     if not result.success:
         raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
     return result.value

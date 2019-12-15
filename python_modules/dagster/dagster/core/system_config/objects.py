@@ -64,7 +64,7 @@ class EnvironmentConfig(
     @staticmethod
     def build(pipeline, environment_dict=None, run_config=None):
         from dagster.core.types.config.evaluator.composite_descent import composite_descent
-        from dagster.core.types.config.evaluator.validate import validate_config
+        from dagster.core.types.config.evaluator.validate import process_config
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
@@ -73,7 +73,7 @@ class EnvironmentConfig(
         mode = run_config.mode or pipeline.get_default_mode_name()
         environment_type = create_environment_type(pipeline, mode)
 
-        config_evr = validate_config(environment_type, environment_dict)
+        config_evr = process_config(environment_type, environment_dict)
         if not config_evr.success:
             raise DagsterInvalidConfigError(
                 'Error in config for pipeline {}'.format(pipeline.name),
@@ -81,19 +81,17 @@ class EnvironmentConfig(
                 environment_dict,
             )
 
-        validated_config_value = config_evr.value
+        config_value = config_evr.value
 
-        solid_config_dict = composite_descent(
-            pipeline, validated_config_value.get('solids', {}), run_config
-        )
+        solid_config_dict = composite_descent(pipeline, config_value.get('solids', {}), run_config)
 
         return EnvironmentConfig(
             solids=solid_config_dict,
-            execution=ExecutionConfig.from_dict(validated_config_value.get('execution')),
-            storage=StorageConfig.from_dict(validated_config_value.get('storage')),
-            loggers=validated_config_value.get('loggers'),
+            execution=ExecutionConfig.from_dict(config_value.get('execution')),
+            storage=StorageConfig.from_dict(config_value.get('storage')),
+            loggers=config_value.get('loggers'),
             original_config_dict=environment_dict,
-            resources=validated_config_value.get('resources'),
+            resources=config_value.get('resources'),
         )
 
 

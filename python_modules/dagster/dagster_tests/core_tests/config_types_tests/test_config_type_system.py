@@ -30,7 +30,7 @@ from dagster.core.types.config.evaluator.errors import (
     DagsterEvaluateConfigValueError,
     DagsterEvaluationErrorReason,
 )
-from dagster.core.types.config.evaluator.validate import validate_config
+from dagster.core.types.config.evaluator.validate import process_config, validate_config
 from dagster.core.types.config.field_utils import coerce_potential_field
 
 
@@ -57,7 +57,7 @@ def test_int_field(snapshot):
 
 
 def assert_config_value_success(config_type, config_value, expected):
-    result = validate_config(config_type, config_value)
+    result = process_config(config_type, config_value)
     assert result.success
     assert result.value == expected
 

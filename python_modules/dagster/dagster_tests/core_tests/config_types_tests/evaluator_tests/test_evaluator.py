@@ -6,12 +6,12 @@ from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
 )
-from dagster.core.types.config.evaluator.validate import validate_config
+from dagster.core.types.config.evaluator.validate import process_config
 from dagster.core.types.config.field import resolve_to_config_type
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
-    return validate_config(resolve_to_config_type(dagster_type), value)
+    return process_config(resolve_to_config_type(dagster_type), value)
 
 
 def assert_success(result, expected_value):

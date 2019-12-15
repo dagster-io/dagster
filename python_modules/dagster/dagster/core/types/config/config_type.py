@@ -323,7 +323,12 @@ class Enum(ConfigType):
             if ev.config_value == config_value:
                 return ev.python_value
 
-        check.failed('should never reach this. config_value should be pre-validated')
+        check.failed(
+            (
+                'Should never reach this. config_value should be pre-validated. '
+                'Got {config_value}'
+            ).format(config_value=config_value)
+        )
 
 
 ConfigAnyInstance = Any()

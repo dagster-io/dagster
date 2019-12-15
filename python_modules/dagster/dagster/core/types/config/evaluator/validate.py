@@ -1,5 +1,3 @@
-import copy
-
 import six
 
 from dagster import check
@@ -13,7 +11,8 @@ from dagster.core.types.config.config_type import (
     Path,
     String,
 )
-from dagster.utils import ensure_single_item, frozendict, merge_dicts
+from dagster.core.types.config.default_applier import apply_default_values
+from dagster.utils import ensure_single_item, frozendict
 
 from .errors import (
     create_dict_type_mismatch_error,
@@ -99,38 +98,47 @@ def _validate_config(context, config_value):
         check.failed('Unsupported ConfigTypeKind {}'.format(kind))
 
 
+def _validate_empty_selector_config(context):
+    if len(context.config_type.fields) > 1:
+        return EvaluateValueResult.for_error(
+            create_selector_multiple_fields_no_field_selected_error(context)
+        )
+
+    _, defined_field_def = ensure_single_item(context.config_type.fields)
+
+    if not defined_field_def.is_optional:
+        return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))
+
+    return EvaluateValueResult.for_value({})
+
+
 def validate_selector_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.SELECTOR, 'selector_type')
     check.not_none_param(config_value, 'config_value')
 
-    if config_value:
-        if not isinstance(config_value, dict):
-            return EvaluateValueResult.for_error(create_selector_type_error(context, config_value))
+    # Special case the empty dictionary, meaning no values provided for the
+    # value of the selector. # E.g. {'logging': {}}
+    # If there is a single field defined on the selector and if it is optional
+    # it passes validation. (e.g. a single logger "console")
+    if config_value == {}:
+        return _validate_empty_selector_config(context)
 
-        if len(config_value) > 1:
-            return EvaluateValueResult.for_error(
-                create_selector_multiple_fields_error(context, config_value)
-            )
+    # Now we ensure that the used-provided config has only a a single entry
+    # and then continue the validation pass
 
-        field_name, incoming_field_value = ensure_single_item(config_value)
-        if field_name not in context.config_type.fields:
-            return EvaluateValueResult.for_error(
-                create_field_not_defined_error(context, field_name)
-            )
+    if not isinstance(config_value, dict):
+        return EvaluateValueResult.for_error(create_selector_type_error(context, config_value))
 
-    else:
-        if len(context.config_type.fields) > 1:
-            return EvaluateValueResult.for_error(
-                create_selector_multiple_fields_no_field_selected_error(context)
-            )
+    if len(config_value) > 1:
+        return EvaluateValueResult.for_error(
+            create_selector_multiple_fields_error(context, config_value)
+        )
 
-        field_name, field_def = ensure_single_item(context.config_type.fields)
+    field_name, field_value = ensure_single_item(config_value)
 
-        if not field_def.is_optional:
-            return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))
-
-        incoming_field_value = field_def.default_value if field_def.default_provided else None
+    if field_name not in context.config_type.fields:
+        return EvaluateValueResult.for_error(create_field_not_defined_error(context, field_name))
 
     field_def = context.config_type.fields[field_name]
 
@@ -145,9 +153,7 @@ def validate_selector_config(context, config_value):
         #
         # And we want the default values of the child elementls of filesystem:
         # to "fill in"
-        {}
-        if incoming_field_value is None and field_def.config_type.has_fields
-        else incoming_field_value,
+        {} if field_value is None and field_def.config_type.has_fields else field_value,
     )
 
     if child_evaluate_value_result.success:
@@ -158,9 +164,32 @@ def validate_selector_config(context, config_value):
         return child_evaluate_value_result
 
 
-def _validate_fields(context, config_value, errors):
+def _validate_dict_config(context, config_value, check_for_extra_incoming_fields):
+    check.inst_param(context, 'context', ValidationContext)
+    check.not_none_param(config_value, 'config_value')
+    check.bool_param(check_for_extra_incoming_fields, 'check_for_extra_incoming_fields')
+
+    if config_value and not isinstance(config_value, dict):
+        return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
+
+    fields = context.config_type.fields
+
+    defined_field_names = set(fields.keys())
+    incoming_field_names = set(config_value.keys())
+
+    errors = []
+
+    if check_for_extra_incoming_fields:
+        _append_if_error(
+            errors,
+            _check_for_extra_incoming_fields(context, defined_field_names, incoming_field_names),
+        )
+
+    _append_if_error(errors, _compute_missing_fields_error(context, fields, incoming_field_names))
+
+    # dict is well-formed. now recursively validate all incoming fields
+
     field_errors = []
-    new_config_value = {}
     for name, field_def in context.config_type.fields.items():
         if name in config_value:
             field_evr = _validate_config(context.for_field(field_def, name), config_value[name])
@@ -168,17 +197,13 @@ def _validate_fields(context, config_value, errors):
             if field_evr.errors:
                 field_errors += field_evr.errors
 
-            new_config_value[name] = field_evr.value
-        elif field_def.default_provided:
-            new_config_value[name] = field_def.default_value
-
     if field_errors:
         errors += field_errors
 
     if errors:
         return EvaluateValueResult.for_errors(errors)
     else:
-        return EvaluateValueResult.for_value(frozendict(new_config_value))
+        return EvaluateValueResult.for_value(frozendict(config_value))
 
 
 def validate_permissive_dict_config(context, config_value):
@@ -186,27 +211,7 @@ def validate_permissive_dict_config(context, config_value):
     check.invariant(context.config_type.kind == ConfigTypeKind.PERMISSIVE_DICT)
     check.not_none_param(config_value, 'config_value')
 
-    if config_value and not isinstance(config_value, dict):
-        return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
-
-    fields = context.config_type.fields
-
-    errors = []
-    _append_if_error(
-        errors,
-        _compute_missing_fields_error(context, fields, incoming_fields=set(config_value.keys())),
-    )
-
-    # copy to prevent default application from smashing original values
-    evr = _validate_fields(context, copy.copy(config_value), errors)
-    if not evr.success:
-        return evr
-
-    # _validate_fields constructs a new dict with only the defined fields
-    # The merge ensures that extra keys not in the field dictionary
-    # are returned back, but that an modifications (e.g. default values)
-    # as a result of validation are also returned
-    return EvaluateValueResult.for_value(merge_dicts(config_value, evr.value))
+    return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=False)
 
 
 def validate_dict_config(context, config_value):
@@ -214,20 +219,7 @@ def validate_dict_config(context, config_value):
     check.invariant(context.config_type.kind == ConfigTypeKind.DICT)
     check.not_none_param(config_value, 'config_value')
 
-    if config_value and not isinstance(config_value, dict):
-        return EvaluateValueResult.for_error(create_dict_type_mismatch_error(context, config_value))
-
-    fields = context.config_type.fields
-
-    defined_fields = set(fields.keys())
-    incoming_fields = set(config_value.keys())
-
-    errors = []
-
-    _append_if_error(errors, _compute_extra_fields(context, defined_fields, incoming_fields))
-    _append_if_error(errors, _compute_missing_fields_error(context, fields, incoming_fields))
-
-    return _validate_fields(context, config_value, errors)
+    return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=True)
 
 
 def _append_if_error(errors, maybe_error):
@@ -235,8 +227,8 @@ def _append_if_error(errors, maybe_error):
         errors.append(maybe_error)
 
 
-def _compute_extra_fields(context, defined_fields, incoming_fields):
-    extra_fields = list(incoming_fields - defined_fields)
+def _check_for_extra_incoming_fields(context, defined_field_names, incoming_field_names):
+    extra_fields = list(incoming_field_names - defined_field_names)
 
     if extra_fields:
         if len(extra_fields) == 1:
@@ -294,4 +286,14 @@ def validate_enum_config(context, config_value):
     if not context.config_type.is_valid_config_enum_value(config_value):
         return EvaluateValueResult.for_error(create_enum_value_missing_error(context, config_value))
 
-    return EvaluateValueResult.for_value(context.config_type.to_python_value(config_value))
+    return EvaluateValueResult.for_value(config_value)
+
+
+def process_config(config_type, config_dict):
+    config_evr = validate_config(config_type, config_dict)
+    if not config_evr.success:
+        return config_evr
+
+    processed = apply_default_values(config_type, config_evr.value)
+
+    return EvaluateValueResult.for_value(processed)

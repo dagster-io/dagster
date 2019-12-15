@@ -67,6 +67,20 @@ class PipelineExecutionResult(object):
 
         return self.result_for_handle(name)
 
+    def output_for_solid(self, handle, output_name=DEFAULT_OUTPUT):
+        '''Get the output of a solid by its solid handle string and output name.
+
+        Args:
+            handle (str): The string handle for the solid.
+            output_name (str): Optional. The name of the output, default to DEFAULT_OUTPUT.
+
+        Returns:
+            The output value for the handle and output_name.
+        '''
+        check.str_param(handle, 'handle')
+        check.str_param(output_name, 'output_name')
+        return self.result_for_handle(handle).output_value(output_name)
+
     @property
     def solid_result_list(self):
         '''List[Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results for each

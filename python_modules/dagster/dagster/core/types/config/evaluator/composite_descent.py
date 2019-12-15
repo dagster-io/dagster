@@ -15,7 +15,7 @@ from dagster.core.execution.config import IRunConfig, RunConfig
 from dagster.core.system_config.objects import SolidConfig
 
 from .evaluate_value_result import EvaluateValueResult
-from .validate import validate_config
+from .validate import process_config
 
 
 class SolidConfigEntry(namedtuple('_SolidConfigEntry', 'handle solid_config')):
@@ -164,9 +164,9 @@ def _get_mapped_solids_dict(composite_def, current_stack, current_solid_config):
         composite_def.solids, composite_def.dependency_structure, current_stack.handle
     )
 
-    # validate against that new type
+    # process against that new type
 
-    evr = validate_config(type_to_evaluate_against, mapped_solids_config)
+    evr = process_config(type_to_evaluate_against, mapped_solids_config)
 
     if not evr.success:
         raise_composite_descent_config_error(current_stack, mapped_solids_config, evr)

@@ -2,6 +2,8 @@ import pytest
 
 from dagster import (
     DagsterInvalidConfigError,
+    Enum,
+    EnumValue,
     Field,
     InputDefinition,
     Output,
@@ -440,3 +442,85 @@ def test_new_multiple_overrides_pipeline():
 
     assert result.success
     assert result.result_for_handle('layer0.layer1.layer2').output_value() == 'blah'
+
+
+def test_config_mapped_enum():
+    from enum import Enum as PythonEnum
+
+    class TestPythonEnum(PythonEnum):
+        VALUE_ONE = 0
+        OTHER = 1
+
+    DagsterEnumType = Enum(
+        'TestEnum',
+        [
+            EnumValue('VALUE_ONE', TestPythonEnum.VALUE_ONE),
+            EnumValue('OTHER', TestPythonEnum.OTHER),
+        ],
+    )
+
+    @solid(config={'enum': DagsterEnumType})
+    def return_enum(context):
+        return context.solid_config['enum']
+
+    @composite_solid(
+        config={'num': int},
+        config_fn=lambda _, cfg: {
+            'return_enum': {'config': {'enum': 'VALUE_ONE' if cfg['num'] == 1 else 'OTHER'}}
+        },
+    )
+    def wrapping_return_enum():
+        return return_enum()
+
+    @pipeline
+    def wrapping_return_enum_pipeline():
+        wrapping_return_enum()
+
+    assert (
+        execute_pipeline(
+            wrapping_return_enum_pipeline,
+            {'solids': {'wrapping_return_enum': {'config': {'num': 1}}}},
+        ).output_for_solid('wrapping_return_enum')
+        == TestPythonEnum.VALUE_ONE
+    )
+
+    assert (
+        execute_pipeline(
+            wrapping_return_enum_pipeline,
+            {'solids': {'wrapping_return_enum': {'config': {'num': -11}}}},
+        ).output_for_solid('wrapping_return_enum')
+        == TestPythonEnum.OTHER
+    )
+
+    @solid(config={'num': int})
+    def return_int(context):
+        return context.solid_config['num']
+
+    @composite_solid(
+        config={'enum': DagsterEnumType},
+        config_fn=lambda _, cfg: {
+            'return_int': {'config': {'num': 1 if cfg['enum'] == TestPythonEnum.VALUE_ONE else 2}}
+        },
+    )
+    def wrap_return_int():
+        return return_int()
+
+    @pipeline
+    def wrap_return_int_pipeline():
+        wrap_return_int()
+
+    assert (
+        execute_pipeline(
+            wrap_return_int_pipeline,
+            {'solids': {'wrap_return_int': {'config': {'enum': 'VALUE_ONE'}}}},
+        ).output_for_solid('wrap_return_int')
+        == 1
+    )
+
+    assert (
+        execute_pipeline(
+            wrap_return_int_pipeline,
+            {'solids': {'wrap_return_int': {'config': {'enum': 'OTHER'}}}},
+        ).output_for_solid('wrap_return_int')
+        == 2
+    )
