@@ -11,7 +11,7 @@ from dagster.core.types.config.config_type import (
     Path,
     String,
 )
-from dagster.core.types.config.default_applier import apply_default_values
+from dagster.core.types.config.post_process import post_process_config
 from dagster.utils import ensure_single_item, frozendict
 
 from .errors import (
@@ -294,6 +294,6 @@ def process_config(config_type, config_dict):
     if not config_evr.success:
         return config_evr
 
-    processed = apply_default_values(config_type, config_evr.value)
+    processed = post_process_config(config_type, config_evr.value)
 
     return EvaluateValueResult.for_value(processed)

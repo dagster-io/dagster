@@ -3,39 +3,39 @@ import pytest
 from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
 from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
-from dagster.core.types.config.default_applier import apply_default_values
 from dagster.core.types.config.field import resolve_to_config_type
 from dagster.core.types.config.field_utils import Selector
+from dagster.core.types.config.post_process import post_process_config
 
 
-def test_apply_default_values():
+def test_post_process_config():
     scalar_config_type = resolve_to_config_type(String)
-    assert apply_default_values(scalar_config_type, 'foo') == 'foo'
-    assert apply_default_values(scalar_config_type, 3) == 3
-    assert apply_default_values(scalar_config_type, {}) == {}
-    assert apply_default_values(scalar_config_type, None) is None
+    assert post_process_config(scalar_config_type, 'foo') == 'foo'
+    assert post_process_config(scalar_config_type, 3) == 3
+    assert post_process_config(scalar_config_type, {}) == {}
+    assert post_process_config(scalar_config_type, None) is None
 
     enum_config_type = resolve_to_config_type(
         Enum('an_enum', [EnumValue('foo'), EnumValue('bar', python_value=3)])
     )
-    assert apply_default_values(enum_config_type, 'foo') == 'foo'
-    assert apply_default_values(enum_config_type, 'bar') == 3
+    assert post_process_config(enum_config_type, 'foo') == 'foo'
+    assert post_process_config(enum_config_type, 'bar') == 3
     with pytest.raises(CheckError, match='config_value should be pre-validated'):
-        apply_default_values(enum_config_type, 'baz')
+        post_process_config(enum_config_type, 'baz')
     with pytest.raises(CheckError, match='config_value should be pre-validated'):
-        apply_default_values(enum_config_type, None)
+        post_process_config(enum_config_type, None)
 
     list_config_type = resolve_to_config_type(List[String])
 
-    assert apply_default_values(list_config_type, ['foo']) == ['foo']
-    assert apply_default_values(list_config_type, None) == []
+    assert post_process_config(list_config_type, ['foo']) == ['foo']
+    assert post_process_config(list_config_type, None) == []
     with pytest.raises(CheckError, match='Null list member not caught'):
-        assert apply_default_values(list_config_type, [None]) == [None]
+        assert post_process_config(list_config_type, [None]) == [None]
 
     nullable_list_config_type = resolve_to_config_type(List[Optional[String]])
-    assert apply_default_values(nullable_list_config_type, ['foo']) == ['foo']
-    assert apply_default_values(nullable_list_config_type, [None]) == [None]
-    assert apply_default_values(nullable_list_config_type, None) == []
+    assert post_process_config(nullable_list_config_type, ['foo']) == ['foo']
+    assert post_process_config(nullable_list_config_type, [None]) == [None]
+    assert post_process_config(nullable_list_config_type, None) == []
 
     composite_config_type = resolve_to_config_type(
         Dict(
@@ -49,23 +49,23 @@ def test_apply_default_values():
     )
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(composite_config_type, {})
+        post_process_config(composite_config_type, {})
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(composite_config_type, {'bar': {'baz': ['giraffe']}, 'quux': 'nimble'})
+        post_process_config(composite_config_type, {'bar': {'baz': ['giraffe']}, 'quux': 'nimble'})
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(composite_config_type, {'foo': 'zowie', 'quux': 'nimble'})
+        post_process_config(composite_config_type, {'foo': 'zowie', 'quux': 'nimble'})
 
-    assert apply_default_values(
+    assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'nimble'}
     ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'nimble'}
 
-    assert apply_default_values(
+    assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}}
     ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip'}
 
-    assert apply_default_values(
+    assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quiggle': 'squiggle'}
     ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip', 'quiggle': 'squiggle'}
 
@@ -86,26 +86,26 @@ def test_apply_default_values():
     )
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(nested_composite_config_type, {'fruts': None})
+        post_process_config(nested_composite_config_type, {'fruts': None})
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(
+        post_process_config(
             nested_composite_config_type, {'fruts': {'banana': 'good', 'potato': 'bad'}}
         )
 
-    assert apply_default_values(
+    assert post_process_config(
         nested_composite_config_type, {'fruts': {'apple': 'strawberry'}}
     ) == {'fruts': {'apple': 'strawberry', 'potato': 'pie'}}
 
-    assert apply_default_values(
+    assert post_process_config(
         nested_composite_config_type, {'fruts': {'apple': 'a', 'banana': 'b', 'potato': 'c'}}
     ) == {'fruts': {'apple': 'a', 'banana': 'b', 'potato': 'c'}}
 
     any_config_type = resolve_to_config_type(Any)
 
-    assert apply_default_values(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
+    assert post_process_config(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
 
-    assert apply_default_values(ConfigType('gargle', 'bargle', ConfigTypeKind.ANY), 3)
+    assert post_process_config(ConfigType('gargle', 'bargle', ConfigTypeKind.ANY), 3)
 
     selector_config_type = resolve_to_config_type(
         Selector(
@@ -120,32 +120,30 @@ def test_apply_default_values():
     )
 
     with pytest.raises(CheckError):
-        apply_default_values(selector_config_type, 'one')
+        post_process_config(selector_config_type, 'one')
 
     with pytest.raises(ParameterCheckError):
-        apply_default_values(selector_config_type, None)
+        post_process_config(selector_config_type, None)
 
     with pytest.raises(ParameterCheckError, match='Expected dict with single item'):
-        apply_default_values(selector_config_type, {})
+        post_process_config(selector_config_type, {})
 
     with pytest.raises(CheckError):
-        apply_default_values(selector_config_type, {'one': 'foo', 'another': 'bar'})
+        post_process_config(selector_config_type, {'one': 'foo', 'another': 'bar'})
 
-    assert apply_default_values(selector_config_type, {'one': 'foo'}) == {'one': 'foo'}
+    assert post_process_config(selector_config_type, {'one': 'foo'}) == {'one': 'foo'}
 
-    assert apply_default_values(selector_config_type, {'one': None}) == {'one': None}
+    assert post_process_config(selector_config_type, {'one': None}) == {'one': None}
 
-    assert apply_default_values(selector_config_type, {'one': {}}) == {'one': {}}
+    assert post_process_config(selector_config_type, {'one': {}}) == {'one': {}}
 
-    assert apply_default_values(selector_config_type, {'another': {}}) == {
-        'another': {'foo': 'bar'}
-    }
+    assert post_process_config(selector_config_type, {'another': {}}) == {'another': {'foo': 'bar'}}
 
     singleton_selector_config_type = resolve_to_config_type(
         Selector({'foo': Field(String, default_value='bar', is_optional=True)})
     )
 
-    assert apply_default_values(singleton_selector_config_type, None) == {'foo': 'bar'}
+    assert post_process_config(singleton_selector_config_type, None) == {'foo': 'bar'}
 
     permissive_dict_config_type = resolve_to_config_type(
         PermissiveDict(
@@ -154,9 +152,9 @@ def test_apply_default_values():
     )
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
-        apply_default_values(permissive_dict_config_type, None)
+        post_process_config(permissive_dict_config_type, None)
 
-    assert apply_default_values(permissive_dict_config_type, {'foo': 'wow', 'mau': 'mau'}) == {
+    assert post_process_config(permissive_dict_config_type, {'foo': 'wow', 'mau': 'mau'}) == {
         'foo': 'wow',
         'bar': 'baz',
         'mau': 'mau',

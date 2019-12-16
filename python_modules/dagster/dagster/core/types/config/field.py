@@ -13,8 +13,8 @@ from dagster.core.types.wrapping.wrapping import (
 from dagster.utils.typing_api import is_typing_type
 
 from .config_type import ConfigAnyInstance, ConfigType, List, Nullable
-from .default_applier import apply_default_values
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
+from .post_process import post_process_config
 
 
 def resolve_to_config_list(list_type):
@@ -168,7 +168,7 @@ class Field(object):
         if is_optional is None:
             is_optional = all_optional_type(self.config_type)
             if is_optional is True:
-                self._default_value = apply_default_values(self.config_type, None)
+                self._default_value = post_process_config(self.config_type, None)
             else:
                 self._default_value = default_value
         else:
