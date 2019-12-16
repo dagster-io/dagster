@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface HandleStartExecutionFragment_InvalidStepError {
-  __typename: "InvalidStepError" | "InvalidOutputError" | "PythonError";
+  __typename: "InvalidStepError" | "InvalidOutputError";
 }
 
 export interface HandleStartExecutionFragment_StartPipelineExecutionSuccess_run_pipeline {
@@ -42,4 +42,10 @@ export interface HandleStartExecutionFragment_PipelineConfigValidationInvalid {
   errors: HandleStartExecutionFragment_PipelineConfigValidationInvalid_errors[];
 }
 
-export type HandleStartExecutionFragment = HandleStartExecutionFragment_InvalidStepError | HandleStartExecutionFragment_StartPipelineExecutionSuccess | HandleStartExecutionFragment_PipelineNotFoundError | HandleStartExecutionFragment_PipelineConfigValidationInvalid;
+export interface HandleStartExecutionFragment_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export type HandleStartExecutionFragment = HandleStartExecutionFragment_InvalidStepError | HandleStartExecutionFragment_StartPipelineExecutionSuccess | HandleStartExecutionFragment_PipelineNotFoundError | HandleStartExecutionFragment_PipelineConfigValidationInvalid | HandleStartExecutionFragment_PythonError;

@@ -93,12 +93,19 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''Get a list of tag keys and the values that have been associated with them.
 
         Returns:
-            List[Tuple[string, List[string]]]
+            List[Tuple[string, Set[string]]]
         '''
 
     @abstractmethod
     def has_run(self, run_id):
-        pass
+        '''Check if the storage contains a run.
+
+        Args:
+            run_id (str): The id of the run
+
+        Returns:
+            bool
+        '''
 
     @abstractmethod
     def wipe(self):

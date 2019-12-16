@@ -25,8 +25,9 @@ import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
-import styled from "styled-components";
-import { copyValue, unixTimestampToString } from "../Util";
+import styled from "styled-components/macro";
+import { unixTimestampToString } from "../Util";
+import { copyValue } from "../DomUtils";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 

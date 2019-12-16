@@ -34,4 +34,20 @@ def info_command():
     click.echo(instance.info_str())
 
 
+@click.command(name='migrate', help='Automatically migrate an out of date instance.')
+def migrate_command():
+    instance = DagsterInstance.get()
+    home = os.environ.get('DAGSTER_HOME')
+
+    if instance.is_ephemeral:
+        click.echo('$DAGSTER_HOME is not set; ephemeral instances do not need to be migrated.')
+        return
+
+    click.echo('$DAGSTER_HOME: {}\n'.format(home))
+
+    instance.upgrade(click.echo)
+
+    click.echo(instance.info_str())
+
+
 instance_cli = create_instance_cli_group()

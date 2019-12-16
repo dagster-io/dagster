@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom/server";
-import { StyleSheetManager } from "styled-components";
+import { StyleSheetManager } from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 import pretty from "pretty";
 import path from "path";
@@ -35,6 +35,7 @@ function svgForPipeline(
         minified={false}
         solids={solids}
         parentSolid={parent}
+        focusSolids={[]}
         pipelineName={name}
         layout={layout}
         backgroundColor={Colors.LIGHT_GRAY5}

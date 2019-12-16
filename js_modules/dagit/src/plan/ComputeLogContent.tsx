@@ -2,13 +2,12 @@ import * as React from "react";
 import { Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
-import styled from "styled-components";
-import * as sc from "styled-components";
+import styled, { createGlobalStyle } from "styled-components/macro";
 import { Spinner, Intent } from "@blueprintjs/core";
 import Ansi from "ansi-to-react";
 import { IStepState } from "../RunMetadataProvider";
 import { ExecutionStateDot } from "./ExecutionStateDot";
-import { ROOT_SERVER_URI } from "../Util";
+import { ROOT_SERVER_URI } from "../DomUtils";
 import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
 
 interface IComputeLogContentProps {
@@ -454,7 +453,7 @@ const LineNumberContainer = styled.div`
   color: #858585;
   min-height: 100%;
 `;
-const SolarizedColors = sc.createGlobalStyle`
+const SolarizedColors = createGlobalStyle`
   .ansi-black {
     color: #586e75;
   }

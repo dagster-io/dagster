@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Code, Colors } from "@blueprintjs/core";
 import TypeWithTooltip from "./TypeWithTooltip";
 import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";

@@ -273,6 +273,7 @@ class SolidSelectorModal extends React.PureComponent<
             layout={getDagrePipelineLayout(
               pipeline && pipeline.solids ? pipeline.solids : []
             )}
+            focusSolids={[]}
             highlightedSolids={
               pipeline
                 ? pipeline.solids.filter(

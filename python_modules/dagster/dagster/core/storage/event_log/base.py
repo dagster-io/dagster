@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 import pyrsistent
 import six
@@ -61,3 +61,7 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def end_watch(self, run_id, handler):
         '''Call this method to stop watching.'''
+
+    @abstractproperty
+    def is_persistent(self):
+        '''bool: Whether the storage is persistent.'''

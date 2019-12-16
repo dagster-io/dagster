@@ -141,6 +141,8 @@ def test_fetch_count_by_tag(run_storage_factory_cm_fn):
         run_count = storage.get_run_count_with_matching_tags([])
         assert run_count == 3
 
+        assert storage.get_run_tags() == [('mytag', {'hello', 'goodbye'}), ('mytag2', {'world'})]
+
 
 @run_storage_test
 def test_fetch_by_tags(run_storage_factory_cm_fn):

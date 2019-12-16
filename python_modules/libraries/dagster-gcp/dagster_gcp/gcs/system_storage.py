@@ -9,12 +9,18 @@ from .intermediate_store import GCSIntermediateStore
 @system_storage(
     name='gcs',
     is_persistent=True,
-    config={'gcs_bucket': Field(String)},
+    config={
+        'gcs_bucket': Field(String),
+        'gcs_prefix': Field(String, is_optional=True, default_value='dagster'),
+    },
     required_resource_keys={'gcs'},
 )
 def gcs_system_storage(init_context):
     client = init_context.resources.gcs.client
-    gcs_key = 'dagster/storage/{run_id}/files'.format(run_id=init_context.pipeline_run.run_id)
+    gcs_key = '{prefix}/storage/{run_id}/files'.format(
+        prefix=init_context.system_storage_config['gcs_prefix'],
+        run_id=init_context.pipeline_run.run_id,
+    )
     return SystemStorageData(
         file_manager=GCSFileManager(
             client=client,
@@ -25,6 +31,7 @@ def gcs_system_storage(init_context):
             GCSIntermediateStore(
                 client=client,
                 gcs_bucket=init_context.system_storage_config['gcs_bucket'],
+                gcs_prefix=init_context.system_storage_config['gcs_prefix'],
                 run_id=init_context.pipeline_run.run_id,
                 type_storage_plugin_registry=init_context.type_storage_plugin_registry,
             )

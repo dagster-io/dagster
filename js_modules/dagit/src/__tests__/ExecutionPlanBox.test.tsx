@@ -69,7 +69,7 @@ it("renders given materializations and passing expectations", () => {
   const run = undefined;
   const component = TestRenderer.create(
     <BrowserRouter>
-      <MockedProvider mocks={MOCKS} addTypename={false}>
+      <MockedProvider mocks={MOCKS} addTypename={true}>
         <RunContext.Provider value={run}>
           <ExecutionPlanBox {...executionPlanBoxProps} />
         </RunContext.Provider>
