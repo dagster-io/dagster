@@ -92,6 +92,7 @@ class DauphinQuery(dauphin.ObjectType):
     pipelineRunTags = dauphin.non_null_list('PipelineTagAndValues')
 
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
+    usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
 
     isPipelineConfigValid = dauphin.Field(
         dauphin.NonNull('PipelineConfigValidationResult'),
@@ -170,6 +171,22 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunTags(self, graphene_info):
         return get_run_tags(graphene_info)
+
+    def resolve_usedSolid(self, graphene_info, name):
+        repository = graphene_info.context.repository_definition
+        invocations = []
+        definition = None
+
+        for pipeline in repository.get_all_pipelines():
+            for handle in build_dauphin_solid_handles(pipeline):
+                if handle.handleID.definition_name == name:
+                    if definition is None:
+                        definition = handle.solid.resolve_definition(graphene_info)
+                    invocations.append(
+                        DauphinSolidInvocationSite(pipeline=pipeline, solidHandle=handle)
+                    )
+
+        return DauphinUsedSolid(definition=definition, invocations=invocations)
 
     def resolve_usedSolids(self, graphene_info):
         repository = graphene_info.context.repository_definition

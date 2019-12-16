@@ -823,6 +823,7 @@ type Query {
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!

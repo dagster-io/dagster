@@ -8027,7 +8027,7 @@ and
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      file_cache
+                      s3
                     </h4>
                   </div>
                   <div
@@ -8056,7 +8056,7 @@ and
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      s3
+                      file_cache
                     </h4>
                   </div>
                 </div>
@@ -8512,13 +8512,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8529,13 +8529,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8578,13 +8578,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8610,13 +8610,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8627,13 +8627,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9098,13 +9098,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9115,13 +9115,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Float"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Float
                   </code>
                 </a>
                 
@@ -9147,13 +9147,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9164,13 +9164,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Float"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Float
                   </code>
                 </a>
                 
@@ -12543,35 +12543,6 @@ more detail.
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      file_cache
-                    </h4>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
-                  >
-                    <span
-                      className="bp3-icon bp3-icon-layers"
-                      icon="layers"
-                    >
-                      <svg
-                        data-icon="layers"
-                        fill="#202B33"
-                        height={14}
-                        viewBox="0 0 16 16"
-                        width={14}
-                      >
-                        <desc>
-                          layers
-                        </desc>
-                        <path
-                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
-                          fillRule="evenodd"
-                        />
-                      </svg>
-                    </span>
-                    <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
-                    >
                       spark
                     </h4>
                   </div>
@@ -12602,6 +12573,35 @@ more detail.
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
                       s3
+                    </h4>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__ResourceContainer-sc-198d6h6-3 homUez"
+                  >
+                    <span
+                      className="bp3-icon bp3-icon-layers"
+                      icon="layers"
+                    >
+                      <svg
+                        data-icon="layers"
+                        fill="#202B33"
+                        height={14}
+                        viewBox="0 0 16 16"
+                        width={14}
+                      >
+                        <desc>
+                          layers
+                        </desc>
+                        <path
+                          d="M.55 4.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5a.998.998 0 00-.06-1.81L8.4.08a1.006 1.006 0 00-.79 0l-6.99 3a.992.992 0 00-.07 1.81zM15 10c-.16 0-.31.04-.45.11L8 13.38 1.45 10.1c-.14-.06-.29-.1-.45-.1-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1zm0-3.5c-.16 0-.31.04-.45.11L8 9.88 1.45 6.61A.997.997 0 001 6.5c-.55 0-1 .45-1 1 0 .39.23.73.55.89l7 3.5c.14.07.29.11.45.11s.31-.04.45-.11l7-3.5c.32-.16.55-.5.55-.89 0-.55-.45-1-1-1z"
+                          fillRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <h4
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                    >
+                      file_cache
                     </h4>
                   </div>
                 </div>
@@ -12856,84 +12856,26 @@ more detail.
                       <div
                         style={
                           Object {
-                            "fontWeight": 600,
+                            "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
                           }
                         }
                       >
                         
-                        april_on_time_s3_to_df
+                        process_q2_ticket_data
                       </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
                       <div
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "paddingLeft": 6,
                             "paddingRight": 15,
                           }
                         }
                       >
-                        
-                        june_on_time_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        master_cord_s3_to_df
+                        ↳
+                        s3_to_df
                       </div>
                     </div>
                   </div>
@@ -12969,53 +12911,6 @@ more detail.
                       >
                         
                         may_on_time_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 300,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        process_q2_coupon_data
-                      </div>
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 6,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        ↳
-                        s3_to_df
                       </div>
                     </div>
                   </div>
@@ -13090,6 +12985,41 @@ more detail.
                       <div
                         style={
                           Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        master_cord_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
                             "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
@@ -13097,7 +13027,7 @@ more detail.
                         }
                       >
                         
-                        process_q2_ticket_data
+                        process_q2_coupon_data
                       </div>
                       <div
                         style={
@@ -13110,6 +13040,76 @@ more detail.
                       >
                         ↳
                         s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        april_on_time_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        june_on_time_s3_to_df
                       </div>
                     </div>
                   </div>
