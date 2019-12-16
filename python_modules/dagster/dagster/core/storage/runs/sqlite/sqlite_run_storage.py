@@ -62,7 +62,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     def upgrade(self):
         path_to_old_db = os.path.join(
-            os.path.split(os.path.abspath(urlparse(self._conn_string).path))[0], '..', 'runs.db'
+            os.path.split(urlparse(self._conn_string).path)[0], '..', 'runs.db'
         )
         if os.path.exists(path_to_old_db):
             old_conn_string = 'sqlite:///{}'.format('/'.join(path_to_old_db.split(os.sep)))
