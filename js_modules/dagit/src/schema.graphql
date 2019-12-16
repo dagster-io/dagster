@@ -603,6 +603,8 @@ type Partition {
 type PartitionSet {
   name: String!
   pipelineName: String!
+  solidSubset: [String!]
+  mode: String!
   partitions: [Partition!]!
 }
 

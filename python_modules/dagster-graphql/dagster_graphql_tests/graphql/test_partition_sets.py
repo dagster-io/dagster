@@ -11,6 +11,9 @@ GET_PARTITION_SETS_QUERY = '''
         ...on PartitionSets {
             results {
                 name
+                pipelineName
+                solidSubset
+                mode
             }
         }
     }
@@ -24,6 +27,9 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
             ...on PartitionSets {
                 results {
                     name
+                    pipelineName
+                    solidSubset
+                    mode
                 }
             }
             ...on PipelineNotFoundError {
@@ -39,6 +45,9 @@ GET_PARTITION_SET_QUERY = '''
             __typename
             ...on PartitionSet {
                 name
+                pipelineName
+                solidSubset
+                mode
                 partitions {
                     name
                 }

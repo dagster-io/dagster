@@ -11,7 +11,12 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
         '__typename': 'PartitionSets',
         'results': [
             {
-                'name': 'integer_partition'
+                'mode': 'default',
+                'name': 'integer_partition',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': [
+                    'return_hello'
+                ]
             }
         ]
     }

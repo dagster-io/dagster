@@ -22,6 +22,8 @@ class DauphinPartitionSet(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
+    solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
+    mode = dauphin.NonNull(dauphin.String)
     partitions = dauphin.non_null_list('Partition')
 
     def __init__(self, partition_set):
@@ -30,7 +32,10 @@ class DauphinPartitionSet(dauphin.ObjectType):
         )
 
         super(DauphinPartitionSet, self).__init__(
-            name=partition_set.name, pipeline_name=partition_set.pipeline_name
+            name=partition_set.name,
+            pipeline_name=partition_set.pipeline_name,
+            solid_subset=partition_set.solid_subset,
+            mode=partition_set.mode,
         )
 
     def resolve_partitions(self, _):
