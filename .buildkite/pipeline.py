@@ -578,7 +578,8 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
-        .run("pip install black==19.10b0", "make check_black")
+        # See: https://github.com/dagster-io/dagster/issues/1999
+        .run("pip install regex==2019.11.1 black==19.10b0", "make check_black")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs snapshot test")
