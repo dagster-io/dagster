@@ -143,6 +143,10 @@ class Solid(object):
         return self.definition.output_dict
 
     @property
+    def metadata(self):
+        return self.definition.metadata
+
+    @property
     def step_metadata_fn(self):
         return self.definition.step_metadata_fn
 
