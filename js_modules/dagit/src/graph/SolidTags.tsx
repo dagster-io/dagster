@@ -38,7 +38,7 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
   minified
 }) => {
   const height = minified ? 32 : 20;
-  const overhang = 6;
+  const overhang = 10;
 
   return (
     <SVGFlowLayoutRect
@@ -62,14 +62,14 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({
             height={height}
             padding={minified ? 8 : 4}
             fill={`hsl(${hue}, 10%, 95%)`}
-            stroke={`hsl(${hue}, 75%, 55%)`}
+            stroke={`hsl(${hue}, 75%, 50%)`}
             onClick={tag.onClick}
             strokeWidth={1}
             spacing={0}
           >
             <SVGMonospaceText
               text={tag.label}
-              fill={`hsl(${hue}, 75%, 55%)`}
+              fill={`hsl(${hue}, 75%, 50%)`}
               size={minified ? 24 : 14}
             />
           </SVGFlowLayoutRect>
