@@ -246,6 +246,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
       >
         <SVGMonospaceText
           size={minified ? 30 : 16}
+          allowTwoLines={!minified}
           text={invocation ? invocation.name : definition.name}
           fill={"#222"}
         />

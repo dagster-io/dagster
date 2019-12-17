@@ -96,8 +96,8 @@ export interface IPoint {
 
 const MAX_PER_ROW_ENABLED = false;
 const MAX_PER_ROW = 25;
-const SOLID_WIDTH = 350;
-const SOLID_BASE_HEIGHT = 60;
+const SOLID_WIDTH = 370;
+const SOLID_BASE_HEIGHT = 75;
 const IO_HEIGHT = 36;
 const IO_INSET = 6;
 const IO_MINI_WIDTH = 35;
