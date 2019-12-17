@@ -8,6 +8,7 @@ from dagster import check, seven
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.utils import datetime_as_float
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import DagsterEventLogInvalidForRun, EventLogStorage
@@ -120,10 +121,14 @@ class SqlEventLogStorage(EventLogStorage):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                start_time=times.get(DagsterEventType.PIPELINE_START.value, None),
-                end_time=times.get(
-                    DagsterEventType.PIPELINE_SUCCESS.value,
-                    times.get(DagsterEventType.PIPELINE_FAILURE.value, None),
+                start_time=datetime_as_float(
+                    times.get(DagsterEventType.PIPELINE_START.value, None)
+                ),
+                end_time=datetime_as_float(
+                    times.get(
+                        DagsterEventType.PIPELINE_SUCCESS.value,
+                        times.get(DagsterEventType.PIPELINE_FAILURE.value, None),
+                    )
                 ),
             )
         except (seven.JSONDecodeError, check.CheckError) as err:

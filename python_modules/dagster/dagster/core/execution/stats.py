@@ -4,6 +4,7 @@ from dagster import check
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
+from dagster.utils import datetime_as_float
 
 
 def build_stats_from_events(run_id, records):
@@ -30,7 +31,7 @@ def build_stats_from_events(run_id, records):
         if not event.is_dagster_event:
             continue
         if event.dagster_event.event_type == DagsterEventType.PIPELINE_START:
-            start_time = event.timestamp
+            start_time = datetime_as_float(event.timestamp)
         if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             steps_failed += 1
         if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
@@ -43,7 +44,7 @@ def build_stats_from_events(run_id, records):
             event.dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS
             or event.dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE
         ):
-            end_time = event.timestamp
+            end_time = datetime_as_float(event.timestamp)
 
     return PipelineRunStatsSnapshot(
         run_id, steps_succeeded, steps_failed, materializations, expectations, start_time, end_time
