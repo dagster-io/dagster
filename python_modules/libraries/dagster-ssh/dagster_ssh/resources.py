@@ -7,6 +7,7 @@ from six import StringIO
 from sshtunnel import SSHTunnelForwarder
 
 from dagster import Field, check, resource
+from dagster.utils import merge_dicts
 
 
 def key_from_str(key_str):
@@ -217,5 +218,5 @@ class SSHResource(object):
 )
 def ssh_resource(init_context):
     args = init_context.resource_config
-    args['logger'] = init_context.log_manager
+    args = merge_dicts(init_context.resource_config, {'logger': init_context.log_manager})
     return SSHResource(**args)

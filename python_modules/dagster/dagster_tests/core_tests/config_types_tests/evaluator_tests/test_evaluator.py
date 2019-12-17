@@ -1,17 +1,17 @@
 from dagster import Any, Bool, Dict, Field, Int, List, Optional, String
 from dagster.core.types.config import Selector
-from dagster.core.types.config.evaluator import evaluate_config
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.evaluate_value_result import EvaluateValueResult
 from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
     EvaluationStackPathEntry,
 )
+from dagster.core.types.config.evaluator.validate import process_config
 from dagster.core.types.config.field import resolve_to_config_type
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
-    return evaluate_config(resolve_to_config_type(dagster_type), value)
+    return process_config(resolve_to_config_type(dagster_type), value)
 
 
 def assert_success(result, expected_value):
@@ -528,6 +528,6 @@ def test_nullable_dict():
 
 def test_any_with_default_value():
     dict_with_any = Dict({'any_field': Field(Any, default_value='foo', is_optional=True)})
-    result = eval_config_value_from_dagster_type(dict_with_any, None)
+    result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {'any_field': 'foo'}

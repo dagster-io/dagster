@@ -2,7 +2,10 @@ import path from "path";
 import { ROOT_PIPELINES_QUERY } from "../App";
 import { TYPE_EXPLORER_CONTAINER_QUERY } from "../typeexplorer/TypeExplorerContainer";
 import { TYPE_LIST_CONTAINER_QUERY } from "../typeexplorer/TypeListContainer";
-import { SOLIDS_ROOT_QUERY } from "../solids/SolidsRoot";
+import {
+  SOLIDS_ROOT_QUERY,
+  USED_SOLID_DETAILS_QUERY
+} from "../solids/SolidsRoot";
 import { PIPELINE_EXPLORER_ROOT_QUERY } from "../PipelineExplorerRoot";
 import { SIDEBAR_TABBED_CONTAINER_SOLID_QUERY } from "../SidebarSolidContainer";
 import { CachedGraphQLRequest } from "./MockedApolloLinks";
@@ -58,6 +61,12 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: SOLIDS_ROOT_QUERY,
     variables: {},
     filepath: path.join(__dirname, "__data__", "SOLIDS_ROOT_QUERY.json")
+  },
+  {
+    name: "USED_SOLIDS_DETAILS_QUERY",
+    query: USED_SOLID_DETAILS_QUERY,
+    variables: { name: "s3_to_df" },
+    filepath: path.join(__dirname, "__data__", "USED_SOLID_DETAILS_QUERY.json")
   },
   {
     name: "SIDEBAR_TABBED_CONTAINER_SOLID_QUERY",

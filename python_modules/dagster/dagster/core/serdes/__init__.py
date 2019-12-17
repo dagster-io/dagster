@@ -164,7 +164,7 @@ class ConfigurableClassData(
 
     def rehydrate(self, **constructor_kwargs):
         from dagster.core.errors import DagsterInvalidConfigError
-        from dagster.core.types.config.evaluator import evaluate_config
+        from dagster.core.types.config.evaluator.validate import validate_config
 
         try:
             module = importlib.import_module(self.module_name)
@@ -197,9 +197,13 @@ class ConfigurableClassData(
             )
 
         config_dict = yaml.load(self.config_yaml)
-        result = evaluate_config(klass.config_type(), config_dict)
+        result = validate_config(klass.config_type(), config_dict)
         if not result.success:
-            raise DagsterInvalidConfigError(None, result.errors, config_dict)
+            raise DagsterInvalidConfigError(
+                'Errors whilst loading configuration for {}.'.format(klass.config_type()),
+                result.errors,
+                config_dict,
+            )
         return klass.from_config_value(self, result.value, **constructor_kwargs)
 
 

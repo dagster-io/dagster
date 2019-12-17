@@ -25,12 +25,12 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.test_utils import throwing_evaluate_config_value
-from dagster.core.types.config.evaluator import evaluate_config
+from dagster.core.test_utils import throwing_validate_config_value
 from dagster.core.types.config.evaluator.errors import (
     DagsterEvaluateConfigValueError,
     DagsterEvaluationErrorReason,
 )
+from dagster.core.types.config.evaluator.validate import process_config, validate_config
 from dagster.core.types.config.field_utils import coerce_potential_field
 
 
@@ -53,17 +53,17 @@ def test_noop_config():
 def test_int_field(snapshot):
     config_field = _to_field({'int_field': Int})
     assert_config_type_snapshot(snapshot, config_field)
-    assert evaluate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
+    assert validate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
 def assert_config_value_success(config_type, config_value, expected):
-    result = evaluate_config(config_type, config_value)
+    result = process_config(config_type, config_value)
     assert result.success
     assert result.value == expected
 
 
 def assert_eval_failure(config_type, value):
-    assert not evaluate_config(config_type, value).success
+    assert not validate_config(config_type, value).success
 
 
 def test_int_fails(snapshot):
@@ -113,7 +113,7 @@ def _multiple_required_fields_config_permissive_dict():
 
 
 def _validate(config_field, value):
-    return throwing_evaluate_config_value(config_field.config_type, value)
+    return throwing_validate_config_value(config_field.config_type, value)
 
 
 def test_single_required_string_field_config_type():
@@ -418,13 +418,13 @@ def test_config_with_and_without_config():
         },
     )
 
+    assert result.success
+    assert result.result_for_solid('print_value').output_value() == '_customprefix_12345'
+
     result_using_default = execute_pipeline(
         config_issue_pipeline,
         {'solids': {'prefix_id': {'config': {}, 'inputs': {'val': {'value': "12345"}}}}},
     )
-
-    assert result.success
-    assert result.result_for_solid('print_value').output_value() == '_customprefix_12345'
 
     assert result_using_default.success
     assert result_using_default.result_for_solid('print_value').output_value() == '_id_12345'
@@ -537,12 +537,7 @@ def test_multilevel_default_handling():
     assert execute_pipeline(pipeline_def).success
     assert execute_pipeline(pipeline_def, environment_dict=None).success
     assert execute_pipeline(pipeline_def, environment_dict={}).success
-    assert execute_pipeline(pipeline_def, environment_dict={'solids': None}).success
     assert execute_pipeline(pipeline_def, environment_dict={'solids': {}}).success
-    assert execute_pipeline(
-        pipeline_def, environment_dict={'solids': {'has_default_value': None}}
-    ).success
-
     assert execute_pipeline(
         pipeline_def, environment_dict={'solids': {'has_default_value': {}}}
     ).success
@@ -674,8 +669,17 @@ def test_required_resource_not_given():
     def pipeline_def():
         pass
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, environment_dict={'resources': None})
+
+    assert len(not_none_pe_info.value.errors) == 1
+    assert (
+        'Value at path root:resources must be not be None.'
+        in not_none_pe_info.value.errors[0].message
+    )
+
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+        execute_pipeline(pipeline_def, environment_dict={'resources': {}})
 
     pe = pe_info.value
     error = pe.errors[0]
@@ -695,11 +699,19 @@ def test_multilevel_good_error_handling_solids():
     def pipeline_def():
         good_error_handling()
 
-    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+    with pytest.raises(DagsterInvalidConfigError) as not_none_pe_info:
         execute_pipeline(pipeline_def, environment_dict={'solids': None})
 
-    assert len(pe_info.value.errors) == 1
-    assert pe_info.value.errors[0].message == (
+    assert len(not_none_pe_info.value.errors) == 1
+    assert (
+        'Value at path root:solids must be not be None.' in not_none_pe_info.value.errors[0].message
+    )
+
+    with pytest.raises(DagsterInvalidConfigError) as missing_field_pe_info:
+        execute_pipeline(pipeline_def, environment_dict={'solids': {}})
+
+    assert len(missing_field_pe_info.value.errors) == 1
+    assert missing_field_pe_info.value.errors[0].message == (
         '''Missing required field "good_error_handling" at path root:solids '''
         '''Available Fields: "['good_error_handling']".'''
     )

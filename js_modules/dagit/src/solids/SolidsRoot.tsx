@@ -12,6 +12,7 @@ import {
   SolidsRootQuery,
   SolidsRootQuery_usedSolids
 } from "./types/SolidsRootQuery";
+import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
 import { SplitPanelChildren } from "../SplitPanelChildren";
 import { Colors, NonIdealState } from "@blueprintjs/core";
 import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
@@ -23,6 +24,7 @@ import {
   stringFromValue,
   TokenizingField
 } from "../TokenizingField";
+import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
 
 function flatUniq(arrs: string[][]) {
   const results: { [key: string]: boolean } = {};
@@ -200,10 +202,8 @@ const SolidsRootWithData: React.FunctionComponent<{
         right={
           selected ? (
             <SolidDetailScrollContainer>
-              <SolidCard definition={selected.definition} />
-              <SidebarSolidDefinition
-                definition={selected.definition}
-                showingSubsolids={false}
+              <UsedSolidDetails
+                name={selected.definition.name}
                 onClickInvocation={({ pipelineName, handleID }) =>
                   history.push(
                     `/p/${pipelineName}/explore/${handleID
@@ -211,12 +211,6 @@ const SolidsRootWithData: React.FunctionComponent<{
                       .join("/")}`
                   )
                 }
-                getInvocations={() => {
-                  return selected.invocations.map(i => ({
-                    handleID: i.solidHandle.handleID,
-                    pipelineName: i.pipeline.name
-                  }));
-                }}
               />
             </SolidDetailScrollContainer>
           ) : (
@@ -231,9 +225,68 @@ const SolidsRootWithData: React.FunctionComponent<{
   );
 };
 
+const UsedSolidDetails: React.FunctionComponent<{
+  name: string;
+  onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
+}> = ({ name, onClickInvocation }) => {
+  const queryResult = useQuery<UsedSolidDetailsQuery>(
+    USED_SOLID_DETAILS_QUERY,
+    {
+      variables: { name }
+    }
+  );
+
+  return (
+    <Loading queryResult={queryResult}>
+      {({ usedSolid }) => {
+        if (!usedSolid) {
+          return null;
+        }
+
+        return (
+          <>
+            <SolidCard definition={usedSolid.definition} />
+            <SidebarSolidDefinition
+              definition={usedSolid.definition}
+              showingSubsolids={false}
+              onClickInvocation={onClickInvocation}
+              getInvocations={() => {
+                return usedSolid.invocations.map(i => ({
+                  handleID: i.solidHandle.handleID,
+                  pipelineName: i.pipeline.name
+                }));
+              }}
+            />
+          </>
+        );
+      }}
+    </Loading>
+  );
+};
+
 export const SOLIDS_ROOT_QUERY = gql`
   query SolidsRootQuery {
     usedSolids {
+      __typename
+      definition {
+        name
+        ...SolidTypeSignatureFragment
+      }
+      invocations {
+        __typename
+        pipeline {
+          name
+        }
+      }
+    }
+  }
+
+  ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
+`;
+
+export const USED_SOLID_DETAILS_QUERY = gql`
+  query UsedSolidDetailsQuery($name: String!) {
+    usedSolid(name: $name) {
       __typename
       definition {
         ...SolidCardSolidDefinitionFragment

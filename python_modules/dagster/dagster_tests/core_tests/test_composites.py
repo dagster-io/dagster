@@ -252,11 +252,11 @@ def test_types_descent():
 
 
 def test_deep_mapping():
-    @lambda_solid
+    @lambda_solid(output_def=OutputDefinition(String))
     def echo(blah):
         return blah
 
-    @lambda_solid
+    @lambda_solid(output_def=OutputDefinition(String))
     def emit_foo():
         return 'foo'
 
@@ -281,11 +281,11 @@ def test_deep_mapping():
 
 
 def test_mapping_parrallel_composite():
-    @lambda_solid
+    @lambda_solid(output_def=OutputDefinition(int))
     def one():
         return 1
 
-    @lambda_solid
+    @lambda_solid(output_def=OutputDefinition(int))
     def two():
         return 2
 
@@ -293,7 +293,8 @@ def test_mapping_parrallel_composite():
         input_defs=[
             InputDefinition(dagster_type=int, name='a'),
             InputDefinition(dagster_type=int, name='b'),
-        ]
+        ],
+        output_def=OutputDefinition(int),
     )
     def adder(a, b):
         return a + b
@@ -359,3 +360,74 @@ def test_composite_config_driven_materialization():
         )
 
         assert os.path.exists(write_location)
+
+
+def test_mapping_errors():
+    @lambda_solid
+    def echo(foo):
+        return foo
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="references solid 'inner' which it does not contain"
+    ):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            input_mappings=[InputDefinition('mismatch').mapping_to('inner', 'foo')],
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="no input named 'bar'"):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            input_mappings=[InputDefinition('mismatch').mapping_to('echo', 'bar')],
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="InputMapping source and destination must have the same type",
+    ):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            input_mappings=[InputDefinition('mismatch', str).mapping_to('echo', 'foo')],
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="mappings with same definition name but different definitions",
+    ):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            input_mappings=[
+                InputDefinition('mismatch').mapping_to('echo', 'foo'),
+                InputDefinition('mismatch').mapping_to('echo_2', 'foo'),
+            ],
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="references solid 'inner' which it does not contain"
+    ):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            output_mappings=[OutputDefinition().mapping_from('inner', 'result')],
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="no output named 'return'"):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            output_mappings=[OutputDefinition().mapping_from('echo', 'return')],
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="OutputMapping source and destination must have the same type",
+    ):
+        CompositeSolidDefinition(
+            name='bad',
+            solid_defs=[echo],
+            output_mappings=[OutputDefinition(str).mapping_from('echo', 'result')],
+        )

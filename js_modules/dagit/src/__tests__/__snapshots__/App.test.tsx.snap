@@ -8512,13 +8512,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8529,13 +8529,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8578,13 +8578,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8610,13 +8610,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -8627,13 +8627,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9098,13 +9098,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9115,13 +9115,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Float"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Float
                   </code>
                 </a>
                 
@@ -9147,13 +9147,13 @@ Array [
                 num
                 : 
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Int"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Int
                   </code>
                 </a>
                 
@@ -9164,13 +9164,13 @@ Array [
                 :
                  
                 <a
-                  href="/?typeExplorer=Any"
+                  href="/?typeExplorer=Float"
                   onClick={[Function]}
                 >
                   <code
                     className="TypeWithTooltip__TypeName-t0c6it-0 dIeGvs"
                   >
-                    Any
+                    Float
                   </code>
                 </a>
                 
@@ -12543,7 +12543,7 @@ more detail.
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      file_cache
+                      spark
                     </h4>
                   </div>
                   <div
@@ -12601,7 +12601,7 @@ more detail.
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      spark
+                      file_cache
                     </h4>
                   </div>
                 </div>
@@ -12856,84 +12856,26 @@ more detail.
                       <div
                         style={
                           Object {
-                            "fontWeight": 600,
+                            "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
                           }
                         }
                       >
                         
-                        april_on_time_s3_to_df
+                        process_q2_ticket_data
                       </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
                       <div
                         style={
                           Object {
                             "fontWeight": 600,
-                            "paddingLeft": 0,
+                            "paddingLeft": 6,
                             "paddingRight": 15,
                           }
                         }
                       >
-                        
-                        june_on_time_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        master_cord_s3_to_df
+                        ↳
+                        s3_to_df
                       </div>
                     </div>
                   </div>
@@ -12969,53 +12911,6 @@ more detail.
                       >
                         
                         may_on_time_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 300,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        process_q2_coupon_data
-                      </div>
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 6,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        ↳
-                        s3_to_df
                       </div>
                     </div>
                   </div>
@@ -13090,6 +12985,41 @@ more detail.
                       <div
                         style={
                           Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        master_cord_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
                             "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
@@ -13097,7 +13027,7 @@ more detail.
                         }
                       >
                         
-                        process_q2_ticket_data
+                        process_q2_coupon_data
                       </div>
                       <div
                         style={
@@ -13110,6 +13040,76 @@ more detail.
                       >
                         ↳
                         s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        april_on_time_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        june_on_time_s3_to_df
                       </div>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import LRU from "lru-cache";
 export const DEFAULT_RESULT_NAME = "result";
 
 export function unixTimestampToString(unix: number | null) {
@@ -87,6 +88,40 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
       event.clipboardData.setData("Text", text);
     }
   });
+}
+
+export function memoize<T extends object, R>(
+  fn: (arg: T, ...rest: any[]) => R,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+  hashSize?: number
+): (arg: T, ...rest: any[]) => R {
+  const cache = new LRU(hashSize || 50);
+  return (arg: T, ...rest: any[]) => {
+    const key = hashFn ? hashFn(arg, ...rest) : arg;
+    if (cache.has(key)) {
+      return cache.get(key) as R;
+    }
+    const r = fn(arg, ...rest);
+    cache.set(key, r);
+    return r;
+  };
+}
+
+export function asyncMemoize<T extends object, R>(
+  fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+  hashSize?: number
+): (arg: T, ...rest: any[]) => Promise<R> {
+  const cache = new LRU(hashSize || 50);
+  return async (arg: T, ...rest: any[]) => {
+    const key = hashFn ? hashFn(arg, ...rest) : arg;
+    if (cache.has(key)) {
+      return Promise.resolve(cache.get(key) as R);
+    }
+    const r = (await fn(arg, ...rest)) as R;
+    cache.set(key, r);
+    return r;
+  };
 }
 
 // Simple memoization function for methods that take a single object argument.

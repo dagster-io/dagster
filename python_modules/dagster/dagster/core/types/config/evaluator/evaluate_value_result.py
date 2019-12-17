@@ -15,10 +15,6 @@ class EvaluateValueResult(namedtuple('_EvaluateValueResult', 'success value erro
         )
 
     @staticmethod
-    def empty():
-        return EvaluateValueResult(None, None, None)
-
-    @staticmethod
     def for_error(error):
         return EvaluateValueResult(False, None, [error])
 

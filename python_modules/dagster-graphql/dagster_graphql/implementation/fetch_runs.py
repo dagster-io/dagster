@@ -4,17 +4,13 @@ from dagster import RunConfig, check
 from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.types.config.evaluator import evaluate_config
+from dagster.core.types.config.evaluator.validate import validate_config
 
 from .fetch_pipelines import (
     get_dauphin_pipeline_from_selector_or_raise,
     get_dauphin_pipeline_reference_from_selector,
 )
 from .utils import UserFacingGraphQLError, capture_dauphin_error
-
-
-def validate_config(graphene_info, dauphin_pipeline, env_config, mode):
-    get_validated_config(graphene_info, dauphin_pipeline, env_config, mode)
 
 
 def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode):
@@ -24,9 +20,7 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
 
     environment_schema = create_environment_schema(pipeline, mode)
 
-    validated_config = evaluate_config(
-        environment_schema.environment_type, environment_dict, pipeline
-    )
+    validated_config = validate_config(environment_schema.environment_type, environment_dict)
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

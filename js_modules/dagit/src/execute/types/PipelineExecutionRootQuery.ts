@@ -54,12 +54,12 @@ export interface PipelineExecutionRootQuery_environmentSchemaOrError_PipelineNot
 }
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_rootEnvironmentType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "CompositeConfigType" | "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
 }
 
-export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_RegularConfigType {
-  __typename: "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ListConfigType {
+  __typename: "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -101,7 +101,7 @@ export interface PipelineExecutionRootQuery_environmentSchemaOrError_Environment
   fields: PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes = PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_RegularConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType;
+export type PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes = PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ListConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType;
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema {
   __typename: "EnvironmentSchema";

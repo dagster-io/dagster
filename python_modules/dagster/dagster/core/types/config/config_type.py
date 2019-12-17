@@ -127,7 +127,7 @@ class ConfigType(object):
         return self.kind == ConfigTypeKind.ANY
 
     @property
-    def inner_types(self):
+    def recursive_config_types(self):
         return []
 
     @property
@@ -225,8 +225,8 @@ class Nullable(ConfigType):
         )
 
     @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+    def recursive_config_types(self):
+        return [self.inner_type] + self.inner_type.recursive_config_types
 
 
 class List(ConfigType):
@@ -249,8 +249,8 @@ class List(ConfigType):
         )
 
     @property
-    def inner_types(self):
-        return [self.inner_type] + self.inner_type.inner_types
+    def recursive_config_types(self):
+        return [self.inner_type] + self.inner_type.recursive_config_types
 
 
 class EnumValue(object):
@@ -323,7 +323,12 @@ class Enum(ConfigType):
             if ev.config_value == config_value:
                 return ev.python_value
 
-        check.failed('should never reach this. config_value should be pre-validated')
+        check.failed(
+            (
+                'Should never reach this. config_value should be pre-validated. '
+                'Got {config_value}'
+            ).format(config_value=config_value)
+        )
 
 
 ConfigAnyInstance = Any()

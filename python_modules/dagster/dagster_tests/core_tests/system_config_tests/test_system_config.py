@@ -25,12 +25,8 @@ from dagster.core.definitions.environment_configs import (
     define_solid_config_cls,
     define_solid_dictionary_cls,
 )
-from dagster.core.system_config.objects import (
-    EnvironmentConfig,
-    SolidConfig,
-    construct_solid_dictionary,
-)
-from dagster.core.test_utils import throwing_evaluate_config_value
+from dagster.core.system_config.objects import EnvironmentConfig, SolidConfig
+from dagster.core.test_utils import throwing_validate_config_value
 from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
 from dagster.core.types.config.field_utils import NamedDict
 from dagster.loggers import default_loggers
@@ -119,7 +115,7 @@ def test_provided_default_on_resources_config():
 
     assert some_resource_field.default_value == {'config': {'with_default_int': 23434}}
 
-    value = EnvironmentConfig.from_config_value(throwing_evaluate_config_value(env_type, {}), {})
+    value = EnvironmentConfig.build(pipeline_def, {})
     assert value.resources == {'some_resource': {'config': {'with_default_int': 23434}}}
 
 
@@ -132,14 +128,12 @@ def test_default_environment():
     def pipeline_def():
         some_solid()
 
-    EnvironmentConfig.from_config_value(
-        throwing_evaluate_config_value(create_environment_type(pipeline_def), {}), {}
-    )
+    assert EnvironmentConfig.build(pipeline_def, {})
 
 
 def test_solid_config():
     solid_config_type = define_solid_config_cls(Field(Int), None, None)
-    solid_inst = throwing_evaluate_config_value(solid_config_type, {'config': 1})
+    solid_inst = throwing_validate_config_value(solid_config_type, {'config': 1})
     assert solid_inst['config'] == 1
     assert solid_config_type.type_attributes.is_system_config
 
@@ -148,15 +142,15 @@ def test_solid_dictionary_type():
     pipeline_def = define_test_solids_config_pipeline()
 
     solid_dict_type = define_solid_dictionary_cls(
-        'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
+        pipeline_def.solids, pipeline_def.dependency_structure
     )
 
-    value = construct_solid_dictionary(
-        throwing_evaluate_config_value(
-            solid_dict_type,
-            {'int_config_solid': {'config': 1}, 'string_config_solid': {'config': 'bar'}},
-        )
+    env_obj = EnvironmentConfig.build(
+        pipeline_def,
+        {'solids': {'int_config_solid': {'config': 1}, 'string_config_solid': {'config': 'bar'}},},
     )
+
+    value = env_obj.solids
 
     assert set(['int_config_solid', 'string_config_solid']) == set(value.keys())
     assert value == {'int_config_solid': SolidConfig(1), 'string_config_solid': SolidConfig('bar')}
@@ -212,6 +206,7 @@ def test_solid_configs_defaults():
 
     assert int_solid_field.is_optional
     # TODO: this is the test case the exposes the default dodginess
+    # https://github.com/dagster-io/dagster/issues/1990
     assert int_solid_field.default_provided
 
     assert_has_fields(int_solid_field.config_type, 'config')
@@ -236,16 +231,10 @@ def test_solid_dictionary_some_no_config():
         int_config_solid()
         no_config_solid()
 
-    solid_dict_type = define_solid_dictionary_cls(
-        'foobar', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
-    )
+    env = EnvironmentConfig.build(pipeline_def, {'solids': {'int_config_solid': {'config': 1}}})
 
-    value = construct_solid_dictionary(
-        throwing_evaluate_config_value(solid_dict_type, {'int_config_solid': {'config': 1}})
-    )
-
-    assert set(['int_config_solid']) == set(value.keys())
-    assert value == {'int_config_solid': SolidConfig(1)}
+    assert {'int_config_solid', 'no_config_solid'} == set(env.solids.keys())
+    assert env.solids == {'int_config_solid': SolidConfig(1), 'no_config_solid': SolidConfig()}
 
 
 def test_whole_environment():
@@ -275,16 +264,8 @@ def test_whole_environment():
         ],
     )
 
-    environment_type = create_environment_type(pipeline_def)
-
-    env = EnvironmentConfig.from_config_value(
-        throwing_evaluate_config_value(
-            environment_type,
-            {
-                'resources': {'test_resource': {'config': 1}},
-                'solids': {'int_config_solid': {'config': 123}},
-            },
-        ),
+    env = EnvironmentConfig.build(
+        pipeline_def,
         {
             'resources': {'test_resource': {'config': 1}},
             'solids': {'int_config_solid': {'config': 123}},
@@ -292,23 +273,23 @@ def test_whole_environment():
     )
 
     assert isinstance(env, EnvironmentConfig)
-    assert env.solids == {'int_config_solid': SolidConfig(123)}
+    assert env.solids == {'int_config_solid': SolidConfig(123), 'no_config_solid': SolidConfig()}
     assert env.resources == {'test_resource': {'config': 1}}
 
 
 def test_solid_config_error():
     pipeline_def = define_test_solids_config_pipeline()
     solid_dict_type = define_solid_dictionary_cls(
-        'slkdfjkjdsf', pipeline_def.solids, pipeline_def.dependency_structure, pipeline_def.name
+        pipeline_def.solids, pipeline_def.dependency_structure,
     )
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type
 
     with pytest.raises(DagsterEvaluateConfigValueError, match='Field "notconfig" is not defined'):
-        throwing_evaluate_config_value(int_solid_config_type, {'notconfig': 1})
+        throwing_validate_config_value(int_solid_config_type, {'notconfig': 1})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_evaluate_config_value(int_solid_config_type, 1)
+        throwing_validate_config_value(int_solid_config_type, 1)
 
 
 def test_optional_solid_with_no_config():
@@ -362,11 +343,7 @@ def test_optional_solid_with_optional_scalar_config():
 
     assert solids_type.fields['int_config_solid'].is_optional is True
 
-    solids_default_obj = construct_solid_dictionary(throwing_evaluate_config_value(solids_type, {}))
-
-    assert solids_default_obj['int_config_solid'].config is None
-
-    env_obj = EnvironmentConfig.from_config_value(throwing_evaluate_config_value(env_type, {}), {})
+    env_obj = EnvironmentConfig.build(pipeline_def, {})
 
     assert env_obj.solids['int_config_solid'].config is None
 
@@ -433,20 +410,17 @@ def test_required_solid_with_required_subfield():
 
     assert env_type.fields['execution'].is_optional
 
-    env_obj = EnvironmentConfig.from_config_value(
-        throwing_evaluate_config_value(
-            env_type, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}}
-        ),
-        {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
+    env_obj = EnvironmentConfig.build(
+        pipeline_def, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
     )
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_evaluate_config_value(env_type, {'solids': {}})
+        throwing_validate_config_value(env_type, {'solids': {}})
 
     with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_evaluate_config_value(env_type, {})
+        throwing_validate_config_value(env_type, {})
 
 
 def test_optional_solid_with_optional_subfield():
@@ -581,11 +555,8 @@ def test_optional_and_required_context():
         env_type, 'resources', 'required_resource', 'config', 'required_field'
     ).is_required
 
-    env_obj = EnvironmentConfig.from_config_value(
-        throwing_evaluate_config_value(
-            env_type, {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}}
-        ),
-        {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}},
+    env_obj = EnvironmentConfig.build(
+        pipeline_def, {'resources': {'required_resource': {'config': {'required_field': 'foo'}}}},
     )
 
     assert env_obj.resources == {
@@ -659,7 +630,7 @@ def test_files_default_config():
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
-    config_value = throwing_evaluate_config_value(env_type, {})
+    config_value = throwing_validate_config_value(env_type, {})
 
     assert 'storage' not in config_value
 
@@ -670,7 +641,7 @@ def test_storage_in_memory_config():
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
-    config_value = throwing_evaluate_config_value(env_type, {'storage': {'in_memory': {}}})
+    config_value = throwing_validate_config_value(env_type, {'storage': {'in_memory': {}}})
 
     assert config_value['storage'] == {'in_memory': {}}
 

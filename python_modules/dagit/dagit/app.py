@@ -58,6 +58,11 @@ def static_view(path, file):
     )
 
 
+def worker_view(worker_name):
+    filename = '{}.worker.js'.format(worker_name)
+    return send_from_directory(os.path.join(os.path.dirname(__file__), './webapp/build/'), filename)
+
+
 def vendor_view(path, file):
     return send_from_directory(
         os.path.join(os.path.dirname(__file__), './webapp/build/vendor/', path), file
@@ -200,6 +205,7 @@ def create_app(handle, instance, reloader=None):
 
     app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
     app.add_url_rule('/vendor/<path:path>/<string:file>', 'vendor_view', vendor_view)
+    app.add_url_rule('/<string:worker_name>.worker.js', 'worker_view', worker_view)
     app.add_url_rule('/dagit_info', 'sanity_view', info_view)
     app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
     app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})

@@ -53,6 +53,7 @@ from dagster.core.definitions import (
 from dagster.core.engine import Engine
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
+    DagsterConfigMappingFunctionError,
     DagsterError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,

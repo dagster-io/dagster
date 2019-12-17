@@ -102,7 +102,7 @@ export interface PipelineGraphParentSolidFragment_definition_SolidDefinition_out
 }
 
 export interface PipelineGraphParentSolidFragment_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "CompositeConfigType" | "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   name: string | null;
   description: string | null;
 }
