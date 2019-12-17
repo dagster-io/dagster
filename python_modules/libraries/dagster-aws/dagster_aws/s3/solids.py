@@ -34,7 +34,7 @@ def dict_with_fields(name, fields):
                 python_type=dict, name=name, input_hydration_config=_input_schema
             )
 
-    return _DictWithSchema
+    return _DictWithSchema()
 
 
 S3Coordinate = dict_with_fields(

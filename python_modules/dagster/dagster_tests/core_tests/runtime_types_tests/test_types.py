@@ -25,13 +25,16 @@ class BarObj(object):
     pass
 
 
-class Bar(PythonObjectType):
+class _Bar(PythonObjectType):
     def __init__(self):
-        super(Bar, self).__init__(BarObj, description='A bar.')
+        super(_Bar, self).__init__(BarObj, name='Bar', description='A bar.')
+
+
+Bar = _Bar()
 
 
 def test_python_object_type():
-    type_bar = Bar.inst()
+    type_bar = Bar
 
     assert type_bar.name == 'Bar'
     assert type_bar.description == 'A bar.'
@@ -52,7 +55,7 @@ def test_python_object_type_with_custom_type_check():
         def __init__(self):
             super(Int3, self).__init__(int, type_check=eq_3)
 
-    type_int_3 = Int3.inst()
+    type_int_3 = Int3()
     assert type_int_3.name == 'Int3'
     assert_success(type_int_3, 3)
     assert_failure(type_int_3, 5)
@@ -246,22 +249,20 @@ def test_output_types_fail_in_pipeline():
 # TODO add more step output use cases
 
 
-class ThrowsExceptionType(RuntimeType):
-    def __init__(self):
-        super(ThrowsExceptionType, self).__init__(
-            key='ThrowsExceptionType', name='ThrowsExceptionType'
-        )
-
-    def type_check(self, value):
-        raise Exception('kdjfkjd')
+def _always_fails(_value):
+    raise Exception('kdjfkjd')
 
 
-class BadType(RuntimeType):
-    def __init__(self):
-        super(BadType, self).__init__(key='BadType', name='BadType')
+ThrowsExceptionType = RuntimeType(
+    key='ThrowsExceptionType', name='ThrowsExceptionType', type_check_fn=_always_fails,
+)
 
-    def type_check(self, _value):
-        return 'kdjfkjd'
+
+def _return_bad_value(_value):
+    return 'kdjfkjd'
+
+
+BadType = RuntimeType(key='BadType', name='BadType', type_check_fn=_return_bad_value)
 
 
 def test_input_type_returns_wrong_thing():
@@ -412,36 +413,31 @@ def test_output_type_throw_arbitrary_exception():
 
 
 def define_custom_dict(name, permitted_key_names):
-    class _CustomDict(RuntimeType):
-        def __init__(self):
-            super(_CustomDict, self).__init__(name=name, key=name)
-
-        def type_check(self, value):
-            if not isinstance(value, dict):
+    def type_check_method(value):
+        if not isinstance(value, dict):
+            return TypeCheck(
+                False,
+                description='Value {value} should be of type {type_name}.'.format(
+                    value=value, type_name=name
+                ),
+            )
+        for key in value:
+            if not key in permitted_key_names:
                 return TypeCheck(
                     False,
-                    description='Value {value} should be of type {type_name}.'.format(
-                        value=value, type_name=self.name
-                    ),
+                    description=(
+                        'Key {name} is not a permitted value, values can only be of: ' '{name_list}'
+                    ).format(name=value.name, name_list=permitted_key_names),
                 )
-            for key in value:
-                if not key in permitted_key_names:
-                    return TypeCheck(
-                        False,
-                        description=(
-                            'Key {name} is not a permitted value, values can only be of: '
-                            '{name_list}'
-                        ).format(name=value.name, name_list=permitted_key_names),
-                    )
-            return TypeCheck(
-                True,
-                metadata_entries=[
-                    EventMetadataEntry.text(label='row_count', text=str(len(value))),
-                    EventMetadataEntry.text(label='series_names', text=', '.join(value.keys())),
-                ],
-            )
+        return TypeCheck(
+            True,
+            metadata_entries=[
+                EventMetadataEntry.text(label='row_count', text=str(len(value))),
+                EventMetadataEntry.text(label='series_names', text=', '.join(value.keys())),
+            ],
+        )
 
-    return _CustomDict
+    return RuntimeType(key=name, name=name, type_check_fn=type_check_method)
 
 
 def test_fan_in_custom_types_with_storage():

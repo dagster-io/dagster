@@ -30,6 +30,44 @@ class TypedSetInputHydrationConfig(InputHydrationConfig):
         return runtime_value
 
 
+class _TypedPythonSet(RuntimeType):
+    def __init__(self, item_runtime_type):
+        self.item_type = item_runtime_type
+        super(_TypedPythonSet, self).__init__(
+            key='TypedPythonSet.{}'.format(item_runtime_type.key),
+            name=None,
+            is_builtin=True,
+            input_hydration_config=(
+                TypedSetInputHydrationConfig(item_runtime_type)
+                if item_runtime_type.input_hydration_config
+                else None
+            ),
+            type_check_fn=self.type_check_method,
+        )
+
+    def type_check_method(self, value):
+        from dagster.core.definitions.events import TypeCheck
+
+        if not isinstance(value, set):
+            return TypeCheck(
+                success=False,
+                description='Value should be a set, got a{value_type}'.format(
+                    value_type=type(value)
+                ),
+            )
+
+        for item in value:
+            item_check = self.item_type.type_check(item)
+            if not item_check.success:
+                return item_check
+
+        return TypeCheck(success=True)
+
+    @property
+    def display_name(self):
+        return 'Set[{}]'.format(self.item_type.display_name)
+
+
 def create_typed_runtime_set(item_dagster_type):
     item_runtime_type = resolve_to_runtime_type(item_dagster_type)
 
@@ -38,40 +76,4 @@ def create_typed_runtime_set(item_dagster_type):
         'Cannot create the runtime type Set[Nothing]. Use List type for fan-in.',
     )
 
-    class _TypedPythonSet(RuntimeType):
-        def __init__(self):
-            self.item_type = item_runtime_type
-            super(_TypedPythonSet, self).__init__(
-                key='TypedPythonSet.{}'.format(item_runtime_type.key),
-                name=None,
-                is_builtin=True,
-                input_hydration_config=(
-                    TypedSetInputHydrationConfig(item_runtime_type)
-                    if item_runtime_type.input_hydration_config
-                    else None
-                ),
-            )
-
-        def type_check(self, value):
-            from dagster.core.definitions.events import TypeCheck
-
-            if not isinstance(value, set):
-                return TypeCheck(
-                    success=False,
-                    description='Value should be a set, got a{value_type}'.format(
-                        value_type=type(value)
-                    ),
-                )
-
-            for item in value:
-                item_check = item_runtime_type.type_check(item)
-                if not item_check.success:
-                    return item_check
-
-            return TypeCheck(success=True)
-
-        @property
-        def display_name(self):
-            return 'Set[{}]'.format(self.item_type.display_name)
-
-    return _TypedPythonSet
+    return _TypedPythonSet(item_runtime_type)

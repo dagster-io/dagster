@@ -13,7 +13,7 @@ def _decorate_as_dagster_type(
     auto_plugins=None,
     type_check=None,
 ):
-    dagster_type_cls = define_python_dagster_type(
+    runtime_type = define_python_dagster_type(
         name=name,
         description=description,
         python_type=bare_cls,
@@ -24,7 +24,7 @@ def _decorate_as_dagster_type(
         type_check=type_check,
     )
 
-    register_python_type(bare_cls, dagster_type_cls)
+    register_python_type(bare_cls, runtime_type)
 
     return bare_cls
 

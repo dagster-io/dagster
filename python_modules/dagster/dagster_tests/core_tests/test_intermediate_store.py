@@ -9,9 +9,8 @@ from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.runtime.marshal import SerializationStrategy
 from dagster.core.types.runtime.runtime_type import Bool as RuntimeBool
-from dagster.core.types.runtime.runtime_type import RuntimeType
 from dagster.core.types.runtime.runtime_type import String as RuntimeString
-from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
+from dagster.core.types.runtime.runtime_type import create_any_type, resolve_to_runtime_type
 from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 
@@ -24,13 +23,9 @@ class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=
         return read_file_obj.read().decode('utf-8').lower()
 
 
-class LowercaseString(RuntimeType):
-    def __init__(self):
-        super(LowercaseString, self).__init__(
-            'lowercase_string',
-            'LowercaseString',
-            serialization_strategy=UppercaseSerializationStrategy('uppercase'),
-        )
+LowercaseString = create_any_type(
+    'LowercaseString', serialization_strategy=UppercaseSerializationStrategy('uppercase')
+)
 
 
 class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
@@ -57,9 +52,9 @@ def test_file_system_intermediate_store():
     )
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
-        intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+        intermediate_store.set_object(True, context, RuntimeBool, ['true'])
         assert intermediate_store.has_object(context, ['true'])
-        assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+        assert intermediate_store.get_object(context, RuntimeBool, ['true']).obj is True
         assert intermediate_store.uri_for_paths(['true']).startswith('file:///')
         assert intermediate_store.rm_object(context, ['true']) is None
         assert intermediate_store.rm_object(context, ['true']) is None
@@ -76,11 +71,11 @@ def test_file_system_intermediate_store_composite_types():
 
     with yield_empty_pipeline_context(instance=instance, run_id=run_id) as context:
         intermediate_store.set_object(
-            [True, False], context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
+            [True, False], context, resolve_to_runtime_type(List[Bool]), ['bool']
         )
         assert intermediate_store.has_object(context, ['bool'])
         assert intermediate_store.get_object(
-            context, resolve_to_runtime_type(List[Bool]).inst(), ['bool']
+            context, resolve_to_runtime_type(List[Bool]), ['bool']
         ).obj == [True, False]
 
 
@@ -93,13 +88,13 @@ def test_file_system_intermediate_store_with_custom_serializer():
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
-        intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
+        intermediate_store.set_object('foo', context, LowercaseString, ['foo'])
 
         with open(os.path.join(intermediate_store.root, 'foo'), 'rb') as fd:
             assert fd.read().decode('utf-8') == 'FOO'
 
         assert intermediate_store.has_object(context, ['foo'])
-        assert intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
+        assert intermediate_store.get_object(context, LowercaseString, ['foo']).obj == 'foo'
 
 
 def test_file_system_intermediate_store_composite_types_with_custom_serializer_for_inner_type():
@@ -112,11 +107,11 @@ def test_file_system_intermediate_store_composite_types_with_custom_serializer_f
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
         intermediate_store.set_object(
-            ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]).inst(), ['list']
+            ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]), ['list']
         )
         assert intermediate_store.has_object(context, ['list'])
         assert intermediate_store.get_object(
-            context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
+            context, resolve_to_runtime_type(List[Bool]), ['list']
         ).obj == ['foo', 'bar']
 
 
@@ -128,18 +123,16 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
         instance.intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
+            {RuntimeString: FancyStringFilesystemTypeStoragePlugin}
         ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
+            intermediate_store.set_value('hello', context, RuntimeString, ['obj_name'])
 
             assert intermediate_store.has_object(context, ['obj_name'])
-            assert (
-                intermediate_store.get_value(context, RuntimeString.inst(), ['obj_name']) == 'hello'
-            )
+            assert intermediate_store.get_value(context, RuntimeString, ['obj_name']) == 'hello'
 
         finally:
             intermediate_store.rm_object(context, ['obj_name'])
@@ -152,7 +145,7 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
         DagsterInstance.ephemeral().intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringFilesystemTypeStoragePlugin}
+            {RuntimeString: FancyStringFilesystemTypeStoragePlugin}
         ),
     )
 

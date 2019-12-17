@@ -72,8 +72,6 @@ def create_lakehouse_table_def(
         python_type=ITableHandle, name=name, description=description
     )
 
-    table_type_inst = table_type.inst()
-
     table_input_dict = {input_table.name: input_table for input_table in input_tables}
     input_defs = input_tables + other_input_defs
     validate_solid_fn('@solid', name, lakehouse_fn, input_defs, ['context'])
@@ -123,7 +121,7 @@ def create_lakehouse_table_def(
         computed_output = lakehouse_fn(context, **hydrated_tables, **other_inputs)
 
         materialization, output_table_handle = context.resources.lakehouse.materialize(
-            context, table_type_inst, metadata, computed_output
+            context, table_type, metadata, computed_output
         )
 
         if materialization:
@@ -166,7 +164,7 @@ class LakehouseTableInputDefinition(InputDefinition):
 
         super(LakehouseTableInputDefinition, self).__init__(
             name,
-            dagster_type=type(lakehouse_table_def.table_type),
+            dagster_type=lakehouse_table_def.table_type,
             description=lakehouse_table_def.description,
         )
 

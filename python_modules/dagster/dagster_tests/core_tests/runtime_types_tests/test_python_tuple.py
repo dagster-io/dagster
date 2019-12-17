@@ -81,7 +81,7 @@ def test_open_typing_tuple_input_fail():
 
 
 def test_typed_python_tuple_directly():
-    int_str_tuple = create_typed_tuple(int, str).inst()
+    int_str_tuple = create_typed_tuple(int, str)
 
     int_str_tuple.type_check((1, 'foo'))
 
@@ -101,7 +101,7 @@ def test_typed_python_tuple_directly():
 def test_nested_python_tuple_directly():
     int_str_tuple_kls = create_typed_tuple(int, str)
 
-    nested_tuple = create_typed_tuple(bool, list, int_str_tuple_kls).inst()
+    nested_tuple = create_typed_tuple(bool, list, int_str_tuple_kls)
 
     nested_tuple.type_check((True, [1], (1, 'foo')))
 
