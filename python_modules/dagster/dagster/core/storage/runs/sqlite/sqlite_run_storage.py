@@ -8,7 +8,7 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.types import String
 from dagster.core.types.config import Field
-from dagster.seven import urlparse
+from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
 from ...sql import create_engine, get_alembic_config, stamp_alembic_rev
@@ -61,14 +61,15 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             conn.close()
 
     def upgrade(self):
-        path_to_old_db = os.path.join(
-            os.path.split(urlparse(self._conn_string).path)[0], '..', 'runs.db'
-        )
+        old_conn_string = 'sqlite://' + urljoin(urlparse(self._conn_string).path, '../runs.db')
+        path_to_old_db = urlparse(old_conn_string).path
+        # sqlite URLs look like `sqlite:///foo/bar/baz on Unix/Mac` but on Windows they look like
+        # `sqlite:///D:/foo/bar/baz` (or `sqlite:///D:\foo\bar\baz`)
+        if os.name == 'nt':
+            path_to_old_db = path_to_old_db.lstrip('/')
         if os.path.exists(path_to_old_db):
-            old_conn_string = 'sqlite:///{}'.format('/'.join(path_to_old_db.split(os.sep)))
             old_storage = SqliteRunStorage(old_conn_string)
             old_runs = old_storage.all_runs()
             for run in old_runs:
                 self.add_run(run)
-
-        os.unlink(path_to_old_db)
+            os.unlink(path_to_old_db)
