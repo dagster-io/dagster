@@ -146,7 +146,7 @@ export const ExecutionTabsContainer = styled.div`
 const TabContainer = styled.div<{ active: boolean }>`
   color: ${({ active }) => (active ? Colors.WHITE : Colors.GRAY3)};
   padding: 6px 9px;
-  height: 36px
+  height: 36px;
   display: inline-flex;
   align-items: center;
   border-left: 1px solid ${Colors.DARK_GRAY2};

@@ -183,9 +183,9 @@ const ButtonLink = styled.button`
   color: #106ba3;
   margin-left: 10px;
   font-size: 14px;
-  background: none!important;
+  background: none !important;
   border: none;
-  padding: 0!important;
+  padding: 0 !important;
   font-family: inherit;
   cursor: pointer;
   &: hover {
