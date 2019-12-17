@@ -157,14 +157,14 @@ Array [
       className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 bcqdVG"
     >
       <div
-        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 dwdGvg"
+        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 invDfl"
         onClick={[Function]}
         onDoubleClick={[Function]}
       >
         Workspace
       </div>
       <div
-        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 bAtLCs"
+        className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 jtfdQI"
         onClick={[Function]}
         onDoubleClick={[Function]}
       >
@@ -3827,7 +3827,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 juBqNI"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 gzdQIW"
             >
               <span
                 className="bp3-icon bp3-icon-diagram-tree"
@@ -3861,7 +3861,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 fIlFds"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 iIZlCI"
             >
               <span
                 className="bp3-icon bp3-icon-manual"
@@ -7456,7 +7456,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 juBqNI"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 gzdQIW"
             >
               <span
                 className="bp3-icon bp3-icon-diagram-tree"
@@ -7490,7 +7490,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 fIlFds"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 iIZlCI"
             >
               <span
                 className="bp3-icon bp3-icon-manual"
@@ -16567,7 +16567,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 fIlFds"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 iIZlCI"
             >
               <span
                 className="bp3-icon bp3-icon-diagram-tree"
@@ -16601,7 +16601,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 juBqNI"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 gzdQIW"
             >
               <span
                 className="bp3-icon bp3-icon-manual"
@@ -20242,7 +20242,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 fIlFds"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 iIZlCI"
             >
               <span
                 className="bp3-icon bp3-icon-diagram-tree"
@@ -20276,7 +20276,7 @@ load_q2_sfo_weather:data_frame
             onClick={[Function]}
           >
             <div
-              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 juBqNI"
+              className="SidebarTabbedContainer__Tab-sc-1ddso41-1 gzdQIW"
             >
               <span
                 className="bp3-icon bp3-icon-manual"

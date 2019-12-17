@@ -261,7 +261,7 @@ const ExecutionPlanRowContainer = styled.div`
 
 const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
   background: ${({ state }) =>
-    state === IStepState.WAITING ? Colors.GRAY3 : Colors.LIGHT_GRAY2}
+    state === IStepState.WAITING ? Colors.GRAY3 : Colors.LIGHT_GRAY2};
   box-shadow: 0 2px 3px rgba(0, 0, 0, 0.3);
   color: ${Colors.DARK_GRAY3};
   padding: 4px;
@@ -277,7 +277,8 @@ const ExecutionPlanBoxContainer = styled.div<{ state: IStepState }>`
   &:hover {
     cursor: default;
     color: ${Colors.BLACK};
-    border: 2px solid ${({ state }) =>
-      state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE};
+    border: 2px solid
+      ${({ state }) =>
+        state === IStepState.WAITING ? Colors.LIGHT_GRAY4 : Colors.WHITE};
   }
 `;

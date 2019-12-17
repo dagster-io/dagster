@@ -23,7 +23,7 @@ exports[`renders given an execution plan 1`] = `
         className="ExecutionPlanBox__ExecutionPlanRowContainer-sc-1bacjj9-5 kaLnAx"
       >
         <div
-          className="ExecutionPlanBox__ExecutionPlanBoxContainer-sc-1bacjj9-6 lhblCw waiting"
+          className="ExecutionPlanBox__ExecutionPlanBoxContainer-sc-1bacjj9-6 bvnZYX waiting"
           onClick={[Function]}
           style={
             Object {
