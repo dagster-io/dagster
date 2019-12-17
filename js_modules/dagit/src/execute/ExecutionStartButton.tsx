@@ -163,9 +163,9 @@ export const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
         "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
       starting:
         "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
-    }[state])}
-  border-top: 1px solid rgba(255,255,255,0.25);
-  border-bottom: 1px solid rgba(0,0,0,0.25);
+    }[state])};
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
   transition: background 200ms linear;
   justify-content: center;
   align-items: center;
@@ -184,7 +184,7 @@ export const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
           "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
         starting:
           "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
-      }[state])}
+      }[state])};
   }
 
   &:active {
