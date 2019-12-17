@@ -43,7 +43,14 @@ export interface ISVGMonospaceTextProps {
   width?: number;
   size: number;
   text: string;
+  allowTwoLines?: boolean;
 }
+
+const LINE_SPACING = 1.25;
+
+const clipToLength = (str: string, len: number) => {
+  return str.length > len ? str.substr(0, len - 1) + "…" : str;
+};
 
 /*
 Wraps <text>, exposes an intrinsic size and automatically truncates with ellipsis
@@ -60,28 +67,58 @@ export class SVGMonospaceText extends React.PureComponent<
   }
 
   render() {
-    const { width, size, text, ...rest } = this.props;
-    const chars = width
+    const { y, width, size, text, allowTwoLines, ...rest } = this.props;
+
+    const lineChars = width
       ? Math.round(width / (size * PX_TO_UNITS))
       : text.length;
+    let line1 = "";
+    let line2 = "";
 
-    let textClipped = text;
-    if (textClipped.length > chars) {
-      textClipped = textClipped.substr(0, chars - 1) + "…";
+    if (allowTwoLines) {
+      const parts = text.split("_");
+      while (parts.length && line1.length + parts[0].length <= lineChars) {
+        line1 += parts.shift() + (parts.length > 0 ? "_" : "");
+      }
+      line2 = clipToLength(parts.join("_"), lineChars);
+    } else {
+      line1 = clipToLength(text, lineChars);
     }
 
+    const line1Y =
+      (Number(y) || 0) -
+      (line2.length > 0 ? (Number(size) * LINE_SPACING) / 2 : 0);
+
+    const style: React.CSSProperties = {
+      font: `${size}px "Source Code Pro", monospace`,
+      pointerEvents: "none"
+    };
+
     return (
-      <text
-        {...rest}
-        style={{
-          font: `${size}px "Source Code Pro", monospace`,
-          pointerEvents: "none"
-        }}
-        width={textClipped.length * size * PX_TO_UNITS}
-        dominantBaseline="hanging"
-      >
-        {textClipped}
-      </text>
+      <>
+        <text
+          {...rest}
+          y={line1Y}
+          style={style}
+          width={line1.length * size * PX_TO_UNITS}
+          height={size}
+          dominantBaseline="hanging"
+        >
+          {line1}
+        </text>
+        {line2 && (
+          <text
+            {...rest}
+            y={line1Y + Number(size) * LINE_SPACING}
+            style={style}
+            width={line2.length * size * PX_TO_UNITS}
+            height={size}
+            dominantBaseline="hanging"
+          >
+            {line2}
+          </text>
+        )}
+      </>
     );
   }
 }
@@ -186,6 +223,7 @@ export class SVGFlowLayoutRect extends React.Component<
   render() {
     const { x, y, spacing, padding, maxWidth, ...rest } = this.props;
     const layout = SVGFlowLayoutRect.computeLayout(this.props);
+    rest.children = [];
 
     // Use the explicit width we're given, fall back to our intrinsic layout width
     const finalWidth = this.props.width
