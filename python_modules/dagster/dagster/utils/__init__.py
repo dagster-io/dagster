@@ -1,4 +1,5 @@
 import contextlib
+import datetime
 import errno
 import inspect
 import multiprocessing
@@ -28,6 +29,7 @@ if sys.version_info > (3,):
 else:
     from pathlib2 import Path  # pylint: disable=import-error
 
+EPOCH = datetime.datetime.utcfromtimestamp(0)
 
 PICKLE_PROTOCOL = 2
 
@@ -326,3 +328,8 @@ def start_termination_thread(termination_event):
     int_thread = threading.Thread(target=_kill_on_event, args=(termination_event,))
     int_thread.daemon = True
     int_thread.start()
+
+
+def datetime_as_float(dt):
+    check.inst_param(dt, 'dt', datetime.datetime)
+    return float((dt - EPOCH).total_seconds())
