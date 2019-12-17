@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 
+import sqlalchemy as db
+
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -11,9 +13,20 @@ from dagster.core.types.config import Field
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
-        self.engine = create_engine(postgres_url)
-        RunStorageSqlMetadata.create_all(self.engine)
+        self.postgres_url = postgres_url
+        with self.get_engine() as engine:
+            RunStorageSqlMetadata.create_all(engine)
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @contextmanager
+    def get_engine(self):
+        engine = create_engine(
+            self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+        )
+        try:
+            yield engine
+        finally:
+            engine.dispose()
 
     @property
     def inst_data(self):
@@ -29,14 +42,21 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @staticmethod
     def create_clean_storage(postgres_url):
-        engine = create_engine(postgres_url)
-        RunStorageSqlMetadata.drop_all(engine)
+        engine = create_engine(
+            postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+        )
+        try:
+            RunStorageSqlMetadata.drop_all(engine)
+        finally:
+            engine.dispose()
         return PostgresRunStorage(postgres_url)
 
     @contextmanager
     def connect(self, _run_id=None):  # pylint: disable=arguments-differ
-        yield self.engine.connect()
+        with self.get_engine() as engine:
+            yield engine
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self.engine)
+        with self.get_engine() as engine:
+            run_alembic_upgrade(alembic_config, engine)

@@ -65,3 +65,6 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractproperty
     def is_persistent(self):
         '''bool: Whether the storage is persistent.'''
+
+    def dispose(self):
+        '''Explicit lifecycle management.'''
