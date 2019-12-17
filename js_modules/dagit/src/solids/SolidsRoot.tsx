@@ -343,9 +343,5 @@ const Wrapper = styled.div`
   flex: 1 1;
   display: flex;
   flex-direction: row;
-  width: 100%;
-  height: 100vh;
-  position: absolute;
-  padding-top: 50px;
   top: 0;
 `;

@@ -46,20 +46,9 @@ export default () => {
 
   return (
     <Label>
-      {data.instance && data.instance.info ? (
-        <Tooltip
-          hoverOpenDelay={500}
-          content={
-            <div style={{ whiteSpace: "pre-wrap" }}>{data.instance.info}</div>
-          }
-        >
-          {data.version}
-        </Tooltip>
-      ) : (
-        data.version
-      )}
       {data.reloadSupported && (
         <Tooltip
+          className="bp3-dark"
           hoverOpenDelay={500}
           content={
             <div style={{ maxWidth: 300 }}>
@@ -73,8 +62,7 @@ export default () => {
         >
           <Button
             small={true}
-            text="Reload"
-            style={{ marginLeft: 8 }}
+            text={navigator.platform.includes("Mac") ? "⌘R" : "^R"}
             icon={<Icon icon="refresh" iconSize={12} />}
             disabled={reloadStatus !== "none"}
             onClick={() => {
@@ -83,6 +71,19 @@ export default () => {
             }}
           />
         </Tooltip>
+      )}
+      <div style={{ height: 14 }} />
+      {data.instance && data.instance.info ? (
+        <Tooltip
+          hoverOpenDelay={500}
+          content={
+            <div style={{ whiteSpace: "pre-wrap" }}>{data.instance.info}</div>
+          }
+        >
+          {data.version}
+        </Tooltip>
+      ) : (
+        data.version
       )}
     </Label>
   );
@@ -105,8 +106,9 @@ const RELOAD_DAGIT_MUTATION = gql`
 `;
 
 const Label = styled.span`
-  color: ${Colors.DARK_GRAY5};
+  color: ${Colors.LIGHT_GRAY1};
   font-size: 0.8rem;
   display: flex;
   align-items: center;
+  flex-direction: column;
 `;

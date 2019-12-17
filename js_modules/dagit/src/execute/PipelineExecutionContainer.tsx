@@ -276,7 +276,7 @@ export default class PipelineExecutionContainer extends React.Component<
     const modeError = this.getModeError();
 
     return (
-      <>
+      <PipelineExecutionWrapper>
         <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
           mutation={START_PIPELINE_EXECUTION_MUTATION}
         >
@@ -304,7 +304,7 @@ export default class PipelineExecutionContainer extends React.Component<
           )}
         </Mutation>
         {currentSession ? (
-          <PipelineExecutionWrapper>
+          <SplitPanelFlexbox>
             <SplitPanelChildren
               identifier={"execution"}
               leftInitialPercent={75}
@@ -417,11 +417,11 @@ export default class PipelineExecutionContainer extends React.Component<
                 )
               }
             />
-          </PipelineExecutionWrapper>
+          </SplitPanelFlexbox>
         ) : (
           <span />
         )}
-      </>
+      </PipelineExecutionWrapper>
     );
   }
 }
@@ -484,11 +484,15 @@ const PREVIEW_CONFIG_QUERY = gql`
 const PipelineExecutionWrapper = styled.div`
   flex: 1 1;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
-  height: 100vh;
-  position: absolute;
-  padding-top: 100px;
+  height: 100%;
+`;
+
+const SplitPanelFlexbox = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex: 1 1;
 `;
 
 const SessionSettingsBar = styled.div`
@@ -499,7 +503,6 @@ const SessionSettingsBar = styled.div`
   align-items: center;
   height: 47px;
   padding: 8px;
-}
 `;
 
 const ConfigEditorPresetInsertionContainer = styled.div`

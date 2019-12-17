@@ -264,10 +264,6 @@ const PipelinesContainer = styled.div`
   flex: 1 1;
   display: flex;
   width: 100%;
-  height: 100vh;
-  top: 0;
-  position: absolute;
-  padding-top: 50px;
 `;
 
 const RightInfoPanel = styled.div`

@@ -4,10 +4,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: TopNavPipelinesFragment
+// GraphQL fragment: LeftNavPipelinesFragment
 // ====================================================
 
-export interface TopNavPipelinesFragment {
+export interface LeftNavPipelinesFragment {
   __typename: "Pipeline";
   name: string;
 }

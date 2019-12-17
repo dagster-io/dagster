@@ -14,7 +14,7 @@ import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
 import { ScheduleRoot } from "./schedules/ScheduleRoot";
-import { TopNav } from "./TopNav";
+import { LeftNav } from "./LeftNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 
@@ -83,17 +83,19 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <BrowserRouter>
-      <TopNav pipelines={pipelines} />
-      {error ? (
-        <PythonErrorInfo
-          contextMsg={`${error.__typename} encountered when loading pipelines:`}
-          error={error}
-          centered={true}
-        />
-      ) : (
-        <AppRoutes />
-      )}
-      <CustomAlertProvider />
+      <div style={{ display: "flex", height: "100%" }}>
+        <LeftNav pipelines={pipelines} />
+        {error ? (
+          <PythonErrorInfo
+            contextMsg={`${error.__typename} encountered when loading pipelines:`}
+            error={error}
+            centered={true}
+          />
+        ) : (
+          <AppRoutes />
+        )}
+        <CustomAlertProvider />
+      </div>
     </BrowserRouter>
   );
 };
@@ -108,11 +110,11 @@ export const ROOT_PIPELINES_QUERY = gql`
       }
       ... on PipelineConnection {
         nodes {
-          ...TopNavPipelinesFragment
+          ...LeftNavPipelinesFragment
         }
       }
     }
   }
 
-  ${TopNav.fragments.TopNavPipelinesFragment}
+  ${LeftNav.fragments.LeftNavPipelinesFragment}
 `;
