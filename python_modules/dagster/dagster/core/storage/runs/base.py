@@ -114,3 +114,6 @@ class RunStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def delete_run(self, run_id):
         '''Remove a run from storage'''
+
+    def dispose(self):
+        '''Explicit lifecycle management.'''

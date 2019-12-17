@@ -245,6 +245,10 @@ class DagsterInstance:
         print_fn('Updating event storage...')
         self._event_storage.upgrade()
 
+    def dispose(self):
+        self._run_storage.dispose()
+        self._event_storage.dispose()
+
     # run storage
 
     def get_run_by_id(self, run_id):

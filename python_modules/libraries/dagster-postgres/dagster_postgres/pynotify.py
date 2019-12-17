@@ -71,7 +71,12 @@ def construct_signals(arg):
 
 
 def await_pg_notifications(
-    conn_string, channels=None, timeout=5.0, yield_on_timeout=False, handle_signals=None
+    conn_string,
+    channels=None,
+    timeout=5.0,
+    yield_on_timeout=False,
+    handle_signals=None,
+    exit_event=None,
 ):
     """Subscribe to PostgreSQL notifications, and handle them
     in infinite-loop style.
@@ -104,7 +109,7 @@ def await_pg_notifications(
             listen_on = [conn]
             wakeup = None
 
-        while True:
+        while True and not (exit_event and exit_event.is_set()):
             try:
                 r, w, x = select.select(listen_on, [], [], max(0, timeout))
                 if (r, w, x) == ([], [], []):
@@ -133,6 +138,7 @@ def await_pg_notifications(
                 else:
                     raise
     finally:
+        conn.close()
         for s in signals_to_handle or []:
             if s in original_handlers:
                 signal_name = construct_signals(s).name
