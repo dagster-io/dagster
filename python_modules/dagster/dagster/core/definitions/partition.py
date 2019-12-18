@@ -152,21 +152,29 @@ class PartitionSetDefinition(
         self,
         schedule_name,
         cron_schedule,
-        partition_selector=LastPartitionSelector(),
+        should_execute=lambda: True,
         environment_vars=None,
+        partition_selector=LastPartitionSelector(),
     ):
-        '''Create a ScheduleDefinition from a PartitionSetDefinition
+        '''Create a ScheduleDefinition from a PartitionSetDefinition.
 
         Arguments:
             schedule_name (str): The name of the schedule.
             cron_schedule (str): A valid cron string for the schedule
-            partition_selector (IPartitionSelector): A partition selector for the schedule
+            should_execute (Optional[function]): Function that runs at schedule execution time that
+            determines whether a schedule should execute. Defaults to a function that always returns
+            ``True``.
             environment_vars (Optional[dict]): The environment variables to set for the schedule
+            partition_selector (IPartitionSelector): A partition selector for the schedule
 
         Returns:
             ScheduleDefinition -- The generated ScheduleDefinition for the IPartitionSelector
         '''
 
+        check.str_param(schedule_name, 'schedule_name')
+        check.str_param(cron_schedule, 'cron_schedule')
+        check.callable_param(should_execute, 'should_execute')
+        check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
         check.inst_param(partition_selector, 'partition_selector', IPartitionSelector)
 
         def _environment_dict_fn_wrapper():
@@ -193,13 +201,49 @@ class PartitionSetDefinition(
 
             return self.tags_for_partition(selected_partition)
 
-        return ScheduleDefinition(
+        return PartitionScheduleDefinition(
             name=schedule_name,
             cron_schedule=cron_schedule,
             pipeline_name=self.pipeline_name,
             environment_dict_fn=_environment_dict_fn_wrapper,
             tags_fn=_tags_fn_wrapper,
+            solid_subset=self.solid_subset,
+            mode=self.mode,
+            should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_set=self,
+        )
+
+
+class PartitionScheduleDefinition(ScheduleDefinition):
+    __slots__ = ['_partition_set']
+
+    def __init__(
+        self,
+        name,
+        cron_schedule,
+        pipeline_name,
+        environment_dict_fn,
+        tags_fn,
+        solid_subset,
+        mode,
+        should_execute,
+        environment_vars,
+        partition_set,
+    ):
+        super(PartitionScheduleDefinition, self).__init__(
+            name=name,
+            cron_schedule=cron_schedule,
+            pipeline_name=pipeline_name,
+            environment_dict_fn=environment_dict_fn,
+            tags_fn=tags_fn,
+            solid_subset=solid_subset,
+            mode=mode,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+        self._partition_set = check.inst_param(
+            partition_set, 'partition_set', PartitionSetDefinition
         )
 
 
