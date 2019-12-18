@@ -1,3 +1,5 @@
+from dagster_pandas.data_frame import create_dagster_pandas_dataframe_type
+from dagster_pandas.validation import PandasColumn
 from numpy import mean, median, ndarray
 from pandas import DataFrame, Timestamp
 
@@ -84,52 +86,37 @@ class DataFrameValidator(object):
                     )
 
 
-def validate_trip_dataframe(dataframe):
-    TRIP_CONFIG = {
-        'bike_id': {'bounds': (0, float('inf')), 'expected_dtypes': {'int64'}},
-        'start_time': {
-            'bounds': (Timestamp(year=2018, month=1, day=1), Timestamp(year=2020, month=1, day=1)),
-            'expected_dtypes': {'<M8[ns]', 'datetime64[ns]'},
-        },
-        'end_time': {
-            'bounds': (Timestamp(year=2018, month=1, day=1), Timestamp(year=2020, month=1, day=1)),
-            'expected_dtypes': {'<M8[ns]', 'datetime64[ns]'},
-        },
-        'interval_date': {'expected_dtypes': {'str', 'object'}},
-    }
-    failed_type_check = DataFrameValidator(TRIP_CONFIG).validate_columns_in_dataframe(dataframe)
-    return (
-        failed_type_check
-        if failed_type_check
-        else TypeCheck(
-            success=True,
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    str(min(dataframe['start_time'])),
-                    'min_start_time',
-                    'Date data collection started',
-                ),
-                EventMetadataEntry.text(
-                    str(max(dataframe['end_time'])), 'max_end_time', 'Timestamp of last trip'
-                ),
-                EventMetadataEntry.text(
-                    str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
-                ),
-                EventMetadataEntry.text(
-                    str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
-                ),
-            ],
-        )
-    )
+def compute_trip_dataframe_summary_statistics(dataframe):
+    return [
+        EventMetadataEntry.text(
+            str(min(dataframe['start_time'])), 'min_start_time', 'Date data collection started',
+        ),
+        EventMetadataEntry.text(
+            str(max(dataframe['end_time'])), 'max_end_time', 'Timestamp of last trip'
+        ),
+        EventMetadataEntry.text(
+            str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
+        ),
+        EventMetadataEntry.text(
+            str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
+        ),
+    ]
 
 
-@dagster_type(  # pylint: disable=W0223
+TripDataFrame = create_dagster_pandas_dataframe_type(
     name='TripDataFrame',
-    description='A consolidated view of all bay bike trips in 2018/2019',
-    type_check=validate_trip_dataframe,
+    columns=[
+        PandasColumn.integer_column('bike_id', min_value=0),
+        PandasColumn.datetime_column(
+            'start_time', min_datetime=Timestamp(year=2018, month=1, day=1),
+        ),
+        PandasColumn.datetime_column(
+            'end_time', min_datetime=Timestamp(year=2018, month=1, day=1),
+        ),
+        PandasColumn.string_column('interval_date'),
+    ],
+    summary_statistics=compute_trip_dataframe_summary_statistics,
 )
-class TripDataFrame(DataFrame):
-    pass
 
 
 def validate_traffic_dataframe(dataframe):

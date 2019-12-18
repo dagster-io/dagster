@@ -32,6 +32,7 @@ from dagster import (
     List,
     Materialization,
     Output,
+    OutputDefinition,
     String,
     check,
     composite_solid,
@@ -185,18 +186,20 @@ def download_weather_report_from_weather_api(context, date_file_name: str) -> st
     return csv_target
 
 
-@solid
-def preprocess_trip_dataset(_, dataframe: DataFrame) -> TripDataFrame:
+@solid(
+    output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame),]
+)
+def preprocess_trip_dataset(_, dataframe: DataFrame):
     dataframe = dataframe[['bike_id', 'start_time', 'end_time']].dropna(how='all').reindex()
     dataframe['bike_id'] = dataframe['bike_id'].astype('int64')
     dataframe['start_time'] = to_datetime(dataframe['start_time'])
     dataframe['end_time'] = to_datetime(dataframe['end_time'])
     dataframe['interval_date'] = dataframe['start_time'].apply(lambda x: x.date())
-    return TripDataFrame(dataframe)
+    yield Output(dataframe, output_name='TripDataFrame')
 
 
-@composite_solid
-def produce_trip_dataset() -> TripDataFrame:
+@composite_solid(output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame)])
+def produce_trip_dataset():
     download_baybike_zipfiles_from_url = download_zipfiles_from_urls.alias(
         'download_baybike_zipfiles_from_url'
     )
@@ -258,7 +261,7 @@ def produce_weather_dataset() -> WeatherDataFrame:
 
 
 @solid
-def transform_into_traffic_dataset(_, trip_dataset: TripDataFrame) -> TrafficDataFrame:
+def transform_into_traffic_dataset(_, trip_dataset: DataFrame) -> TrafficDataFrame:
     def max_traffic_load(trips):
         interval_count = {
             start_interval: 0 for start_interval in date_range(trips.name, periods=24, freq='h')

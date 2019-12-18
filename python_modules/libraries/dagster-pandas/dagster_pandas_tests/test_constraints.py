@@ -4,6 +4,9 @@ from dagster_pandas.constraints import (
     ColumnExistsConstraint,
     ColumnTypeConstraint,
     ConstraintViolationException,
+    InRangeColumnConstraint,
+    MaxValueColumnConstraint,
+    MinValueColumnConstraint,
     NonNullableColumnConstraint,
 )
 from pandas import DataFrame
@@ -41,3 +44,24 @@ def test_categorical_column_constraint():
     bad_test_dataframe = DataFrame({'foo': ['bar', 'qux', 'bar', 'bar']})
     with pytest.raises(ConstraintViolationException):
         CategoricalColumnConstraint({'bar', 'baz'}).validate(bad_test_dataframe, 'foo')
+
+
+def test_min_value_column_constraint():
+    test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
+    assert MinValueColumnConstraint(0).validate(test_dataframe, 'foo') is None
+    with pytest.raises(ConstraintViolationException):
+        assert MinValueColumnConstraint(2).validate(test_dataframe, 'foo')
+
+
+def test_max_value_column_constraint():
+    test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
+    assert MaxValueColumnConstraint(5).validate(test_dataframe, 'foo') is None
+    with pytest.raises(ConstraintViolationException):
+        assert MinValueColumnConstraint(2).validate(test_dataframe, 'foo')
+
+
+def test_in_range_value_column_constraint():
+    test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
+    assert InRangeColumnConstraint(1, 4).validate(test_dataframe, 'foo') is None
+    with pytest.raises(ConstraintViolationException):
+        assert InRangeColumnConstraint(2, 3).validate(test_dataframe, 'foo')
