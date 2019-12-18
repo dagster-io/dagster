@@ -1,13 +1,9 @@
 import random
 import time
 
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
-
 from dagster import (
     Field,
     InputDefinition,
-    Int,
     ModeDefinition,
     Output,
     OutputDefinition,
@@ -27,11 +23,11 @@ def get_executor_defs():
 
 
 @solid(
-    input_defs=[InputDefinition('chase_duration', Int)],
-    output_defs=[OutputDefinition(Int, 'total')],
+    input_defs=[InputDefinition('chase_duration', int)],
+    output_defs=[OutputDefinition(int, 'total')],
     config={
         'chase_size': Field(
-            Int,
+            int,
             default_value=100000,
             is_optional=True,
             description='How big should the pointer chase array be?',
@@ -56,12 +52,12 @@ def hammer(context, chase_duration):
 
 
 @solid(
-    config=Field(Int, is_optional=True, default_value=1),
+    config=Field(int, is_optional=True, default_value=1),
     output_defs=[
-        OutputDefinition(Int, 'out_1'),
-        OutputDefinition(Int, 'out_2'),
-        OutputDefinition(Int, 'out_3'),
-        OutputDefinition(Int, 'out_4'),
+        OutputDefinition(int, 'out_1'),
+        OutputDefinition(int, 'out_2'),
+        OutputDefinition(int, 'out_3'),
+        OutputDefinition(int, 'out_4'),
     ],
 )
 def chase_giver(context):
@@ -75,12 +71,12 @@ def chase_giver(context):
 
 @solid(
     input_defs=[
-        InputDefinition('in_1', Int),
-        InputDefinition('in_2', Int),
-        InputDefinition('in_3', Int),
-        InputDefinition('in_4', Int),
+        InputDefinition('in_1', int),
+        InputDefinition('in_2', int),
+        InputDefinition('in_3', int),
+        InputDefinition('in_4', int),
     ],
-    output_defs=[OutputDefinition(Int)],
+    output_defs=[OutputDefinition(int)],
 )
 def reducer(_, in_1, in_2, in_3, in_4):
     return in_1 + in_2 + in_3 + in_4
@@ -88,13 +84,7 @@ def reducer(_, in_1, in_2, in_3, in_4):
 
 @pipeline(
     # Needed for Dask tests which use this pipeline
-    mode_defs=[
-        ModeDefinition(
-            resource_defs={'s3': s3_resource},
-            system_storage_defs=s3_plus_default_storage_defs,
-            executor_defs=get_executor_defs(),
-        )
-    ]
+    mode_defs=[ModeDefinition(executor_defs=get_executor_defs())]
 )
 def hammer_pipeline():
 
