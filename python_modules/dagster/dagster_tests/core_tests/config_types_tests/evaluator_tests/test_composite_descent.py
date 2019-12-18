@@ -333,12 +333,12 @@ def test_provide_one_of_two_inputs_via_config():
     )
 
 
-@solid(config_field=Field(String, is_optional=True))
+@solid(config=Field(String, is_optional=True))
 def scalar_config_solid(context):
     yield Output(context.solid_config)
 
 
-@solid(config_field=Field(String, is_optional=False))
+@solid(config=Field(String, is_optional=False))
 def required_scalar_config_solid(context):
     yield Output(context.solid_config)
 

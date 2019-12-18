@@ -37,35 +37,21 @@ def raise_bad_user_facing_field_argument(obj, param_name, error_context_str):
     from .field import resolve_to_config_type
     from .type_printer import print_config_type_to_string
 
-    config_type = resolve_to_config_type(obj)
-    if config_type:
-        raise DagsterInvalidDefinitionError(
-            (
-                'You have passed a config type "{printed_type}" in the parameter '
-                '"{param_name}" {error_context_str}. '
-                'You have likely forgot to wrap this type in a Field.'
-            ).format(
-                printed_type=print_config_type_to_string(config_type, with_lines=False),
-                error_context_str=error_context_str,
-                param_name=param_name,
-            )
+    raise DagsterInvalidDefinitionError(
+        (
+            'You have passed an object {value_repr} of incorrect type '
+            '"{type_name}" in the parameter "{param_name}" '
+            '{error_context_str} where a Field, dict, or type was expected.'
+        ).format(
+            error_context_str=error_context_str,
+            param_name=param_name,
+            value_repr=repr(obj),
+            type_name=type(obj).__name__,
         )
-    else:
-        raise DagsterInvalidDefinitionError(
-            (
-                'You have passed an object {value_repr} of incorrect type '
-                '"{type_name}" in the parameter "{param_name}" '
-                '{error_context_str} where a Field was expected.'
-            ).format(
-                error_context_str=error_context_str,
-                param_name=param_name,
-                value_repr=repr(obj),
-                type_name=type(obj).__name__,
-            )
-        )
+    )
 
 
-def check_user_facing_opt_field_param(obj, param_name, error_context_str):
+def check_user_facing_opt_config_param(obj, param_name, error_context_str):
     check.str_param(param_name, 'param_name')
 
     if obj is None:
@@ -73,8 +59,8 @@ def check_user_facing_opt_field_param(obj, param_name, error_context_str):
 
     return coerce_potential_field(
         obj,
-        lambda _potential_field: raise_bad_user_facing_field_argument(
-            obj, param_name, error_context_str
+        lambda potential_field: raise_bad_user_facing_field_argument(
+            potential_field, param_name, error_context_str
         ),
     )
 
@@ -314,7 +300,7 @@ class PermissiveDict(_ConfigHasFields):
 
     .. code-block:: python
 
-        @solid(config_field=Field(PermissiveDict({'required': Field(String)})))
+        @solid(config=Field(PermissiveDict({'required': Field(String)})))
         def partially_specified_config(context) -> List:
             return sorted(list(context.solid_config.items()))
     '''
@@ -366,18 +352,12 @@ class Selector(_ConfigHasFields):
     .. code-block:: python
 
         @solid(
-            config_field=Field(
+            config=Field(
                 Selector(
                     {
-                        'haw': Field(
-                            Dict({'whom': Field(String, default_value='honua', is_optional=True)})
-                        ),
-                        'cn': Field(
-                            Dict({'whom': Field(String, default_value='世界', is_optional=True)})
-                        ),
-                        'en': Field(
-                            Dict({'whom': Field(String, default_value='world', is_optional=True)})
-                        )
+                        'haw': {'whom': Field(String, default_value='honua', is_optional=True)},
+                        'cn': {'whom': Field(String, default_value='世界', is_optional=True)},
+                        'en': {'whom': Field(String, default_value='world', is_optional=True)},
                     }
                 ),
                 is_optional=True,

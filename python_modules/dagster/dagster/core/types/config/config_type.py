@@ -283,7 +283,7 @@ class Enum(ConfigType):
         .. code-block:: python
 
             @solid(
-                config_field=Field(
+                config=Field(
                     Enum(
                         'CowboyType',
                         [

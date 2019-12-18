@@ -25,15 +25,13 @@ def resource_init(init_context):
 
 
 def define_errorable_resource():
-    return ResourceDefinition(
-        resource_fn=resource_init, config_field={'throw_on_resource_init': Bool}
-    )
+    return ResourceDefinition(resource_fn=resource_init, config={'throw_on_resource_init': Bool})
 
 
 solid_throw_config = {'throw_in_solid': Bool, 'return_wrong_type': Bool}
 
 
-@solid(name='emit_num', output_defs=[OutputDefinition(Int)], config_field=solid_throw_config)
+@solid(name='emit_num', output_defs=[OutputDefinition(Int)], config=solid_throw_config)
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
         raise Exception('throwing from in the solid')
@@ -48,7 +46,7 @@ def emit_num(context):
     name='num_to_str',
     input_defs=[InputDefinition('num', Int)],
     output_defs=[OutputDefinition(String)],
-    config_field=solid_throw_config,
+    config=solid_throw_config,
 )
 def num_to_str(context, num):
     if context.solid_config['throw_in_solid']:
@@ -64,7 +62,7 @@ def num_to_str(context, num):
     name='str_to_num',
     input_defs=[InputDefinition('string', String)],
     output_defs=[OutputDefinition(Int)],
-    config_field=solid_throw_config,
+    config=solid_throw_config,
 )
 def str_to_num(context, string):
     if context.solid_config['throw_in_solid']:

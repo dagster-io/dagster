@@ -2,8 +2,13 @@
 
 ## 0.7.0 (Upcoming)
 
+**New**
+
+- We are now more permissive when specifying configuration schema in order make constructing configuration schema more concise.
+
 **Breaking**
 
+- `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
 - The implementation of SQL-based event log and run storages has been consolidated, which has
   entailed a schema change. If you have event logs stored in a Postgres- or SQLite-backed event

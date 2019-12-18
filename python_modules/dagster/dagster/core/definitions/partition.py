@@ -8,6 +8,8 @@ from dagster.core.definitions.schedule import ScheduleDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
+from .mode import DEFAULT_MODE_NAME
+
 
 def by_name(partition):
     return partition.name
@@ -72,7 +74,7 @@ class PartitionSetDefinition(
     namedtuple(
         '_PartitionSetDefinition',
         (
-            'name pipeline_name partition_fn user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
+            'name pipeline_name partition_fn solid_subset mode user_defined_environment_dict_fn_for_partition user_defined_tags_fn_for_partition'
         ),
     )
 ):
@@ -84,6 +86,9 @@ class PartitionSetDefinition(
         pipeline_name (str): The name of the pipeline definition
         partition_fn (Callable[void, List[Partition]]): User-provided function to define the set of
             valid partition objects.
+        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
+            unaliased solids or of their aliases if aliased) to execute with this partition.
+        mode (Optional[str]): The mode to apply when executing this partition. (default: 'default')
         environment_dict_fn_for_partition (Callable[[Partition], [Dict]]): A
             function that takes a Partition and returns the environment
             configuration that parameterizes the execution for this partition, as a dict
@@ -97,6 +102,8 @@ class PartitionSetDefinition(
         name,
         pipeline_name,
         partition_fn,
+        solid_subset=None,
+        mode=None,
         environment_dict_fn_for_partition=lambda _partition: {},
         tags_fn_for_partition=lambda _partition: {},
     ):
@@ -116,6 +123,8 @@ class PartitionSetDefinition(
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, 'partition_fn')()
             ],
+            solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
+            mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
             user_defined_environment_dict_fn_for_partition=check.callable_param(
                 environment_dict_fn_for_partition, 'environment_dict_fn_for_partition'
             ),

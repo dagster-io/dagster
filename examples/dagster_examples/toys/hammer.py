@@ -5,7 +5,6 @@ from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 
 from dagster import (
-    Dict,
     Field,
     InputDefinition,
     Int,
@@ -30,18 +29,14 @@ def get_executor_defs():
 @solid(
     input_defs=[InputDefinition('chase_duration', Int)],
     output_defs=[OutputDefinition(Int, 'total')],
-    config_field=Field(
-        Dict(
-            fields={
-                'chase_size': Field(
-                    Int,
-                    default_value=100000,
-                    is_optional=True,
-                    description='How big should the pointer chase array be?',
-                )
-            }
+    config={
+        'chase_size': Field(
+            Int,
+            default_value=100000,
+            is_optional=True,
+            description='How big should the pointer chase array be?',
         )
-    ),
+    },
 )
 def hammer(context, chase_duration):
     '''what better way to do a lot of gnarly work than to pointer chase?'''
@@ -61,7 +56,7 @@ def hammer(context, chase_duration):
 
 
 @solid(
-    config_field=Field(Int, is_optional=True, default_value=1),
+    config=Field(Int, is_optional=True, default_value=1),
     output_defs=[
         OutputDefinition(Int, 'out_1'),
         OutputDefinition(Int, 'out_2'),

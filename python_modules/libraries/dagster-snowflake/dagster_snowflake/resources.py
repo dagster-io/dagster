@@ -97,7 +97,7 @@ class SnowflakeConnection(object):
 
 
 @resource(
-    config_field=define_snowflake_config(),
+    config=define_snowflake_config(),
     description='This resource is for connecting to the Snowflake data warehouse',
 )
 def snowflake_resource(context):

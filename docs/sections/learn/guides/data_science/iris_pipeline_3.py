@@ -8,7 +8,7 @@ k_means_iris_solid = dm.define_dagstermill_solid(
     'k_means_iris',
     script_relative_path('iris-kmeans_2.ipynb'),
     input_defs=[InputDefinition('path', Path, description='Local path to the Iris dataset')],
-    config_field=Field(
+    config=Field(
         Int, default_value=3, is_optional=True, description='The number of clusters to find'
     ),
 )

@@ -16,6 +16,10 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_execution,
     start_scheduled_execution,
 )
+from dagster_graphql.implementation.fetch_partition_sets import (
+    get_partition_set,
+    get_partition_sets_or_error,
+)
 from dagster_graphql.implementation.fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
     get_pipeline_or_error,
@@ -76,6 +80,13 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull('ScheduleOrError'),
         schedule_name=dauphin.NonNull(dauphin.String),
         limit=dauphin.Int(),
+    )
+
+    partitionSetsOrError = dauphin.Field(
+        dauphin.NonNull('PartitionSetsOrError'), pipelineName=dauphin.String()
+    )
+    partitionSetOrError = dauphin.Field(
+        dauphin.NonNull('PartitionSetOrError'), partitionSetName=dauphin.String()
     )
 
     pipelineRunsOrError = dauphin.Field(
@@ -168,6 +179,14 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
         return get_run(graphene_info, runId)
+
+    def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
+        pipeline_name = kwargs.get('pipelineName')
+
+        return get_partition_sets_or_error(graphene_info, pipeline_name)
+
+    def resolve_partitionSetOrError(self, graphene_info, partitionSetName):
+        return get_partition_set(graphene_info, partitionSetName)
 
     def resolve_pipelineRunTags(self, graphene_info):
         return get_run_tags(graphene_info)

@@ -7,10 +7,11 @@ from dagster.core.meta.config_types import (
 )
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.types.config.field import resolve_to_config_type
+from dagster.core.types.config.field_utils import coerce_potential_field
 
 
 def meta_from_dagster_type(dagster_type):
-    return meta_from_config_type(resolve_to_config_type(dagster_type))
+    return meta_from_config_type(coerce_potential_field(dagster_type, lambda: None).config_type)
 
 
 def test_basic_int_meta():
@@ -26,7 +27,7 @@ def test_basic_int_meta():
 
 
 def test_basic_dict():
-    dict_meta = meta_from_dagster_type(Dict({'foo': Field(int)}))
+    dict_meta = meta_from_dagster_type({'foo': int})
     assert dict_meta.key.startswith('Dict.')
     assert dict_meta.name is None
     assert dict_meta.inner_type_refs
@@ -44,14 +45,12 @@ def test_basic_dict():
 
 def test_field_things():
     dict_meta = meta_from_dagster_type(
-        Dict(
-            {
-                'req': Field(int),
-                'opt': Field(int, is_optional=True),
-                'opt_with_default': Field(int, is_optional=True, default_value=2),
-                'req_with_desc': Field(int, description='A desc'),
-            }
-        )
+        {
+            'req': int,
+            'opt': Field(int, is_optional=True),
+            'opt_with_default': Field(int, is_optional=True, default_value=2),
+            'req_with_desc': Field(int, description='A desc'),
+        }
     )
 
     assert dict_meta.fields and len(dict_meta.fields) == 4
@@ -150,21 +149,12 @@ def test_kitchen_sink():
         Dict(
             {
                 'opt_list_of_int': Field(List[int], is_optional=True),
-                'nested_dict': Field(
-                    Dict(
-                        {
-                            'list_list': Field(List[List[int]]),
-                            'nested_selector': Field(
-                                Selector(
-                                    {
-                                        'some_field': Field(int),
-                                        'more_list': Field(Optional[List[bool]]),
-                                    }
-                                )
-                            ),
-                        }
-                    )
-                ),
+                'nested_dict': {
+                    'list_list': List[List[int]],
+                    'nested_selector': Field(
+                        Selector({'some_field': int, 'more_list': Optional[List[bool]]})
+                    ),
+                },
             }
         )
     ]

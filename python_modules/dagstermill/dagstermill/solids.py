@@ -25,7 +25,7 @@ from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.serdes import pack_value
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine
@@ -236,7 +236,7 @@ def define_dagstermill_solid(
     notebook_path,
     input_defs=None,
     output_defs=None,
-    config_field=None,
+    config=None,
     required_resource_keys=None,
 ):
     '''Wrap a Jupyter notebook in a solid.
@@ -258,16 +258,15 @@ def define_dagstermill_solid(
     required_resource_keys = check.opt_set_param(
         required_resource_keys, 'required_resource_keys', of_type=str
     )
-    config_field = check_user_facing_opt_field_param(
-        config_field, 'config_field', 'of a dagstermill solid named "{name}"'.format(name=name)
-    )
 
     return SolidDefinition(
         name=name,
         input_defs=input_defs,
         compute_fn=_dm_solid_compute(name, notebook_path),
         output_defs=output_defs,
-        config_field=config_field,
+        config=check_user_facing_opt_config_param(
+            config, 'config', 'of a dagstermill solid named "{name}"'.format(name=name)
+        ),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},

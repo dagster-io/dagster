@@ -266,7 +266,7 @@ def test_any_config_field():
     called = {}
     conf_value = 234
 
-    @solid(config_field=Field(Any))
+    @solid(config=Field(Any))
     def hello_world(context):
         assert context.solid_config == conf_value
         called['yup'] = True

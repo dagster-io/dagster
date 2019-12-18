@@ -17,7 +17,7 @@ from .composition import (
     enter_composition,
     exit_composition,
 )
-from .config import ConfigMapping, resolve_config_field
+from .config import ConfigMapping
 from .events import ExpectationResult, Materialization, Output
 from .inference import (
     has_explicit_return_type,
@@ -82,7 +82,7 @@ class _Solid(object):
         output_defs=None,
         description=None,
         required_resource_keys=None,
-        config_field=None,
+        config=None,
         metadata=None,
         step_metadata_fn=None,
     ):
@@ -97,8 +97,8 @@ class _Solid(object):
         # resources will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
 
-        # config_field will be checked within SolidDefinition
-        self.config_field = config_field
+        # config will be checked within SolidDefinition
+        self.config = config
 
         # metadata will be checked within ISolidDefinition
         self.metadata = metadata
@@ -130,7 +130,7 @@ class _Solid(object):
             input_defs=input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
-            config_field=self.config_field,
+            config=self.config,
             description=self.description,
             required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
@@ -257,7 +257,6 @@ def solid(
     description=None,
     input_defs=None,
     output_defs=None,
-    config_field=None,
     config=None,
     required_resource_keys=None,
     metadata=None,
@@ -275,11 +274,9 @@ def solid(
     The decorated function will be used as the solid's compute function. The signature of the
     decorated function is more flexible than that of the ``compute_fn`` in the core API; it may:
 
-    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the
-        compute function.
+    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the compute function.
     2. Return an :py:class:`Output`. This output will be yielded by the compute function.
-    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute
-        behaviour.
+    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute behaviour.
 
     Note that options 1) and 2) are incompatible with yielding other events -- if you would like
     to decorate a function that yields events, it must also wrap its eventual output in an
@@ -293,13 +290,15 @@ def solid(
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
-        config (Optional[Dict[str, Field]]):
-            Defines the schema of the configuration dict provided to the solid via context.
-        config_field (Optional[Field]): Used in the rare case when a solid's top level config type
-            is other than a dictionary.
-
-            A :class:`DagsterInvalidDefinitionError` will be raised if both ``config`` and
-            ``config_field`` are set.
+        config (Optional[Any]): The schema for the config. Configuration data available
+            as context.solid_config.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -360,7 +359,6 @@ def solid(
         check.invariant(input_defs is None)
         check.invariant(output_defs is None)
         check.invariant(description is None)
-        check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         check.invariant(metadata is None)
@@ -371,7 +369,7 @@ def solid(
         name=name,
         input_defs=input_defs,
         output_defs=output_defs,
-        config_field=resolve_config_field(config_field, config, '@solid'),
+        config=config,
         description=description,
         required_resource_keys=required_resource_keys,
         metadata=metadata,
@@ -711,9 +709,14 @@ def composite_solid(
             :py:class:`CompositeSolidDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        config (Optional[Dict[str, Field]]):
-            Defines the schema of the configuration dict provided to the composite solid via context.
-            If you specify ``config``, you must also specify ``config_fn``.
+        config (Optional[Any]): The schema for the config.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.

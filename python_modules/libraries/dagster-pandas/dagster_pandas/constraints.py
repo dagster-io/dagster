@@ -58,14 +58,18 @@ class ColumnExistsConstraint(Constraint):
 
 
 class ColumnTypeConstraint(Constraint):
-    def __init__(self, expected_pandas_dtype):
-        self.expected_pandas_dtype = check.str_param(expected_pandas_dtype, 'expected_pandas_dtype')
+    def __init__(self, expected_pandas_dtypes):
+        if isinstance(expected_pandas_dtypes, str):
+            expected_pandas_dtypes = {expected_pandas_dtypes}
+        self.expected_pandas_dtypes = check.set_param(
+            expected_pandas_dtypes, 'expected_pandas_dtype'
+        )
         super(ColumnTypeConstraint, self).__init__(
-            "Column dtype must be {}".format(self.expected_pandas_dtype)
+            "Column dtype must be {}".format(self.expected_pandas_dtypes)
         )
 
     def validate(self, dataframe, column_name):
-        if dataframe[column_name].dtype != self.expected_pandas_dtype:
+        if str(dataframe[column_name].dtype) not in self.expected_pandas_dtypes:
             raise ConstraintViolationException(
                 constraint_name=self.name,
                 constraint_description=self.description,
@@ -108,13 +112,13 @@ class CategoricalColumnConstraint(Constraint):
 
 class MinValueColumnConstraint(Constraint):
     def __init__(self, min_value):
-        self.min_value = check.numeric_param(min_value, 'min_value')
+        self.min_value = min_value
         super(MinValueColumnConstraint, self).__init__(
             "Column must have values greater than {}".format(self.min_value)
         )
 
     def validate(self, dataframe, column_name):
-        out_of_bounds_rows = dataframe[dataframe[self.name].apply(lambda x: x < self.min_value)]
+        out_of_bounds_rows = dataframe[dataframe[column_name] < self.min_value]
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
@@ -126,13 +130,13 @@ class MinValueColumnConstraint(Constraint):
 
 class MaxValueColumnConstraint(Constraint):
     def __init__(self, max_value):
-        self.max_value = check.numeric_param(max_value, 'max_value')
+        self.max_value = max_value
         super(MaxValueColumnConstraint, self).__init__(
             "Column must have values greater than {}".format(self.max_value)
         )
 
     def validate(self, dataframe, column_name):
-        out_of_bounds_rows = dataframe[dataframe[self.name].apply(lambda x: x > self.max_value)]
+        out_of_bounds_rows = dataframe[dataframe[column_name] > self.max_value]
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
@@ -144,15 +148,15 @@ class MaxValueColumnConstraint(Constraint):
 
 class InRangeColumnConstraint(Constraint):
     def __init__(self, min_value, max_value):
-        self.min_value = check.numeric_param(min_value, 'min_value')
-        self.max_value = check.numeric_param(max_value, 'max_value')
+        self.min_value = min_value
+        self.max_value = max_value
         super(InRangeColumnConstraint, self).__init__(
             "Column must have values between {} and {}".format(self.min_value, self.max_value)
         )
 
     def validate(self, dataframe, column_name):
         out_of_bounds_rows = dataframe[
-            dataframe[self.name].apply(lambda x: x > self.max_value | x < self.min_value)
+            ~dataframe[column_name].between(self.min_value, self.max_value)
         ]
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(

@@ -6,7 +6,7 @@ import six
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 from dagster.utils import frozendict, frozenlist
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
@@ -139,7 +139,15 @@ class SolidDefinition(ISolidDefinition):
             of the solid's ``output_defs``, and additionally may yield other types of Dagster
             events, including :py:class:`Materialization` and :py:class:`ExpectationResult`.
         output_defs (List[OutputDefinition]): Outputs of the solid.
-        config_field (Optional[Field]): Defines how the solid may be configured.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.solid_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         description (Optional[str]): Human-readable description of the solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid.
@@ -166,17 +174,15 @@ class SolidDefinition(ISolidDefinition):
         input_defs,
         compute_fn,
         output_defs,
-        config_field=None,
+        config=None,
         description=None,
         metadata=None,
         required_resource_keys=None,
         step_metadata_fn=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_field = check_user_facing_opt_field_param(
-            config_field,
-            'config_field',
-            'of a SolidDefinition or @solid named "{name}"'.format(name=name),
+        self._config_field = check_user_facing_opt_config_param(
+            config, 'config', 'of a SolidDefinition or @solid named "{name}"'.format(name=name),
         )
         self._required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str

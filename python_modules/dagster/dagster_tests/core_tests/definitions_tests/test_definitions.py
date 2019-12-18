@@ -5,7 +5,6 @@ import pytest
 from dagster import (
     Any,
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     OutputDefinition,
@@ -36,7 +35,7 @@ def test_solid_def():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Field(Int)},
+        config={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -117,7 +116,7 @@ def test_pipeline_types():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Field(Int)},
+        config={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')

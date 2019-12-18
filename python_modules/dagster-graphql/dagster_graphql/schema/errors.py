@@ -559,3 +559,18 @@ class DauphinPipelineRunsOrError(dauphin.Union):
     class Meta(object):
         name = 'PipelineRunsOrError'
         types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError, DauphinPythonError)
+
+
+class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PartitionSetNotFoundError'
+        interfaces = (DauphinError,)
+
+    partition_set_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, partition_set_name):
+        super(DauphinPartitionSetNotFoundError, self).__init__()
+        self.partition_set_name = check.str_param(partition_set_name, 'partition_set_name')
+        self.message = 'Partition set {partition_set_name} could not be found.'.format(
+            partition_set_name=self.partition_set_name
+        )

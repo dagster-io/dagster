@@ -4,10 +4,8 @@ import pytest
 
 from dagster import (
     DagsterInvalidConfigError,
-    Dict,
     Enum,
     EnumValue,
-    Field,
     Int,
     PipelineDefinition,
     execute_pipeline,
@@ -41,14 +39,7 @@ def test_enum_in_pipeline_execution():
     called = {}
 
     @solid(
-        config_field=Field(
-            Dict(
-                {
-                    'int_field': Field(Int),
-                    'enum_field': Field(Enum('AnEnum', [EnumValue('ENUM_VALUE')])),
-                }
-            )
-        )
+        config={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
     )
     def config_me(context):
         assert context.solid_config['int_field'] == 2
@@ -92,7 +83,7 @@ def test_native_enum_dagster_enum():
 
     called = {}
 
-    @solid(config_field=Field(dagster_enum))
+    @solid(config=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
         called['yup'] = True

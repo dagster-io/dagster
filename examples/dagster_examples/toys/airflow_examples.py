@@ -7,7 +7,6 @@ from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 from dagster import (
-    Field,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -19,7 +18,7 @@ from dagster import (
 )
 
 
-@solid(input_defs=[InputDefinition('word', str)], config={'factor': Field(Int)})
+@solid(input_defs=[InputDefinition('word', str)], config={'factor': Int})
 def multiply_the_word(context, word):
     return word * context.solid_config['factor']
 

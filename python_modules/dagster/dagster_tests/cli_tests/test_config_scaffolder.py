@@ -1,6 +1,4 @@
 from dagster import (
-    Dict,
-    Field,
     Int,
     ModeDefinition,
     PipelineDefinition,
@@ -34,7 +32,7 @@ def test_basic_solids_config(snapshot):
                 name='required_field_solid',
                 input_defs=[],
                 output_defs=[],
-                config_field={'required_int': Int},
+                config={'required_int': Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],
@@ -78,10 +76,7 @@ def test_two_modes(snapshot):
                 'mode_one', resource_defs={'value': dummy_resource({'mode_one_field': String})},
             ),
             ModeDefinition(
-                'mode_two',
-                resource_defs={
-                    'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))
-                },
+                'mode_two', resource_defs={'value': dummy_resource({'mode_two_field': Int})},
             ),
         ],
     )

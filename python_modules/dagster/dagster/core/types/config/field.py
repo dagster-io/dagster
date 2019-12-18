@@ -134,8 +134,8 @@ class Field(object):
         .. code-block:: python
 
             @solid(
-                config_field=Field(
-                    Dict({'word': Field(String, default_value='foo'), 'repeats': Field(Int)})
+                config=Field(
+                    Dict({'word': Field(String, default_value='foo'), 'repeats': Int})
                 )
             )
             def repeat_word(context):

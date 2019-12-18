@@ -3,9 +3,7 @@ from functools import update_wrapper
 from dagster import check
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.types.config.field_utils import check_user_facing_opt_field_param
-
-from .config import resolve_config_field
+from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class SystemStorageDefinition(object):
@@ -30,7 +28,15 @@ class SystemStorageDefinition(object):
         is_persistent (bool): Does storage def persist in a way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor or within
             the context of dagster-airflow requires a persistent storage mode.
-        config_field (Field): Configuration field for its section of the storage config.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.system_storage_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
             which consumes the init context and then emits the SystemStorageData.
@@ -42,16 +48,14 @@ class SystemStorageDefinition(object):
         self,
         name,
         is_persistent,
-        config_field=None,
+        config=None,
         system_storage_creation_fn=None,
         required_resource_keys=None,
     ):
         self.name = check.str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config_field = check_user_facing_opt_field_param(
-            config_field,
-            'config_field',
-            'of a SystemStorageDefinition named {name}'.format(name=self.name),
+        self.config_field = check_user_facing_opt_config_param(
+            config, 'config', 'of a SystemStorageDefinition named {name}'.format(name=self.name),
         )
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
@@ -69,9 +73,7 @@ class SystemStorageData(object):
         self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(
-    name=None, is_persistent=True, config_field=None, config=None, required_resource_keys=None
-):
+def system_storage(name=None, is_persistent=True, config=None, required_resource_keys=None):
     '''A decorator for creating a SystemStorageDefinition. The decorated function will be used as the
     system_storage_creation_fn in a SystemStorageDefinition.
 
@@ -82,18 +84,20 @@ def system_storage(
             the context of dagster-airflow require a persistent storage mode.
         required_resource_keys (Set[str]):
             The resources that this storage needs at runtime to function.
-        config (Dict[str, Field]):
-            The schema for the configuration data made available to the system_storage_creation_fn.
-        config_field (Field):
-            Used in the rare case of a top level config type other than a dictionary.
-
-            Only one of config or config_field can be provided.
+        config (Optional[Any]): The schema for the config. Configuration data available in
+            `init_context.system_storage_config`.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
 
     '''
 
     if callable(name):
         check.invariant(is_persistent is True)
-        check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         return _SystemStorageDecoratorCallable()(name)
@@ -101,18 +105,16 @@ def system_storage(
     return _SystemStorageDecoratorCallable(
         name=name,
         is_persistent=is_persistent,
-        config_field=resolve_config_field(config_field, config, '@system_storage'),
+        config=config,
         required_resource_keys=required_resource_keys,
     )
 
 
 class _SystemStorageDecoratorCallable(object):
-    def __init__(
-        self, name=None, is_persistent=True, config_field=None, required_resource_keys=None
-    ):
+    def __init__(self, name=None, is_persistent=True, config=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config_field = config_field  # type check in definition
+        self.config = config  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
@@ -124,7 +126,7 @@ class _SystemStorageDecoratorCallable(object):
         storage_def = SystemStorageDefinition(
             name=self.name,
             is_persistent=self.is_persistent,
-            config_field=self.config_field,
+            config=self.config,
             system_storage_creation_fn=fn,
             required_resource_keys=self.required_resource_keys,
         )

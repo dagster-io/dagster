@@ -12,7 +12,6 @@ from dagster.core.types.config.config_type import (
 )
 from dagster.core.types.config.field import Field
 from dagster.core.types.config.field_utils import NamedSelector
-from dagster.core.types.wrapping.wrapping import Dict
 
 from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
 
@@ -48,7 +47,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
 
 def define_path_dict_field():
-    return Field(Dict({'path': Field(ConfigPathInstance)}))
+    return {'path': Field(ConfigPathInstance)}
 
 
 def define_builtin_scalar_output_schema(scalar_name):

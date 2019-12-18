@@ -361,7 +361,7 @@ const ButtonLink = styled.button`
   color: #ffffff;
   margin-left: 10px;
   font-size: 12px;
-  background: none!important;
+  background: none !important;
   border: none;
   padding: 0!important;
   font-family: inherit;

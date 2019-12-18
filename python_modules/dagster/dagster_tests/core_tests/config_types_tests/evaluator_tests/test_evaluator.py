@@ -491,14 +491,14 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = Dict({'int_field': Field(Int)})
+    dict_with_int = Dict({'int_field': Int})
 
     assert not eval_config_value_from_dagster_type(dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {}).success
     assert not eval_config_value_from_dagster_type(dict_with_int, {'int_field': None}).success
     assert eval_config_value_from_dagster_type(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = Optional[Dict({'int_field': Field(Int)})]
+    nullable_dict_with_int = Optional[Dict({'int_field': Int})]
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(nullable_dict_with_int, {}).success

@@ -1,5 +1,6 @@
 import os
 import subprocess
+import uuid
 
 import click
 import yaml
@@ -56,7 +57,11 @@ def get_app(config_yaml, config_module, config_file):
 
 
 def get_worker_name(name=None):
-    return name + '@%h' if name is not None else 'dagster@%h'
+    return (
+        name + '@%h'
+        if name is not None
+        else 'dagster-{uniq}@%h'.format(uniq=str(uuid.uuid4())[-6:])
+    )
 
 
 def celery_worker_config_args(config_yaml, config_module, config_file):
@@ -106,7 +111,7 @@ def launch_background_worker(subprocess_args):
 
 
 @click.command(name='start')
-@click.argument('name', default='dagster')
+@click.option('--name', '-n', type=click.STRING, default=None)
 @click.option('--config-yaml', '-y', type=click.Path(exists=True), default=None)
 @click.option('--config-module', '-m', type=click.STRING, default=None)
 @click.option('--config-file', '-f', type=click.Path(exists=True), default=None)
@@ -115,7 +120,7 @@ def launch_background_worker(subprocess_args):
 @click.option('--includes', '-i', type=click.STRING, multiple=True)
 @click.option('--loglevel', '-l', type=click.STRING, default='INFO')
 def worker_start_command(
-    name='dagster',
+    name=None,
     config_yaml=None,
     config_module=None,
     config_file=None,

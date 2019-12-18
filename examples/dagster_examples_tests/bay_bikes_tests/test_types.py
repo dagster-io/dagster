@@ -73,19 +73,11 @@ def bad_dtype_df():
     return df
 
 
-def bad_bounds_df():
-    df = valid_trip_dataframe()
-    df['start_time'][0] = Timestamp(year=2021, month=2, day=3)
-    return df
-
-
 def test_validate_dataframe_ok():
     assert check_dagster_type(TripDataFrame, valid_trip_dataframe()).success
 
 
-@pytest.mark.parametrize(
-    'invalid_dataframe', [missing_column_dataframe(), bad_dtype_df(), bad_bounds_df()]
-)
+@pytest.mark.parametrize('invalid_dataframe', [missing_column_dataframe(), bad_dtype_df()])
 def test_validate_dataframe_missing_column(invalid_dataframe):
     assert not check_dagster_type(TripDataFrame, invalid_dataframe).success
 
