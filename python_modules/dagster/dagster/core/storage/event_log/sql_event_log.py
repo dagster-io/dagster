@@ -98,13 +98,18 @@ class SqlEventLogStorage(EventLogStorage):
     def get_stats_for_run(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        query = db.select(
-            [
-                SqlEventLogStorageTable.c.dagster_event_type,
-                db.func.count().label('n_events_of_type'),
-                db.func.max(SqlEventLogStorageTable.c.timestamp).label('last_event_timestamp'),
-            ]
-        ).group_by('dagster_event_type')
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    db.func.count().label('n_events_of_type'),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label('last_event_timestamp'),
+                ]
+            )
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .group_by('dagster_event_type')
+        )
+
         with self.connect(run_id) as conn:
             results = conn.execute(query).fetchall()
 

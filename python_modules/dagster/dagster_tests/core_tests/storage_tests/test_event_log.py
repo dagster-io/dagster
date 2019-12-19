@@ -8,6 +8,7 @@ import sqlalchemy
 from dagster import seven
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import DagsterEventRecord
+from dagster.core.execution.plan.objects import StepSuccessData
 from dagster.core.storage.event_log import (
     DagsterEventLogInvalidForRun,
     InMemoryEventLogStorage,
@@ -75,6 +76,37 @@ def test_event_log_storage_store_events_and_wipe(event_storage_factory_cm_fn):
         assert storage.get_stats_for_run('foo')
         storage.wipe()
         assert len(storage.get_logs_for_run('foo')) == 0
+
+
+@event_storage_test
+def test_event_log_storage_store_with_multiple_runs(event_storage_factory_cm_fn):
+    with event_storage_factory_cm_fn() as storage:
+        runs = ['foo', 'bar', 'baz']
+        for run_id in runs:
+            assert len(storage.get_logs_for_run(run_id)) == 0
+            storage.store_event(
+                DagsterEventRecord(
+                    None,
+                    'Message2',
+                    'debug',
+                    '',
+                    run_id,
+                    time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.STEP_SUCCESS.value,
+                        'nonce',
+                        event_specific_data=StepSuccessData(duration_ms=100.0),
+                    ),
+                )
+            )
+
+        for run_id in runs:
+            assert len(storage.get_logs_for_run(run_id)) == 1
+            assert storage.get_stats_for_run(run_id).steps_succeeded == 1
+
+        storage.wipe()
+        for run_id in runs:
+            assert len(storage.get_logs_for_run(run_id)) == 0
 
 
 @event_storage_test
