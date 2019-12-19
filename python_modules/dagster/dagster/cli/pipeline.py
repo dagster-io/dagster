@@ -1,11 +1,14 @@
 from __future__ import print_function
 
 import os
+import random
 import re
+import string
 import textwrap
 
 import click
 import six
+import time
 import yaml
 
 from dagster import (
@@ -22,11 +25,13 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.seven import IS_WINDOWS
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
+
+BACKFILL_TAG_LENGTH = 8
 
 
 def create_pipeline_cli_group():
@@ -546,7 +551,12 @@ def pipeline_backfill_command(mode, *args, **kwargs):
     if click.confirm(
         'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
     ):
-        click.echo('Launching')
+
+        backfill_tag = ''.join(
+            random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH)
+        )
+        click.echo('Launching runs... ')
+
         for partition in partitions:
             run = PipelineRun(
                 pipeline_name=pipeline.name,
@@ -554,10 +564,16 @@ def pipeline_backfill_command(mode, *args, **kwargs):
                 selector=ExecutionSelector(pipeline.name),
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 mode=mode or 'default',
-                tags=partition_set.tags_for_partition(partition),
+                tags=merge_dicts(
+                    {'dagster/backfill': backfill_tag}, partition_set.tags_for_partition(partition)
+                ),
                 status=PipelineRunStatus.NOT_STARTED,
             )
             instance.run_launcher.launch_run(run)
+            # Remove once we can handle synchronous execution... currently limited by sqlite
+            time.sleep(0.1)
+
+        click.echo('Launched backfill job `{}`'.format(backfill_tag))
     else:
         click.echo(' Aborted!')
 
