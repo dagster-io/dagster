@@ -73,6 +73,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
+    execute_partition_set,
     execute_pipeline,
     execute_pipeline_iterator,
     execute_pipeline_with_preset,

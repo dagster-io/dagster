@@ -5,10 +5,10 @@ import random
 import re
 import string
 import textwrap
+import time
 
 import click
 import six
-import time
 import yaml
 
 from dagster import (
