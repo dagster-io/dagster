@@ -17,6 +17,12 @@ snapshots['test_get_partition_sets_for_pipeline 1'] = {
                 'solidSubset': [
                     'return_hello'
                 ]
+            },
+            {
+                'mode': 'default',
+                'name': 'scheduled_integer_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
             }
         ]
     }
@@ -45,6 +51,12 @@ snapshots['test_get_all_partition_sets 1'] = {
                 'mode': 'default',
                 'name': 'enum_partition',
                 'pipelineName': 'noop_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'scheduled_integer_partitions',
+                'pipelineName': 'no_config_pipeline',
                 'solidSubset': None
             }
         ]

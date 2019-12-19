@@ -172,6 +172,6 @@ def test_partition_based_execution():
 
         assert any(tag['key'] == 'dagster/partition' and tag['value'] == '9' for tag in tags)
         assert any(
-            tag['key'] == 'dagster/partition_set' and tag['value'] == 'integer_partitions'
+            tag['key'] == 'dagster/partition_set' and tag['value'] == 'scheduled_integer_partitions'
             for tag in tags
         )

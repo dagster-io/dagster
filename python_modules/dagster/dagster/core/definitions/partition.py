@@ -246,6 +246,9 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             partition_set, 'partition_set', PartitionSetDefinition
         )
 
+    def get_partition_set(self):
+        return self._partition_set
+
 
 class RepositoryPartitionsHandle(namedtuple('_RepositoryPartitionsHandle', ('partition_set_defs'))):
     def __new__(cls, partition_set_defs):
@@ -256,7 +259,7 @@ class RepositoryPartitionsHandle(namedtuple('_RepositoryPartitionsHandle', ('par
             ),
         )
 
-    def get_all_partition_sets(self):
+    def get_partition_sets(self):
         return self.partition_set_defs
 
     def get_partition_set(self, name):

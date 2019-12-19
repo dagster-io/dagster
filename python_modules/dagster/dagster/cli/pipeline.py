@@ -19,7 +19,8 @@ from dagster import (
     execute_pipeline_with_preset,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
-from dagster.core.definitions import Solid, solids_in_topological_order
+from dagster.core.definitions import ExecutionTargetHandle, Solid, solids_in_topological_order
+from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -440,6 +441,24 @@ def validate_partition_slice(partitions, name, value):
     return index if is_start else index + 1
 
 
+def get_partition_sets_for_handle(handle, artifacts_dir):
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    partitions_handle = handle.build_partitions_handle()
+    scheduler_handle = handle.build_scheduler_handle(artifacts_dir)
+    partition_sets = []
+    if partitions_handle:
+        partition_sets.extend(partitions_handle.get_partition_sets())
+    if scheduler_handle:
+        partition_sets.extend(
+            [
+                schedule_def.get_partition_set()
+                for schedule_def in scheduler_handle.all_schedule_defs()
+                if isinstance(schedule_def, PartitionScheduleDefinition)
+            ]
+        )
+    return partition_sets
+
+
 @click.command(
     name='backfill',
     help='Backfill a partitioned pipeline.\n\n{instructions}'.format(
@@ -499,13 +518,12 @@ def pipeline_backfill_command(mode, *args, **kwargs):
         )
 
     pipeline = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
-
-    partition_handle = handle.build_partitions_handle()
+    partition_sets = get_partition_sets_for_handle(handle, instance.schedules_directory())
 
     if not pipeline:
         raise click.UsageError('No pipeline found')
 
-    if not partition_handle:
+    if not partition_sets:
         raise click.UsageError('No partitions found')
 
     if not instance.run_launcher:
@@ -518,29 +536,29 @@ def pipeline_backfill_command(mode, *args, **kwargs):
         )
 
     if kwargs.get('partition_set'):
-        partition_set = partition_handle.get_partition_set(kwargs['partition_set'])
+        partition_set = next(
+            (x for x in partition_sets if x.name == kwargs.get('partition_set')), None
+        )
     else:
-        all_partition_sets = [
-            x for x in partition_handle.get_all_partition_sets() if x.pipeline_name == pipeline.name
-        ]
-        if not all_partition_sets:
+        pipeline_partition_sets = [x for x in partition_sets if x.pipeline_name == pipeline.name]
+        if not pipeline_partition_sets:
             raise click.UsageError(
                 'Pipeline `{}` does not have partition sets defined'.format(pipeline.name)
             )
-        if len(all_partition_sets) == 1:
-            partition_set = all_partition_sets[0]
+        if len(pipeline_partition_sets) == 1:
+            partition_set = pipeline_partition_sets[0]
         else:
             partition_set_name = click.prompt(
                 'Select a partition set to use for backfill: {}'.format(
-                    ', '.join(x.name for x in all_partition_sets)
+                    ', '.join(x.name for x in pipeline_partition_sets)
                 )
             )
             partition_set = next(
-                (x for x in all_partition_sets if x.name == partition_set_name), None
+                (x for x in pipeline_partition_sets if x.name == partition_set_name), None
             )
 
     if not partition_set:
-        raise click.UsageError('Error, partition set not found')
+        raise click.UsageError('Partition set not found')
 
     partitions = gen_partitions_from_args(partition_set, kwargs)
 
