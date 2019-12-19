@@ -16,7 +16,7 @@ export interface IExecutionPlanBoxProps {
   state: IStepState;
   stepKey: string;
   start: number | undefined;
-  elapsed: number | undefined;
+  finish: number | undefined;
   delay: number;
   materializations: IMaterialization[];
   expectationResults: IExpectationResult[];
@@ -49,7 +49,7 @@ export class ExecutionPlanBox extends React.Component<
     return (
       nextProps.state !== this.props.state ||
       nextProps.stepKey !== this.props.stepKey ||
-      nextProps.elapsed !== this.props.elapsed ||
+      nextProps.finish !== this.props.finish ||
       nextState.expanded !== this.state.expanded ||
       nextState.v !== this.state.v
     );
@@ -95,6 +95,7 @@ export class ExecutionPlanBox extends React.Component<
     const {
       state,
       start,
+      finish,
       stepKey,
       delay,
       expectationResults,
@@ -107,7 +108,7 @@ export class ExecutionPlanBox extends React.Component<
 
     const { expanded } = this.state;
 
-    let elapsed = this.props.elapsed;
+    let elapsed = start && finish ? finish - start : undefined;
     if (state === IStepState.RUNNING && start) {
       elapsed = Math.floor((Date.now() - start) / 1000) * 1000;
     }

@@ -1,5 +1,4 @@
 import * as React from "react";
-import produce from "immer";
 import gql from "graphql-tag";
 
 import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
@@ -56,7 +55,7 @@ export interface IMaterialization extends IStepDisplayEvent {}
 export interface IStepMetadata {
   state: IStepState;
   start?: number;
-  elapsed?: number;
+  finish?: number;
   transitionedAt: number;
   expectationResults: IExpectationResult[];
   materializations: IMaterialization[];
@@ -165,84 +164,57 @@ export function extractMetadataFromLogs(
     }
 
     if (log.step) {
-      const stepKey = log.step.key;
       const timestamp = Number.parseInt(log.timestamp, 10);
+      const stepKey = log.step.key;
+      const step = metadata.steps[stepKey] || {
+        state: IStepState.WAITING,
+        start: undefined,
+        elapsed: undefined,
+        transitionedAt: 0,
+        expectationResults: [],
+        materializations: []
+      };
 
       if (log.__typename === "ExecutionStepStartEvent") {
-        metadata.steps[stepKey] = {
-          state: IStepState.RUNNING,
-          start: timestamp,
-          transitionedAt: timestamp,
-          expectationResults: [],
-          materializations: []
-        };
+        if (step.state === IStepState.WAITING) {
+          step.state = IStepState.RUNNING;
+          step.transitionedAt = timestamp;
+          step.start = timestamp;
+        } else {
+          // we have already received a success / skipped / failure event
+          // and this message is out of order.
+        }
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
-        metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
-          step => {
-            step.state = IStepState.SUCCEEDED;
-            if (step.start) {
-              step.transitionedAt = timestamp;
-              step.elapsed = timestamp - step.start;
-            }
-          }
-        );
+        step.state = IStepState.SUCCEEDED;
+        step.transitionedAt = timestamp;
+        step.finish = timestamp;
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
-        metadata.steps[stepKey] = {
-          state: IStepState.SKIPPED,
-          transitionedAt: timestamp,
-          expectationResults: [],
-          materializations: []
-        };
-      } else if (log.__typename === "StepMaterializationEvent") {
-        metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {
-            expectationResults: [],
-            materializations: []
-          },
-          step => {
-            step.materializations.push({
-              icon: IStepDisplayIconType.LINK,
-              text: log.materialization.label || "Materialization",
-              items: itemsForMetadataEntries(
-                log.materialization.metadataEntries
-              )
-            });
-          }
-        );
-      } else if (log.__typename === "StepExpectationResultEvent") {
-        metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {
-            expectationResults: [],
-            materializations: []
-          },
-          step => {
-            step.expectationResults.push({
-              status: log.expectationResult.success
-                ? IExpectationResultStatus.PASSED
-                : IExpectationResultStatus.FAILED,
-              icon: log.expectationResult.success
-                ? IStepDisplayIconType.SUCCESS
-                : IStepDisplayIconType.FAILURE,
-              text: log.expectationResult.label,
-              items: itemsForMetadataEntries(
-                log.expectationResult.metadataEntries
-              )
-            });
-          }
-        );
+        step.state = IStepState.SKIPPED;
+        step.transitionedAt = timestamp;
       } else if (log.__typename === "ExecutionStepFailureEvent") {
-        metadata.steps[stepKey] = produce(
-          metadata.steps[stepKey] || {},
-          step => {
-            step.state = IStepState.FAILED;
-            if (step.start) {
-              step.transitionedAt = timestamp;
-              step.elapsed = timestamp - step.start;
-            }
-          }
-        );
+        step.state = IStepState.FAILED;
+        step.transitionedAt = timestamp;
+        step.finish = timestamp;
+      } else if (log.__typename === "StepMaterializationEvent") {
+        step.materializations.push({
+          icon: IStepDisplayIconType.LINK,
+          text: log.materialization.label || "Materialization",
+          items: itemsForMetadataEntries(log.materialization.metadataEntries)
+        });
+      } else if (log.__typename === "StepExpectationResultEvent") {
+        step.expectationResults.push({
+          status: log.expectationResult.success
+            ? IExpectationResultStatus.PASSED
+            : IExpectationResultStatus.FAILED,
+          icon: log.expectationResult.success
+            ? IStepDisplayIconType.SUCCESS
+            : IStepDisplayIconType.FAILURE,
+          text: log.expectationResult.label,
+          items: itemsForMetadataEntries(log.expectationResult.metadataEntries)
+        });
       }
+
+      metadata.steps[stepKey] = step;
     }
   });
   return metadata;
