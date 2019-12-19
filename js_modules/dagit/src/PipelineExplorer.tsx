@@ -312,7 +312,7 @@ const LargeDAGNotice = () => (
     <LargeDAGInstructionBox>
       <p>
         This is a large DAG that may be difficult to visualize. Type{" "}
-        <code>*</code> in the subset box above to render the entire thing, or
+        <code>*</code> in the subset box below to render the entire thing, or
         type a solid name and use:
       </p>
       <ul style={{ marginBottom: 0 }}>

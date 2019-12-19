@@ -4,7 +4,6 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 import sqlalchemy as db
-from dagster_postgres.utils import get_conn
 
 from dagster import Field, String, check
 from dagster.core.definitions.environment_configs import SystemNamedDict
@@ -32,19 +31,26 @@ WATCHER_POLL_INTERVAL = 0.2
 
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
-        self.conn_string = check.str_param(postgres_url, 'postgres_url')
-        self._event_watcher = PostgresEventWatcher(self.conn_string)
-        self._engine = create_engine(self.conn_string)
-        SqlEventLogStorageMetadata.create_all(self.engine)
+        self.postgres_url = check.str_param(postgres_url, 'postgres_url')
+        self._event_watcher = PostgresEventWatcher(self.postgres_url)
+        with self.get_engine() as engine:
+            SqlEventLogStorageMetadata.create_all(engine)
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
-    @property
-    def engine(self):
-        return self._engine
+    @contextmanager
+    def get_engine(self):
+        engine = create_engine(
+            self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+        )
+        try:
+            yield engine
+        finally:
+            engine.dispose()
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        run_alembic_upgrade(alembic_config, self.engine)
+        with self.get_engine() as engine:
+            run_alembic_upgrade(alembic_config, engine)
 
     @property
     def inst_data(self):
@@ -91,8 +97,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
             )
             res = result_proxy.fetchone()
-
-        with get_conn(self.conn_string).cursor() as conn:
+            result_proxy.close()
             conn.execute(
                 '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
                 (res[0] + '_' + str(res[1]),),
@@ -100,7 +105,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @contextmanager
     def connect(self, run_id=None):
-        yield self.engine.connect()
+        with self.get_engine() as engine:
+            yield engine
 
     def watch(self, run_id, start_cursor, callback):
         self._event_watcher.watch_run(run_id, start_cursor, callback)
@@ -114,6 +120,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def __del__(self):
         # Keep the inherent limitations of __del__ in Python in mind!
+        self.dispose()
+
+    def dispose(self):
         self._event_watcher.close()
 
 
@@ -141,11 +150,15 @@ TERMINATE_EVENT_LOOP = 'TERMINATE_EVENT_LOOP'
 def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_thread_exit):
 
     for notif in await_pg_notifications(
-        conn_string, channels=[CHANNEL_NAME], timeout=POLLING_CADENCE, yield_on_timeout=True,
+        conn_string,
+        channels=[CHANNEL_NAME],
+        timeout=POLLING_CADENCE,
+        yield_on_timeout=True,
+        exit_event=watcher_thread_exit,
     ):
         if notif is None:
             if watcher_thread_exit.is_set():
-                return
+                break
         else:
             run_id, index_str = notif.payload.split('_')
             if run_id not in run_id_dict:
@@ -155,13 +168,18 @@ def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_t
             with dict_lock:
                 handlers = handlers_dict.get(run_id, [])
 
-            engine = create_engine(conn_string)
-            res = engine.execute(
-                db.select([SqlEventLogStorageTable.c.event]).where(
-                    SqlEventLogStorageTable.c.id == index
-                )
+            engine = create_engine(
+                conn_string, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
             )
-            dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
+            try:
+                res = engine.execute(
+                    db.select([SqlEventLogStorageTable.c.event]).where(
+                        SqlEventLogStorageTable.c.id == index
+                    ),
+                )
+                dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
+            finally:
+                engine.dispose()
 
             for (cursor, callback) in handlers:
                 if index >= cursor:

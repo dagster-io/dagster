@@ -18,6 +18,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def connect(self):
         '''Context manager yielding a sqlalchemy.engine.Connection.'''
 
+    def execute(self, query):
+        with self.connect() as conn:
+            result_proxy = conn.execute(query)
+            res = result_proxy.fetchall()
+            result_proxy.close()
+
+        return res
+
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
@@ -94,8 +102,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
         query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
         return self._rows_to_runs(rows)
 
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
@@ -113,8 +120,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             RunsTable.c.pipeline_name == pipeline_name
         )
         query = self._build_query(base_query, cursor, limit)
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
         return self._rows_to_runs(rows)
 
     def get_run_count_with_matching_tags(self, tags):
@@ -138,8 +144,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         query = db.select([db.func.count()]).select_from(sub_query)
 
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
 
         count = rows[0][0]
         return count
@@ -165,8 +170,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         query = self._build_query(base_query, cursor, limit)
 
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
 
         return self._rows_to_runs(rows)
 
@@ -175,8 +179,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         base_query = db.select([RunsTable.c.run_body]).where(RunsTable.c.status == run_status.value)
         query = self._build_query(base_query, cursor, limit)
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
+
         return self._rows_to_runs(rows)
 
     def get_run_by_id(self, run_id):
@@ -191,15 +195,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(run_id, 'run_id')
 
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def get_run_tags(self):
         result = defaultdict(set)
         query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(RunTagsTable.c.value)
-        with self.connect() as conn:
-            rows = conn.execute(query).fetchall()
+        rows = self.execute(query)
         for r in rows:
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])

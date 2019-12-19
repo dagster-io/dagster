@@ -1,4 +1,4 @@
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 665 910" width="665" height="910">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 695 962.5" width="695" height="962.5">
   <style data-styled="" data-styled-version="4.4.1">
     /* sc-component-id: ParentSolidNode__SVGLabeledParentRect-sc-1gamf85-0 */
     .bSpCYX {
@@ -26,154 +26,124 @@
     }
   </style>
   <g>
-    <rect x="1" y="1" width="664" height="909" fill="#F5F8FA" stroke="#979797" stroke-width="1" class="ParentSolidNode__SVGLabeledParentRect-sc-1gamf85-0 bSpCYX"></rect><text x="6" y="6" fill="#979797" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="198.4" dominant-baseline="hanging">master_cord_s3_to_df</text>
+    <rect x="1" y="1" width="694" height="961.5" fill="#F5F8FA" stroke="#979797" stroke-width="1" class="ParentSolidNode__SVGLabeledParentRect-sc-1gamf85-0 bSpCYX"></rect><text x="6" height="16" fill="#979797" y="6" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="198.4" dominant-baseline="hanging">master_cord_s3_to_df</text>
   </g>
   <g>
-    <rect x="70" y="142" width="525" height="626" fill="#F5F8FA" stroke="#979797" stroke-width="1" class="ParentSolidNode__SVGLabeledParentRect-sc-1gamf85-0 bSpCYX"></rect><text x="75" y="147" fill="#979797" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">s3_to_df</text>
+    <rect x="70" y="142" width="555" height="678.5" fill="#F5F8FA" stroke="#979797" stroke-width="1" class="ParentSolidNode__SVGLabeledParentRect-sc-1gamf85-0 bSpCYX"></rect><text x="75" height="16" fill="#979797" y="147" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="79.36" dominant-baseline="hanging">s3_to_df</text>
   </g>
   <g>
     <path d="M 85 124 H 50 V 230 H 155" fill="none" stroke-width="5" stroke-linecap="round" stroke="rgb(137, 206, 206)"></path>
     <path d="M 85 124 H 50 V 230 H 155" fill="none" stroke-width="4" stroke-linecap="round" stroke="white"></path>
   </g>
   <g>
-    <path d="M 85 88 H 40 V 448 H 155" fill="none" stroke-width="5" stroke-linecap="round" stroke="rgb(137, 206, 206)"></path>
-    <path d="M 85 88 H 40 V 448 H 155" fill="none" stroke-width="4" stroke-linecap="round" stroke="white"></path>
+    <path d="M 85 88 H 40 V 463 H 155" fill="none" stroke-width="5" stroke-linecap="round" stroke="rgb(137, 206, 206)"></path>
+    <path d="M 85 88 H 40 V 463 H 155" fill="none" stroke-width="4" stroke-linecap="round" stroke="white"></path>
   </g>
   <g>
-    <path d="M 85 786 H 50 V 726 H 155" fill="none" stroke-width="5" stroke-linecap="round" stroke="rgb(137, 206, 206)"></path>
-    <path d="M 85 786 H 50 V 726 H 155" fill="none" stroke-width="4" stroke-linecap="round" stroke="white"></path>
+    <path d="M 85 838.5 H 50 V 771 H 155" fill="none" stroke-width="5" stroke-linecap="round" stroke="rgb(137, 206, 206)"></path>
+    <path d="M 85 838.5 H 50 V 771 H 155" fill="none" stroke-width="4" stroke-linecap="round" stroke="white"></path>
   </g>
   <g>
     <title>s3_coordinate: S3Coordinate
 
       Connected to: cache_file_from_s3:s3_coordinate</title>
-    <rect x="70" y="106" width="277.67999999999995" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-      <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" dominant-baseline="hanging">s3_coordinate:</text>
-      <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text>
-    </rect>
-    <ellipse cx="85" cy="124" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="99" y="117" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" dominant-baseline="hanging">s3_coordinate:</text>
-    <rect x="227.51999999999998" y="110.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text></rect><text fill="#222" x="231.51999999999998" y="117" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text>
+    <rect x="70" y="106" width="277.67999999999995" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+    <ellipse cx="85" cy="124" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="99" y="117" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" height="14" dominant-baseline="hanging">s3_coordinate:</text>
+    <rect x="227.51999999999998" y="110.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="231.51999999999998" y="117" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" height="14" dominant-baseline="hanging">S3Coordinate</text>
   </g>
   <g>
     <title>archive_member: String
 
       Connected to: unzip_file_handle:archive_member</title>
-    <rect x="70" y="70" width="234.27999999999997" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-      <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">archive_member:</text>
-      <rect width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text>
-    </rect>
-    <ellipse cx="85" cy="88" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="99" y="81" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">archive_member:</text>
-    <rect x="236.2" y="74.5" width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text></rect><text fill="#222" x="240.2" y="81" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text>
+    <rect x="70" y="70" width="234.27999999999997" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+    <ellipse cx="85" cy="88" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="99" y="81" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" height="14" dominant-baseline="hanging">archive_member:</text>
+    <rect x="236.2" y="74.5" width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="240.2" y="81" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" height="14" dominant-baseline="hanging">String</text>
   </g>
   <g>
-    <rect width="215.76" height="12" x="-22.879999999999995" y="970" class="ExternalConnectionNode__BackingRect-sc-1pxbh2t-0 dZjnIq"></rect>
-    <ellipse cx="85" cy="960" rx="7" ry="7" fill="#C7CBCD"></ellipse><text height="12" x="-22.879999999999995" y="970" style="font:12px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="215.76" dominant-baseline="hanging">join_q2_data:master_cord_data</text>
-    <path class="vx-link vx-link-vertical-diagonal" d="M85,960C85,873,85,873,85,786" style="stroke:#C7CBCD;stroke-width:6;fill:none"></path>
+    <rect width="215.76" height="12" x="-22.879999999999995" y="1022.5" class="ExternalConnectionNode__BackingRect-sc-1pxbh2t-0 dZjnIq"></rect>
+    <ellipse cx="85" cy="1012.5" rx="7" ry="7" fill="#C7CBCD"></ellipse><text height="12" x="-22.879999999999995" y="1022.5" style="font:12px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="215.76" dominant-baseline="hanging">join_q2_data:master_cord_data</text>
+    <path class="vx-link vx-link-vertical-diagonal" d="M85,1012.5C85,925.5,85,925.5,85,838.5" style="stroke:#C7CBCD;stroke-width:6;fill:none"></path>
   </g>
   <g>
     <title>result: PySparkDataFrame
 
       Connected to: ingest_csv_file_handle_to_spark:result</title>
-    <rect x="70" y="768" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
-      <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
-    </rect>
-    <ellipse cx="85" cy="786" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-    <rect x="99" y="772.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="103" y="779" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
+    <rect x="70" y="820.5" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
+    <ellipse cx="85" cy="838.5" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+    <rect x="99" y="825" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="103" y="831.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" height="14" dominant-baseline="hanging">PySparkDataFrame</text>
   </g>
   <g opacity="0.2">
     <g>
-      <path d="M155,544C155,587,155,587,155,630" class="SolidLinks__StyledPath-sc-143cb6y-0 jaospH"></path>
+      <path d="M155,574C155,617,155,617,155,660" class="SolidLinks__StyledPath-sc-143cb6y-0 jaospH"></path>
     </g>
     <g>
-      <path d="M155,326C155,369,155,369,155,412" class="SolidLinks__StyledPath-sc-143cb6y-0 jaospH"></path>
+      <path d="M155,341C155,384,155,384,155,427" class="SolidLinks__StyledPath-sc-143cb6y-0 jaospH"></path>
     </g>
   </g>
   <g opacity="0.55"></g>
   <g>
-    <rect x="140" y="242" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="178.56" dominant-baseline="hanging">cache_file_from_s3</text></rect><text fill="#222" x="152" y="270" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="178.56" dominant-baseline="hanging">cache_file_from_s3</text>
+    <rect x="140" y="242" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="152" y="277.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="178.56" height="16" dominant-baseline="hanging">cache_file_from_s3</text>
     <g>
       <title>s3_coordinate: S3Coordinate</title>
-      <rect x="140" y="212" width="277.67999999999995" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" dominant-baseline="hanging">s3_coordinate:</text>
-        <rect width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text>
-      </rect>
-      <ellipse cx="155" cy="230" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="223" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" dominant-baseline="hanging">s3_coordinate:</text>
-      <rect x="297.52" y="216.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text></rect><text fill="#222" x="301.52" y="223" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" dominant-baseline="hanging">S3Coordinate</text>
+      <rect x="140" y="212" width="277.67999999999995" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+      <ellipse cx="155" cy="230" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="223" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="121.52" height="14" dominant-baseline="hanging">s3_coordinate:</text>
+      <rect x="297.52" y="216.5" width="112.16" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="301.52" y="223" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="104.16" height="14" dominant-baseline="hanging">S3Coordinate</text>
     </g>
     <g>
       <title>result: FileHandle
 
         Used By:
         unzip_file_handle:archive_file_handle</title>
-      <rect x="140" y="308" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-        <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
-      </rect>
-      <ellipse cx="155" cy="326" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect x="169" y="312.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="173" y="319" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      <rect x="140" y="323" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
+      <ellipse cx="155" cy="341" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+      <rect x="169" y="327.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="173" y="334" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" height="14" dominant-baseline="hanging">FileHandle</text>
     </g>
-    <ellipse cx="470" cy="242" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
-    <ellipse cx="470" cy="242" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="465" y="236.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
+    <ellipse cx="490" cy="242" rx="13" ry="13" stroke="#8A9BA8" fill="#DBE6EE" pathLength="100" stroke-width="1" stroke-dasharray="0 50 0"></ellipse>
+    <ellipse cx="490" cy="242" rx="10" ry="10" stroke="#FFFFFF" fill="#7D8C97" pathLength="100" stroke-width="2"></ellipse><text x="485" y="236.5" style="font:14px &quot;Arial&quot;, san-serif" fill="#FFFFFF" dominant-baseline="hanging">C</text>
   </g>
   <g>
-    <rect x="140" y="642" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="307.52" dominant-baseline="hanging">ingest_csv_file_handle_to_spark</text></rect><text fill="#222" x="152" y="670" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="307.52" dominant-baseline="hanging">ingest_csv_file_handle_to_spark</text>
+    <rect x="140" y="672" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="152" y="707.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="307.52" height="16" dominant-baseline="hanging">ingest_csv_file_handle_to_spark</text>
     <g>
       <title>csv_file_handle: FileHandle
 
         From:
         unzip_file_handle:result</title>
-      <rect x="140" y="612" width="277.68" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">csv_file_handle:</text>
-        <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
-      </rect>
-      <ellipse cx="155" cy="630" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="623" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">csv_file_handle:</text>
-      <rect x="314.88" y="616.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="318.88" y="623" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      <rect x="140" y="642" width="277.68" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+      <ellipse cx="155" cy="660" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="653" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" height="14" dominant-baseline="hanging">csv_file_handle:</text>
+      <rect x="314.88" y="646.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="318.88" y="653" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" height="14" dominant-baseline="hanging">FileHandle</text>
     </g>
     <g>
       <title>result: PySparkDataFrame</title>
-      <rect x="140" y="708" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-        <rect width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
-      </rect>
-      <ellipse cx="155" cy="726" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect x="169" y="712.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text></rect><text fill="#222" x="173" y="719" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" dominant-baseline="hanging">PySparkDataFrame</text>
+      <rect x="140" y="753" width="183.88" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
+      <ellipse cx="155" cy="771" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+      <rect x="169" y="757.5" width="146.88" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="173" y="764" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="138.88" height="14" dominant-baseline="hanging">PySparkDataFrame</text>
     </g>
   </g>
   <g>
-    <rect x="140" y="460" width="350" height="72" fill="#DBE6EE" stroke="#979797" stroke-width="1"><text fill="#222" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="168.64" dominant-baseline="hanging">unzip_file_handle</text></rect><text fill="#222" x="152" y="488" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="168.64" dominant-baseline="hanging">unzip_file_handle</text>
+    <rect x="140" y="475" width="370" height="87" fill="#DBE6EE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="152" y="510.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="168.64" height="16" dominant-baseline="hanging">unzip_file_handle</text>
     <g>
       <title>archive_file_handle: FileHandle
 
         From:
         cache_file_from_s3:result</title>
-      <rect x="140" y="394" width="300" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="173.6" dominant-baseline="hanging">archive_file_handle:</text>
-        <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
-      </rect>
-      <ellipse cx="155" cy="412" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="405" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="164.92" dominant-baseline="hanging">archive_file_handl…</text>
-      <rect x="341.5797317436662" y="398.5" width="90.42026825633384" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="345.5797317436662" y="405" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" dominant-baseline="hanging">FileHand…</text>
+      <rect x="140" y="409" width="300" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+      <ellipse cx="155" cy="427" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="420" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="164.92" height="14" dominant-baseline="hanging">archive_file_handl…</text>
+      <rect x="341.5797317436662" y="413.5" width="90.42026825633384" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="345.5797317436662" y="420" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="78.12" height="14" dominant-baseline="hanging">FileHand…</text>
     </g>
     <g>
       <title>archive_member: String</title>
-      <rect x="140" y="430" width="234.27999999999997" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">archive_member:</text>
-        <rect width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text>
-      </rect>
-      <ellipse cx="155" cy="448" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="441" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" dominant-baseline="hanging">archive_member:</text>
-      <rect x="306.2" y="434.5" width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text></rect><text fill="#222" x="310.2" y="441" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" dominant-baseline="hanging">String</text>
+      <rect x="140" y="445" width="234.27999999999997" height="36" stroke="#979797" stroke-width="1" fill="#00B3A4"></rect>
+      <ellipse cx="155" cy="463" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse><text fill="#FFF" x="169" y="456" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="130.2" height="14" dominant-baseline="hanging">archive_member:</text>
+      <rect x="306.2" y="449.5" width="60.08" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="310.2" y="456" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="52.08" height="14" dominant-baseline="hanging">String</text>
     </g>
     <g>
       <title>result: FileHandle
 
         Used By:
         ingest_csv_file_handle_to_spark:csv_file_handle</title>
-      <rect x="140" y="526" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD">
-        <ellipse cx="7" cy="7" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-        <rect width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="4" y="6.5" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
-      </rect>
-      <ellipse cx="155" cy="544" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
-      <rect x="169" y="530.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"><text fill="#222" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text></rect><text fill="#222" x="173" y="537" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" dominant-baseline="hanging">FileHandle</text>
+      <rect x="140" y="556" width="131.8" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
+      <ellipse cx="155" cy="574" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
+      <rect x="169" y="560.5" width="94.8" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="173" y="567" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="86.8" height="14" dominant-baseline="hanging">FileHandle</text>
     </g>
   </g>
 </svg>

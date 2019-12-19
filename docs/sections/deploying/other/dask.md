@@ -5,6 +5,12 @@
 Dagster is designed to target a variety of execution substrates, and natively
 supports Dask for pipeline execution.
 
+Note that Dagster currently only provides task-level parallelism with Dask: the pipeline execution
+steps are distributed, but work within a single solid still happens entirely in a single process on
+a single machine. If your goal is to distribute execution of workloads within a single solid, you
+may find that invoking Dask or Pyspark directly from within the body of a solid function is a better
+fit than the engine layer covered in this documentation.
+
 The Dagster / Dask integration lets you execute a Dagster pipeline on either local Dask or on a
 remote Dask cluster by specifying `dask` in the `execution` block of the environment config.
 

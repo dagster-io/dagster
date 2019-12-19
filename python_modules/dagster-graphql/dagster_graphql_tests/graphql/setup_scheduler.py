@@ -3,7 +3,7 @@ from dagster_tests.utils import FilesytemTestScheduler
 from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, schedules
 
 integer_partition_set = PartitionSetDefinition(
-    name='integer_partitions',
+    name='scheduled_integer_partitions',
     pipeline_name='no_config_pipeline',
     partition_fn=lambda: [Partition(x) for x in range(1, 10)],
     environment_dict_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},

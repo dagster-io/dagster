@@ -1,4 +1,5 @@
 from dagster import ExecutionTargetHandle, check
+from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
 
 from .pipeline_execution_manager import PipelineExecutionManager
@@ -30,10 +31,28 @@ class DagsterGraphQLContext(object):
         return self._handle
 
     def get_partition_set(self, partition_set_name):
-        if not self.partitions_handle:
-            return None
+        return next(
+            (
+                partition_set
+                for partition_set in self.get_all_partition_sets()
+                if partition_set.name == partition_set_name
+            ),
+            None,
+        )
 
-        return self.partitions_handle.get_partition_set(partition_set_name)
+    def get_all_partition_sets(self):
+        partition_sets = []
+        if self.partitions_handle:
+            partition_sets.extend(self.partitions_handle.get_partition_sets())
+        if self.scheduler_handle:
+            partition_sets.extend(
+                [
+                    schedule_def.get_partition_set()
+                    for schedule_def in self.scheduler_handle.all_schedule_defs()
+                    if isinstance(schedule_def, PartitionScheduleDefinition)
+                ]
+            )
+        return partition_sets
 
     def get_repository(self):
         return self.repository_definition

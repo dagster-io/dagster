@@ -1,29 +1,44 @@
+import datetime
 import os
 
 from dagster_cron import SystemCronScheduler
-from dagster_examples.experimental.partitions import dash_stat_date_set, log_date_set, us_states_set
 
-from dagster import schedules
+from dagster import daily_schedule, hourly_schedule, schedules
 
 
 @schedules(scheduler=SystemCronScheduler)
 def define_scheduler():
-
-    dash_stats_datetime_partition = dash_stat_date_set.create_schedule_definition(
-        schedule_name='dash_stats_datetime_partition',
-        cron_schedule='0 0 * * *',
+    @daily_schedule(
+        pipeline_name='dash_stats',
+        start_date=datetime.datetime(2019, 12, 1),
+        execution_time=datetime.time(hour=3, minute=41),
         environment_vars={
             'GOOGLE_APPLICATION_CREDENTIALS': os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
             'SLACK_TOKEN': os.getenv('SLACK_TOKEN'),
         },
     )
+    def dash_stats_schedule(date):
+        return {
+            'resources': {
+                'bigquery': {},
+                'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}},
+            },
+            'solids': {'bq_solid': {'config': {'date': date.strftime("%Y-%m-%d")}}},
+        }
 
-    log_state_partition = us_states_set.create_schedule_definition(
-        schedule_name='log_states', cron_schedule='* * * * *'
+    @hourly_schedule(
+        pipeline_name='log_partitions',
+        start_date=datetime.datetime(2019, 12, 1),
+        execution_time=datetime.time(minute=28),
     )
+    def hourly_announce_schedule(date):
+        return {
+            'solids': {
+                'announce_partition': {'config': {'partition': "Partition is: " + str(date)}}
+            }
+        }
 
-    log_date_partition = log_date_set.create_schedule_definition(
-        schedule_name='log_dates', cron_schedule='* * * * *'
-    )
-
-    return [dash_stats_datetime_partition, log_date_partition, log_state_partition]
+    return [
+        dash_stats_schedule,
+        hourly_announce_schedule,
+    ]

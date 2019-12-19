@@ -598,6 +598,10 @@ type PageInfo {
 
 type Partition {
   name: String!
+  partitionSetName: String!
+  solidSubset: [String!]
+  mode: String!
+  environmentConfigYaml: String!
 }
 
 type PartitionSet {

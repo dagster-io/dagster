@@ -9,6 +9,7 @@ from dagster.core.instance import DagsterInstance
 def create_instance_cli_group():
     group = click.Group(name='instance')
     group.add_command(info_command)
+    group.add_command(migrate_command)
     return group
 
 

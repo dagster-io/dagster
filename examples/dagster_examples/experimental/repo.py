@@ -11,6 +11,7 @@ from dagster import (
     ModeDefinition,
     Output,
     OutputDefinition,
+    PresetDefinition,
     RepositoryDefinition,
     pipeline,
     solid,
@@ -128,7 +129,34 @@ def announce_partition(context):
     context.log.info(context.solid_config.get('partition'))
 
 
-@pipeline
+@pipeline(
+    preset_defs=[
+        PresetDefinition(
+            name="test",
+            environment_dict={
+                "solids": {"announce_partition": {"config": {"partition": "Test Partition"}}}
+            },
+        ),
+        PresetDefinition(
+            name="prod",
+            environment_dict={
+                "solids": {"announce_partition": {"config": {"partition": "Prod Partition"}}}
+            },
+        ),
+        PresetDefinition(
+            name="prod2",
+            environment_dict={
+                "solids": {"announce_partition": {"config": {"partition": "Prod Partition"}}}
+            },
+        ),
+        PresetDefinition(
+            name="prod3",
+            environment_dict={
+                "solids": {"announce_partition": {"config": {"partition": "Prod Partition"}}}
+            },
+        ),
+    ],
+)
 def log_partitions():
     announce_partition()
 
