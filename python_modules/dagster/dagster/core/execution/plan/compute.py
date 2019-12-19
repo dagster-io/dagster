@@ -28,7 +28,9 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
         ),
         kind=StepKind.COMPUTE,
         solid_handle=handle,
-        metadata=solid.step_metadata_fn(environment_config) if solid.step_metadata_fn else {},
+        metadata=solid.step_metadata_fn(environment_config)
+        if solid.step_metadata_fn
+        else solid.metadata,
     )
 
 

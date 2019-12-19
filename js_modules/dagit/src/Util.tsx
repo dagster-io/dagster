@@ -1,41 +1,5 @@
-import { Toaster, Position, Intent } from "@blueprintjs/core";
-
+import LRU from "lru-cache";
 export const DEFAULT_RESULT_NAME = "result";
-
-// The address to the dagit server (eg: http://localhost:5000) based
-// on our current "GRAPHQL_URI" env var. Note there is no trailing slash.
-export const ROOT_SERVER_URI = (process.env.REACT_APP_GRAPHQL_URI || "")
-  .replace("wss://", "https://")
-  .replace("ws://", "http://")
-  .replace("/graphql", "");
-
-export const WEBSOCKET_URI =
-  process.env.REACT_APP_GRAPHQL_URI ||
-  `${document.location.protocol === "https:" ? "wss" : "ws"}://${
-    document.location.host
-  }/graphql`;
-
-export const SharedToaster = Toaster.create(
-  { position: Position.TOP },
-  document.body
-);
-
-export async function copyValue(event: React.MouseEvent<any>, value: string) {
-  event.preventDefault();
-
-  const el = document.createElement("input");
-  document.body.appendChild(el);
-  el.value = value;
-  el.select();
-  document.execCommand("copy");
-  el.remove();
-
-  SharedToaster.show({
-    message: "Copied to clipboard!",
-    icon: "clipboard",
-    intent: Intent.NONE
-  });
-}
 
 export function unixTimestampToString(unix: number | null) {
   if (!unix) {
@@ -112,6 +76,52 @@ export function formatElapsedTime(msec: number) {
 
 export function breakOnUnderscores(str: string) {
   return str.replace(/_/g, "_\u200b");
+}
+
+export function patchCopyToRemoveZeroWidthUnderscores() {
+  document.addEventListener("copy", event => {
+    event.preventDefault();
+    if (event.clipboardData) {
+      const text = (window.getSelection() || "")
+        .toString()
+        .replace(/_\u200b/g, "_");
+      event.clipboardData.setData("Text", text);
+    }
+  });
+}
+
+export function memoize<T extends object, R>(
+  fn: (arg: T, ...rest: any[]) => R,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+  hashSize?: number
+): (arg: T, ...rest: any[]) => R {
+  const cache = new LRU(hashSize || 50);
+  return (arg: T, ...rest: any[]) => {
+    const key = hashFn ? hashFn(arg, ...rest) : arg;
+    if (cache.has(key)) {
+      return cache.get(key) as R;
+    }
+    const r = fn(arg, ...rest);
+    cache.set(key, r);
+    return r;
+  };
+}
+
+export function asyncMemoize<T extends object, R>(
+  fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
+  hashFn?: (arg: T, ...rest: any[]) => any,
+  hashSize?: number
+): (arg: T, ...rest: any[]) => Promise<R> {
+  const cache = new LRU(hashSize || 50);
+  return async (arg: T, ...rest: any[]) => {
+    const key = hashFn ? hashFn(arg, ...rest) : arg;
+    if (cache.has(key)) {
+      return Promise.resolve(cache.get(key) as R);
+    }
+    const r = (await fn(arg, ...rest)) as R;
+    cache.set(key, r);
+    return r;
+  };
 }
 
 // Simple memoization function for methods that take a single object argument.

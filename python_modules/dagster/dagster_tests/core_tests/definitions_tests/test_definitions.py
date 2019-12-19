@@ -5,7 +5,6 @@ import pytest
 from dagster import (
     Any,
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     OutputDefinition,
@@ -36,7 +35,7 @@ def test_solid_def():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Field(Int)},
+        config={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -83,9 +82,18 @@ def test_solid_def():
         solid_one_solid, solid_one_solid.output_dict['result']
     )
 
-    assert len(pipeline_def.dependency_structure.deps_of_solid_with_input('solid_one')) == 1
+    assert (
+        len(pipeline_def.dependency_structure.input_to_upstream_outputs_for_solid('solid_one')) == 1
+    )
 
-    assert len(pipeline_def.dependency_structure.depended_by_of_solid('produce_string')) == 1
+    assert (
+        len(
+            pipeline_def.dependency_structure.output_to_downstream_inputs_for_solid(
+                'produce_string'
+            )
+        )
+        == 1
+    )
 
     assert len(pipeline_def.dependency_structure.input_handles()) == 1
 
@@ -108,7 +116,7 @@ def test_pipeline_types():
     @solid(
         input_defs=[InputDefinition('input_one', String)],
         output_defs=[OutputDefinition(Any)],
-        config={'another_field': Field(Int)},
+        config={'another_field': Int},
     )
     def solid_one(_context, input_one):
         raise Exception('should not execute')
@@ -128,7 +136,6 @@ def test_pipeline_types():
 def test_mapper_errors():
     @lambda_solid
     def solid_a():
-        print('a: 1')
         return 1
 
     with pytest.raises(DagsterInvalidDefinitionError) as excinfo_1:

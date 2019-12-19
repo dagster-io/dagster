@@ -1,8 +1,9 @@
 import pandas as pd
+from dagster_pandas.constraints import ConstraintViolationException
+from dagster_pandas.validation import validate_collection_schema
 
 from dagster import (
     DagsterInvariantViolationError,
-    Dict,
     EventMetadataEntry,
     Field,
     Materialization,
@@ -11,18 +12,10 @@ from dagster import (
     TypeCheck,
     as_dagster_type,
     check,
+    dagster_type,
 )
-from dagster.core.types import NamedSelector, input_selector_schema, output_selector_schema
-
-
-def define_path_dict_field():
-    return Field(Dict({'path': Field(Path)}))
-
-
-def define_csv_dict_field():
-    return Field(
-        Dict({'path': Field(Path), 'sep': Field(String, is_optional=True, default_value=',')})
-    )
+from dagster.core.types.config.field_utils import NamedSelector
+from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
 
 
 def dict_without_keys(ddict, *keys):
@@ -33,9 +26,9 @@ def dict_without_keys(ddict, *keys):
     NamedSelector(
         'DataFrameOutputSchema',
         {
-            'csv': define_csv_dict_field(),
-            'parquet': define_path_dict_field(),
-            'table': define_path_dict_field(),
+            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'parquet': {'path': Path},
+            'table': {'path': Path},
         },
     )
 )
@@ -61,9 +54,9 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     NamedSelector(
         'DataFrameInputSchema',
         {
-            'csv': define_csv_dict_field(),
-            'parquet': define_path_dict_field(),
-            'table': define_path_dict_field(),
+            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'parquet': {'path': Path},
+            'table': {'path': Path},
         },
     )
 )
@@ -107,3 +100,41 @@ DataFrame = as_dagster_type(
     output_materialization_config=dataframe_output_schema,
     type_check=df_type_check,
 )
+
+
+def create_dagster_pandas_dataframe_type(
+    name=None, type_check=None, columns=None, summary_statistics=None
+):
+    summary_statistics = check.opt_callable_param(summary_statistics, 'summary_statistics')
+
+    def _dagster_type_check(value):
+        event_metadata = []
+        if columns is not None:
+            try:
+                validate_collection_schema(columns, value)
+            except ConstraintViolationException as e:
+                return TypeCheck(success=False, description=str(e))
+
+        if type_check:
+            type_check_object = check.inst_param(
+                type_check(value), 'user_type_check_object', TypeCheck
+            )
+            if not type_check_object.success:
+                return type_check_object
+            event_metadata += type_check_object.metadata_entries
+
+        if summary_statistics:
+            metadata_entries = summary_statistics(value)
+            event_metadata += check.opt_list_param(
+                metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
+            )
+        return TypeCheck(success=True, metadata_entries=event_metadata)
+
+    @dagster_type(  # pylint: disable=W0223
+        name=name, type_check=_dagster_type_check,
+    )
+    class _DataFrameDagsterType(DataFrame):
+        pass
+
+    # Did this instead of as_dagster_type because multiple dataframe types can be created
+    return _DataFrameDagsterType

@@ -1,35 +1,42 @@
-import os
-from datetime import date, timedelta
+import datetime
 
 from dagster_cron import SystemCronScheduler
 
-from dagster import ScheduleDefinition, schedules
+from dagster import daily_schedule, hourly_schedule, schedules
+
+
+@hourly_schedule(
+    pipeline_name='metrics_pipeline',
+    start_date=datetime.datetime(2019, 12, 1),
+    execution_time=datetime.time(),
+)
+def daily_ingest_schedule(date):
+    date_path = date.strftime('%Y/%m/%d/%H')
+    return {
+        'solids': {
+            'save_metrics': {
+                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format(date_path)}}
+            }
+        },
+    }
+
+
+@daily_schedule(
+    pipeline_name='rollup_pipeline',
+    start_date=datetime.datetime(2019, 12, 1),
+    execution_time=datetime.time(hour=3, minute=0),
+)
+def daily_rollup_schedule(date):
+    date_path = date.strftime('%Y/%m/%d')
+    return {
+        'solids': {
+            'rollup_data': {
+                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format(date_path)}}
+            }
+        },
+    }
 
 
 @schedules(scheduler=SystemCronScheduler)
 def define_scheduler():
-    def dash_stats_datetime_partition_config():
-
-        yesterday = date.today() - timedelta(days=1)
-        d = yesterday.strftime("%Y-%m-%d")
-
-        return {
-            'resources': {
-                'bigquery': None,
-                'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}},
-            },
-            'solids': {'bq_solid': {'config': {'date': d}}},
-        }
-
-    dash_stats_datetime_partition = ScheduleDefinition(
-        name='dash_stats_datetime_partition',
-        cron_schedule='* * * * *',
-        pipeline_name='dash_stats',
-        environment_dict_fn=dash_stats_datetime_partition_config,
-        environment_vars={
-            'GOOGLE_APPLICATION_CREDENTIALS': os.getenv('GOOGLE_APPLICATION_CREDENTIALS'),
-            'SLACK_TOKEN': os.getenv('SLACK_TOKEN'),
-        },
-    )
-
-    return [dash_stats_datetime_partition]
+    return [daily_ingest_schedule, daily_rollup_schedule]

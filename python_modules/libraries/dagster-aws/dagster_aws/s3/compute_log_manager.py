@@ -1,6 +1,6 @@
 import os
 
-from dagster import check, seven
+from dagster import Field, String, check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.compute_log_manager import (
@@ -10,16 +10,16 @@ from dagster.core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
-from dagster.core.types import Field, String
 from dagster.utils import ensure_dir, ensure_file
 
 from .utils import create_s3_session
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
-    def __init__(self, bucket, local_dir=None, inst_data=None):
+    def __init__(self, bucket, local_dir=None, inst_data=None, prefix='dagster'):
         self._s3_session = create_s3_session()
         self._s3_bucket = check.str_param(bucket, 'bucket')
+        self._s3_prefix = check.str_param(prefix, 'prefix')
         self._download_urls = {}
 
         # proxy calls to local compute log manager (for subscriptions, etc)
@@ -37,7 +37,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def config_type(cls):
         return SystemNamedDict(
             'S3ComputeLogManagerConfig',
-            {'bucket': Field(String), 'local_dir': Field(String, is_optional=True)},
+            {
+                'bucket': Field(String),
+                'local_dir': Field(String, is_optional=True),
+                'prefix': Field(String, is_optional=True, default_value='dagster'),
+            },
         )
 
     @staticmethod
@@ -122,5 +126,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _bucket_key(self, run_id, step_key, io_type):
         check.inst_param(io_type, 'io_type', ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
-        paths = ['dagster', 'storage', run_id, 'compute_logs', '{}.{}'.format(step_key, extension)]
+        paths = [
+            self._s3_prefix,
+            'storage',
+            run_id,
+            'compute_logs',
+            '{}.{}'.format(step_key, extension),
+        ]
         return '/'.join(paths)  # s3 path delimiter

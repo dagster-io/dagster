@@ -1,7 +1,6 @@
 from future.standard_library import install_aliases  # isort:skip
 
 install_aliases()  # isort:skip
-from urllib.parse import urljoin, urlparse  # isort:skip
 
 import click
 import requests
@@ -13,6 +12,7 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
+from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 
@@ -41,8 +41,6 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
-    # We allow external creation of the pipeline_run_storage to support testing contexts where we
-    # need access to the underlying run storage
     instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
     check.bool_param(use_sync_executor, 'use_sync_executor')
 

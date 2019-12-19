@@ -1,12 +1,13 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
-import ConfigTypeSchema from "../ConfigTypeSchema";
+import { ConfigTypeSchema } from "../ConfigTypeSchema";
 import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
 import {
   SidebarSubhead,
   SidebarSection,
-  SidebarTitle
+  SidebarTitle,
+  SectionInner
 } from "../SidebarComponents";
 
 import Description from "../Description";
@@ -23,13 +24,13 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
         description
         inputSchemaType {
           ...ConfigTypeSchemaFragment
-          innerTypes {
+          recursiveConfigTypes {
             ...ConfigTypeSchemaFragment
           }
         }
         outputSchemaType {
           ...ConfigTypeSchemaFragment
-          innerTypes {
+          recursiveConfigTypes {
             ...ConfigTypeSchemaFragment
           }
         }
@@ -50,9 +51,11 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
     return (
       <div>
         <SidebarSubhead />
-        <SidebarTitle>
-          <Link to="?types=true">Pipeline Types</Link> {">"} {name}
-        </SidebarTitle>
+        <SectionInner>
+          <SidebarTitle>
+            <Link to="?types=true">Pipeline Types</Link> {">"} {name}
+          </SidebarTitle>
+        </SectionInner>
         <SidebarSection title={"Description"}>
           <Description description={description || "No Description Provided"} />
         </SidebarSection>
@@ -60,7 +63,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Input"}>
             <ConfigTypeSchema
               type={inputSchemaType}
-              allInnerTypes={inputSchemaType.innerTypes}
+              typesInScope={inputSchemaType.recursiveConfigTypes}
             />
           </SidebarSection>
         )}
@@ -68,7 +71,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           <SidebarSection title={"Output"}>
             <ConfigTypeSchema
               type={outputSchemaType}
-              allInnerTypes={outputSchemaType.innerTypes}
+              typesInScope={outputSchemaType.recursiveConfigTypes}
             />
           </SidebarSection>
         )}

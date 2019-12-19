@@ -7,8 +7,8 @@ from dagster_aws.s3.resources import S3Resource
 from dagster.seven import mock
 
 
-def create_s3_fake_resource():
-    return S3Resource(S3FakeSession())
+def create_s3_fake_resource(buckets=None):
+    return S3Resource(S3FakeSession(buckets=buckets))
 
 
 class S3FakeSession(object):
@@ -36,7 +36,7 @@ class S3FakeSession(object):
         self.buckets[Bucket][Key] = Body.read()
 
     def get_object(self, Bucket, Key, *args, **kwargs):
-        if not self._has_object(Bucket, Key):
+        if not self.has_object(Bucket, Key):
             raise ClientError({}, None)
 
         self.mock_extras.get_object(*args, **kwargs)
@@ -46,7 +46,7 @@ class S3FakeSession(object):
         self.mock_extras.upload_fileobj(*args, **kwargs)
         self.buckets[bucket][key] = fileobj.read()
 
-    def _has_object(self, bucket, key):
+    def has_object(self, bucket, key):
         return bucket in self.buckets and key in self.buckets[bucket]
 
     def _get_byte_stream(self, bucket, key):

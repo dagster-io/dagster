@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import StepBuilder
+from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -12,6 +12,7 @@ sys.path.append(SCRIPT_PATH)
 
 
 TOX_MAP = {
+    SupportedPython.V3_8: "py38",
     SupportedPython.V3_7: "py37",
     SupportedPython.V3_6: "py36",
     SupportedPython.V3_5: "py35",
@@ -45,18 +46,14 @@ def check_for_release():
     return False
 
 
-def wait_step():
-    return "wait"
-
-
 def network_buildkite_container(network_name):
     return [
         # hold onto your hats, this is docker networking at its best. First, we figure out
         # the name of the currently running container...
         "export CONTAINER_ID=`cut -c9- < /proc/1/cpuset`",
         r'export CONTAINER_NAME=`docker ps --filter "id=\${CONTAINER_ID}" --format "{{.Names}}"`',
-        # then, we dynamically bind this container into the dask user-defined bridge
-        # network to make the dask containers visible...
+        # then, we dynamically bind this container into the user-defined bridge
+        # network to make the target containers visible...
         "docker network connect {network_name} \\${{CONTAINER_NAME}}".format(
             network_name=network_name
         ),
@@ -65,8 +62,8 @@ def network_buildkite_container(network_name):
 
 def connect_sibling_docker_container(network_name, container_name, env_variable):
     return [
-        # Now, we grab the IP address of the dask-scheduler container from within the dask
-        # bridge network and export it; this will let the tox tests talk to the scheduler.
+        # Now, we grab the IP address of the target container from within the target
+        # bridge network and export it; this will let the tox tests talk to the target cot.
         (
             "export {env_variable}=`docker inspect --format "
             "'{{{{ .NetworkSettings.Networks.{network_name}.IPAddress }}}}' "
@@ -77,46 +74,23 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
     ]
 
 
-def wrap_with_docker_compose_steps(
-    steps_to_execute, filename=None, remove_orphans=True
-):  # pylint:disable=keyword-arg-before-vararg
-    if filename is not None:
-        filename_arg = '-f {filename} '.format(filename=filename)
-    else:
-        filename_arg = ''
-
-    if remove_orphans:
-        remove_orphans_arg = ' --remove-orphans'
-    else:
-        remove_orphans_arg = ''
-
-    return (
-        [
-            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
-            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
-            "docker-compose {filename_arg}up -d{remove_orphans_arg}".format(
-                filename_arg=filename_arg, remove_orphans_arg=remove_orphans_arg
-            ),
-        ]
-        + steps_to_execute
-        + [
-            "docker-compose {filename_arg}stop".format(filename_arg=filename_arg),
-            "docker-compose {filename_arg}rm -f".format(filename_arg=filename_arg),
-        ]
-    )
-
-
 def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+
+        # pyspark doesn't support Python 3.8 yet
+        # See: https://github.com/dagster-io/dagster/issues/1960
+        if ('pyspark' in label or 'aws' in label) and version == SupportedPython.V3_8:
+            continue
+
         coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
             label=label, version=version
         )
         tests.append(
             StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
             .run(
-                "pip install tox",
                 "eval $(ssh-agent)",
                 "cd python_modules/{directory}".format(directory=directory),
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
@@ -146,19 +120,16 @@ def airline_demo_tests():
                 "mkdir -p /home/circleci/airflow",
                 # Run the postgres db. We are in docker running docker
                 # so this will be a sibling container.
-                *wrap_with_docker_compose_steps(
-                    # Can't use host networking on buildkite and communicate via localhost
-                    # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('postgres')
-                    + connect_sibling_docker_container(
-                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                    )
-                    + [
-                        "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                "tox -vv -c airline.tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .build()
         )
@@ -182,7 +153,6 @@ def events_demo_tests():
                 "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
                 "popd",
                 "pushd examples",
-                "pip install tox",
                 "tox -vv -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -199,7 +169,6 @@ def publish_airflow_images():
     return [
         StepBuilder("[dagster-airflow] images", key="dagster-airflow-images")
         .run(
-            "pip install awscli",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
             r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
             + GCP_CREDS_LOCAL_FILE,
@@ -228,12 +197,12 @@ def publish_airflow_images():
 
 def airflow_tests():
     tests = []
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("[dagster-airflow] ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install awscli",
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
@@ -262,9 +231,38 @@ def airflow_tests():
     return tests
 
 
+def celery_tests():
+    tests = []
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+        coverage = ".coverage.dagster-celery.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("[dagster-celery] ({ver})".format(ver=TOX_MAP[version]))
+            .on_integration_image(version)
+            .run(
+                "pushd python_modules/dagster-celery",
+                # Run the rabbitmq db. We are in docker running docker
+                # so this will be a sibling container.
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('rabbitmq'),
+                connect_sibling_docker_container(
+                    'rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'
+                ),
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .build()
+        )
+    return tests
+
+
 def dagster_postgres_tests():
     tests = []
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagster-postgres.{version}.$BUILDKITE_BUILD_ID".format(
             version=version
         )
@@ -272,35 +270,26 @@ def dagster_postgres_tests():
             StepBuilder("libraries/dagster-postgres tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "cd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-                *wrap_with_docker_compose_steps(
-                    wrap_with_docker_compose_steps(
-                        network_buildkite_container('postgres')
-                        + connect_sibling_docker_container(
-                            'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                        )
-                        + network_buildkite_container('postgres_multi')
-                        + connect_sibling_docker_container(
-                            'postgres_multi',
-                            'test-run-storage-db',
-                            'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
-                        )
-                        + connect_sibling_docker_container(
-                            'postgres_multi',
-                            'test-event-log-storage-db',
-                            'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
-                        )
-                        + [
-                            "pushd ../",
-                            "pip install tox",
-                            "tox -e {ver}".format(ver=TOX_MAP[version]),
-                            "mv .coverage {file}".format(file=coverage),
-                            "buildkite-agent artifact upload {file}".format(file=coverage),
-                            "popd",
-                        ],
-                        filename='docker-compose-multi.yml',
-                        remove_orphans=False,
-                    )
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                network_buildkite_container('postgres_multi'),
+                connect_sibling_docker_container(
+                    'postgres_multi', 'test-run-storage-db', 'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
+                ),
+                connect_sibling_docker_container(
+                    'postgres_multi',
+                    'test-event-log-storage-db',
+                    'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
+                ),
+                "pushd ../",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
             )
             .on_integration_image(version)
             .build()
@@ -316,20 +305,16 @@ def examples_tests():
             StepBuilder("examples tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "pushd examples",
-                "pip install tox",
-                *wrap_with_docker_compose_steps(
-                    # Can't use host networking on buildkite and communicate via localhost
-                    # between these sibling containers, so pass along the ip.
-                    network_buildkite_container('postgres')
-                    + connect_sibling_docker_container(
-                        'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
-                    )
-                    + [
-                        "tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
+                # Can't use host networking on buildkite and communicate via localhost
+                # between these sibling containers, so pass along the ip.
+                network_buildkite_container('postgres'),
+                connect_sibling_docker_container(
+                    'postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'
+                ),
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(version)
             .build()
@@ -345,7 +330,6 @@ def automation_tests():
         StepBuilder("automation tests ({ver})".format(ver=TOX_MAP[version]))
         .run(
             "pushd python_modules/automation",
-            "pip install tox",
             "tox -e {ver}".format(ver=TOX_MAP[version]),
             "mv .coverage {file}".format(file=coverage),
             "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -365,11 +349,9 @@ def gcp_tests():
         tests.append(
             StepBuilder("libraries-dagster-gcp tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install awscli",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "pip install tox;",
                 "cd python_modules/libraries/dagster-gcp",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -400,20 +382,14 @@ def dask_tests():
                 "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
                 "./build.sh " + version,
                 # Run the docker-compose dask cluster
-                *wrap_with_docker_compose_steps(
-                    network_buildkite_container('dask')
-                    + connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS')
-                    + [
-                        "popd",
-                        "pushd python_modules/dagster-dask/",
-                        "pip install tox",
-                        "tox -e {ver}".format(ver=TOX_MAP[version]),
-                        "mv .coverage {file}".format(file=coverage),
-                        "buildkite-agent artifact upload {file}".format(file=coverage),
-                        "popd",
-                        "pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker",
-                    ]
-                )
+                "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+                network_buildkite_container('dask'),
+                connect_sibling_docker_container('dask', 'dask-scheduler', 'DASK_ADDRESS'),
+                "popd",
+                "pushd python_modules/dagster-dask/",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
@@ -441,7 +417,8 @@ def library_tests():
 
 def dagit_tests():
     tests = []
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagit.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
@@ -449,7 +426,6 @@ def dagit_tests():
                 "pushd python_modules",
                 "make rebuild_dagit",
                 "popd",
-                "pip install tox;",
                 "cd python_modules/dagit",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -469,7 +445,6 @@ def lakehouse_tests():
         tests.append(
             StepBuilder("lakehouse tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install tox;",
                 "cd python_modules/lakehouse",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -484,11 +459,11 @@ def lakehouse_tests():
 
 def pipenv_smoke_tests():
     tests = []
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
         is_release = check_for_release()
         smoke_test_steps = (
             [
-                "pip install pipenv",
                 "mkdir /tmp/pipenv_smoke_tests",
                 "pushd /tmp/pipenv_smoke_tests",
                 "pipenv install -e /workdir/python_modules/dagster",
@@ -603,7 +578,8 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
-        .run("pip install black==19.10b0", "make check_black")
+        # See: https://github.com/dagster-io/dagster/issues/1999
+        .run("pip install regex==2019.11.1 black==19.10b0", "make check_black")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("docs snapshot test")
@@ -624,7 +600,6 @@ if __name__ == "__main__":
             "pip install -e python_modules/libraries/dagster-cron -qqq",
             "pip install -e python_modules/libraries/dagster-slack -qqq",
             "pip install -e python_modules/dagit -qqq",
-            "pip install -r python_modules/dagit/dev-requirements.txt -qqq",
             "pip install -e examples -qqq",
             "cd js_modules/dagit",
             "yarn install --offline",
@@ -648,6 +623,7 @@ if __name__ == "__main__":
 
     steps += publish_airflow_images()
     steps += airflow_tests()
+    steps += celery_tests()
     steps += dask_tests()
 
     steps += dagit_tests()

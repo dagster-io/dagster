@@ -1,8 +1,8 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.config import ConfigType
-from dagster.core.types.field import Field
+from dagster.core.types.config.config_type import ConfigType
+from dagster.core.types.config.field import Field
 
 
 def to_dauphin_config_type(config_type):
@@ -16,8 +16,10 @@ def to_dauphin_config_type(config_type):
         return DauphinListConfigType(config_type)
     elif config_type.is_nullable:
         return DauphinNullableConfigType(config_type)
-    else:
+    elif config_type.is_any or config_type.is_scalar:
         return DauphinRegularConfigType(config_type)
+    else:
+        check.failed('Should never reach')
 
 
 def _ctor_kwargs(config_type):
@@ -30,6 +32,9 @@ def _ctor_kwargs(config_type):
         is_nullable=config_type.is_nullable,
         is_selector=config_type.is_selector,
         is_system_generated=config_type.type_attributes.is_system_config,
+        type_param_keys=[tp.key for tp in config_type.type_params]
+        if config_type.type_params
+        else [],
     )
 
 
@@ -41,8 +46,33 @@ class DauphinConfigType(dauphin.Interface):
     name = dauphin.String()
     description = dauphin.String()
 
-    inner_types = dauphin.non_null_list('ConfigType')
+    recursive_config_types = dauphin.Field(
+        dauphin.non_null_list('ConfigType'),
+        description='''
+This is an odd and problematic field. It recursively goes down to
+get all the types contained within a type. The case where it is horrible
+are dictionaries and it recurses all the way down to the leaves. This means
+that in a case where one is fetching all the types and then all the inner
+types keys for those types, we are returning O(N^2) type keys, which
+can cause awful performance for large schemas. When you have access
+to *all* the types, you should instead only use the type_param_keys
+field for closed generic types and manually navigate down the to
+field types client-side.
 
+Where it is useful is when you are fetching types independently and
+want to be able to render them, but without fetching the entire schema.
+
+We use this capability when rendering the sidebar.
+    ''',
+    )
+    type_param_keys = dauphin.Field(
+        dauphin.non_null_list(dauphin.String),
+        description='''
+This returns the keys for type parameters of any closed generic type,
+(e.g. List, Optional). This should be used for reconstructing and
+navigating the full schema client-side and not innerTypes.
+    ''',
+    )
     is_nullable = dauphin.NonNull(dauphin.Boolean)
     is_list = dauphin.NonNull(dauphin.Boolean)
     is_selector = dauphin.NonNull(dauphin.Boolean)
@@ -65,8 +95,8 @@ filter out those types by default.
     )
 
 
-def _resolve_inner_types(config_type):
-    return list(map(to_dauphin_config_type, config_type.inner_types))
+def _resolve_recursive_config_types(config_type):
+    return list(map(to_dauphin_config_type, config_type.recursive_config_types))
 
 
 class DauphinRegularConfigType(dauphin.ObjectType):
@@ -77,9 +107,10 @@ class DauphinRegularConfigType(dauphin.ObjectType):
     class Meta(object):
         name = 'RegularConfigType'
         interfaces = [DauphinConfigType]
+        description = 'Regular is an odd name in this context. It really means Scalar or Any.'
 
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
 
 
 class DauphinWrappingConfigType(dauphin.Interface):
@@ -101,8 +132,8 @@ class DauphinListConfigType(dauphin.ObjectType):
     def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(self._config_type.inner_type)
 
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
 
 
 class DauphinNullableConfigType(dauphin.ObjectType):
@@ -117,8 +148,8 @@ class DauphinNullableConfigType(dauphin.ObjectType):
     def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(self._config_type.inner_type)
 
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
 
 
 class DauphinEnumConfigType(dauphin.ObjectType):
@@ -140,8 +171,8 @@ class DauphinEnumConfigType(dauphin.ObjectType):
             for ev in self._config_type.enum_values
         ]
 
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
 
 
 class DauphinEnumConfigValue(dauphin.ObjectType):
@@ -174,8 +205,8 @@ class DauphinCompositeConfigType(dauphin.ObjectType):
             key=lambda field: field.name,
         )
 
-    def resolve_inner_types(self, _graphene_info):
-        return _resolve_inner_types(self._config_type)
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
 
 
 class DauphinConfigTypeField(dauphin.ObjectType):
@@ -185,8 +216,12 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     config_type = dauphin.NonNull('ConfigType')
+    config_type_key = dauphin.NonNull(dauphin.String)
     default_value = dauphin.String()
     is_optional = dauphin.NonNull(dauphin.Boolean)
+
+    def resolve_config_type_key(self, _):
+        return self._field.config_type.key
 
     def __init__(self, name, field):
         check.str_param(name, 'name')

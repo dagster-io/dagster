@@ -8,9 +8,11 @@ from dagster.core.definitions import (
     ExecutorDefinition,
     ExpectationResult,
     Failure,
+    FirstPartitionSelector,
     InputDefinition,
     InputMapping,
     JsonMetadataEntryData,
+    LastPartitionSelector,
     LoggerDefinition,
     MarkdownMetadataEntryData,
     Materialization,
@@ -19,6 +21,8 @@ from dagster.core.definitions import (
     Output,
     OutputDefinition,
     OutputMapping,
+    Partition,
+    PartitionSetDefinition,
     PathMetadataEntryData,
     PipelineDefinition,
     PresetDefinition,
@@ -33,14 +37,18 @@ from dagster.core.definitions import (
     TypeCheck,
     UrlMetadataEntryData,
     composite_solid,
+    daily_schedule,
     default_executors,
     executor,
+    hourly_schedule,
     in_process_executor,
     lambda_solid,
     logger,
     multiprocess_executor,
     pipeline,
+    repository_partitions,
     resource,
+    schedule,
     schedules,
     solid,
     system_storage,
@@ -48,6 +56,7 @@ from dagster.core.definitions import (
 from dagster.core.engine import Engine
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
+    DagsterConfigMappingFunctionError,
     DagsterError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
@@ -64,6 +73,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
+    execute_partition_set,
     execute_pipeline,
     execute_pipeline_iterator,
     execute_pipeline_with_preset,
@@ -86,29 +96,29 @@ from dagster.core.storage.system_storage import (
     fs_system_storage,
     mem_system_storage,
 )
-from dagster.core.types import (
+from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector
+from dagster.core.types.runtime import (
+    SerializationStrategy,
+    as_dagster_type,
+    dagster_type,
+    define_python_dagster_type,
+    input_hydration_config,
+    output_materialization_config,
+)
+from dagster.core.types.wrapping import (
     Any,
     Bool,
     Dict,
-    Field,
     Float,
     Int,
     List,
     Nothing,
     Optional,
     Path,
-    PermissiveDict,
-    Selector,
     Set,
     String,
     Tuple,
-    input_hydration_config,
-    output_materialization_config,
 )
-from dagster.core.types.config import Enum, EnumValue
-from dagster.core.types.decorator import as_dagster_type, dagster_type
-from dagster.core.types.marshal import SerializationStrategy
-from dagster.core.types.runtime import define_python_dagster_type
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,

@@ -3,23 +3,45 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.config import IRunConfig
-from dagster.core.types import Dict, Field
+from dagster.core.types.config.field_utils import (
+    check_user_facing_opt_config_param,
+    coerce_potential_field,
+    is_potential_field,
+)
+from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.wrapping.mapping import is_supported_config_python_builtin
 
 
-def resolve_config_field(config_field, config, source):
-    if config_field is not None and config is not None:
+def resolve_config(config, source):
+    if not is_potential_field(config):
         raise DagsterInvalidDefinitionError(
-            'Must only provide one of config_field or config but not both in {}.'
-            'Using the config arg is equivalent to config_field=Field(Dict(...)).'.format(source)
+            (
+                'You have passed an object {value_repr} of incorrect type '
+                '"{type_name}" in the parameter "{param_name}" '
+                '{error_context_str} where a Field, dict, or type was expected.'
+            ).format(
+                error_context_str='of ' + source,
+                param_name='config',
+                value_repr=repr(config),
+                type_name=type(config).__name__,
+            )
         )
 
-    if config_field:
-        return config_field
+    def _raise_error(value):
+        # https://github.com/dagster-io/dagster/issues/1976
+        raise DagsterInvalidDefinitionError(
+            (
+                'You have passed an object {value_repr} of incorrect type "{type_name}" '
+                'somewhere in config structure passed to a {source} where a Field, dict, '
+                'or type was expected.'
+            ).format(value_repr=repr(value), type_name=type(value).__name__, source=source)
+        )
 
-    if config:
-        return Field(Dict(config))
+    return coerce_potential_field(config, _raise_error)
 
-    return None
+
+def is_callable_valid_config_arg(config):
+    return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
 class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
@@ -45,7 +67,7 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_field')):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, 'config_fn'),
-            config_field=resolve_config_field(None, config, 'ConfigMapping'),
+            config_field=check_user_facing_opt_config_param(config, 'config', 'ConfigMapping'),
         )
 
 

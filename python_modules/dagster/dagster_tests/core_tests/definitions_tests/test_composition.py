@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     DependencyDefinition,
-    Field,
     InputDefinition,
     Int,
     Nothing,
@@ -23,7 +22,7 @@ def builder(graph):
     return graph.add_one(graph.return_one())
 
 
-@lambda_solid
+@lambda_solid(output_def=OutputDefinition(Int))
 def echo(blah):
     return blah
 
@@ -53,7 +52,10 @@ def pipe(num):
     return num
 
 
-@solid(input_defs=[InputDefinition('int_1', Int), InputDefinition('int_2', Int)])
+@solid(
+    input_defs=[InputDefinition('int_1', Int), InputDefinition('int_2', Int)],
+    output_defs=[OutputDefinition(Int)],
+)
 def adder(_context, int_1, int_2):
     return int_1 + int_2
 
@@ -316,7 +318,7 @@ def test_output_map_fail():
 
 
 def test_deep_graph():
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def download_num(context):
         return context.solid_config
 
@@ -336,7 +338,7 @@ def test_deep_graph():
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition('num')], output_def=OutputDefinition(Int))
     def load_num(num):
         return num + 3
 
@@ -511,7 +513,7 @@ def test_multimap():
 
 
 def test_reuse_inputs():
-    @composite_solid
+    @composite_solid(input_defs=[InputDefinition('one', Int), InputDefinition('two', Int)])
     def calculate(one, two):
         adder(one, two)
         adder.alias('adder_2')(one, two)

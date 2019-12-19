@@ -12,7 +12,7 @@ from dagster import (
     input_hydration_config,
     solid,
 )
-from dagster.core.types.runtime import PythonObjectType
+from dagster.core.types.runtime.runtime_type import PythonObjectType
 
 from .file_manager import S3FileHandle
 

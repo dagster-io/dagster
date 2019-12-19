@@ -17,6 +17,7 @@ from dagster import (
     SerializationStrategy,
     String,
     check,
+    execute_pipeline,
     lambda_solid,
     pipeline,
 )
@@ -25,10 +26,10 @@ from dagster.core.execution.api import create_execution_plan, execute_plan, scop
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.runtime import Bool as RuntimeBool
-from dagster.core.types.runtime import RuntimeType
-from dagster.core.types.runtime import String as RuntimeString
-from dagster.core.types.runtime import resolve_to_runtime_type
+from dagster.core.types.runtime.runtime_type import Bool as RuntimeBool
+from dagster.core.types.runtime.runtime_type import RuntimeType
+from dagster.core.types.runtime.runtime_type import String as RuntimeString
+from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -52,7 +53,7 @@ class LowercaseString(RuntimeType):
 nettest = pytest.mark.nettest
 
 
-def define_inty_pipeline():
+def define_inty_pipeline(should_throw=True):
     @lambda_solid
     def return_one():
         return 1
@@ -75,7 +76,8 @@ def define_inty_pipeline():
     )
     def basic_external_plan_execution():
         add_one(return_one())
-        user_throw_exception()
+        if should_throw:
+            user_throw_exception()
 
     return basic_external_plan_execution
 
@@ -259,6 +261,61 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
             )
         finally:
             intermediate_store.rm_object(context, ['foo'])
+
+
+@nettest
+def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
+    run_id = str(uuid.uuid4())
+    gcs_prefix = 'custom_prefix'
+
+    pipe = define_inty_pipeline(should_throw=False)
+    environment_dict = {
+        'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket, 'gcs_prefix': gcs_prefix}}}
+    }
+
+    pipeline_run = PipelineRun.create_empty_run(
+        pipe.name, run_id=run_id, environment_dict=environment_dict
+    )
+    instance = DagsterInstance.ephemeral()
+
+    result = execute_pipeline(
+        pipe, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id),
+    )
+    assert result.success
+
+    with scoped_pipeline_context(pipe, environment_dict, pipeline_run, instance) as context:
+        store = GCSIntermediateStore(
+            run_id=run_id,
+            gcs_bucket=gcs_bucket,
+            gcs_prefix=gcs_prefix,
+            client=context.scoped_resources_builder.build().gcs.client,
+        )
+        assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
+        assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
+        assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
+
+
+@nettest
+def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
+    run_id = str(uuid.uuid4())
+
+    intermediate_store = GCSIntermediateStore(
+        run_id=run_id, gcs_bucket=gcs_bucket, gcs_prefix='custom_prefix'
+    )
+    assert intermediate_store.root == '/'.join(['custom_prefix', 'storage', run_id])
+
+    try:
+        with yield_empty_pipeline_context(run_id=run_id) as context:
+
+            intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+
+            assert intermediate_store.has_object(context, ['true'])
+            assert intermediate_store.uri_for_paths(['true']).startswith(
+                'gs://%s/custom_prefix' % gcs_bucket
+            )
+
+    finally:
+        intermediate_store.rm_object(context, ['true'])
 
 
 @nettest

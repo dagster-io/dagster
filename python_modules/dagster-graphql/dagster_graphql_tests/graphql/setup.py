@@ -13,7 +13,6 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster import (
     Any,
     Bool,
-    Dict,
     Enum,
     EnumValue,
     EventMetadataEntry,
@@ -258,26 +257,17 @@ def more_complicated_nested_config():
         name='a_solid_with_multilayered_config',
         input_defs=[],
         output_defs=[],
-        config_field=Field(
-            Dict(
-                {
-                    'field_one': Field(String),
-                    'field_two': Field(String, is_optional=True),
-                    'field_three': Field(String, is_optional=True, default_value='some_value'),
-                    'nested_field': Field(
-                        Dict(
-                            {
-                                'field_four_str': Field(String),
-                                'field_five_int': Field(Int),
-                                'field_six_nullable_int_list': Field(
-                                    List[Optional[Int]], is_optional=True
-                                ),
-                            }
-                        )
-                    ),
-                }
-            )
-        ),
+        config={
+            'field_any': Any,
+            'field_one': String,
+            'field_two': Field(String, is_optional=True),
+            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'nested_field': {
+                'field_four_str': String,
+                'field_five_int': Int,
+                'field_six_nullable_int_list': Field(List[Optional[Int]], is_optional=True),
+            },
+        },
     )
     def a_solid_with_multilayered_config(_):
         return None
@@ -327,7 +317,7 @@ def csv_hello_world_two():
     return sum_solid()
 
 
-@solid(name='solid_with_list', input_defs=[], output_defs=[], config_field=Field(List[Int]))
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config=Field(List[Int]))
 def solid_def(_):
     return None
 
@@ -378,15 +368,13 @@ def scalar_output_pipeline():
 @pipeline
 def pipeline_with_enum_config():
     @solid(
-        config_field=Field(
-            Enum(
-                'TestEnum',
-                [
-                    EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
-                    EnumValue(config_value='ENUM_VALUE_TWO', description='An enum value.'),
-                    EnumValue(config_value='ENUM_VALUE_THREE', description='An enum value.'),
-                ],
-            )
+        config=Enum(
+            'TestEnum',
+            [
+                EnumValue(config_value='ENUM_VALUE_ONE', description='An enum value.'),
+                EnumValue(config_value='ENUM_VALUE_TWO', description='An enum value.'),
+                EnumValue(config_value='ENUM_VALUE_THREE', description='An enum value.'),
+            ],
         )
     )
     def takes_an_enum(_context):
@@ -411,7 +399,7 @@ def pipeline_with_step_metadata():
         input_defs=[],
         output_defs=[],
         compute_fn=lambda *args, **kwargs: None,
-        config_field=Field(Dict({'str_value': Field(String)})),
+        config={'str_value': String},
         step_metadata_fn=lambda env_config: {
             'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
         },
@@ -419,12 +407,12 @@ def pipeline_with_step_metadata():
     return solid_metadata()
 
 
-@resource(config_field=Field(Int))
+@resource(config=Field(Int))
 def adder_resource(init_context):
     return lambda x: x + init_context.resource_config
 
 
-@resource(config_field=Field(Int))
+@resource(config=Field(Int))
 def multer_resource(init_context):
     return lambda x: x * init_context.resource_config
 
@@ -466,7 +454,7 @@ def multi_mode_with_resources():
     return apply_to_three()
 
 
-@resource(config_field=Field(Int, is_optional=True))
+@resource(config=Field(Int, is_optional=True))
 def req_resource(_):
     return 1
 
@@ -480,7 +468,7 @@ def required_resource_pipeline():
     solid_with_required_resource()
 
 
-@logger(config_field=Field(str))
+@logger(config=Field(str))
 def foo_logger(init_context):
     logger_ = logging.Logger('foo')
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config))
@@ -528,7 +516,7 @@ def multi_mode_with_loggers():
 
 @pipeline
 def composites_pipeline():
-    @lambda_solid(input_defs=[InputDefinition('num', Int)])
+    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
@@ -536,11 +524,11 @@ def composites_pipeline():
     def div_two(num):
         return num / 2
 
-    @composite_solid
+    @composite_solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Int)])
     def add_two(num):
         return add_one.alias('adder_2')(add_one.alias('adder_1')(num))
 
-    @composite_solid
+    @composite_solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Int)])
     def add_four(num):
         return add_two.alias('adder_2')(add_two.alias('adder_1')(num))
 

@@ -1,4 +1,4 @@
-from dagster import Dict, Field, List, Optional, Selector, Set, Tuple
+from dagster import Dict, Field, List, Optional, Selector
 from dagster.core.meta.config_types import (
     ConfigTypeKind,
     ConfigTypeMeta,
@@ -6,11 +6,12 @@ from dagster.core.meta.config_types import (
     meta_from_config_type,
 )
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.core.types.field import resolve_to_config_type
+from dagster.core.types.config.field import resolve_to_config_type
+from dagster.core.types.config.field_utils import coerce_potential_field
 
 
 def meta_from_dagster_type(dagster_type):
-    return meta_from_config_type(resolve_to_config_type(dagster_type))
+    return meta_from_config_type(coerce_potential_field(dagster_type, lambda: None).config_type)
 
 
 def test_basic_int_meta():
@@ -26,7 +27,7 @@ def test_basic_int_meta():
 
 
 def test_basic_dict():
-    dict_meta = meta_from_dagster_type(Dict({'foo': Field(int)}))
+    dict_meta = meta_from_dagster_type({'foo': int})
     assert dict_meta.key.startswith('Dict.')
     assert dict_meta.name is None
     assert dict_meta.inner_type_refs
@@ -44,14 +45,12 @@ def test_basic_dict():
 
 def test_field_things():
     dict_meta = meta_from_dagster_type(
-        Dict(
-            {
-                'req': Field(int),
-                'opt': Field(int, is_optional=True),
-                'opt_with_default': Field(int, is_optional=True, default_value=2),
-                'req_with_desc': Field(int, description='A desc'),
-            }
-        )
+        {
+            'req': int,
+            'opt': Field(int, is_optional=True),
+            'opt_with_default': Field(int, is_optional=True, default_value=2),
+            'req_with_desc': Field(int, description='A desc'),
+        }
     )
 
     assert dict_meta.fields and len(dict_meta.fields) == 4
@@ -135,23 +134,6 @@ def test_list_of_dict():
     )
 
 
-def test_tuple_of_things():
-    tuple_meta = meta_from_dagster_type(Tuple[bool, str, List[int]])
-    assert tuple_meta.key.startswith('Tuple')
-    assert len(tuple_meta.type_param_refs) == 3
-    assert [ref.key for ref in tuple_meta.type_param_refs] == ['Bool', 'String', 'List.Int']
-
-    assert len(tuple_meta.inner_type_refs) == 4
-
-
-def test_set_of_things():
-    tuple_meta = meta_from_dagster_type(Set[Tuple[int, str, List[int]]])
-    assert tuple_meta.key.startswith('Set')
-    assert len(tuple_meta.type_param_refs) == 1
-    print([type_ref.key for type_ref in tuple_meta.inner_type_refs])
-    assert len(tuple_meta.inner_type_refs) == 4
-
-
 def test_selector_of_things():
     selector_meta = meta_from_dagster_type(Selector({'bar': Field(int)}))
     assert selector_meta.key.startswith('Selector')
@@ -167,19 +149,12 @@ def test_kitchen_sink():
         Dict(
             {
                 'opt_list_of_int': Field(List[int], is_optional=True),
-                'tuple_of_things': Field(Tuple[int, str]),
-                'nested_dict': Field(
-                    Dict(
-                        {
-                            'list_list': Field(List[List[int]]),
-                            'nested_selector': Field(
-                                Selector(
-                                    {'some_field': Field(int), 'set': Field(Optional[Set[bool]])}
-                                )
-                            ),
-                        }
-                    )
-                ),
+                'nested_dict': {
+                    'list_list': List[List[int]],
+                    'nested_selector': Field(
+                        Selector({'some_field': int, 'more_list': Optional[List[bool]]})
+                    ),
+                },
             }
         )
     ]
@@ -197,20 +172,19 @@ def test_kitchen_sink_break_out():
         {
             'list_list': Field(List[List[int]]),
             'nested_selector': Field(
-                Selector({'some_field': Field(int), 'set': Field(Optional[Set[bool]])})
+                Selector({'some_field': Field(int), 'list': Field(Optional[List[bool]])})
             ),
         }
     )
     dict_within_list_cls = Dict(
         {
             'opt_list_of_int': Field(List[int], is_optional=True),
-            'tuple_of_things': Field(Tuple[int, str]),
             'nested_dict': Field(nested_dict_cls),
         }
     )
     kitchen_sink = List[dict_within_list_cls]
 
-    dict_within_list_key = dict_within_list_cls.inst().key
+    dict_within_list_key = dict_within_list_cls.key
     kitchen_sink_meta = meta_from_dagster_type(kitchen_sink)
 
     assert len(kitchen_sink_meta.type_param_refs) == 1
@@ -219,14 +193,8 @@ def test_kitchen_sink_break_out():
     assert kitchen_sink_meta.inner_type_refs[0].key == dict_within_list_key
     dict_within_list_meta = meta_from_dagster_type(dict_within_list_cls)
     assert dict_within_list_meta.type_param_refs is None
-    # List[int], Int, Tuple[int, str], str, Dict.XXX
-    assert len(dict_within_list_meta.inner_type_refs) == 5
+    # List[int], Int, Dict.XXX
+    assert len(dict_within_list_meta.inner_type_refs) == 3
     assert sorted([type_ref.key for type_ref in dict_within_list_meta.inner_type_refs]) == sorted(
-        [
-            nested_dict_cls.inst().key,
-            'Int',
-            'List.Int',
-            meta_from_dagster_type(Tuple[int, str]).key,
-            'String',
-        ]
+        [nested_dict_cls.key, 'Int', 'List.Int']
     )

@@ -3,16 +3,7 @@ from operator import add
 
 from dagster_pyspark import SparkRDD, pyspark_resource
 
-from dagster import (
-    Field,
-    InputDefinition,
-    Int,
-    ModeDefinition,
-    OutputDefinition,
-    Path,
-    pipeline,
-    solid,
-)
+from dagster import InputDefinition, Int, ModeDefinition, OutputDefinition, Path, pipeline, solid
 
 
 def parseNeighbors(urls):
@@ -44,7 +35,7 @@ def computeContribs(urls, rank):
 @solid(
     input_defs=[InputDefinition(name='links', dagster_type=SparkRDD)],
     output_defs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
-    config={'iterations': Field(Int)},
+    config={'iterations': Int},
 )
 def calculate_ranks_step_five(context, links):
     ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))

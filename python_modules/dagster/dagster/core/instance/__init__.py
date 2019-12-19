@@ -13,8 +13,8 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types import Field, PermissiveDict, String
-from dagster.core.types.evaluator import evaluate_config
+from dagster.core.types import String
+from dagster.core.types.config import Field, PermissiveDict
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
@@ -118,6 +118,8 @@ class DagsterInstance:
 
         self._subscribers = defaultdict(list)
 
+    # ctors
+
     @staticmethod
     def ephemeral(tempdir=None):
         from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -178,6 +180,8 @@ class DagsterInstance:
             ref=instance_ref,
         )
 
+    # flags
+
     @property
     def is_persistent(self):
         return self._instance_type == InstanceType.PERSISTENT
@@ -192,14 +196,15 @@ class DagsterInstance:
 
         check.failed('Can not produce an instance reference for {t}'.format(t=self))
 
+    @property
+    def root_directory(self):
+        return self._local_artifact_storage.base_dir
+
     @staticmethod
     def temp_storage():
         if DagsterInstance._PROCESS_TEMPDIR is None:
             DagsterInstance._PROCESS_TEMPDIR = seven.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
-
-    def root_directory(self):
-        return self._local_artifact_storage.base_dir
 
     def info_str(self):
         def _info(component):
@@ -232,6 +237,17 @@ class DagsterInstance:
     @property
     def compute_log_manager(self):
         return self._compute_log_manager
+
+    def upgrade(self, print_fn=lambda _: None):
+        print_fn('Updating run storage...')
+        self._run_storage.upgrade()
+
+        print_fn('Updating event storage...')
+        self._event_storage.upgrade()
+
+    def dispose(self):
+        self._run_storage.dispose()
+        self._event_storage.dispose()
 
     # run storage
 

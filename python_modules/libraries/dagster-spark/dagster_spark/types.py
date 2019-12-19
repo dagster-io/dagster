@@ -1,5 +1,3 @@
-'''Type definitions for the event pipeline demo'''
-
 from dagster import Enum, EnumValue
 
 SparkDeployModeCluster = EnumValue('cluster')

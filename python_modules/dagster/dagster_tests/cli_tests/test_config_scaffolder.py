@@ -1,6 +1,4 @@
 from dagster import (
-    Dict,
-    Field,
     Int,
     ModeDefinition,
     PipelineDefinition,
@@ -11,7 +9,7 @@ from dagster import (
 )
 from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.core.definitions import create_environment_type
-from dagster.core.types import config
+from dagster.core.types.config import config_type
 
 
 def fail_me():
@@ -19,11 +17,11 @@ def fail_me():
 
 
 def test_scalars():
-    assert scaffold_type(config.Int.inst()) == 0
-    assert scaffold_type(config.String.inst()) == ''
-    assert scaffold_type(config.Path.inst()) == 'path/to/something'
-    assert scaffold_type(config.Bool.inst()) is True
-    assert scaffold_type(config.Any.inst()) == 'AnyType'
+    assert scaffold_type(config_type.Int()) == 0
+    assert scaffold_type(config_type.String()) == ''
+    assert scaffold_type(config_type.Path()) == 'path/to/something'
+    assert scaffold_type(config_type.Bool()) is True
+    assert scaffold_type(config_type.Any()) == 'AnyType'
 
 
 def test_basic_solids_config(snapshot):
@@ -34,7 +32,7 @@ def test_basic_solids_config(snapshot):
                 name='required_field_solid',
                 input_defs=[],
                 output_defs=[],
-                config_field=Field(Dict(fields={'required_int': Field(Int)})),
+                config={'required_int': Int},
                 compute_fn=lambda *_args: fail_me(),
             )
         ],
@@ -75,16 +73,10 @@ def test_two_modes(snapshot):
         solid_defs=[],
         mode_defs=[
             ModeDefinition(
-                'mode_one',
-                resource_defs={
-                    'value': dummy_resource(Field(Dict({'mode_one_field': Field(String)})))
-                },
+                'mode_one', resource_defs={'value': dummy_resource({'mode_one_field': String})},
             ),
             ModeDefinition(
-                'mode_two',
-                resource_defs={
-                    'value': dummy_resource(Field(Dict({'mode_two_field': Field(Int)})))
-                },
+                'mode_two', resource_defs={'value': dummy_resource({'mode_two_field': Int})},
             ),
         ],
     )

@@ -9,6 +9,7 @@ from dagster.core.instance import DagsterInstance
 def create_instance_cli_group():
     group = click.Group(name='instance')
     group.add_command(info_command)
+    group.add_command(migrate_command)
     return group
 
 
@@ -30,6 +31,22 @@ def info_command():
         return
 
     click.echo('$DAGSTER_HOME: {}\n'.format(home))
+
+    click.echo(instance.info_str())
+
+
+@click.command(name='migrate', help='Automatically migrate an out of date instance.')
+def migrate_command():
+    instance = DagsterInstance.get()
+    home = os.environ.get('DAGSTER_HOME')
+
+    if instance.is_ephemeral:
+        click.echo('$DAGSTER_HOME is not set; ephemeral instances do not need to be migrated.')
+        return
+
+    click.echo('$DAGSTER_HOME: {}\n'.format(home))
+
+    instance.upgrade(click.echo)
 
     click.echo(instance.info_str())
 

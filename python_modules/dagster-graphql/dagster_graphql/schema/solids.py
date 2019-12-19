@@ -358,7 +358,9 @@ class DauphinResourceRequirement(dauphin.ObjectType):
 
 def build_dauphin_solid(solid, deps):
     return DauphinSolid(
-        solid, deps.deps_of_solid_with_input(solid.name), deps.depended_by_of_solid(solid.name)
+        solid,
+        deps.input_to_upstream_outputs_for_solid(solid.name),
+        deps.output_to_downstream_inputs_for_solid(solid.name),
     )
 
 

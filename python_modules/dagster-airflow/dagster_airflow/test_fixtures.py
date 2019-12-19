@@ -1,9 +1,12 @@
+import logging
+import sys
 import uuid
 
 import pytest
 from airflow import DAG
 from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
+from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
@@ -11,6 +14,13 @@ from dagster.utils import load_yaml_from_glob_list
 
 def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
     assert isinstance(dag, DAG)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    root = logging.getLogger('airflow.task.operators')
+    root.setLevel(logging.DEBUG)
+    root.addHandler(handler)
 
     dag_run = dag.create_dagrun(run_id=run_id, state='success', execution_date=execution_date)
 

@@ -1,7 +1,7 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
-from dagster.core.types.config import ALL_CONFIG_BUILTINS
+from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
 from .setup import csv_hello_world_solids_config, define_context
@@ -326,6 +326,7 @@ def test_more_complicated_works():
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
+                        'field_any': {'123': 123},
                         'field_one': 'foo.txt',
                         'field_two': 'yup',
                         'field_three': 'mmmhmmm',
@@ -360,7 +361,7 @@ def test_multiple_missing_fields():
     assert len(valid_data['errors']) == 1
     error_data = valid_data['errors'][0]
     missing_names = {field_data['name'] for field_data in error_data['fields']}
-    assert missing_names == {'nested_field', 'field_one'}
+    assert missing_names == {'nested_field', 'field_one', 'field_any'}
     assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
 
 
@@ -371,6 +372,7 @@ def test_more_complicated_multiple_errors():
             'solids': {
                 'a_solid_with_multilayered_config': {
                     'config': {
+                        'field_any': [],
                         # 'field_one': 'foo.txt', # missing
                         'field_two': 'yup',
                         'field_three': 'mmmhmmm',
@@ -543,7 +545,8 @@ fragment configTypeFragment on ConfigType {
   isSelector
   isBuiltin
   isSystemGenerated
-  innerTypes {
+  typeParamKeys
+  recursiveConfigTypes {
     key
     name
     description
@@ -586,81 +589,6 @@ query allConfigTypes($pipelineName: String!, $mode: String!) {
   }
 }
 '''
-
-CONFIG_TYPE_QUERY = '''
-query ConfigTypeQuery($pipelineName: String! $configTypeName: String! $mode: String!)
-{
-    configTypeOrError(
-        pipelineName: $pipelineName
-        configTypeName: $configTypeName
-        mode: $mode
-    ) {
-        __typename
-        ... on RegularConfigType {
-            name
-        }
-        ... on CompositeConfigType {
-            name
-            innerTypes { key name }
-            fields { name configType { key name } }
-        }
-        ... on EnumConfigType {
-            name
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
-        ... on ConfigTypeNotFoundError {
-            pipeline { name }
-            configTypeName
-        }
-    }
-}
-'''
-
-
-def test_config_type_or_error_query_success():
-    result = execute_dagster_graphql(
-        define_context(),
-        CONFIG_TYPE_QUERY,
-        {
-            'pipelineName': 'csv_hello_world',
-            'configTypeName': 'CsvHelloWorld.Mode.Default.Environment',
-            'mode': 'default',
-        },
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['configTypeOrError']['__typename'] == 'CompositeConfigType'
-    assert result.data['configTypeOrError']['name'] == 'CsvHelloWorld.Mode.Default.Environment'
-
-
-def test_config_type_or_error_pipeline_not_found():
-    result = execute_dagster_graphql(
-        define_context(),
-        CONFIG_TYPE_QUERY,
-        {'pipelineName': 'nope', 'configTypeName': 'CsvHelloWorld.Environment', 'mode': 'default'},
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['configTypeOrError']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['configTypeOrError']['pipelineName'] == 'nope'
-
-
-def test_config_type_or_error_type_not_found():
-    result = execute_dagster_graphql(
-        define_context(),
-        CONFIG_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'configTypeName': 'nope', 'mode': 'default'},
-    )
-
-    assert not result.errors
-    assert result.data
-    assert result.data['configTypeOrError']['__typename'] == 'ConfigTypeNotFoundError'
-    assert result.data['configTypeOrError']['pipeline']['name'] == 'csv_hello_world'
-    assert result.data['configTypeOrError']['configTypeName'] == 'nope'
 
 
 def get_field_data(config_type_data, name):

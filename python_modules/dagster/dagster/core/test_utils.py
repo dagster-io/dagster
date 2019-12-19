@@ -6,8 +6,8 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types.evaluator import evaluate_config
-from dagster.core.types.evaluator.errors import DagsterEvaluateConfigValueError
+from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
+from dagster.core.types.config.evaluator.validate import process_config
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
@@ -61,8 +61,8 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
 # This is a legacy API from when the config parsing only returned a single
 # error. Existing test logic was written assuming structure to this is still
 # around to avoid having to port all the unit tests.
-def throwing_evaluate_config_value(config_type, config_value):
-    result = evaluate_config(config_type, config_value)
+def throwing_validate_config_value(config_type, config_value):
+    result = process_config(config_type, config_value)
     if not result.success:
         raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
     return result.value
@@ -80,7 +80,7 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         return 1
 
     def create_wrap(inner, name):
-        @composite_solid
+        @composite_solid(name=name)
         def wrap():
             for i in range(num_children):
                 solid_alias = '%s_node_%d' % (name, i)

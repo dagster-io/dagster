@@ -139,8 +139,7 @@ class DagsterUserCodeExecutionError(DagsterError):
         user_exception = check.inst_param(kwargs.pop('user_exception'), 'user_exception', Exception)
         original_exc_info = check.tuple_param(kwargs.pop('original_exc_info'), 'original_exc_info')
 
-        if original_exc_info[0] is None:
-            raise Exception('bad dude {}'.format(type(self)))
+        check.invariant(original_exc_info[0] is not None)
 
         msg = _add_inner_exception_for_py2(args[0], original_exc_info)
 
@@ -194,24 +193,29 @@ class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
+class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occured while executing the body of a config mapping
+    function defined in a :class:`CompositeSolidDefinition <dagster.CompositeSolidDefinition>`
+    during config parsing.
+    '''
+
+
 class DagsterInvalidConfigError(DagsterError):
     '''Thrown when provided config is invalid (does not type check against the relevant config
     schema).'''
 
-    def __init__(self, pipeline, errors, config_value, *args, **kwargs):
-        from dagster.core.definitions import PipelineDefinition
-        from dagster.core.types.evaluator.errors import friendly_string_for_error, EvaluationError
+    def __init__(self, preamble, errors, config_value, *args, **kwargs):
+        from dagster.core.types.config.evaluator.errors import (
+            friendly_string_for_error,
+            EvaluationError,
+        )
 
-        self.pipeline = check.opt_inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.str_param(preamble, 'preamble')
         self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
-
         self.config_value = config_value
 
-        if pipeline is not None:
-            error_msg = 'Pipeline "{pipeline}" config errors:'.format(pipeline=pipeline.name)
-        else:
-            error_msg = 'Config errors:'
-
+        error_msg = preamble
         error_messages = []
 
         for i_error, error in enumerate(self.errors):
@@ -250,3 +254,21 @@ class DagsterSubprocessError(DagsterError):
 class DagsterLaunchFailedError(DagsterError):
     '''Indicates an error while attempting to launch a pipeline run.
     '''
+
+
+class DagsterInstanceMigrationRequired(DagsterError):
+    '''Indicates that the dagster instance must be migrated.'''
+
+    def __init__(self, msg=None, db_revision=None, head_revision=None):
+        super(DagsterInstanceMigrationRequired, self).__init__(
+            'Instance is out of date and must be migrated{additional_msg}.'
+            '{revision_clause} Please run `dagster instance migrate`.'.format(
+                additional_msg=' ({msg})'.format(msg=msg) if msg else '',
+                revision_clause=(
+                    ' Database is at revision {db_revision}, head is '
+                    '{head_revision}.'.format(db_revision=db_revision, head_revision=head_revision)
+                    if db_revision or head_revision
+                    else ''
+                ),
+            )
+        )

@@ -13,7 +13,8 @@ type CompositeConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -58,7 +59,8 @@ interface ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -70,18 +72,16 @@ type ConfigTypeField {
   name: String!
   description: String
   configType: ConfigType!
+  configTypeKey: String!
   defaultValue: String
   isOptional: Boolean!
 }
 
 type ConfigTypeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
   configTypeName: String!
 }
-
-union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
 
 scalar Cursor
 
@@ -112,7 +112,8 @@ type EnumConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -131,7 +132,6 @@ scalar EnvironmentConfigData
 type EnvironmentSchema {
   rootEnvironmentType: ConfigType!
   allConfigTypes: [ConfigType!]!
-  configTypeOrError(configTypeName: String!): ConfigTypeOrError!
   isEnvironmentConfigValid(environmentConfigData: EnvironmentConfigData): PipelineConfigValidationResult!
 }
 
@@ -139,7 +139,6 @@ union EnvironmentSchemaOrError = EnvironmentSchema | PipelineNotFoundError | Inv
 
 interface Error {
   message: String!
-  stack: [String!]!
 }
 
 enum EvaluationErrorReason {
@@ -374,7 +373,6 @@ type InvalidOutputError {
 
 type InvalidPipelineRunsFilterError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 type InvalidStepError {
@@ -383,7 +381,6 @@ type InvalidStepError {
 
 type InvalidSubsetError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
 }
 
@@ -406,7 +403,8 @@ type ListConfigType implements ConfigType & WrappingConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -505,7 +503,6 @@ type Mode {
 
 type ModeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   mode: String!
 }
 
@@ -525,7 +522,8 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -598,6 +596,35 @@ type PageInfo {
   totalCount: Int!
 }
 
+type Partition {
+  name: String!
+  partitionSetName: String!
+  solidSubset: [String!]
+  mode: String!
+  environmentConfigYaml: String!
+}
+
+type PartitionSet {
+  name: String!
+  pipelineName: String!
+  solidSubset: [String!]
+  mode: String!
+  partitions: [Partition!]!
+}
+
+type PartitionSetNotFoundError implements Error {
+  message: String!
+  partitionSetName: String!
+}
+
+union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
+
+type PartitionSets {
+  results: [PartitionSet!]!
+}
+
+union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
+
 type Pipeline implements SolidContainer & PipelineReference {
   solids: [Solid!]!
   name: String!
@@ -657,7 +684,6 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
 
 type PipelineNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipelineName: String!
 }
 
@@ -735,7 +761,6 @@ type PipelineRunLogsSubscriptionSuccess {
 
 type PipelineRunNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   runId: String!
 }
 
@@ -805,7 +830,6 @@ type PipelineTagAndValues {
 
 type PresetNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   preset: String!
 }
 
@@ -821,14 +845,16 @@ type Query {
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
-  configTypeOrError(pipelineName: String!, configTypeName: String!, mode: String!): ConfigTypeOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
+  partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
+  partitionSetOrError(partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
@@ -839,7 +865,8 @@ type RegularConfigType implements ConfigType {
   key: String!
   name: String
   description: String
-  innerTypes: [ConfigType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
   isNullable: Boolean!
   isList: Boolean!
   isSelector: Boolean!
@@ -873,7 +900,6 @@ type ResourceRequirement {
 
 type RunLauncherNotDefinedError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 type RunningSchedule {
@@ -918,7 +944,6 @@ interface RuntimeType {
 
 type RuntimeTypeNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   pipeline: Pipeline!
   runtimeTypeName: String!
 }
@@ -951,7 +976,6 @@ type ScheduledExecutionBlocked {
 
 type ScheduleNotFoundError implements Error {
   message: String!
-  stack: [String!]!
   scheduleName: String!
 }
 
@@ -963,7 +987,6 @@ type Scheduler {
 
 type SchedulerNotDefinedError implements Error {
   message: String!
-  stack: [String!]!
 }
 
 union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError

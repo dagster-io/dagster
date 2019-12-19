@@ -23,7 +23,7 @@ parser.add_argument('--nightly', action='store_true')
 
 def _do_setup(name='dagster-aws'):
     setup(
-        name='dagster_aws',
+        name=name,
         version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
@@ -40,7 +40,6 @@ def _do_setup(name='dagster-aws'):
         include_package_data=True,
         install_requires=['boto3==1.9.*', 'dagster', 'requests', 'terminaltables'],
         extras_require={'pyspark': ['dagster-pyspark']},
-        tests_require=['moto'],
         entry_points={'console_scripts': ['dagster-aws = dagster_aws.cli.cli:main']},
         zip_safe=False,
     )

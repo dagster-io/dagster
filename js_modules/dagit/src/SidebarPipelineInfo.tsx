@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Colors, Icon } from "@blueprintjs/core";
 import {
   SidebarTitle,
@@ -11,7 +11,7 @@ import {
   SectionHeader
 } from "./SidebarComponents";
 import Description from "./Description";
-import ConfigTypeSchema from "./ConfigTypeSchema";
+import { ConfigTypeSchema } from "./ConfigTypeSchema";
 import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
 import { IconNames } from "@blueprintjs/icons";
 import { breakOnUnderscores } from "./Util";
@@ -39,7 +39,7 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
-                innerTypes {
+                recursiveConfigTypes {
                   ...ConfigTypeSchemaFragment
                 }
               }
@@ -51,7 +51,7 @@ export default class SidebarPipelineInfo extends React.Component<
             configField {
               configType {
                 ...ConfigTypeSchemaFragment
-                innerTypes {
+                recursiveConfigTypes {
                   ...ConfigTypeSchemaFragment
                 }
               }
@@ -78,7 +78,7 @@ export default class SidebarPipelineInfo extends React.Component<
             description={pipeline ? pipeline.description : NO_DESCRIPTION}
           />
         </SidebarSection>
-        <SidebarSection title={"Modes"}>
+        <SidebarSection title={"Modes"} collapsedByDefault={true}>
           {pipeline.modes.map(mode => (
             <SectionItemContainer key={mode.name}>
               <SectionHeader>{mode.name}</SectionHeader>
@@ -100,8 +100,8 @@ export default class SidebarPipelineInfo extends React.Component<
                     {resource.configField && (
                       <ConfigTypeSchema
                         type={resource.configField.configType}
-                        allInnerTypes={
-                          resource.configField.configType.innerTypes
+                        typesInScope={
+                          resource.configField.configType.recursiveConfigTypes
                         }
                       />
                     )}
@@ -123,7 +123,9 @@ export default class SidebarPipelineInfo extends React.Component<
                     {logger.configField && (
                       <ConfigTypeSchema
                         type={logger.configField.configType}
-                        allInnerTypes={logger.configField.configType.innerTypes}
+                        typesInScope={
+                          logger.configField.configType.recursiveConfigTypes
+                        }
                       />
                     )}
                   </div>

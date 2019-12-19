@@ -6,7 +6,7 @@ import boto3
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
-from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.runtime.marshal import SerializationStrategy
 
 
 class S3ObjectStore(ObjectStore):

@@ -1,6 +1,6 @@
 import { debounce } from "lodash";
 import { print } from "graphql/language/printer";
-import { WEBSOCKET_URI } from "./Util";
+import { WEBSOCKET_URI } from "./DomUtils";
 
 type FlushCallback<T> = (messages: T[], isFirstResponse: boolean) => void;
 

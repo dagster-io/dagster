@@ -92,7 +92,6 @@ You'll see the full stream of events emitted by dagster appear in the console, i
 call to the logging machinery, which will look like:
 
 .. code-block:: console
-
   :emphasize-lines: 1
 
     2019-10-10 11:46:50 - dagster - INFO - system - a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals

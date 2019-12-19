@@ -4,3 +4,6 @@ repository:
 scheduler:
   file: graphql/setup_scheduler.py
   fn: define_scheduler
+partitions:
+  file: graphql/setup_partitions.py
+  fn: define_partitions

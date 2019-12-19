@@ -1,8 +1,9 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
-import { copyValue, assertUnreachable } from "../Util";
+import { assertUnreachable } from "../Util";
+import { copyValue } from "../DomUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { Button, Dialog, Classes, Colors, Icon } from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";

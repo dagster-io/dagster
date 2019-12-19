@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime import construct_runtime_type_dictionary
+from dagster.core.types.runtime.runtime_type import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -93,7 +93,7 @@ class PipelineDefinition(IContainSolids, object):
             def apply_op(context, num):
                 return context.resources.op(num)
 
-            @resource(config_field=Field(Int))
+            @resource(config=Int)
             def adder_resource(init_context):
                 return lambda x: x + init_context.resource_config
 
@@ -114,8 +114,8 @@ class PipelineDefinition(IContainSolids, object):
 
             pipeline_def = PipelineDefinition(
                 name='basic',
-                solid_defs=[return_one, apply_op_three],
-                dependencies={'apply_op_three': {'num': DependencyDefinition('return_one')}},
+                solid_defs=[return_one, apply_op],
+                dependencies={'apply_op': {'num': DependencyDefinition('return_one')}},
                 mode_defs=[add_mode],
                 preset_defs=[add_three_preset],
             )
@@ -191,10 +191,7 @@ class PipelineDefinition(IContainSolids, object):
         # Validate unsatisfied inputs can be materialized from config
         _validate_inputs(self._dependency_structure, self._solid_dict)
 
-        self._all_solid_defs = {}
-        for current_level_solid_def in self._current_level_solid_defs:
-            for solid_def in current_level_solid_def.iterate_solid_defs():
-                self._all_solid_defs[solid_def.name] = solid_def
+        self._all_solid_defs = _build_all_solid_defs(self._current_level_solid_defs)
 
         self._selector = ExecutionSelector(self.name, list(solid_dict.keys()))
 
@@ -529,6 +526,23 @@ def _validate_inputs(dependency_structure, solid_dict):
                     )
 
 
+def _build_all_solid_defs(solid_defs):
+    all_defs = {}
+    for current_level_solid_def in solid_defs:
+        for solid_def in current_level_solid_def.iterate_solid_defs():
+            if solid_def.name in all_defs:
+                if all_defs[solid_def.name] != solid_def:
+                    raise DagsterInvalidDefinitionError(
+                        'Detected conflicting solid definitions with the same name "{name}"'.format(
+                            name=solid_def.name
+                        )
+                    )
+            else:
+                all_defs[solid_def.name] = solid_def
+
+    return all_defs
+
+
 @whitelist_for_serdes
 class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
     def __new__(cls, name, solid_subset=None):
@@ -567,7 +581,7 @@ def _create_environment_schema(pipeline_def, mode_definition):
     )
     from .environment_schema import EnvironmentSchema
 
-    environment_cls = define_environment_cls(
+    environment_type = define_environment_cls(
         EnvironmentClassCreationData(
             pipeline_name=pipeline_def.name,
             solids=pipeline_def.solids,
@@ -576,8 +590,6 @@ def _create_environment_schema(pipeline_def, mode_definition):
             logger_defs=mode_definition.loggers,
         )
     )
-
-    environment_type = environment_cls.inst()
 
     config_type_dict_by_name, config_type_dict_by_key = construct_config_type_dictionary(
         pipeline_def.all_solid_defs, environment_type

@@ -26,7 +26,7 @@ from .fetch_pipelines import (
     get_dauphin_pipeline_from_selector_or_raise,
     get_dauphin_pipeline_reference_from_selector,
 )
-from .fetch_runs import get_validated_config, validate_config
+from .fetch_runs import get_validated_config
 from .fetch_schedules import get_dagster_schedule, get_dagster_schedule_def
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
@@ -87,49 +87,40 @@ def start_scheduled_execution(graphene_info, schedule_name):
     should_execute = schedule_def.should_execute
     if should_execute() != True:
         return graphene_info.schema.type_named('ScheduledExecutionBlocked')(
-            message='Schedule {schedule_name} did not run because the should_execute did not return '
-            'True'
+            message='Schedule {schedule_name} did not run because the should_execute did not return'
+            ' True'.format(schedule_name=schedule_name)
         )
 
-    environment_dict_fn = schedule_def.environment_dict_fn
-    if environment_dict_fn:
-        schedule_def.execution_params['environmentConfigData'] = environment_dict_fn()
+    # Get environment_dict
+    if schedule_def.environment_dict:
+        environment_dict = schedule_def.environment_dict
+    else:
+        environment_dict = schedule_def.environment_dict_fn()
 
-    # Add dagster/schedule_id tag to executionMetadata
+    # Get tags
+    if schedule_def.tags:
+        tags = schedule_def.tags
+    else:
+        tags = schedule_def.tags_fn()
+
+    check.invariant('dagster/schedule_id' not in tags)
+    tags['dagster/schedule_id'] = schedule.schedule_id
+
+    check.invariant('dagster/schedule_name' not in tags)
+    tags['dagster/schedule_name'] = schedule_def.name
+
+    execution_metadata_tags = [{'key': key, 'value': value} for key, value in tags.items()]
     execution_params = merge_dicts(
-        {'executionMetadata': {'tags': []}}, schedule_def.execution_params
+        schedule_def.execution_params, {'executionMetadata': {'tags': execution_metadata_tags}}
     )
 
-    # Check that the dagster/schedule_id tag is not already set
-    check.invariant(
-        not any(
-            tag['key'] == 'dagster/schedule_id'
-            for tag in execution_params['executionMetadata']['tags']
-        ),
-        "Tag dagster/schedule_id tag is already defined in executionMetadata.tags",
+    selector = ExecutionSelector(
+        execution_params['selector']['name'], execution_params['selector'].get('solidSubset')
     )
 
-    # Check that the dagster/schedule_name tag is not already set
-    check.invariant(
-        not any(
-            tag['key'] == 'dagster/schedule_name'
-            for tag in execution_params['executionMetadata']['tags']
-        ),
-        "Tag dagster/schedule_name tag is already defined in executionMetadata.tags",
-    )
-
-    execution_params['executionMetadata']['tags'].append(
-        {'key': 'dagster/schedule_id', 'value': schedule.schedule_id}
-    )
-
-    execution_params['executionMetadata']['tags'].append(
-        {'key': 'dagster/schedule_name', 'value': schedule.name}
-    )
-
-    selector = execution_params['selector']
     execution_params = ExecutionParams(
-        selector=ExecutionSelector(selector['name'], selector.get('solidSubset')),
-        environment_dict=execution_params.get('environmentConfigData'),
+        selector=selector,
+        environment_dict=environment_dict,
         mode=execution_params.get('mode'),
         execution_metadata=create_execution_metadata(execution_params.get('executionMetadata')),
         step_keys=execution_params.get('stepKeys'),
@@ -315,7 +306,7 @@ def do_execute_plan(graphene_info, execution_params):
 def _execute_plan_resolve_config(graphene_info, execution_params, dauphin_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    validate_config(
+    get_validated_config(
         graphene_info, dauphin_pipeline, execution_params.environment_dict, execution_params.mode
     )
     return _do_execute_plan(graphene_info, execution_params, dauphin_pipeline)

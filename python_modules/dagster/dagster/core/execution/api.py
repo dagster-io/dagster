@@ -1,7 +1,8 @@
 import time
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition, SystemStorageData
+from dagster.core.definitions import PartitionSetDefinition, PipelineDefinition, SystemStorageData
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -10,6 +11,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.utils import make_new_run_id
 from dagster.utils import ensure_gen, merge_dicts
 
 from .config import EXECUTION_TIME_KEY, IRunConfig, RunConfig
@@ -340,3 +342,32 @@ def _add_execution_time_tag(tags):
         execution_time = time.time()
 
     return merge_dicts(tags, {EXECUTION_TIME_KEY: execution_time})
+
+
+def execute_partition_set(partition_set, partition_filter, instance=None):
+    check.inst_param(partition_set, 'partition_set', PartitionSetDefinition)
+    check.callable_param(partition_filter, 'partition_filter')
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    candidate_partitions = partition_set.get_partitions()
+    partitions = partition_filter(candidate_partitions)
+
+    instance = instance or DagsterInstance.ephemeral()
+
+    for partition in partitions:
+        run = PipelineRun(
+            pipeline_name=partition_set.pipeline_name,
+            run_id=make_new_run_id(),
+            selector=ExecutionSelector(partition_set.pipeline_name),
+            environment_dict=partition_set.environment_dict_for_partition(partition),
+            mode='default',
+            tags=merge_dicts(
+                {'dagster/backfill': 'custom'}, partition_set.tags_for_partition(partition)
+            ),
+            status=PipelineRunStatus.NOT_STARTED,
+        )
+
+        # Remove once we can handle synchronous execution... currently limited by sqlite
+        time.sleep(0.1)
+
+        instance.run_launcher.launch_run(run)

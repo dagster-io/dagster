@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Button, Colors, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
@@ -20,7 +20,7 @@ import {
   ConfigEditorHelpContext,
   isHelpContextEqual
 } from "../configeditor/ConfigEditor";
-import { ConfigEditorPresetsPicker } from "./ConfigEditorPresetsPicker";
+import { ConfigEditorConfigPicker } from "./ConfigEditorConfigPicker";
 import { ConfigEditorModePicker } from "./ConfigEditorModePicker";
 import {
   applyChangesToSession,
@@ -144,8 +144,14 @@ export default class PipelineExecutionContainer extends React.Component<
     });
   };
 
-  onSolidSubsetChange = (solidSubset: string[] | null) => {
-    this.onSaveSession(this.props.currentSession.key, { solidSubset });
+  onSolidSubsetChange = (
+    solidSubset: string[] | null,
+    solidSubsetLabel: string | null
+  ) => {
+    this.onSaveSession(this.props.currentSession.key, {
+      solidSubset,
+      solidSubsetLabel
+    });
   };
 
   onModeChange = (mode: string) => {
@@ -180,6 +186,8 @@ export default class PipelineExecutionContainer extends React.Component<
     throw new Error(`Recieved unexpected "${obj.__typename}"`);
   };
 
+  // have this return an object with prebuilt index
+  // https://github.com/dagster-io/dagster/issues/1966
   getEnvironmentSchema = ():
     | ConfigEditorEnvironmentSchemaFragment
     | undefined => {
@@ -303,7 +311,7 @@ export default class PipelineExecutionContainer extends React.Component<
               left={
                 <>
                   <ConfigEditorPresetInsertionContainer className="bp3-dark">
-                    <ConfigEditorPresetsPicker
+                    <ConfigEditorConfigPicker
                       pipelineName={pipelineName}
                       solidSubset={currentSession.solidSubset}
                       onCreateSession={this.onCreateSession}
@@ -374,6 +382,7 @@ export default class PipelineExecutionContainer extends React.Component<
                       pipelineName={pipelineName}
                       subsetError={subsetError}
                       value={currentSession.solidSubset || null}
+                      label={currentSession.solidSubsetLabel || null}
                       onChange={this.onSolidSubsetChange}
                     />
                     <div style={{ width: 5 }} />

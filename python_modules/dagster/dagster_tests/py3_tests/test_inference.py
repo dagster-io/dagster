@@ -1,11 +1,10 @@
 import collections
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 
 from dagster import (
     DagsterInvalidDefinitionError,
-    Dict,
     InputDefinition,
     Int,
     as_dagster_type,
@@ -263,3 +262,14 @@ def test_python_autowrap_built_in_output():
     output_value = execute_solid(emit_counter).output_value()
     assert output_value == collections.Counter([1, 1, 2])
     assert isinstance(output_value, collections.Counter)
+
+
+def test_nested_kitchen_sink():
+    @lambda_solid
+    def no_execute() -> Optional[List[Tuple[List[int], str, Dict[str, Optional[List[str]]]]]]:
+        pass
+
+    assert (
+        no_execute.output_defs[0].runtime_type.display_name
+        == '[Tuple[[Int],String,Dict[String,[String]?]]]?'
+    )

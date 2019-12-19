@@ -256,7 +256,8 @@ def test_set_solid_configable_input_bad():
         DagsterInvalidConfigError,
         match=re.escape(
             'Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[String]". Value at path root:solids:set_solid:inputs:set_input must be list. '
+            '"List[String.InputHydrationConfig]". Value at path '
+            'root:solids:set_solid:inputs:set_input must be list. '
             'Expected: [{ json: { path: Path } pickle: { path: Path } value: String }].'
         ),
     ):
@@ -287,22 +288,6 @@ def test_tuple_solid_configable_input():
     assert res.output_value() == ['foo', 1, 3.1]
 
 
-def test_tuple_solid_configable_input_bad():
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Error 1: Type failure at path "root:solids:tuple_solid:inputs:tuple_input[0]". Value '
-            'for selector type String.InputHydrationConfig must be a dict.'
-        ),
-    ):
-        execute_solid(
-            tuple_solid,
-            environment_dict={
-                'solids': {'tuple_solid': {'inputs': {'tuple_input': ['foo', 1, 3.1]}}}
-            },
-        )
-
-
 def test_dict_return_solid():
     res = execute_solid(dict_return_solid)
     assert res.output_value() == {'foo': 'bar'}
@@ -311,92 +296,58 @@ def test_dict_return_solid():
 ######
 
 
-@solid(config_field=Field(Any))
+@solid(config=Field(Any))
 def any_config(context):
     return context.solid_config
 
 
-@solid(config_field=Field(Bool))
+@solid(config=Field(Bool))
 def bool_config(context):
     return 'true' if context.solid_config else 'false'
 
 
-@solid(config_field=Field(Int))
+@solid(config=Int)
 def add_n(context, x: Int) -> int:
     return x + context.solid_config
 
 
-@solid(config_field=Field(Float))
+@solid(config=Field(Float))
 def div_y(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config_field=Field(float))
+@solid(config=Field(float))
 def div_y_var(context, x: Float) -> float:
     return x / context.solid_config
 
 
-@solid(config_field=Field(String))
+@solid(config=Field(String))
 def hello(context) -> str:
     return 'Hello, {friend}!'.format(friend=context.solid_config)
 
 
-@solid(config_field=Field(Path))
+@solid(config=Field(Path))
 def unpickle(context) -> Any:
     with open(context.solid_config, 'rb') as fd:
         return pickle.load(fd)
 
 
-@solid(config_field=Field(List[String]))
+@solid(config=Field(List))
+def concat_typeless_list_config(context) -> String:
+    return ''.join(context.solid_config)
+
+
+@solid(config=Field(List[String]))
 def concat_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config_field=Field(Dict({'word': Field(String), 'times': Field(Int)})))
+@solid(config={'word': String, 'times': Int})
 def repeat_config(context) -> str:
     return context.solid_config['word'] * context.solid_config['times']
 
 
-@solid(config_field=Field(Tuple))
-def tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[Any, Any]))
-def any_tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[String, Int, Float]))
-def heterogeneous_tuple_config(context) -> str:
-    return ':'.join([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Tuple[Tuple[String, String], Int]))
-def nested_tuple_config(context) -> str:
-    return (context.solid_config[0][0] + context.solid_config[0][1]) * context.solid_config[1]
-
-
-@solid(config_field=Field(Set))
-def set_config(context) -> list:
-    return sorted([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Set[Any]))
-def set_any_config(context) -> list:
-    return sorted([str(x) for x in context.solid_config])
-
-
-@solid(config_field=Field(Set[str]))
-def set_string_config(context) -> list:
-    return sorted([x for x in context.solid_config])
-
-
-@solid(
-    config_field=Field(
-        Selector({'haw': Field(Dict({})), 'cn': Field(Dict({})), 'en': Field(Dict({}))})
-    )
-)
+@solid(config=Field(Selector({'haw': {}, 'cn': {}, 'en': {}})))
 def hello_world(context) -> str:
     if 'haw' in context.solid_config:
         return 'Aloha honua!'
@@ -406,14 +357,12 @@ def hello_world(context) -> str:
 
 
 @solid(
-    config_field=Field(
+    config=Field(
         Selector(
             {
-                'haw': Field(
-                    Dict({'whom': Field(String, default_value='honua', is_optional=True)})
-                ),
-                'cn': Field(Dict({'whom': Field(String, default_value='世界', is_optional=True)})),
-                'en': Field(Dict({'whom': Field(String, default_value='world', is_optional=True)})),
+                'haw': {'whom': Field(String, default_value='honua', is_optional=True)},
+                'cn': {'whom': Field(String, default_value='世界', is_optional=True)},
+                'en': {'whom': Field(String, default_value='world', is_optional=True)},
             }
         ),
         is_optional=True,
@@ -429,7 +378,7 @@ def hello_world_default(context) -> str:
         return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
 
 
-@solid(config_field=Field(PermissiveDict({'required': Field(String)})))
+@solid(config=Field(PermissiveDict({'required': Field(String)})))
 def partially_specified_config(context) -> List:
     return sorted(list(context.solid_config.items()))
 
@@ -501,6 +450,16 @@ def test_concat_config():
     assert res.output_value() == 'foobarbaz'
 
 
+def test_concat_typeless_config():
+    res = execute_solid(
+        concat_typeless_list_config,
+        environment_dict={
+            'solids': {'concat_typeless_list_config': {'config': ['foo', 'bar', 'baz']}}
+        },
+    )
+    assert res.output_value() == 'foobarbaz'
+
+
 def test_repeat_config():
     res = execute_solid(
         repeat_config,
@@ -509,111 +468,12 @@ def test_repeat_config():
     assert res.output_value() == 'foofoofoo'
 
 
-def test_tuple_config():
-    res = execute_solid(
-        tuple_config, environment_dict={'solids': {'tuple_config': {'config': ['foo', 3, 3.4]}}}
-    )
-    assert res.output_value() == 'foo:3:3.4'
-
-
-def test_any_tuple_config():
-    res = execute_solid(
-        any_tuple_config, environment_dict={'solids': {'any_tuple_config': {'config': ['foo', 3]}}}
-    )
-    assert res.output_value() == 'foo:3'
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Type failure at path "root:solids:any_tuple_config:config" on type "Tuple[Any, Any]". '
-            'Value at path root:solids:any_tuple_config:config must be a tuple with 2 values. '
-            'Expected: Tuple[Any, Any].'
-        ),
-    ):
-        execute_solid(
-            any_tuple_config,
-            environment_dict={'solids': {'any_tuple_config': {'config': ['foo', 3, 3.4]}}},
-        )
-
-
-def test_heterogeneous_tuple_config():
-    res = execute_solid(
-        heterogeneous_tuple_config,
-        environment_dict={'solids': {'heterogeneous_tuple_config': {'config': ['foo', 3, 3.1]}}},
-    )
-    assert res.output_value() == 'foo:3:3.1'
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Error 1: Type failure at path "root:solids:heterogeneous_tuple_config:config[2]" on '
-            'type "Float". Value at path root:solids:heterogeneous_tuple_config:config[2] is not '
-            'valid. Expected "Float".'
-        ),
-    ):
-        execute_solid(
-            heterogeneous_tuple_config,
-            environment_dict={'solids': {'heterogeneous_tuple_config': {'config': ['foo', 3, 3]}}},
-        )
-
-
-def test_nested_tuple_config():
-    res = execute_solid(
-        nested_tuple_config,
-        environment_dict={'solids': {'nested_tuple_config': {'config': [['foo', 'bar'], 2]}}},
-    )
-    assert res.output_value() == 'foobarfoobar'
-
-
 def test_tuple_none_config():
-    with pytest.raises(
-        check.CheckError,
-        match=re.escape(
-            'Member of list mismatches type. Expected <class '
-            '\'dagster.core.types.config.ConfigType\'>. Got None of type <class \'NoneType\'>'
-        ),
-    ):
+    with pytest.raises(check.CheckError, match='Param tuple_types cannot be none'):
 
-        @solid(config_field=Field(Tuple[None]))
+        @solid(config=Field(Tuple[None]))
         def _tuple_none_config(context) -> str:
             return ':'.join([str(x) for x in context.solid_config])
-
-
-def test_set_config():
-    res = execute_solid(
-        set_config, environment_dict={'solids': {'set_config': {'config': ['foo', 'foo', 3]}}}
-    )
-    assert res.output_value() == sorted(['foo', '3'])
-
-
-@pytest.mark.xfail
-# https://github.com/dagster-io/dagster/issues/1932
-def test_set_any_config():
-    res = execute_solid(
-        set_any_config,
-        environment_dict={'solids': {'set_any_config': {'config': ['foo', 'foo', 3]}}},
-    )
-    assert res.output_value() == sorted(['foo', '3'])
-
-
-def test_set_string_config():
-    res = execute_solid(
-        set_string_config,
-        environment_dict={'solids': {'set_string_config': {'config': ['foo', 'foo', 'bar']}}},
-    )
-    assert res.output_value() == sorted(['foo', 'bar'])
-
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Type failure at path "root:solids:set_string_config:config[2]" on type "String". '
-            'Value at path root:solids:set_string_config:config[2] is not valid. Expected "String".'
-        ),
-    ):
-        res = execute_solid(
-            set_string_config,
-            environment_dict={'solids': {'set_string_config': {'config': ['foo', 'foo', 3]}}},
-        )
 
 
 def test_selector_config():

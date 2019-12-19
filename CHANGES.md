@@ -1,18 +1,45 @@
 # Changelog
 
+## 0.7.0 (Upcoming)
+
+**New**
+
+- We are now more permissive when specifying configuration schema in order make constructing configuration schema more concise.
+
+**Breaking**
+
+- `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
+- `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
+- The implementation of SQL-based event log and run storages has been consolidated, which has
+  entailed a schema change. If you have event logs stored in a Postgres- or SQLite-backed event
+  log storage, and you would like to maintain access to these logs, you should run
+  `dagster instance migrate`. To check what event log storages you are using, run
+  `dagster instance info`.
+
+**Dagit**
+
+- The Explore UI now allows you to render a subset of a large DAG via a new solid
+  query bar that accepts terms like `solid_name+*` and `+solid_name+`. When viewing
+  very large DAGs, nothing is displayed by default and `*` produces the original behavior.
+
+- The Explore UI now includes a zoom slider that makes it easier to navigate large DAGs.
+
 ## 0.6.6
 
 **Breaking**
+
 - The `selector` argument to `PipelineDefinition` has been removed. This API made it possible to
   construct a `PipelineDefinition` in an invalid state. Use `PipelineDefinition.build_sub_pipeline`
   instead.
 
 **New**
+
 - Added the `dagster_prometheus` library, which exposes a basic Prometheus resource.
 - Dagster Airflow DAGs may now use GCS instead of S3 for storage.
 - Expanded interface for schedule management in Dagit.
-  
+
 **Dagit**
+
 - Performance improvements when loading, displaying, and editing config for large pipelines.
 - Smooth scrolling zoom in the explore tab replaces the previous two-step zoom.
 - No longer depends on internet fonts to run, allowing fully offline dev.
@@ -25,6 +52,7 @@
 - Better handling of pipelines that aren't present in the currently loaded repo.
 
 **Bugfix**
+
 - Dagster Airflow DAGs previously could crash while handling Python errors in DAG logic.
 - Step failures when running Dagster Airflow DAGs were previously not being surfaced as task
   failures in Airflow.
@@ -32,16 +60,17 @@
   solid subselection.
 - `frozenlist` and `frozendict` now pass Dagster's parameter type checks for `list` and `dict`.
 - The GraphQL playground in Dagit is now working again.
-  
+
 **Nits**
+
 - Dagit now prints its pid when it loads.
 - Third-party dependencies have been relaxed to reduce the risk of version conflicts.
 - Improvements to docs and example code.
 
-
 ## 0.6.5
 
 **Breaking**
+
 - The interface for type checks has changed. Previously the `type_check_fn` on a custom type was
   required to return None (=passed) or else raise `Failure` (=failed). Now, a `type_check_fn` may
   return `True`/`False` to indicate success/failure in the ordinary case, or else return a
@@ -58,6 +87,7 @@
   `configField`.
 
 **Bugfix**
+
 - `PresetDefinition.from_files` is now guaranteed to give identical results across all Python
   minor versions.
 - Nested composite solids with no config, but with config mapping functions, now behave as expected.
@@ -66,9 +96,11 @@
 - Improvements to Dagit interface.
 
 **New**
+
 - dagster_pyspark now supports remote execution on EMR with the `@pyspark_solid` decorator.
 
 **Nits**
+
 - Documentation has been improved.
 - The top level config field `features` in the `dagster.yaml` will no longer have any effect.
 - Third-party dependencies have been relaxed to reduce the risk of version conflicts.

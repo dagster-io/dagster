@@ -1,3 +1,5 @@
+import os
+import shutil
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
@@ -14,6 +16,7 @@ from dagster import (
     check,
     execute_pipeline,
     lambda_solid,
+    seven,
 )
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -29,7 +32,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.runtime import resolve_to_runtime_type
+from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -41,6 +44,7 @@ from .temp_file import (
     get_temp_file_name_with_data,
     get_temp_file_names,
 )
+from .typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
@@ -284,6 +288,15 @@ def check_dagster_type(dagster_type, value):
 
             assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
     '''
+
+    if is_typing_type(dagster_type):
+        raise DagsterInvariantViolationError(
+            (
+                'Must pass in a type from dagster module. You passed {dagster_type} '
+                'which is part of python\'s typing module.'
+            ).format(dagster_type=dagster_type)
+        )
+
     runtime_type = resolve_to_runtime_type(dagster_type)
     type_check = runtime_type.type_check(value)
     if not isinstance(type_check, TypeCheck):
@@ -293,3 +306,15 @@ def check_dagster_type(dagster_type, value):
             )
         )
     return type_check
+
+
+@contextmanager
+def restore_directory(src):
+    with seven.TemporaryDirectory() as temp_dir:
+        dst = os.path.join(temp_dir, os.path.basename(src))
+        shutil.copytree(src, dst)
+        try:
+            yield
+        finally:
+            shutil.rmtree(src)
+            shutil.copytree(dst, src)

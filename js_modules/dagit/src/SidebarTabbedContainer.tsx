@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { Icon, IconName, Colors } from "@blueprintjs/core";
 import { Link } from "react-router-dom";
 import { TypeExplorerContainer } from "./typeexplorer/TypeExplorerContainer";
@@ -141,7 +141,7 @@ const Tabs = styled.div`
 const Tab = styled.div<{ active: boolean }>`
   color: ${p => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
   border-top: 3px solid transparent;
-  border-bottom: 3px solid ${p => (p.active ? Colors.COBALT3 : "transparent")}
+  border-bottom: 3px solid ${p => (p.active ? Colors.COBALT3 : "transparent")};
   text-decoration: none;
   white-space: nowrap;
   min-width: 40px;

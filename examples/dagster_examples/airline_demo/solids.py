@@ -9,7 +9,6 @@ from dagstermill import define_dagstermill_solid
 from sqlalchemy import text
 
 from dagster import (
-    Dict,
     EventMetadataEntry,
     ExpectationResult,
     Field,
@@ -198,7 +197,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
 
 @solid(
     output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
-    config_field=Field(Dict(fields={'table_name': Field(String, description='')})),
+    config={'table_name': String},
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
@@ -219,16 +218,11 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
 
 @solid(
     description='Subsample a spark dataset via the configuration option.',
-    config_field=Field(
-        Dict(
-            fields={
-                'subsample_pct': Field(
-                    Int,
-                    description='The integer percentage of rows to sample from the input dataset.',
-                )
-            }
+    config={
+        'subsample_pct': Field(
+            Int, description='The integer percentage of rows to sample from the input dataset.',
         )
-    ),
+    },
 )
 def subsample_spark_dataset(context, data_frame: DataFrame) -> DataFrame:
     return data_frame.sample(
@@ -254,7 +248,7 @@ def s3_to_df(s3_coordinate: S3Coordinate, archive_member: String) -> DataFrame:
         'subsample_spark_dataset': {'config': {'subsample_pct': cfg['subsample_pct']}},
         'load_data_to_database_from_spark': {'config': {'table_name': cfg['table_name']}},
     },
-    config={'subsample_pct': Field(int), 'table_name': Field(str)},
+    config={'subsample_pct': int, 'table_name': str},
     description='''Ingest zipped csv file from s3, load into a Spark
 DataFrame, optionally subsample it (via configuring the
 subsample_spark_dataset, solid), canonicalize the column names, and then
@@ -495,7 +489,7 @@ sfo_delays_by_destination = notebook_solid(
 
 @solid(
     required_resource_keys={'spark'},
-    config={'subsample_pct': Field(Int)},
+    config={'subsample_pct': Int},
     description='''
     This solid takes April, May, and June data and coalesces it into a q2 data set.
     It then joins the that origin and destination airport with the data in the

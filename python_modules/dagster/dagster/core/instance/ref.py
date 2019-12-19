@@ -125,6 +125,15 @@ class InstanceRef(
             run_launcher_data=run_launcher_data,
         )
 
+    @staticmethod
+    def from_dict(instance_ref_dict):
+        return InstanceRef(
+            **{
+                k: (ConfigurableClassData(*v) if v is not None else None)
+                for k, v in instance_ref_dict.items()
+            }
+        )
+
     @property
     def local_artifact_storage(self):
         return self.local_artifact_storage_data.rehydrate()
@@ -144,3 +153,6 @@ class InstanceRef(
     @property
     def run_launcher(self):
         return self.run_launcher_data.rehydrate() if self.run_launcher_data else None
+
+    def to_dict(self):
+        return self._asdict()

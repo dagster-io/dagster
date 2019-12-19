@@ -234,11 +234,13 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 num_attempts = 0
                 while not res and num_attempts < LOG_RETRIEVAL_MAX_ATTEMPTS:
                     raw_res = client.read_namespaced_pod_log(
-                        name=pod.name, namespace=pod.namespace, container='base', tail_lines=5
+                        name=pod.name, namespace=pod.namespace, container='base'
                     )
                     res = parse_raw_res(raw_res.split('\n'))
                     time.sleep(LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC)
                     num_attempts += 1
+                    self.log.debug('k8s pod raw response: ' + str(raw_res))
+                    self.log.debug('parsed response: ' + str(res))
 
                 try:
                     handle_execution_errors(res, 'executePlan')

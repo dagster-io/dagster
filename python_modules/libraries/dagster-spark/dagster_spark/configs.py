@@ -5,7 +5,7 @@ in a variety of deployment contexts. See the Spark documentation at
 https://spark.apache.org/docs/latest/submitting-applications.html for a more in-depth summary of
 Spark deployment contexts and configuration.
 '''
-from dagster import Dict, Field, List, Path, String
+from dagster import Field
 
 from .configs_spark import spark_config
 from .types import SparkDeployMode
@@ -19,7 +19,7 @@ def define_spark_config():
     '''
 
     master_url = Field(
-        String,
+        str,
         description='The master URL for the cluster (e.g. spark://23.195.26.187:7077)',
         is_optional=False,
     )
@@ -38,7 +38,7 @@ def define_spark_config():
     )
 
     application_jar = Field(
-        Path,
+        str,
         description='''Path to a bundled jar including your application and all
                         dependencies. The URL must be globally visible inside of your cluster, for
                         instance, an hdfs:// path or a file:// path that is present on all nodes.
@@ -47,29 +47,22 @@ def define_spark_config():
     )
 
     application_arguments = Field(
-        String,
+        str,
         description='Arguments passed to the main method of your main class, if any',
         is_optional=True,
     )
 
     spark_home = Field(
-        String,
+        str,
         description='The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.',
         is_optional=True,
     )
 
-    spark_outputs = Field(List[String], description='The outputs that this Spark job will produce')
-
-    return Field(
-        Dict(
-            fields={
-                'master_url': master_url,
-                'deploy_mode': deploy_mode,
-                'application_jar': application_jar,
-                'spark_conf': spark_config(),
-                'spark_home': spark_home,
-                'application_arguments': application_arguments,
-                'spark_outputs': spark_outputs,
-            }
-        )
-    )
+    return {
+        'master_url': master_url,
+        'deploy_mode': deploy_mode,
+        'application_jar': application_jar,
+        'spark_conf': spark_config(),
+        'spark_home': spark_home,
+        'application_arguments': application_arguments,
+    }

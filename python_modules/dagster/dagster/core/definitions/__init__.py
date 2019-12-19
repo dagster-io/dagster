@@ -1,6 +1,15 @@
 from .config import ConfigMapping, ConfigMappingContext
 from .container import IContainSolids, create_execution_structure, solids_in_topological_order
-from .decorators import composite_solid, lambda_solid, pipeline, schedules, solid
+from .decorators import (
+    composite_solid,
+    daily_schedule,
+    hourly_schedule,
+    lambda_solid,
+    pipeline,
+    schedule,
+    schedules,
+    solid,
+)
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
@@ -40,6 +49,14 @@ from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
+from .partition import (
+    FirstPartitionSelector,
+    IPartitionSelector,
+    LastPartitionSelector,
+    Partition,
+    PartitionSetDefinition,
+    repository_partitions,
+)
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .repository import RepositoryDefinition

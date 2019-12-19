@@ -63,10 +63,9 @@ def _do_setup(name='dagster'):
             'click>=5.0',
             'coloredlogs>=6.1',
             'graphviz>=0.8.4',
-            # pyyaml pinned for compatibility with docker-compose
-            # https://github.com/docker/compose/blob/master/setup.py#L35
-            'PyYAML>=3.10,<5',
+            'PyYAML',
             # core (not explicitly expressed atm)
+            'alembic>=1.2.1',
             'gevent',
             'pyrsistent>=0.14.8',
             'rx<=1.6.1',  # 3.0 was a breaking change. No py2 compatability as well.
@@ -80,7 +79,6 @@ def _do_setup(name='dagster'):
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
         ],
-        tests_require=['mock'],
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 

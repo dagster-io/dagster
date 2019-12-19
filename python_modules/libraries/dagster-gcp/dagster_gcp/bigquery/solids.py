@@ -42,7 +42,7 @@ def bq_solid_for_queries(sql_queries):
     @solid(
         input_defs=[InputDefinition(_START, Nothing)],
         output_defs=[OutputDefinition(List[DataFrame])],
-        config_field=define_bigquery_query_config(),
+        config=define_bigquery_query_config(),
         required_resource_keys={'bigquery'},
         metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
     )
@@ -74,7 +74,7 @@ BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 @solid(
     input_defs=[InputDefinition('paths', List[Path])],
     output_defs=[OutputDefinition(Nothing)],
-    config_field=BIGQUERY_LOAD_CONFIG,
+    config=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_gcs_paths_to_bq(context, paths):
@@ -84,7 +84,7 @@ def import_gcs_paths_to_bq(context, paths):
 @solid(
     input_defs=[InputDefinition('df', DataFrame)],
     output_defs=[OutputDefinition(Nothing)],
-    config_field=BIGQUERY_LOAD_CONFIG,
+    config=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_df_to_bq(context, df):
@@ -94,7 +94,7 @@ def import_df_to_bq(context, df):
 @solid(
     input_defs=[InputDefinition('path', Path)],
     output_defs=[OutputDefinition(Nothing)],
-    config_field=BIGQUERY_LOAD_CONFIG,
+    config=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
 )
 def import_file_to_bq(context, path):
@@ -118,7 +118,7 @@ def _execute_load_in_source(context, source, source_name):
 
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
-    config_field=define_bigquery_create_dataset_config(),
+    config=define_bigquery_create_dataset_config(),
     required_resource_keys={'bigquery'},
 )
 def bq_create_dataset(context):
@@ -135,7 +135,7 @@ def bq_create_dataset(context):
 
 @solid(
     input_defs=[InputDefinition(_START, Nothing)],
-    config_field=define_bigquery_delete_dataset_config(),
+    config=define_bigquery_delete_dataset_config(),
     required_resource_keys={'bigquery'},
 )
 def bq_delete_dataset(context):

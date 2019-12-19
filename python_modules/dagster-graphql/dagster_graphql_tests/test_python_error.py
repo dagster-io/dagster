@@ -34,7 +34,7 @@ def test_python_error():
 
 
 def define_bad_pipeline():
-    @solid(config_field=Field(Int, default_value='number'))
+    @solid(config=Field(Int, default_value='number'))
     def bad_context():
         pass
 

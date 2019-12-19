@@ -152,7 +152,7 @@ class DataprocResource(object):
 
 
 @resource(
-    config_field=define_dataproc_create_cluster_config(),
+    config=define_dataproc_create_cluster_config(),
     description='Manage a Dataproc cluster resource',
 )
 def dataproc_resource(context):

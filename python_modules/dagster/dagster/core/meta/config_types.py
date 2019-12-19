@@ -2,8 +2,8 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.config import ConfigType, ConfigTypeKind
-from dagster.core.types.field import Field
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
+from dagster.core.types.config.field import Field
 
 
 @whitelist_for_serdes
@@ -185,6 +185,6 @@ def meta_from_config_type(config_type):
         if config_type.is_enum
         else None,
         fields=[meta_from_field(name, field) for name, field in config_type.fields.items()]
-        if config_type.is_selector or config_type.is_composite
+        if config_type.has_fields
         else None,
     )

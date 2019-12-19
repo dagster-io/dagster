@@ -1,8 +1,11 @@
+import datetime
 import inspect
+import warnings
 from functools import wraps
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.partition.utils import date_partition_range
 
 from ..decorator_utils import (
     InvalidDecoratedFunctionInfo,
@@ -17,7 +20,7 @@ from .composition import (
     enter_composition,
     exit_composition,
 )
-from .config import ConfigMapping, resolve_config_field
+from .config import ConfigMapping
 from .events import ExpectationResult, Materialization, Output
 from .inference import (
     has_explicit_return_type,
@@ -27,7 +30,7 @@ from .inference import (
     infer_output_definitions,
 )
 from .input import InputDefinition
-from .mode import ModeDefinition
+from .mode import DEFAULT_MODE_NAME, ModeDefinition
 from .output import OutputDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
@@ -82,7 +85,7 @@ class _Solid(object):
         output_defs=None,
         description=None,
         required_resource_keys=None,
-        config_field=None,
+        config=None,
         metadata=None,
         step_metadata_fn=None,
     ):
@@ -97,8 +100,8 @@ class _Solid(object):
         # resources will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
 
-        # config_field will be checked within SolidDefinition
-        self.config_field = config_field
+        # config will be checked within SolidDefinition
+        self.config = config
 
         # metadata will be checked within ISolidDefinition
         self.metadata = metadata
@@ -130,7 +133,7 @@ class _Solid(object):
             input_defs=input_defs,
             output_defs=output_defs,
             compute_fn=compute_fn,
-            config_field=self.config_field,
+            config=self.config,
             description=self.description,
             required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
@@ -257,7 +260,6 @@ def solid(
     description=None,
     input_defs=None,
     output_defs=None,
-    config_field=None,
     config=None,
     required_resource_keys=None,
     metadata=None,
@@ -275,11 +277,9 @@ def solid(
     The decorated function will be used as the solid's compute function. The signature of the
     decorated function is more flexible than that of the ``compute_fn`` in the core API; it may:
 
-    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the
-        compute function.
+    1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the compute function.
     2. Return an :py:class:`Output`. This output will be yielded by the compute function.
-    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute
-        behaviour.
+    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute behaviour.
 
     Note that options 1) and 2) are incompatible with yielding other events -- if you would like
     to decorate a function that yields events, it must also wrap its eventual output in an
@@ -293,13 +293,15 @@ def solid(
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
-        config (Optional[Dict[str, Field]]):
-            Defines the schema of the configuration dict provided to the solid via context.
-        config_field (Optional[Field]): Used in the rare case when a solid's top level config type
-            is other than a dictionary.
-
-            A :class:`DagsterInvalidDefinitionError` will be raised if both ``config`` and
-            ``config_field`` are set.
+        config (Optional[Any]): The schema for the config. Configuration data available
+            as context.solid_config.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -360,7 +362,6 @@ def solid(
         check.invariant(input_defs is None)
         check.invariant(output_defs is None)
         check.invariant(description is None)
-        check.invariant(config_field is None)
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         check.invariant(metadata is None)
@@ -371,7 +372,7 @@ def solid(
         name=name,
         input_defs=input_defs,
         output_defs=output_defs,
-        config_field=resolve_config_field(config_field, config, '@solid'),
+        config=config,
         description=description,
         required_resource_keys=required_resource_keys,
         metadata=metadata,
@@ -711,9 +712,14 @@ def composite_solid(
             :py:class:`CompositeSolidDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        config (Optional[Dict[str, Field]]):
-            Defines the schema of the configuration dict provided to the composite solid via context.
-            If you specify ``config``, you must also specify ``config_fn``.
+        config (Optional[Any]): The schema for the config.
+            This value can be a:
+                - :py:class:`Field`
+                - Python primitive types that resolve to dagster config types
+                    - int, float, bool, str, list.
+                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+                in the dictionary get resolved by the same rules, recursively.
         config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.
@@ -834,3 +840,157 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
     return _Pipeline(
         name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description
     )
+
+
+def schedule(
+    name,
+    cron_schedule,
+    pipeline_name,
+    tags=None,
+    tags_fn=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=lambda: True,
+    environment_vars=None,
+):
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        return ScheduleDefinition(
+            name=schedule_name,
+            cron_schedule=cron_schedule,
+            pipeline_name=pipeline_name,
+            environment_dict_fn=fn,
+            tags=tags,
+            tags_fn=tags_fn,
+            solid_subset=solid_subset,
+            mode=mode,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner
+
+
+def daily_schedule(
+    pipeline_name,
+    start_date,
+    name=None,
+    execution_time=datetime.time(0, 0),
+    tags=None,
+    tags_fn_for_date=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=lambda: True,
+    environment_vars=None,
+):
+
+    from dagster.core.definitions.partition import PartitionSetDefinition
+
+    check.opt_str_param(name, 'name')
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
+    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
+    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
+    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    check.callable_param(should_execute, 'should_execute')
+    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+
+    cron_schedule = '{minute} {hour} * * *'.format(
+        minute=execution_time.minute, hour=execution_time.hour
+    )
+
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        def _environment_dict_fn_for_partition(partition):
+            return fn(partition.value)
+
+        partition_set_name = '{}_daily'.format(pipeline_name)
+        partition_set = PartitionSetDefinition(
+            name=partition_set_name,
+            pipeline_name=pipeline_name,
+            partition_fn=date_partition_range(start_date),
+            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+        )
+
+        return partition_set.create_schedule_definition(
+            schedule_name,
+            cron_schedule,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner
+
+
+def hourly_schedule(
+    pipeline_name,
+    start_date,
+    name=None,
+    execution_time=datetime.time(0, 0),
+    tags=None,
+    tags_fn_for_date=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=lambda: True,
+    environment_vars=None,
+):
+
+    from dagster.core.definitions.partition import PartitionSetDefinition
+
+    check.opt_str_param(name, 'name')
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
+    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
+    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
+    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    check.callable_param(should_execute, 'should_execute')
+    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+
+    if execution_time.hour != 0:
+        warnings.warn(
+            "Hourly schedule {schedule_name} created with:\n"
+            "\tschedule_time=datetime.time(hour={hour}, minute={minute}, ...)."
+            "Since this is a hourly schedule, the hour parameter will be ignored and the schedule "
+            "will run on the {minute} mark for the previous hour interval. Replace "
+            "datetime.time(hour={hour}, minute={minute}, ...) with datetime.time(minute={minute}, ...)"
+            "to fix this warning."
+        )
+
+    cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)
+
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        def _environment_dict_fn_for_partition(partition):
+            return fn(partition.value)
+
+        partition_set_name = '{}_hourly'.format(pipeline_name)
+        partition_set = PartitionSetDefinition(
+            name=partition_set_name,
+            pipeline_name=pipeline_name,
+            partition_fn=date_partition_range(
+                start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
+            ),
+            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+        )
+
+        return partition_set.create_schedule_definition(
+            schedule_name,
+            cron_schedule,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner

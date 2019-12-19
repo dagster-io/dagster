@@ -1,5 +1,5 @@
 import * as React from "react";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import gql from "graphql-tag";
 import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";

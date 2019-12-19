@@ -14,7 +14,8 @@ def create_schema():
         pipelines,
         roots,
         runs,
-        run_schedule,
+        schedules,
+        partition_sets,
         runtime_types,
     )
 

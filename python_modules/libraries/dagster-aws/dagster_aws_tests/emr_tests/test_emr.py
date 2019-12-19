@@ -1,68 +1,24 @@
-import pytest
-from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
+from dagster_aws.emr import EmrClusterState, EmrJobRunner
 from moto import mock_emr
 
-from dagster import execute_pipeline, pipeline
+from dagster.utils.test import create_test_pipeline_execution_context
+
+REGION = 'us-west-1'
 
 
-@pytest.mark.skip
 @mock_emr
-def test_run_emr_job():
-    @pipeline
-    def test_pipe():
-        EmrRunJobFlowSolidDefinition('test')()
+def test_emr_create_cluster(emr_cluster_config):
+    context = create_test_pipeline_execution_context()
+    cluster = EmrJobRunner(region=REGION)
+    cluster_id = cluster.run_job_flow(context, emr_cluster_config)
+    assert cluster_id.startswith('j-')
 
-    emr_config = {
-        'Name': 'test-pyspark',
-        'ReleaseLabel': 'emr-5.23.0',
-        'Instances': {
-            'MasterInstanceType': 'm4.large',
-            'SlaveInstanceType': 'm4.large',
-            'InstanceCount': 4,
-            'TerminationProtected': False,
-        },
-        'Applications': [{'Name': 'Spark'}],
-        'BootstrapActions': [
-            {
-                'Name': 'Spark Default Config',
-                'ScriptBootstrapAction': {
-                    'Path': 's3://support.elasticmapreduce/spark/maximize-spark-default-config'
-                },
-            }
-        ],
-        'Steps': [
-            {
-                'Name': 'Setup Debugging',
-                'ActionOnFailure': 'TERMINATE_CLUSTER',
-                'HadoopJarStep': {'Jar': 'command-runner.jar', 'Args': ['state-pusher-script']},
-            },
-            {
-                'Name': 'setup - copy files',
-                'ActionOnFailure': 'TERMINATE_CLUSTER',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': [
-                        'aws',
-                        's3',
-                        'cp',
-                        's3://elementl-public/pyspark/hello_world.py',
-                        '/home/hadoop/',
-                    ],
-                },
-            },
-            {
-                'Name': 'Run Spark',
-                'ActionOnFailure': 'TERMINATE_CLUSTER',
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': ['spark-submit', '/home/hadoop/main.py'],
-                },
-            },
-        ],
-        'VisibleToAllUsers': True,
-        'JobFlowRole': 'EMR_EC2_DefaultRole',
-        'ServiceRole': 'EMR_DefaultRole',
-    }
-    config = {'solids': {'test': {'config': {'job_config': emr_config, 'aws_region': 'us-east-1'}}}}
-    result = execute_pipeline(test_pipe, config)
-    assert result.success
+
+@mock_emr
+def test_emr_describe_cluster(emr_cluster_config):
+    context = create_test_pipeline_execution_context()
+    cluster = EmrJobRunner(region=REGION)
+    cluster_id = cluster.run_job_flow(context, emr_cluster_config)
+    cluster_info = cluster.describe_cluster(cluster_id)
+    assert cluster_info['Name'] == 'test-emr'
+    assert EmrClusterState(cluster_info['Status']['State']) == EmrClusterState.Waiting

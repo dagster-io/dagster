@@ -3,7 +3,6 @@ import os
 import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
-from typing import List
 
 import requests
 from dagster_examples.bay_bikes.constants import (
@@ -18,10 +17,30 @@ from dagster_examples.bay_bikes.types import (
     TripDataFrame,
     WeatherDataFrame,
 )
-from numpy import array
+from keras.layers import LSTM, Dense
+from keras.models import Sequential
+from numpy import array, transpose
 from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
 
-from dagster import Field, Float, Int, String, check, composite_solid, solid
+from dagster import (
+    Any,
+    Dict,
+    EventMetadataEntry,
+    Field,
+    Float,
+    Int,
+    List,
+    Materialization,
+    Output,
+    OutputDefinition,
+    String,
+    check,
+    composite_solid,
+    solid,
+)
+
+# Added this to silence tensorflow logs. They are insanely verbose.
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 
 def _write_chunks_to_fp(response, output_fp, chunk_size):
@@ -88,12 +107,9 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
     },
     required_resource_keys={'volume'},
 )
-def consolidate_csv_files(
-    context, input_file_names: List[str], source_dir: str, target_name: str
-) -> str:
+def consolidate_csv_files(context, input_file_names: List[str], source_dir: str) -> DataFrame:
     # mount dirs onto volume
     csv_file_location = os.path.join(context.resources.volume, source_dir)
-    consolidated_csv_location = os.path.join(context.resources.volume, target_name)
     if not os.path.exists(csv_file_location):
         os.mkdir(csv_file_location)
     # There must be a header in all of these dataframes or pandas won't know how to concatinate dataframes.
@@ -107,8 +123,7 @@ def consolidate_csv_files(
             for file_name in input_file_names
         ]
     )
-    dataset.to_csv(consolidated_csv_location, sep=context.solid_config['delimiter'])
-    return consolidated_csv_location
+    return dataset
 
 
 @solid(required_resource_keys={'transporter'})
@@ -171,22 +186,33 @@ def download_weather_report_from_weather_api(context, date_file_name: str) -> st
     return csv_target
 
 
-@solid
-def preprocess_trip_dataset(_, dataframe: DataFrame) -> TripDataFrame:
+@solid(
+    output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame),]
+)
+def preprocess_trip_dataset(_, dataframe: DataFrame):
     dataframe = dataframe[['bike_id', 'start_time', 'end_time']].dropna(how='all').reindex()
     dataframe['bike_id'] = dataframe['bike_id'].astype('int64')
     dataframe['start_time'] = to_datetime(dataframe['start_time'])
     dataframe['end_time'] = to_datetime(dataframe['end_time'])
     dataframe['interval_date'] = dataframe['start_time'].apply(lambda x: x.date())
-    return TripDataFrame(dataframe)
+    yield Output(dataframe, output_name='TripDataFrame')
 
 
-@composite_solid
-def produce_trip_dataset() -> TripDataFrame:
-    download_trips_dataset = download_csv_from_bucket_and_return_dataframe.alias(
-        'download_trips_dataset'
+@composite_solid(output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame)])
+def produce_trip_dataset():
+    download_baybike_zipfiles_from_url = download_zipfiles_from_urls.alias(
+        'download_baybike_zipfiles_from_url'
     )
-    return preprocess_trip_dataset(download_trips_dataset())
+    unzip_baybike_zipfiles = unzip_files.alias('unzip_baybike_zipfiles')
+    consolidate_baybike_data_into_trip_dataset = consolidate_csv_files.alias(
+        'consolidate_baybike_data_into_trip_dataset'
+    )
+
+    return preprocess_trip_dataset(
+        consolidate_baybike_data_into_trip_dataset(
+            unzip_baybike_zipfiles(download_baybike_zipfiles_from_url())
+        )
+    )
 
 
 @solid
@@ -235,7 +261,7 @@ def produce_weather_dataset() -> WeatherDataFrame:
 
 
 @solid
-def transform_into_traffic_dataset(_, trip_dataset: TripDataFrame) -> TrafficDataFrame:
+def transform_into_traffic_dataset(_, trip_dataset: DataFrame) -> TrafficDataFrame:
     def max_traffic_load(trips):
         interval_count = {
             start_interval: 0 for start_interval in date_range(trips.name, periods=24, freq='h')
@@ -325,10 +351,14 @@ class MultivariateTimeseries:
         self.output_timeseries_name = check.str_param(output_sequence_name, 'output_sequence_name')
 
     def convert_to_snapshot_matrix(self, memory_length):
-        input_snapshot_matrix = [
-            timeseries.convert_to_snapshot_sequence(memory_length)
-            for timeseries in self.input_timeseries_collection
-        ]
+        # Transpose the matrix so that inputs match up with tensorflow tensor expectation
+        input_snapshot_matrix = transpose(
+            [
+                timeseries.convert_to_snapshot_sequence(memory_length)
+                for timeseries in self.input_timeseries_collection
+            ],
+            (1, 2, 0),
+        )
         output_snapshot_sequence = self.output_timeseries.sequence[memory_length:]
         return array(input_snapshot_matrix), array(output_snapshot_sequence)
 
@@ -360,3 +390,71 @@ def produce_training_set(
         context.solid_config['memory_length']
     )
     return TrainingSet((input_snapshot_matrix, output))
+
+
+@solid(
+    config={
+        'timeseries_train_test_breakpoint': Field(
+            int, description='The breakpoint between training and test set'
+        ),
+        'lstm_layer_config': Field(
+            Dict(
+                {
+                    'activation': Field(str, is_optional=True, default_value='relu'),
+                    'num_recurrant_units': Field(int, is_optional=True, default_value=50),
+                }
+            )
+        ),
+        'num_dense_layers': Field(int, is_optional=True, default_value=1),
+        'model_trainig_config': Field(
+            Dict(
+                {
+                    'optimizer': Field(
+                        str,
+                        description='Type of optimizer to use',
+                        is_optional=True,
+                        default_value='adam',
+                    ),
+                    'loss': Field(str, is_optional=True, default_value='mse'),
+                    'num_epochs': Field(int, description='Number of epochs to optimize over'),
+                }
+            )
+        ),
+    }
+)
+def train_lstm_model(context, training_set: TrainingSet) -> Any:
+    X, y = training_set
+    breakpoint = context.solid_config['timeseries_train_test_breakpoint']  # pylint: disable=W0622
+    X_train, X_test = X[0:breakpoint], X[breakpoint:]
+    y_train, y_test = y[0:breakpoint], y[breakpoint:]
+
+    _, n_steps, n_features = X.shape
+    model = Sequential()
+    model.add(
+        LSTM(
+            context.solid_config['lstm_layer_config']['num_recurrant_units'],
+            activation=context.solid_config['lstm_layer_config']['activation'],
+            input_shape=(n_steps, n_features),
+        )
+    )
+    model.add(Dense(context.solid_config['num_dense_layers']))
+    model.compile(
+        optimizer=context.solid_config['model_trainig_config']['optimizer'],
+        loss=context.solid_config['model_trainig_config']['loss'],
+        metrics=['mae'],
+    )
+    model.fit(
+        X_train,
+        y_train,
+        epochs=context.solid_config['model_trainig_config']['num_epochs'],
+        verbose=0,
+    )
+    results = model.evaluate(X_test, y_test, verbose=0)
+    yield Materialization(
+        label='test_set_results',
+        metadata_entries=[
+            EventMetadataEntry.text(str(results[0]), 'Mean Squared Error'),
+            EventMetadataEntry.text(str(results[1]), 'Mean Absolute Error'),
+        ],
+    )
+    yield Output(model)

@@ -8,11 +8,10 @@ import six
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.utils import S3Logger
 from dagster_snowflake import snowflake_resource
-from dagster_spark import SparkSolidDefinition
+from dagster_spark import create_spark_solid, spark_resource
 
 from dagster import (
     Bool,
-    Dict,
     Field,
     InputDefinition,
     List,
@@ -94,18 +93,14 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
 # See https://github.com/dagster-io/dagster/issues/1476
 @solid(
     name='download_from_s3_to_file',
-    config_field=Field(
-        Dict(
-            fields={
-                'bucket': Field(String, description='S3 bucket name'),
-                'key': Field(String, description='S3 key name'),
-                'target_folder': Field(
-                    Path, description=('Specifies the path at which to download the object.')
-                ),
-                'skip_if_present': Field(Bool, is_optional=True, default_value=False),
-            }
-        )
-    ),
+    config={
+        'bucket': Field(String, description='S3 bucket name'),
+        'key': Field(String, description='S3 key name'),
+        'target_folder': Field(
+            Path, description=('Specifies the path at which to download the object.')
+        ),
+        'skip_if_present': Field(Bool, is_optional=True, default_value=False),
+    },
     description='Downloads an object from S3 to a file.',
     output_defs=[
         OutputDefinition(FileExistsAtPath, description='The path to the downloaded object.')
@@ -148,7 +143,12 @@ def gunzipper(_, gzip_file):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            name='default', resource_defs={'s3': s3_resource, 'snowflake': snowflake_resource}
+            name='default',
+            resource_defs={
+                's3': s3_resource,
+                'snowflake': snowflake_resource,
+                'spark': spark_resource,
+            },
         )
     ],
     preset_defs=[
@@ -160,7 +160,7 @@ def gunzipper(_, gzip_file):
     ],
 )
 def event_ingest_pipeline():
-    event_ingest = SparkSolidDefinition(
+    event_ingest = create_spark_solid(
         name='event_ingest',
         main_class='io.dagster.events.EventPipeline',
         description='Ingest events from JSON to Parquet',
@@ -173,4 +173,4 @@ def event_ingest_pipeline():
             src='file:///tmp/dagster/events/data/output/2019/01/01/*.parquet', table='events'
         )
 
-    snowflake_load(event_ingest(spark_inputs=gunzipper(gzip_file=download_from_s3_to_file())))
+    snowflake_load(event_ingest(start=gunzipper(gzip_file=download_from_s3_to_file())))

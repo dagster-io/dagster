@@ -6,9 +6,15 @@
 # Dagster image.
 #
 ####################################################################################################
+ARG DEBIAN_VERSION
 ARG PYTHON_VERSION
 
-FROM python:"${PYTHON_VERSION}-stretch" AS dagster-base-build-image
+FROM python:"${PYTHON_VERSION}-${DEBIAN_VERSION}" AS dagster-base-build-image
+
+# ARG must be both before and after FROM
+# See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+ARG DEBIAN_VERSION
+
 LABEL maintainer="Elementl"
 
 # Never prompts the user for choices on installation/configuration of packages
@@ -45,7 +51,10 @@ RUN { \
 	} > /usr/local/bin/docker-java-home \
 	&& chmod +x /usr/local/bin/docker-java-home \
     # do some fancy footwork to create a JAVA_HOME that's cross-architecture-safe
-    && ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-java-home
+    && ln -svT "/usr/lib/jvm/java-8-openjdk-$(dpkg --print-architecture)" /docker-java-home \
+    # Pull in debian stretch stable repo so we can still get openjdk-8 on buster
+    && echo "APT::Default-Release \"${DEBIAN_VERSION}\";" > /etc/apt/apt.conf.d/99defaultrelease \
+    && echo "deb http://http.us.debian.org/debian stretch main contrib non-free" > /etc/apt/sources.list.d/91-debian-stretch.list
 
 RUN set -ex \
     && curl -sL https://deb.nodesource.com/setup_11.x | bash - \
@@ -109,15 +118,29 @@ RUN make dev_install
 FROM dagster-base-build-image AS dagster-integration-image
 ARG PYTHON_MAJOR_VERSION
 
-# This instigates some package downloads required by the airline-demo
+# This instigates some package downloads required by the airline-demo. Fails on Python 3.8
 ADD trigger_maven.py .
-RUN python trigger_maven.py
+RUN python trigger_maven.py; exit 0
+
+RUN apt-get update -yqq \
+    && apt-get install -yqq \
+        libgdal-dev \
+        libgeos-dev \
+        libpq-dev
 
 # pip install all the downstream deps to speed up our CI jobs
-ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /tmp/snapshot-reqs.txt
+ADD snapshot-reqs-$PYTHON_MAJOR_VERSION.txt /snapshot-reqs.txt
 RUN pip install -U pip setuptools wheel \
-    && pip install tox \
-    && pip install -r /tmp/snapshot-reqs.txt
+    && pip install \
+        awscli \
+        pipenv \
+        tox \
+    && pip install -r /snapshot-reqs.txt
+
+# Install gcloud CLI
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-sdk -y
 
 # Install Docker and other dependencies
 RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
@@ -135,9 +158,11 @@ RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-c
         curl \
         docker-ce \
         gnupg2 \
-        libpq-dev\
         pandoc \
         sbt \
+        rabbitmq-server \
+        postgresql \
+        postgresql-contrib \
 # Clean up after install process
     && apt-get autoremove -yqq --purge \
     && apt-get clean \
@@ -161,3 +186,8 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_
 # Pre-load jars for scala_modules by running a compile
 ADD scala_modules scala_modules
 RUN cd scala_modules && make compile
+
+# Final cleanup
+RUN rm -rf /scala_modules \
+    /snapshot-reqs.txt \
+    /trigger_maven.py

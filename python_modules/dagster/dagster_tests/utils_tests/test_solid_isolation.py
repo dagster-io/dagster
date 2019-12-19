@@ -65,7 +65,7 @@ def test_single_solid_with_multiple_inputs():
 def test_single_solid_with_config():
     ran = {}
 
-    @solid(config_field=Field(Int))
+    @solid(config=Int)
     def check_config_for_two(context):
         assert context.solid_config == 2
         ran['check_config_for_two'] = True
@@ -79,7 +79,7 @@ def test_single_solid_with_config():
 
 
 def test_single_solid_with_context_config():
-    @resource(config_field=Field(Int, is_optional=True, default_value=2))
+    @resource(config=Field(Int, is_optional=True, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
 
@@ -219,14 +219,14 @@ def test_execute_nested_composite_solids():
     res = execute_solid(nested_composite_solid)
 
     assert res.success
-    assert res.solid.name == 'wrap'
+    assert res.solid.name == 'layer_0'
 
     assert res.output_values == {}
 
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            'Output \'result\' not defined in composite solid \'wrap\': no output mappings were '
+            'Output \'result\' not defined in composite solid \'layer_0\': no output mappings were '
             'defined. If you were expecting this output to be present, you may be missing an '
             'output_mapping from an inner solid to its enclosing composite solid.'
         ),

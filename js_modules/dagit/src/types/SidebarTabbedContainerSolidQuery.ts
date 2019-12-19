@@ -118,116 +118,43 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_def
   resourceKey: string;
 }
 
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType_innerTypes[];
+  typeParamKeys: string[];
 }
 
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields {
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields_configType;
+  configTypeKey: string;
 }
 
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType {
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType_fields[];
+  typeParamKeys: string[];
+  fields: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes_CompositeConfigType;
+export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_innerTypes[];
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType_innerTypes[];
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields {
-  __typename: "ConfigTypeField";
-  name: string;
-  description: string | null;
-  isOptional: boolean;
-  configType: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields_configType;
-}
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType {
-  __typename: "CompositeConfigType";
-  key: string;
-  name: string | null;
-  description: string | null;
-  isList: boolean;
-  isNullable: boolean;
-  isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_innerTypes[];
-  fields: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType_fields[];
-}
-
-export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes_CompositeConfigType;
-
-export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ListConfigType" | "NullableConfigType";
-  key: string;
+  typeParamKeys: string[];
+  recursiveConfigTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes[];
 }
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields {
@@ -235,19 +162,47 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_def
   name: string;
   description: string | null;
   isOptional: boolean;
-  configType: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields_configType;
+  configTypeKey: string;
 }
+
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  name: string | null;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
-  isList: boolean;
-  isNullable: boolean;
   isSelector: boolean;
-  innerTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_innerTypes[];
+  typeParamKeys: string[];
   fields: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields[];
+  recursiveConfigTypes: SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
 export type SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType = SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType | SidebarTabbedContainerSolidQuery_pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType;

@@ -7,7 +7,7 @@ import six
 
 from dagster import check
 from dagster.core.definitions import resource
-from dagster.core.types import Field
+from dagster.core.types.config import Field
 from dagster.utils import mkdir_p
 
 from .file_manager import LocalFileHandle

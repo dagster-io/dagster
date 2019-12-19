@@ -5,7 +5,7 @@ import { IPoint } from "./getFullSolidLayout";
 import { Edge } from "./SolidLinks";
 import { isHighlighted } from "./highlighting";
 import { Colors } from "@blueprintjs/core";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;

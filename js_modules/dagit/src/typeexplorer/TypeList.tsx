@@ -1,6 +1,6 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components";
+import styled from "styled-components/macro";
 import { H3, UL } from "@blueprintjs/core";
 import TypeWithTooltip from "../TypeWithTooltip";
 import { TypeListFragment } from "./types/TypeListFragment";

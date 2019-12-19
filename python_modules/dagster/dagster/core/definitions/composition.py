@@ -91,7 +91,7 @@ class CompleteCompositionContext(
         for invocation in invocations.values():
             def_name = invocation.solid_def.name
             if def_name in solid_def_dict and solid_def_dict[def_name] is not invocation.solid_def:
-                check.failed(
+                raise DagsterInvalidDefinitionError(
                     'Detected conflicting solid definitions with the same name "{name}"'.format(
                         name=def_name
                     )
