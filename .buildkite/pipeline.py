@@ -569,12 +569,7 @@ def releasability_tests():
 if __name__ == "__main__":
     steps = pylint_steps() + [
         StepBuilder("isort")
-        .run(
-            "pip install isort>=4.3.21",
-            "isort -rc examples python_modules",  # -sg seems to be broken
-            "isort -rc -l 78 examples/dagster_examples/intro_tutorial",
-            "git diff --exit-code",
-        )
+        .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code",)
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
