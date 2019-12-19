@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import re
 import textwrap
 
@@ -20,6 +21,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.seven import IS_WINDOWS
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
@@ -365,20 +367,61 @@ def do_scaffold_command(pipeline, printer, skip_optional):
     printer(yaml_string)
 
 
-def gen_partition_slice_from_args(partition_set, kwargs):
-    if kwargs.get('all') and (kwargs.get('from') or kwargs.get('to')):
-        click.echo('error, cannot use both all and from/to')
-        return []
+def gen_partitions_from_args(partition_set, kwargs):
+    partition_selector_args = [
+        bool(kwargs.get('all')),
+        bool(kwargs.get('partitions')),
+        (bool(kwargs.get('from')) or bool(kwargs.get('to'))),
+    ]
+    if sum(partition_selector_args) > 1:
+        raise click.UsageError(
+            'error, cannot use more than one of: `--all`, `--partitions`, `--from/--to`'
+        )
 
     partitions = partition_set.get_partitions()
 
     if kwargs.get('all'):
         return partitions
 
+    if kwargs.get('partitions'):
+        selected_args = [s.strip() for s in kwargs.get('partitions').split(',') if s.strip()]
+        selected_partitions = [
+            partition for partition in partitions if partition.name in selected_args
+        ]
+        if len(selected_partitions) < len(selected_args):
+            selected_names = [partition.name for partition in selected_partitions]
+            unknown = [selected for selected in selected_args if selected not in selected_names]
+            raise click.UsageError('Unknown partitions: {}'.format(unknown.join(', ')))
+        return selected_partitions
+
     start = validate_partition_slice(partitions, 'from', kwargs.get('from'))
     end = validate_partition_slice(partitions, 'to', kwargs.get('to'))
 
     return partitions[start:end]
+
+
+def print_partition_format(partitions, indent_level):
+    if IS_WINDOWS:
+        # We cannot read the terminal (cmd/powershell/etc) window size, so just cap this at 250
+        screen_width = 250
+    else:
+        _, tty_width = os.popen('stty size', 'r').read().split()
+        screen_width = min(250, int(tty_width))
+    max_str_len = max(len(x.name) for x in partitions)
+    spacing = 10
+    num_columns = min(10, int((screen_width - indent_level) / (max_str_len + spacing)))
+    column_width = int((screen_width - indent_level) / num_columns)
+    prefix = ' ' * max(0, indent_level - spacing)
+    lines = []
+    for chunk in list(split_chunk(partitions, num_columns)):
+        lines.append(prefix + ''.join(partition.name.rjust(column_width) for partition in chunk))
+
+    return '\n' + '\n'.join(lines)
+
+
+def split_chunk(l, n):
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
 
 
 def validate_partition_slice(partitions, name, value):
@@ -404,6 +447,11 @@ def validate_partition_slice(partitions, name, value):
 )
 @click.option(
     '-p',
+    '--partitions',
+    type=click.STRING,
+    help='Comma-separated list of partition names that we want to backfill',
+)
+@click.option(
     '--partition-set',
     type=click.STRING,
     help='The name of the partition set over which we want to backfill.',
@@ -480,11 +528,11 @@ def pipeline_backfill_command(mode, *args, **kwargs):
     if not partition_set:
         raise click.UsageError('error, partition set not found')
 
-    partitions = gen_partition_slice_from_args(partition_set, kwargs)
+    partitions = gen_partitions_from_args(partition_set, kwargs)
 
     click.echo('\n     Pipeline: {}'.format(pipeline.name))
     click.echo('Partition set: {}'.format(partition_set.name))
-    click.echo('   Partitions: {}\n'.format(', '.join([x.name for x in partitions])))
+    click.echo('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
 
     if click.confirm(
         'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
