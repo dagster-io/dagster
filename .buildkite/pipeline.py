@@ -610,6 +610,14 @@ if __name__ == "__main__":
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
+        StepBuilder("mypy examples")
+        .run(
+            "pip install mypy",
+            # start small by making sure the local code type checks
+            "mypy examples --ignore-missing-imports",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
     steps += airline_demo_tests()
     steps += automation_tests()
