@@ -45,14 +45,15 @@ class SqlEventLogStorage(EventLogStorage):
 
         run_id = event.run_id
 
+        # https://stackoverflow.com/a/54386260/324449
+        event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=run_id,
+            event=serialize_dagster_namedtuple(event),
+            dagster_event_type=dagster_event_type,
+            timestamp=datetime.datetime.fromtimestamp(event.timestamp),
+        )
+
         with self.connect(run_id) as conn:
-            # https://stackoverflow.com/a/54386260/324449
-            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=run_id,
-                event=serialize_dagster_namedtuple(event),
-                dagster_event_type=dagster_event_type,
-                timestamp=datetime.datetime.fromtimestamp(event.timestamp),
-            )
             conn.execute(event_insert)
 
     def get_logs_for_run(self, run_id, cursor=-1):
