@@ -146,8 +146,8 @@ export class ExecutionPlanBox extends React.Component<
                   />
                 )}
                 <div style={{ width: 4 }} />
-                {(expectationResults.length > 0 ||
-                  materializations.length > 0) && (
+                {((expectationResults && expectationResults.length > 0) ||
+                  (materializations && materializations.length > 0)) && (
                   <DisclosureTriangle
                     onClick={() => this.setState({ expanded: !expanded })}
                     expanded={expanded}
