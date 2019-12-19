@@ -118,3 +118,6 @@ data
 
 # Dask
 dask-worker-space
+
+# PyCharm IDE Config files
+.idea
