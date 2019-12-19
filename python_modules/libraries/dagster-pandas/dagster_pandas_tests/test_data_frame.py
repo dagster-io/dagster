@@ -35,7 +35,7 @@ def test_mock_pipeline_with_pandas_dataframe_dagster_type():
     MockDF = create_dagster_pandas_dataframe_type(
         name='MockDF',
         columns=[
-            PandasColumn.integer_column('pid', nullable=False),
+            PandasColumn.integer_column('pid', exists=True),
             PandasColumn.string_column('names'),
         ],
         type_check=custom_type_check,

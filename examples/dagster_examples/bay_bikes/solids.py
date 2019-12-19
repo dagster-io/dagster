@@ -3,6 +3,7 @@ import os
 import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
+from typing import Tuple
 
 import requests
 from dagster_examples.bay_bikes.constants import (
@@ -12,6 +13,8 @@ from dagster_examples.bay_bikes.constants import (
     WEATHER_COLUMNS,
 )
 from dagster_examples.bay_bikes.types import (
+    RawTripDataFrame,
+    RawWeatherDataFrame,
     TrafficDataFrame,
     TrainingSet,
     TripDataFrame,
@@ -19,7 +22,7 @@ from dagster_examples.bay_bikes.types import (
 )
 from keras.layers import LSTM, Dense
 from keras.models import Sequential
-from numpy import array, transpose
+from numpy import array, ndarray, transpose
 from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
 
 from dagster import (
@@ -28,6 +31,7 @@ from dagster import (
     EventMetadataEntry,
     Field,
     Float,
+    InputDefinition,
     Int,
     List,
     Materialization,
@@ -187,18 +191,19 @@ def download_weather_report_from_weather_api(context, date_file_name: str) -> st
 
 
 @solid(
-    output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame),]
+    input_defs=[InputDefinition(name='dataframe', dagster_type=RawTripDataFrame)],
+    output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)],
 )
-def preprocess_trip_dataset(_, dataframe: DataFrame):
+def preprocess_trip_dataset(_, dataframe: DataFrame) -> DataFrame:
     dataframe = dataframe[['bike_id', 'start_time', 'end_time']].dropna(how='all').reindex()
     dataframe['bike_id'] = dataframe['bike_id'].astype('int64')
     dataframe['start_time'] = to_datetime(dataframe['start_time'])
     dataframe['end_time'] = to_datetime(dataframe['end_time'])
     dataframe['interval_date'] = dataframe['start_time'].apply(lambda x: x.date())
-    yield Output(dataframe, output_name='TripDataFrame')
+    yield Output(dataframe, output_name='trip_dataframe')
 
 
-@composite_solid(output_defs=[OutputDefinition(name='TripDataFrame', dagster_type=TripDataFrame)])
+@composite_solid(output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)])
 def produce_trip_dataset():
     download_baybike_zipfiles_from_url = download_zipfiles_from_urls.alias(
         'download_baybike_zipfiles_from_url'
@@ -215,8 +220,11 @@ def produce_trip_dataset():
     )
 
 
-@solid
-def preprocess_weather_dataset(_, dataframe: DataFrame) -> WeatherDataFrame:
+@solid(
+    input_defs=[InputDefinition(name='dataframe', dagster_type=RawWeatherDataFrame)],
+    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
+)
+def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     '''
     Steps:
 
@@ -249,19 +257,24 @@ def preprocess_weather_dataset(_, dataframe: DataFrame) -> WeatherDataFrame:
     )
     dataframe['didRain'] = dataframe.precipType.apply(lambda x: x == 'rain')
     del dataframe['precipType']
-    return WeatherDataFrame(dataframe)
+    yield Output(dataframe, output_name='weather_dataframe')
 
 
-@composite_solid
-def produce_weather_dataset() -> WeatherDataFrame:
+@composite_solid(
+    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)]
+)
+def produce_weather_dataset() -> DataFrame:
     download_weather_dataset = download_csv_from_bucket_and_return_dataframe.alias(
         'download_weather_dataset'
     )
     return preprocess_weather_dataset(download_weather_dataset())
 
 
-@solid
-def transform_into_traffic_dataset(_, trip_dataset: DataFrame) -> TrafficDataFrame:
+@solid(
+    input_defs=[InputDefinition('trip_dataset', dagster_type=TripDataFrame)],
+    output_defs=[OutputDefinition(name='traffic_dataframe', dagster_type=TrafficDataFrame)],
+)
+def transform_into_traffic_dataset(_, trip_dataset: DataFrame) -> DataFrame:
     def max_traffic_load(trips):
         interval_count = {
             start_interval: 0 for start_interval in date_range(trips.name, periods=24, freq='h')
@@ -292,7 +305,7 @@ def transform_into_traffic_dataset(_, trip_dataset: DataFrame) -> TrafficDataFra
     counts = trip_dataset.groupby(['interval_date']).apply(max_traffic_load)
     traffic_dataset = DataFrame(counts).reset_index()
     traffic_dataset.columns = ['interval_date', 'peak_traffic_load']
-    return TrafficDataFrame(traffic_dataset)
+    yield Output(traffic_dataset, output_name='traffic_dataframe')
 
 
 class Timeseries:
@@ -375,10 +388,17 @@ class MultivariateTimeseries:
         )
 
 
-@solid(config={'memory_length': Field(Int, description='The window memory length')})
+@solid(
+    config={'memory_length': Field(Int, description='The window memory length')},
+    input_defs=[
+        InputDefinition('traffic_dataset', dagster_type=TrafficDataFrame),
+        InputDefinition('weather_dataset', dagster_type=WeatherDataFrame),
+    ],
+    output_defs=[OutputDefinition(dagster_type=TrainingSet)],
+)
 def produce_training_set(
-    context, traffic_dataset: TrafficDataFrame, weather_dataset: WeatherDataFrame
-) -> TrainingSet:
+    context, traffic_dataset: DataFrame, weather_dataset: DataFrame
+) -> Tuple[ndarray, ndarray]:
     traffic_dataset['time'] = to_datetime(traffic_dataset.interval_date)
     weather_dataset['time'] = to_datetime(weather_dataset.time)
     dataset = traffic_dataset.join(weather_dataset.set_index('time'), on='time')
@@ -389,7 +409,7 @@ def produce_training_set(
     input_snapshot_matrix, output = multivariate_timeseries.convert_to_snapshot_matrix(
         context.solid_config['memory_length']
     )
-    return TrainingSet((input_snapshot_matrix, output))
+    return input_snapshot_matrix, output
 
 
 @solid(
@@ -420,9 +440,11 @@ def produce_training_set(
                 }
             )
         ),
-    }
+    },
+    input_defs=[InputDefinition('training_set', dagster_type=TrainingSet)],
+    output_defs=[OutputDefinition(Any)],
 )
-def train_lstm_model(context, training_set: TrainingSet) -> Any:
+def train_lstm_model(context, training_set: TrainingSet):
     X, y = training_set
     breakpoint = context.solid_config['timeseries_train_test_breakpoint']  # pylint: disable=W0622
     X_train, X_test = X[0:breakpoint], X[breakpoint:]

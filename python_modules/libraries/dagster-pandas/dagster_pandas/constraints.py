@@ -92,6 +92,21 @@ class NonNullableColumnConstraint(Constraint):
             )
 
 
+class UniqueColumnConstraint(Constraint):
+    def __init__(self):
+        super(UniqueColumnConstraint, self).__init__("Column must contain unique values")
+
+    def validate(self, dataframe, column_name):
+        rows_with_duplicated_values = dataframe[dataframe[column_name].duplicated()]
+        if not rows_with_duplicated_values.empty:
+            raise ConstraintViolationException(
+                constraint_name=self.name,
+                constraint_description=self.description,
+                column_name=column_name,
+                offending_rows=rows_with_duplicated_values,
+            )
+
+
 class CategoricalColumnConstraint(Constraint):
     def __init__(self, categories):
         self.categories = check.set_param(categories, 'categories', of_type=str)

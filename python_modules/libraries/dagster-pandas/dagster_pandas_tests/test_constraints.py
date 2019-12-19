@@ -8,6 +8,7 @@ from dagster_pandas.constraints import (
     MaxValueColumnConstraint,
     MinValueColumnConstraint,
     NonNullableColumnConstraint,
+    UniqueColumnConstraint,
 )
 from pandas import DataFrame
 
@@ -18,6 +19,15 @@ def test_column_exists_constraint():
 
     with pytest.raises(ConstraintViolationException):
         ColumnExistsConstraint().validate(test_dataframe, 'bar')
+
+
+def test_column_unique_constraint():
+    test_dataframe = DataFrame({'foo': ['foo', 'bar', 'baz']})
+    assert UniqueColumnConstraint().validate(test_dataframe, 'foo') is None
+
+    bad_test_dataframe = DataFrame({'foo': ['foo', 'foo', 'baz']})
+    with pytest.raises(ConstraintViolationException):
+        UniqueColumnConstraint().validate(bad_test_dataframe, 'foo')
 
 
 def test_column_type_constraint():
