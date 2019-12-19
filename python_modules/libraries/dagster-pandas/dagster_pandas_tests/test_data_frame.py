@@ -7,6 +7,7 @@ from dagster import (
     EventMetadataEntry,
     Output,
     OutputDefinition,
+    RuntimeType,
     TypeCheck,
     execute_pipeline,
     pipeline,
@@ -20,7 +21,7 @@ def test_create_pandas_dataframe_dagster_type():
         type_check=lambda value: True,
         columns=[PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
     )
-    assert isinstance(TestDataFrame, type)
+    assert isinstance(TestDataFrame, RuntimeType)
 
 
 def test_mock_pipeline_with_pandas_dataframe_dagster_type():
