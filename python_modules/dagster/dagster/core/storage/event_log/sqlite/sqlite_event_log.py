@@ -80,6 +80,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _initdb(self, engine, run_id):
         try:
             SqlEventLogStorageMetadata.create_all(engine)
+            engine.execute('PRAGMA journal_mode=WAL;')
         except (db.exc.DatabaseError, sqlite3.DatabaseError) as exc:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
 
