@@ -52,13 +52,13 @@ it("renders given materializations and passing expectations", () => {
 
   const executionPlanBoxProps: IExecutionPlanBoxProps = {
     delay: 200,
-    elapsed: 21,
     executionArtifactsPersisted: false,
     expectationResults: expectationResults,
     materializations,
     stepKey: "many_materializations_and_passing_expectations",
     state: IStepState.SUCCEEDED,
-    start: 1558389791907
+    start: 1558389791907,
+    finish: 1558389791907 + 21
   };
 
   const executionPlanBoxStateExpanded: IExecutionPlanBoxState = {
