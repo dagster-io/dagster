@@ -8,6 +8,11 @@ from dagster.core.execution.config import (
     check_persistent_storage_requirement,
 )
 
+DEFAULT_CONFIG = {
+    # 'task_queue_max_priority': 10,
+    'worker_prefetch_multiplier': 1,
+}
+
 
 class dict_wrapper(object):
     '''Wraps a dict to convert `obj['attr']` to `obj.attr`.'''
@@ -26,6 +31,7 @@ class CeleryConfig(
         backend (Optional[str]): The URL of the Celery backend.
         include (Optional[List[str]]): List of modules every worker should import.
         config_source (Optional[Dict]): Config settings for the Celery app.
+
     '''
 
     def __new__(
@@ -42,7 +48,9 @@ class CeleryConfig(
             ),
             backend=check.opt_str_param(backend, 'backend'),
             include=check.opt_list_param(include, 'include', of_type=str),
-            config_source=dict_wrapper(check.opt_dict_param(config_source, 'config_source')),
+            config_source=dict_wrapper(
+                dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+            ),
         )
 
     def check_requirements(self, instance, system_storage_def):
