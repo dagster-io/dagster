@@ -1,13 +1,13 @@
 import os
 
 from celery import Celery
+from dagster_celery.config import CeleryConfig
 from dagster_graphql.client.mutations import execute_execute_plan_mutation
+from kombu import Queue
 
 from dagster import ExecutionTargetHandle
 from dagster.core.instance import InstanceRef
 from dagster.core.serdes import serialize_dagster_namedtuple
-
-from .config import CeleryConfig
 
 DEFAULT_BROKER = 'pyamqp://guest@{hostname}:5672//'.format(
     hostname=os.getenv('DAGSTER_CELERY_BROKER_HOST', 'localhost')
@@ -32,6 +32,14 @@ def create_task(celery_app, **task_kwargs):
 def make_app(config=CeleryConfig()):
     app_ = Celery('dagster', **dict({'broker': DEFAULT_BROKER}, **(config._asdict())))
     app_.loader.import_module('celery.contrib.testing.tasks')
+    app_.conf.task_queues = [
+        Queue('dagster', routing_key='dagster.#', queue_arguments={'x-max-priority': 10})
+    ]
+    app_.conf.task_routes = {
+        'execute_query': {'queue': 'dagster', 'routing_key': 'dagster.execute_query'}
+    }
+    app_.conf.task_queue_max_priority = 10
+    app_.conf.task_default_priority = 5
     return app_
 
 

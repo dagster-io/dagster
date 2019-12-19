@@ -1,6 +1,5 @@
 import time
-
-from celery import Celery
+from collections import defaultdict
 
 from dagster import check
 from dagster.core.engine.engine_base import Engine
@@ -9,9 +8,11 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 
 from .config import CeleryConfig
-from .tasks import create_task
+from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
+
+DEFAULT_PRIORITY = 5
 
 
 class CeleryEngine(Engine):
@@ -42,15 +43,18 @@ class CeleryEngine(Engine):
 
         run_id = pipeline_context.pipeline_run.run_id
 
-        app = Celery('dagster', **(celery_config._asdict()))
+        app = make_app(celery_config)
 
         pending_steps = execution_plan.execution_deps()
 
         task_signatures = {}  # Dict[step_key, celery.Signature]
+        apply_kwargs = defaultdict(dict)  # Dict[step_key, Dict[str, Any]]
+
+        sort_by_priority = lambda step_key: (-1 * apply_kwargs[step_key]['priority'])
 
         for step_key in execution_plan.step_keys_to_execute:
-            # This is where we'll eventually set the priority and queue using task_kwargs and tags
-            # on the solids
+            step = execution_plan.get_step_by_key(step_key)
+            priority = step.metadata.get('dagster-celery/priority', DEFAULT_PRIORITY)
             task = create_task(app)
 
             variables = {
@@ -63,6 +67,7 @@ class CeleryEngine(Engine):
                 }
             }
             task_signatures[step_key] = task.si(handle_dict, variables, instance_ref_dict)
+            apply_kwargs[step_key] = {'priority': priority}
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
         completed_steps = set({})  # Set[step_key]
@@ -70,7 +75,9 @@ class CeleryEngine(Engine):
         while pending_steps or step_results:
 
             results_to_pop = []
-            for step_key, result in step_results.items():
+            for step_key, result in sorted(
+                step_results.items(), key=lambda x: sort_by_priority(x[0])
+            ):
                 if result.ready():
                     try:
                         step_events = result.get()
@@ -90,9 +97,18 @@ class CeleryEngine(Engine):
             pending_to_pop = []
             for step_key, requirements in pending_steps.items():
                 if requirements.issubset(completed_steps):
-                    step_results[step_key] = task_signatures[step_key].apply_async()
-
                     pending_to_pop.append(step_key)
+
+            # This is a slight refinement. If we have n workers idle and schedule m > n steps for
+            # execution, the first n steps will be picked up by the idle workers in the order in
+            # which they are scheduled (and the following m-n steps will be executed in priority
+            # order, provided that it takes longer to execute a step than to schedule it). The test
+            # case has m >> n to exhibit this behavior in the absence of this sort step.
+            to_execute = sorted(pending_to_pop, key=sort_by_priority)
+            for step_key in to_execute:
+                step_results[step_key] = task_signatures[step_key].apply_async(
+                    queue='dagster', routing_key='dagster.execute_query', **apply_kwargs[step_key]
+                )
 
             for step_key in pending_to_pop:
                 if step_key in pending_steps:
