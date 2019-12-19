@@ -8,6 +8,10 @@ from dagster.core.execution.config import (
     check_persistent_storage_requirement,
 )
 
+DEFAULT_PRIORITY = 5
+
+DEFAULT_QUEUE = 'dagster'
+
 DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,
     'worker_prefetch_multiplier': 1,
@@ -30,6 +34,7 @@ class CeleryConfig(
         broker (Optional[str]): The URL of the Celery broker.
         backend (Optional[str]): The URL of the Celery backend.
         include (Optional[List[str]]): List of modules every worker should import.
+        queues (Optional[List[Dict]]): 
         config_source (Optional[Dict]): Config settings for the Celery app.
 
     '''

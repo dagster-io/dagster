@@ -7,12 +7,10 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 
-from .config import CeleryConfig
+from .config import DEFAULT_PRIORITY, DEFAULT_QUEUE, CeleryConfig
 from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
-
-DEFAULT_PRIORITY = 5
 
 
 class CeleryEngine(Engine):
@@ -55,6 +53,7 @@ class CeleryEngine(Engine):
         for step_key in execution_plan.step_keys_to_execute:
             step = execution_plan.get_step_by_key(step_key)
             priority = step.metadata.get('dagster-celery/priority', DEFAULT_PRIORITY)
+            queue = step.metadata.get('dagster-celery/queue', DEFAULT_QUEUE)
             task = create_task(app)
 
             variables = {
@@ -67,7 +66,11 @@ class CeleryEngine(Engine):
                 }
             }
             task_signatures[step_key] = task.si(handle_dict, variables, instance_ref_dict)
-            apply_kwargs[step_key] = {'priority': priority}
+            apply_kwargs[step_key] = {
+                'priority': priority,
+                'queue': queue,
+                'routing_key': '{queue}.execute_query'.format(queue=queue),
+            }
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
         completed_steps = set({})  # Set[step_key]
@@ -89,7 +92,6 @@ class CeleryEngine(Engine):
                         yield deserialize_json_to_dagster_namedtuple(step_event)
                     results_to_pop.append(step_key)
                     completed_steps.add(step_key)
-
             for step_key in results_to_pop:
                 if step_key in step_results:
                     del step_results[step_key]
@@ -107,7 +109,7 @@ class CeleryEngine(Engine):
             to_execute = sorted(pending_to_pop, key=sort_by_priority)
             for step_key in to_execute:
                 step_results[step_key] = task_signatures[step_key].apply_async(
-                    queue='dagster', routing_key='dagster.execute_query', **apply_kwargs[step_key]
+                    **apply_kwargs[step_key]
                 )
 
             for step_key in pending_to_pop:
