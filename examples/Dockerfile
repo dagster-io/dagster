@@ -1,6 +1,6 @@
 # Dockerfile for Airflow
 
-FROM dagster/dagster-py37
+FROM python:3.7.5-slim-stretch
 
 RUN mkdir -p /tmp/results
 
