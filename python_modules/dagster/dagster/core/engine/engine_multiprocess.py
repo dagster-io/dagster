@@ -89,7 +89,7 @@ def bounded_parallel_executor(pipeline_context, step_contexts, limit):
     while pending_execution or active_iters:
         try:
             while len(active_iters) < limit and pending_execution:
-                step_context = pending_execution.pop()
+                step_context = pending_execution.pop(0)
                 step = step_context.step
                 term_events[step.key] = get_multiprocessing_context().Event()
                 active_iters[step.key] = execute_step_out_of_process(
