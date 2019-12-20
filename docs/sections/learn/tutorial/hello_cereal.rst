@@ -105,7 +105,7 @@ Using dagit to execute a pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To visualize your pipeline (which only has one node) in dagit, from the directory in which you've
-saved the pipeline file, just run run:
+saved the pipeline file, just run:
 
 .. code-block:: console
 
