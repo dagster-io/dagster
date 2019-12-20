@@ -85,10 +85,11 @@ def bounded_parallel_executor(pipeline_context, step_contexts, limit):
     active_iters = {}
     errors = {}
     term_events = {}
+    stopping = False
 
-    while pending_execution or active_iters:
+    while (not stopping and pending_execution) or active_iters:
         try:
-            while len(active_iters) < limit and pending_execution:
+            while len(active_iters) < limit and pending_execution and not stopping:
                 step_context = pending_execution.pop(0)
                 step = step_context.step
                 term_events[step.key] = get_multiprocessing_context().Event()
@@ -110,6 +111,8 @@ def bounded_parallel_executor(pipeline_context, step_contexts, limit):
 
             for key in empty_iters:
                 del active_iters[key]
+                if term_events[key].is_set():
+                    stopping = True
                 del term_events[key]
 
         # In the very small chance that we get interrupted in this coordination section and not

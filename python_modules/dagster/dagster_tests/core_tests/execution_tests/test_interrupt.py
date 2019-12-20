@@ -34,12 +34,20 @@ def write_a_file(context):
         time.sleep(0.1)
 
 
+@solid
+def should_not_start(_context):
+    assert False
+
+
 @pipeline
 def write_files_pipeline():
     write_a_file.alias('write_1')()
     write_a_file.alias('write_2')()
     write_a_file.alias('write_3')()
     write_a_file.alias('write_4')()
+    should_not_start.alias('x_should_not_start')()
+    should_not_start.alias('y_should_not_start')()
+    should_not_start.alias('z_should_not_start')()
 
 
 def test_interrupt():
