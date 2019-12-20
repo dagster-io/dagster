@@ -39,6 +39,7 @@ import { RunTableRunFragment } from "./types/RunTableRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { useMutation } from "react-apollo";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
+import PythonErrorInfo from "../PythonErrorInfo";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -71,12 +72,19 @@ export class RunTable extends React.Component<RunTableProps> {
           }
         }
         stats {
-          stepsSucceeded
-          stepsFailed
-          startTime
-          endTime
-          expectations
-          materializations
+          __typename
+          ... on PipelineRunStatsSnapshot {
+            stepsSucceeded
+            stepsFailed
+            startTime
+            endTime
+            expectations
+            materializations
+          }
+          ... on PythonError {
+            message
+            stack
+          }
         }
         tags {
           key
@@ -119,6 +127,70 @@ export class RunTable extends React.Component<RunTableProps> {
 const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
   run
 }) => {
+  let details;
+  let time;
+  if (run.stats.__typename === "PipelineRunStatsSnapshot") {
+    details = (
+      <Details>
+        <Link
+          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_success`}
+        >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
+        <Link
+          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_failure`}
+        >
+          {`${run.stats.stepsFailed} steps failed, `}{" "}
+        </Link>
+        <Link
+          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
+        >{`${run.stats.materializations} materializations`}</Link>
+        ,{" "}
+        <Link
+          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
+        >{`${run.stats.expectations} expectations passed`}</Link>
+      </Details>
+    );
+    time = (
+      <>
+        {run.stats.startTime ? (
+          <div style={{ marginBottom: 4 }}>
+            <Icon icon="calendar" />{" "}
+            {unixTimestampToString(run.stats.startTime)}
+            <Icon
+              icon="arrow-right"
+              style={{ marginLeft: 10, marginRight: 10 }}
+            />
+            {unixTimestampToString(run.stats.endTime)}
+          </div>
+        ) : run.status === "FAILURE" ? (
+          <div style={{ marginBottom: 4 }}> Failed to start</div>
+        ) : (
+          <div style={{ marginBottom: 4 }}>
+            <Icon icon="calendar" /> Starting...
+          </div>
+        )}
+        <RunTime startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
+      </>
+    );
+  } else {
+    details = (
+      <Popover
+        content={<PythonErrorInfo error={run.stats} />}
+        targetTagName="div"
+      >
+        <Details>
+          <Icon icon="error" /> Failed to load stats
+        </Details>
+      </Popover>
+    );
+    time = (
+      <Popover content={<PythonErrorInfo error={run.stats} />}>
+        <div>
+          <Icon icon="error" /> Failed to load times
+        </div>
+      </Popover>
+    );
+  }
+
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
@@ -128,23 +200,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
         <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
           {titleForRun(run)}
         </Link>
-        <Details>
-          <Link
-            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_success`}
-          >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
-          <Link
-            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_failure`}
-          >
-            {`${run.stats.stepsFailed} steps failed, `}{" "}
-          </Link>
-          <Link
-            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
-          >{`${run.stats.materializations} materializations`}</Link>
-          ,{" "}
-          <Link
-            to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
-          >{`${run.stats.expectations} expectations passed`}</Link>
-        </Details>
+        {details}
       </RowColumn>
       <RowColumn>
         {run.pipeline.__typename === "Pipeline" ? (
@@ -193,26 +249,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
           </div>
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1.8, borderRight: 0 }}>
-        {run.stats.startTime ? (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" />{" "}
-            {unixTimestampToString(run.stats.startTime)}
-            <Icon
-              icon="arrow-right"
-              style={{ marginLeft: 10, marginRight: 10 }}
-            />
-            {unixTimestampToString(run.stats.endTime)}
-          </div>
-        ) : run.status === "FAILURE" ? (
-          <div style={{ marginBottom: 4 }}> Failed to start</div>
-        ) : (
-          <div style={{ marginBottom: 4 }}>
-            <Icon icon="calendar" /> Starting...
-          </div>
-        )}
-        <RunTime startUnix={run.stats.startTime} endUnix={run.stats.endTime} />
-      </RowColumn>
+      <RowColumn style={{ flex: 1.8, borderRight: 0 }}>{time}</RowColumn>
       <RowColumn style={{ maxWidth: 50 }}>
         <RunActionsMenu run={run} />
       </RowColumn>

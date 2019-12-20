@@ -734,7 +734,7 @@ type PipelineRun {
   runId: String!
   status: PipelineRunStatus!
   pipeline: PipelineReference!
-  stats: PipelineRunStatsSnapshot!
+  stats: PipelineRunStatsOrError!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -779,6 +779,8 @@ input PipelineRunsFilter {
 }
 
 union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+
+union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
 
 type PipelineRunStatsSnapshot {
   runId: String!

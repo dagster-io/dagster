@@ -5,6 +5,7 @@ import logging
 import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
+from dagster_graphql.implementation.fetch_runs import get_stats
 
 from dagster import RunConfig, check, seven
 from dagster.core.definitions.events import (
@@ -63,6 +64,12 @@ class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
         self._stats = check.inst_param(stats, 'stats', PipelineRunStatsSnapshot)
 
 
+class DauphinPipelineRunStatsOrError(dauphin.Union):
+    class Meta(object):
+        name = 'PipelineRunStatsOrError'
+        types = ('PipelineRunStatsSnapshot', 'PythonError')
+
+
 class DauphinPipelineRun(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineRun'
@@ -70,7 +77,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     runId = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
-    stats = dauphin.NonNull('PipelineRunStatsSnapshot')
+    stats = dauphin.NonNull('PipelineRunStatsOrError')
     logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
         dauphin.NonNull('ComputeLogs'),
@@ -99,8 +106,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_stats(self, graphene_info):
-        stats = graphene_info.context.instance.get_run_stats(self.run_id)
-        return graphene_info.schema.type_named('PipelineRunStatsSnapshot')(stats)
+        return get_stats(graphene_info, self.run_id)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
         return graphene_info.schema.type_named('ComputeLogs')(runId=self.run_id, stepKey=stepKey)
