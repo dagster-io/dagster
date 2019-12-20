@@ -146,7 +146,7 @@ def worker_start_command(
 
     config_args = celery_worker_config_args(config_yaml, config_module, config_file)
     subprocess_args = (
-        ['celery', '-A', 'dagster_celery.tasks', 'worker']
+        ['celery', '-A', 'dagster_celery.tasks', 'worker', '--prefetch-multiplier=1']
         + config_args
         + loglevel_args
         + queue_args

@@ -31,7 +31,7 @@ const EMPTY_RUN_METADATA: IRunMetadataDict = {
 const EMPTY_STEP_METADATA: IStepMetadata = {
   state: IStepState.WAITING,
   start: undefined,
-  elapsed: undefined,
+  finish: undefined,
   transitionedAt: 0,
   expectationResults: [],
   materializations: []
@@ -167,7 +167,7 @@ export class ExecutionPlan extends React.PureComponent<IExecutionPlanProps> {
                   <ExecutionPlanBox
                     state={metadata.state}
                     start={metadata.start}
-                    elapsed={metadata.elapsed}
+                    finish={metadata.finish}
                     key={step.key}
                     stepKey={step.key}
                     expectationResults={metadata.expectationResults}

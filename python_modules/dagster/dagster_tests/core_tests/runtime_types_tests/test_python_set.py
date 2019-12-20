@@ -83,7 +83,7 @@ def test_open_typing_set_input_fail():
 
 
 def test_runtime_set_of_int():
-    set_runtime_type = create_typed_runtime_set(int).inst()
+    set_runtime_type = create_typed_runtime_set(int)
 
     set_runtime_type.type_check({1})
     set_runtime_type.type_check(set())

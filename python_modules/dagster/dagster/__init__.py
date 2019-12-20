@@ -73,6 +73,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import (
+    execute_partition_set,
     execute_pipeline,
     execute_pipeline_iterator,
     execute_pipeline_with_preset,
@@ -97,6 +98,7 @@ from dagster.core.storage.system_storage import (
 )
 from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector
 from dagster.core.types.runtime import (
+    RuntimeType,
     SerializationStrategy,
     as_dagster_type,
     dagster_type,

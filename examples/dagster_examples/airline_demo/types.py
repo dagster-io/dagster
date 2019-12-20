@@ -5,7 +5,7 @@ from collections import namedtuple
 import sqlalchemy
 
 from dagster import as_dagster_type
-from dagster.core.types.runtime.runtime_type import Stringish
+from dagster.core.types.runtime.runtime_type import create_string_type
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -19,10 +19,5 @@ SqlAlchemyEngineType = as_dagster_type(
     description='A SqlAlchemy Connectable',
 )
 
-
-class SqlTableName(Stringish):
-    def __init__(self):
-        super(SqlTableName, self).__init__(description='The name of a database table')
-
-
+SqlTableName = create_string_type('SqlTableName', description='The name of a database table')
 DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table host db_name')

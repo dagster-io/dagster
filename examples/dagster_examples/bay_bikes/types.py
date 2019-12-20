@@ -1,7 +1,7 @@
 from dagster_pandas.data_frame import create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
 from numpy import mean, median, ndarray
-from pandas import DataFrame, Timestamp
+from pandas import Timestamp
 
 from dagster import EventMetadataEntry, TypeCheck, dagster_type
 
@@ -103,172 +103,167 @@ def compute_trip_dataframe_summary_statistics(dataframe):
     ]
 
 
+TripDataFrameSchema = [
+    PandasColumn.integer_column('bike_id', min_value=0),
+    PandasColumn.datetime_column('start_time', min_datetime=Timestamp(year=2018, month=1, day=1),),
+    PandasColumn.datetime_column('end_time', min_datetime=Timestamp(year=2018, month=1, day=1),),
+    PandasColumn.string_column('interval_date'),
+]
+
+
+RawTripDataFrame = create_dagster_pandas_dataframe_type(
+    name='RawTripDataFrame',
+    columns=[
+        PandasColumn(column.name)
+        for column in TripDataFrameSchema
+        if column.name != 'interval_date'
+    ],
+)
+
+
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name='TripDataFrame',
-    columns=[
-        PandasColumn.integer_column('bike_id', min_value=0),
-        PandasColumn.datetime_column(
-            'start_time', min_datetime=Timestamp(year=2018, month=1, day=1),
-        ),
-        PandasColumn.datetime_column(
-            'end_time', min_datetime=Timestamp(year=2018, month=1, day=1),
-        ),
-        PandasColumn.string_column('interval_date'),
-    ],
+    columns=TripDataFrameSchema,
     summary_statistics=compute_trip_dataframe_summary_statistics,
 )
 
 
-def validate_traffic_dataframe(dataframe):
-    TRAFFIC_CONFIG = {
-        'interval_date': {'expected_dtypes': {'str', 'object'}},
-        'peak_traffic_load': {'bounds': (0, float('inf')), 'expected_dtypes': {'int64'}},
-    }
-    failed_type_check = DataFrameValidator(TRAFFIC_CONFIG).validate_columns_in_dataframe(dataframe)
-    return (
-        failed_type_check
-        if failed_type_check
-        else TypeCheck(
-            success=True,
-            description='Yay',
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    str(min(dataframe['peak_traffic_load'])), 'min_traffic_load', 'Best Peak Load'
-                ),
-                EventMetadataEntry.text(
-                    str(max(dataframe['peak_traffic_load'])), 'max_traffic_load', 'Worst Peak Load'
-                ),
-                EventMetadataEntry.text(
-                    str(mean(dataframe['peak_traffic_load'])),
-                    'mean_traffic_load',
-                    'Mean peak traffic',
-                ),
-                EventMetadataEntry.text(
-                    str(median(dataframe['peak_traffic_load'])),
-                    'median_traffic_load',
-                    'Median peak traffic',
-                ),
-                EventMetadataEntry.text(
-                    str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
-                ),
-                EventMetadataEntry.text(
-                    str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
-                ),
-            ],
-        )
-    )
+def compute_traffic_dataframe_summary_statistics(dataframe):
+    return [
+        EventMetadataEntry.text(
+            str(min(dataframe['peak_traffic_load'])), 'min_traffic_load', 'Best Peak Load'
+        ),
+        EventMetadataEntry.text(
+            str(max(dataframe['peak_traffic_load'])), 'max_traffic_load', 'Worst Peak Load'
+        ),
+        EventMetadataEntry.text(
+            str(mean(dataframe['peak_traffic_load'])), 'mean_traffic_load', 'Mean peak traffic',
+        ),
+        EventMetadataEntry.text(
+            str(median(dataframe['peak_traffic_load'])),
+            'median_traffic_load',
+            'Median peak traffic',
+        ),
+        EventMetadataEntry.text(
+            str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
+        ),
+        EventMetadataEntry.text(
+            str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
+        ),
+    ]
 
 
-@dagster_type(  # pylint: disable=W0223
+TrafficDataFrame = create_dagster_pandas_dataframe_type(
     name='TrafficDataFrame',
-    description='A consolidated view of peak traffic for each day in 2018/2019',
-    type_check=validate_traffic_dataframe,
+    columns=[
+        PandasColumn.string_column('interval_date'),
+        PandasColumn.integer_column('peak_traffic_load', min_value=0),
+    ],
+    summary_statistics=compute_traffic_dataframe_summary_statistics,
 )
-class TrafficDataFrame(DataFrame):
-    pass
 
 
-def validate_weather_dataframe(dataframe):
-    WEATHER_CONFIG = {
-        'time': {
-            'bounds': (Timestamp(year=2018, month=1, day=1), Timestamp(year=2020, month=1, day=1)),
-            'expected_dtypes': {'<M8[ns]', 'datetime64[ns]'},
-            'no_duplicates': None,
+def compute_weather_dataframe_summary_statistics(dataframe):
+    return [
+        EventMetadataEntry.text(
+            str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
+        ),
+        EventMetadataEntry.text(
+            str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
+        ),
+    ]
+
+
+WeatherDataFrameSchema = [
+    PandasColumn.datetime_column(
+        'time', min_datetime=Timestamp(year=2018, month=1, day=1), unique=True
+    ),
+    PandasColumn.categorical_column(
+        'summary',
+        categories={
+            'Partly cloudy throughout the day.',
+            'Mostly cloudy throughout the day.',
+            'Clear throughout the day.',
+            'Light rain in the morning and afternoon.',
+            'Light rain starting in the afternoon.',
+            'Rain throughout the day.',
+            'Overcast throughout the day.',
+            'Foggy in the morning and afternoon.',
+            'Light rain in the morning.',
+            'Possible drizzle in the morning.',
+            'Light rain throughout the day.',
+            'Possible drizzle in the evening and overnight.',
+            'Rain starting in the afternoon.',
+            'Light rain until morning, starting again in the evening.',
+            'Foggy starting in the afternoon.',
+            'Light rain in the morning and overnight.',
+            'Light rain overnight.',
+            'Light rain in the evening and overnight.',
+            'Drizzle in the morning and afternoon.',
+            'Rain overnight.',
+            'Light rain until evening.',
+            'Possible drizzle in the morning and afternoon.',
+            'Possible drizzle overnight.',
+            'Light rain in the afternoon and evening.',
+            'Drizzle in the afternoon and evening.',
+            'Rain until morning, starting again in the evening.',
+            'Drizzle until morning, starting again in the evening.',
+            'Possible drizzle in the afternoon and evening.',
+            'Foggy throughout the day.',
+            'Possible drizzle until morning, starting again in the evening.',
+            'Foggy until evening.',
+            'Possible light rain until evening.',
+            'Foggy in the morning.',
+            'Rain until evening.',
+            'Drizzle starting in the afternoon.',
+            'Rain in the morning and afternoon.',
+            'Possible drizzle throughout the day.',
+            'Heavy rain until morning, starting again in the evening.',
+            'Foggy overnight.',
+            'Rain in the evening and overnight.',
+            'Rain in the morning.',
         },
-        'summary': {
-            'categories': {
-                'Partly cloudy throughout the day.',
-                'Mostly cloudy throughout the day.',
-                'Clear throughout the day.',
-                'Light rain in the morning and afternoon.',
-                'Light rain starting in the afternoon.',
-                'Rain throughout the day.',
-                'Overcast throughout the day.',
-                'Foggy in the morning and afternoon.',
-                'Light rain in the morning.',
-                'Possible drizzle in the morning.',
-                'Light rain throughout the day.',
-                'Possible drizzle in the evening and overnight.',
-                'Rain starting in the afternoon.',
-                'Light rain until morning, starting again in the evening.',
-                'Foggy starting in the afternoon.',
-                'Light rain in the morning and overnight.',
-                'Light rain overnight.',
-                'Light rain in the evening and overnight.',
-                'Drizzle in the morning and afternoon.',
-                'Rain overnight.',
-                'Light rain until evening.',
-                'Possible drizzle in the morning and afternoon.',
-                'Possible drizzle overnight.',
-                'Light rain in the afternoon and evening.',
-                'Drizzle in the afternoon and evening.',
-                'Rain until morning, starting again in the evening.',
-                'Drizzle until morning, starting again in the evening.',
-                'Possible drizzle in the afternoon and evening.',
-                'Foggy throughout the day.',
-                'Possible drizzle until morning, starting again in the evening.',
-                'Foggy until evening.',
-                'Possible light rain until evening.',
-                'Foggy in the morning.',
-                'Rain until evening.',
-                'Drizzle starting in the afternoon.',
-                'Rain in the morning and afternoon.',
-                'Possible drizzle throughout the day.',
-                'Heavy rain until morning, starting again in the evening.',
-                'Foggy overnight.',
-                'Rain in the evening and overnight.',
-                'Rain in the morning.',
-            }
-        },
-        'icon': {'categories': {'clear-day', 'cloudy', 'fog', 'partly-cloudy-day', 'rain'}},
-        'sunriseTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'sunsetTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'precipIntensity': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'precipIntensityMax': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'precipProbability': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'temperatureHigh': {'bounds': [40, 100], 'expected_dtaypes': {'float64'}},
-        'temperatureHighTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'temperatureLow': {'bounds': [30, 100], 'expected_dtaypes': {'float64'}},
-        'temperatureLowTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'dewPoint': {'bounds': [10, 70], 'expected_dtypes': {'float64'}},
-        'humidity': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'pressure': {'bounds': [900, 1200], 'expected_dtypes': {'float64'}},
-        'windSpeed': {'bounds': [0, 17], 'expected_dtypes': {'float64'}},
-        'windGust': {'bounds': [0, 40], 'expected_dtypes': {'float64'}},
-        'windGustTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'windBearing': {'bounds': [1, 400], 'expected_dtypes': {'int64'}},
-        'cloudCover': {'bounds': [0, 1], 'expected_dtypes': {'float64'}},
-        'uvIndex': {'bounds': [0, 12], 'expected_dtypes': {'int64'}},
-        'uvIndexTime': {'bounds': [0, float('inf')], 'expected_dtypes': {'int64'}},
-        'visibility': {'bounds': [0, 10], 'expected_dtypes': {'float64'}},
-        'ozone': {'bounds': [200, 500], 'expected_dtypes': {'float64'}},
-        'didRain': {'categories': {True, False}},
-    }
-    failed_type_check = DataFrameValidator(WEATHER_CONFIG).validate_columns_in_dataframe(dataframe)
-    return (
-        failed_type_check
-        if failed_type_check
-        else TypeCheck(
-            success=True,
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
-                ),
-                EventMetadataEntry.text(
-                    str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
-                ),
-            ],
-        )
-    )
+    ),
+    PandasColumn.categorical_column(
+        'icon', categories={'clear-day', 'cloudy', 'fog', 'partly-cloudy-day', 'rain'}
+    ),
+    PandasColumn.integer_column('sunriseTime', min_value=0),
+    PandasColumn.integer_column('sunsetTime', min_value=0),
+    PandasColumn.float_column('precipIntensity', min_value=0.0, max_value=1.0),
+    PandasColumn.float_column('precipIntensityMax', min_value=0.0, max_value=1.0),
+    PandasColumn.float_column('precipProbability', min_value=0.0, max_value=1.0),
+    PandasColumn.float_column('temperatureHigh', min_value=40.0, max_value=100.0),
+    PandasColumn.integer_column('temperatureHighTime', min_value=0),
+    PandasColumn.float_column('temperatureLow', min_value=30.0, max_value=100.0),
+    PandasColumn.integer_column('temperatureLowTime', min_value=0),
+    PandasColumn.float_column('dewPoint', min_value=10.0, max_value=70.0),
+    PandasColumn.float_column('humidity', min_value=0.0, max_value=1.0),
+    PandasColumn.float_column('pressure', min_value=900.0, max_value=1200.0),
+    PandasColumn.float_column('windSpeed', min_value=0.0, max_value=17.0),
+    PandasColumn.float_column('windGust', min_value=0.0, max_value=40.0),
+    PandasColumn.integer_column('windGustTime', min_value=0),
+    PandasColumn.integer_column('windBearing', min_value=1, max_value=400),
+    PandasColumn.float_column('cloudCover', min_value=0.0, max_value=1.0),
+    PandasColumn.integer_column('uvIndex', min_value=0, max_value=12),
+    PandasColumn.integer_column('uvIndexTime', min_value=0),
+    PandasColumn.float_column('visibility', min_value=0.0, max_value=10.0),
+    PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
+    PandasColumn.boolean_column('didRain', exists=True),
+]
 
 
-@dagster_type(  # pylint: disable=W0223
+RawWeatherDataFrame = create_dagster_pandas_dataframe_type(
+    name='RawWeatherDataFrame',
+    columns=[
+        PandasColumn(column.name) for column in WeatherDataFrameSchema if column.name != 'didRain'
+    ],
+)
+
+WeatherDataFrame = create_dagster_pandas_dataframe_type(
     name='WeatherDataFrame',
-    description='A consolidated summary of bay area weather for each day in 2018/2019',
-    type_check=validate_weather_dataframe,
+    columns=WeatherDataFrameSchema,
+    summary_statistics=compute_weather_dataframe_summary_statistics,
 )
-class WeatherDataFrame(DataFrame):
-    pass
 
 
 def validate_snapshot_timeseries(training_set_data):

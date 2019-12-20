@@ -27,9 +27,8 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.runtime.runtime_type import Bool as RuntimeBool
-from dagster.core.types.runtime.runtime_type import RuntimeType
 from dagster.core.types.runtime.runtime_type import String as RuntimeString
-from dagster.core.types.runtime.runtime_type import resolve_to_runtime_type
+from dagster.core.types.runtime.runtime_type import create_any_type, resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -41,13 +40,9 @@ class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=
         return read_file_obj.read().decode('utf-8').lower()
 
 
-class LowercaseString(RuntimeType):
-    def __init__(self):
-        super(LowercaseString, self).__init__(
-            'lowercase_string',
-            'LowercaseString',
-            serialization_strategy=UppercaseSerializationStrategy('uppercase'),
-        )
+LowercaseString = create_any_type(
+    'LowercaseString', serialization_strategy=UppercaseSerializationStrategy('uppercase'),
+)
 
 
 nettest = pytest.mark.nettest
@@ -177,18 +172,16 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
+            {RuntimeString: FancyStringGCSTypeStoragePlugin}
         ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString.inst(), ['obj_name'])
+            intermediate_store.set_value('hello', context, RuntimeString, ['obj_name'])
 
             assert intermediate_store.has_object(context, ['obj_name'])
-            assert (
-                intermediate_store.get_value(context, RuntimeString.inst(), ['obj_name']) == 'hello'
-            )
+            assert intermediate_store.get_value(context, RuntimeString, ['obj_name']) == 'hello'
 
         finally:
             intermediate_store.rm_object(context, ['obj_name'])
@@ -202,7 +195,7 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString.inst(): FancyStringGCSTypeStoragePlugin}
+            {RuntimeString: FancyStringGCSTypeStoragePlugin}
         ),
     )
 
@@ -221,14 +214,11 @@ def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
-                ['foo', 'bar'],
-                context,
-                resolve_to_runtime_type(List[LowercaseString]).inst(),
-                ['list'],
+                ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]), ['list'],
             )
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]).inst(), ['list']
+                context, resolve_to_runtime_type(List[Bool]), ['list']
             ).obj == ['foo', 'bar']
 
         finally:
@@ -243,7 +233,7 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object('foo', context, LowercaseString.inst(), ['foo'])
+            intermediate_store.set_object('foo', context, LowercaseString, ['foo'])
 
             bucket_obj = intermediate_store.object_store.client.get_bucket(
                 intermediate_store.object_store.bucket
@@ -256,9 +246,7 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
             assert file_obj.read().decode('utf-8') == 'FOO'
 
             assert intermediate_store.has_object(context, ['foo'])
-            assert (
-                intermediate_store.get_object(context, LowercaseString.inst(), ['foo']).obj == 'foo'
-            )
+            assert intermediate_store.get_object(context, LowercaseString, ['foo']).obj == 'foo'
         finally:
             intermediate_store.rm_object(context, ['foo'])
 
@@ -307,7 +295,7 @@ def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
 
             assert intermediate_store.has_object(context, ['true'])
             assert intermediate_store.uri_for_paths(['true']).startswith(
@@ -332,17 +320,15 @@ def test_gcs_intermediate_store(gcs_bucket):
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool.inst(), ['true'])
+            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
 
             assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool.inst(), ['true']).obj is True
+            assert intermediate_store.get_object(context, RuntimeBool, ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('gs://')
 
             intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
             assert intermediate_store_2.has_object(context, ['true'])
-            assert (
-                intermediate_store_2.get_object(context, RuntimeBool.inst(), ['true']).obj is True
-            )
+            assert intermediate_store_2.get_object(context, RuntimeBool, ['true']).obj is True
     finally:
         intermediate_store.rm_object(context, ['true'])
         intermediate_store_2.rm_object(context, ['true'])

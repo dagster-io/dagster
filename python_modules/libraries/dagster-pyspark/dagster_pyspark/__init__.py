@@ -18,7 +18,6 @@ from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config.field_utils import Selector
 from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
-from dagster.core.types.runtime.runtime_type import define_any_type
 
 from .decorators import pyspark_solid
 from .resources import PySparkResourceDefinition, pyspark_resource, spark_session_from_config

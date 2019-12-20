@@ -8,11 +8,11 @@ from dagster import (
     Field,
     Materialization,
     Path,
+    RuntimeType,
     String,
     TypeCheck,
     as_dagster_type,
     check,
-    dagster_type,
 )
 from dagster.core.types.config.field_utils import NamedSelector
 from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
@@ -130,11 +130,4 @@ def create_dagster_pandas_dataframe_type(
             )
         return TypeCheck(success=True, metadata_entries=event_metadata)
 
-    @dagster_type(  # pylint: disable=W0223
-        name=name, type_check=_dagster_type_check,
-    )
-    class _DataFrameDagsterType(DataFrame):
-        pass
-
-    # Did this instead of as_dagster_type because multiple dataframe types can be created
-    return _DataFrameDagsterType
+    return RuntimeType(name=name, key=name, type_check_fn=_dagster_type_check)
