@@ -111,16 +111,10 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Any'
             },
             {
-                'name': 'Any.InputHydrationConfig'
-            },
-            {
                 'name': 'Any.MaterializationSchema'
             },
             {
                 'name': 'Bool'
-            },
-            {
-                'name': 'Bool.InputHydrationConfig'
             },
             {
                 'name': 'Bool.MaterializationSchema'
@@ -129,16 +123,10 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Float'
             },
             {
-                'name': 'Float.InputHydrationConfig'
-            },
-            {
                 'name': 'Float.MaterializationSchema'
             },
             {
                 'name': 'Int'
-            },
-            {
-                'name': 'Int.InputHydrationConfig'
             },
             {
                 'name': 'Int.MaterializationSchema'
@@ -153,10 +141,22 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Path.MaterializationSchema'
             },
             {
-                'name': 'String'
+                'name': 'ScalarUnion[Any,Any.InputHydrationConfig]'
             },
             {
-                'name': 'String.InputHydrationConfig'
+                'name': 'ScalarUnion[Bool,Bool.InputHydrationConfig]'
+            },
+            {
+                'name': 'ScalarUnion[Float,Float.InputHydrationConfig]'
+            },
+            {
+                'name': 'ScalarUnion[Int,Int.InputHydrationConfig]'
+            },
+            {
+                'name': 'ScalarUnion[String,String.InputHydrationConfig]'
+            },
+            {
+                'name': 'String'
             },
             {
                 'name': 'String.MaterializationSchema'

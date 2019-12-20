@@ -17,6 +17,7 @@ class ConfigTypeKind(PythonEnum):
     SELECTOR = 'SELECTOR'
     STRICT_DICT = 'STRICT_DICT'
     PERMISSIVE_DICT = 'PERMISSIVE_DICT'
+    SCALAR_UNION = 'SCALAR_UNION'
 
     @staticmethod
     def has_fields(kind):
@@ -324,6 +325,20 @@ class Enum(ConfigType):
         if name is None:
             name = enum.__name__
         return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+
+
+class ScalarUnion(ConfigType):
+    def __init__(self, scalar_type, non_scalar_type):
+        self.scalar_type = check.inst_param(scalar_type, 'scalar_type', ConfigType)
+        self.non_scalar_type = check.inst_param(non_scalar_type, 'non_scalar_type', ConfigType)
+        key = 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
+        name = 'ScalarUnion[{},{}]'.format(scalar_type.name, non_scalar_type.name)
+        super(ScalarUnion, self).__init__(
+            key=key,
+            name=name,
+            kind=ConfigTypeKind.SCALAR_UNION,
+            type_params=[scalar_type, non_scalar_type],
+        )
 
 
 ConfigAnyInstance = Any()

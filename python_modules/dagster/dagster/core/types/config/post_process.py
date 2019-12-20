@@ -25,8 +25,17 @@ def post_process_config(config_type, config_value):
         return post_process_config(config_type.inner_type, config_value)
     elif kind == ConfigTypeKind.ANY:
         return config_value
+    elif config_type.kind == ConfigTypeKind.SCALAR_UNION:
+        return post_process_scalar_union_type(config_type, config_value)
     else:
         check.failed('Unsupported type {name}'.format(name=config_type.name))
+
+
+def post_process_scalar_union_type(scalar_union_type, config_value):
+    if isinstance(config_value, dict) or isinstance(config_value, list):
+        return post_process_config(scalar_union_type.non_scalar_type, config_value)
+    else:
+        return post_process_config(scalar_union_type.scalar_type, config_value)
 
 
 def post_process_config_to_selector(selector_type, config_value):

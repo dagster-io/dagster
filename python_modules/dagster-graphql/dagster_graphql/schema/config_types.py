@@ -20,6 +20,8 @@ def to_dauphin_config_type(config_type):
         return DauphinNullableConfigType(config_type)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
         return DauphinRegularConfigType(config_type)
+    elif kind == ConfigTypeKind.SCALAR_UNION:
+        return DauphinRegularConfigType(config_type)
     else:
         check.failed('Should never reach')
 

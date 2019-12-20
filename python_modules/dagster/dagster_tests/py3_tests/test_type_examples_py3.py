@@ -255,10 +255,10 @@ def test_set_solid_configable_input_bad():
     with pytest.raises(
         DagsterInvalidConfigError,
         match=re.escape(
-            'Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[String.InputHydrationConfig]". Value at path '
-            'root:solids:set_solid:inputs:set_input must be list. '
-            'Expected: [{ json: { path: Path } pickle: { path: Path } value: String }].'
+            'Error 1: Type failure at path "root:solids:set_solid:inputs:set_input" on type '
+            '"List[ScalarUnion[String,String.InputHydrationConfig]]". Value at path '
+            'root:solids:set_solid:inputs:set_input must be list. Expected: '
+            '[(String | { json: { path: Path } pickle: { path: Path } value: String })].'
         ),
     ):
         execute_solid(
