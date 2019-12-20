@@ -214,6 +214,7 @@ def test_event_log_delete():
             )
         )
         assert len(storage.get_logs_for_run('foo')) == 1
+        assert storage.get_stats_for_run('foo')
         storage.delete_events('foo')
         assert len(storage.get_logs_for_run('foo')) == 0
 
