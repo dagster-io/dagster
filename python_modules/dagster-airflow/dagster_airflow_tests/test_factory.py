@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import os
 import uuid
 
 from airflow.exceptions import AirflowSkipException
@@ -30,6 +31,20 @@ AIRFLOW_DEMO_EVENTS = {
     ('STEP_SUCCESS', 'count_letters.compute'),
 }
 
+ENVIRONMENTS_PATH = script_relative_path(
+    os.path.join(
+        '..',
+        '..',
+        '..',
+        '.buildkite',
+        'images',
+        'docker',
+        'test_project',
+        'test_pipelines',
+        'environments',
+    )
+)
+
 
 def validate_pipeline_execution(pipeline_exc_result):
     seen_events = set()
@@ -45,12 +60,10 @@ def validate_pipeline_execution(pipeline_exc_result):
 
 class TestExecuteDagPythonFilesystemStorageNoExplicitBaseDir(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_filesystem_no_explicit_base_dir.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem_no_explicit_base_dir.yaml'),
     ]
     run_id = str(uuid.uuid4())
 
@@ -61,12 +74,10 @@ class TestExecuteDagPythonFilesystemStorageNoExplicitBaseDir(object):
 
 class TestExecuteDagPythonFilesystemStorage(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_filesystem.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
 
@@ -77,12 +88,10 @@ class TestExecuteDagPythonFilesystemStorage(object):
 
 class TestExecuteDagPythonS3Storage(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_s3.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
 
@@ -93,12 +102,10 @@ class TestExecuteDagPythonS3Storage(object):
 
 class TestExecuteDagPythonGCSStorage(object):
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_gcs.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
 
@@ -109,12 +116,10 @@ class TestExecuteDagPythonGCSStorage(object):
 
 class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_filesystem_no_explicit_base_dir.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem_no_explicit_base_dir.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
@@ -127,12 +132,10 @@ class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
 @nettest
 class TestExecuteDagContainerizedS3Storage(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_s3.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
@@ -145,12 +148,10 @@ class TestExecuteDagContainerizedS3Storage(object):
 @nettest
 class TestExecuteDagContainerizedGCSStorage(object):
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_gcs.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
@@ -162,12 +163,10 @@ class TestExecuteDagContainerizedGCSStorage(object):
 
 class TestExecuteDagContainerizedFilesystemStorage(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_filesystem.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
     ]
     run_id = str(uuid.uuid4())
     op_kwargs = {'host_tmp_dir': '/tmp'}
@@ -180,12 +179,10 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
 
 class TestExecuteDagKubernetizedS3Storage(object):
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_s3.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
@@ -197,12 +194,10 @@ class TestExecuteDagKubernetizedS3Storage(object):
 
 class TestExecuteDagKubernetizedGCSStorage(object):
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env.yaml'),
-        script_relative_path('test_project/env_gcs.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
     image = IMAGE
@@ -242,10 +237,8 @@ def validate_skip_pipeline_execution(result):
 
 class TestExecuteSkipsPythonOperator(object):
     pipeline_name = 'optional_outputs'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
-    environment_yaml = [script_relative_path('test_project/env_filesystem.yaml')]
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
+    environment_yaml = [os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml')]
     run_id = str(uuid.uuid4())
 
     # pylint: disable=redefined-outer-name
@@ -255,10 +248,8 @@ class TestExecuteSkipsPythonOperator(object):
 
 class TestExecuteSkipsContainerized(object):
     pipeline_name = 'optional_outputs'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
-    environment_yaml = [script_relative_path('test_project/env_filesystem.yaml')]
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
+    environment_yaml = [os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml')]
     run_id = str(uuid.uuid4())
     op_kwargs = {'host_tmp_dir': '/tmp'}
     image = IMAGE

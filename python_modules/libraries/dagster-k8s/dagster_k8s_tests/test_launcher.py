@@ -7,8 +7,24 @@ from dagster_k8s.launcher import K8sRunLauncher
 from kubernetes import client
 
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils import load_yaml_from_path, script_relative_path
 
-DAGSTER_AIRFLOW_DOCKER_IMAGE = os.environ['DAGSTER_AIRFLOW_DOCKER_IMAGE']
+ENVIRONMENTS_PATH = script_relative_path(
+    os.path.join(
+        '..',
+        '..',
+        '..',
+        '..',
+        '.buildkite',
+        'images',
+        'docker',
+        'test_project',
+        'test_pipelines',
+        'environments',
+    )
+)
+
+DAGSTER_DOCKER_IMAGE = os.environ['DAGSTER_DOCKER_IMAGE']
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
@@ -34,8 +50,10 @@ spec:
         - -p
         - startPipelineExecution
         - -v
-        - '{{"executionParams": {{"environmentConfigData": {{}}, "mode": "default", "selector":
-          {{"name": "many_events", "solidSubset": null}}}}}}'
+        - '{{"executionParams": {{"environmentConfigData": {{"loggers": {{"console": {{"config":
+          {{"log_level": "DEBUG"}}}}}}, "solids": {{"multiply_the_word": {{"config": {{"factor":
+          2}}, "inputs": {{"word": {{"value": "bar"}}}}}}}}}}, "mode": "default", "selector":
+          {{"name": "demo_pipeline", "solidSubset": null}}}}}}'
         command:
         - dagster-graphql
         env:
@@ -82,20 +100,23 @@ def remove_none(obj):
 
 def test_k8s_run_launcher():
     run_id = uuid.uuid4().hex
-    run = PipelineRun.create_empty_run('many_events', run_id, {})
+
+    environment_dict = load_yaml_from_path(os.path.join(ENVIRONMENTS_PATH, 'env.yaml'))
+
+    run = PipelineRun.create_empty_run('demo_pipeline', run_id, environment_dict)
     run_launcher = K8sRunLauncher(
         postgres_host='dagster-postgresql',
         postgres_port='5432',
         image_pull_secrets=[{'name': 'element-dev-key'}],
         service_account_name='dagit-admin',
-        job_image=DAGSTER_AIRFLOW_DOCKER_IMAGE,
+        job_image=DAGSTER_DOCKER_IMAGE,
         load_kubeconfig=True,
     )
     job = run_launcher.construct_job(run)
 
     assert (
         yaml.dump(remove_none(job.to_dict()), default_flow_style=False).strip()
-        == EXPECTED_JOB_SPEC.format(run_id=run_id, job_image=DAGSTER_AIRFLOW_DOCKER_IMAGE).strip()
+        == EXPECTED_JOB_SPEC.format(run_id=run_id, job_image=DAGSTER_DOCKER_IMAGE).strip()
     )
 
     run_launcher.launch_run(run)

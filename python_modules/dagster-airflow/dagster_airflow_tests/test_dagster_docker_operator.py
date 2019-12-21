@@ -24,7 +24,7 @@ def test_modified_docker_operator_bad_docker_conn():
         api_version='auto',
         task_id='nonce',
         docker_conn_id='foo_conn',
-        command='--help',
+        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -38,7 +38,7 @@ def test_modified_docker_operator_env():
         image=IMAGE,
         api_version='auto',
         task_id='nonce',
-        command='--help',
+        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -51,7 +51,7 @@ def test_modified_docker_operator_bad_command():
         image=IMAGE,
         api_version='auto',
         task_id='nonce',
-        command='gargle bargle',
+        command='dagster-graphql gargle bargle',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -76,7 +76,7 @@ def test_modified_docker_operator_url():
             docker_url=docker_host or 'unix:///var/run/docker.sock',
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
-            command='--help',
+            command='dagster-graphql --help',
             environment_dict={'storage': {'filesystem': {}}},
             pipeline_name='',
         )

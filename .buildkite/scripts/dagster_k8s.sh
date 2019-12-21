@@ -6,7 +6,7 @@ set -eu
 TOX_PYTHON_VERSION="$1"
 
 # Environment vars
-export DAGSTER_AIRFLOW_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-demo:${BUILDKITE_BUILD_ID}"
+export DAGSTER_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PYTHON_VERSION}"
 export CLUSTER_NAME=kind`echo ${BUILDKITE_JOB_ID} | sed -e 's/-//g'`
 export KUBECONFIG="/tmp/kubeconfig"
 
@@ -43,14 +43,14 @@ curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bas
 # Install helm chart
 helm install \
     --debug \
-    --set dagit.image.repository="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-demo" \
-    --set dagit.image.tag="${BUILDKITE_BUILD_ID}" \
-    --set job_image.image.repository="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-demo" \
-    --set job_image.image.tag="${BUILDKITE_BUILD_ID}" \
+    --set dagit.image.repository="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite" \
+    --set dagit.image.tag="${BUILDKITE_BUILD_ID}-${TOX_PYTHON_VERSION}" \
+    --set job_image.image.repository="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite" \
+    --set job_image.image.tag="${BUILDKITE_BUILD_ID}-${TOX_PYTHON_VERSION}" \
     dagster \
     helm/dagster/
 
-echo -e "--- \033[32m:k8s: Waiting for cluster ready\033[0m"
+echo -e "--- \033[32m:k8s: Waiting for dagster pods\033[0m"
 
 # Wait for dagster pods to launch
 #
@@ -65,16 +65,18 @@ do
     sleep 1
 done
 
-DAGIT=$(kubectl get pods -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep dagit)
+echo -e "--- \033[32m:k8s: Waiting for pods ready\033[0m"
+
+DAGIT_POD=$(kubectl get pods -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep dagit)
 
 # Wait for pods to be ready
 while
-    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=15s
+    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout=5s
     ret=$?
     ((ret != 0))
 do
     kubectl get pods
-    kubectl describe pod ${DAGIT}
+    kubectl describe pod ${DAGIT_POD}
 done
 
 echo -e "--- \033[32m:python: Running tox tests\033[0m"

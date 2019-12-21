@@ -140,6 +140,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         )
 
         return [
+            'dagster-graphql',
             '-v',
             '{}'.format(seven.json.dumps(variables)),
             '-t',
