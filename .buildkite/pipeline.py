@@ -459,8 +459,10 @@ def library_tests():
     tests = []
     for library in library_modules:
         if library == 'dagster-k8s':
-            tests += publish_k8s_images()
-            tests += k8s_tests()
+            pass
+            # https://github.com/dagster-io/dagster/issues/2028
+            # tests += publish_k8s_images()
+            # tests += k8s_tests()
         elif library == 'dagster-gcp':
             tests += gcp_tests()
         elif library == 'dagster-postgres':
