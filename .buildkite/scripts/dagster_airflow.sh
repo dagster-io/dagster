@@ -3,7 +3,7 @@ set -eu
 TOX_PYTHON_VERSION="$1"
 
 # Environment vars
-export DAGSTER_AIRFLOW_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:${BUILDKITE_BUILD_ID}"
+export DAGSTER_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PYTHON_VERSION}"
 export CLUSTER_NAME=kind`echo ${BUILDKITE_JOB_ID} | sed -e 's/-//g'`
 export KUBECONFIG="/tmp/kubeconfig"
 export AIRFLOW_HOME="/airflow"
@@ -13,6 +13,8 @@ function cleanup {
     kind delete cluster --name ${CLUSTER_NAME}
 }
 trap cleanup EXIT
+
+echo -e "--- \033[32m:k8s: Running kind cluster setup\033[0m"
 
 # Need a unique cluster name for this job; can't have hyphens
 kind create cluster --name ${CLUSTER_NAME}
@@ -29,6 +31,8 @@ for node in $(kubectl get nodes -oname); do
 done
 
 mkdir -p ${AIRFLOW_HOME}
+
+echo -e "--- \033[32m:python: Running tox tests\033[0m"
 
 # Finally, run tests
 cd python_modules/dagster-airflow/

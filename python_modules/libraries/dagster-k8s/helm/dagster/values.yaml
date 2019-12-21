@@ -11,14 +11,14 @@ rbacEnabled: true
 
 dagit:
   image:
-    repository: dagster-k8s-demo
+    repository: dagster-docker-buildkite
     tag: latest
   nameOverride: ""
 
 # Image to use for executing jobs; this is typically the same image as dagit
 job_image:
   image:
-    repository: dagster-k8s-demo
+    repository: dagster-docker-buildkite
     tag: latest
 
 # Configuration values for postgresql

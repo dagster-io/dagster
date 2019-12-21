@@ -1,3 +1,4 @@
+import os
 import uuid
 
 import pytest
@@ -14,14 +15,26 @@ from dagster_airflow_tests.conftest import IMAGE
 from dagster import ExecutionTargetHandle
 from dagster.utils import load_yaml_from_glob_list, script_relative_path
 
+ENVIRONMENTS_PATH = script_relative_path(
+    os.path.join(
+        '..',
+        '..',
+        '..',
+        '.buildkite',
+        'images',
+        'docker',
+        'test_project',
+        'test_pipelines',
+        'environments',
+    )
+)
+
 
 def test_error_dag_python():
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env_filesystem.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
@@ -38,11 +51,9 @@ def test_error_dag_python():
 
 def test_error_dag_containerized():
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env_s3.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
@@ -61,11 +72,9 @@ def test_error_dag_containerized():
 
 def test_error_dag_k8s():
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_airflow_tests.test_project.dagster_airflow_demo', pipeline_name
-    )
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        script_relative_path('test_project/env_s3.yaml'),
+        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
