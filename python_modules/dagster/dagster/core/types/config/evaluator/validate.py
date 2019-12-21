@@ -86,7 +86,7 @@ def _validate_config(context, config_value):
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
-    elif kind == ConfigTypeKind.DICT:
+    elif kind == ConfigTypeKind.STRICT_DICT:
         return validate_dict_config(context, config_value)
     elif kind == ConfigTypeKind.PERMISSIVE_DICT:
         return validate_permissive_dict_config(context, config_value)
@@ -151,9 +151,11 @@ def validate_selector_config(context, config_value):
         # storage:
         #   filesystem:
         #
-        # And we want the default values of the child elementls of filesystem:
+        # And we want the default values of the child elements of filesystem:
         # to "fill in"
-        {} if field_value is None and field_def.config_type.has_fields else field_value,
+        {}
+        if field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
+        else field_value,
     )
 
     if child_evaluate_value_result.success:
@@ -216,7 +218,7 @@ def validate_permissive_dict_config(context, config_value):
 
 def validate_dict_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
-    check.invariant(context.config_type.kind == ConfigTypeKind.DICT)
+    check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_DICT)
     check.not_none_param(config_value, 'config_value')
 
     return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=True)

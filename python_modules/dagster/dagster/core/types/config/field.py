@@ -12,7 +12,7 @@ from dagster.core.types.wrapping.wrapping import (
 )
 from dagster.utils.typing_api import is_typing_type
 
-from .config_type import ConfigAnyInstance, ConfigType, List, Nullable
+from .config_type import ConfigAnyInstance, ConfigType, ConfigTypeKind, List, Nullable
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 from .post_process import post_process_config
 
@@ -182,7 +182,10 @@ class Field(object):
                 'required arguments should not specify default values',
             )
 
-        if config_type.is_scalar and self._default_value != FIELD_NO_DEFAULT_PROVIDED:
+        if (
+            config_type.kind == ConfigTypeKind.SCALAR
+            and self._default_value != FIELD_NO_DEFAULT_PROVIDED
+        ):
             check.param_invariant(
                 config_type.is_config_scalar_valid(self._default_value),
                 'default_value',

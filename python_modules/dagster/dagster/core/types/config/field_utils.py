@@ -10,7 +10,7 @@ from .config_type import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttribut
 def all_optional_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_dict:
+    if ConfigTypeKind.is_dict(config_type.kind):
         for field in config_type.fields.values():
             if not field.is_optional:
                 return False
@@ -151,7 +151,7 @@ class NamedDict(_ConfigHasFields):
         super(NamedDict, self).__init__(
             key=name,
             name=name,
-            kind=ConfigTypeKind.DICT,
+            kind=ConfigTypeKind.STRICT_DICT,
             fields=fields,
             description=description,
             type_attributes=type_attributes,
@@ -218,7 +218,7 @@ class Dict(_ConfigHasFields):
         fields = process_user_facing_fields_dict(fields, 'Dict')
         super(Dict, self).__init__(
             name=None,
-            kind=ConfigTypeKind.DICT,
+            kind=ConfigTypeKind.STRICT_DICT,
             key=_define_dict_key_hash(fields, description, is_system_config),
             description=description,
             fields=fields,

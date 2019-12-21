@@ -4,7 +4,7 @@ from enum import Enum
 from dagster import check
 from dagster.core.errors import DagsterError
 
-from ..config_type import ConfigType
+from ..config_type import ConfigType, ConfigTypeKind
 from ..field import check_field_param
 from ..type_printer import print_config_type_to_string
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
@@ -63,7 +63,7 @@ class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'config_t
 
 class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type incoming_fields')):
     def __new__(cls, dagster_type, incoming_fields):
-        check.param_invariant(dagster_type.is_selector, 'dagster_type')
+        check.param_invariant(dagster_type.kind == ConfigTypeKind.SELECTOR, 'dagster_type')
         return super(SelectorTypeErrorData, cls).__new__(
             cls, dagster_type, check.list_param(incoming_fields, 'incoming_fields', of_type=str)
         )
@@ -152,7 +152,7 @@ def create_dict_type_mismatch_error(context, config_value):
 
 def create_fields_not_defined_error(context, undefined_fields):
     check.inst_param(context, 'context', ValidationContext)
-    check.param_invariant(context.config_type.has_fields, 'config_type')
+    check_config_type_in_context_has_fields(context, 'context')
     check.list_param(undefined_fields, 'undefined_fields', of_type=str)
 
     available_fields = sorted(list(context.config_type.fields.keys()))
@@ -197,9 +197,13 @@ def create_enum_value_missing_error(context, config_value):
     )
 
 
+def check_config_type_in_context_has_fields(context, param_name):
+    check.param_invariant(ConfigTypeKind.has_fields(context.config_type.kind), param_name)
+
+
 def create_field_not_defined_error(context, received_field):
     check.inst_param(context, 'context', ValidationContext)
-    check.param_invariant(context.config_type.has_fields, 'config_type')
+    check_config_type_in_context_has_fields(context, 'context')
     check.str_param(received_field, 'received_field')
 
     return EvaluationError(
@@ -216,7 +220,7 @@ def create_field_not_defined_error(context, received_field):
 
 def create_list_error(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
-    check.param_invariant(context.config_type.is_list, 'config_type')
+    check.param_invariant(context.config_type.kind == ConfigTypeKind.LIST, 'config_type')
 
     return EvaluationError(
         stack=context.stack,
@@ -231,7 +235,7 @@ def create_list_error(context, config_value):
 
 def create_missing_required_field_error(context, expected_field):
     check.inst_param(context, 'context', ValidationContext)
-    check.param_invariant(context.config_type.has_fields, 'config_type')
+    check_config_type_in_context_has_fields(context, 'context')
 
     return EvaluationError(
         stack=context.stack,
@@ -252,7 +256,7 @@ def create_missing_required_field_error(context, expected_field):
 
 def create_missing_required_fields_error(context, missing_fields):
     check.inst_param(context, 'context', ValidationContext)
-    check.param_invariant(context.config_type.has_fields, 'compositve_type')
+    check_config_type_in_context_has_fields(context, 'context')
 
     missing_fields = sorted(missing_fields)
     missing_field_defs = list(map(lambda mf: context.config_type.fields[mf], missing_fields))
