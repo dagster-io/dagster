@@ -38,10 +38,6 @@ def _raise_error():
     raise Exception('error in test')
 
 
-def assert_config_type_snapshot(snapshot, config_field):
-    snapshot.assert_match(config_field.config_type.debug_str())
-
-
 def _to_field(ddict):
     return coerce_potential_field(ddict, _raise_error)
 
@@ -50,9 +46,8 @@ def test_noop_config():
     assert Field(Any)
 
 
-def test_int_field(snapshot):
+def test_int_field():
     config_field = _to_field({'int_field': Int})
-    assert_config_type_snapshot(snapshot, config_field)
     assert validate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
@@ -66,18 +61,16 @@ def assert_eval_failure(config_type, value):
     assert not validate_config(config_type, value).success
 
 
-def test_int_fails(snapshot):
+def test_int_fails():
     config_field = _to_field({'int_field': Int})
 
-    assert_config_type_snapshot(snapshot, config_field)
     assert_eval_failure(config_field.config_type, {'int_field': 'fjkdj'})
     assert_eval_failure(config_field.config_type, {'int_field': True})
 
 
-def test_default_arg(snapshot):
+def test_default_arg():
     config_field = _to_field({'int_field': Field(Int, default_value=2, is_optional=True)})
 
-    assert_config_type_snapshot(snapshot, config_field)
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
 
 
@@ -292,12 +285,6 @@ def test_single_nested_config():
     assert _validate(_single_nested_config(), {'nested': {'int_field': 2}}) == {
         'nested': {'int_field': 2}
     }
-
-
-def test_print_schema(snapshot):
-    assert_config_type_snapshot(snapshot, _single_nested_config())
-    assert_config_type_snapshot(snapshot, _nested_optional_config_with_default())
-    assert_config_type_snapshot(snapshot, _nested_optional_config_with_no_default())
 
 
 def test_single_nested_config_undefined_errors():

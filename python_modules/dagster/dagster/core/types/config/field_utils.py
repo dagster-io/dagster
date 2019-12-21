@@ -1,6 +1,5 @@
 # encoding: utf-8
 import hashlib
-import re
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -81,50 +80,6 @@ class _ConfigHasFields(ConfigType):
             yield field.config_type
             for recursive_config_type in field.config_type.recursive_config_types:
                 yield recursive_config_type
-
-    def debug_str(self):
-        def left_pad(line, n=2, char=" "):
-            lines = line.splitlines()
-            return "\n".join(map(lambda x: (char * n) + x, lines))
-
-        def format_fields(fields):
-            lines = map(left_pad, fields)
-            return '{{\n{lines}\n}}'.format(lines="\n".join(lines))
-
-        def field_to_string(field_key, field_value):
-            s = "{k}{opt}: ".format(k=field_key, opt="?" if field_value.is_optional else "")
-
-            if field_value.config_type.is_scalar:
-                typ = re.search(r'\.([^\.]*) object', str(field_value.config_type)).group(1)
-                s += "[" + typ + "] "
-            elif field_value.config_type.is_selector:
-                fields = [
-                    field_to_string("-" + k, v) for k, v in field_value.config_type.fields.items()
-                ]
-                fields = map(lambda x: left_pad(x, 1, "|"), fields)
-                s += format_fields(fields)
-            elif field_value.config_type.is_enum:
-                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
-                s += format_fields(fields)
-            elif field_value.config_type.is_dict:
-                fields = [field_to_string(k, v) for k, v in field_value.config_type.fields.items()]
-                s += format_fields(fields)
-            elif field_value.config_type.is_list:
-                fields = [
-                    field_to_string(k, v)
-                    for k, v in field_value.config_type.inner_type.fields.items()
-                ]
-                s += format_fields(fields)
-            elif field_value.config_type.is_any:
-                s += "[Any]"
-
-            s += (
-                " default=" + str(field_value.default_value) if field_value.default_provided else ""
-            )
-            return s
-
-        fields = [field_to_string(k, v) for k, v in self.fields.items()]
-        return format_fields(fields)
 
 
 def is_potential_field(potential_field):
