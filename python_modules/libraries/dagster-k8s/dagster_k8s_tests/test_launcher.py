@@ -1,30 +1,13 @@
 import os
-import time
 import uuid
 
 import yaml
-from dagster_k8s.launcher import K8sRunLauncher
-from kubernetes import client
 
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils import load_yaml_from_path, script_relative_path
+from dagster.utils import load_yaml_from_path
 
-ENVIRONMENTS_PATH = script_relative_path(
-    os.path.join(
-        '..',
-        '..',
-        '..',
-        '..',
-        '.buildkite',
-        'images',
-        'docker',
-        'test_project',
-        'test_pipelines',
-        'environments',
-    )
-)
-
-DAGSTER_DOCKER_IMAGE = os.environ['DAGSTER_DOCKER_IMAGE']
+from .conftest import ENVIRONMENTS_PATH, docker_image  # pylint: disable=unused-import
+from .utils import parse_raw_res, remove_none_recursively, wait_for_job_success
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
@@ -85,61 +68,54 @@ spec:
 '''
 
 
-def remove_none(obj):
-    if isinstance(obj, (list, tuple, set)):
-        return type(obj)(remove_none(x) for x in obj if x is not None)
-    elif isinstance(obj, dict):
-        return type(obj)(
-            (remove_none(k), remove_none(v))
-            for k, v in obj.items()
-            if k is not None and v is not None
-        )
-    else:
-        return obj
-
-
-def test_k8s_run_launcher():
+def test_valid_job_format(run_launcher, docker_image):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
-
     environment_dict = load_yaml_from_path(os.path.join(ENVIRONMENTS_PATH, 'env.yaml'))
-
-    run = PipelineRun.create_empty_run('demo_pipeline', run_id, environment_dict)
-    run_launcher = K8sRunLauncher(
-        postgres_host='dagster-postgresql',
-        postgres_port='5432',
-        image_pull_secrets=[{'name': 'element-dev-key'}],
-        service_account_name='dagit-admin',
-        job_image=DAGSTER_DOCKER_IMAGE,
-        load_kubeconfig=True,
-    )
+    pipeline_name = 'demo_pipeline'
+    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
     job = run_launcher.construct_job(run)
 
     assert (
-        yaml.dump(remove_none(job.to_dict()), default_flow_style=False).strip()
-        == EXPECTED_JOB_SPEC.format(run_id=run_id, job_image=DAGSTER_DOCKER_IMAGE).strip()
+        yaml.dump(remove_none_recursively(job.to_dict()), default_flow_style=False).strip()
+        == EXPECTED_JOB_SPEC.format(run_id=run_id, job_image=docker_image).strip()
     )
 
+
+def test_k8s_run_launcher(run_launcher):
+    run_id = uuid.uuid4().hex
+    environment_dict = load_yaml_from_path(os.path.join(ENVIRONMENTS_PATH, 'env.yaml'))
+    pipeline_name = 'demo_pipeline'
+    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
+
     run_launcher.launch_run(run)
+    success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
+    result = parse_raw_res(raw_logs.split('\n'))
 
-    # Poll the job for successful completion (time out after 10 mins)
-    succeeded = None
-    num_iter, max_iter = 0, 20
-    while succeeded is None and num_iter < max_iter:
-        res = client.BatchV1Api().list_namespaced_job(namespace='default', watch=False)
+    assert success
+    assert not result.get('errors')
+    assert result['data']
+    assert result['data']['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
 
-        launched_job = None
-        for job in res.items:
-            if job.metadata.name == 'dagster-job-%s' % run_id:
-                launched_job = job
-                break
 
-        # Ensure we found the job that we launched
-        if launched_job is None:
-            print('Job not yet launched, waiting')
-            time.sleep(30)
-            continue
-        else:
-            succeeded = launched_job.status.succeeded
-            num_iter += 1
-            time.sleep(30)
-    assert succeeded == 1
+def test_failing_k8s_run_launcher(run_launcher):
+    run_id = uuid.uuid4().hex
+    environment_dict = {'blah blah this is wrong': {}}
+    pipeline_name = 'demo_pipeline'
+    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
+
+    run_launcher.launch_run(run)
+    success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
+    result = parse_raw_res(raw_logs.split('\n'))
+
+    assert success
+    assert not result.get('errors')
+    assert result['data']
+    assert (
+        result['data']['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+    )
+    assert len(result['data']['startPipelineExecution']['errors']) == 2
+
+    assert set(error['reason'] for error in result['data']['startPipelineExecution']['errors']) == {
+        'FIELD_NOT_DEFINED',
+        'MISSING_REQUIRED_FIELD',
+    }
