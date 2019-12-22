@@ -227,8 +227,12 @@ def k8s_tests():
         tests.append(
             StepBuilder("dagster-k8s ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "./.buildkite/scripts/dagster_k8s.sh {ver}".format(ver=TOX_MAP[version]),
+                "pip install kubernetes",
+                "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash",
+                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + TOX_MAP[version],
+                "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-k8s/",
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",
@@ -423,9 +427,7 @@ def library_tests():
     tests = []
     for library in library_modules:
         if library == 'dagster-k8s':
-            pass
-            # https://github.com/dagster-io/dagster/issues/2028
-            # tests += k8s_tests()
+            tests += k8s_tests()
         elif library == 'dagster-gcp':
             tests += gcp_tests()
         elif library == 'dagster-postgres':
