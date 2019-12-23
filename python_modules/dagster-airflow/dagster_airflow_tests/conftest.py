@@ -18,8 +18,15 @@ from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
 
 # Will be set in environment by pipeline.py -> tox.ini to:
-# ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:${BUILDKITE_BUILD_ID}
-IMAGE = os.environ['DAGSTER_AIRFLOW_DOCKER_IMAGE']
+# ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
+IMAGE = os.environ['DAGSTER_DOCKER_IMAGE']
+
+
+@pytest.fixture(scope='module')
+def test_repo_path():
+    return script_relative_path(
+        os.path.join('..', '..', '..', '.buildkite', 'images', 'docker', 'test_project')
+    )
 
 
 @pytest.fixture(scope='module')
@@ -90,8 +97,8 @@ def docker_client():
 
 
 @pytest.fixture(scope='session')
-def build_docker_image(docker_client):
-    with pushd(script_relative_path('test_project')):
+def build_docker_image(test_repo_path, docker_client):
+    with pushd(test_repo_path):
         subprocess.check_output(['./build.sh'], shell=True)
 
     return IMAGE
@@ -130,8 +137,8 @@ def plugins_path(airflow_home):
 
 
 @pytest.fixture(scope='module')
-def environment_dict(s3_bucket):
-    env_dict = load_yaml_from_path(script_relative_path('test_project/env.yaml'))
+def environment_dict(s3_bucket, test_repo_path):
+    env_dict = load_yaml_from_path(os.path.join(test_repo_path, 'env.yaml'))
     env_dict['storage'] = {'s3': {'s3_bucket': s3_bucket}}
     yield env_dict
 

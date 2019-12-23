@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "dagster.fullname" . }}-instance
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  dagster.yaml: |
+    run_launcher:
+      module: dagster_k8s.launcher
+      class: K8sRunLauncher
+      config:
+        postgres_host: "{{ template "dagster.postgresql.fullname" . }}"
+        postgres_port: "{{ .Values.postgresql.service.port }}"
+        {{- with .Values.imagePullSecrets }}
+        image_pull_secrets:
+            {{- toYaml . | nindent 10 }}
+        {{- end }}
+        service_account_name: {{ include "dagster.serviceAccountName" . }}
+        job_image: "{{ .Values.job_image.image.repository }}:{{ .Values.job_image.image.tag }}"
+
+    run_storage:
+      module: dagster_postgres.run_storage
+      class: PostgresRunStorage
+      config:
+        postgres_url: "postgresql://{{ .Values.postgresql.postgresqlUsername}}:{{ .Values.postgresql.postgresqlPassword	}}@{{ template "dagster.postgresql.fullname" . }}:{{ .Values.postgresql.service.port }}/postgres"
+
+    event_log_storage:
+      module: dagster_postgres.event_log
+      class: PostgresEventLogStorage
+      config:
+        postgres_url: "postgresql://{{ .Values.postgresql.postgresqlUsername}}:{{ .Values.postgresql.postgresqlPassword	}}@{{ template "dagster.postgresql.fullname" . }}:{{ .Values.postgresql.service.port }}/postgres"

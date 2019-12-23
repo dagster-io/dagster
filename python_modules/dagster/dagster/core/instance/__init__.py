@@ -218,11 +218,13 @@ class DagsterInstance:
             '  Run Storage:\n{run}\n'
             '  Event Log Storage:\n{event}\n'
             '  Compute Log Manager:\n{compute}\n'
+            '  Run Launcher:\n{run_launcher}\n'
             ''.format(
                 artifact=_info(self._local_artifact_storage),
                 run=_info(self._run_storage),
                 event=_info(self._event_storage),
                 compute=_info(self._compute_log_manager),
+                run_launcher=_info(self._run_launcher),
             )
         )
 

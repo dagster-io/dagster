@@ -5,6 +5,7 @@ install_aliases()  # isort:skip
 import requests
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
+from requests import RequestException
 
 from dagster import Bool, Field, String, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
@@ -21,6 +22,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         self._address = check.str_param(address, 'address')
         self._handle = None
         self._instance = None
+        self._validated = False
 
         parsed_url = urlparse(address)
         check.invariant(
@@ -51,14 +53,23 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         self._instance = None
 
     def validate(self):
-        sanity_check = requests.get(urljoin(self._address, '/dagit_info'))
-        sanity_check.raise_for_status()
-        check.invariant(
-            'dagit' in sanity_check.text,
-            'Host {host} failed sanity check. It is not a dagit server.'.format(host=self._address),
-        )
+        if self._validated:
+            return
+        try:
+            sanity_check = requests.get(urljoin(self._address, '/dagit_info'))
+            self._validated = sanity_check.status_code = 200 and 'dagit' in sanity_check.text
+        except RequestException:
+            self._validated = False
+
+        if not self._validated:
+            raise DagsterLaunchFailedError(
+                'Host {host} failed sanity check. It is not a dagit server.'.format(
+                    host=self._address
+                ),
+            )
 
     def launch_run(self, run):
+        self.validate()
         execution_params = execution_params_from_pipeline_run(run)
         variables = {'executionParams': execution_params.to_graphql_input()}
         response = requests.post(

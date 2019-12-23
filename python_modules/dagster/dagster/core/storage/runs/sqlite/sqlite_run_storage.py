@@ -41,6 +41,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         path_components = os.path.abspath(base_dir).split(os.sep)
         conn_string = 'sqlite:///{}'.format('/'.join(path_components + ['runs.db']))
         engine = create_engine(conn_string, poolclass=NullPool)
+        engine.execute('PRAGMA journal_mode=WAL;')
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
         conn = engine.connect()

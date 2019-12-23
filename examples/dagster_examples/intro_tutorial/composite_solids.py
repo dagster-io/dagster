@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable,no-member
 import csv
 from copy import deepcopy
+from typing import Any
 
 from dagster import (
     Bool,
@@ -19,7 +20,7 @@ class _DataFrame(list):
     pass
 
 
-DataFrame = as_dagster_type(_DataFrame, name='DataFrame')
+DataFrame = as_dagster_type(_DataFrame, name='DataFrame')  # type: Any
 
 
 @solid(

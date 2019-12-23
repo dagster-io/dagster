@@ -1,6 +1,7 @@
 import csv
 import sqlite3
 from copy import deepcopy
+from typing import Any
 
 import sqlalchemy
 import sqlalchemy.ext.declarative
@@ -47,7 +48,7 @@ def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config['conn_str'])
 
 
-Base = sqlalchemy.ext.declarative.declarative_base()
+Base = sqlalchemy.ext.declarative.declarative_base()  # type: Any
 
 
 class NormalizedCereal(Base):

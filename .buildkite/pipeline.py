@@ -74,6 +74,33 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
     ]
 
 
+def publish_test_images():
+    '''This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
+    the dagster-k8s tests
+    '''
+    tests = []
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+        key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
+
+        tests.append(
+            StepBuilder("test images {version}".format(version=version), key=key)
+            .run("./.buildkite/images/docker/test_project/build.sh " + TOX_MAP[version])
+            .on_integration_image(
+                SupportedPython.V3_7,
+                [
+                    'AIRFLOW_HOME',
+                    'AWS_ACCOUNT_ID',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'BUILDKITE_SECRETS_BUCKET',
+                ],
+            )
+            .build()
+        )
+    return tests
+
+
 def python_modules_tox_tests(directory):
     label = directory.replace("/", "-")
     tests = []
@@ -162,59 +189,25 @@ def events_demo_tests():
     return tests
 
 
-def publish_airflow_images():
-    '''These images are used by the dagster-airflow tests. We build them here and not in the main
-    build pipeline to speed it up, because they change very rarely.
-    '''
-    return [
-        StepBuilder("[dagster-airflow] images", key="dagster-airflow-images")
-        .run(
-            "aws ecr get-login --no-include-email --region us-west-1 | sh",
-            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-            + GCP_CREDS_LOCAL_FILE,
-            "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-            "export DAGSTER_AIRFLOW_DOCKER_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-airflow-demo:$${BUILDKITE_BUILD_ID}",
-            # Build and deploy dagster-airflow docker images
-            "pushd python_modules/dagster-airflow/dagster_airflow_tests/test_project",
-            "./build.sh",
-            "docker tag dagster-airflow-demo $${DAGSTER_AIRFLOW_DOCKER_IMAGE}",
-            "docker push $${DAGSTER_AIRFLOW_DOCKER_IMAGE}",
-            "popd",
-        )
-        .on_integration_image(
-            SupportedPython.V3_7,
-            [
-                'AIRFLOW_HOME',
-                'AWS_ACCOUNT_ID',
-                'AWS_ACCESS_KEY_ID',
-                'AWS_SECRET_ACCESS_KEY',
-                'BUILDKITE_SECRETS_BUCKET',
-            ],
-        )
-        .build()
-    ]
-
-
 def airflow_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
     for version in SupportedPythons + [SupportedPython.V3_8]:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
-            StepBuilder("[dagster-airflow] ({ver})".format(ver=TOX_MAP[version]))
+            StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
             .run(
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 "./.buildkite/scripts/dagster_airflow.sh {ver}".format(ver=TOX_MAP[version]),
                 "pushd python_modules/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",
             )
-            .depends_on(["dagster-airflow-images"])
+            .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
             .on_integration_image(
                 version,
                 [
@@ -224,6 +217,35 @@ def airflow_tests():
                     'AWS_SECRET_ACCESS_KEY',
                     'BUILDKITE_SECRETS_BUCKET',
                     'GOOGLE_APPLICATION_CREDENTIALS',
+                ],
+            )
+            .build()
+        )
+    return tests
+
+
+def k8s_tests():
+    tests = []
+    # See: https://github.com/dagster-io/dagster/issues/1960
+    for version in SupportedPythons + [SupportedPython.V3_8]:
+        coverage = ".coverage.dagster-k8s.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("dagster-k8s ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "./.buildkite/scripts/dagster_k8s.sh {ver}".format(ver=TOX_MAP[version]),
+                "pushd python_modules/libraries/dagster-k8s/",
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+                "popd",
+            )
+            .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
+            .on_integration_image(
+                version,
+                [
+                    'AWS_ACCOUNT_ID',
+                    'AWS_ACCESS_KEY_ID',
+                    'AWS_SECRET_ACCESS_KEY',
+                    'BUILDKITE_SECRETS_BUCKET',
                 ],
             )
             .build()
@@ -405,7 +427,11 @@ def library_tests():
 
     tests = []
     for library in library_modules:
-        if library == 'dagster-gcp':
+        if library == 'dagster-k8s':
+            pass
+            # https://github.com/dagster-io/dagster/issues/2028
+            # tests += k8s_tests()
+        elif library == 'dagster-gcp':
             tests += gcp_tests()
         elif library == 'dagster-postgres':
             tests += dagster_postgres_tests()
@@ -569,12 +595,7 @@ def releasability_tests():
 if __name__ == "__main__":
     steps = pylint_steps() + [
         StepBuilder("isort")
-        .run(
-            "pip install isort>=4.3.21",
-            "isort -rc examples python_modules",  # -sg seems to be broken
-            "isort -rc -l 78 examples/dagster_examples/intro_tutorial",
-            "git diff --exit-code",
-        )
+        .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code",)
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("black")
@@ -615,13 +636,21 @@ if __name__ == "__main__":
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
+        StepBuilder("mypy examples")
+        .run(
+            "pip install mypy",
+            # start small by making sure the local code type checks
+            "mypy examples --ignore-missing-imports",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
     steps += airline_demo_tests()
     steps += automation_tests()
     steps += events_demo_tests()
     steps += examples_tests()
 
-    steps += publish_airflow_images()
+    steps += publish_test_images()
     steps += airflow_tests()
     steps += celery_tests()
     steps += dask_tests()

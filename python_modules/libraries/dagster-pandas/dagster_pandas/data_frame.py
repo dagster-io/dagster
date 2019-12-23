@@ -102,32 +102,49 @@ DataFrame = as_dagster_type(
 )
 
 
-def create_dagster_pandas_dataframe_type(
-    name=None, type_check=None, columns=None, summary_statistics=None
-):
+def create_dagster_pandas_dataframe_type(name=None, columns=None, summary_statistics=None):
     summary_statistics = check.opt_callable_param(summary_statistics, 'summary_statistics')
 
     def _dagster_type_check(value):
-        event_metadata = []
+        if not isinstance(value, DataFrame):
+            return TypeCheck(
+                success=False,
+                description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(
+                    type_name=type(value).__name__
+                ),
+            )
+
         if columns is not None:
             try:
                 validate_collection_schema(columns, value)
             except ConstraintViolationException as e:
                 return TypeCheck(success=False, description=str(e))
 
-        if type_check:
-            type_check_object = check.inst_param(
-                type_check(value), 'user_type_check_object', TypeCheck
-            )
-            if not type_check_object.success:
-                return type_check_object
-            event_metadata += type_check_object.metadata_entries
+        return TypeCheck(
+            success=True,
+            metadata_entries=_execute_summary_stats(name, value, summary_statistics)
+            if summary_statistics
+            else None,
+        )
 
-        if summary_statistics:
-            metadata_entries = summary_statistics(value)
-            event_metadata += check.opt_list_param(
-                metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
-            )
-        return TypeCheck(success=True, metadata_entries=event_metadata)
+    # add input_hydration_confign and output_materialization_config
+    # https://github.com/dagster-io/dagster/issues/2027
+    return RuntimeType(name=name, key=name, type_check_fn=_dagster_type_check,)
 
-    return RuntimeType(name=name, key=name, type_check_fn=_dagster_type_check)
+
+def _execute_summary_stats(type_name, value, summary_statistics_fn):
+    metadata_entries = summary_statistics_fn(value)
+
+    if not (
+        isinstance(metadata_entries, list)
+        and all(isinstance(item, EventMetadataEntry) for item in metadata_entries)
+    ):
+        raise DagsterInvariantViolationError(
+            (
+                'The return value of the user-defined summary_statistics function '
+                'for pandas data frame type {type_name} returned {value}. '
+                'This function must return List[EventMetadataEntry]'
+            ).format(type_name=type_name, value=repr(metadata_entries))
+        )
+
+    return metadata_entries

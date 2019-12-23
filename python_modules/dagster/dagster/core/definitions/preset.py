@@ -14,10 +14,10 @@ from .mode import DEFAULT_MODE_NAME
 
 class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict solid_subset mode')):
     '''Defines a preset configuration in which a pipeline can execute.
-    
-    
+
+
     Presets can be used in Dagit to load predefined configurations into the tool.
-    
+
     Presets may also be used from the Python API (in a script, or in test) as follows:
 
     .. code-block:: python
