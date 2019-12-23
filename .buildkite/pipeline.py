@@ -174,11 +174,6 @@ def events_demo_tests():
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
             .run(
-                "mkdir -p /tmp/dagster/events",
-                "pushd scala_modules",
-                "sbt events/assembly",
-                "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
-                "popd",
                 "pushd examples",
                 "tox -vv -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
