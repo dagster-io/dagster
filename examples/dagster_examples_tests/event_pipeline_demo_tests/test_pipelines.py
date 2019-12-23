@@ -1,6 +1,3 @@
-import os
-import subprocess
-
 import pandas as pd
 import pytest
 from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
@@ -8,6 +5,8 @@ from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 from dagster import execute_pipeline
 from dagster.seven import mock
 from dagster.utils import load_yaml_from_globs, script_relative_path
+
+from .conftest import events_jar, spark_home  # pylint: disable=unused-import
 
 
 def create_mock_connector(*_args, **_kwargs):
@@ -30,49 +29,24 @@ def connect_with_fetchall_returning(value):
 # 3. Include example / test data in this repository
 @pytest.mark.spark
 @mock.patch('snowflake.connector.connect', new_callable=create_mock_connector)
-def test_event_pipeline(snowflake_connect):
+def test_event_pipeline(
+    snowflake_connect, events_jar, spark_home,
+):  # pylint: disable=redefined-outer-name, unused-argument
+    config = load_yaml_from_globs(
+        script_relative_path('../../dagster_examples/event_pipeline_demo/environments/default.yaml')
+    )
+    config['solids']['event_ingest']['config']['application_jar'] = events_jar
 
-    spark_home_set = True
+    result_pipeline = execute_pipeline(event_ingest_pipeline, config)
+    assert result_pipeline.success
 
-    if os.getenv('SPARK_HOME') is None:
-        spark_home_set = False
-
-    try:
-        if not spark_home_set:
-            try:
-                pyspark_show = subprocess.check_output(['pip', 'show', 'pyspark'])
-            except subprocess.CalledProcessError:
-                pass
-            else:
-                os.environ['SPARK_HOME'] = os.path.join(
-                    list(
-                        filter(lambda x: 'Location' in x, pyspark_show.decode('utf-8').split('\n'))
-                    )[0].split(' ')[1],
-                    'pyspark',
-                )
-
-        config = load_yaml_from_globs(
-            script_relative_path(
-                '../../dagster_examples/event_pipeline_demo/environments/default.yaml'
-            )
-        )
-        result_pipeline = execute_pipeline(event_ingest_pipeline, config)
-        assert result_pipeline.success
-
-        # We're not testing Snowflake loads here, so at least test that we called the connect
-        # appropriately
-        snowflake_connect.assert_called_with(
-            user='<< SET ME >>',
-            password='<< SET ME >>',
-            account='<< SET ME >>',
-            database='TESTDB',
-            schema='TESTSCHEMA',
-            warehouse='TINY_WAREHOUSE',
-        )
-
-    finally:
-        if not spark_home_set:
-            try:
-                del os.environ['SPARK_HOME']
-            except KeyError:
-                pass
+    # We're not testing Snowflake loads here, so at least test that we called the connect
+    # appropriately
+    snowflake_connect.assert_called_with(
+        user='<< SET ME >>',
+        password='<< SET ME >>',
+        account='<< SET ME >>',
+        database='TESTDB',
+        schema='TESTSCHEMA',
+        warehouse='TINY_WAREHOUSE',
+    )

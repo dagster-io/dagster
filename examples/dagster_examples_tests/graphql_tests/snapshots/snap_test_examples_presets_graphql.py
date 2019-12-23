@@ -336,7 +336,7 @@ solids:
   event_ingest:
     config:
       application_arguments: --local-path /tmp/dagster/events/data --date 2019-01-01
-      application_jar: /tmp/dagster/events/events-assembly-0.1.0-SNAPSHOT.jar
+      application_jar: '{jar_path}'
       deploy_mode: client
       master_url: local[*]
       spark_conf:
