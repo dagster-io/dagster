@@ -192,7 +192,7 @@ def events_demo_tests():
 def airflow_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
+    for version in SupportedPythons:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
