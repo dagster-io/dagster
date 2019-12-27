@@ -174,11 +174,6 @@ def events_demo_tests():
                 version, ['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION']
             )
             .run(
-                "mkdir -p /tmp/dagster/events",
-                "pushd scala_modules",
-                "sbt events/assembly",
-                "cp ./events/target/scala-2.11/events-assembly-0.1.0-SNAPSHOT.jar /tmp/dagster/events/",
-                "popd",
                 "pushd examples",
                 "tox -vv -c event.tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
@@ -192,7 +187,7 @@ def events_demo_tests():
 def airflow_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
+    for version in SupportedPythons:
         coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
