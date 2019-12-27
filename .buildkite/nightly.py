@@ -59,7 +59,7 @@ if __name__ == "__main__":
         )
         .build(),
         StepBuilder('clean phabricator tags')
-        .run('git tag | grep phabricator | xargs git push -d origin')
+        .run('git tag | grep phabricator | xargs -I {} git push -d origin {}')
         .build(),
     ]
     print(yaml.dump({"env": {}, "steps": steps}, default_flow_style=False))
