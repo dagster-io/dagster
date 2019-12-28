@@ -588,7 +588,10 @@ def releasability_tests():
 
 
 if __name__ == "__main__":
-    steps = pylint_steps() + [
+    steps = []
+    steps += publish_test_images()
+    steps += pylint_steps()
+    steps += [
         StepBuilder("isort")
         .run("pip install isort>=4.3.21", "make isort", "git diff --exit-code",)
         .on_integration_image(SupportedPython.V3_7)
@@ -640,12 +643,12 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]
+
     steps += airline_demo_tests()
     steps += automation_tests()
     steps += events_demo_tests()
     steps += examples_tests()
 
-    steps += publish_test_images()
     steps += airflow_tests()
     steps += celery_tests()
     steps += dask_tests()
