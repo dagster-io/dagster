@@ -17,6 +17,7 @@ import { ScheduleRoot } from "./schedules/ScheduleRoot";
 import { TopNav } from "./TopNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
+import { TestRoot } from "./TestRoot";
 
 function extractData(result?: RootPipelinesQuery) {
   if (!result || !result.pipelinesOrError) {
@@ -31,6 +32,8 @@ function extractData(result?: RootPipelinesQuery) {
 
 const AppRoutes = () => (
   <Switch>
+    <Route path="/test" component={TestRoot} />
+
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solids/:name?" component={SolidsRoot} />

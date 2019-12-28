@@ -16,8 +16,8 @@ import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 import { SolidJumpBar } from "./PipelineJumpComponents";
-import { SolidQueryInput } from "./SolidQueryInput";
-import { filterSolidsByQuery } from "./SolidQueryImpl";
+import { GraphQueryInput } from "./GraphQueryInput";
+import { filterByQuery } from "./GraphQueryImpl";
 
 interface PipelineExplorerProps {
   history: History;
@@ -143,8 +143,9 @@ export default class PipelineExplorer extends React.Component<
 
     const solids = this.props.handles.map(h => h.solid);
     const solidsQueryEnabled = !parentHandle;
+
     const queryResultSolids = solidsQueryEnabled
-      ? filterSolidsByQuery(solids, visibleSolidsQuery)
+      ? filterByQuery(solids, visibleSolidsQuery)
       : { all: solids, focus: [] };
 
     const highlightedSolids = queryResultSolids.all.filter(s =>
@@ -201,8 +202,8 @@ export default class PipelineExplorer extends React.Component<
                 />
               </PathOverlay>
               {solidsQueryEnabled && (
-                <SolidQueryInput
-                  solids={solids}
+                <GraphQueryInput
+                  items={solids}
                   value={visibleSolidsQuery}
                   onChange={q => this.setState({ visibleSolidsQuery: q })}
                 />
