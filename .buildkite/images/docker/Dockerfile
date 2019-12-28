@@ -1,19 +1,19 @@
 ####################################################################################################
 #
-# DAGSTER BASE IMAGE
+# DAGSTER INTEGRATION IMAGE
 #
-# We use this image to derive both an image for our Buildkite CI/CD pipeline, as well as a public
-# Dagster image.
+# We use this Dockerfile to build an image for our Buildkite CI/CD pipeline.
 #
 ####################################################################################################
 ARG DEBIAN_VERSION
 ARG PYTHON_VERSION
 
-FROM python:"${PYTHON_VERSION}-${DEBIAN_VERSION}" AS dagster-base-build-image
+FROM python:"${PYTHON_VERSION}-${DEBIAN_VERSION}"
 
 # ARG must be both before and after FROM
 # See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG DEBIAN_VERSION
+ARG PYTHON_MAJOR_VERSION
 
 LABEL maintainer="Elementl"
 
@@ -95,28 +95,6 @@ RUN set -ex \
 
 # This will frequently OOM without --no-cache-dir
 RUN pip --no-cache-dir install pyspark==$PYSPARK_VERSION
-
-####################################################################################################
-#
-# DAGSTER PUBLIC IMAGE
-#
-####################################################################################################
-FROM dagster-base-build-image AS dagster-public-image
-
-RUN pip install -U pip setuptools wheel && \
-    git clone https://github.com/dagster-io/dagster.git
-
-WORKDIR /dagster/
-RUN make dev_install
-
-
-####################################################################################################
-#
-# DAGSTER BUILDKITE INTEGRATION IMAGE
-#
-####################################################################################################
-FROM dagster-base-build-image AS dagster-integration-image
-ARG PYTHON_MAJOR_VERSION
 
 # This instigates some package downloads required by the airline-demo. Fails on Python 3.8
 ADD trigger_maven.py .
