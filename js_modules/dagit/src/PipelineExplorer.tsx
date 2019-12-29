@@ -15,14 +15,16 @@ import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
-import { SolidJumpBar } from "./PipelineJumpComponents";
+import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
 
 interface PipelineExplorerProps {
   history: History;
   path: string[];
+  visibleSolidsQuery: string;
   pipeline: PipelineExplorerFragment;
+  pipelineNavigation: React.ReactChild;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerParentSolidHandleFragment;
@@ -30,7 +32,6 @@ interface PipelineExplorerProps {
 }
 
 interface PipelineExplorerState {
-  visibleSolidsQuery: string;
   highlighted: string;
 }
 
@@ -72,12 +73,16 @@ export default class PipelineExplorer extends React.Component<
   };
 
   state = {
-    visibleSolidsQuery: "",
     highlighted: ""
   };
 
-  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
+  handleQueryChange = (query: string) => {
     const { history, pipeline, path } = this.props;
+    history.replace(`/p/${pipeline.name}:${query}/explore/${path.join("/")}`);
+  };
+
+  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
+    const { history, pipeline, path, visibleSolidsQuery } = this.props;
     const next = [...path];
     const retValue = fn(next);
     if (retValue !== undefined) {
@@ -85,7 +90,9 @@ export default class PipelineExplorer extends React.Component<
         "handleAdjustPath function is expected to mutate the array"
       );
     }
-    history.push(`/p/${pipeline.name}/explore/${next.join("/")}`);
+    history.push(
+      `/p/${pipeline.name}:${visibleSolidsQuery}/explore/${next.join("/")}`
+    );
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -138,8 +145,14 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const { pipeline, parentHandle, path } = this.props;
-    const { visibleSolidsQuery, highlighted } = this.state;
+    const {
+      pipeline,
+      parentHandle,
+      path,
+      visibleSolidsQuery,
+      history
+    } = this.props;
+    const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
     const solidsQueryEnabled = !parentHandle;
@@ -178,12 +191,18 @@ export default class PipelineExplorer extends React.Component<
                 <Link style={{ padding: 3 }} to={`/p/${pipeline.name}/explore`}>
                   <Icon icon="diagram-tree" />
                 </Link>
+                <PipelineJumpBar
+                  selectedPipelineName={pipeline.name}
+                  onItemSelect={name => history.push(`/p/${name}`)}
+                />
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
                     <Link
                       style={{ padding: 3 }}
-                      to={`/p/${pipeline.name}/explore/${path
+                      to={`/p/${
+                        pipeline.name
+                      }:${visibleSolidsQuery}/explore/${path
                         .slice(0, idx + 1)
                         .join("/")}`}
                     >
@@ -204,7 +223,7 @@ export default class PipelineExplorer extends React.Component<
                 <SolidQueryInput
                   solids={solids}
                   value={visibleSolidsQuery}
-                  onChange={q => this.setState({ visibleSolidsQuery: q })}
+                  onChange={this.handleQueryChange}
                 />
               )}
               <SearchOverlay style={{ background: backgroundTranslucent }}>
