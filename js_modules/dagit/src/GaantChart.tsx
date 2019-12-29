@@ -1,7 +1,7 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { weakmapMemoize } from "./Util";
-import { layoutPipeline, ILayoutSolid } from "./graph/layout";
+import { ILayoutSolid } from "./graph/layout";
 import { IRunMetadataDict } from "./RunMetadataProvider";
 import { ExecutionPlanFragment } from "./plan/types/ExecutionPlanFragment";
 import { RunFragment } from "./runs/types/RunFragment";
@@ -15,16 +15,16 @@ interface GaantChartProps {
 }
 
 interface GaantChartRow {
-  x: number;
   depth: number;
-  dependencies: GaantChartRow[];
-  label: string;
+  children: GaantChartRow[];
+  solid: ILayoutSolid;
 }
 interface GaantChartLayout {
   rows: GaantChartRow[];
 }
 
 const ROW_HEIGHT = 20;
+const BOX_WIDTH = 80;
 const LINE_SIZE = 2;
 
 const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
@@ -77,48 +77,120 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
   return Object.values(solidsTable);
 });
 
-const layout = weakmapMemoize((solidGraph: ILayoutSolid[]) => {
-  const stepInputKeys: { [key: string]: string[] } = {};
-
-  for (const solid of solidGraph) {
-    stepInputKeys[solid.name] = [];
-    for (const input of solid.inputs) {
-      stepInputKeys[solid.name].push(...input.dependsOn.map(d => d.solid.name));
+const forEachDep = (solid: ILayoutSolid, cb: (name: string) => void) => {
+  for (const out of solid.outputs) {
+    for (const dep of out.dependedBy) {
+      cb(dep.solid.name);
     }
   }
-  const layout = layoutPipeline(solidGraph);
+};
 
-  // arrange in order of Y
-  const rows: GaantChartRow[] = [];
-  let depth = 0;
-  let lastY = 0;
+const collapseRunsInSolidGraph = (
+  solidGraph: ILayoutSolid[],
+  solidNames: string[]
+) => {
+  solidGraph = JSON.parse(JSON.stringify(solidGraph));
 
-  Object.entries(layout.solids)
-    .sort((a, b) => {
-      const yDiff = a[1].boundingBox.y - b[1].boundingBox.y;
-      if (yDiff != 0) return yDiff;
-      const xDiff = a[1].boundingBox.x - b[1].boundingBox.x;
-      return xDiff;
-    })
-    .forEach(([key, solid]) => {
-      if (Math.abs(lastY - solid.boundingBox.y) > 50) {
-        lastY = solid.boundingBox.y;
-        depth += 1;
-      }
-      rows.push({
-        x: depth * 50,
-        depth: depth,
-        dependencies: rows.filter(r => stepInputKeys[key].includes(r.label)),
-        label: key
+  for (const name of solidNames) {
+    // find the node
+    const solid = solidGraph.find(s => s.name === name);
+    if (!solid) continue;
+
+    // merge the node with it's immediate children
+    const nextSet: string[] = [];
+    forEachDep(solid, childName => {
+      const childSolidIdx = solidGraph.findIndex(s => s.name === childName);
+      if (childSolidIdx === -1) return;
+      const [childSolid] = solidGraph.splice(childSolidIdx, 1);
+      forEachDep(childSolid, name => {
+        nextSet.push(name);
       });
     });
 
+    if (nextSet.length) {
+      solid.outputs[0].definition.name = "COLLAPSED";
+      solid.outputs[0].dependedBy = nextSet.map(m => ({
+        solid: { name: m },
+        definition: { name: "" }
+      }));
+    }
+  }
+
+  return solidGraph;
+};
+
+const layout = (solidGraph: ILayoutSolid[]) => {
+  let rows: GaantChartRow[] = solidGraph
+    .filter(
+      g =>
+        g.inputs.filter(i =>
+          i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
+        ).length === 0
+    )
+    .map(solid => ({ solid: solid, children: [], depth: 0 }));
+
+  let rowZero = [...rows];
+
+  const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
+    if (parentIdx < childIdx) {
+      return;
+    }
+    const [child] = rows.splice(childIdx, 1);
+    rows.push(child);
+    const newIdx = rows.length - 1;
+    child.children.forEach(subchild =>
+      ensureSubtreeBelow(rows.indexOf(subchild), newIdx)
+    );
+  };
+
+  const addChildren = (row: GaantChartRow) => {
+    const idx = rows.indexOf(row);
+    const seen: string[] = [];
+
+    for (const out of row.solid.outputs) {
+      for (const dep of out.dependedBy) {
+        const depSolid = solidGraph.find(n => dep.solid.name === n.name);
+        if (!depSolid) continue;
+
+        if (seen.includes(depSolid.name)) continue;
+        seen.push(depSolid.name);
+
+        const depRowIdx = rows.findIndex(r => r.solid === depSolid);
+        let depRow: GaantChartRow;
+
+        if (depRowIdx === -1) {
+          depRow = {
+            solid: depSolid,
+            depth: 0,
+            children: []
+          };
+          rows.push(depRow);
+          addChildren(depRow);
+        } else {
+          depRow = rows[depRowIdx];
+          ensureSubtreeBelow(depRowIdx, idx);
+        }
+
+        row.children.push(depRow);
+      }
+    }
+  };
+
+  rowZero.forEach(addChildren);
+
+  const deepen = (row: GaantChartRow, depth: number) => {
+    row.depth = Math.max(depth, row.depth);
+    row.children.forEach(child => deepen(child, depth + 1));
+  };
+  rowZero.forEach(row => deepen(row, 0));
+
   return { rows } as GaantChartLayout;
-});
+};
 
 interface GaantChartState {
   hoveredIdx: number;
   query: string;
+  collapsed: string[];
 }
 
 export class GaantChart extends React.Component<
@@ -127,71 +199,63 @@ export class GaantChart extends React.Component<
 > {
   state: GaantChartState = {
     hoveredIdx: -1,
-    query: "*"
+    collapsed: [],
+    query: "*trials_raw"
   };
 
   render() {
-    const { hoveredIdx, query } = this.state;
+    const { hoveredIdx, query, collapsed } = this.state;
 
     const graph = toMockSolidGraph(this.props.run);
     const graphFiltered = filterByQuery(graph, query);
-    const l = layout(graphFiltered.all);
+    const graphCollapsed = collapseRunsInSolidGraph(
+      graphFiltered.all,
+      collapsed
+    );
+    const l = layout(graphCollapsed);
 
     return (
       <div style={{ height: "100%" }}>
         <div style={{ overflow: "scroll", height: "100%" }}>
           <div style={{ position: "relative" }}>
             {l.rows.map((row, idx) => (
-              <React.Fragment key={row.label}>
+              <React.Fragment key={row.solid.name}>
                 <GaantBox
                   style={{
                     top: ROW_HEIGHT * idx,
-                    left: row.depth * 50,
-                    width: 50
+                    left: row.depth * BOX_WIDTH,
+                    width: BOX_WIDTH
                   }}
+                  collapsed={
+                    row.solid.outputs[0]?.definition.name === "COLLAPSED"
+                  }
                   onMouseEnter={() => this.setState({ hoveredIdx: idx })}
                   onMouseLeave={() => this.setState({ hoveredIdx: -1 })}
+                  onClick={() =>
+                    this.setState({
+                      collapsed: collapsed.includes(row.solid.name)
+                        ? collapsed.filter(c => c !== row.solid.name)
+                        : [...collapsed, row.solid.name]
+                    })
+                  }
                 >
-                  {row.label}
+                  {row.solid.name}
                 </GaantBox>
-                {row.dependencies
-                  .filter(
-                    dep =>
-                      hoveredIdx === idx || hoveredIdx === l.rows.indexOf(dep)
-                  )
-                  .map((dep, depIdx) => (
-                    <>
-                      <Line
-                        key={`${idx}-${depIdx}-horizontal`}
-                        style={{
-                          height: LINE_SIZE,
-                          left: (dep.depth + 1) * 50,
-                          width:
-                            row.depth * 50 -
-                            (dep.depth + 1) * 50 +
-                            20 +
-                            depIdx * LINE_SIZE,
-                          top:
-                            l.rows.indexOf(dep) * ROW_HEIGHT + ROW_HEIGHT / 2,
-                          background: "red"
-                        }}
-                      />
-                      <Line
-                        key={`${idx}-${depIdx}-vertical`}
-                        style={{
-                          width: LINE_SIZE,
-                          left: row.depth * 50 + 20 + depIdx * LINE_SIZE,
-                          top:
-                            l.rows.indexOf(dep) * ROW_HEIGHT + ROW_HEIGHT / 2,
-                          height:
-                            idx * ROW_HEIGHT -
-                            l.rows.indexOf(dep) * ROW_HEIGHT -
-                            ROW_HEIGHT / 2,
-                          background: "red"
-                        }}
-                      />
-                    </>
-                  ))}
+                {row.children.map((child, childIdx) => {
+                  const childRowIdx = l.rows.indexOf(child);
+                  return (
+                    <GaantLine
+                      key={`${row.solid.name}-${child.solid.name}-${childIdx}`}
+                      rows={l.rows}
+                      start={row}
+                      end={child}
+                      depIdx={childIdx}
+                      highlighted={
+                        hoveredIdx === idx || hoveredIdx === childRowIdx
+                      }
+                    />
+                  );
+                })}
               </React.Fragment>
             ))}
           </div>
@@ -206,8 +270,71 @@ export class GaantChart extends React.Component<
   }
 }
 
+const GaantLine = React.memo(
+  (props: {
+    rows: GaantChartRow[];
+    start: GaantChartRow;
+    end: GaantChartRow;
+    highlighted: boolean;
+    depIdx: number;
+  }) => {
+    const minDepth = Math.min(props.start.depth, props.end.depth);
+    const maxDepth = Math.max(props.start.depth, props.end.depth);
+
+    const startIdx = props.rows.indexOf(props.start);
+    const endIdx = props.rows.indexOf(props.end);
+    const minIdx = Math.min(startIdx, endIdx);
+    const maxIdx = Math.max(startIdx, endIdx);
+
+    if (minIdx === -1) {
+      console.warn("Row missing");
+    }
+    if (minDepth === maxDepth) {
+      console.warn("minDepth === maxDepth");
+    }
+    if (minIdx === maxIdx) {
+      console.warn("minIdx === maxIdx");
+    }
+
+    const offsetX = BOX_WIDTH / 2;
+    const maxX = maxDepth * BOX_WIDTH + offsetX;
+    const minX = (minDepth + 1) * BOX_WIDTH;
+    const maxY = maxIdx * ROW_HEIGHT;
+    const minY = minIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+
+    return (
+      <>
+        <Line
+          data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
+          style={{
+            height: LINE_SIZE,
+            left: minX,
+            width: maxX - minX,
+            top: minY,
+            background: props.highlighted ? "red" : "#eee",
+            zIndex: props.highlighted ? 100 : 1
+          }}
+        />
+        <Line
+          data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
+          style={{
+            width: LINE_SIZE,
+            left: maxX + props.depIdx * LINE_SIZE,
+            top: minY,
+            height: maxY - minY,
+            background: props.highlighted ? "red" : "#eee",
+            zIndex: props.highlighted ? 100 : 1
+          }}
+        />
+      </>
+    );
+  }
+);
+
 const Line = styled.div`
   position: absolute;
+  transition: top 200ms linear, left 200ms linear, width 200ms linear,
+    height 200ms linear;
 `;
 
 const GaantRow = styled.div`
@@ -216,12 +343,17 @@ const GaantRow = styled.div`
   border-bottom: 1px solid #ccc;
 `;
 
-const GaantBox = styled.div`
+const GaantBox = styled.div<{ collapsed: boolean }>`
   display: inline-block;
   position: absolute;
   height: ${ROW_HEIGHT}px;
-  background: green;
+  background: ${({ collapsed }) => (collapsed ? "#1c71bc" : "#2491eb")};
   color: white;
   font-size: 11px;
   border: 1px solid darkgreen;
+  overflow: hidden;
+  z-index: 2;
+
+  transition: top 200ms linear, left 200ms linear, width 200ms linear,
+    height 200ms linear;
 `;
