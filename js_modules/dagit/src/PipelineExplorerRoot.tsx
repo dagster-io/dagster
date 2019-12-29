@@ -15,7 +15,8 @@ import {
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
-  match: match<{ pipelineName: string; 0: string }>;
+  pipelineNavigation: React.ReactChild;
+  match: match<{ pipelineSelector: string; 0: string }>;
   history: History<any>;
 }
 
@@ -28,6 +29,11 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 
+  const [pipelineName, query] = [
+    ...props.match.params.pipelineSelector.split(":"),
+    ""
+  ];
+
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
     PipelineExplorerRootQueryVariables
@@ -35,7 +41,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
     variables: {
-      pipeline: props.match.params.pipelineName,
+      pipeline: pipelineName,
       parentHandleID: parentNames.join(".")
     }
   });
@@ -63,7 +69,9 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
               <PipelineExplorer
                 history={props.history}
                 path={pathSolids}
+                visibleSolidsQuery={query}
                 pipeline={pipelineOrError}
+                pipelineNavigation={props.pipelineNavigation}
                 handles={displayedHandles}
                 parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(

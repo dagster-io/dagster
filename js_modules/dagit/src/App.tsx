@@ -6,6 +6,7 @@ import CustomAlertProvider from "./CustomAlertProvider";
 import { NonIdealState } from "@blueprintjs/core";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
+import { PipelineNamesContext } from "./PipelineNamesContext";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
@@ -23,7 +24,10 @@ function extractData(result?: RootPipelinesQuery) {
     return { pipelines: [], error: null };
   }
   if (result.pipelinesOrError.__typename === "PipelineConnection") {
-    return { pipelines: result.pipelinesOrError.nodes, error: null };
+    return {
+      pipelines: result.pipelinesOrError.nodes.map(p => p.name),
+      error: null
+    };
   } else {
     return { pipelines: [], error: result.pipelinesOrError };
   }
@@ -48,7 +52,7 @@ const AppRoutes = () => (
     <Route path="/p/:pipelineName/execute" component={PipelineExecutionRoot} />
     {/* Capture solid subpath in a regex match */}
     <Route
-      path="/p/:pipelineName/explore(/?.*)"
+      path="/p/:pipelineSelector/explore(/?.*)"
       component={PipelineExplorerRoot}
     />
     {/* Legacy redirects */}
@@ -83,19 +87,21 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <BrowserRouter>
-      <div style={{ display: "flex", height: "100%" }}>
-        <LeftNav pipelines={pipelines} />
-        {error ? (
-          <PythonErrorInfo
-            contextMsg={`${error.__typename} encountered when loading pipelines:`}
-            error={error}
-            centered={true}
-          />
-        ) : (
-          <AppRoutes />
-        )}
-        <CustomAlertProvider />
-      </div>
+      <PipelineNamesContext.Provider value={pipelines}>
+        <div style={{ display: "flex", height: "100%" }}>
+          <LeftNav />
+          {error ? (
+            <PythonErrorInfo
+              contextMsg={`${error.__typename} encountered when loading pipelines:`}
+              error={error}
+              centered={true}
+            />
+          ) : (
+            <AppRoutes />
+          )}
+          <CustomAlertProvider />
+        </div>
+      </PipelineNamesContext.Provider>
     </BrowserRouter>
   );
 };
@@ -110,11 +116,9 @@ export const ROOT_PIPELINES_QUERY = gql`
       }
       ... on PipelineConnection {
         nodes {
-          ...LeftNavPipelinesFragment
+          name
         }
       }
     }
   }
-
-  ${LeftNav.fragments.LeftNavPipelinesFragment}
 `;
