@@ -36,7 +36,6 @@ fi
 
 # Build the integration image
 docker build . \
-    --no-cache \
     --build-arg DEBIAN_VERSION=$DEBIAN_VERSION \
     --build-arg PYTHON_VERSION=$PYTHON_VERSION \
     --build-arg PYTHON_MAJOR_VERSION=$PYTHON_MAJOR_VERSION \

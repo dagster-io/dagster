@@ -481,7 +481,7 @@ def lakehouse_tests():
 def pipenv_smoke_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
+    for version in SupportedPythons:
         is_release = check_for_release()
         smoke_test_steps = (
             [
@@ -598,9 +598,7 @@ if __name__ == "__main__":
         .build(),
         StepBuilder("black")
         # See: https://github.com/dagster-io/dagster/issues/1999
-        .run("pip install regex==2019.11.1 black==19.10b0", "make check_black")
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
+        .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
         StepBuilder("docs snapshot test")
         .run(
             "pip install -r .read-the-docs-requirements.txt -qqq",

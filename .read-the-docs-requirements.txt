@@ -6,7 +6,6 @@ git+https://github.com/t-b/sphinxcontrib-images.git@c76b9c25efb249f9c5054adbb436
 -e ./python_modules/dagster-graphql
 -e ./python_modules/dagstermill
 -e ./python_modules/dagster-airflow
--e ./python_modules/dagster-dask
 -e ./python_modules/libraries/dagster-cron
 -r ./python_modules/dagster/dev-requirements.txt
 sphinx-click==2.3.1
