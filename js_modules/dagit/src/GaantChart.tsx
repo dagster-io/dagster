@@ -18,13 +18,15 @@ interface GaantChartRow {
   depth: number;
   children: GaantChartRow[];
   solid: ILayoutSolid;
+  y: number;
 }
 interface GaantChartLayout {
   rows: GaantChartRow[];
 }
 
-const ROW_HEIGHT = 20;
-const BOX_WIDTH = 80;
+const ROW_HEIGHT = 30;
+const ROW_MARGIN = 5;
+const BOX_WIDTH = 100;
 const LINE_SIZE = 2;
 
 const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
@@ -119,7 +121,7 @@ const collapseRunsInSolidGraph = (
   return solidGraph;
 };
 
-const layout = (solidGraph: ILayoutSolid[]) => {
+const layout = (solidGraph: ILayoutSolid[], steps: number) => {
   let rows: GaantChartRow[] = solidGraph
     .filter(
       g =>
@@ -127,7 +129,7 @@ const layout = (solidGraph: ILayoutSolid[]) => {
           i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
         ).length === 0
     )
-    .map(solid => ({ solid: solid, children: [], depth: 0 }));
+    .map(solid => ({ solid: solid, children: [], depth: 0, y: -1 }));
 
   let rowZero = [...rows];
 
@@ -162,7 +164,8 @@ const layout = (solidGraph: ILayoutSolid[]) => {
           depRow = {
             solid: depSolid,
             depth: 0,
-            children: []
+            children: [],
+            y: -1
           };
           rows.push(depRow);
           addChildren(depRow);
@@ -184,6 +187,62 @@ const layout = (solidGraph: ILayoutSolid[]) => {
   };
   rowZero.forEach(row => deepen(row, 0));
 
+  // now assign Y values
+  const parents: { [name: string]: GaantChartRow[] } = {};
+  rows.forEach((row, idx) => {
+    row.y = idx;
+    row.children.forEach(child => {
+      parents[child.solid.name] = parents[child.solid.name] || [];
+      parents[child.solid.name].push(row);
+    });
+  });
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let idx = rows.length - 1; idx > 0; idx--) {
+      const row = rows[idx];
+      const rowParents = parents[row.solid.name] || [];
+      const highestYParent = rowParents.sort((a, b) => b.y - a.y)[0];
+      if (!highestYParent) continue;
+
+      const onTargetY = rows.filter(r => r.y === highestYParent.y);
+      const taken = onTargetY.find(r => r.depth === row.depth);
+      if (taken) continue;
+
+      const parentDepth = highestYParent.depth;
+      const willCross = onTargetY.some(
+        r => r.depth > parentDepth && r.depth < row.depth
+      );
+      const willCauseCrossing = onTargetY.some(
+        r =>
+          r.depth < row.depth &&
+          r.children.some(c => c.y >= highestYParent.y && c.depth > row.depth)
+      );
+      if (willCross || willCauseCrossing) continue;
+
+      row.y = highestYParent.y;
+      changed = true;
+      break;
+    }
+  }
+
+  // reflow to fill empty rows
+
+  changed = true;
+  while (changed) {
+    changed = false;
+    let maxY = rows.reduce((m, r) => Math.max(m, r.y), 0);
+    for (let y = 0; y < maxY; y++) {
+      const empty = !rows.some(r => r.y === y);
+      if (empty) {
+        rows.filter(r => r.y > y).forEach(r => (r.y -= 1));
+        changed = true;
+        break;
+      }
+    }
+  }
+
   return { rows } as GaantChartLayout;
 };
 
@@ -191,6 +250,7 @@ interface GaantChartState {
   hoveredIdx: number;
   query: string;
   collapsed: string[];
+  n: number;
 }
 
 export class GaantChart extends React.Component<
@@ -200,11 +260,12 @@ export class GaantChart extends React.Component<
   state: GaantChartState = {
     hoveredIdx: -1,
     collapsed: [],
-    query: "*trials_raw"
+    query: "*trials_raw",
+    n: 100
   };
 
   render() {
-    const { hoveredIdx, query, collapsed } = this.state;
+    const { hoveredIdx, query, collapsed, n } = this.state;
 
     const graph = toMockSolidGraph(this.props.run);
     const graphFiltered = filterByQuery(graph, query);
@@ -212,22 +273,30 @@ export class GaantChart extends React.Component<
       graphFiltered.all,
       collapsed
     );
-    const l = layout(graphCollapsed);
+    const l = layout(graphCollapsed, n);
 
     return (
       <div style={{ height: "100%" }}>
+        <div onClick={() => this.setState({ n: n + 1 })}>+1</div>
+        <div onClick={() => this.setState({ n: n - 1 })}>-1</div>
+        <div>{n}</div>
         <div style={{ overflow: "scroll", height: "100%" }}>
           <div style={{ position: "relative" }}>
             {l.rows.map((row, idx) => (
               <React.Fragment key={row.solid.name}>
                 <GaantBox
+                  key={row.solid.name}
                   style={{
-                    top: ROW_HEIGHT * idx,
-                    left: row.depth * BOX_WIDTH,
-                    width: BOX_WIDTH
+                    top: ROW_HEIGHT * row.y + 5,
+                    left: row.depth * BOX_WIDTH + 10,
+                    width: BOX_WIDTH - 20
                   }}
                   collapsed={
                     row.solid.outputs[0]?.definition.name === "COLLAPSED"
+                  }
+                  highlighted={
+                    hoveredIdx === idx ||
+                    l.rows[hoveredIdx]?.children.includes(row)
                   }
                   onMouseEnter={() => this.setState({ hoveredIdx: idx })}
                   onMouseLeave={() => this.setState({ hoveredIdx: -1 })}
@@ -241,21 +310,18 @@ export class GaantChart extends React.Component<
                 >
                   {row.solid.name}
                 </GaantBox>
-                {row.children.map((child, childIdx) => {
-                  const childRowIdx = l.rows.indexOf(child);
-                  return (
-                    <GaantLine
-                      key={`${row.solid.name}-${child.solid.name}-${childIdx}`}
-                      rows={l.rows}
-                      start={row}
-                      end={child}
-                      depIdx={childIdx}
-                      highlighted={
-                        hoveredIdx === idx || hoveredIdx === childRowIdx
-                      }
-                    />
-                  );
-                })}
+                {row.children.map((child, childIdx) => (
+                  <GaantLine
+                    key={`${row.solid.name}-${child.solid.name}-${childIdx}`}
+                    rows={l.rows}
+                    start={row}
+                    end={child}
+                    depIdx={childIdx}
+                    highlighted={
+                      hoveredIdx === idx || hoveredIdx === l.rows.indexOf(child)
+                    }
+                  />
+                ))}
               </React.Fragment>
             ))}
           </div>
@@ -270,66 +336,56 @@ export class GaantChart extends React.Component<
   }
 }
 
-const GaantLine = React.memo(
-  (props: {
-    rows: GaantChartRow[];
-    start: GaantChartRow;
-    end: GaantChartRow;
-    highlighted: boolean;
-    depIdx: number;
-  }) => {
-    const minDepth = Math.min(props.start.depth, props.end.depth);
-    const maxDepth = Math.max(props.start.depth, props.end.depth);
+const GaantLine = (props: {
+  rows: GaantChartRow[];
+  start: GaantChartRow;
+  end: GaantChartRow;
+  highlighted: boolean;
+  depIdx: number;
+}) => {
+  const minDepth = Math.min(props.start.depth, props.end.depth);
+  const maxDepth = Math.max(props.start.depth, props.end.depth);
 
-    const startIdx = props.rows.indexOf(props.start);
-    const endIdx = props.rows.indexOf(props.end);
-    const minIdx = Math.min(startIdx, endIdx);
-    const maxIdx = Math.max(startIdx, endIdx);
+  const startIdx = props.start.y; //props.rows.indexOf(props.start);
+  const endIdx = props.end.y; //.indexOf(props.end);
+  const minIdx = Math.min(startIdx, endIdx);
+  const maxIdx = Math.max(startIdx, endIdx);
 
-    if (minIdx === -1) {
-      console.warn("Row missing");
-    }
-    if (minDepth === maxDepth) {
-      console.warn("minDepth === maxDepth");
-    }
-    if (minIdx === maxIdx) {
-      console.warn("minIdx === maxIdx");
-    }
+  const offsetX = maxIdx === minIdx ? 0 : 80 / 2;
+  const maxY = maxIdx * ROW_HEIGHT + ROW_MARGIN;
+  const minY = minIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+  const maxX = maxDepth * BOX_WIDTH + offsetX + 10;
+  const minX = (minDepth + 1) * BOX_WIDTH - 10;
 
-    const offsetX = BOX_WIDTH / 2;
-    const maxX = maxDepth * BOX_WIDTH + offsetX;
-    const minX = (minDepth + 1) * BOX_WIDTH;
-    const maxY = maxIdx * ROW_HEIGHT;
-    const minY = minIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
-
-    return (
-      <>
-        <Line
-          data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
-          style={{
-            height: LINE_SIZE,
-            left: minX,
-            width: maxX - minX,
-            top: minY,
-            background: props.highlighted ? "red" : "#eee",
-            zIndex: props.highlighted ? 100 : 1
-          }}
-        />
+  return (
+    <>
+      <Line
+        data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
+        style={{
+          height: LINE_SIZE,
+          left: minX,
+          width: maxX + (props.depIdx % 10) * LINE_SIZE - minX,
+          top: minY,
+          background: props.highlighted ? "red" : "#eee",
+          zIndex: props.highlighted ? 100 : 1
+        }}
+      />
+      {maxIdx !== minIdx && (
         <Line
           data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
           style={{
             width: LINE_SIZE,
-            left: maxX + props.depIdx * LINE_SIZE,
+            left: maxX + (props.depIdx % 10) * LINE_SIZE,
             top: minY,
             height: maxY - minY,
             background: props.highlighted ? "red" : "#eee",
             zIndex: props.highlighted ? 100 : 1
           }}
         />
-      </>
-    );
-  }
-);
+      )}
+    </>
+  );
+};
 
 const Line = styled.div`
   position: absolute;
@@ -343,11 +399,12 @@ const GaantRow = styled.div`
   border-bottom: 1px solid #ccc;
 `;
 
-const GaantBox = styled.div<{ collapsed: boolean }>`
+const GaantBox = styled.div<{ collapsed: boolean; highlighted: boolean }>`
   display: inline-block;
   position: absolute;
-  height: ${ROW_HEIGHT}px;
-  background: ${({ collapsed }) => (collapsed ? "#1c71bc" : "#2491eb")};
+  height: ${ROW_HEIGHT - ROW_MARGIN * 2}px;
+  background: ${({ collapsed, highlighted }) =>
+    highlighted ? "red" : collapsed ? "#1c71bc" : "#2491eb"};
   color: white;
   font-size: 11px;
   border: 1px solid darkgreen;
