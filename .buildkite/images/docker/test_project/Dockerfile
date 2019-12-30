@@ -1,4 +1,6 @@
-FROM python:3.7.5-slim-stretch
+ARG BASE_IMAGE
+
+FROM $BASE_IMAGE
 
 ADD build_cache/ /
 ADD test_pipelines test_pipelines
