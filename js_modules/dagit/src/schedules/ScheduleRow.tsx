@@ -154,7 +154,7 @@ export const ScheduleRow: React.FunctionComponent<{
               >
                 {attempt.run ? (
                   <Link
-                    to={`/pipeline/${attempt.run.pipeline.name}/runs/${attempt.run.runId}`}
+                    to={`/runs/${attempt.run.pipeline.name}/${attempt.run.runId}`}
                   >
                     <Tooltip
                       position={"top"}

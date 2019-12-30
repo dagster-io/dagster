@@ -9,15 +9,20 @@ import { useStorage } from "../LocalStorage";
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 
 interface IPipelineExecutionRootProps {
-  match: match<{ pipelineName: string }>;
+  match: match<{ pipelineSelector: string }>;
 }
 
 export const PipelineExecutionRoot: React.FunctionComponent<IPipelineExecutionRootProps> = ({
   match: { params }
 }) => {
-  const [data, onSave] = useStorage({ namespace: params.pipelineName });
+  const [data, onSave] = useStorage();
+  const [pipelineName, query, mode] = [
+    ...params.pipelineSelector.split(":"),
+    "",
+    ""
+  ];
   const vars = {
-    name: params.pipelineName,
+    name: pipelineName,
     solidSubset: data.sessions[data.current].solidSubset,
     mode: data.sessions[data.current].mode
   };
@@ -75,7 +80,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<IPipelineExecutionRo
             onSave={onSave}
             pipelineOrError={pipelineOrError}
             environmentSchemaOrError={environmentSchemaOrError}
-            pipelineName={params.pipelineName}
+            pipelineName={pipelineName}
             currentSession={data.sessions[data.current]}
           />
         );

@@ -1,9 +1,10 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import Color from "color";
+import * as qs from "query-string";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup, ControlGroup } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -18,6 +19,11 @@ import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplo
 import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
+import {
+  ExecutionButtonContainer,
+  ExecutionButtonStatus
+} from "./execute/ExecutionStartButton";
+import { IconNames } from "@blueprintjs/icons";
 
 interface PipelineExplorerProps {
   history: History;
@@ -143,6 +149,21 @@ export default class PipelineExplorer extends React.Component<
     this.handleClickSolid({ name: "" });
   };
 
+  handleClickExecute = () => {
+    const { history, pipeline, visibleSolidsQuery, parentHandle } = this.props;
+    const solids = this.props.handles.map(h => h.solid);
+    const solidsQueryEnabled = !parentHandle;
+    const queryResultSolids = solidsQueryEnabled
+      ? filterSolidsByQuery(solids, visibleSolidsQuery)
+      : { all: solids, focus: [] };
+
+    history.push(
+      `/playground/${pipeline.name}:${queryResultSolids.all
+        .map(s => s.name)
+        .join(",")}/setup`
+    );
+  };
+
   public render() {
     const {
       pipeline,
@@ -187,13 +208,17 @@ export default class PipelineExplorer extends React.Component<
           left={
             <>
               <PathOverlay style={{ background: backgroundTranslucent }}>
-                <Link style={{ padding: 3 }} to={`/pipeline/${pipeline.name}`}>
-                  <Icon icon="diagram-tree" />
-                </Link>
-                <PipelineJumpBar
-                  selectedPipelineName={pipeline.name}
-                  onItemSelect={name => history.push(`/pipeline/${name}`)}
-                />
+                <ControlGroup vertical={false}>
+                  <PipelineJumpBar
+                    selectedPipelineName={pipeline.name}
+                    onChange={name => history.push(`/pipeline/${name}/`)}
+                  />
+                  <SolidQueryInput
+                    solids={solids}
+                    value={visibleSolidsQuery}
+                    onChange={this.handleQueryChange}
+                  />
+                </ControlGroup>
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
@@ -213,18 +238,26 @@ export default class PipelineExplorer extends React.Component<
                 <SolidJumpBar
                   solids={queryResultSolids.all}
                   selectedSolid={selectedHandle && selectedHandle.solid}
-                  onItemSelect={solid =>
+                  onChange={solid =>
                     this.handleClickSolid({ name: solid.name })
                   }
                 />
               </PathOverlay>
-              {solidsQueryEnabled && (
-                <SolidQueryInput
-                  solids={solids}
-                  value={visibleSolidsQuery}
-                  onChange={this.handleQueryChange}
-                />
-              )}
+              <ExecuteOverlay>
+                <ExecutionButtonContainer
+                  role="button"
+                  style={{ minWidth: 125 }}
+                  state={ExecutionButtonStatus.Ready}
+                  onClick={this.handleClickExecute}
+                >
+                  <Icon
+                    icon={IconNames.PLAY}
+                    iconSize={17}
+                    style={{ textAlign: "center", marginRight: 5 }}
+                  />
+                  Execute...
+                </ExecutionButtonContainer>
+              </ExecuteOverlay>
               <SearchOverlay style={{ background: backgroundTranslucent }}>
                 <SolidHighlightInput
                   type="text"
@@ -301,7 +334,8 @@ const SearchOverlay = styled.div`
   display: inline-flex;
   align-items: stretch;
   position: absolute;
-  right: 0;
+  bottom: 0;
+  left: 0;
 `;
 
 const PathOverlay = styled.div`
@@ -344,6 +378,13 @@ const LargeDAGNotice = () => (
     <Icon icon="arrow-down" iconSize={40} />
   </LargeDAGContainer>
 );
+
+const ExecuteOverlay = styled.div`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+`;
 
 const LargeDAGContainer = styled.div`
   width: 50vw;

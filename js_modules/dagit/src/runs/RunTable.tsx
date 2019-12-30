@@ -125,24 +125,24 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
         <RunStatus status={run.status} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/pipeline/${run.pipeline.name}/runs/${run.runId}`}>
+        <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
         <Details>
           <Link
-            to={`/pipeline/${run.pipeline.name}/runs/${run.runId}?q=type:step_success`}
+            to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
           >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
           <Link
-            to={`/pipeline/${run.pipeline.name}/runs/${run.runId}?q=type:step_failure`}
+            to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}
           >
             {`${run.stats.stepsFailed} steps failed, `}{" "}
           </Link>
           <Link
-            to={`/pipeline/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
+            to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
           >{`${run.stats.materializations} materializations`}</Link>
           ,{" "}
           <Link
-            to={`/pipeline/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
+            to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
           >{`${run.stats.expectations} expectations passed`}</Link>
         </Details>
       </RowColumn>

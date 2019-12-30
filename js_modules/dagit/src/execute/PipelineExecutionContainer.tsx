@@ -56,6 +56,7 @@ import {
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
+import { PipelineJumpBar } from "../PipelineJumpComponents";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -294,11 +295,34 @@ export default class PipelineExecutionContainer extends React.Component<
               {!pipeline || !this.state.preview ? (
                 <Spinner size={17} />
               ) : (
-                <ExecutionStartButton
-                  title="Start Execution"
-                  icon={IconNames.PLAY}
-                  onClick={() => this.onExecute(startPipelineExecution)}
-                />
+                <>
+                  <PipelineJumpBar
+                    selectedPipelineName={pipeline.name}
+                    onChange={name => {}}
+                  />
+                  <SolidSelector
+                    pipelineName={pipelineName}
+                    subsetError={subsetError}
+                    value={currentSession.solidSubset || null}
+                    label={currentSession.solidSubsetLabel || null}
+                    onChange={this.onSolidSubsetChange}
+                  />
+                  <div style={{ width: 5 }} />
+                  {pipeline && (
+                    <ConfigEditorModePicker
+                      modes={pipeline.modes}
+                      modeError={modeError}
+                      onModeChange={this.onModeChange}
+                      modeName={currentSession.mode}
+                    />
+                  )}
+
+                  <ExecutionStartButton
+                    title="Start Execution"
+                    icon={IconNames.PLAY}
+                    onClick={() => this.onExecute(startPipelineExecution)}
+                  />
+                </>
               )}
             </TabBarContainer>
           )}
@@ -378,22 +402,6 @@ export default class PipelineExecutionContainer extends React.Component<
                     )}
                   </ApolloConsumer>
                   <SessionSettingsBar className="bp3-dark">
-                    <SolidSelector
-                      pipelineName={pipelineName}
-                      subsetError={subsetError}
-                      value={currentSession.solidSubset || null}
-                      label={currentSession.solidSubsetLabel || null}
-                      onChange={this.onSolidSubsetChange}
-                    />
-                    <div style={{ width: 5 }} />
-                    {pipeline && (
-                      <ConfigEditorModePicker
-                        modes={pipeline.modes}
-                        modeError={modeError}
-                        onModeChange={this.onModeChange}
-                        modeName={currentSession.mode}
-                      />
-                    )}
                     <Button
                       icon="paragraph"
                       small={true}

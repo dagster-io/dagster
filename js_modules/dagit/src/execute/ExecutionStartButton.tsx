@@ -16,7 +16,7 @@ interface IExecutionStartButtonState {
   starting: boolean;
 }
 
-enum ExecutionButtonStatus {
+export enum ExecutionButtonStatus {
   Ready = "ready",
   Starting = "starting",
   Disabled = "disabled"
@@ -76,7 +76,7 @@ export default class ExecutionStartButton extends React.Component<
         {websocketStatus => {
           if (websocketStatus !== WebSocket.OPEN) {
             return (
-              <Wrapper
+              <ExecutionButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
@@ -88,13 +88,13 @@ export default class ExecutionStartButton extends React.Component<
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
                 {this.props.title}
-              </Wrapper>
+              </ExecutionButtonContainer>
             );
           }
 
           if (this.state.starting) {
             return (
-              <Wrapper
+              <ExecutionButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Starting}
@@ -104,13 +104,13 @@ export default class ExecutionStartButton extends React.Component<
                   <Spinner intent={Intent.NONE} size={iconSize} />
                 </div>
                 Starting...
-              </Wrapper>
+              </ExecutionButtonContainer>
             );
           }
 
           if (this.props.disabled) {
             return (
-              <Wrapper
+              <ExecutionButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
@@ -122,12 +122,12 @@ export default class ExecutionStartButton extends React.Component<
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
                 {this.props.title}
-              </Wrapper>
+              </ExecutionButtonContainer>
             );
           }
 
           return (
-            <Wrapper
+            <ExecutionButtonContainer
               role="button"
               ref={this._startButton}
               style={style}
@@ -141,7 +141,7 @@ export default class ExecutionStartButton extends React.Component<
                 style={{ textAlign: "center", marginRight: 5 }}
               />
               {this.props.title}
-            </Wrapper>
+            </ExecutionButtonContainer>
           );
         }}
       </WebsocketStatusContext.Consumer>
@@ -149,7 +149,9 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-export const Wrapper = styled.div<{ state: ExecutionButtonStatus }>`
+export const ExecutionButtonContainer = styled.div<{
+  state: ExecutionButtonStatus;
+}>`
   min-width: 150px;
   height: 30px;
   border-radius: 3px;
