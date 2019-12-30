@@ -3,22 +3,22 @@ import * as TestRenderer from "react-test-renderer";
 import { BrowserRouter } from "react-router-dom";
 
 import { ConfigEditorModePicker } from "../execute/ConfigEditorModePicker";
-import { ModeNotFoundError } from "../execute/PipelineExecutionContainer";
-import { PipelineExecutionContainerFragment_Pipeline_modes } from "../execute/types/PipelineExecutionContainerFragment";
+import { ModeNotFoundError } from "../execute/ExecutionSessionContainer";
+import { ExecutionSessionContainerFragment_Pipeline_modes } from "../execute/types/ExecutionSessionContainerFragment";
 
-const defaultMode: PipelineExecutionContainerFragment_Pipeline_modes = {
+const defaultMode: ExecutionSessionContainerFragment_Pipeline_modes = {
   __typename: "Mode",
   description: null,
   name: "default"
 };
 
-const mode1: PipelineExecutionContainerFragment_Pipeline_modes = {
+const mode1: ExecutionSessionContainerFragment_Pipeline_modes = {
   __typename: "Mode",
   description: "Mode 1",
   name: "mode_1"
 };
 
-const mode2: PipelineExecutionContainerFragment_Pipeline_modes = {
+const mode2: ExecutionSessionContainerFragment_Pipeline_modes = {
   __typename: "Mode",
   description: "Mode 2",
   name: "mode_2"

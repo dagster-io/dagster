@@ -258,8 +258,9 @@ const RunActionsMenu: React.FunctionComponent<{
             disabled={run.pipeline.__typename !== "Pipeline"}
             icon="edit"
             target="_blank"
-            href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
+            href={`/playground/setup?${qs.stringify({
               mode: run.mode,
+              pipeline: run.pipeline.name,
               config: run.environmentConfigYaml,
               solidSubset:
                 run.pipeline.__typename === "Pipeline"

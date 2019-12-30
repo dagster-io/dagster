@@ -98,6 +98,6 @@ it("renders solids explorer", async () => {
 });
 
 it("renders execution", async () => {
-  window.history.pushState({}, "", "/playground/airline_demo_ingest_pipeline/");
+  window.history.pushState({}, "", "/playground/");
   await testApp();
 });
