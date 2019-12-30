@@ -1,41 +1,33 @@
+import datetime
 import os
 import sys
 
 import yaml
 from defines import SupportedPython, SupportedPythons
-from step_builder import BuildkiteQueue, StepBuilder, wait_step
+from step_builder import BuildkiteQueue, StepBuilder
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
 sys.path.append(SCRIPT_PATH)
 
 
-def image_input_step():
-    return {
-        'input': 'Integration Image Version',
-        'fields': [
-            {
-                'text': 'Image Version String',
-                'hint': 'The version of integration images to publish (e.g. v5, v6, etc.)',
-                'key': 'integration-image-version',
-            }
-        ],
-    }
-
-
 def publish_integration_images():
+    python_versions = [
+        ''.join(python_version.split('.')[:2])
+        for python_version in SupportedPythons + [SupportedPython.V3_8]
+    ]
+    publish_date = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%S")
+
     return [
         StepBuilder("Integration Image %s" % python_version)
         .run(
-            # See: https://buildkite.com/docs/pipelines/build-meta-data
-            "export IMAGE_VERSION=$$(buildkite-agent meta-data get \"integration-image-version\")",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
             "cd /workdir/.buildkite/images/",
-            "make VERSION=\"$$IMAGE_VERSION\" build-integration-{python_version}".format(
-                python_version=''.join(python_version.split('.')[:2])
+            "make VERSION=\"{publish_date}\" build-integration-{python_version}".format(
+                publish_date=publish_date, python_version=python_version
             ),
-            "make VERSION=\"$$IMAGE_VERSION\" push-integration-{python_version}".format(
-                python_version=''.join(python_version.split('.')[:2])
+            "make VERSION=\"{publish_date}\" push-integration-{python_version}".format(
+                publish_date=publish_date, python_version=python_version
             ),
         )
         .on_integration_image(
@@ -50,14 +42,9 @@ def publish_integration_images():
         .on_queue(BuildkiteQueue.DOCKER)
         .with_timeout(30)
         .build()
-        for python_version in SupportedPythons + [SupportedPython.V3_8]
+        for python_version in python_versions
     ]
 
 
 if __name__ == "__main__":
-    print(
-        yaml.dump(
-            {"steps": [image_input_step(), wait_step()] + publish_integration_images()},
-            default_flow_style=False,
-        )
-    )
+    print(yaml.dump({"steps": publish_integration_images()}, default_flow_style=False,))

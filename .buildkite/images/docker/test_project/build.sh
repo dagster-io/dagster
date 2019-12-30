@@ -20,10 +20,6 @@ aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $GOOGLE_APP
 # ensure cleanup happens on error or normal exit
 trap cleanup INT TERM EXIT ERR
 
-# rebuild dagit before building container
-echo -e "--- \033[32m:tv: Rebuilding Dagit\033[0m"
-pushd $ROOT && make rebuild_dagit && popd
-
 pushd $ROOT/.buildkite/images/docker/test_project
 
 mkdir -p build_cache
