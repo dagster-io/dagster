@@ -101,11 +101,12 @@ def publish_test_images():
     return tests
 
 
-def python_modules_tox_tests(directory):
+def python_modules_tox_tests(directory, supported_pythons=None):
     label = directory.replace("/", "-")
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons + [SupportedPython.V3_8]:
+    supported_pythons = supported_pythons or SupportedPythons + [SupportedPython.V3_8]
+    for version in supported_pythons:
 
         # pyspark doesn't support Python 3.8 yet
         # See: https://github.com/dagster-io/dagster/issues/1960
@@ -659,7 +660,16 @@ if __name__ == "__main__":
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagster-graphql")
-    steps += python_modules_tox_tests("dagstermill")
+    steps += python_modules_tox_tests(
+        "dagstermill",
+        # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
+        supported_pythons=[
+            SupportedPython.V2_7,
+            SupportedPython.V3_6,
+            SupportedPython.V3_7,
+            SupportedPython.V3_8,
+        ],
+    )
     steps += library_tests()
 
     steps += releasability_tests()
