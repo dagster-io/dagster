@@ -6,7 +6,7 @@ def add_one(_, num):
     return num + 1
 
 
-@solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Float)])
+@solid(input_defs=[InputDefinition('num', Float)], output_defs=[OutputDefinition(Float)])
 def div_two(_, num):
     return num / 2
 
@@ -21,11 +21,16 @@ def add_four(num):
     return add_two(num=add_two(num))
 
 
-@composite_solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Float)])
+@composite_solid(input_defs=[InputDefinition('num', Float)], output_defs=[OutputDefinition(Float)])
 def div_four(num):
     return div_two(num=div_two(num))
 
 
+@solid(input_defs=[InputDefinition('num', Int)], output_defs=[OutputDefinition(Float)])
+def int_to_float(_, num):
+    return float(num)
+
+
 @pipeline
 def composition():
-    div_four(add_four())
+    div_four(int_to_float(add_four()))
