@@ -206,9 +206,7 @@ const SolidsRootWithData: React.FunctionComponent<{
                 name={selected.definition.name}
                 onClickInvocation={({ pipelineName, handleID }) =>
                   history.push(
-                    `/p/${pipelineName}/explore/${handleID
-                      .split(".")
-                      .join("/")}`
+                    `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
                   )
                 }
               />

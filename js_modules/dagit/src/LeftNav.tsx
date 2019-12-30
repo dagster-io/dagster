@@ -10,17 +10,28 @@ import navBarImage from "./images/nav-logo-icon.png";
 import styled from "styled-components/macro";
 import { PipelineNamesContext } from "./PipelineNamesContext";
 
+const LAST_PIPELINE = "last-pipeline";
+
 export const LeftNav = () => {
   const pipelineNames = React.useContext(PipelineNamesContext);
+
   return (
     <Route
-      path="/:scope?/:scopeArg?/:tab?"
+      path="/:tab?/:pipelineSelector?"
       render={({ match: { params }, history }) => {
-        const { scope, scopeArg, tab } = params;
+        const { tab } = params;
 
-        const selectedTab = scope === "p" ? tab : scope;
-        const selectedPipelineName =
-          scope === "p" ? scopeArg : pipelineNames[0] || "null";
+        if (tab === "pipeline" || tab === "playground") {
+          window.localStorage.setItem(LAST_PIPELINE, params.pipelineSelector);
+        }
+
+        let pipelineSelector = window.localStorage.getItem(LAST_PIPELINE);
+        if (
+          !pipelineSelector ||
+          (pipelineNames.length && !pipelineNames.includes(pipelineSelector))
+        ) {
+          pipelineSelector = `${pipelineNames[0]}:`;
+        }
 
         return (
           <Tabs>
@@ -32,36 +43,30 @@ export const LeftNav = () => {
             </LogoContainer>
 
             <Tab
-              to={`/p/${selectedPipelineName}/explore`}
-              className={selectedTab === "explore" ? "active" : ""}
+              to={`/pipeline/${pipelineSelector}`}
+              className={tab === "pipeline" ? "active" : ""}
             >
               <Icon icon="diagram-tree" iconSize={30} />
               <TabLabel>Pipelines</TabLabel>
             </Tab>
-            <Tab
-              to={`/solids`}
-              className={selectedTab === "solids" ? "active" : ""}
-            >
+            <Tab to={`/solids`} className={tab === "solids" ? "active" : ""}>
               <Icon icon="git-commit" iconSize={30} />
               <TabLabel>Solids</TabLabel>
             </Tab>
-            <Tab
-              to={`/runs`}
-              className={selectedTab === "runs" ? "active" : ""}
-            >
+            <Tab to={`/runs`} className={tab === "runs" ? "active" : ""}>
               <Icon icon="history" iconSize={30} />
               <TabLabel>Runs</TabLabel>
             </Tab>
             <Tab
-              to={`/p/${selectedPipelineName}/execute`}
-              className={selectedTab === "execute" ? "active" : ""}
+              to={`/playground/${pipelineSelector}`}
+              className={tab === "playground" ? "active" : ""}
             >
               <Icon icon="manually-entered-data" iconSize={30} />
               <TabLabel>Playground</TabLabel>
             </Tab>
             <Tab
               to={`/scheduler`}
-              className={selectedTab === "scheduler" ? "active" : ""}
+              className={tab === "scheduler" ? "active" : ""}
             >
               <Icon icon="calendar" iconSize={30} />
               <TabLabel>Schedule</TabLabel>

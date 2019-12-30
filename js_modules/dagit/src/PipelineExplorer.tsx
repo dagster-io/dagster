@@ -24,7 +24,6 @@ interface PipelineExplorerProps {
   path: string[];
   visibleSolidsQuery: string;
   pipeline: PipelineExplorerFragment;
-  pipelineNavigation: React.ReactChild;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerParentSolidHandleFragment;
@@ -78,7 +77,7 @@ export default class PipelineExplorer extends React.Component<
 
   handleQueryChange = (query: string) => {
     const { history, pipeline, path } = this.props;
-    history.replace(`/p/${pipeline.name}:${query}/explore/${path.join("/")}`);
+    history.replace(`/pipeline/${pipeline.name}:${query}/${path.join("/")}`);
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
@@ -91,7 +90,7 @@ export default class PipelineExplorer extends React.Component<
       );
     }
     history.push(
-      `/p/${pipeline.name}:${visibleSolidsQuery}/explore/${next.join("/")}`
+      `/pipeline/${pipeline.name}:${visibleSolidsQuery}/${next.join("/")}`
     );
   };
 
@@ -188,21 +187,21 @@ export default class PipelineExplorer extends React.Component<
           left={
             <>
               <PathOverlay style={{ background: backgroundTranslucent }}>
-                <Link style={{ padding: 3 }} to={`/p/${pipeline.name}/explore`}>
+                <Link style={{ padding: 3 }} to={`/pipeline/${pipeline.name}`}>
                   <Icon icon="diagram-tree" />
                 </Link>
                 <PipelineJumpBar
                   selectedPipelineName={pipeline.name}
-                  onItemSelect={name => history.push(`/p/${name}`)}
+                  onItemSelect={name => history.push(`/pipeline/${name}`)}
                 />
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
                     <Link
                       style={{ padding: 3 }}
-                      to={`/p/${
+                      to={`/pipeline/${
                         pipeline.name
-                      }:${visibleSolidsQuery}/explore/${path
+                      }:${visibleSolidsQuery}/${path
                         .slice(0, idx + 1)
                         .join("/")}`}
                     >
