@@ -9,9 +9,10 @@ function cleanup {
     set +ux
 }
 
-export TOX_PY_VERSION=$1
+export BASE_IMAGE=$1
+
 export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"
-export DAGSTER_DOCKER_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
+export DAGSTER_DOCKER_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${PYTHON_VERSION}
 
 aws ecr get-login --no-include-email --region us-west-1 | sh
 aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $GOOGLE_APPLICATION_CREDENTIALS
@@ -43,7 +44,9 @@ cp -R $ROOT/python_modules/dagster \
 find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
-docker build -t dagster-docker-buildkite .
+docker build . \
+    --build-arg BASE_IMAGE=$BASE_IMAGE \
+    -t dagster-docker-buildkite
 docker tag dagster-docker-buildkite $DAGSTER_DOCKER_IMAGE
 
 echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"

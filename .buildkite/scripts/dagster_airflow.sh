@@ -1,9 +1,10 @@
 set -eu
 
-TOX_PYTHON_VERSION="$1"
+PYTHON_VERSION="$1"
+TOX_PYTHON_VERSION="$2"
 
 # Environment vars
-export DAGSTER_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PYTHON_VERSION}"
+export DAGSTER_DOCKER_IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${PYTHON_VERSION}"
 export CLUSTER_NAME=kind`echo ${BUILDKITE_JOB_ID} | sed -e 's/-//g'`
 export KUBECONFIG="/tmp/kubeconfig"
 export AIRFLOW_HOME="/airflow"
