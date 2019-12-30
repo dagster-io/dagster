@@ -120,7 +120,7 @@ export const ScheduleRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
       <RowColumn>
-        <Link to={`/p/${pipelineName}/explore/`}>
+        <Link to={`/pipeline/${pipelineName}/`}>
           <Icon icon="diagram-tree" /> {pipelineName}
         </Link>
       </RowColumn>
@@ -154,7 +154,7 @@ export const ScheduleRow: React.FunctionComponent<{
               >
                 {attempt.run ? (
                   <Link
-                    to={`/p/${attempt.run.pipeline.name}/runs/${attempt.run.runId}`}
+                    to={`/pipeline/${attempt.run.pipeline.name}/runs/${attempt.run.runId}`}
                   >
                     <Tooltip
                       position={"top"}
@@ -282,9 +282,9 @@ export const ScheduleRow: React.FunctionComponent<{
                 text="Open in Execute Tab..."
                 icon="edit"
                 target="_blank"
-                href={`/p/${
+                href={`/playground/${
                   executionParams.selector.name
-                }/execute/setup?${qs.stringify({
+                }/setup?${qs.stringify({
                   mode: executionParams.mode,
                   config: environmentConfigYaml,
                   solidSubset: executionParams.selector.solidSubset

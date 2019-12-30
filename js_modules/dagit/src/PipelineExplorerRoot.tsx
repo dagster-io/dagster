@@ -15,24 +15,16 @@ import {
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
-  pipelineNavigation: React.ReactChild;
-  match: match<{ pipelineSelector: string; 0: string }>;
+  match: match<{ 0: string }>;
   history: History<any>;
 }
 
 const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> = props => {
-  const urlPathParts = props.match.params["0"];
-  const solidPath = urlPathParts.startsWith("/")
-    ? urlPathParts.slice(1)
-    : urlPathParts; // from the React Router regex
-  const pathSolids = solidPath.split("/");
+  const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
+  const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
+
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
-
-  const [pipelineName, query] = [
-    ...props.match.params.pipelineSelector.split(":"),
-    ""
-  ];
 
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
@@ -71,7 +63,6 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
                 path={pathSolids}
                 visibleSolidsQuery={query}
                 pipeline={pipelineOrError}
-                pipelineNavigation={props.pipelineNavigation}
                 handles={displayedHandles}
                 parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(

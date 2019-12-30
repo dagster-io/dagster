@@ -35,5 +35,5 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecuti
       onSave(applyCreateSession(data, newSession));
     }
   });
-  return <Redirect to={{ pathname: `/p/${params.pipelineName}/execute` }} />;
+  return <Redirect to={{ pathname: `/playground/${params.pipelineName}` }} />;
 };

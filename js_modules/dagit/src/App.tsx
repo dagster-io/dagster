@@ -38,44 +38,28 @@ const AppRoutes = () => (
     <Route path="/runs/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solids/:name?" component={SolidsRoot} />
-    <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
-    <Redirect
-      from="/p/:pipelineName"
-      exact={true}
-      to="/p/:pipelineName/explore"
-    />
+    <Route path="/pipeline/:pipelineName/runs/:runId" component={RunRoot} />
 
     <Route
-      path="/p/:pipelineName/execute/setup"
+      path="/playground/:pipelineName/setup"
       component={PipelineExecutionSetupRoot}
     />
-    <Route path="/p/:pipelineName/execute" component={PipelineExecutionRoot} />
+    <Route path="/playground/:pipelineName" component={PipelineExecutionRoot} />
     {/* Capture solid subpath in a regex match */}
-    <Route
-      path="/p/:pipelineSelector/explore(/?.*)"
-      component={PipelineExplorerRoot}
-    />
-    {/* Legacy redirects */}
-    <Redirect
-      from="/execute/:pipelineName/setup"
-      to="/p/:pipelineName/execute/setup"
-    />
-    <Redirect from="/execute/:pipelineName" to="/p/:pipelineName/execute" />
-    <Redirect
-      from="/explore/:pipelineName/:rest?"
-      to="/p/:pipelineName/explore/:rest?"
-    />
-    {/* Index default */}
+    <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
+
     <Route path="/scheduler/:rest?" component={SchedulesRoot} />
     <Route path="/schedule/:scheduleName" component={ScheduleRoot} />
-    <Route
-      render={() => (
-        <NonIdealState
-          title="No pipeline selected"
-          description="Select a pipeline in the navbar"
-        />
-      )}
-    />
+
+    <PipelineNamesContext.Consumer>
+      {names =>
+        names.length ? (
+          <Redirect to={`/pipeline/${names[0]}`} />
+        ) : (
+          <Route render={() => <NonIdealState title="No pipelines" />} />
+        )
+      }
+    </PipelineNamesContext.Consumer>
   </Switch>
 );
 
@@ -87,21 +71,21 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <BrowserRouter>
-      <PipelineNamesContext.Provider value={pipelines}>
-        <div style={{ display: "flex", height: "100%" }}>
-          <LeftNav />
-          {error ? (
-            <PythonErrorInfo
-              contextMsg={`${error.__typename} encountered when loading pipelines:`}
-              error={error}
-              centered={true}
-            />
-          ) : (
+      {error ? (
+        <PythonErrorInfo
+          contextMsg={`${error.__typename} encountered when loading pipelines:`}
+          error={error}
+          centered={true}
+        />
+      ) : (
+        <PipelineNamesContext.Provider value={pipelines}>
+          <div style={{ display: "flex", height: "100%" }}>
+            <LeftNav />
             <AppRoutes />
-          )}
-          <CustomAlertProvider />
-        </div>
-      </PipelineNamesContext.Provider>
+            <CustomAlertProvider />
+          </div>
+        </PipelineNamesContext.Provider>
+      )}
     </BrowserRouter>
   );
 };
