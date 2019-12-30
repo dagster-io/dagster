@@ -5,6 +5,7 @@ import styled from "styled-components/macro";
 import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
+import { GlobalKeyHandler } from "./GlobalKeyHandler";
 import { SharedToaster } from "./DomUtils";
 
 export default () => {
@@ -44,33 +45,43 @@ export default () => {
     return <span />;
   }
 
+  const onClick = () => {
+    setReloadStatus("closing");
+    reload();
+  };
   return (
     <Label>
       {data.reloadSupported && (
-        <Tooltip
-          className="bp3-dark"
-          hoverOpenDelay={500}
-          content={
-            <div style={{ maxWidth: 300 }}>
-              Re-launch the web process and reload the UI to reflect the latest
-              metadata, including DAG structure, solid names, type names, etc.
-              <br />
-              <br />
-              Executing a pipeline run always uses the latest code on disk.
-            </div>
-          }
+        <GlobalKeyHandler
+          onGlobalKeydown={(event: KeyboardEvent) => {
+            if (event.key === "e" && (event.ctrlKey || event.metaKey)) {
+              onClick();
+            }
+          }}
         >
-          <Button
-            small={true}
-            text={navigator.platform.includes("Mac") ? "⌘R" : "^R"}
-            icon={<Icon icon="refresh" iconSize={12} />}
-            disabled={reloadStatus !== "none"}
-            onClick={() => {
-              setReloadStatus("closing");
-              reload();
-            }}
-          />
-        </Tooltip>
+          <Tooltip
+            className="bp3-dark"
+            hoverOpenDelay={500}
+            content={
+              <div style={{ maxWidth: 300 }}>
+                Re-launch the web process and reload the UI to reflect the
+                latest metadata, including DAG structure, solid names, type
+                names, etc.
+                <br />
+                <br />
+                Executing a pipeline run always uses the latest code on disk.
+              </div>
+            }
+          >
+            <Button
+              small={true}
+              text={navigator.platform.includes("Mac") ? "⌘E" : "^E"}
+              icon={<Icon icon="refresh" iconSize={12} />}
+              disabled={reloadStatus !== "none"}
+              onClick={onClick}
+            />
+          </Tooltip>
+        </GlobalKeyHandler>
       )}
       <div style={{ height: 14 }} />
       {data.instance && data.instance.info ? (

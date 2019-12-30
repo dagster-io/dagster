@@ -5,6 +5,7 @@ import { Button, MenuItem } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
 import { PipelineNamesContext } from "./PipelineNamesContext";
+import { GlobalKeyHandler } from "./GlobalKeyHandler";
 
 interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
@@ -15,34 +16,6 @@ interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;
   selectedSolid: SolidJumpBarFragment_solids | undefined;
   onChange: (solid: SolidJumpBarFragment_solids) => void;
-}
-
-class GlobalKeyHandler extends React.Component<{
-  onGlobalKeydown: (event: KeyboardEvent) => void;
-}> {
-  componentDidMount() {
-    window.addEventListener("keydown", this.onGlobalKeydown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener("keydown", this.onGlobalKeydown);
-  }
-
-  onGlobalKeydown = (event: KeyboardEvent) => {
-    const { target } = event;
-
-    if (
-      (target && (target as HTMLElement).nodeName === "INPUT") ||
-      (target as HTMLElement).nodeName === "TEXTAREA"
-    ) {
-      return;
-    }
-    this.props.onGlobalKeydown(event);
-  };
-
-  render() {
-    return this.props.children;
-  }
 }
 
 export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
