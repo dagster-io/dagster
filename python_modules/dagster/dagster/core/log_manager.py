@@ -100,7 +100,9 @@ def coerce_valid_log_level(log_level):
         log_level.lower() in PYTHON_LOGGING_LEVELS_NAMES,
         'Bad value for log level {level}: permissible values are {levels}.'.format(
             level=log_level,
-            levels=', '.join(['\'{}\''.format(level_name.upper())  for level_name in PYTHON_LOGGING_LEVELS_NAMES]),
+            levels=', '.join(
+                ['\'{}\''.format(level_name.upper()) for level_name in PYTHON_LOGGING_LEVELS_NAMES]
+            ),
         ),
     )
     log_level = PYTHON_LOGGING_LEVELS_ALIASES.get(log_level.upper(), log_level.upper())
