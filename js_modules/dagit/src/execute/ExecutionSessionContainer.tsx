@@ -138,11 +138,11 @@ export default class ExecutionSessionContainer extends React.Component<
 
   onSolidSubsetChange = (
     solidSubset: string[] | null,
-    solidSubsetQuery: string | null
+    solidSubsetLabel: string | null
   ) => {
     this.props.onSaveSession({
       solidSubset,
-      solidSubsetQuery
+      solidSubsetLabel
     });
   };
 
@@ -259,19 +259,18 @@ export default class ExecutionSessionContainer extends React.Component<
           left={
             <>
               <SessionSettingsBar>
-                <ControlGroup>
-                  <PipelineJumpBar
-                    selectedPipelineName={currentSession.pipeline}
-                    onChange={name => onSaveSession({ pipeline: name })}
-                  />
-                  <SolidSelector
-                    subsetError={subsetError}
-                    pipelineName={currentSession.pipeline}
-                    value={currentSession.solidSubset || null}
-                    query={currentSession.solidSubsetQuery || null}
-                    onChange={this.onSolidSubsetChange}
-                  />
-                </ControlGroup>
+                <PipelineJumpBar
+                  selectedPipelineName={currentSession.pipeline}
+                  onChange={name => onSaveSession({ pipeline: name })}
+                />
+                <div style={{ width: 5 }} />
+                <SolidSelector
+                  subsetError={subsetError}
+                  pipelineName={currentSession.pipeline}
+                  value={currentSession.solidSubset || null}
+                  label={currentSession.solidSubsetLabel || null}
+                  onChange={this.onSolidSubsetChange}
+                />
                 <div style={{ width: 5 }} />
                 {pipeline && (
                   <ConfigEditorModePicker
