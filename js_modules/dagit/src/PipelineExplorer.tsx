@@ -4,7 +4,13 @@ import Color from "color";
 import * as qs from "query-string";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup, ControlGroup } from "@blueprintjs/core";
+import {
+  Icon,
+  Colors,
+  InputGroup,
+  ControlGroup,
+  Button
+} from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -78,6 +84,8 @@ export default class PipelineExplorer extends React.Component<
       ${SolidQueryInput.fragments.SolidQueryInputSolidFragment}
     `
   };
+
+  pathOverlayEl = React.createRef<HTMLDivElement>();
 
   state = {
     highlighted: ""
@@ -211,17 +219,35 @@ export default class PipelineExplorer extends React.Component<
           leftInitialPercent={70}
           left={
             <>
-              <PathOverlay style={{ background: backgroundTranslucent }}>
+              <PathOverlay
+                style={{ background: backgroundTranslucent }}
+                ref={this.pathOverlayEl}
+              >
                 <ControlGroup vertical={false}>
                   <PipelineJumpBar
                     selectedPipelineName={pipeline.name}
                     onChange={name => history.push(`/pipeline/${name}/`)}
                   />
-                  <SolidQueryInput
-                    solids={solids}
-                    value={visibleSolidsQuery}
-                    onChange={this.handleQueryChange}
-                  />
+                  {visibleSolidsQuery.length > 0 ||
+                  queryResultSolids.all.length === 0 ? (
+                    <SolidQueryInput
+                      solids={solids}
+                      value={visibleSolidsQuery}
+                      onChange={this.handleQueryChange}
+                    />
+                  ) : (
+                    <Button
+                      text="*"
+                      onClick={() => {
+                        this.handleQueryChange("*");
+                        window.requestAnimationFrame(() =>
+                          this.pathOverlayEl.current
+                            ?.querySelector("input")
+                            ?.select()
+                        );
+                      }}
+                    />
+                  )}
                 </ControlGroup>
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
