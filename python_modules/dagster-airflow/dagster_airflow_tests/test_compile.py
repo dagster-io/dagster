@@ -23,4 +23,5 @@ def test_compile():
         'add_four.add_two_2.add_one_2',
         'div_four.div_two',
         'div_four.div_two_2',
+        'int_to_float',
     }
