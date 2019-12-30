@@ -418,9 +418,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
               onChange={name => props.onSaveSession({ pipeline: name })}
             />
           </SessionSettingsBar>
-          <div style={{ background: "#1b2124", flex: 1 }} className="bp3-dark">
-            {props.children}
-          </div>
+          {props.children}
         </>
       }
       right={<RunPreview />}

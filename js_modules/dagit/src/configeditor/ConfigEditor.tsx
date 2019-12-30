@@ -65,13 +65,6 @@ const CodeMirrorShimStyle = createGlobalStyle`
     bottom: 0;
     height: initial;
   }
-  .react-codemirror2 .CodeMirror.cm-s-material {
-    background: #1b2124;
-  }
-  .react-codemirror2 .CodeMirror.cm-s-material .CodeMirror-gutters {
-    background: #1b2124;
-
-  }
 `;
 const CodeMirrorWhitespaceStyle = createGlobalStyle`
 .cm-whitespace {
@@ -129,7 +122,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           options={
             {
               mode: "yaml",
-              theme: "material",
+              theme: "default",
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,
