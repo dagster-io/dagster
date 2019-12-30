@@ -167,7 +167,7 @@ prop or implement an `intrinsicSizeForProps` method that returns {width, height}
 Children are cloned and receive x, y, and width props from this parent.
 
 If width or maxWidth is present, the SVGFlowLayoutRect evenly compresses
-children that provided an instrinsic width rather than a fixed prop width to fit
+children that provided an intrinsic width rather than a fixed prop width to fit
 in the available space. (TODO: Variable compression resistance?)
 */
 export class SVGFlowLayoutRect extends React.Component<
