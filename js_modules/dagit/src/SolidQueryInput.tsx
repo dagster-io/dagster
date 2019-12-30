@@ -1,10 +1,11 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
-import { PipelineExplorerSolidHandleFragment_solid } from "./types/PipelineExplorerSolidHandleFragment";
+import { SolidQueryInputSolidFragment } from "./types/SolidQueryInputSolidFragment";
+import gql from "graphql-tag";
 
 interface SolidQueryInputProps {
-  solids: PipelineExplorerSolidHandleFragment_solid[];
+  solids: SolidQueryInputSolidFragment[];
   value: string;
   onChange: (value: string) => void;
 }
@@ -19,9 +20,7 @@ interface ActiveSuggestionInfo {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForSolids = (
-  solids: PipelineExplorerSolidHandleFragment_solid[]
-) => {
+const placeholderTextForSolids = (solids: SolidQueryInputSolidFragment[]) => {
   const seed = solids.length % 3;
 
   let placeholder = "Type a Solid Subset";
@@ -50,7 +49,7 @@ const placeholderTextForSolids = (
   return placeholder;
 };
 
-export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = props => {
+export const SolidQueryInput = (props: SolidQueryInputProps) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [focused, setFocused] = React.useState<boolean>(false);
 
@@ -153,6 +152,28 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
       </Popover>
     </SolidQueryInputContainer>
   );
+};
+
+SolidQueryInput.fragments = {
+  SolidQueryInputSolidFragment: gql`
+    fragment SolidQueryInputSolidFragment on Solid {
+      name
+      inputs {
+        dependsOn {
+          solid {
+            name
+          }
+        }
+      }
+      outputs {
+        dependedBy {
+          solid {
+            name
+          }
+        }
+      }
+    }
+  `
 };
 
 const SolidQueryInputContainer = styled.div`

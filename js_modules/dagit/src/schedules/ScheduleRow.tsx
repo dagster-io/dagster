@@ -282,12 +282,11 @@ export const ScheduleRow: React.FunctionComponent<{
                 text="Open in Execute Tab..."
                 icon="edit"
                 target="_blank"
-                href={`/playground/${
-                  executionParams.selector.name
-                }/setup?${qs.stringify({
+                href={`/playground/setup?${qs.stringify({
                   mode: executionParams.mode,
                   config: environmentConfigYaml,
-                  solidSubset: executionParams.selector.solidSubset
+                  solidSubset: executionParams.selector.solidSubset,
+                  pipeline: executionParams.selector.name
                 })}`}
               />
               <MenuDivider />

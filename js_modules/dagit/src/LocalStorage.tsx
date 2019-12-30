@@ -24,7 +24,7 @@ export interface IExecutionSession {
   environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
-  solidSubsetLabel: string | null;
+  solidSubsetQuery: string | null;
 
   // this is set when you execute the session and freeze it
   runId?: string;
@@ -78,23 +78,18 @@ export function applyCreateSession(
     current: key,
     sessions: {
       ...data.sessions,
-      [key]: Object.assign(
-        {},
-        {
-          name: "Workspace",
-          environmentConfigYaml: "",
-          mode: null,
-          solidSubset: null,
-          pipeline: null,
-          solidSubsetLabel: "All Solids",
-          runId: undefined
-        },
-        initial,
-        {
-          configChangedSinceRun: false,
-          key
-        }
-      )
+      [key]: {
+        name: "Workspace",
+        environmentConfigYaml: "",
+        mode: null,
+        solidSubset: null,
+        solidSubsetQuery: "*",
+        pipeline: "",
+        runId: undefined,
+        ...initial,
+        configChangedSinceRun: false,
+        key
+      }
     }
   };
 }
@@ -127,7 +122,7 @@ function getStorageDataForNamespace(namespace: string) {
     // noop
   }
   if (Object.keys(data.sessions).length === 0) {
-    data = applyCreateSession(data);
+    data = applyCreateSession(data, {});
   }
   if (!data.sessions[data.current]) {
     data.current = Object.keys(data.sessions)[0];

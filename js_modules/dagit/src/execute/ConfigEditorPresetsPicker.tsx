@@ -44,6 +44,7 @@ export const ConfigEditorPresetsPicker: React.FunctionComponent<ConfigEditorPres
       }
       onCreateSession({
         name: updatedPreset.name,
+        pipeline: pipelineName,
         environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
         solidSubset: updatedPreset.solidSubset,
         mode: updatedPreset.mode

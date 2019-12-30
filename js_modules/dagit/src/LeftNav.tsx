@@ -21,7 +21,7 @@ export const LeftNav = () => {
       render={({ match: { params }, history }) => {
         const { tab } = params;
 
-        if (tab === "pipeline" || tab === "playground") {
+        if (tab === "pipeline") {
           window.localStorage.setItem(LAST_PIPELINE, params.pipelineSelector);
         }
 
@@ -61,7 +61,7 @@ export const LeftNav = () => {
               <TabLabel>Runs</TabLabel>
             </Tab>
             <Tab
-              to={`/playground/${pipelineSelector}`}
+              to={`/playground`}
               className={tab === "playground" ? "active" : ""}
             >
               <Icon icon="manually-entered-data" iconSize={30} />

@@ -3,7 +3,7 @@ import { Button, Intent, Menu } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Select } from "@blueprintjs/select";
 import { PipelineDetailsFragment_modes } from "./types/PipelineDetailsFragment";
-import { ModeNotFoundError } from "./PipelineExecutionContainer";
+import { ModeNotFoundError } from "./ExecutionSessionContainer";
 
 interface ConfigEditorModePickerProps {
   modes: PipelineDetailsFragment_modes[];

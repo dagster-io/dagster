@@ -71,9 +71,11 @@ export default class PipelineExplorer extends React.Component<
         solid {
           name
           ...PipelineGraphParentSolidFragment
+          ...SolidQueryInputSolidFragment
         }
       }
       ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
+      ${SolidQueryInput.fragments.SolidQueryInputSolidFragment}
     `
   };
 
@@ -158,9 +160,11 @@ export default class PipelineExplorer extends React.Component<
       : { all: solids, focus: [] };
 
     history.push(
-      `/playground/${pipeline.name}:${queryResultSolids.all
-        .map(s => s.name)
-        .join(",")}/setup`
+      `/playground/setup?${qs.stringify({
+        pipeline: pipeline.name,
+        solidSubset: queryResultSolids.all.map(s => s.name),
+        solidSubsetQuery: visibleSolidsQuery || "*"
+      })}`
     );
   };
 
