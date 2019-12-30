@@ -8,18 +8,20 @@ import {
 import * as querystring from "query-string";
 
 interface PipelineExecutionSetupRootProps {
-  match: match<{ pipelineName: string }>;
+  match: match<{ pipelineSelector: string }>;
 }
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = ({
   match: { params }
 }) => {
-  const [data, onSave] = useStorage({ namespace: params.pipelineName });
+  const [data, onSave] = useStorage();
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
     if (qs.config || qs.mode || qs.solidSubset) {
-      const newSession: Partial<IExecutionSession> = {};
+      const newSession: Partial<IExecutionSession> = {
+        pipeline: params.pipelineSelector
+      };
       if (typeof qs.config === "string") {
         newSession.environmentConfigYaml = qs.config;
       }
@@ -35,5 +37,7 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecuti
       onSave(applyCreateSession(data, newSession));
     }
   });
-  return <Redirect to={{ pathname: `/playground/${params.pipelineName}` }} />;
+  return (
+    <Redirect to={{ pathname: `/playground/${params.pipelineSelector}` }} />
+  );
 };

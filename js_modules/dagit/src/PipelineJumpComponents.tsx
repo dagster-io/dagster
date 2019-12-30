@@ -8,13 +8,13 @@ import { PipelineNamesContext } from "./PipelineNamesContext";
 
 interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
-  onItemSelect: (pipelineName: string) => void;
+  onChange: (pipelineName: string) => void;
 }
 
 interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;
   selectedSolid: SolidJumpBarFragment_solids | undefined;
-  onItemSelect: (solid: SolidJumpBarFragment_solids) => void;
+  onChange: (solid: SolidJumpBarFragment_solids) => void;
 }
 
 class GlobalKeyHandler extends React.Component<{
@@ -65,7 +65,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
   };
 
   render() {
-    const { solids, selectedSolid, onItemSelect } = this.props;
+    const { solids, selectedSolid, onChange } = this.props;
 
     return (
       <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
@@ -75,9 +75,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
           itemRenderer={BasicStringRenderer}
           itemListPredicate={BasicStringPredicate}
           noResults={<MenuItem disabled={true} text="No results." />}
-          onItemSelect={name =>
-            onItemSelect(solids.find(s => s.name === name)!)
-          }
+          onItemSelect={name => onChange(solids.find(s => s.name === name)!)}
         >
           <Button
             text={selectedSolid ? selectedSolid.name : "Select a Solid..."}
@@ -98,13 +96,13 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
     }
     if (this.select.current && this.select.current.state.isOpen) {
       if (event.key === "Escape" && this.props.selectedPipelineName) {
-        this.props.onItemSelect(this.props.selectedPipelineName);
+        this.props.onChange(this.props.selectedPipelineName);
       }
     }
   };
 
   render() {
-    const { onItemSelect, selectedPipelineName } = this.props;
+    const { onChange, selectedPipelineName } = this.props;
 
     return (
       <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
@@ -116,13 +114,13 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
               itemRenderer={BasicStringRenderer}
               itemListPredicate={BasicStringPredicate}
               noResults={<MenuItem disabled={true} text="No results." />}
-              onItemSelect={onItemSelect}
+              onItemSelect={onChange}
             >
               <Button
-                style={{ minWidth: 230, justifyContent: "space-between" }}
                 text={selectedPipelineName || "Select a pipeline..."}
                 disabled={pipelineNames.length === 0}
                 rightIcon="double-caret-vertical"
+                icon="send-to-graph"
               />
             </StringSelect>
           )}

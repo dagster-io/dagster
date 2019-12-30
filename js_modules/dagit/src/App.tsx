@@ -35,16 +35,19 @@ function extractData(result?: RootPipelinesQuery) {
 
 const AppRoutes = () => (
   <Switch>
-    <Route path="/runs/:runId" component={RunRoot} />
+    <Route path="/runs/all/:runId" component={RunRoot} />
+    <Route path="/runs/:pipelineName/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solids/:name?" component={SolidsRoot} />
-    <Route path="/pipeline/:pipelineName/runs/:runId" component={RunRoot} />
 
     <Route
-      path="/playground/:pipelineName/setup"
+      path="/playground/:pipelineSelector/setup"
       component={PipelineExecutionSetupRoot}
     />
-    <Route path="/playground/:pipelineName" component={PipelineExecutionRoot} />
+    <Route
+      path="/playground/:pipelineSelector"
+      component={PipelineExecutionRoot}
+    />
     {/* Capture solid subpath in a regex match */}
     <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
 
@@ -54,7 +57,7 @@ const AppRoutes = () => (
     <PipelineNamesContext.Consumer>
       {names =>
         names.length ? (
-          <Redirect to={`/pipeline/${names[0]}`} />
+          <Redirect to={`/pipeline/${names[0]}/`} />
         ) : (
           <Route render={() => <NonIdealState title="No pipelines" />} />
         )

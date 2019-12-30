@@ -26,9 +26,12 @@ export const LeftNav = () => {
         }
 
         let pipelineSelector = window.localStorage.getItem(LAST_PIPELINE);
+        if (!pipelineSelector) {
+          pipelineSelector = `${pipelineNames[0]}:`;
+        }
         if (
-          !pipelineSelector ||
-          (pipelineNames.length && !pipelineNames.includes(pipelineSelector))
+          pipelineNames &&
+          !pipelineNames.includes(pipelineSelector.split(":")[0])
         ) {
           pipelineSelector = `${pipelineNames[0]}:`;
         }
@@ -43,7 +46,7 @@ export const LeftNav = () => {
             </LogoContainer>
 
             <Tab
-              to={`/pipeline/${pipelineSelector}`}
+              to={`/pipeline/${pipelineSelector}/`}
               className={tab === "pipeline" ? "active" : ""}
             >
               <Icon icon="diagram-tree" iconSize={30} />

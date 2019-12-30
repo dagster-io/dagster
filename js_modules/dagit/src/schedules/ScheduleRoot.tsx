@@ -101,7 +101,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
           <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
             {attempt.run ? (
               <div>
-                <Link to={`/runs/${attempt.run.runId}`}>
+                <Link to={`/runs/all/${attempt.run.runId}`}>
                   {attempt.run.runId}
                 </Link>
               </div>
