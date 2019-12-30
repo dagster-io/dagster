@@ -52,8 +52,13 @@ const placeholderTextForSolids = (solids: SolidQueryInputSolidFragment[]) => {
 export const SolidQueryInput = (props: SolidQueryInputProps) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [focused, setFocused] = React.useState<boolean>(false);
+  const [pendingValue, setPendingValue] = React.useState<string>(props.value);
 
-  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(props.value);
+  React.useEffect(() => {
+    setPendingValue(props.value);
+  }, [props.value]);
+
+  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(pendingValue);
   let menu: JSX.Element | undefined = undefined;
 
   const [, prefix, lastSolidName, suffix] = lastClause || [];
@@ -65,8 +70,10 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
       : [];
 
   const onConfirmSuggestion = (suggestion: string) => {
-    const preceding = lastClause ? props.value.substr(0, lastClause.index) : "";
-    props.onChange(preceding + prefix + suggestion + suffix);
+    const preceding = lastClause
+      ? pendingValue.substr(0, lastClause.index)
+      : "";
+    setPendingValue(preceding + prefix + suggestion + suffix);
   };
 
   if (suggestions.length && focused) {
@@ -130,6 +137,19 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
     }
   };
 
+  const onKeyUp = (e: React.KeyboardEvent<any>) => {
+    if (
+      e.key === "Enter" ||
+      e.key === "Return" ||
+      e.key === "Tab" ||
+      e.key === "+" ||
+      (e.key === "*" && pendingValue.length > 1) ||
+      (e.key === "Backspace" && pendingValue.length)
+    ) {
+      props.onChange(pendingValue);
+    }
+  };
+
   return (
     <SolidQueryInputContainer>
       <Popover
@@ -140,15 +160,19 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
       >
         <SolidQueryInputField
           type="text"
-          value={props.value}
+          value={pendingValue}
           leftIcon={"send-to-graph"}
           placeholder={placeholderTextForSolids(props.solids)}
           onChange={(e: React.ChangeEvent<any>) =>
-            props.onChange(e.target.value)
+            setPendingValue(e.target.value)
           }
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            props.onChange(pendingValue);
+          }}
           onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
         />
       </Popover>
     </SolidQueryInputContainer>
