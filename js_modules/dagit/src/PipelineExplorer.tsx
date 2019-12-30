@@ -201,32 +201,10 @@ export default class PipelineExplorer extends React.Component<
                 style={{ background: backgroundTranslucent }}
                 ref={this.pathOverlayEl}
               >
-                <ControlGroup vertical={false}>
-                  <PipelineJumpBar
-                    selectedPipelineName={pipeline.name}
-                    onChange={name => history.push(`/pipeline/${name}/`)}
-                  />
-                  {visibleSolidsQuery.length > 0 ||
-                  queryResultSolids.all.length === 0 ? (
-                    <SolidQueryInput
-                      solids={solids}
-                      value={visibleSolidsQuery}
-                      onChange={this.handleQueryChange}
-                    />
-                  ) : (
-                    <Button
-                      text="*"
-                      onClick={() => {
-                        this.handleQueryChange("*");
-                        window.requestAnimationFrame(() =>
-                          this.pathOverlayEl.current
-                            ?.querySelector("input")
-                            ?.select()
-                        );
-                      }}
-                    />
-                  )}
-                </ControlGroup>
+                <PipelineJumpBar
+                  selectedPipelineName={pipeline.name}
+                  onChange={name => history.push(`/pipeline/${name}/`)}
+                />
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
@@ -251,6 +229,14 @@ export default class PipelineExplorer extends React.Component<
                   }
                 />
               </PathOverlay>
+              {solidsQueryEnabled && (
+                <SolidQueryInput
+                  solids={solids}
+                  value={visibleSolidsQuery}
+                  onChange={this.handleQueryChange}
+                />
+              )}
+
               <SearchOverlay style={{ background: backgroundTranslucent }}>
                 <SolidHighlightInput
                   type="text"

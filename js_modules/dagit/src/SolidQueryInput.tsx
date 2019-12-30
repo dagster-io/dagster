@@ -141,6 +141,7 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
         <SolidQueryInputField
           type="text"
           value={props.value}
+          leftIcon={"send-to-graph"}
           placeholder={placeholderTextForSolids(props.solids)}
           onChange={(e: React.ChangeEvent<any>) =>
             props.onChange(e.target.value)
@@ -178,17 +179,19 @@ SolidQueryInput.fragments = {
 
 const SolidQueryInputContainer = styled.div`
   z-index: 2;
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
 `;
 
 const SolidQueryInputField = styled(InputGroup)`
+  width: 30vw;
   font-size: 14px;
-  width: 300px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
 `;
 
 const StyledMenu = styled(Menu)`
-  width: 300px;
+  width: 30vw;
 `;
 
 const StyledMenuItem = styled(MenuItem)`
