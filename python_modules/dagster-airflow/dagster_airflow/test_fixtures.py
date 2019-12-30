@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import uuid
 
@@ -10,6 +11,12 @@ from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
+
+
+def get_dagster_docker_image():
+    # Will be set in environment by pipeline.py -> tox.ini to:
+    # ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
+    return os.environ['DAGSTER_DOCKER_IMAGE']
 
 
 def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
@@ -102,7 +109,6 @@ def dagster_airflow_docker_operator_pipeline(request):
             # config_yaml = ['environments/test_*.yaml']
             run_id = 'test_run_3'
             execution_date = datetime.datetime(2019, 1, 1)
-            image = 'my_pipeline_image'
 
             def test_pipeline_results(dagster_airflow_docker_operator_pipeline):
                 # This is a list of the parsed JSON returned by calling executePlan for each
@@ -115,7 +121,10 @@ def dagster_airflow_docker_operator_pipeline(request):
 
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
-    image = getattr(request.cls, 'image')
+    # Removed image parameter and made it hard-coded. See:
+    # https://github.com/dagster-io/dagster/issues/2041
+    # getattr(request.cls, 'image')
+    image = get_dagster_docker_image()
     environment_dict = getattr(request.cls, 'environment_dict', None)
     environment_yaml = getattr(request.cls, 'environment_yaml', [])
     op_kwargs = getattr(request.cls, 'op_kwargs', {})
@@ -144,7 +153,10 @@ def dagster_airflow_k8s_operator_pipeline(request):
 
     handle = getattr(request.cls, 'handle')
     pipeline_name = getattr(request.cls, 'pipeline_name')
-    image = getattr(request.cls, 'image')
+    # Removed image parameter and made it hard-coded. See:
+    # https://github.com/dagster-io/dagster/issues/2041
+    # getattr(request.cls, 'image')
+    image = get_dagster_docker_image()
     namespace = getattr(request.cls, 'namespace', 'default')
     environment_dict = getattr(request.cls, 'environment_dict', None)
     environment_yaml = getattr(request.cls, 'environment_yaml', [])

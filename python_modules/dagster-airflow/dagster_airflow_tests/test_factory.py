@@ -10,7 +10,6 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     dagster_airflow_python_operator_pipeline,
 )
-from dagster_airflow_tests.conftest import IMAGE
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
@@ -122,7 +121,6 @@ class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
         os.path.join(ENVIRONMENTS_PATH, 'env_filesystem_no_explicit_base_dir.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
@@ -138,7 +136,6 @@ class TestExecuteDagContainerizedS3Storage(object):
         os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
@@ -154,7 +151,6 @@ class TestExecuteDagContainerizedGCSStorage(object):
         os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
@@ -170,7 +166,6 @@ class TestExecuteDagContainerizedFilesystemStorage(object):
     ]
     run_id = str(uuid.uuid4())
     op_kwargs = {'host_tmp_dir': '/tmp'}
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
@@ -185,7 +180,6 @@ class TestExecuteDagKubernetizedS3Storage(object):
         os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_kubernetized(self, dagster_airflow_k8s_operator_pipeline):
@@ -200,7 +194,6 @@ class TestExecuteDagKubernetizedGCSStorage(object):
         os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
     ]
     run_id = str(uuid.uuid4())
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_kubernetized(self, dagster_airflow_k8s_operator_pipeline):
@@ -252,7 +245,6 @@ class TestExecuteSkipsContainerized(object):
     environment_yaml = [os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml')]
     run_id = str(uuid.uuid4())
     op_kwargs = {'host_tmp_dir': '/tmp'}
-    image = IMAGE
 
     # pylint: disable=redefined-outer-name
     def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):

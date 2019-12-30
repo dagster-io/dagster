@@ -9,8 +9,7 @@ from dagster_airflow.factory import (
     make_airflow_dag_for_handle,
     make_airflow_dag_kubernetized_for_handle,
 )
-from dagster_airflow.test_fixtures import execute_tasks_in_dag
-from dagster_airflow_tests.conftest import IMAGE
+from dagster_airflow.test_fixtures import execute_tasks_in_dag, get_dagster_docker_image
 
 from dagster import ExecutionTargetHandle
 from dagster.utils import load_yaml_from_glob_list, script_relative_path
@@ -61,7 +60,7 @@ def test_error_dag_containerized():
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_containerized_for_handle(
-        handle, pipeline_name, IMAGE, environment_dict
+        handle, pipeline_name, get_dagster_docker_image(), environment_dict
     )
 
     with pytest.raises(AirflowException) as exc_info:
@@ -84,7 +83,7 @@ def test_error_dag_k8s():
     dag, tasks = make_airflow_dag_kubernetized_for_handle(
         handle=handle,
         pipeline_name=pipeline_name,
-        image=IMAGE,
+        image=get_dagster_docker_image(),
         namespace='default',
         environment_dict=environment_dict,
     )
