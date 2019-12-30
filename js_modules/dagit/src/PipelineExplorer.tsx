@@ -1,16 +1,9 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import Color from "color";
-import * as qs from "query-string";
 import styled from "styled-components/macro";
 import { History } from "history";
-import {
-  Icon,
-  Colors,
-  InputGroup,
-  ControlGroup,
-  Button
-} from "@blueprintjs/core";
+import { Icon, Colors, InputGroup } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
