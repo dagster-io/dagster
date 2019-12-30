@@ -25,9 +25,13 @@ deps =
   -r ./dev-requirements.txt
 
 usedevelop = true
+whitelist_externals =
+  /bin/bash
+  echo
 commands =
   linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
+  echo -e "--- \033[0;32m:pytest: Running tox tests\033[0m"
   pytest dagster_examples_tests/event_pipeline_demo_tests/ -vv --junitxml=test_results.xml --cov=dagster_examples --cov=../python_modules --cov-append --cov-report=
   coverage report --omit='.tox/*,**/test_*.py' --skip-covered
   coverage html --omit='.tox/*,**/test_*.py'
