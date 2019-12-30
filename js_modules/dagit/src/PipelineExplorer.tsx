@@ -25,11 +25,6 @@ import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplo
 import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
-import {
-  ExecutionButtonContainer,
-  ExecutionButtonStatus
-} from "./execute/ExecutionStartButton";
-import { IconNames } from "@blueprintjs/icons";
 
 interface PipelineExplorerProps {
   history: History;
@@ -159,23 +154,6 @@ export default class PipelineExplorer extends React.Component<
     this.handleClickSolid({ name: "" });
   };
 
-  handleClickExecute = () => {
-    const { history, pipeline, visibleSolidsQuery, parentHandle } = this.props;
-    const solids = this.props.handles.map(h => h.solid);
-    const solidsQueryEnabled = !parentHandle;
-    const queryResultSolids = solidsQueryEnabled
-      ? filterSolidsByQuery(solids, visibleSolidsQuery)
-      : { all: solids, focus: [] };
-
-    history.push(
-      `/playground/setup?${qs.stringify({
-        pipeline: pipeline.name,
-        solidSubset: queryResultSolids.all.map(s => s.name),
-        solidSubsetQuery: visibleSolidsQuery || "*"
-      })}`
-    );
-  };
-
   public render() {
     const {
       pipeline,
@@ -273,21 +251,6 @@ export default class PipelineExplorer extends React.Component<
                   }
                 />
               </PathOverlay>
-              <ExecuteOverlay>
-                <ExecutionButtonContainer
-                  role="button"
-                  style={{ minWidth: 125 }}
-                  state={ExecutionButtonStatus.Ready}
-                  onClick={this.handleClickExecute}
-                >
-                  <Icon
-                    icon={IconNames.PLAY}
-                    iconSize={17}
-                    style={{ textAlign: "center", marginRight: 5 }}
-                  />
-                  Execute...
-                </ExecutionButtonContainer>
-              </ExecuteOverlay>
               <SearchOverlay style={{ background: backgroundTranslucent }}>
                 <SolidHighlightInput
                   type="text"
@@ -364,8 +327,8 @@ const SearchOverlay = styled.div`
   display: inline-flex;
   align-items: stretch;
   position: absolute;
-  bottom: 0;
-  left: 0;
+  top: 0;
+  right: 0;
 `;
 
 const PathOverlay = styled.div`
@@ -408,13 +371,6 @@ const LargeDAGNotice = () => (
     <Icon icon="arrow-down" iconSize={40} />
   </LargeDAGContainer>
 );
-
-const ExecuteOverlay = styled.div`
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 2;
-`;
 
 const LargeDAGContainer = styled.div`
   width: 50vw;
