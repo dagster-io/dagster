@@ -3,8 +3,6 @@ import styled from "styled-components/macro";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
-  IExecutionSessionChanges,
-  IExecutionSession,
   IStorageData,
   applySelectSession,
   applyChangesToSession,

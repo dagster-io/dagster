@@ -147,7 +147,7 @@ current localStorage namespace in memory (in _data above) and React keeps a simp
 version flag it can use to trigger a re-render after changes are saved, so changing
 namespaces changes the returned data immediately.
 */
-export function useStorage(namespace: string = "shared"): StorageHook {
+export function useStorage(namespace = "shared"): StorageHook {
   const [version, setVersion] = React.useState<number>(0);
 
   const onSave = (newData: IStorageData) => {
