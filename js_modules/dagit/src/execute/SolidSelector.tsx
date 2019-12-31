@@ -29,7 +29,7 @@ interface ISolidSelectorProps {
   subsetError: SubsetError;
   value: string[] | null;
   label: string | null;
-  onChange: (value: string[] | null, query: string | null) => void;
+  onChange: (value: string[] | null, label: string | null) => void;
   onRequestClose?: () => void;
 }
 

@@ -86,16 +86,17 @@ interface ExecutionTabsProps {
   onSave: (data: IStorageData) => void;
 }
 
+function sessionNamesAndKeysHash(data: IStorageData) {
+  return Object.values(data.sessions)
+    .map(s => s.name + s.key)
+    .join(",");
+}
+
 export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   shouldComponentUpdate(prevProps: ExecutionTabsProps) {
-    const prevSessions = Object.values(prevProps.data.sessions)
-      .map(s => s.name + s.key)
-      .join(",");
-    const nextSessions = Object.values(this.props.data.sessions)
-      .map(s => s.name + s.key)
-      .join(",");
     return (
-      prevSessions !== nextSessions ||
+      sessionNamesAndKeysHash(prevProps.data) !==
+        sessionNamesAndKeysHash(this.props.data) ||
       prevProps.data.current !== this.props.data.current
     );
   }
