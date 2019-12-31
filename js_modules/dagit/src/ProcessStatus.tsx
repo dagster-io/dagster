@@ -8,7 +8,7 @@ import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
 import { GlobalKeyHandler } from "./GlobalKeyHandler";
 import { SharedToaster } from "./DomUtils";
 
-export default () => {
+export const ProcessStatus: React.FunctionComponent = () => {
   const apollo = useApolloClient();
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);

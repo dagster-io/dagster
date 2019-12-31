@@ -55,6 +55,9 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
   const [pendingValue, setPendingValue] = React.useState<string>(props.value);
 
   React.useEffect(() => {
+    // props.value is our source of truth, but we hold "un-committed" changes in
+    // pendingValue while the field is being edited. Ensure the pending value
+    // is synced whenever props.value changes.
     setPendingValue(props.value);
   }, [props.value]);
 

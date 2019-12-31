@@ -149,11 +149,11 @@ export default class PipelineExplorer extends React.Component<
 
   public render() {
     const {
+      path,
+      history,
       pipeline,
       parentHandle,
-      path,
-      visibleSolidsQuery,
-      history
+      visibleSolidsQuery
     } = this.props;
     const { highlighted } = this.state;
 
@@ -196,7 +196,7 @@ export default class PipelineExplorer extends React.Component<
               >
                 <PipelineJumpBar
                   selectedPipelineName={pipeline.name}
-                  onChange={name => history.push(`/pipeline/${name}/`)}
+                  onChange={name => history.push(`/pipeline/${name}:/`)}
                 />
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (

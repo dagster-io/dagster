@@ -4,8 +4,8 @@ import { Colors, Icon } from "@blueprintjs/core";
 
 import { Link } from "react-router-dom";
 import { Route } from "react-router";
-import ProcessStatus from "./ProcessStatus";
-import WebsocketStatus from "./WebsocketStatus";
+import { ProcessStatus } from "./ProcessStatus";
+import { WebsocketStatus } from "./WebsocketStatus";
 import navBarImage from "./images/nav-logo-icon.png";
 import styled from "styled-components/macro";
 import { PipelineNamesContext } from "./PipelineNamesContext";
@@ -21,11 +21,13 @@ export const LeftNav = () => {
       render={({ match: { params }, history }) => {
         const { tab } = params;
 
+        // When you click the Pipeline tab, navigate to the last pipeline you've
+        // viewed by storing a small amount of state in localStorage.
         if (tab === "pipeline") {
-          window.localStorage.setItem(LAST_PIPELINE, params.pipelineSelector);
+          localStorage.setItem(LAST_PIPELINE, params.pipelineSelector);
         }
 
-        let pipelineSelector = window.localStorage.getItem(LAST_PIPELINE);
+        let pipelineSelector = localStorage.getItem(LAST_PIPELINE);
         if (!pipelineSelector) {
           pipelineSelector = `${pipelineNames[0]}:`;
         }
@@ -40,9 +42,7 @@ export const LeftNav = () => {
           <Tabs>
             <LogoContainer onClick={() => history.push("/")}>
               <img src={navBarImage} style={{ height: 40 }} alt="logo" />
-              <WebsocketStatus
-                style={{ position: "absolute", top: 28, right: -3 }}
-              />
+              <LogoWebsocketStatus />
             </LogoContainer>
 
             <Tab
@@ -82,6 +82,12 @@ export const LeftNav = () => {
     />
   );
 };
+
+const LogoWebsocketStatus = styled(WebsocketStatus)`
+  position: absolute;
+  top: 28px;
+  right: -3px;
+`;
 
 const Tabs = styled.div`
   width: 74px;

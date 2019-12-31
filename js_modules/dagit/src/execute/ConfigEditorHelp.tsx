@@ -60,7 +60,7 @@ const ConfigScrollWrap = styled.div`
 
 const Container = styled.div`
   width: 300px;
-  top: 50px;
+  top: 54px;
   right: 10px;
   color: black;
   background-color: #e1e8edd1;

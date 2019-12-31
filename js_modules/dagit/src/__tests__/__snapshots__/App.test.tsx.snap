@@ -10,10 +10,10 @@ exports[`renders execution 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -30,20 +30,17 @@ exports[`renders execution 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -67,13 +64,13 @@ exports[`renders execution 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -97,13 +94,13 @@ exports[`renders execution 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -127,13 +124,13 @@ exports[`renders execution 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/playground"
       onClick={[Function]}
     >
@@ -157,13 +154,13 @@ exports[`renders execution 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -187,7 +184,7 @@ exports[`renders execution 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -365,6 +362,42 @@ exports[`renders execution 1`] = `
         <div
           className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-2 djNEkQ"
         />
+        <div
+          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-3 jezrRd"
+        >
+          <button
+            className="bp3-button bp3-active bp3-small"
+            onClick={[Function]}
+            onKeyDown={[Function]}
+            onKeyUp={[Function]}
+            style={
+              Object {
+                "marginLeft": "auto",
+              }
+            }
+            type="button"
+          >
+            <span
+              className="bp3-icon bp3-icon-paragraph"
+              icon="paragraph"
+            >
+              <svg
+                data-icon="paragraph"
+                height={16}
+                viewBox="0 0 16 16"
+                width={16}
+              >
+                <desc>
+                  paragraph
+                </desc>
+                <path
+                  d="M13 1H6C3.8 1 2 2.8 2 5s1.8 4 4 4v5c0 .6.4 1 1 1s1-.5 1-1V3h2v11c0 .6.4 1 1 1s1-.5 1-1V3h1c.5 0 1-.4 1-1s-.4-1-1-1z"
+                  fillRule="evenodd"
+                />
+              </svg>
+            </span>
+          </button>
+        </div>
         <span />
         <span />
       </div>
@@ -481,10 +514,10 @@ exports[`renders pipeline page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -501,20 +534,17 @@ exports[`renders pipeline page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -538,13 +568,13 @@ exports[`renders pipeline page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -568,13 +598,13 @@ exports[`renders pipeline page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -598,13 +628,13 @@ exports[`renders pipeline page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -628,13 +658,13 @@ exports[`renders pipeline page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -658,7 +688,7 @@ exports[`renders pipeline page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -4160,10 +4190,10 @@ exports[`renders pipeline solid page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -4180,20 +4210,17 @@ exports[`renders pipeline solid page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -4217,13 +4244,13 @@ exports[`renders pipeline solid page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -4247,13 +4274,13 @@ exports[`renders pipeline solid page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -4277,13 +4304,13 @@ exports[`renders pipeline solid page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -4307,13 +4334,13 @@ exports[`renders pipeline solid page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -4337,7 +4364,7 @@ exports[`renders pipeline solid page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -7839,10 +7866,10 @@ exports[`renders solids explorer 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -7859,20 +7886,17 @@ exports[`renders solids explorer 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -7896,13 +7920,13 @@ exports[`renders solids explorer 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/solids"
       onClick={[Function]}
     >
@@ -7926,13 +7950,13 @@ exports[`renders solids explorer 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -7956,13 +7980,13 @@ exports[`renders solids explorer 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -7986,13 +8010,13 @@ exports[`renders solids explorer 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -8016,7 +8040,7 @@ exports[`renders solids explorer 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -12734,10 +12758,10 @@ exports[`renders type page 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -12754,20 +12778,17 @@ exports[`renders type page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -12791,13 +12812,13 @@ exports[`renders type page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -12821,13 +12842,13 @@ exports[`renders type page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -12851,13 +12872,13 @@ exports[`renders type page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -12881,13 +12902,13 @@ exports[`renders type page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -12911,7 +12932,7 @@ exports[`renders type page 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -16413,10 +16434,10 @@ exports[`renders type page 2`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -16433,20 +16454,17 @@ exports[`renders type page 2`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -16470,13 +16488,13 @@ exports[`renders type page 2`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -16500,13 +16518,13 @@ exports[`renders type page 2`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -16530,13 +16548,13 @@ exports[`renders type page 2`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -16560,13 +16578,13 @@ exports[`renders type page 2`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -16590,7 +16608,7 @@ exports[`renders type page 2`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>
@@ -20092,10 +20110,10 @@ exports[`renders without error 1`] = `
   }
 >
   <div
-    className="LeftNav__Tabs-tqwrge-0 clOdUl"
+    className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-3 ddTTxv"
+      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
       onClick={[Function]}
     >
       <img
@@ -20112,20 +20130,17 @@ exports[`renders without error 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
         style={
           Object {
             "background": "#3DCC91",
-            "position": "absolute",
-            "right": -3,
-            "top": 28,
           }
         }
         title="Connecting..."
       />
     </div>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue active"
+      className="LeftNav__Tab-tqwrge-2 jMsogv active"
       href="/pipeline/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
@@ -20149,13 +20164,13 @@ exports[`renders without error 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Pipelines
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/solids"
       onClick={[Function]}
     >
@@ -20179,13 +20194,13 @@ exports[`renders without error 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Solids
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/runs"
       onClick={[Function]}
     >
@@ -20209,13 +20224,13 @@ exports[`renders without error 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Runs
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/playground"
       onClick={[Function]}
     >
@@ -20239,13 +20254,13 @@ exports[`renders without error 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Playground
       </div>
     </a>
     <a
-      className="LeftNav__Tab-tqwrge-1 ffGbue"
+      className="LeftNav__Tab-tqwrge-2 jMsogv"
       href="/scheduler"
       onClick={[Function]}
     >
@@ -20269,7 +20284,7 @@ exports[`renders without error 1`] = `
         </svg>
       </span>
       <div
-        className="LeftNav__TabLabel-tqwrge-2 bNxTXK"
+        className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
         Schedule
       </div>

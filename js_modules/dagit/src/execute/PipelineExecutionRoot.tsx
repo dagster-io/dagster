@@ -21,8 +21,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<{}> = () => {
 
   const vars = {
     name: data.sessions[data.current].pipeline || "",
-    solidSubset: data.sessions[data.current].solidSubset,
-    mode: data.sessions[data.current].mode
+    mode: data.sessions[data.current].mode,
+    solidSubset: data.sessions[data.current].solidSubset
   };
 
   const onSaveSession = (

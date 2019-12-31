@@ -65,32 +65,36 @@ const Circle = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.6);
 `;
 
-export default ({ style }: { style: React.CSSProperties }) => (
+export const WebsocketStatus: React.FunctionComponent = props => (
   <WebsocketStatusContext.Consumer>
     {status =>
       ({
         [WebSocket.CONNECTING]: (
           <Circle
-            style={{ background: Colors.GREEN5, ...style }}
+            style={{ background: Colors.GREEN5 }}
             title="Connecting..."
+            {...props}
           />
         ),
         [WebSocket.OPEN]: (
           <Circle
-            style={{ background: Colors.GREEN3, ...style }}
+            style={{ background: Colors.GREEN3 }}
             title="Connected"
+            {...props}
           />
         ),
         [WebSocket.CLOSING]: (
           <Circle
-            style={{ background: Colors.GRAY3, ...style }}
+            style={{ background: Colors.GRAY3 }}
             title="Closing..."
+            {...props}
           />
         )
       }[status] || (
         <Circle
-          style={{ background: Colors.GRAY3, ...style }}
+          style={{ background: Colors.GRAY3 }}
           title="Disconnected"
+          {...props}
         />
       ))
     }

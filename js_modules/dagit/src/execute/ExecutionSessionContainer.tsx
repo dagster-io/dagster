@@ -2,7 +2,7 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
+import { Colors, Button } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
 
@@ -289,7 +289,9 @@ export default class ExecutionSessionContainer extends React.Component<
                     onCreateSession={onCreateSession}
                   />
                 )}
-                {/* <Button
+              </ConfigEditorPresetInsertionContainer>
+              <ConfigEditorDisplayOptionsContainer>
+                <Button
                   icon="paragraph"
                   small={true}
                   active={showWhitespace}
@@ -297,8 +299,8 @@ export default class ExecutionSessionContainer extends React.Component<
                   onClick={() =>
                     this.setState({ showWhitespace: !showWhitespace })
                   }
-                /> */}
-              </ConfigEditorPresetInsertionContainer>
+                />
+              </ConfigEditorDisplayOptionsContainer>
               <ConfigEditorHelp
                 context={editorHelpContext}
                 allInnerTypes={environmentSchema?.allConfigTypes || []}
@@ -472,6 +474,14 @@ const ConfigEditorPresetInsertionContainer = styled.div`
   display: inline-block;
   position: absolute;
   top: 10px;
+  right: 10px;
+  z-index: 10;
+`;
+
+const ConfigEditorDisplayOptionsContainer = styled.div`
+  display: inline-block;
+  position: absolute;
+  bottom: 10px;
   right: 10px;
   z-index: 10;
 `;
