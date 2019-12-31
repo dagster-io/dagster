@@ -3,14 +3,13 @@ import os
 import pytest
 from airflow.exceptions import AirflowException
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
+from dagster_airflow.test_fixtures import get_dagster_docker_image
 from dagster_graphql.client.mutations import DagsterGraphQLClientError
-
-from .conftest import IMAGE
 
 
 def test_init_modified_docker_operator():
     DagsterDockerOperator(
-        image=IMAGE,
+        image=get_dagster_docker_image(),
         api_version='auto',
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -20,7 +19,7 @@ def test_init_modified_docker_operator():
 
 def test_modified_docker_operator_bad_docker_conn():
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=get_dagster_docker_image(),
         api_version='auto',
         task_id='nonce',
         docker_conn_id='foo_conn',
@@ -35,7 +34,7 @@ def test_modified_docker_operator_bad_docker_conn():
 
 def test_modified_docker_operator_env():
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=get_dagster_docker_image(),
         api_version='auto',
         task_id='nonce',
         command='dagster-graphql --help',
@@ -48,7 +47,7 @@ def test_modified_docker_operator_env():
 
 def test_modified_docker_operator_bad_command():
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=get_dagster_docker_image(),
         api_version='auto',
         task_id='nonce',
         command='dagster-graphql gargle bargle',
@@ -70,7 +69,7 @@ def test_modified_docker_operator_url():
         os.environ['DOCKER_CERT_PATH'] = 'farfle'
 
         operator = DagsterDockerOperator(
-            image=IMAGE,
+            image=get_dagster_docker_image(),
             api_version='auto',
             task_id='nonce',
             docker_url=docker_host or 'unix:///var/run/docker.sock',

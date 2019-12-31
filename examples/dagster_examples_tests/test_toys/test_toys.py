@@ -1,4 +1,5 @@
 import pytest
+from dagster_examples.toys.composition import composition
 from dagster_examples.toys.config_mapping import config_mapping_pipeline
 from dagster_examples.toys.error_monster import error_monster
 from dagster_examples.toys.hammer import hammer_pipeline
@@ -150,3 +151,13 @@ def test_error_resource(snapshot):
     init_failure_event = result.event_list[0]
     assert init_failure_event.event_type_value == 'PIPELINE_INIT_FAILURE'
     snapshot.assert_match(init_failure_event.message)
+
+
+def test_composition_pipeline():
+    result = execute_pipeline(
+        composition, environment_dict={'solids': {'add_four': {'inputs': {'num': {'value': 3}}}}},
+    )
+
+    assert result.success
+
+    assert result.output_for_solid('div_four') == 7.0 / 4.0

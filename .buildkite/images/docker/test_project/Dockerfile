@@ -5,26 +5,14 @@ ADD test_pipelines test_pipelines
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
-RUN pip install --no-deps \
+RUN pip install \
         -e dagster \
         -e dagster-graphql \
-        -e dagit \
-        -e dagster-aws \
         -e dagster-cron \
-        -e dagster-pandas \
-        -e dagster-postgres \
-        -e dagster-gcp \
-        -e dagster-k8s \
-        -e dagster-airflow \
-        -e test_pipelines \
-    && pip install \
-        -e dagster \
-        -e dagster-graphql \
         -e dagit \
-        -e dagster-aws \
-        -e dagster-cron \
-        -e dagster-pandas \
         -e dagster-postgres \
+        -e dagster-pandas \
+        -e dagster-aws \
         -e dagster-gcp \
         -e dagster-k8s \
         -e dagster-airflow \

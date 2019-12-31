@@ -23,10 +23,6 @@ def key_from_str(key_str):
 
 class SSHResource(object):
     '''
-    Based on the Airflow SSHHook:
-
-    https://github.com/apache/airflow/blob/master/airflow/contrib/hooks/ssh_hook.py
-
     Resource for ssh remote execution using Paramiko.
     ref: https://github.com/paramiko/paramiko
     '''

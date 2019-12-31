@@ -19,6 +19,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         service_account_name,
         job_image,
         load_kubeconfig=False,
+        kubeconfig_file=None,
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
@@ -27,9 +28,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self.image_pull_secrets = check.list_param(image_pull_secrets, 'image_pull_secrets')
         self.service_account_name = check.str_param(service_account_name, 'service_account_name')
         self.job_image = check.str_param(job_image, 'job_image')
+        check.bool_param(load_kubeconfig, 'load_kubeconfig')
+        check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
         if load_kubeconfig:
-            config.load_kube_config()
+            config.load_kube_config(kubeconfig_file)
         else:
             config.load_incluster_config()
 
