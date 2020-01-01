@@ -20,7 +20,8 @@ following to your pipeline configuration YAML:
 
     execution:
       multiprocess:
-        max_concurrent: 0
+        config:
+          max_concurrent: 0
     storage:
       filesystem:
 
