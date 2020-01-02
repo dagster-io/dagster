@@ -14,20 +14,6 @@ from .utils import wait_for_pod
 TOX_PYTHON_VERSION = 'py37'
 
 KUBECONFIG_FILE = '/tmp/kubeconfig'
-ENVIRONMENTS_PATH = script_relative_path(
-    os.path.join(
-        '..',
-        '..',
-        '..',
-        '..',
-        '.buildkite',
-        'images',
-        'docker',
-        'test_project',
-        'test_pipelines',
-        'environments',
-    )
-)
 
 
 @pytest.fixture(scope='session')
@@ -65,6 +51,18 @@ def docker_image(
 @pytest.fixture(scope='session')
 def git_repository_root():
     return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+
+
+@pytest.fixture(scope='session')
+def test_repo_path(git_repository_root):  # pylint: disable=redefined-outer-name
+    return script_relative_path(
+        os.path.join(git_repository_root, '.buildkite', 'images', 'docker', 'test_project')
+    )
+
+
+@pytest.fixture(scope='session')
+def environments_path(test_repo_path):  # pylint: disable=redefined-outer-name
+    return os.path.join(test_repo_path, 'test_pipelines', 'environments')
 
 
 @pytest.fixture(scope='session')

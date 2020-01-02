@@ -13,17 +13,28 @@ import uuid
 
 import docker
 import pytest
+import six
 from dagster_airflow.test_fixtures import get_dagster_docker_image
 
 from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
 
 
-@pytest.fixture(scope='module')
-def test_repo_path():
+@pytest.fixture(scope='session')
+def git_repository_root():
+    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+
+
+@pytest.fixture(scope='session')
+def test_repo_path(git_repository_root):  # pylint: disable=redefined-outer-name
     return script_relative_path(
-        os.path.join('..', '..', '..', '.buildkite', 'images', 'docker', 'test_project')
+        os.path.join(git_repository_root, '.buildkite', 'images', 'docker', 'test_project')
     )
+
+
+@pytest.fixture(scope='session')
+def environments_path(test_repo_path):  # pylint: disable=redefined-outer-name
+    return os.path.join(test_repo_path, 'test_pipelines', 'environments')
 
 
 @pytest.fixture(scope='module')
