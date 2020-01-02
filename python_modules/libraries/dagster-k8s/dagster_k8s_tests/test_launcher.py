@@ -6,7 +6,7 @@ import yaml
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
-from .conftest import ENVIRONMENTS_PATH, docker_image  # pylint: disable=unused-import
+from .conftest import docker_image, environments_path  # pylint: disable=unused-import
 from .utils import parse_raw_res, remove_none_recursively, wait_for_job_success
 
 EXPECTED_JOB_SPEC = '''
@@ -68,9 +68,11 @@ spec:
 '''
 
 
-def test_valid_job_format(run_launcher, docker_image):  # pylint: disable=redefined-outer-name
+def test_valid_job_format(
+    run_launcher, docker_image, environments_path
+):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
-    environment_dict = load_yaml_from_path(os.path.join(ENVIRONMENTS_PATH, 'env.yaml'))
+    environment_dict = load_yaml_from_path(os.path.join(environments_path, 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
     job = run_launcher.construct_job(run)
@@ -81,9 +83,9 @@ def test_valid_job_format(run_launcher, docker_image):  # pylint: disable=redefi
     )
 
 
-def test_k8s_run_launcher(run_launcher):
+def test_k8s_run_launcher(run_launcher, environments_path):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
-    environment_dict = load_yaml_from_path(os.path.join(ENVIRONMENTS_PATH, 'env.yaml'))
+    environment_dict = load_yaml_from_path(os.path.join(environments_path, 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
 
