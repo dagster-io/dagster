@@ -81,16 +81,15 @@ export class RunTable extends React.Component<RunTableProps> {
             expectations
             materializations
           }
-          ... on PythonError {
-            message
-            stack
-          }
+          ...PythonErrorFragment
         }
         tags {
           key
           value
         }
       }
+
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 

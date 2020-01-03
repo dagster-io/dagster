@@ -1,22 +1,38 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { Button } from "@blueprintjs/core";
+import gql from "graphql-tag";
+import { PythonErrorFragment } from "./types/PythonErrorFragment";
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
   contextMsg?: string;
-  error: {
-    message: string;
-    stack?: string[];
-  };
+  error: { message: string } | PythonErrorFragment;
 }
 
 export default class PythonErrorInfo extends React.Component<
   IPythonErrorInfoProps
 > {
+  static fragments = {
+    PythonErrorFragment: gql`
+      fragment PythonErrorFragment on PythonError {
+        __typename
+        message
+        stack
+        cause {
+          message
+          stack
+        }
+      }
+    `
+  };
+
   render() {
-    const { message, stack } = this.props.error;
+    const message = this.props.error.message;
+    const stack = (this.props.error as PythonErrorFragment).stack;
+    const cause = (this.props.error as PythonErrorFragment).cause;
+
     const Wrapper = this.props.centered ? ErrorWrapperCentered : ErrorWrapper;
     const context = this.props.contextMsg ? (
       <ErrorHeader>{this.props.contextMsg}</ErrorHeader>
@@ -27,6 +43,18 @@ export default class PythonErrorInfo extends React.Component<
         {context}
         <ErrorHeader>{message}</ErrorHeader>
         <Trace>{stack ? stack.join("") : "No Stack Provided."}</Trace>
+        {cause ? (
+          <>
+            <CauseHeader>
+              The above exception was the direct cause of the following
+              exception:
+            </CauseHeader>
+            <ErrorHeader>{cause.message}</ErrorHeader>
+            <Trace>
+              {cause.stack ? cause.stack.join("") : "No Stack Provided."}
+            </Trace>
+          </>
+        ) : null}
         {this.props.showReload && (
           <Button icon="refresh" onClick={() => window.location.reload()}>
             Reload
@@ -36,6 +64,11 @@ export default class PythonErrorInfo extends React.Component<
     );
   }
 }
+
+const CauseHeader = styled.h3`
+  font-weight: 400;
+  margin: 1em 0 1em;
+`;
 
 const ErrorHeader = styled.h3`
   color: #b05c47;

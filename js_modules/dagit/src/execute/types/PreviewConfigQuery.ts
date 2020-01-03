@@ -50,7 +50,7 @@ export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidati
 export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
 
 export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid" | "PythonError";
+  __typename: "PipelineConfigValidationInvalid";
 }
 
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
@@ -75,7 +75,20 @@ export interface PreviewConfigQuery_executionPlan_InvalidSubsetError {
   message: string;
 }
 
-export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid | PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError | PreviewConfigQuery_executionPlan_InvalidSubsetError;
+export interface PreviewConfigQuery_executionPlan_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface PreviewConfigQuery_executionPlan_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: PreviewConfigQuery_executionPlan_PythonError_cause | null;
+}
+
+export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid | PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError | PreviewConfigQuery_executionPlan_InvalidSubsetError | PreviewConfigQuery_executionPlan_PythonError;
 
 export interface PreviewConfigQuery {
   isPipelineConfigValid: PreviewConfigQuery_isPipelineConfigValid;

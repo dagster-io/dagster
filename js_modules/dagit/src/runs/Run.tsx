@@ -68,11 +68,7 @@ const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
           variables: { runId: run.runId }
         });
         setInFlight(false);
-        if (
-          res.data &&
-          res.data.cancelPipelineExecution &&
-          res.data.cancelPipelineExecution.message
-        ) {
+        if (res.data?.cancelPipelineExecution?.message) {
           SharedToaster.show({
             message: res.data.cancelPipelineExecution.message,
             icon: "error",
@@ -142,8 +138,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
         }
         ... on ExecutionStepFailureEvent {
           error {
-            message
-            stack
+            ...PythonErrorFragment
           }
         }
         ...LogsScrollingTableMessageFragment
@@ -152,6 +147,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
 
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 
