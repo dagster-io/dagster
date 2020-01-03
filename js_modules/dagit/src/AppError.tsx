@@ -79,9 +79,9 @@ const AppStackTraceLink = ({ error }: { error: DagsterGraphQLError }) => {
       >
         messaging in the Dagster slack
       </a>
-      . Use the <code>"Copy"</code> button below to include error information
-      that is helpful for the core development team to diagnose what is
-      happening and to improve Dagster in recovering from unexpected errors.
+      . Use the <code>&quot;Copy&quot;</code> button below to include error
+      information that is helpful for the core development team to diagnose what
+      is happening and to improve Dagster in recovering from unexpected errors.
     </div>
   );
 
