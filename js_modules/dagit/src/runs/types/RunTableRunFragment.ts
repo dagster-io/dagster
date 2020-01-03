@@ -27,7 +27,7 @@ export interface RunTableRunFragment_pipeline_Pipeline {
 
 export type RunTableRunFragment_pipeline = RunTableRunFragment_pipeline_UnknownPipeline | RunTableRunFragment_pipeline_Pipeline;
 
-export interface RunTableRunFragment_stats {
+export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
@@ -36,6 +36,14 @@ export interface RunTableRunFragment_stats {
   expectations: number;
   materializations: number;
 }
+
+export interface RunTableRunFragment_stats_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
 
 export interface RunTableRunFragment_tags {
   __typename: "PipelineTag";
