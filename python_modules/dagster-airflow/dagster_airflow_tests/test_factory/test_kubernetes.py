@@ -8,8 +8,8 @@ from dagster_airflow.factory import make_airflow_dag_kubernetized_for_handle
 from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     execute_tasks_in_dag,
-    get_dagster_docker_image,
 )
+from dagster_airflow_tests.conftest import dagster_docker_image  # pylint: disable=unused-import
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
@@ -35,40 +35,46 @@ ENVIRONMENTS_PATH = script_relative_path(
 
 
 @nettest
-class TestExecuteDagKubernetizedS3Storage(object):
+def test_s3_storage(
+    dagster_airflow_k8s_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_kubernetized(self, dagster_airflow_k8s_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_k8s_operator_pipeline)
+    results = dagster_airflow_k8s_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_s3.yaml'),
+        ],
+        image=dagster_docker_image,
+    )
+    validate_pipeline_execution(results)
 
 
 @nettest
-class TestExecuteDagKubernetizedGCSStorage(object):
+def test_gcs_storage(
+    dagster_airflow_k8s_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
+    results = dagster_airflow_k8s_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_gcs.yaml'),
+        ],
+        image=dagster_docker_image,
+    )
+    validate_pipeline_execution(results)
 
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_kubernetized(self, dagster_airflow_k8s_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_k8s_operator_pipeline)
 
-
-def test_error_dag_k8s():
+def test_error_dag_k8s(
+    dagster_docker_image, environments_path
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
+        os.path.join(environments_path, 'env_s3.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
@@ -78,7 +84,7 @@ def test_error_dag_k8s():
     dag, tasks = make_airflow_dag_kubernetized_for_handle(
         handle=handle,
         pipeline_name=pipeline_name,
-        image=get_dagster_docker_image(),
+        image=dagster_docker_image,
         namespace='default',
         environment_dict=environment_dict,
     )

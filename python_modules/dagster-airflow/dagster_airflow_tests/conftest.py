@@ -14,7 +14,6 @@ import uuid
 import docker
 import pytest
 import six
-from dagster_airflow.test_fixtures import get_dagster_docker_image
 
 from dagster import check
 from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
@@ -105,11 +104,22 @@ def docker_client():
 
 
 @pytest.fixture(scope='session')
-def build_docker_image(test_repo_path, docker_client):
+def dagster_docker_image():
+    assert (
+        'DAGSTER_DOCKER_IMAGE' in os.environ
+    ), 'DAGSTER_DOCKER_IMAGE must be set in your environment for these tests'
+
+    # Will be set in environment by .buildkite/pipeline.py -> tox.ini to:
+    # ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
+    return os.environ['DAGSTER_DOCKER_IMAGE']
+
+
+@pytest.fixture(scope='session')
+def build_docker_image(test_repo_path, docker_client, dagster_docker_image):
     with pushd(test_repo_path):
         subprocess.check_output(['./build.sh'], shell=True)
 
-    return get_dagster_docker_image()
+    return dagster_docker_image
 
 
 @pytest.fixture(scope='session')

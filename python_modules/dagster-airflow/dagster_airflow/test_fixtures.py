@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import uuid
 
@@ -11,12 +10,6 @@ from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 
 from dagster.utils import load_yaml_from_glob_list
-
-
-def get_dagster_docker_image():
-    # Will be set in environment by pipeline.py -> tox.ini to:
-    # ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
-    return os.environ['DAGSTER_DOCKER_IMAGE']
 
 
 def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
@@ -45,138 +38,152 @@ def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
     return results
 
 
-@pytest.fixture(scope='class')
-def dagster_airflow_python_operator_pipeline(request):
+@pytest.fixture(scope='function')
+def dagster_airflow_python_operator_pipeline():
     '''This is a test fixture for running Dagster pipelines as Airflow DAGs.
 
     Usage:
-        # alternatively, import this fixture into your conftest.py
         from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 
-        class TestMyPipeline(object):
-            handle = ExecutionTargetHandle.for_pipeline_fn(define_pipeline)
-            config = {'solids': {'my_solid': 'foo'}}
-            # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yaml']
-            run_id = 'test_run_3'
-            execution_date = datetime.datetime(2019, 1, 1)
-
-            def test_pipeline_results(dagster_airflow_python_operator_pipeline):
-                # This is a list of the parsed JSON returned by calling executePlan for each
-                # solid in the pipeline
-                results = dagster_airflow_python_operator_pipeline
-                assert len(results) = 3
+        def test_airflow(dagster_airflow_python_operator_pipeline):
+            results = dagster_airflow_python_operator_pipeline(
+                pipeline_name='test_pipeline',
+                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                environment_yaml=['environments/test_*.yaml']
+            )
+            assert len(results) == 3
     '''
     from .factory import make_airflow_dag_for_handle
     from .vendor.python_operator import PythonOperator
 
-    handle = getattr(request.cls, 'handle')
-    pipeline_name = getattr(request.cls, 'pipeline_name')
-    environment_dict = getattr(request.cls, 'environment_dict', None)
-    environment_yaml = getattr(request.cls, 'environment_yaml', None)
-    op_kwargs = getattr(request.cls, 'op_kwargs', {})
-    mode = getattr(request.cls, 'mode', None)
+    def _pipeline_fn(
+        handle,
+        pipeline_name,
+        environment_dict=None,
+        environment_yaml=None,
+        op_kwargs=None,
+        mode=None,
+        execution_date=timezone.utcnow(),
+    ):
+        if environment_dict is None and environment_yaml is not None:
+            environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-    if environment_dict is None and environment_yaml is not None:
-        environment_dict = load_yaml_from_glob_list(environment_yaml)
-    run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
-    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
+        dag, tasks = make_airflow_dag_for_handle(
+            handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
+        )
+        assert isinstance(dag, DAG)
 
-    dag, tasks = make_airflow_dag_for_handle(
-        handle, pipeline_name, environment_dict, mode=mode, op_kwargs=op_kwargs
-    )
+        for task in tasks:
+            assert isinstance(task, PythonOperator)
 
-    assert isinstance(dag, DAG)
+        return execute_tasks_in_dag(
+            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+        )
 
-    for task in tasks:
-        assert isinstance(task, PythonOperator)
-
-    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)
+    return _pipeline_fn
 
 
-@pytest.fixture(scope='class')
-def dagster_airflow_docker_operator_pipeline(request):
+@pytest.fixture(scope='function')
+def dagster_airflow_docker_operator_pipeline():
     '''This is a test fixture for running Dagster pipelines as containerized Airflow DAGs.
 
     Usage:
-        # alternatively, import this fixture into your conftest.py
         from dagster_airflow.test_fixtures import dagster_airflow_docker_operator_pipeline
 
-        class TestMyPipeline(object):
-            pipeline = define_my_pipeline()
-            config = {'solids': {'my_solid': 'foo'}}
-            # alternatively, pass a list of globs to be assembled into a config yaml
-            # config_yaml = ['environments/test_*.yaml']
-            run_id = 'test_run_3'
-            execution_date = datetime.datetime(2019, 1, 1)
-
-            def test_pipeline_results(dagster_airflow_docker_operator_pipeline):
-                # This is a list of the parsed JSON returned by calling executePlan for each
-                # solid in the pipeline
-                results = dagster_airflow_docker_operator_pipeline
-                assert len(results) = 3
+        def test_airflow(dagster_airflow_docker_operator_pipeline):
+            results = dagster_airflow_docker_operator_pipeline(
+                pipeline_name='test_pipeline',
+                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                environment_yaml=['environments/test_*.yaml'],
+                image='myimage:latest'
+            )
+            assert len(results) == 3
     '''
     from .factory import make_airflow_dag_containerized_for_handle
     from .operators.docker_operator import DagsterDockerOperator
 
-    handle = getattr(request.cls, 'handle')
-    pipeline_name = getattr(request.cls, 'pipeline_name')
-    # Removed image parameter and made it hard-coded. See:
-    # https://github.com/dagster-io/dagster/issues/2041
-    # getattr(request.cls, 'image')
-    image = get_dagster_docker_image()
-    environment_dict = getattr(request.cls, 'environment_dict', None)
-    environment_yaml = getattr(request.cls, 'environment_yaml', [])
-    op_kwargs = getattr(request.cls, 'op_kwargs', {})
+    def _pipeline_fn(
+        handle,
+        pipeline_name,
+        image,
+        environment_dict=None,
+        environment_yaml=None,
+        op_kwargs=None,
+        mode=None,
+        execution_date=timezone.utcnow(),
+    ):
+        if environment_dict is None and environment_yaml is not None:
+            environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-    if environment_dict is None and environment_yaml is not None:
-        environment_dict = load_yaml_from_glob_list(environment_yaml)
-    run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
-    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
+        dag, tasks = make_airflow_dag_containerized_for_handle(
+            handle=handle,
+            pipeline_name=pipeline_name,
+            image=image,
+            mode=mode,
+            environment_dict=environment_dict,
+            op_kwargs=op_kwargs,
+        )
+        assert isinstance(dag, DAG)
 
-    dag, tasks = make_airflow_dag_containerized_for_handle(
-        handle, pipeline_name, image, environment_dict, op_kwargs=op_kwargs
-    )
+        for task in tasks:
+            assert isinstance(task, DagsterDockerOperator)
 
-    for task in tasks:
-        assert isinstance(task, DagsterDockerOperator)
+        return execute_tasks_in_dag(
+            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+        )
 
-    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)
+    return _pipeline_fn
 
 
-@pytest.fixture(scope='class')
-def dagster_airflow_k8s_operator_pipeline(request):
+@pytest.fixture(scope='function')
+def dagster_airflow_k8s_operator_pipeline():
     '''This is a test fixture for running Dagster pipelines on Airflow + K8s.
+
+    Usage:
+        from dagster_airflow.test_fixtures import dagster_airflow_k8s_operator_pipeline
+
+        def test_airflow(dagster_airflow_k8s_operator_pipeline):
+            results = dagster_airflow_k8s_operator_pipeline(
+                pipeline_name='test_pipeline',
+                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                environment_yaml=['environments/test_*.yaml'],
+                image='myimage:latest'
+            )
+            assert len(results) == 3
     '''
     from .factory import make_airflow_dag_kubernetized_for_handle
     from .operators.kubernetes_operator import DagsterKubernetesPodOperator
 
-    handle = getattr(request.cls, 'handle')
-    pipeline_name = getattr(request.cls, 'pipeline_name')
-    # Removed image parameter and made it hard-coded. See:
-    # https://github.com/dagster-io/dagster/issues/2041
-    # getattr(request.cls, 'image')
-    image = get_dagster_docker_image()
-    namespace = getattr(request.cls, 'namespace', 'default')
-    environment_dict = getattr(request.cls, 'environment_dict', None)
-    environment_yaml = getattr(request.cls, 'environment_yaml', [])
-    op_kwargs = getattr(request.cls, 'op_kwargs', {})
+    def _pipeline_fn(
+        handle,
+        pipeline_name,
+        image,
+        environment_dict=None,
+        environment_yaml=None,
+        op_kwargs=None,
+        mode=None,
+        namespace='default',
+        execution_date=timezone.utcnow(),
+    ):
+        if environment_dict is None and environment_yaml is not None:
+            environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-    if environment_dict is None and environment_yaml is not None:
-        environment_dict = load_yaml_from_glob_list(environment_yaml)
-    run_id = getattr(request.cls, 'run_id', str(uuid.uuid4()))
-    execution_date = getattr(request.cls, 'execution_date', timezone.utcnow())
+        dag, tasks = make_airflow_dag_kubernetized_for_handle(
+            handle=handle,
+            pipeline_name=pipeline_name,
+            image=image,
+            mode=mode,
+            namespace=namespace,
+            environment_dict=environment_dict,
+            op_kwargs=op_kwargs,
+        )
+        assert isinstance(dag, DAG)
 
-    dag, tasks = make_airflow_dag_kubernetized_for_handle(
-        handle=handle,
-        pipeline_name=pipeline_name,
-        image=image,
-        namespace=namespace,
-        environment_dict=environment_dict,
-        op_kwargs=op_kwargs,
-    )
+        for task in tasks:
+            assert isinstance(task, DagsterKubernetesPodOperator)
 
-    for task in tasks:
-        assert isinstance(task, DagsterKubernetesPodOperator)
+        return execute_tasks_in_dag(
+            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+        )
 
-    return execute_tasks_in_dag(dag, tasks, run_id, execution_date)
+    return _pipeline_fn

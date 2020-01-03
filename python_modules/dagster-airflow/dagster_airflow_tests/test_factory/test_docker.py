@@ -1,3 +1,4 @@
+# pylint: disable=unused-import
 import os
 import uuid
 
@@ -5,111 +6,107 @@ import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
 from dagster_airflow.factory import make_airflow_dag_containerized_for_handle
-from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
+from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     execute_tasks_in_dag,
-    get_dagster_docker_image,
 )
+from dagster_airflow_tests.conftest import dagster_docker_image, environments_path
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
-from dagster.utils import load_yaml_from_glob_list, script_relative_path
+from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
-# TODO (Nate): Will remove in follow-up diff
-ENVIRONMENTS_PATH = script_relative_path(
-    os.path.join(
-        '..',
-        '..',
-        '..',
-        '..',
-        '.buildkite',
-        'images',
-        'docker',
-        'test_project',
-        'test_pipelines',
-        'environments',
+
+def test_fs_storage_no_explicit_base_dir(
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
+    pipeline_name = 'demo_pipeline'
+    results = dagster_airflow_docker_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
+        ],
+        image=dagster_docker_image,
     )
-)
+    validate_pipeline_execution(results)
 
 
-class TestExecuteDagContainerizedFilesystemStorageNoExplicitBaseDir(object):
+def test_fs_storage(
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem_no_explicit_base_dir.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
+    results = dagster_airflow_docker_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_filesystem.yaml'),
+        ],
+        image=dagster_docker_image,
+    )
+    validate_pipeline_execution(results)
 
 
 @nettest
-class TestExecuteDagContainerizedS3Storage(object):
+def test_s3_storage(
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
+    results = dagster_airflow_docker_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_s3.yaml'),
+        ],
+        image=dagster_docker_image,
+    )
+    validate_pipeline_execution(results)
 
 
 @nettest
-class TestExecuteDagContainerizedGCSStorage(object):
+def test_gcs_storage(
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
-
-
-class TestExecuteDagContainerizedFilesystemStorage(object):
-    pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-    op_kwargs = {'host_tmp_dir': '/tmp'}
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_docker_operator_pipeline)
+    results = dagster_airflow_docker_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_gcs.yaml'),
+        ],
+        image=dagster_docker_image,
+    )
+    validate_pipeline_execution(results)
 
 
-class TestExecuteSkipsContainerized(object):
+def test_skip_operator(
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'optional_outputs'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml')]
-    run_id = str(uuid.uuid4())
-    op_kwargs = {'host_tmp_dir': '/tmp'}
 
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag_containerized(self, dagster_airflow_docker_operator_pipeline):
-        validate_skip_pipeline_execution(dagster_airflow_docker_operator_pipeline)
+    results = dagster_airflow_docker_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[os.path.join(environments_path, 'env_filesystem.yaml')],
+        op_kwargs={'host_tmp_dir': '/tmp'},
+        image=dagster_docker_image,
+    )
+    validate_skip_pipeline_execution(results)
 
 
-def test_error_dag_containerized():
+def test_error_dag_containerized(
+    dagster_docker_image, environments_path
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
+        os.path.join(environments_path, 'env_s3.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
@@ -117,7 +114,7 @@ def test_error_dag_containerized():
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_containerized_for_handle(
-        handle, pipeline_name, get_dagster_docker_image(), environment_dict
+        handle, pipeline_name, dagster_docker_image, environment_dict
     )
 
     with pytest.raises(AirflowException) as exc_info:
