@@ -15,86 +15,87 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_python_operator_pipeline,
     execute_tasks_in_dag,
 )
+from dagster_airflow_tests.conftest import environments_path  # pylint: disable=unused-import
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
-from dagster.utils import load_yaml_from_glob_list, script_relative_path
+from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
-# TODO (Nate): Will remove in follow-up diff
-ENVIRONMENTS_PATH = script_relative_path(
-    os.path.join(
-        '..',
-        '..',
-        '..',
-        '..',
-        '.buildkite',
-        'images',
-        'docker',
-        'test_project',
-        'test_pipelines',
-        'environments',
+
+def test_fs_storage_no_explicit_base_dir(
+    dagster_airflow_python_operator_pipeline, environments_path,
+):  # pylint: disable=redefined-outer-name
+    pipeline_name = 'demo_pipeline'
+    results = dagster_airflow_python_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
+        ],
     )
-)
+    validate_pipeline_execution(results)
 
 
-class TestExecuteDagPythonFilesystemStorageNoExplicitBaseDir(object):
+def test_fs_storage(
+    dagster_airflow_python_operator_pipeline, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem_no_explicit_base_dir.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
-
-
-class TestExecuteDagPythonFilesystemStorage(object):
-    pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
+    results = dagster_airflow_python_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_filesystem.yaml'),
+        ],
+    )
+    validate_pipeline_execution(results)
 
 
 @nettest
-class TestExecuteDagPythonS3Storage(object):
+def test_s3_storage(
+    dagster_airflow_python_operator_pipeline, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_s3.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
+    results = dagster_airflow_python_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_s3.yaml'),
+        ],
+    )
+    validate_pipeline_execution(results)
 
 
 @nettest
-class TestExecuteDagPythonGCSStorage(object):
+def test_gcs_storage(
+    dagster_airflow_python_operator_pipeline, environments_path,
+):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline_gcs'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env.yaml'),
-        os.path.join(ENVIRONMENTS_PATH, 'env_gcs.yaml'),
-    ]
-    run_id = str(uuid.uuid4())
+    results = dagster_airflow_python_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[
+            os.path.join(environments_path, 'env.yaml'),
+            os.path.join(environments_path, 'env_gcs.yaml'),
+        ],
+    )
+    validate_pipeline_execution(results)
 
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        validate_pipeline_execution(dagster_airflow_python_operator_pipeline)
+
+def test_skip_operator(
+    dagster_airflow_python_operator_pipeline, environments_path,
+):  # pylint: disable=redefined-outer-name
+    pipeline_name = 'optional_outputs'
+    results = dagster_airflow_python_operator_pipeline(
+        pipeline_name=pipeline_name,
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        environment_yaml=[os.path.join(environments_path, 'env_filesystem.yaml')],
+    )
+    validate_skip_pipeline_execution(results)
 
 
 def test_rename_for_airflow():
@@ -113,31 +114,18 @@ def test_rename_for_airflow():
         assert after == _rename_for_airflow(before)
 
 
-class TestExecuteSkipsPythonOperator(object):
-    pipeline_name = 'optional_outputs'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
-    environment_yaml = [os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml')]
-    run_id = str(uuid.uuid4())
-
-    # pylint: disable=redefined-outer-name
-    def test_execute_dag(self, dagster_airflow_python_operator_pipeline):
-        validate_skip_pipeline_execution(dagster_airflow_python_operator_pipeline)
-
-
-def test_error_dag_python():
+def test_error_dag_python(environments_path):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
     environment_yaml = [
-        os.path.join(ENVIRONMENTS_PATH, 'env_filesystem.yaml'),
+        os.path.join(environments_path, 'env_filesystem.yaml'),
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
-
-    run_id = str(uuid.uuid4())
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_for_handle(handle, pipeline_name, environment_dict)
 
     with pytest.raises(AirflowException) as exc_info:
-        execute_tasks_in_dag(dag, tasks, run_id, execution_date)
+        execute_tasks_in_dag(dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date)
 
     assert 'Exception: Unusual error' in str(exc_info.value)
