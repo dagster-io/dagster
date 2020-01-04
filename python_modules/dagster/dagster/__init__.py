@@ -27,6 +27,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ResourceDefinition,
     ScheduleDefinition,
+    ScheduleExecutionContext,
     SolidDefinition,
     SolidInvocation,
     SystemStorageData,

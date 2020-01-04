@@ -13,6 +13,7 @@ from rx import Observable
 
 from dagster import RunConfig, check
 from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import EXECUTION_TIME_KEY
@@ -83,25 +84,18 @@ def start_scheduled_execution(graphene_info, schedule_name):
     schedule = get_dagster_schedule(graphene_info, schedule_name)
     schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
 
+    schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
+
     # Run should_execute and halt if it returns False
-    should_execute = schedule_def.should_execute
-    if should_execute() != True:
+    if not schedule_def.should_execute(schedule_context):
         return graphene_info.schema.type_named('ScheduledExecutionBlocked')(
             message='Schedule {schedule_name} did not run because the should_execute did not return'
             ' True'.format(schedule_name=schedule_name)
         )
 
     # Get environment_dict
-    if schedule_def.environment_dict:
-        environment_dict = schedule_def.environment_dict
-    else:
-        environment_dict = schedule_def.environment_dict_fn()
-
-    # Get tags
-    if schedule_def.tags:
-        tags = schedule_def.tags
-    else:
-        tags = schedule_def.tags_fn()
+    environment_dict = schedule_def.get_environment_dict(schedule_context)
+    tags = schedule_def.get_tags(schedule_context)
 
     check.invariant('dagster/schedule_id' not in tags)
     tags['dagster/schedule_id'] = schedule.schedule_id

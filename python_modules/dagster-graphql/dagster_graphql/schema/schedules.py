@@ -13,7 +13,7 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check, seven
-from dagster.core.definitions import ScheduleDefinition
+from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.scheduler import Schedule
 from dagster.seven import yaml
@@ -51,16 +51,15 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
     def resolve_environment_config_yaml(self, _graphene_info):
         schedule_def = self._schedule_def
-        environment_config = schedule_def.environment_dict or schedule_def.environment_dict_fn()
-
+        environment_config = schedule_def.get_environment_dict(self._schedule_context)
         environment_config_yaml = yaml.dump(environment_config, default_flow_style=False)
         return environment_config_yaml if environment_config_yaml else ''
 
-    def __init__(self, schedule_def):
+    def __init__(self, graphene_info, schedule_def):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
-
+        self._schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
         execution_params = schedule_def.execution_params
-        environment_config = schedule_def.environment_dict or schedule_def.environment_dict_fn()
+        environment_config = schedule_def.get_environment_dict(self._schedule_context)
         execution_params['environmentConfigData'] = environment_config
 
         super(DauphinScheduleDefinition, self).__init__(
@@ -110,7 +109,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         super(DauphinRunningSchedule, self).__init__(
             id=schedule.schedule_id,
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
-                get_dagster_schedule_def(graphene_info, schedule.name)
+                graphene_info=graphene_info,
+                schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
             ),
             status=schedule.status,
             python_path=schedule.python_path,
