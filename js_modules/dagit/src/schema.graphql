@@ -364,6 +364,7 @@ type InputMapping {
 
 type Instance {
   info: String!
+  runLauncher: RunLauncher
 }
 
 type InvalidOutputError {
@@ -899,6 +900,10 @@ type Resource {
 
 type ResourceRequirement {
   resourceKey: String!
+}
+
+type RunLauncher {
+  name: String!
 }
 
 type RunLauncherNotDefinedError implements Error {

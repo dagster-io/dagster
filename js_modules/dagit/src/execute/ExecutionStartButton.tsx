@@ -6,7 +6,9 @@ import { WebsocketStatusContext } from "../WebsocketStatus";
 
 interface IExecutionStartButtonProps {
   title: string;
-  icon: "repeat" | "play" | "disable";
+  icon: "repeat" | "play" | "disable" | "send-to";
+  tooltip?: string;
+  activeText?: string;
   small?: boolean;
   disabled?: boolean;
   onClick: () => void;
@@ -103,7 +105,7 @@ export default class ExecutionStartButton extends React.Component<
                 <div style={{ marginRight: 5 }}>
                   <Spinner intent={Intent.NONE} size={iconSize} />
                 </div>
-                Starting...
+                {this.props.activeText ? this.props.activeText : "Starting..."}
               </Wrapper>
             );
           }
@@ -114,7 +116,7 @@ export default class ExecutionStartButton extends React.Component<
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
-                title={this.props.title}
+                title={this.props.tooltip}
               >
                 <Icon
                   icon={this.props.icon}
@@ -132,7 +134,7 @@ export default class ExecutionStartButton extends React.Component<
               ref={this._startButton}
               style={style}
               state={ExecutionButtonStatus.Ready}
-              title={this.props.title}
+              title={this.props.tooltip}
               onClick={this.onClick}
             >
               <Icon

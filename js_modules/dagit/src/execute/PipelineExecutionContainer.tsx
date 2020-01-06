@@ -3,15 +3,9 @@ import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { Button, Colors, Spinner } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
+import { ApolloConsumer } from "react-apollo";
 
-import ExecutionStartButton from "./ExecutionStartButton";
 import { ExecutionTabs } from "./ExecutionTabs";
-import {
-  handleStartExecutionResult,
-  HANDLE_START_EXECUTION_FRAGMENT
-} from "../runs/RunUtils";
 import { RunPreview } from "./RunPreview";
 import { SplitPanelChildren } from "../SplitPanelChildren";
 import SolidSelector from "./SolidSelector";
@@ -51,11 +45,9 @@ import {
   PipelineExecutionContainerEnvironmentSchemaFragment_ModeNotFoundError
 } from "./types/PipelineExecutionContainerEnvironmentSchemaFragment";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
-import {
-  StartPipelineExecution,
-  StartPipelineExecutionVariables
-} from "./types/StartPipelineExecution";
+
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
+import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -214,31 +206,6 @@ export default class PipelineExecutionContainer extends React.Component<
     return undefined;
   };
 
-  onExecute = async (
-    startPipelineExecution: MutationFunction<
-      StartPipelineExecution,
-      StartPipelineExecutionVariables
-    >
-  ) => {
-    const { preview } = this.state;
-    const pipeline = this.getPipeline();
-
-    if (!preview || !pipeline) {
-      alert(
-        "Dagit is still retrieving pipeline info. Please try again in a moment."
-      );
-      return;
-    }
-
-    const variables = this.buildExecutionVariables();
-    if (!variables) return;
-
-    const result = await startPipelineExecution({ variables });
-    handleStartExecutionResult(pipeline.name, result, {
-      openInNewWindow: true
-    });
-  };
-
   buildExecutionVariables = () => {
     const { currentSession } = this.props;
     const pipeline = this.getPipeline();
@@ -277,32 +244,25 @@ export default class PipelineExecutionContainer extends React.Component<
 
     return (
       <>
-        <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
-          mutation={START_PIPELINE_EXECUTION_MUTATION}
-        >
-          {startPipelineExecution => (
-            <TabBarContainer className="bp3-dark">
-              <ExecutionTabs
-                sessions={this.props.data.sessions}
-                currentSession={currentSession}
-                onSelectSession={this.onSelectSession}
-                onCreateSession={this.onCreateSession}
-                onRemoveSession={this.onRemoveSession}
-                onSaveSession={this.onSaveSession}
-              />
-              <div style={{ flex: 1 }} />
-              {!pipeline || !this.state.preview ? (
-                <Spinner size={17} />
-              ) : (
-                <ExecutionStartButton
-                  title="Start Execution"
-                  icon={IconNames.PLAY}
-                  onClick={() => this.onExecute(startPipelineExecution)}
-                />
-              )}
-            </TabBarContainer>
+        <TabBarContainer className="bp3-dark">
+          <ExecutionTabs
+            sessions={this.props.data.sessions}
+            currentSession={currentSession}
+            onSelectSession={this.onSelectSession}
+            onCreateSession={this.onCreateSession}
+            onRemoveSession={this.onRemoveSession}
+            onSaveSession={this.onSaveSession}
+          />
+          <div style={{ flex: 1 }} />
+          {!pipeline || !this.state.preview ? (
+            <Spinner size={17} />
+          ) : (
+            <PipelineExecutionButtonGroup
+              pipelineName={pipeline.name}
+              getVariables={this.buildExecutionVariables}
+            />
           )}
-        </Mutation>
+        </TabBarContainer>
         {currentSession ? (
           <PipelineExecutionWrapper>
             <SplitPanelChildren
@@ -425,34 +385,6 @@ export default class PipelineExecutionContainer extends React.Component<
     );
   }
 }
-
-const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
-      __typename
-
-      ... on StartPipelineExecutionSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ...HandleStartExecutionFragment
-    }
-  }
-
-  ${HANDLE_START_EXECUTION_FRAGMENT}
-`;
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
