@@ -838,6 +838,7 @@ type PresetNotFoundError implements Error {
 type PythonError implements Error {
   message: String!
   stack: [String!]!
+  cause: PythonError
 }
 
 type Query {

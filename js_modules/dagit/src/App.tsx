@@ -102,10 +102,7 @@ export const ROOT_PIPELINES_QUERY = gql`
   query RootPipelinesQuery {
     pipelinesOrError {
       __typename
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
       ... on PipelineConnection {
         nodes {
           ...TopNavPipelinesFragment
@@ -115,4 +112,5 @@ export const ROOT_PIPELINES_QUERY = gql`
   }
 
   ${TopNav.fragments.TopNavPipelinesFragment}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

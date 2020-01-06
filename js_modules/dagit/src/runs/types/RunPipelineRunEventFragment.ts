@@ -27,10 +27,17 @@ export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
   key: string;
 }
 
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {

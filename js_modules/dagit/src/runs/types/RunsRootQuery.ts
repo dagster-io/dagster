@@ -37,10 +37,17 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_Pi
   materializations: number;
 }
 
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
 }
 
 export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;

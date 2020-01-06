@@ -3,14 +3,12 @@ import * as ReactDOM from "react-dom";
 import { createGlobalStyle } from "styled-components/macro";
 import ApolloClient from "apollo-client";
 import { ApolloLink } from "apollo-link";
-import { onError } from "apollo-link-error";
 import { ApolloProvider } from "react-apollo";
 import { SubscriptionClient } from "subscriptions-transport-ws";
 import { WebSocketLink } from "apollo-link-ws";
 import { WebsocketStatusProvider } from "./WebsocketStatus";
 import { App } from "./App";
 import AppCache from "./AppCache";
-import { Toaster, Position, Intent } from "@blueprintjs/core";
 
 import "@blueprintjs/core/lib/css/blueprint.css";
 import "@blueprintjs/table/lib/css/table.css";
@@ -18,6 +16,7 @@ import "@blueprintjs/icons/lib/css/blueprint-icons.css";
 import "@blueprintjs/select/lib/css/blueprint-select.css";
 import { patchCopyToRemoveZeroWidthUnderscores } from "./Util";
 import { WEBSOCKET_URI } from "./DomUtils";
+import { AppErrorLink } from "./AppError";
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -50,36 +49,14 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
-
 const websocketClient = new SubscriptionClient(WEBSOCKET_URI, {
   reconnect: true,
   lazy: true
 });
 
-const errorLink = onError(({ graphQLErrors, networkError }) => {
-  if (graphQLErrors) {
-    graphQLErrors.map(error => {
-      ErrorToaster.show({
-        message: `[GraphQL error] ${error.message}`,
-        intent: Intent.DANGER
-      });
-      console.error("[GraphQL error]", error);
-      return null;
-    });
-  }
-  if (networkError) {
-    ErrorToaster.show({
-      message: `[Network error] ${networkError}`,
-      intent: Intent.DANGER
-    });
-    console.error("[Network error]", networkError);
-  }
-});
-
 const client = new ApolloClient({
   cache: AppCache,
-  link: ApolloLink.from([errorLink, new WebSocketLink(websocketClient)])
+  link: ApolloLink.from([AppErrorLink(), new WebSocketLink(websocketClient)])
 });
 
 ReactDOM.render(

@@ -21,7 +21,7 @@ export const SharedToaster = Toaster.create(
 export async function copyValue(event: React.MouseEvent<any>, value: string) {
   event.preventDefault();
 
-  const el = document.createElement("input");
+  const el = document.createElement("textarea");
   document.body.appendChild(el);
   el.value = value;
   el.select();

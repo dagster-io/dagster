@@ -37,10 +37,17 @@ export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
   materializations: number;
 }
 
+export interface RunTableRunFragment_stats_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface RunTableRunFragment_stats_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: RunTableRunFragment_stats_PythonError_cause | null;
 }
 
 export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunStatsSnapshot | RunTableRunFragment_stats_PythonError;
