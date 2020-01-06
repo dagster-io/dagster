@@ -71,15 +71,14 @@ function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
 
   for (const item of search) {
     if (item.token === "pipeline") {
-      obj.pipeline = item.value;
+      obj.pipelineName = item.value;
     } else if (item.token === "id") {
       obj.runId = item.value;
     } else if (item.token === "status") {
       obj.status = item.value as PipelineRunStatus;
     } else if (item.token === "tag") {
       const [key, value] = item.value.split("=");
-      obj.tagKey = key;
-      obj.tagValue = value;
+      obj.tags = [{ key, value }];
     }
   }
 

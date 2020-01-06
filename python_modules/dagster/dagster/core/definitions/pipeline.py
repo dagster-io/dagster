@@ -559,18 +559,23 @@ class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
 
 
 @whitelist_for_serdes
-class PipelineRunsFilter(
-    namedtuple('_PipelineRunsFilter', 'run_id tag_key tag_value pipeline status')
-):
-    def __new__(cls, run_id=None, pipeline=None, status=None, tag_key=None, tag_value=None):
+class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_id tags pipeline_name status')):
+    def __new__(cls, run_id=None, pipeline_name=None, status=None, tags=None):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
             run_id=check.opt_str_param(run_id, 'run_id'),
-            tag_key=check.opt_str_param(tag_key, 'tag_key'),
-            tag_value=check.opt_str_param(tag_value, 'tag_value'),
-            pipeline=check.opt_str_param(pipeline, 'pipeline'),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
+            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
             status=status,
         )
+
+    def to_graphql_input(self):
+        return {
+            'runId': self.run_id,
+            'tags': [{'key': k, 'value': v} for k, v in self.tags.items()],
+            'pipelineName': self.pipeline_name,
+            'status': self.status,
+        }
 
 
 def _create_environment_schema(pipeline_def, mode_definition):

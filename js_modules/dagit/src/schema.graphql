@@ -773,9 +773,8 @@ type PipelineRuns {
 
 input PipelineRunsFilter {
   runId: String
-  pipeline: String
-  tagKey: String
-  tagValue: String
+  pipelineName: String
+  tags: [ExecutionTag!]
   status: PipelineRunStatus
 }
 

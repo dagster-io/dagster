@@ -87,9 +87,8 @@ export interface ExecutionTag {
 
 export interface PipelineRunsFilter {
   runId?: string | null;
-  pipeline?: string | null;
-  tagKey?: string | null;
-  tagValue?: string | null;
+  pipelineName?: string | null;
+  tags?: ExecutionTag[] | null;
   status?: PipelineRunStatus | null;
 }
 
