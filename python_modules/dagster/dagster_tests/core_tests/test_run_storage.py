@@ -130,15 +130,13 @@ def test_fetch_count_by_tag(run_storage_factory_cm_fn):
         storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
         assert len(storage.all_runs()) == 3
 
-        run_count = storage.get_run_count_with_matching_tags(
-            [('mytag', 'hello'), ('mytag2', 'world')]
-        )
+        run_count = storage.get_run_count_with_matching_tags({'mytag': 'hello', 'mytag2': 'world'})
         assert run_count == 1
 
-        run_count = storage.get_run_count_with_matching_tags([('mytag2', 'world')])
+        run_count = storage.get_run_count_with_matching_tags({'mytag2': 'world'})
         assert run_count == 2
 
-        run_count = storage.get_run_count_with_matching_tags([])
+        run_count = storage.get_run_count_with_matching_tags({})
         assert run_count == 3
 
         assert storage.get_run_tags() == [('mytag', {'hello', 'goodbye'}), ('mytag2', {'world'})]
@@ -168,16 +166,17 @@ def test_fetch_by_tags(run_storage_factory_cm_fn):
         storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
         assert len(storage.all_runs()) == 3
 
-        some_runs = storage.get_runs_with_matching_tags([('mytag', 'hello'), ('mytag2', 'world')])
+        some_runs = storage.get_runs_with_matching_tags({'mytag': 'hello', 'mytag2': 'world'})
+
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
 
-        some_runs = storage.get_runs_with_matching_tags([('mytag2', 'world')])
+        some_runs = storage.get_runs_with_matching_tags({'mytag2': 'world'})
         assert len(some_runs) == 2
         assert any(x.run_id == one for x in some_runs)
         assert any(x.run_id == two for x in some_runs)
 
-        some_runs = storage.get_runs_with_matching_tags([])
+        some_runs = storage.get_runs_with_matching_tags({})
         assert len(some_runs) == 3
 
 
@@ -209,11 +208,9 @@ def test_paginated_fetch(run_storage_factory_cm_fn):
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 
-        all_runs = storage.get_runs_with_matching_tags([('mytag', 'hello')])
+        all_runs = storage.get_runs_with_matching_tags({'mytag': 'hello'})
         assert len(all_runs) == 3
-        sliced_runs = storage.get_runs_with_matching_tags(
-            [('mytag', 'hello')], cursor=three, limit=1
-        )
+        sliced_runs = storage.get_runs_with_matching_tags({'mytag': 'hello'}, cursor=three, limit=1)
         assert len(sliced_runs) == 1
         assert sliced_runs[0].run_id == two
 

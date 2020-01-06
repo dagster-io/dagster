@@ -56,7 +56,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''Return all the runs present in the storage that have the given tags
 
         Args:
-            tags (List[Tuple[str, str]]): List of (key, value) tags
+            tags (Dict[str, str]): Dictionary of (key, value) tags
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 

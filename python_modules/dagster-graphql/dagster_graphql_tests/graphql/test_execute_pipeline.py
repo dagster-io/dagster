@@ -560,7 +560,7 @@ def test_basic_start_pipeline_execution_with_tags():
     assert any([x['key'] == 'dagster/test_key' and x['value'] == 'test_value' for x in run['tags']])
 
     # Check run storage
-    runs_with_tag = instance.get_runs_with_matching_tags([('dagster/test_key', 'test_value')])
+    runs_with_tag = instance.get_runs_with_matching_tags({'dagster/test_key': 'test_value'})
     assert len(runs_with_tag) == 1
     assert runs_with_tag[0].run_id == run_id
 

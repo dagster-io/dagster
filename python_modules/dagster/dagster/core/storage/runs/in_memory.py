@@ -48,14 +48,18 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_run_count_with_matching_tags(self, tags):
-        check.list_param(tags, 'tags', tuple)
+        check.dict_param(tags, 'tags', key_type=str, value_type=str)
         return len(self.get_runs_with_matching_tags(tags))
 
     def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.list_param(tags, 'tags', tuple)
+        check.dict_param(tags, 'tags', key_type=str, value_type=str)
 
         return self._slice(
-            [r for r in self.all_runs() if all(r.tags.get(key) == value for key, value in tags)],
+            [
+                r
+                for r in self.all_runs()
+                if all(r.tags.get(key) == value for key, value in tags.items())
+            ],
             cursor,
             limit,
         )
