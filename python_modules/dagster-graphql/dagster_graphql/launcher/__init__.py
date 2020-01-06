@@ -7,7 +7,7 @@ from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
-from dagster import Bool, Field, String, check, seven
+from dagster import Bool, Field, Float, String, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -17,9 +17,10 @@ from dagster.seven import urljoin, urlparse
 
 
 class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, address, inst_data=None):
+    def __init__(self, address, timeout, inst_data=None):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
         self._address = check.str_param(address, 'address')
+        self._timeout = check.numeric_param(timeout, 'timeout')
         self._handle = None
         self._instance = None
         self._validated = False
@@ -34,11 +35,19 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return NamedDict('RemoteDagitExecutionServerConfig', {'address': Field(String)},)
+        return NamedDict(
+            'RemoteDagitExecutionServerConfig',
+            {
+                'address': Field(String),
+                'timeout': Field(Float, is_optional=True, default_value=30.0),
+            },
+        )
 
     @classmethod
     def from_config_value(cls, inst_data, config_value, **kwargs):
-        return cls(address=config_value['address'], inst_data=inst_data,)
+        return cls(
+            address=config_value['address'], timeout=config_value['timeout'], inst_data=inst_data,
+        )
 
     @property
     def inst_data(self):
@@ -56,7 +65,9 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         if self._validated:
             return
         try:
-            sanity_check = requests.get(urljoin(self._address, '/dagit_info'))
+            sanity_check = requests.get(
+                urljoin(self._address, '/dagit_info'), timeout=self._timeout
+            )
             self._validated = sanity_check.status_code = 200 and 'dagit' in sanity_check.text
         except RequestException:
             self._validated = False
@@ -78,6 +89,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 'query': START_PIPELINE_EXECUTION_MUTATION,
                 'variables': seven.json.dumps(variables),
             },
+            timeout=self._timeout,
         )
         response.raise_for_status()
         result = response.json()['data']['startPipelineExecution']
