@@ -165,14 +165,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
         filters = kwargs['filter'].to_selector()
-        provided = [
-            i for i in [filters.run_id, filters.pipeline_name, filters.tags, filters.status] if i
-        ]
-
-        if len(provided) > 1:
-            return graphene_info.schema.type_named('InvalidPipelineRunsFilterError')(
-                message="You may only provide one of the filter options."
-            )
 
         return graphene_info.schema.type_named('PipelineRuns')(
             results=get_runs(graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit'))
@@ -606,7 +598,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
             status = None
 
         if self.tags:
-            # We are wrapping self.tags in a list because tags is not marked as iterable
+            # We are wrapping self.tags in a list because dauphin.List is not marked as iterable
             tags = {tag['key']: tag['value'] for tag in list(self.tags)}
         else:
             tags = None

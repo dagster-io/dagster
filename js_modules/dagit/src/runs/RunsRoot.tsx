@@ -78,7 +78,11 @@ function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       obj.status = item.value as PipelineRunStatus;
     } else if (item.token === "tag") {
       const [key, value] = item.value.split("=");
-      obj.tags = [{ key, value }];
+      if (obj.tags) {
+        obj.tags.push({ key, value });
+      } else {
+        obj.tags = [{ key, value }];
+      }
     }
   }
 
@@ -136,6 +140,33 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
     }
   );
 
+  const suggestionProvidersFilter = (
+    suggestionProviders: SuggestionProvider[],
+    values: TokenizingFieldValue[]
+  ) => {
+    const tokens: string[] = [];
+    for (const { token } of values) {
+      if (token) {
+        tokens.push(token);
+      }
+    }
+
+    // If id is set, then no other filters can be set
+    if (tokens.includes("id")) {
+      return [];
+    }
+
+    // Can only have one filter value for pipeline, status, or id
+    const limitedTokens = new Set<string>(["id", "pipeline", "status"]);
+    const presentLimitedTokens = tokens.filter(token =>
+      limitedTokens.has(token)
+    );
+
+    return suggestionProviders.filter(
+      provider => !presentLimitedTokens.includes(provider.token)
+    );
+  };
+
   return (
     <RunsQueryVariablesContext.Provider value={queryVars}>
       <ScrollContainer>
@@ -150,9 +181,9 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
           <Filters>
             <TokenizingField
               values={search}
-              maxValues={1}
               onChange={search => setSearch(search)}
               suggestionProviders={suggestions}
+              suggestionProvidersFilter={suggestionProvidersFilter}
               loading={queryResult.loading}
             />
           </Filters>

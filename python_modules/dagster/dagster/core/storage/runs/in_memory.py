@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus
@@ -40,6 +41,34 @@ class InMemoryRunStorage(RunStorage):
 
     def all_runs(self, cursor=None, limit=None):
         return self._slice(list(self._runs.values())[::-1], cursor, limit)
+
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+        check.opt_str_param(cursor, 'cursor')
+        check.opt_int_param(limit, 'limit')
+
+        if not filters:
+            return self.all_runs(cursor, limit)
+
+        def run_filter(run):
+            if filters.run_id and filters.run_id != run.run_id:
+                return False
+
+            if filters.status and filters.status != run.status:
+                return False
+
+            if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
+                return False
+
+            if filters.tags and not all(
+                run.tags.get(key) == value for key, value in filters.tags.items()
+            ):
+                return False
+
+            return True
+
+        matching_runs = list(filter(run_filter, reversed(self._runs.values())))
+        return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         check.str_param(pipeline_name, 'pipeline_name')

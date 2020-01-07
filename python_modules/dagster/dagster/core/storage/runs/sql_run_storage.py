@@ -5,6 +5,7 @@ from datetime import datetime
 import sqlalchemy as db
 
 from dagster import check
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
@@ -102,6 +103,50 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             List[PipelineRun]: Tuples of run_id, pipeline_run.
         '''
         query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
+        rows = self.execute(query)
+        return self._rows_to_runs(rows)
+
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+        check.opt_str_param(cursor, 'cursor')
+        check.opt_int_param(limit, 'limit')
+
+        if not filters:
+            return self.all_runs(cursor, limit)
+
+        # If we have a tags filter, then we need to select from a joined table
+        if filters.tags:
+            base_query = db.select([RunsTable.c.run_body]).select_from(
+                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+            )
+        else:
+            base_query = db.select([RunsTable.c.run_body])
+
+        if filters.run_id:
+            base_query = base_query.where(RunsTable.c.run_id == filters.run_id)
+
+        if filters.pipeline_name:
+            base_query = base_query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+
+        if filters.status:
+            base_query = base_query.where(RunsTable.c.status == filters.status.value)
+
+        if filters.tags:
+            base_query = base_query.where(
+                db.or_(
+                    *(
+                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        for key, value in filters.tags.items()
+                    )
+                )
+            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+
+            if len(filters.tags) > 0:
+                base_query = base_query.having(
+                    db.func.count(RunsTable.c.run_id) == len(filters.tags)
+                )
+
+        query = self._build_query(base_query, cursor, limit)
         rows = self.execute(query)
         return self._rows_to_runs(rows)
 

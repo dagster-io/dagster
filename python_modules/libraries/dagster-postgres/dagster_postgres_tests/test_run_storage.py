@@ -1,6 +1,6 @@
 import uuid
 
-from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
@@ -111,6 +111,89 @@ def test_delete(clean_storage):
     assert len(storage.all_runs()) == 1
     storage.delete_run(run_id)
     assert list(storage.all_runs()) == []
+
+
+def test_fetch_by_filter(clean_storage):
+    storage = clean_storage
+    one = str(uuid.uuid4())
+    two = str(uuid.uuid4())
+    three = str(uuid.uuid4())
+
+    storage.add_run(
+        build_run(
+            run_id=one,
+            pipeline_name='some_pipeline',
+            tags={'tag': 'hello', 'tag2': 'world'},
+            status=PipelineRunStatus.SUCCESS,
+        )
+    )
+    storage.add_run(
+        build_run(
+            run_id=two,
+            pipeline_name='some_pipeline',
+            tags={'tag': 'hello'},
+            status=PipelineRunStatus.FAILURE,
+        ),
+    )
+
+    storage.add_run(
+        build_run(run_id=three, pipeline_name='other_pipeline', status=PipelineRunStatus.SUCCESS)
+    )
+
+    assert len(storage.all_runs()) == 3
+
+    some_runs = storage.get_runs(PipelineRunsFilter(run_id=one))
+    assert len(some_runs) == 1
+    assert some_runs[0].run_id == one
+
+    some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name='some_pipeline'))
+    assert len(some_runs) == 2
+    assert any(x.run_id == one for x in some_runs)
+    assert any(x.run_id == two for x in some_runs)
+
+    some_runs = storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
+    assert len(some_runs) == 2
+    assert any(x.run_id == one for x in some_runs)
+    assert any(x.run_id == three for x in some_runs)
+
+    some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello'}))
+    assert len(some_runs) == 2
+    assert any(x.run_id == one for x in some_runs)
+    assert any(x.run_id == two for x in some_runs)
+
+    some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
+    assert len(some_runs) == 1
+    assert some_runs[0].run_id == one
+
+    some_runs = storage.get_runs(
+        PipelineRunsFilter(pipeline_name="some_pipeline", tags={'tag': 'hello'})
+    )
+    assert len(some_runs) == 2
+    assert any(x.run_id == one for x in some_runs)
+    assert any(x.run_id == two for x in some_runs)
+
+    some_runs = storage.get_runs(
+        PipelineRunsFilter(
+            pipeline_name="some_pipeline", tags={'tag': 'hello'}, status=PipelineRunStatus.SUCCESS,
+        )
+    )
+    assert len(some_runs) == 1
+    assert some_runs[0].run_id == one
+
+    # All filters
+    some_runs = storage.get_runs(
+        PipelineRunsFilter(
+            run_id=one,
+            pipeline_name="some_pipeline",
+            tags={'tag': 'hello'},
+            status=PipelineRunStatus.SUCCESS,
+        )
+    )
+    assert len(some_runs) == 1
+
+    assert some_runs[0].run_id == one
+    some_runs = storage.get_runs(PipelineRunsFilter())
+    assert len(some_runs) == 3
 
 
 def test_fetch_by_pipeline(clean_storage):

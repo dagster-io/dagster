@@ -294,6 +294,9 @@ class DagsterInstance:
     def all_runs(self, cursor=None, limit=None):
         return self._run_storage.all_runs(cursor, limit)
 
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        return self._run_storage.get_runs(filters, cursor, limit)
+
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
 
