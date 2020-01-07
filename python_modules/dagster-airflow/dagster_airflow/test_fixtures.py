@@ -168,6 +168,12 @@ def dagster_airflow_k8s_operator_pipeline():
         if environment_dict is None and environment_yaml is not None:
             environment_dict = load_yaml_from_glob_list(environment_yaml)
 
+        op_kwargs = op_kwargs or {}
+
+        # In this test, sometimes we are pulling the integration image for the first
+        # time on a BK node, which can take a long time.
+        op_kwargs['startup_timeout_seconds'] = 300
+
         dag, tasks = make_airflow_dag_kubernetized_for_handle(
             handle=handle,
             pipeline_name=pipeline_name,
@@ -181,6 +187,8 @@ def dagster_airflow_k8s_operator_pipeline():
 
         for task in tasks:
             assert isinstance(task, DagsterKubernetesPodOperator)
+            # testing to make sure that kwargs shuffling works
+            assert task.startup_timeout_seconds == 300
 
         return execute_tasks_in_dag(
             dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
