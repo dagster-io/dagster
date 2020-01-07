@@ -287,6 +287,7 @@ const PipelinesContainer = styled.div`
   flex: 1 1;
   display: flex;
   width: 100%;
+  min-width: 0;
 `;
 
 const RightInfoPanel = styled.div`

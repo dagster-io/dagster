@@ -3,6 +3,7 @@ import styled from "styled-components/macro";
 import { Icon, Intent, Spinner, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { WebsocketStatusContext } from "../WebsocketStatus";
+import { ShortcutHandler } from "../ShortcutHandler";
 
 interface IExecutionStartButtonProps {
   title: string;
@@ -127,21 +128,27 @@ export default class ExecutionStartButton extends React.Component<
           }
 
           return (
-            <ExecutionButtonContainer
-              role="button"
-              ref={this._startButton}
-              style={style}
-              state={ExecutionButtonStatus.Ready}
-              title={this.props.title}
-              onClick={this.onClick}
+            <ShortcutHandler
+              onShortcut={this.onClick}
+              shortcutLabel={`⌥G`}
+              shortcutFilter={e => e.keyCode === 71 && e.altKey}
             >
-              <Icon
-                icon={this.props.icon}
-                iconSize={iconSize}
-                style={{ textAlign: "center", marginRight: 5 }}
-              />
-              {this.props.title}
-            </ExecutionButtonContainer>
+              <ExecutionButtonContainer
+                role="button"
+                ref={this._startButton}
+                style={style}
+                state={ExecutionButtonStatus.Ready}
+                title={this.props.title}
+                onClick={this.onClick}
+              >
+                <Icon
+                  icon={this.props.icon}
+                  iconSize={iconSize}
+                  style={{ textAlign: "center", marginRight: 5 }}
+                />
+                {this.props.title}
+              </ExecutionButtonContainer>
+            </ShortcutHandler>
           );
         }}
       </WebsocketStatusContext.Consumer>

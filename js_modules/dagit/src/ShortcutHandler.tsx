@@ -101,6 +101,7 @@ export class ShortcutHandler extends React.Component<
       // Deprecated one day, but not likely to be soon? Alternative is to React.cloneElement
       // and attach a ref prop to `children` without wrapping it in another DOM node, but
       // we can't be sure we get a DOM node and not a React component ref. @BG
+      // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
       // eslint-disable-next-line react/no-find-dom-node
       const el = ReactDOM.findDOMNode(this);
       if (!el || !(el instanceof HTMLElement)) return;
@@ -146,17 +147,17 @@ export class ShortcutHandler extends React.Component<
 
     if (shortcutLabel && previewPosition) {
       return (
-        <div>
+        <>
+          {children}
           <ShortcutAnnotation
             style={{ top: previewPosition.top, left: previewPosition.left }}
           >
             {shortcutLabel}
           </ShortcutAnnotation>
-          {children}
-        </div>
+        </>
       );
     }
-    return children;
+    return <>{children}</>;
   }
 }
 
@@ -167,7 +168,7 @@ const ShortcutAnnotation = styled.div`
   font-weight: 600;
   line-height: 14px;
   padding: 1px 3px;
-  z-index: 100;
+  z-index: 10;
   letter-spacing: 2px;
   transform: translate(-90%, -10px);
   color: ${Colors.BLACK};
