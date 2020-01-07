@@ -13,7 +13,7 @@ exports[`renders execution 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -30,7 +30,7 @@ exports[`renders execution 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -161,7 +161,7 @@ exports[`renders execution 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -517,7 +517,7 @@ exports[`renders pipeline page 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -534,7 +534,7 @@ exports[`renders pipeline page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -665,7 +665,7 @@ exports[`renders pipeline page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -3306,7 +3306,7 @@ exports[`renders pipeline solid page 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -3323,7 +3323,7 @@ exports[`renders pipeline solid page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -3454,7 +3454,7 @@ exports[`renders pipeline solid page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -6095,7 +6095,7 @@ exports[`renders solids explorer 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -6112,7 +6112,7 @@ exports[`renders solids explorer 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -6243,7 +6243,7 @@ exports[`renders solids explorer 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -10720,7 +10720,7 @@ exports[`renders type page 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -10737,7 +10737,7 @@ exports[`renders type page 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -10868,7 +10868,7 @@ exports[`renders type page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -13509,7 +13509,7 @@ exports[`renders type page 2`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -13526,7 +13526,7 @@ exports[`renders type page 2`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -13657,7 +13657,7 @@ exports[`renders type page 2`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span
@@ -16298,7 +16298,7 @@ exports[`renders without error 1`] = `
     className="LeftNav__Tabs-tqwrge-1 hRYjx"
   >
     <div
-      className="LeftNav__LogoContainer-tqwrge-4 iqlrnW"
+      className="LeftNav__LogoContainer-tqwrge-4 iLlyhp"
       onClick={[Function]}
     >
       <img
@@ -16315,7 +16315,7 @@ exports[`renders without error 1`] = `
         }
       />
       <div
-        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eMUcSq"
+        className="WebsocketStatus__Circle-sc-18wix91-0 czFjku LeftNav__LogoWebsocketStatus-tqwrge-0 eCsKpY"
         style={
           Object {
             "background": "#3DCC91",
@@ -16446,7 +16446,7 @@ exports[`renders without error 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/scheduler"
+      href="/schedules"
       onClick={[Function]}
     >
       <span

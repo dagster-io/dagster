@@ -5,7 +5,7 @@ import styled from "styled-components/macro";
 import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
-import { GlobalKeyHandler } from "./GlobalKeyHandler";
+import { ShortcutHandler } from "./ShortcutHandler";
 import { SharedToaster } from "./DomUtils";
 
 export const ProcessStatus: React.FunctionComponent = () => {
@@ -52,12 +52,10 @@ export const ProcessStatus: React.FunctionComponent = () => {
   return (
     <Label>
       {data.reloadSupported && (
-        <GlobalKeyHandler
-          onGlobalKeydown={(event: KeyboardEvent) => {
-            if (event.key === "e" && (event.ctrlKey || event.metaKey)) {
-              onClick();
-            }
-          }}
+        <ShortcutHandler
+          onShortcut={onClick}
+          shortcutLabel={`⌥R`}
+          shortcutFilter={e => e.keyCode === 82 && e.altKey}
         >
           <Tooltip
             className="bp3-dark"
@@ -74,14 +72,12 @@ export const ProcessStatus: React.FunctionComponent = () => {
             }
           >
             <Button
-              small={true}
-              text={navigator.platform.includes("Mac") ? "⌘E" : "^E"}
               icon={<Icon icon="refresh" iconSize={12} />}
               disabled={reloadStatus !== "none"}
               onClick={onClick}
             />
           </Tooltip>
-        </GlobalKeyHandler>
+        </ShortcutHandler>
       )}
       <div style={{ height: 14 }} />
       {data.instance && data.instance.info ? (

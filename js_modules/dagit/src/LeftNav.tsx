@@ -9,7 +9,7 @@ import { WebsocketStatus } from "./WebsocketStatus";
 import navBarImage from "./images/nav-logo-icon.png";
 import styled from "styled-components/macro";
 import { PipelineNamesContext } from "./PipelineNamesContext";
-import { GlobalKeyHandler } from "./GlobalKeyHandler";
+import { ShortcutHandler } from "./ShortcutHandler";
 
 const LAST_PIPELINE = "last-pipeline";
 const KEYCODE_FOR_1 = 49;
@@ -66,44 +66,37 @@ export const LeftNav = () => {
             label: "Playground"
           },
           {
-            to: `/scheduler`,
-            tab: `scheduler`,
+            to: `/schedules`,
+            tab: `schedules`,
             icon: <Icon icon="calendar" iconSize={30} />,
             label: "Schedules"
           }
         ];
 
-        const onGlobalKeydown = (event: KeyboardEvent) => {
-          if (
-            event.altKey &&
-            event.keyCode >= KEYCODE_FOR_1 &&
-            event.keyCode < KEYCODE_FOR_1 + TABS.length
-          ) {
-            history.push(TABS[event.keyCode - KEYCODE_FOR_1].to);
-          }
-        };
-
         return (
-          <GlobalKeyHandler onGlobalKeydown={onGlobalKeydown}>
-            <Tabs>
-              <LogoContainer onClick={() => history.push("/")}>
-                <img src={navBarImage} style={{ height: 40 }} alt="logo" />
-                <LogoWebsocketStatus />
-              </LogoContainer>
-              {TABS.map(t => (
-                <Tab
-                  to={t.to}
-                  key={t.tab}
-                  className={tab === t.tab ? "active" : ""}
-                >
+          <Tabs>
+            <LogoContainer onClick={() => history.push("/")}>
+              <img src={navBarImage} style={{ height: 40 }} alt="logo" />
+              <LogoWebsocketStatus />
+            </LogoContainer>
+            {TABS.map((t, i) => (
+              <ShortcutHandler
+                key={t.tab}
+                onShortcut={() => history.push(t.to)}
+                shortcutLabel={`⌥${i + 1}`}
+                shortcutFilter={e =>
+                  e.keyCode === KEYCODE_FOR_1 + i && e.altKey
+                }
+              >
+                <Tab to={t.to} className={tab === t.tab ? "active" : ""}>
                   {t.icon}
                   <TabLabel>{t.label}</TabLabel>
                 </Tab>
-              ))}
-              <div style={{ flex: 1 }} />
-              <ProcessStatus />
-            </Tabs>
-          </GlobalKeyHandler>
+              </ShortcutHandler>
+            ))}
+            <div style={{ flex: 1 }} />
+            <ProcessStatus />
+          </Tabs>
         );
       }}
     />

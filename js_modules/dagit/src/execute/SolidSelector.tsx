@@ -23,7 +23,7 @@ import {
   pointsToBox
 } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
-import { GlobalKeyHandler } from "../GlobalKeyHandler";
+import { ShortcutHandler } from "../ShortcutHandler";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -336,17 +336,13 @@ export default (props: ISolidSelectorProps) => {
     buttonText = subsetDescription(value, null);
   }
 
-  const onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.keyCode === 83 && event.altKey) {
-      // Opt-S
-      setOpen(true);
-      event.preventDefault();
-    }
-  };
-
   return (
     <div>
-      <GlobalKeyHandler onGlobalKeydown={onGlobalKeydown}>
+      <ShortcutHandler
+        shortcutLabel={"⌥S"}
+        shortcutFilter={e => e.keyCode === 83 && e.altKey}
+        onShortcut={() => setOpen(true)}
+      >
         <Dialog
           icon="info-sign"
           onClose={() => setOpen(false)}
@@ -367,7 +363,7 @@ export default (props: ISolidSelectorProps) => {
         >
           {buttonText}
         </Button>
-      </GlobalKeyHandler>
+      </ShortcutHandler>
     </div>
   );
 };

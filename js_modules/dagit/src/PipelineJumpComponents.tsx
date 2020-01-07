@@ -5,7 +5,7 @@ import { Button, MenuItem } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
 import { PipelineNamesContext } from "./PipelineNamesContext";
-import { GlobalKeyHandler } from "./GlobalKeyHandler";
+import { ShortcutHandler } from "./ShortcutHandler";
 
 interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
@@ -31,7 +31,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
 
   select: React.RefObject<Select<string>> = React.createRef();
 
-  onGlobalKeydown = (event: KeyboardEvent) => {
+  onShortcut = (event: KeyboardEvent) => {
     if (event.keyCode === 83 && event.altKey) {
       // Opt-S
       activateSelect(this.select.current);
@@ -43,7 +43,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
     const { solids, selectedSolid, onChange } = this.props;
 
     return (
-      <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
+      <ShortcutHandler onShortcut={this.onShortcut} shortcutLabel={`⌥S`}>
         <StringSelect
           ref={this.select}
           items={solids.map(s => s.name)}
@@ -57,7 +57,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
             rightIcon="double-caret-vertical"
           />
         </StringSelect>
-      </GlobalKeyHandler>
+      </ShortcutHandler>
     );
   }
 }
@@ -65,7 +65,7 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
 export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
   select: React.RefObject<Select<string>> = React.createRef();
 
-  onGlobalKeydown = (event: KeyboardEvent) => {
+  onShortcut = (event: KeyboardEvent) => {
     if (event.keyCode === 80 && event.altKey) {
       // Opt-P
       activateSelect(this.select.current);
@@ -82,7 +82,7 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
     const { onChange, selectedPipelineName } = this.props;
 
     return (
-      <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
+      <ShortcutHandler onGlobalKeyDown={this.onShortcut} shortcutLabel={`⌥P`}>
         <PipelineNamesContext.Consumer>
           {pipelineNames => (
             <StringSelect
@@ -102,7 +102,7 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
             </StringSelect>
           )}
         </PipelineNamesContext.Consumer>
-      </GlobalKeyHandler>
+      </ShortcutHandler>
     );
   }
 }
