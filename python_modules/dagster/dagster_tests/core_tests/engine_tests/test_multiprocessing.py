@@ -3,7 +3,9 @@ from dagster import (
     ExecutionTargetHandle,
     InputDefinition,
     PipelineDefinition,
+    PresetDefinition,
     execute_pipeline,
+    execute_pipeline_with_preset,
     lambda_solid,
 )
 from dagster.core.instance import DagsterInstance
@@ -69,6 +71,17 @@ def define_diamond_pipeline():
                 'right': DependencyDefinition('mult_three'),
             },
         },
+        preset_defs=[
+            PresetDefinition(
+                'just_adder',
+                {
+                    'storage': {'filesystem': {}},
+                    'execution': {'multiprocess': {}},
+                    'solids': {'adder': {'inputs': {'left': 1, 'right': 1}}},
+                },
+                solid_subset=['adder'],
+            )
+        ],
     )
 
 
@@ -117,3 +130,17 @@ def test_invalid_instance():
     assert not result.success
     assert len(result.event_list) == 1
     assert result.event_list[0].is_failure
+
+
+def test_solid_subset():
+    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'define_diamond_pipeline'
+    ).build_pipeline_definition()
+
+    result = execute_pipeline_with_preset(
+        pipeline, 'just_adder', instance=DagsterInstance.local_temp(),
+    )
+
+    assert result.success
+
+    assert result.result_for_solid('adder').output_value() == 2
