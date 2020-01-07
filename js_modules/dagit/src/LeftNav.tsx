@@ -69,7 +69,7 @@ export const LeftNav = () => {
             to: `/scheduler`,
             tab: `scheduler`,
             icon: <Icon icon="calendar" iconSize={30} />,
-            label: "Schedule"
+            label: "Schedules"
           }
         ];
 

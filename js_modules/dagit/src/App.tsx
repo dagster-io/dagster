@@ -45,8 +45,8 @@ const AppRoutes = () => (
     {/* Capture solid subpath in a regex match */}
     <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
 
-    <Route path="/scheduler/:rest?" component={SchedulesRoot} />
-    <Route path="/schedule/:scheduleName" component={ScheduleRoot} />
+    <Route path="/schedules" component={SchedulesRoot} />
+    <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
 
     <PipelineNamesContext.Consumer>
       {names =>

@@ -186,7 +186,7 @@ exports[`renders execution 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -690,7 +690,7 @@ exports[`renders pipeline page 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -3479,7 +3479,7 @@ exports[`renders pipeline solid page 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -6268,7 +6268,7 @@ exports[`renders solids explorer 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -10893,7 +10893,7 @@ exports[`renders type page 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -13682,7 +13682,7 @@ exports[`renders type page 2`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div
@@ -16471,7 +16471,7 @@ exports[`renders without error 1`] = `
       <div
         className="LeftNav__TabLabel-tqwrge-3 jfVvlC"
       >
-        Schedule
+        Schedules
       </div>
     </a>
     <div

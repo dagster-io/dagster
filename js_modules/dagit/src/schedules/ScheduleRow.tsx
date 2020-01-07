@@ -54,7 +54,7 @@ export const ScheduleRow: React.FunctionComponent<{
 
   const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
   const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
-  const match = useRouteMatch("/schedule/:scheduleName");
+  const match = useRouteMatch("/schedules/:scheduleName");
 
   const mostRecentAttempt = attempts.length > 0 ? attempts[0] : null;
   const mostRecentAttemptLogError = mostRecentAttempt
@@ -72,7 +72,7 @@ export const ScheduleRow: React.FunctionComponent<{
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
   ) : (
-    <Link to={`/schedule/${name}`}>
+    <Link to={`/schedules/${name}`}>
       <ScheduleName>{name}</ScheduleName>
     </Link>
   );
@@ -200,7 +200,7 @@ export const ScheduleRow: React.FunctionComponent<{
           : "-"}
         {attemptsCount > NUM_RUNS_TO_DISPLAY && (
           <Link
-            to={`/schedule/${encodeURIComponent(
+            to={`/schedules/${encodeURIComponent(
               schedule.scheduleDefinition.name
             )}`}
             style={{ verticalAlign: "top" }}
