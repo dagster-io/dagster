@@ -106,7 +106,7 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
 
     const onApply = (mutator: any, ...args: any[]) => {
       // note: this function /cannot/ use props bound to local vars above
-      // because this compoennt implements shouldComponentUpdate and data
+      // because this component implements shouldComponentUpdate and data
       // used during render and captured here may be stale.
       this.props.onSave(mutator(this.props.data, ...args));
     };
