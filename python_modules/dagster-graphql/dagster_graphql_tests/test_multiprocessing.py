@@ -4,7 +4,10 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    QueueingSubprocessExecutionManager,
+    SubprocessExecutionManager,
+)
 
 from dagster import (
     ExecutionTargetHandle,
@@ -471,3 +474,70 @@ def test_two_runs_running():
 
         assert not execution_manager.is_process_running(run_id_one)
         assert not execution_manager.is_process_running(run_id_two)
+
+
+def test_max_concurrency_zero():
+    run_id = make_new_run_id()
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
+
+    with safe_tempfile_path() as filepath:
+        instance = DagsterInstance.local_temp()
+        execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=0)
+
+        pipeline_run = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id,
+                environment_dict={'solids': {'loop': {'config': {'file': filepath}}}},
+            )
+        )
+        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, pipeline_run, instance)
+        assert not execution_manager.is_active(run_id)
+        assert not os.path.exists(filepath)
+
+
+def test_max_concurrency_one():
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
+
+    run_id_one = make_new_run_id()
+    run_id_two = make_new_run_id()
+
+    with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two:
+        instance = DagsterInstance.local_temp()
+        execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=1)
+
+        run_one = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id_one,
+                environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
+            )
+        )
+        run_two = instance.create_run(
+            PipelineRun.create_empty_run(
+                pipeline_name=infinite_loop_pipeline.name,
+                run_id=run_id_two,
+                environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
+            )
+        )
+
+        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, run_one, instance)
+        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, run_two, instance)
+
+        while not os.path.exists(file_one):
+            execution_manager.check()
+            time.sleep(0.1)
+
+        assert execution_manager.is_active(run_id_one)
+        assert not execution_manager.is_active(run_id_two)
+        assert not os.path.exists(file_two)
+
+        assert execution_manager.terminate(run_id_one)
+
+        while not os.path.exists(file_two):
+            execution_manager.check()
+            time.sleep(0.1)
+
+        assert not execution_manager.is_active(run_id_one)
+        assert execution_manager.is_active(run_id_two)
+        assert execution_manager.terminate(run_id_two)

@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 import time
+from queue import Empty
 
 import gevent
 import six
@@ -37,6 +38,14 @@ class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def can_terminate(self, run_id):
         '''Whether or not this execution manager can terminate the given run_id'''
+
+    @abc.abstractmethod
+    def get_active_run_count(self):
+        '''The number of actively running execution jobs'''
+
+    @abc.abstractmethod
+    def is_active(self, run_id):
+        '''Whether a given run_id is actively running'''
 
 
 def build_synthetic_pipeline_error_record(run_id, error_info, pipeline_name):
@@ -145,12 +154,17 @@ def build_process_exited_event(run_id, pipeline_name, process_id):
 
 
 class SynchronousExecutionManager(PipelineExecutionManager):
+    def __init__(self):
+        self._active = set()
+
     def execute_pipeline(self, _, pipeline, pipeline_run, instance):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
         event_list = []
+        self._active.add(pipeline_run.run_id)
         for event in execute_run_iterator(pipeline, pipeline_run, instance):
             event_list.append(event)
+        self._active.remove(pipeline_run.run_id)
         return PipelineExecutionResult(pipeline, pipeline_run.run_id, event_list, lambda: None)
 
     def can_terminate(self, run_id):
@@ -158,6 +172,12 @@ class SynchronousExecutionManager(PipelineExecutionManager):
 
     def terminate(self, run_id):
         return False
+
+    def get_active_run_count(self):
+        return len(self._active)
+
+    def is_active(self, run_id):
+        return run_id in self._active
 
 
 SUBPROCESS_TICK = 0.5
@@ -185,7 +205,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         self._term_events = {}
         self._processes_lock = self._multiprocessing_context.Lock()
 
-        gevent.spawn(self._check_for_zombies)
+        gevent.spawn(self._clock)
 
     def _generate_synthetic_error_from_crash(self, run):
         try:
@@ -207,40 +227,52 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         with self._processes_lock:
             return {run_id: process for run_id, process in self._living_process_by_run_id.items()}
 
-    def _check_for_zombies(self):
+    def _clock(self):
         '''
         This function polls the instance to synchronize it with the state of processes managed
-        by this manager instance. On every tick (every 0.5 seconds currently) it gets the current
-        index of run_id => process and sees if any of them are dead. If they are, then it queries
-        the instance to see if the runs are in a proper terminal state (success or failure). If
-        not, then we can assume that the underlying process died unexpected and clean everything.
-        In either case, the dead process is removed from the run_id => process index.
+        by this manager instance. On every tick (every 0.5 seconds currently) it checks for zombie
+        processes
         '''
         while True:
-            runs_to_clear = []
-
-            living_process_snapshot = self._living_process_snapshot()
-
-            for run_id, process in living_process_snapshot.items():
-                if not process.is_alive():
-                    run = self._instance.get_run_by_id(run_id)
-                    if not run:  # defensive
-                        continue
-
-                    runs_to_clear.append(run_id)
-
-                    # expected terminal state. it's fine for process to be dead
-                    if run.is_finished:
-                        continue
-
-                    # the process died in an unexpected manner. inform the system
-                    self._generate_synthetic_error_from_crash(run)
-
-            with self._processes_lock:
-                for run_to_clear_id in runs_to_clear:
-                    del self._living_process_by_run_id[run_to_clear_id]
-
+            self._check_for_zombies()
             gevent.sleep(SUBPROCESS_TICK)
+
+    def _check_for_zombies(self):
+        '''
+        Checks the current index of run_id => process and sees if any of them are dead. If they are,
+        it queries the instance to see if the runs are in a proper terminal state (success or
+        failure). If not, then we can assume that the underlying process died unexpected and clean
+        everything. In either case, the dead process is removed from the run_id => process index.
+        '''
+        runs_to_clear = []
+
+        living_process_snapshot = self._living_process_snapshot()
+
+        for run_id, process in living_process_snapshot.items():
+            if not process.is_alive():
+                run = self._instance.get_run_by_id(run_id)
+                if not run:  # defensive
+                    continue
+
+                runs_to_clear.append(run_id)
+
+                # expected terminal state. it's fine for process to be dead
+                if run.is_finished:
+                    continue
+
+                # the process died in an unexpected manner. inform the system
+                self._generate_synthetic_error_from_crash(run)
+
+        with self._processes_lock:
+            for run_to_clear_id in runs_to_clear:
+                del self._living_process_by_run_id[run_to_clear_id]
+
+    def check(self):
+        '''
+        Utility method for pytest to manually kick off zombie cleanup calls (in absence of
+        gevent)
+        '''
+        self._check_for_zombies()
 
     def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
@@ -311,6 +343,14 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         process.join()
         return True
 
+    def get_active_run_count(self):
+        with self._processes_lock:
+            return len(self._living_process_by_run_id)
+
+    def is_active(self, run_id):
+        with self._processes_lock:
+            return run_id in self._living_process_by_run_id
+
 
 def _in_mp_process(handle, pipeline_run, instance_ref, term_event):
     """
@@ -363,3 +403,67 @@ def _in_mp_process(handle, pipeline_run, instance_ref, term_event):
         )
     finally:
         instance.handle_new_event(build_process_exited_event(run_id, pipeline_name, os.getpid()))
+
+
+class QueueingSubprocessExecutionManager(PipelineExecutionManager):
+    def __init__(self, instance, max_concurrent_runs):
+        check.inst_param(instance, 'instance', DagsterInstance)
+        self._delegate = SubprocessExecutionManager(instance)
+        self._max_concurrent_runs = check.int_param(max_concurrent_runs, 'max_concurrent_runs')
+        self._multiprocessing_context = get_multiprocessing_context()
+        self._queue = self._multiprocessing_context.JoinableQueue(maxsize=0)
+        gevent.spawn(self._clock)
+
+    def _clock(self):
+        while True:
+            self._check_queue()
+            gevent.sleep(1)
+
+    def _check_queue(self):
+        run_count = self._delegate.get_active_run_count()
+        if run_count < self._max_concurrent_runs:
+            try:
+                job_args = self._queue.get(block=False)
+            except Empty:
+                return
+            else:
+                self._start_pipeline_execution(job_args)
+
+    def _start_pipeline_execution(self, job_args):
+        handle = job_args['handle']
+        pipeline_run = job_args['pipeline_run']
+        pipeline = handle.build_repository_definition().get_pipeline(pipeline_run.pipeline_name)
+        instance = DagsterInstance.from_ref(job_args['instance_ref'])
+        self._delegate.execute_pipeline(handle, pipeline, pipeline_run, instance)
+
+    def execute_pipeline(self, handle, pipeline, pipeline_run, instance):
+        check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        job_args = {
+            'handle': handle,
+            'pipeline_run': pipeline_run,
+            'instance_ref': instance.get_ref(),
+        }
+        self._queue.put(job_args, block=False)
+        self._check_queue()
+
+    def check(self):
+        '''
+        Utility method for pytest to manually kick off queue check calls
+        '''
+        self._check_queue()
+        self._delegate.check()
+
+    def can_terminate(self, run_id):
+        # deal with enqueued shit
+        return self._delegate.can_terminate(run_id)
+
+    def terminate(self, run_id):
+        # deal with enqueued shit
+        return self._delegate.terminate(run_id)
+
+    def get_active_run_count(self):
+        return self._delegate.get_active_run_count()
+
+    def is_active(self, run_id):
+        return self._delegate.is_active(run_id)
