@@ -14,10 +14,12 @@ export class GlobalKeyHandler extends React.Component<{
   onGlobalKeydown = (event: KeyboardEvent) => {
     const { target } = event;
 
-    if (
-      (target && (target as HTMLElement).nodeName === "INPUT") ||
-      (target as HTMLElement).nodeName === "TEXTAREA"
-    ) {
+    const inTextInput =
+      target &&
+      ((target as HTMLElement).nodeName === "INPUT" ||
+        (target as HTMLElement).nodeName === "TEXTAREA");
+
+    if (inTextInput && !(event.altKey || event.ctrlKey || event.metaKey)) {
       return;
     }
     this.props.onGlobalKeydown(event);

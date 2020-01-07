@@ -32,8 +32,10 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
   select: React.RefObject<Select<string>> = React.createRef();
 
   onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.key === "s") {
+    if (event.keyCode === 83 && event.altKey) {
+      // Opt-S
       activateSelect(this.select.current);
+      event.preventDefault();
     }
   };
 
@@ -64,8 +66,10 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
   select: React.RefObject<Select<string>> = React.createRef();
 
   onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.key === "p") {
+    if (event.keyCode === 80 && event.altKey) {
+      // Opt-P
       activateSelect(this.select.current);
+      event.preventDefault();
     }
     if (this.select.current && this.select.current.state.isOpen) {
       if (event.key === "Escape" && this.props.selectedPipelineName) {

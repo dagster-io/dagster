@@ -23,6 +23,7 @@ import {
   pointsToBox
 } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
+import { GlobalKeyHandler } from "../GlobalKeyHandler";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -335,28 +336,38 @@ export default (props: ISolidSelectorProps) => {
     buttonText = subsetDescription(value, null);
   }
 
+  const onGlobalKeydown = (event: KeyboardEvent) => {
+    if (event.keyCode === 83 && event.altKey) {
+      // Opt-S
+      setOpen(true);
+      event.preventDefault();
+    }
+  };
+
   return (
     <div>
-      <Dialog
-        icon="info-sign"
-        onClose={() => setOpen(false)}
-        style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
-        title={"Select Solids to Execute"}
-        usePortal={true}
-        isOpen={open}
-      >
-        <SolidSelectorModalContainer
-          {...props}
-          onRequestClose={onRequestClose}
-        />
-      </Dialog>
-      <Button
-        icon={subsetError ? IconNames.WARNING_SIGN : IconNames.SEARCH_AROUND}
-        intent={subsetError ? Intent.WARNING : Intent.NONE}
-        onClick={() => setOpen(true)}
-      >
-        {buttonText}
-      </Button>
+      <GlobalKeyHandler onGlobalKeydown={onGlobalKeydown}>
+        <Dialog
+          icon="info-sign"
+          onClose={() => setOpen(false)}
+          style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
+          title={"Select Solids to Execute"}
+          usePortal={true}
+          isOpen={open}
+        >
+          <SolidSelectorModalContainer
+            {...props}
+            onRequestClose={onRequestClose}
+          />
+        </Dialog>
+        <Button
+          icon={subsetError ? IconNames.WARNING_SIGN : IconNames.SEARCH_AROUND}
+          intent={subsetError ? Intent.WARNING : Intent.NONE}
+          onClick={() => setOpen(true)}
+        >
+          {buttonText}
+        </Button>
+      </GlobalKeyHandler>
     </div>
   );
 };
