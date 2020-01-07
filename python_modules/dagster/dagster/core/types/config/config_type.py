@@ -15,16 +15,13 @@ class ConfigTypeKind(PythonEnum):
     ENUM = 'ENUM'
 
     SELECTOR = 'SELECTOR'
-    DICT = 'DICT'
+    STRICT_DICT = 'STRICT_DICT'
     PERMISSIVE_DICT = 'PERMISSIVE_DICT'
 
     @staticmethod
     def has_fields(kind):
-        return (
-            kind == ConfigTypeKind.SELECTOR
-            or kind == ConfigTypeKind.DICT
-            or kind == ConfigTypeKind.PERMISSIVE_DICT
-        )
+        check.inst_param(kind, 'kind', ConfigTypeKind)
+        return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_dict(kind)
 
     # Closed generic types
     LIST = 'LIST'
@@ -32,7 +29,13 @@ class ConfigTypeKind(PythonEnum):
 
     @staticmethod
     def is_closed_generic(kind):
+        check.inst_param(kind, 'kind', ConfigTypeKind)
         return kind == ConfigTypeKind.LIST or kind == ConfigTypeKind.NULLABLE
+
+    @staticmethod
+    def is_dict(kind):
+        check.inst_param(kind, 'kind', ConfigTypeKind)
+        return kind == ConfigTypeKind.STRICT_DICT or kind == ConfigTypeKind.PERMISSIVE_DICT
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
@@ -99,44 +102,8 @@ class ConfigType(object):
         return self.type_attributes.is_builtin
 
     @property
-    def has_fields(self):
-        return ConfigTypeKind.has_fields(self.kind)
-
-    @property
-    def is_scalar(self):
-        return self.kind == ConfigTypeKind.SCALAR
-
-    @property
-    def is_list(self):
-        return self.kind == ConfigTypeKind.LIST
-
-    @property
-    def is_nullable(self):
-        return self.kind == ConfigTypeKind.NULLABLE
-
-    @property
-    def is_dict(self):
-        return self.kind == ConfigTypeKind.DICT or self.kind == ConfigTypeKind.PERMISSIVE_DICT
-
-    @property
-    def is_selector(self):
-        return self.kind == ConfigTypeKind.SELECTOR
-
-    @property
-    def is_any(self):
-        return self.kind == ConfigTypeKind.ANY
-
-    @property
     def recursive_config_types(self):
         return []
-
-    @property
-    def is_enum(self):
-        return self.kind == ConfigTypeKind.ENUM
-
-    @property
-    def is_permissive_dict(self):
-        return self.kind == ConfigTypeKind.PERMISSIVE_DICT
 
 
 # Scalars, Composites, Selectors, Lists, Optional, Any
@@ -146,9 +113,9 @@ class ConfigScalar(ConfigType):
     def __init__(self, key, name, **kwargs):
         super(ConfigScalar, self).__init__(key, name, kind=ConfigTypeKind.SCALAR, **kwargs)
 
-    @property
-    def is_scalar(self):
-        return True
+    # @property
+    # def is_scalar(self):
+    #     return True
 
     def is_config_scalar_valid(self, _config_value):
         check.not_implemented('must implement')

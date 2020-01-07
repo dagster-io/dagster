@@ -4,7 +4,7 @@ from dagster.core.decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config.config_type import ConfigType, List, Nullable
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind, List, Nullable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
 from dagster.core.types.wrapping.wrapping import WrappingListType, WrappingNullableType
 from dagster.utils import ensure_single_item
@@ -133,7 +133,7 @@ def input_selector_schema(config_cls):
         config_cls (Selector)
     '''
     config_type = _resolve_config_schema_type(config_cls)
-    check.param_invariant(config_type.is_selector, 'config_cls')
+    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
 
     def _wrap(func):
         def _selector(context, config_value):
@@ -204,7 +204,7 @@ def output_selector_schema(config_cls):
         config_cls (Selector):
     '''
     config_type = _resolve_config_schema_type(config_cls)
-    check.param_invariant(config_type.is_selector, 'config_cls')
+    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
 
     def _wrap(func):
         def _selector(context, config_value, runtime_value):

@@ -1,6 +1,6 @@
 from dagster import PipelineDefinition, check
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.config.config_type import ConfigType
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 
 
 def scaffold_pipeline_config(pipeline_def, skip_optional=True, mode=None):
@@ -31,7 +31,7 @@ def scaffold_type(config_type, skip_optional=True):
 
     # Right now selectors and composites have the same
     # scaffolding logic, which might not be wise.
-    if config_type.has_fields:
+    if ConfigTypeKind.has_fields(config_type.kind):
         default_dict = {}
         for field_name, field in config_type.fields.items():
             if skip_optional and field.is_optional:
@@ -39,15 +39,15 @@ def scaffold_type(config_type, skip_optional=True):
 
             default_dict[field_name] = scaffold_type(field.config_type, skip_optional)
         return default_dict
-    elif config_type.is_any:
+    elif config_type.kind == ConfigTypeKind.ANY:
         return 'AnyType'
-    elif config_type.is_scalar:
+    elif config_type.kind == ConfigTypeKind.SCALAR:
         defaults = {'String': '', 'Path': 'path/to/something', 'Int': 0, 'Bool': True}
 
         return defaults[config_type.name]
-    elif config_type.is_list:
+    elif config_type.kind == ConfigTypeKind.LIST:
         return []
-    elif config_type.is_enum:
+    elif config_type.kind == ConfigTypeKind.ENUM:
         return '|'.join(sorted(map(lambda v: v.config_value, config_type.enum_values)))
     else:
         check.failed('Do not know how to scaffold {type_name}'.format(type_name=config_type.name))

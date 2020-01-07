@@ -4,6 +4,7 @@ import os
 import random
 import re
 import string
+import sys
 import textwrap
 import time
 
@@ -407,12 +408,11 @@ def gen_partitions_from_args(partition_set, kwargs):
 
 
 def print_partition_format(partitions, indent_level):
-    if IS_WINDOWS:
-        # We cannot read the terminal (cmd/powershell/etc) window size, so just cap this at 250
-        screen_width = 250
-    else:
+    if not IS_WINDOWS and sys.stdout.isatty():
         _, tty_width = os.popen('stty size', 'r').read().split()
         screen_width = min(250, int(tty_width))
+    else:
+        screen_width = 250
     max_str_len = max(len(x.name) for x in partitions)
     spacing = 10
     num_columns = min(10, int((screen_width - indent_level) / (max_str_len + spacing)))
@@ -501,31 +501,24 @@ def get_partition_sets_for_handle(handle, artifacts_dir):
         'dagster pipeline backfill log_daily_stats --to 20191201'
     ),
 )
-def pipeline_backfill_command(mode, *args, **kwargs):
-    pipeline_name = kwargs.pop('pipeline_name')
-    repo_args = {k: v for k, v in kwargs.items() if k in REPO_ARG_NAMES}
+@click.option('--noprompt', is_flag=True)
+def pipeline_backfill_command(**kwargs):
+    execute_backfill_command(kwargs, click.echo)
+
+
+def execute_backfill_command(cli_args, print_fn, instance=None):
+    pipeline_name = cli_args.pop('pipeline_name')
+    repo_args = {k: v for k, v in cli_args.items() if k in REPO_ARG_NAMES}
     if pipeline_name and not isinstance(pipeline_name, six.string_types):
         if len(pipeline_name) == 1:
             pipeline_name = pipeline_name[0]
 
-    instance = DagsterInstance.get()
+    instance = instance or DagsterInstance.get()
     handle = handle_for_repo_cli_args(repo_args)
     repository = handle.build_repository_definition()
+    noprompt = cli_args.get('noprompt')
 
-    if not pipeline_name:
-        pipeline_name = click.prompt(
-            'Select a pipeline to backfill: {}'.format(', '.join(repository.pipeline_names))
-        )
-
-    pipeline = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
-    partition_sets = get_partition_sets_for_handle(handle, instance.schedules_directory())
-
-    if not pipeline:
-        raise click.UsageError('No pipeline found')
-
-    if not partition_sets:
-        raise click.UsageError('No partitions found')
-
+    # check run launcher
     if not instance.run_launcher:
         raise click.UsageError(
             'A run launcher must be configured before running a backfill. You can configure a run '
@@ -535,45 +528,57 @@ def pipeline_backfill_command(mode, *args, **kwargs):
             'information.'
         )
 
-    if kwargs.get('partition_set'):
-        partition_set = next(
-            (x for x in partition_sets if x.name == kwargs.get('partition_set')), None
+    # Resolve pipeline
+    if not pipeline_name and noprompt:
+        raise click.UsageError('No pipeline specified')
+    if not pipeline_name:
+        pipeline_name = click.prompt(
+            'Select a pipeline to backfill: {}'.format(', '.join(repository.pipeline_names))
         )
-    else:
-        pipeline_partition_sets = [x for x in partition_sets if x.pipeline_name == pipeline.name]
-        if not pipeline_partition_sets:
-            raise click.UsageError(
-                'Pipeline `{}` does not have partition sets defined'.format(pipeline.name)
-            )
+    repository = handle.build_repository_definition()
+    if not repository.has_pipeline(pipeline_name):
+        raise click.UsageError('No pipeline found named `{}`'.format(pipeline_name))
+
+    pipeline = repository.get_pipeline(pipeline_name)
+
+    # Resolve partition set
+    all_partition_sets = get_partition_sets_for_handle(handle, instance.schedules_directory())
+    pipeline_partition_sets = [x for x in all_partition_sets if x.pipeline_name == pipeline.name]
+    if not pipeline_partition_sets:
+        raise click.UsageError('No partition sets found for pipeline `{}`'.format(pipeline.name))
+    partition_set_name = cli_args.get('partition_set')
+    if not partition_set_name:
         if len(pipeline_partition_sets) == 1:
-            partition_set = pipeline_partition_sets[0]
+            partition_set_name = pipeline_partition_sets[0].name
+        elif noprompt:
+            raise click.UsageError('No partition set specified (see option `--partition-set`)')
         else:
             partition_set_name = click.prompt(
                 'Select a partition set to use for backfill: {}'.format(
                     ', '.join(x.name for x in pipeline_partition_sets)
                 )
             )
-            partition_set = next(
-                (x for x in pipeline_partition_sets if x.name == partition_set_name), None
-            )
-
+    partition_set = next((x for x in pipeline_partition_sets if x.name == partition_set_name), None)
     if not partition_set:
-        raise click.UsageError('Partition set not found')
+        raise click.UsageError('No partition set found named `{}`'.format(partition_set_name))
 
-    partitions = gen_partitions_from_args(partition_set, kwargs)
+    # Resolve partitions to backfill
+    partitions = gen_partitions_from_args(partition_set, cli_args)
 
-    click.echo('\n     Pipeline: {}'.format(pipeline.name))
-    click.echo('Partition set: {}'.format(partition_set.name))
-    click.echo('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
+    # Print backfill info
+    print_fn('\n     Pipeline: {}'.format(pipeline.name))
+    print_fn('Partition set: {}'.format(partition_set.name))
+    print_fn('   Partitions: {}\n'.format(print_partition_format(partitions, indent_level=15)))
 
-    if click.confirm(
+    # Confirm and launch
+    if noprompt or click.confirm(
         'Do you want to proceed with the backfill ({} partitions)?'.format(len(partitions))
     ):
 
         backfill_tag = ''.join(
             random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH)
         )
-        click.echo('Launching runs... ')
+        print_fn('Launching runs... ')
 
         for partition in partitions:
             run = PipelineRun(
@@ -581,7 +586,7 @@ def pipeline_backfill_command(mode, *args, **kwargs):
                 run_id=make_new_run_id(),
                 selector=ExecutionSelector(pipeline.name),
                 environment_dict=partition_set.environment_dict_for_partition(partition),
-                mode=mode or 'default',
+                mode=cli_args.get('mode') or 'default',
                 tags=merge_dicts(
                     {'dagster/backfill': backfill_tag}, partition_set.tags_for_partition(partition)
                 ),
@@ -591,9 +596,9 @@ def pipeline_backfill_command(mode, *args, **kwargs):
             # Remove once we can handle synchronous execution... currently limited by sqlite
             time.sleep(0.1)
 
-        click.echo('Launched backfill job `{}`'.format(backfill_tag))
+        print_fn('Launched backfill job `{}`'.format(backfill_tag))
     else:
-        click.echo(' Aborted!')
+        print_fn(' Aborted!')
 
 
 pipeline_cli = create_pipeline_cli_group()

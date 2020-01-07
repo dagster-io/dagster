@@ -1,27 +1,29 @@
 from dagster import check
 from dagster.utils import ensure_single_item
 
-from .config_type import ConfigType
+from .config_type import ConfigType, ConfigTypeKind
 
 
 def post_process_config(config_type, config_value):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_scalar:
+    kind = config_type.kind
+
+    if kind == ConfigTypeKind.SCALAR:
         return config_value
-    elif config_type.is_enum:
+    elif kind == ConfigTypeKind.ENUM:
         return config_type.to_python_value(config_value)
-    elif config_type.is_selector:
+    elif kind == ConfigTypeKind.SELECTOR:
         return post_process_config_to_selector(config_type, config_value)
-    elif config_type.is_dict:
+    elif ConfigTypeKind.is_dict(kind):
         return post_process_dict_config(config_type, config_value)
-    elif config_type.is_list:
+    elif kind == ConfigTypeKind.LIST:
         return post_process_list_config(config_type, config_value)
-    elif config_type.is_nullable:
+    elif kind == ConfigTypeKind.NULLABLE:
         if config_value is None:
             return None
         return post_process_config(config_type.inner_type, config_value)
-    elif config_type.is_any:
+    elif kind == ConfigTypeKind.ANY:
         return config_value
     else:
         check.failed('Unsupported type {name}'.format(name=config_type.name))
@@ -29,7 +31,9 @@ def post_process_config(config_type, config_value):
 
 def post_process_config_to_selector(selector_type, config_value):
     check.param_invariant(
-        selector_type.is_selector, 'selector_type', 'Non-selector not caught in validation'
+        selector_type.kind == ConfigTypeKind.SELECTOR,
+        'selector_type',
+        'Non-selector not caught in validation',
     )
 
     if config_value:
@@ -45,7 +49,7 @@ def post_process_config_to_selector(selector_type, config_value):
 
 
 def post_process_dict_config(dict_type, config_value):
-    check.param_invariant(dict_type.is_dict, 'dict_type')
+    check.param_invariant(ConfigTypeKind.is_dict(dict_type.kind), 'dict_type')
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
     fields = dict_type.fields
@@ -67,7 +71,8 @@ def post_process_dict_config(dict_type, config_value):
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
-    if dict_type.is_permissive_dict:
+
+    if dict_type.kind == ConfigTypeKind.PERMISSIVE_DICT:
         defined_fields = set(fields.keys())
         extra_fields = incoming_fields - defined_fields
         for extra_field in extra_fields:
@@ -77,12 +82,12 @@ def post_process_dict_config(dict_type, config_value):
 
 
 def post_process_list_config(list_type, config_value):
-    check.param_invariant(list_type.is_list, 'list_type')
+    check.param_invariant(list_type.kind == ConfigTypeKind.LIST, 'list_type')
 
     if not config_value:
         return []
 
-    if not list_type.inner_type.is_nullable:
+    if list_type.inner_type.kind != ConfigTypeKind.NULLABLE:
         if any((cv is None for cv in config_value)):
             check.failed('Null list member not caught in validation')
 

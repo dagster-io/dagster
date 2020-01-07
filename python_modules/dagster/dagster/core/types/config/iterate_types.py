@@ -1,6 +1,6 @@
 from dagster import check
 
-from .config_type import ConfigType
+from .config_type import ConfigType, ConfigTypeKind
 
 
 def iterate_config_types(config_type):
@@ -14,11 +14,11 @@ def iterate_config_types(config_type):
                 yield inner_type
 
     check.inst_param(config_type, 'config_type', ConfigType)
-    if config_type.is_list or config_type.is_nullable:
+    if config_type.kind == ConfigTypeKind.LIST or config_type.kind == ConfigTypeKind.NULLABLE:
         for inner_type in iterate_config_types(config_type.inner_type):
             yield inner_type
 
-    if config_type.has_fields:
+    if ConfigTypeKind.has_fields(config_type.kind):
         for field_type in config_type.fields.values():
             for inner_type in iterate_config_types(field_type.config_type):
                 yield inner_type

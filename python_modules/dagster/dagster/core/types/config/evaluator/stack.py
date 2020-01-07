@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 
-from ..config_type import ConfigType
+from ..config_type import ConfigType, ConfigTypeKind
 from ..field import check_field_param
 
 
@@ -25,9 +25,8 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
     @property
     def type_in_context(self):
         ttype = self.entries[-1].config_type if self.entries else self.config_type
-        # TODO: This is the wrong place for this
-        # Should have general facility for unwrapping named types
-        if ttype.is_nullable:
+        # TODO: should we be unwrapping the nullable type here?
+        if ttype.kind == ConfigTypeKind.NULLABLE:
             return ttype.inner_type
         else:
             return ttype
@@ -40,27 +39,10 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
 
     def for_list_index(self, list_index):
         list_type = self.type_in_context
-        check.invariant(list_type.is_list)
+        check.invariant(list_type.kind == ConfigTypeKind.LIST)
         return EvaluationStack(
             config_type=self.config_type,
             entries=self.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
-        )
-
-    def for_set_index(self, set_index):
-        set_type = self.type_in_context
-        check.invariant(set_type.is_set)
-        return EvaluationStack(
-            config_type=self.config_type,
-            entries=self.entries + [EvaluationStackListItemEntry(set_type.inner_type, set_index)],
-        )
-
-    def for_tuple_index(self, tuple_index):
-        tuple_type = self.type_in_context
-        check.invariant(tuple_type.is_tuple)
-        return EvaluationStack(
-            config_type=self.config_type,
-            entries=self.entries
-            + [EvaluationStackListItemEntry(tuple_type.tuple_types[tuple_index], tuple_index)],
         )
 
 

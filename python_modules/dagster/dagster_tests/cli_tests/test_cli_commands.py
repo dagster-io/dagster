@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import os
+import string
 
 import mock
 import pytest
@@ -10,20 +11,24 @@ from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     DagsterInvariantViolationError,
+    PartitionSetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
     lambda_solid,
     pipeline,
+    repository_partitions,
     schedules,
     seven,
     solid,
 )
 from dagster.check import CheckError
 from dagster.cli.pipeline import (
+    execute_backfill_command,
     execute_execute_command,
     execute_list_command,
     execute_print_command,
     execute_scaffold_command,
+    pipeline_backfill_command,
     pipeline_execute_command,
     pipeline_list_command,
     pipeline_print_command,
@@ -38,6 +43,14 @@ from dagster.cli.schedule import (
     schedule_up_command,
     schedule_wipe_command,
 )
+from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher import RunLauncher
+from dagster.core.serdes import ConfigurableClass
+from dagster.core.storage.event_log import InMemoryEventLogStorage
+from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.root import LocalArtifactStorage
+from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.types.config.field_utils import Dict
 from dagster.utils import script_relative_path
 
 
@@ -70,7 +83,7 @@ def baz_pipeline():
 
 
 def define_bar_repo():
-    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline})
+    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},)
 
 
 @solid
@@ -872,3 +885,138 @@ def test_multiproc_invalid():
     )
     # which is invalid for multiproc
     assert 'DagsterUnmetExecutorRequirementsError' in add_result.output
+
+
+class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
+    def __init__(self, inst_data=None):
+        self._inst_data = inst_data
+        self._queue = []
+
+    def launch_run(self, run):
+        self._queue.append(run)
+        return run
+
+    def queue(self):
+        return self._queue
+
+    @classmethod
+    def config_type(cls):
+        return Dict({})
+
+    @classmethod
+    def from_config_value(cls, inst_data, config_value, **kwargs):
+        return cls(inst_data=inst_data,)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+
+@repository_partitions
+def define_baz_partitions():
+    return [
+        PartitionSetDefinition(
+            name='baz_partitions', pipeline_name='baz', partition_fn=lambda: string.ascii_lowercase,
+        )
+    ]
+
+
+def backfill_execute_args(execution_args):
+    backfill_args = {
+        'repository_yaml': script_relative_path('repository_file.yaml'),
+        'noprompt': True,
+    }
+    pipeline_name = execution_args.get('pipeline_name')
+    if pipeline_name:
+        backfill_args['pipeline_name'] = (pipeline_name,)
+    for name, value in execution_args.items():
+        if name != 'pipeline_name':
+            backfill_args[name] = value
+    return backfill_args
+
+
+def backfill_cli_runner_args(execution_args):
+    backfill_args = ['-y', script_relative_path('repository_file.yaml'), '--noprompt']
+    pipeline_name = execution_args.get('pipeline_name')
+    if pipeline_name:
+        backfill_args.append(pipeline_name)
+    for name, value in execution_args.items():
+        if name != 'pipeline_name':
+            backfill_args.extend(['--{}'.format(name.replace('_', '-')), value])
+    return backfill_args
+
+
+def run_test_backfill(
+    execution_args, expected_count=None, error_message=None, use_run_launcher=True
+):
+    runner = CliRunner()
+    run_launcher = InMemoryRunLauncher() if use_run_launcher else None
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=run_launcher,
+        )
+        with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
+            _instance.return_value = instance
+
+            if error_message:
+                with pytest.raises(UsageError) as error_info:
+                    execute_backfill_command(backfill_execute_args(execution_args), no_print)
+                assert error_info and error_message in error_info.value.message
+
+            result = runner.invoke(
+                pipeline_backfill_command, backfill_cli_runner_args(execution_args)
+            )
+            if error_message:
+                assert result.exit_code == 2
+            else:
+                assert result.exit_code == 0
+                if expected_count:
+                    assert len(run_launcher.queue()) == expected_count
+
+
+def test_backfill_no_run_launcher():
+    args = {'pipeline_name': 'baz'}  # legit partition args
+    run_test_backfill(
+        args, use_run_launcher=False, error_message='A run launcher must be configured'
+    )
+
+
+def test_backfill_no_pipeline():
+    args = {'pipeline_name': 'nonexistent'}
+    run_test_backfill(args, error_message='No pipeline found')
+
+
+def test_backfill_no_partition_sets():
+    args = {'pipeline_name': 'foo'}
+    run_test_backfill(args, error_message='No partition sets found')
+
+
+def test_backfill_no_named_partition_set():
+    args = {'pipeline_name': 'baz', 'partition_set': 'nonexistent'}
+    run_test_backfill(args, error_message='No partition set found')
+
+
+def test_backfill_launch():
+    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions'}
+    run_test_backfill(args, expected_count=len(string.ascii_lowercase))
+
+
+def test_backfill_partition_range():
+    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'x'}
+    run_test_backfill(args, expected_count=3)
+
+    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'to': 'c'}
+    run_test_backfill(args, expected_count=3)
+
+    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'from': 'c', 'to': 'f'}
+    run_test_backfill(args, expected_count=4)
+
+
+def test_backfill_partition_enum():
+    args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'partitions': 'c,x,z'}
+    run_test_backfill(args, expected_count=3)

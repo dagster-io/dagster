@@ -3,7 +3,7 @@ from __future__ import print_function
 from dagster import check
 from dagster.utils.indenting_printer import IndentingPrinter
 
-from .config_type import ConfigType
+from .config_type import ConfigType, ConfigTypeKind
 from .field import resolve_to_config_type
 
 
@@ -22,14 +22,16 @@ def print_type(config_type, print_fn=print, with_lines=True):
 def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
     line_break_fn = printer.line if with_lines else lambda string: printer.append(string + ' ')
 
-    if config_type.is_list:
+    kind = config_type.kind
+
+    if kind == ConfigTypeKind.LIST:
         printer.append('[')
         _do_print(config_type.inner_type, printer)
         printer.append(']')
-    elif config_type.is_nullable:
+    elif kind == ConfigTypeKind.NULLABLE:
         _do_print(config_type.inner_type, printer)
         printer.append('?')
-    elif config_type.has_fields:
+    elif ConfigTypeKind.has_fields(kind):
         if config_type.name and shortcut_named:
             printer.append(config_type.name)
         else:

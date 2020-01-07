@@ -121,8 +121,10 @@ def get_args(callble):
     else:
         try:
             if inspect.isclass(callble):
-                return inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
-            return inspect.getargspec(callble)  # pylint: disable=deprecated-method
+                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+            else:
+                arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
+            return arg_spec.args
         except TypeError:
             # This will happen when we try to get the argspec for a slot wrapper, e.g.:
             # TypeError: <slot wrapper '__init__' of 'object' objects> is not a Python function

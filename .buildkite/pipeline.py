@@ -261,6 +261,7 @@ def k8s_tests():
                 "popd",
             )
             .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
+            .with_retry(2)
             .on_integration_image(
                 version,
                 [

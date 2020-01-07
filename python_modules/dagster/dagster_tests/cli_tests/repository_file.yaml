@@ -4,3 +4,6 @@ repository:
 scheduler:
   file: test_cli_commands.py
   fn: define_bar_scheduler
+partitions:
+  file: test_cli_commands.py
+  fn: define_baz_partitions
