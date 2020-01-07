@@ -146,17 +146,17 @@ export class ShortcutHandler extends React.Component<
 
     if (shortcutLabel && previewPosition) {
       return (
-        <div>
+        <>
+          {children}
           <ShortcutAnnotation
             style={{ top: previewPosition.top, left: previewPosition.left }}
           >
             {shortcutLabel}
           </ShortcutAnnotation>
-          {children}
-        </div>
+        </>
       );
     }
-    return children;
+    return <>{children}</>;
   }
 }
 
@@ -167,7 +167,7 @@ const ShortcutAnnotation = styled.div`
   font-weight: 600;
   line-height: 14px;
   padding: 1px 3px;
-  z-index: 100;
+  z-index: 10;
   letter-spacing: 2px;
   transform: translate(-90%, -10px);
   color: ${Colors.BLACK};
