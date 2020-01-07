@@ -113,7 +113,7 @@ export const LeftNav = () => {
 const LogoWebsocketStatus = styled(WebsocketStatus)`
   position: absolute;
   top: 28px;
-  right: -3px;
+  right: 12px;
 `;
 
 const Tabs = styled.div`
@@ -158,7 +158,13 @@ const TabLabel = styled.div`
 `;
 
 const LogoContainer = styled.div`
-  margin: auto;
+  padding: 0 16px;
   margin-bottom: 10px;
   position: relative;
+  cursor: pointer;
+  &:hover {
+    img {
+      filter: brightness(110%);
+    }
+  }
 `;
