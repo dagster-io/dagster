@@ -34,7 +34,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
-        pipeline_def = self.executor_config.handle.build_pipeline_definition()
+        pipeline_def = self.executor_config.load_pipeline(self.pipeline_run)
         environment_dict = dict(self.environment_dict, execution={'in_process': {}})
 
         start_termination_thread(self.term_event)
