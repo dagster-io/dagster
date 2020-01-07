@@ -30,7 +30,7 @@ def test_create_pandas_dataframe_dagster_type():
 
 
 def test_basic_pipeline_with_pandas_dataframe_dagster_type():
-    def compute_summary_stats(dataframe):
+    def compute_event_metadata(dataframe):
         return [
             EventMetadataEntry.text(str(max(dataframe['pid'])), 'max_pid', 'maximum pid'),
         ]
@@ -41,7 +41,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
             PandasColumn.integer_column('pid', exists=True),
             PandasColumn.string_column('names'),
         ],
-        summary_statistics=compute_summary_stats,
+        event_metadata_fn=compute_event_metadata,
     )
 
     @solid(output_defs=[OutputDefinition(name='basic_dataframe', dagster_type=BasicDF)])
@@ -69,13 +69,13 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
 def test_bad_dataframe_type_returns_bad_stuff():
     with pytest.raises(DagsterInvariantViolationError):
         BadDFBadSummaryStats = create_dagster_pandas_dataframe_type(
-            'BadDF', summary_statistics=lambda _: 'ksjdkfsd'
+            'BadDF', event_metadata_fn=lambda _: 'ksjdkfsd'
         )
         check_dagster_type(BadDFBadSummaryStats, DataFrame({'num': [1]}))
 
     with pytest.raises(DagsterInvariantViolationError):
         BadDFBadSummaryStatsListItem = create_dagster_pandas_dataframe_type(
-            'BadDF', summary_statistics=lambda _: ['ksjdkfsd']
+            'BadDF', event_metadata_fn=lambda _: ['ksjdkfsd']
         )
         check_dagster_type(BadDFBadSummaryStatsListItem, DataFrame({'num': [1]}))
 

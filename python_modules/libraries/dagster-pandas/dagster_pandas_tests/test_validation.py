@@ -5,6 +5,7 @@ from dagster_pandas.constraints import (
     ConstraintViolationException,
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
+    RowCountConstraint,
     UniqueColumnConstraint,
 )
 from dagster_pandas.validation import PandasColumn, validate_collection_schema
@@ -35,6 +36,26 @@ def test_validate_collection_schema_ok():
 def test_validate_collection_schema_throw_error(collection_schema, dataframe):
     with pytest.raises(ConstraintViolationException):
         validate_collection_schema(collection_schema, dataframe)
+
+
+def test_shape_validation_ok():
+    assert (
+        validate_collection_schema(
+            [PandasColumn.integer_column('foo', min_value=0), PandasColumn.string_column('bar')],
+            DataFrame({'foo': [2], 'bar': ['hello']}),
+            dataframe_constraints=[RowCountConstraint(1)],
+        )
+        is None
+    )
+
+
+def test_shape_validation_throw_error():
+    with pytest.raises(ConstraintViolationException):
+        validate_collection_schema(
+            [PandasColumn.integer_column('foo', min_value=0), PandasColumn.string_column('bar')],
+            DataFrame({'foo': [2], 'bar': ['hello']}),
+            dataframe_constraints=[RowCountConstraint(2)],
+        )
 
 
 def has_constraints(column, constraints):
