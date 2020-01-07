@@ -9,8 +9,10 @@ import { WebsocketStatus } from "./WebsocketStatus";
 import navBarImage from "./images/nav-logo-icon.png";
 import styled from "styled-components/macro";
 import { PipelineNamesContext } from "./PipelineNamesContext";
+import { GlobalKeyHandler } from "./GlobalKeyHandler";
 
 const LAST_PIPELINE = "last-pipeline";
+const KEYCODE_FOR_1 = 49;
 
 export const LeftNav = () => {
   const pipelineNames = React.useContext(PipelineNamesContext);
@@ -38,45 +40,70 @@ export const LeftNav = () => {
           pipelineSelector = `${pipelineNames[0]}:`;
         }
 
-        return (
-          <Tabs>
-            <LogoContainer onClick={() => history.push("/")}>
-              <img src={navBarImage} style={{ height: 40 }} alt="logo" />
-              <LogoWebsocketStatus />
-            </LogoContainer>
+        const TABS = [
+          {
+            to: `/pipeline/${pipelineSelector}/`,
+            tab: `pipeline`,
+            icon: <Icon icon="diagram-tree" iconSize={30} />,
+            label: "Pipelines"
+          },
+          {
+            to: `/solids`,
+            tab: `solids`,
+            icon: <Icon icon="git-commit" iconSize={30} />,
+            label: "Solids"
+          },
+          {
+            to: `/runs`,
+            tab: `runs`,
+            icon: <Icon icon="history" iconSize={30} />,
+            label: "Runs"
+          },
+          {
+            to: `/playground`,
+            tab: `playground`,
+            icon: <Icon icon="manually-entered-data" iconSize={30} />,
+            label: "Playground"
+          },
+          {
+            to: `/scheduler`,
+            tab: `scheduler`,
+            icon: <Icon icon="calendar" iconSize={30} />,
+            label: "Schedule"
+          }
+        ];
 
-            <Tab
-              to={`/pipeline/${pipelineSelector}/`}
-              className={tab === "pipeline" ? "active" : ""}
-            >
-              <Icon icon="diagram-tree" iconSize={30} />
-              <TabLabel>Pipelines</TabLabel>
-            </Tab>
-            <Tab to={`/solids`} className={tab === "solids" ? "active" : ""}>
-              <Icon icon="git-commit" iconSize={30} />
-              <TabLabel>Solids</TabLabel>
-            </Tab>
-            <Tab to={`/runs`} className={tab === "runs" ? "active" : ""}>
-              <Icon icon="history" iconSize={30} />
-              <TabLabel>Runs</TabLabel>
-            </Tab>
-            <Tab
-              to={`/playground`}
-              className={tab === "playground" ? "active" : ""}
-            >
-              <Icon icon="manually-entered-data" iconSize={30} />
-              <TabLabel>Playground</TabLabel>
-            </Tab>
-            <Tab
-              to={`/scheduler`}
-              className={tab === "scheduler" ? "active" : ""}
-            >
-              <Icon icon="calendar" iconSize={30} />
-              <TabLabel>Schedule</TabLabel>
-            </Tab>
-            <div style={{ flex: 1 }} />
-            <ProcessStatus />
-          </Tabs>
+        const onGlobalKeydown = (event: KeyboardEvent) => {
+          if (
+            event.altKey &&
+            event.keyCode >= KEYCODE_FOR_1 &&
+            event.keyCode < KEYCODE_FOR_1 + TABS.length
+          ) {
+            history.push(TABS[event.keyCode - KEYCODE_FOR_1].to);
+          }
+        };
+
+        return (
+          <GlobalKeyHandler onGlobalKeydown={onGlobalKeydown}>
+            <Tabs>
+              <LogoContainer onClick={() => history.push("/")}>
+                <img src={navBarImage} style={{ height: 40 }} alt="logo" />
+                <LogoWebsocketStatus />
+              </LogoContainer>
+              {TABS.map(t => (
+                <Tab
+                  to={t.to}
+                  key={t.tab}
+                  className={tab === t.tab ? "active" : ""}
+                >
+                  {t.icon}
+                  <TabLabel>{t.label}</TabLabel>
+                </Tab>
+              ))}
+              <div style={{ flex: 1 }} />
+              <ProcessStatus />
+            </Tabs>
+          </GlobalKeyHandler>
         );
       }}
     />
