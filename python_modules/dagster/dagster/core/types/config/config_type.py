@@ -297,6 +297,34 @@ class Enum(ConfigType):
             ).format(config_value=config_value)
         )
 
+    @classmethod
+    def from_python_enum(cls, enum, name=None):
+        '''
+        Create a Dagster enum corresponding to an existing Python enum.
+
+        Args:
+            enum (enum.EnumMeta):
+                The class representing the enum.
+            name (Optional[str]):
+                The name for the enum. If not present, `enum.__name__` will be used.
+
+        Example:
+            .. code-block:: python
+                class Color(enum.Enum):
+                    RED = enum.auto()
+                    GREEN = enum.auto()
+                    BLUE = enum.auto()
+
+                @solid(
+                    config={"color": Field(Enum.from_python_enum(Color))}
+                )
+                def select_color(context):
+                    # ...
+        '''
+        if name is None:
+            name = enum.__name__
+        return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+
 
 ConfigAnyInstance = Any()
 ConfigBoolInstance = Bool()
