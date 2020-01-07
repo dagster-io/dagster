@@ -25,6 +25,16 @@ function setShortcutsVisible(state: boolean) {
   window.dispatchEvent(new CustomEvent(SHORTCUT_VISIBILITY_EVENT_TYPE));
 }
 
+function hideShortcuts() {
+  if (shortcutsVisible) {
+    setShortcutsVisible(false);
+  }
+  if (shortcutsTimer) {
+    clearTimeout(shortcutsTimer);
+    shortcutsTimer = null;
+  }
+}
+
 window.addEventListener("keydown", event => {
   if (
     !shortcutsTimer &&
@@ -36,14 +46,11 @@ window.addEventListener("keydown", event => {
 });
 window.addEventListener("keyup", event => {
   if (MODIFIER_KEYCODES.includes(event.keyCode)) {
-    if (shortcutsVisible) {
-      setShortcutsVisible(false);
-    }
-    if (shortcutsTimer) {
-      clearTimeout(shortcutsTimer);
-      shortcutsTimer = null;
-    }
+    hideShortcuts();
   }
+});
+window.addEventListener("blur", () => {
+  hideShortcuts();
 });
 
 interface ShortcutHandlerProps {
