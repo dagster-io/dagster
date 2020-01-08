@@ -1,23 +1,25 @@
 import time
+from datetime import datetime
 from dagster import resource, Field, String, Int
-from tenacity import retry, wait_random_exponential, stop_after_delay
 import requests
 import jwt
 import pem
 
-
 class GithubResource:
-    def __init__(self, client, app_id, app_private_rsa_key, default_app_installation_id):
+    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
         self.client = client
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
-        self.default_app_installation_id = default_app_installation_id
-        self.set_app_headers()
+        self.default_installation_id = default_installation_id
+        self.installation_tokens = {}
+        self.set_app_token()
 
-    def set_app_headers(self):
+    def set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
         # needing to self-sign a JWT
         now = int(time.time())
+        # JWT expiration time (10 minute maximum)
+        expires = now + (10 * 60)
         certs = pem.parse(str.encode(self.app_private_rsa_key))
         if len(certs) == 0:
             raise Exception("Invalid app_private_rsa_key")
@@ -25,37 +27,32 @@ class GithubResource:
             {
                 # issued at time
                 "iat": now,
-                # JWT expiration time (10 minute maximum)
-                "exp": now + (10 * 60),
+                # JWT expiration time
+                "exp": expires,
                 # GitHub App's identifier
                 "iss": self.app_id,
             },
             str(certs[0]),
             algorithm="RS256",
         ).decode("utf-8")
-        self.app_headers = {
-            "Authorization": f"Bearer {encoded_token}",
-            "Accept": "application/vnd.github.machine-man-preview+json",
+        self.app_token={
+            "value": encoded_token,
+            "expires": expires,
         }
 
-    @retry(
-        wait=wait_random_exponential(multiplier=1, max=60),
-        stop=stop_after_delay(100),
-        reraise=True,
-    )
-    def get_installations(self):
+    def check_app_token(self):
+        if self.app_token["expires"] > (int(time.time()) - 60):
+            self.set_app_token()
+
+    def get_installations(self, headers={}):
+        self.check_app_token()
+        headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
+        headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get(
-            "https://api.github.com/app/installations", headers=self.app_headers,
+            "https://api.github.com/app/installations", headers=headers,
         )
         if request.status_code == 200:
             return request.json()
-        elif request.status_code == 401:
-            self.set_app_headers()
-            raise Exception(
-                "Request failed and returned code of {}. {}".format(
-                    request.status_code, request.json()
-                )
-            )
         else:
             raise Exception(
                 "Request failed and returned code of {}, {}".format(
@@ -63,29 +60,20 @@ class GithubResource:
                 )
             )
 
-    def get_app_installation_headers(self, app_installation_id):
-        auth = self.authenticate_as_installation(app_installation_id)
-        return {"Authorization": f"token {auth['token']}"}
-
-    @retry(
-        wait=wait_random_exponential(multiplier=1, max=60),
-        stop=stop_after_delay(100),
-        reraise=True,
-    )
-    def authenticate_as_installation(self, installation_id):
+    def set_installation_token(self, installation_id, headers={}):
+        self.check_app_token()
+        headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
+        headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
-            f"https://api.github.com/app/installations/{installation_id}/access_tokens",
-            headers=self.app_headers,
+            "https://api.github.com/app/installations/{}/access_tokens".format(installation_id),
+            headers=headers,
         )
         if request.status_code == 201:
-            return request.json()
-        elif request.status_code == 401:
-            self.set_app_headers()
-            raise Exception(
-                "Request failed and returned code of {}. {}".format(
-                    request.status_code, request.json()
-                )
-            )
+            auth = request.json()
+            self.installation_tokens[installation_id] = {
+                "value": auth["token"],
+                "expires": datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
+            }
         else:
             raise Exception(
                 "Request failed and returned code of {}, {}".format(
@@ -93,28 +81,23 @@ class GithubResource:
                 )
             )
 
-    @retry(
-        wait=wait_random_exponential(multiplier=1, max=60),
-        stop=stop_after_delay(100),
-        reraise=True,
-    )
-    def execute(self, query, variables, app_installation_id=None):
-        if app_installation_id is None:
-            app_installation_id = self.default_app_installation_id
+    def check_installation_tokens(self, installation_id):
+        if ((installation_id not in self.installation_tokens) or
+        (self.installation_tokens[installation_id]["expires"] > (int(time.time()) - 60))):
+            self.set_installation_token(installation_id)
+
+    def execute(self, query, variables, headers={}, installation_id=None):
+        if installation_id is None:
+            installation_id = self.default_installation_id
+        self.check_installation_tokens(installation_id)
+        headers["Authorization"] = "token {}".format(self.installation_tokens[installation_id]["value"])
         request = requests.post(
             "https://api.github.com/graphql",
             json={"query": query, "variables": variables},
-            headers=self.get_app_installation_headers(app_installation_id),
+            headers=headers,
         )
         if request.status_code == 200:
             return request.json()
-        elif request.status_code == 401:
-            self.set_app_headers()
-            raise Exception(
-                "Query failed to run by returning code of {}. {}".format(
-                    request.status_code, query
-                )
-            )
         else:
             raise Exception(
                 "Query failed to run by returning code of {}. {}".format(
@@ -122,7 +105,7 @@ class GithubResource:
                 )
             )
 
-    def create_issue(self, repo_name, repo_owner, title, body, app_installation_id=None):
+    def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
         res = self.execute(
             query="""
             query get_repo_id($repo_name: String!, $repo_owner: String!) {
@@ -132,7 +115,7 @@ class GithubResource:
             }
             """,
             variables={"repo_name": repo_name, "repo_owner": repo_owner},
-            app_installation_id=app_installation_id
+            installation_id=installation_id
         )
 
         return self.execute(
@@ -157,7 +140,7 @@ class GithubResource:
                 "title": title,
                 "body": body,
             },
-            app_installation_id=app_installation_id
+            installation_id=installation_id
         )
 
 @resource(
@@ -170,7 +153,7 @@ class GithubResource:
             String,
             description="Github Application Private RSA key text, for more info see https://developer.github.com/apps/",
         ),
-        "default_github_app_installation_id": Field(
+        "default_github_installation_id": Field(
             Int,
             is_optional=True,
             description="Default Github Application Installation ID, for more info see https://developer.github.com/apps/",
@@ -183,5 +166,5 @@ def github_resource(context):
         client=requests.Session(),
         app_id=context.resource_config["github_app_id"],
         app_private_rsa_key=context.resource_config["github_app_private_rsa_key"],
-        default_app_installation_id=context.resource_config["default_github_app_installation_id"],
+        default_installation_id=context.resource_config["default_github_installation_id"],
     )

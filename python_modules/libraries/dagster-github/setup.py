@@ -39,13 +39,12 @@ def _do_setup(name='dagster-github'):
         packages=find_packages(exclude=['test']),
         install_requires=[
             'dagster',
-            # Using a Github app requires signing your own JWT :( 
+            # Using a Github app requires signing your own JWT :(
             # https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
             'pyjwt',
             'pem',
             'cryptography',
             # No officially supported python sdk for github :(
-            'tenacity',
             'requests',
         ],
         zip_safe=False,
