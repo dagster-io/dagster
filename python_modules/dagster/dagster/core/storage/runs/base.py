@@ -22,14 +22,6 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''
 
     @abstractmethod
-    def all_runs(self, cursor=None, limit=None):
-        '''Return all the runs present in the storage.
-
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
     def get_runs(self, filters=None, cursor=None, limit=None):
         '''Return all the runs present in the storage that match the given filter
 
@@ -53,54 +45,6 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
         Returns:
             List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        '''Return all the runs present in the storage for a given pipeline.
-
-        Args:
-            pipeline_name (str): The pipeline to index on
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def get_run_count_with_matching_tags(self, tags):
-        '''Return then number runs present in the storage that have the given tags
-
-        Args:
-            tags (List[Tuple[str, str]]): List of (key, value) tags
-
-        Returns:
-            int
-        '''
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        '''Return all the runs present in the storage that have the given tags
-
-        Args:
-            tags (Dict[str, str]): Dictionary of (key, value) tags
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-
-        Returns:
-            List[PipelineRun]
-        '''
-
-    @abstractmethod
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        '''Run all the runs matching a particular status
-
-        Args:
-            run_status (PipelineRunStatus)
-            cursor (Optional[str]): Starting cursor (run_id) of range of runs
-            limit (Optional[int]): Number of results to get. Defaults to infinite.
-
-        Returns:
-            List[PipelineRun]:
         '''
 
     @abstractmethod

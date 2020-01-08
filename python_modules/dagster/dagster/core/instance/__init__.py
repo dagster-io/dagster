@@ -10,6 +10,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -291,23 +292,11 @@ class DagsterInstance:
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 
-    def all_runs(self, cursor=None, limit=None):
-        return self._run_storage.all_runs(cursor, limit)
-
     def get_runs(self, filters=None, cursor=None, limit=None):
         return self._run_storage.get_runs(filters, cursor, limit)
 
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
-
-    def get_run_count_with_matching_tags(self, tags):
-        return self._run_storage.get_run_count_with_matching_tags(tags)
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_matching_tags(tags, cursor, limit)
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_status(run_status, cursor, limit)
+    def get_runs_count(self, filters=None):
+        return self._run_storage.get_runs_count(filters)
 
     def wipe(self):
         self._run_storage.wipe()

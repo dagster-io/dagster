@@ -96,23 +96,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = query.order_by(RunsTable.c.id.desc())
         return query
 
-    def all_runs(self, cursor=None, limit=None):
-        '''Return all the runs present in the storage.
-
-        Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
-        '''
-        query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
-        rows = self.execute(query)
-        return self._rows_to_runs(rows)
-
     def get_runs(self, filters=None, cursor=None, limit=None):
-        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+        filters = check.opt_inst_param(
+            filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
+        )
         check.opt_str_param(cursor, 'cursor')
         check.opt_int_param(limit, 'limit')
-
-        if not filters:
-            return self.all_runs(cursor, limit)
 
         # If we have a tags filter, then we need to select from a joined table
         if filters.tags:
@@ -195,86 +184,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.execute(query)
         count = rows[0][0]
         return count
-
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        '''Return all the runs present in the storage for a given pipeline.
-
-        Args:
-            pipeline_name (str): The pipeline to index on
-
-        Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
-        '''
-        check.str_param(pipeline_name, 'pipeline_name')
-
-        base_query = db.select([RunsTable.c.run_body]).where(
-            RunsTable.c.pipeline_name == pipeline_name
-        )
-        query = self._build_query(base_query, cursor, limit)
-        rows = self.execute(query)
-        return self._rows_to_runs(rows)
-
-    def get_run_count_with_matching_tags(self, tags):
-        check.dict_param(tags, 'tags', key_type=str, value_type=str)
-
-        sub_query = db.select([1]).select_from(
-            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-        )
-
-        sub_query = sub_query.where(
-            db.or_(
-                *(
-                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags.items()
-                )
-            )
-        ).group_by(RunsTable.c.run_id)
-
-        if len(tags) > 0:
-            sub_query = sub_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
-
-        sub_query = sub_query.alias("matching_runs")
-
-        query = db.select([db.func.count()]).select_from(sub_query)
-
-        rows = self.execute(query)
-
-        count = rows[0][0]
-        return count
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.dict_param(tags, 'tags', key_type=str, value_type=str)
-
-        base_query = db.select([RunsTable.c.run_body]).select_from(
-            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-        )
-
-        base_query = base_query.where(
-            db.or_(
-                *(
-                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags.items()
-                )
-            )
-        ).group_by(RunsTable.c.run_body, RunsTable.c.id)
-
-        if len(tags) > 0:
-            base_query = base_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
-
-        query = self._build_query(base_query, cursor, limit)
-
-        rows = self.execute(query)
-
-        return self._rows_to_runs(rows)
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        check.inst_param(run_status, 'run_status', PipelineRunStatus)
-
-        base_query = db.select([RunsTable.c.run_body]).where(RunsTable.c.status == run_status.value)
-        query = self._build_query(base_query, cursor, limit)
-        rows = self.execute(query)
-
-        return self._rows_to_runs(rows)
 
     def get_run_by_id(self, run_id):
         '''Get a run by its id.

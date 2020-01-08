@@ -39,16 +39,13 @@ class InMemoryRunStorage(RunStorage):
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
             self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
 
-    def all_runs(self, cursor=None, limit=None):
-        return self._slice(list(self._runs.values())[::-1], cursor, limit)
-
     def get_runs(self, filters=None, cursor=None, limit=None):
         check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
         check.opt_str_param(cursor, 'cursor')
         check.opt_int_param(limit, 'limit')
 
         if not filters:
-            return self.all_runs(cursor, limit)
+            return self._slice(list(self._runs.values())[::-1], cursor, limit)
 
         def run_filter(run):
             if filters.run_id and filters.run_id != run.run_id:
@@ -75,29 +72,6 @@ class InMemoryRunStorage(RunStorage):
 
         return len(self.get_runs(filters))
 
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        check.str_param(pipeline_name, 'pipeline_name')
-        return self._slice(
-            [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
-        )
-
-    def get_run_count_with_matching_tags(self, tags):
-        check.dict_param(tags, 'tags', key_type=str, value_type=str)
-        return len(self.get_runs_with_matching_tags(tags))
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.dict_param(tags, 'tags', key_type=str, value_type=str)
-
-        return self._slice(
-            [
-                r
-                for r in self.all_runs()
-                if all(r.tags.get(key) == value for key, value in tags.items())
-            ],
-            cursor,
-            limit,
-        )
-
     def _slice(self, runs, cursor, limit):
         if cursor:
             try:
@@ -121,13 +95,6 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_tags(self):
         return sorted([(k, v) for k, v in self._run_tags.items()], key=lambda x: x[0])
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        check.inst_param(run_status, 'run_status', PipelineRunStatus)
-        matching_runs = list(
-            filter(lambda run: run.status == run_status, reversed(self._runs.values()))
-        )
-        return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
