@@ -28,9 +28,10 @@ class ConstraintViolationException(Exception):
 
 
 class Constraint(with_metaclass(ABCMeta)):
-    def __init__(self, description=None):
+    def __init__(self, error_description=None, markdown_description=None):
         self.name = self.__class__.__name__
-        self.description = check.str_param(description, 'description')
+        self.markdown_description = check.str_param(markdown_description, 'markdown_description')
+        self.error_description = check.str_param(error_description, 'error_description')
 
     @abstractmethod
     def validate(self, dataframe, column_name):
@@ -43,7 +44,10 @@ class Constraint(with_metaclass(ABCMeta)):
 
 class ColumnExistsConstraint(Constraint):
     def __init__(self):
-        super(ColumnExistsConstraint, self).__init__("Column Name must exist in dataframe")
+        description = "Column Name must exist in dataframe"
+        super(ColumnExistsConstraint, self).__init__(
+            error_description=description, markdown_description=description,
+        )
 
     def validate(self, dataframe, column_name):
         check.inst_param(dataframe, 'dataframe', DataFrame)
@@ -52,7 +56,7 @@ class ColumnExistsConstraint(Constraint):
         if column_name not in dataframe.columns:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.markdown_description,
                 column_name=column_name,
             )
 
@@ -64,29 +68,33 @@ class ColumnTypeConstraint(Constraint):
         self.expected_pandas_dtypes = check.set_param(
             expected_pandas_dtypes, 'expected_pandas_dtype'
         )
+        description = "Column dtype must be {}".format(self.expected_pandas_dtypes)
         super(ColumnTypeConstraint, self).__init__(
-            "Column dtype must be {}".format(self.expected_pandas_dtypes)
+            error_description=description, markdown_description=description,
         )
 
     def validate(self, dataframe, column_name):
         if str(dataframe[column_name].dtype) not in self.expected_pandas_dtypes:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
             )
 
 
 class NonNullableColumnConstraint(Constraint):
     def __init__(self):
-        super(NonNullableColumnConstraint, self).__init__("Column must contain non null values")
+        description = "No Null values allowed."
+        super(NonNullableColumnConstraint, self).__init__(
+            error_description=description, markdown_description=description
+        )
 
     def validate(self, dataframe, column_name):
         rows_with_null_columns = dataframe[dataframe[column_name].isna()]
         if not rows_with_null_columns.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=self.get_offending_row_pairs(rows_with_null_columns, column_name),
             )
@@ -94,14 +102,17 @@ class NonNullableColumnConstraint(Constraint):
 
 class UniqueColumnConstraint(Constraint):
     def __init__(self):
-        super(UniqueColumnConstraint, self).__init__("Column must contain unique values")
+        description = "Column must be unique."
+        super(UniqueColumnConstraint, self).__init__(
+            error_description=description, markdown_description=description
+        )
 
     def validate(self, dataframe, column_name):
         rows_with_duplicated_values = dataframe[dataframe[column_name].duplicated()]
         if not rows_with_duplicated_values.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=rows_with_duplicated_values,
             )
@@ -109,9 +120,11 @@ class UniqueColumnConstraint(Constraint):
 
 class CategoricalColumnConstraint(Constraint):
     def __init__(self, categories):
-        self.categories = check.set_param(categories, 'categories', of_type=str)
+        self.categories = list(check.set_param(categories, 'categories', of_type=str))
+
         super(CategoricalColumnConstraint, self).__init__(
-            "Column must take the following values {}".format(self.categories)
+            error_description="Expected Categories are {}".format(self.categories),
+            markdown_description="Category examples are {}...".format(self.categories[:5]),
         )
 
     def validate(self, dataframe, column_name):
@@ -119,7 +132,7 @@ class CategoricalColumnConstraint(Constraint):
         if not rows_with_unexpected_buckets.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=rows_with_unexpected_buckets,
             )
@@ -129,7 +142,8 @@ class MinValueColumnConstraint(Constraint):
     def __init__(self, min_value):
         self.min_value = min_value
         super(MinValueColumnConstraint, self).__init__(
-            "Column must have values greater than {}".format(self.min_value)
+            markdown_description="values > {}".format(self.min_value),
+            error_description="Column must have values > {}".format(self.min_value),
         )
 
     def validate(self, dataframe, column_name):
@@ -137,7 +151,7 @@ class MinValueColumnConstraint(Constraint):
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=out_of_bounds_rows,
             )
@@ -147,7 +161,8 @@ class MaxValueColumnConstraint(Constraint):
     def __init__(self, max_value):
         self.max_value = max_value
         super(MaxValueColumnConstraint, self).__init__(
-            "Column must have values greater than {}".format(self.max_value)
+            markdown_description="values < {}".format(self.max_value),
+            error_description="Column must have values < {}".format(self.max_value),
         )
 
     def validate(self, dataframe, column_name):
@@ -155,7 +170,7 @@ class MaxValueColumnConstraint(Constraint):
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=out_of_bounds_rows,
             )
@@ -166,7 +181,10 @@ class InRangeColumnConstraint(Constraint):
         self.min_value = min_value
         self.max_value = max_value
         super(InRangeColumnConstraint, self).__init__(
-            "Column must have values between {} and {}".format(self.min_value, self.max_value)
+            markdown_description="{} < values < {}".format(self.min_value, self.max_value),
+            error_description="Column must have values between {} and {} inclusive.".format(
+                self.min_value, self.max_value
+            ),
         )
 
     def validate(self, dataframe, column_name):
@@ -176,7 +194,7 @@ class InRangeColumnConstraint(Constraint):
         if not out_of_bounds_rows.empty:
             raise ConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.description,
+                constraint_description=self.error_description,
                 column_name=column_name,
                 offending_rows=out_of_bounds_rows,
             )

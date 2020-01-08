@@ -364,6 +364,7 @@ type InputMapping {
 
 type Instance {
   info: String!
+  runLauncher: RunLauncher
 }
 
 type InvalidOutputError {
@@ -734,7 +735,7 @@ type PipelineRun {
   runId: String!
   status: PipelineRunStatus!
   pipeline: PipelineReference!
-  stats: PipelineRunStatsSnapshot!
+  stats: PipelineRunStatsOrError!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -779,6 +780,8 @@ input PipelineRunsFilter {
 }
 
 union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+
+union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
 
 type PipelineRunStatsSnapshot {
   runId: String!
@@ -836,6 +839,7 @@ type PresetNotFoundError implements Error {
 type PythonError implements Error {
   message: String!
   stack: [String!]!
+  cause: PythonError
 }
 
 type Query {
@@ -896,6 +900,10 @@ type Resource {
 
 type ResourceRequirement {
   resourceKey: String!
+}
+
+type RunLauncher {
+  name: String!
 }
 
 type RunLauncherNotDefinedError implements Error {

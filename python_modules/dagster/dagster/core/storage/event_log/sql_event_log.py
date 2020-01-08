@@ -27,7 +27,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     @abstractmethod
     def upgrade(self):
-        '''This method should perform any schema or data migrations necessary to bring an 
+        '''This method should perform any schema or data migrations necessary to bring an
         out-of-date instance of the storage up to date.
         '''
 
@@ -98,13 +98,18 @@ class SqlEventLogStorage(EventLogStorage):
     def get_stats_for_run(self, run_id):
         check.str_param(run_id, 'run_id')
 
-        query = db.select(
-            [
-                SqlEventLogStorageTable.c.dagster_event_type,
-                db.func.count().label('n_events_of_type'),
-                db.func.max(SqlEventLogStorageTable.c.timestamp).label('last_event_timestamp'),
-            ]
-        ).group_by('dagster_event_type')
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    db.func.count().label('n_events_of_type'),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label('last_event_timestamp'),
+                ]
+            )
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .group_by('dagster_event_type')
+        )
+
         with self.connect(run_id) as conn:
             results = conn.execute(query).fetchall()
 
@@ -116,21 +121,20 @@ class SqlEventLogStorage(EventLogStorage):
                     counts[result[0]] = result[1]
                     times[result[0]] = result[2]
 
+            start_time = times.get(DagsterEventType.PIPELINE_START.value, None)
+            end_time = times.get(
+                DagsterEventType.PIPELINE_SUCCESS.value,
+                times.get(DagsterEventType.PIPELINE_FAILURE.value, None),
+            )
+
             return PipelineRunStatsSnapshot(
                 run_id=run_id,
                 steps_succeeded=counts.get(DagsterEventType.STEP_SUCCESS.value, 0),
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.STEP_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                start_time=datetime_as_float(
-                    times.get(DagsterEventType.PIPELINE_START.value, None)
-                ),
-                end_time=datetime_as_float(
-                    times.get(
-                        DagsterEventType.PIPELINE_SUCCESS.value,
-                        times.get(DagsterEventType.PIPELINE_FAILURE.value, None),
-                    )
-                ),
+                start_time=datetime_as_float(start_time) if start_time else None,
+                end_time=datetime_as_float(end_time) if end_time else None,
             )
         except (seven.JSONDecodeError, check.CheckError) as err:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)

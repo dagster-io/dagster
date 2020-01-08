@@ -7,9 +7,13 @@ import { ShortcutHandler } from "../ShortcutHandler";
 
 interface IExecutionStartButtonProps {
   title: string;
-  icon: "repeat" | "play" | "disable";
+  icon: "repeat" | "play" | "disable" | "send-to";
+  tooltip?: string;
+  activeText?: string;
   small?: boolean;
   disabled?: boolean;
+  shortcutLabel?: string;
+  shortcutFilter?: (event: KeyboardEvent) => boolean;
   onClick: () => void;
 }
 
@@ -104,7 +108,7 @@ export default class ExecutionStartButton extends React.Component<
                 <div style={{ marginRight: 5 }}>
                   <Spinner intent={Intent.NONE} size={iconSize} />
                 </div>
-                Starting...
+                {this.props.activeText ? this.props.activeText : "Starting..."}
               </ExecutionButtonContainer>
             );
           }
@@ -115,7 +119,7 @@ export default class ExecutionStartButton extends React.Component<
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
-                title={this.props.title}
+                title={this.props.tooltip}
               >
                 <Icon
                   icon={this.props.icon}
@@ -130,15 +134,15 @@ export default class ExecutionStartButton extends React.Component<
           return (
             <ShortcutHandler
               onShortcut={this.onClick}
-              shortcutLabel={`⌥G`}
-              shortcutFilter={e => e.keyCode === 71 && e.altKey}
+              shortcutLabel={this.props.shortcutLabel}
+              shortcutFilter={this.props.shortcutFilter}
             >
               <ExecutionButtonContainer
                 role="button"
                 ref={this._startButton}
                 style={style}
                 state={ExecutionButtonStatus.Ready}
-                title={this.props.title}
+                title={this.props.tooltip}
                 onClick={this.onClick}
               >
                 <Icon
@@ -178,7 +182,7 @@ export const ExecutionButtonContainer = styled.div<{
   transition: background 200ms linear;
   justify-content: center;
   align-items: center;
-  display: flex;
+  display: inline-flex;
   color: ${({ state }) =>
     state === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
   cursor: ${({ state }) => (state !== "ready" ? "normal" : "pointer")};

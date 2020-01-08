@@ -155,7 +155,7 @@ def test_error_resource(snapshot):
 
 def test_composition_pipeline():
     result = execute_pipeline(
-        composition, environment_dict={'solids': {'add_four': {'inputs': {'num': {'value': 3}}}}},
+        composition, environment_dict={'solids': {'add_four': {'inputs': {'num': 3}}}},
     )
 
     assert result.success

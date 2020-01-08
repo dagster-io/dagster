@@ -86,7 +86,7 @@ def _validate_config(context, config_value):
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
-    elif kind == ConfigTypeKind.DICT:
+    elif kind == ConfigTypeKind.STRICT_DICT:
         return validate_dict_config(context, config_value)
     elif kind == ConfigTypeKind.PERMISSIVE_DICT:
         return validate_permissive_dict_config(context, config_value)
@@ -94,8 +94,25 @@ def _validate_config(context, config_value):
         return validate_list_config(context, config_value)
     elif kind == ConfigTypeKind.ENUM:
         return validate_enum_config(context, config_value)
+    elif kind == ConfigTypeKind.SCALAR_UNION:
+        return _validate_scalar_union_config(context, config_value)
     else:
         check.failed('Unsupported ConfigTypeKind {}'.format(kind))
+
+
+def _validate_scalar_union_config(context, config_value):
+    check.inst_param(context, 'context', ValidationContext)
+    check.param_invariant(context.config_type.kind == ConfigTypeKind.SCALAR_UNION, 'context')
+    check.not_none_param(config_value, 'config_value')
+
+    if isinstance(config_value, dict) or isinstance(config_value, list):
+        return _validate_config(
+            context.for_new_config_type(context.config_type.non_scalar_type), config_value
+        )
+    else:
+        return _validate_config(
+            context.for_new_config_type(context.config_type.scalar_type), config_value
+        )
 
 
 def _validate_empty_selector_config(context):
@@ -151,9 +168,11 @@ def validate_selector_config(context, config_value):
         # storage:
         #   filesystem:
         #
-        # And we want the default values of the child elementls of filesystem:
+        # And we want the default values of the child elements of filesystem:
         # to "fill in"
-        {} if field_value is None and field_def.config_type.has_fields else field_value,
+        {}
+        if field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
+        else field_value,
     )
 
     if child_evaluate_value_result.success:
@@ -216,7 +235,7 @@ def validate_permissive_dict_config(context, config_value):
 
 def validate_dict_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
-    check.invariant(context.config_type.kind == ConfigTypeKind.DICT)
+    check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_DICT)
     check.not_none_param(config_value, 'config_value')
 
     return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=True)

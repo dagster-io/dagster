@@ -1,5 +1,9 @@
 import pytest
-from dagster_pandas.constraints import ColumnTypeConstraint
+from dagster_pandas.constraints import (
+    ColumnTypeConstraint,
+    InRangeColumnConstraint,
+    NonNullableColumnConstraint,
+)
 from dagster_pandas.data_frame import create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
 from pandas import DataFrame
@@ -74,3 +78,38 @@ def test_bad_dataframe_type_returns_bad_stuff():
             'BadDF', summary_statistics=lambda _: ['ksjdkfsd']
         )
         check_dagster_type(BadDFBadSummaryStatsListItem, DataFrame({'num': [1]}))
+
+
+def test_dataframe_description_generation_just_type_constraint():
+    TestDataFrame = create_dagster_pandas_dataframe_type(
+        name='TestDataFrame',
+        columns=[PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
+    )
+    assert TestDataFrame.description == "\n### Columns\n**foo**: `int64`\n\n"
+
+
+def test_dataframe_description_generation_no_type_constraint():
+    TestDataFrame = create_dagster_pandas_dataframe_type(
+        name='TestDataFrame', columns=[PandasColumn(name='foo')],
+    )
+    assert TestDataFrame.description == "\n### Columns\n**foo**\n\n"
+
+
+def test_dataframe_description_generation_multi_constraints():
+    TestDataFrame = create_dagster_pandas_dataframe_type(
+        name='TestDataFrame',
+        columns=[
+            PandasColumn(
+                name='foo',
+                constraints=[
+                    ColumnTypeConstraint('int64'),
+                    InRangeColumnConstraint(0, 100),
+                    NonNullableColumnConstraint(),
+                ],
+            ),
+        ],
+    )
+    assert (
+        TestDataFrame.description
+        == "\n### Columns\n**foo**: `int64`\n+ 0 < values < 100\n+ No Null values allowed.\n\n"
+    )

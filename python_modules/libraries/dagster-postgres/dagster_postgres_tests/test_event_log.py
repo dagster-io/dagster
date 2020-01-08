@@ -263,6 +263,9 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
+    stats_one = event_log_storage.get_stats_for_run(result_one.run_id)
+    assert stats_one.steps_succeeded == 1
+
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id)
     assert len(out_events_two) == 7
 
@@ -279,6 +282,9 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     )
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
+
+    stats_two = event_log_storage.get_stats_for_run(result_two.run_id)
+    assert stats_two.steps_succeeded == 1
 
 
 def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):

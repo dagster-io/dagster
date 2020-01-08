@@ -421,41 +421,7 @@ exports[`renders execution 1`] = `
               "zIndex": 3,
             }
           }
-        >
-          <div
-            className="ExecutionStartButton__ExecutionButtonContainer-sc-4mq1ym-0 jZagAL"
-            role="button"
-            style={Object {}}
-            title="The dagit server is offline"
-          >
-            <span
-              className="bp3-icon bp3-icon-offline"
-              icon="offline"
-              style={
-                Object {
-                  "marginRight": 5,
-                  "textAlign": "center",
-                }
-              }
-            >
-              <svg
-                data-icon="offline"
-                height={17}
-                viewBox="0 0 16 16"
-                width={17}
-              >
-                <desc>
-                  offline
-                </desc>
-                <path
-                  d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zM6 14l1-5H4l6-7-1 5h3l-6 7z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-            Start Execution
-          </div>
-        </div>
+        />
         <div
           className="RunPreview__NonIdealWrap-sc-5v37v5-0 hRNQzE"
         >
@@ -703,7 +669,7 @@ exports[`renders pipeline page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 dGWoQN"
+    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
   >
     <div
       className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
@@ -3492,7 +3458,7 @@ exports[`renders pipeline solid page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 dGWoQN"
+    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
   >
     <div
       className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
@@ -10906,7 +10872,7 @@ exports[`renders type page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 dGWoQN"
+    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
   >
     <div
       className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
@@ -13695,7 +13661,7 @@ exports[`renders type page 2`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 dGWoQN"
+    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
   >
     <div
       className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
@@ -16484,7 +16450,7 @@ exports[`renders without error 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 dGWoQN"
+    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
   >
     <div
       className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"

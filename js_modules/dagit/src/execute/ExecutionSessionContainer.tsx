@@ -3,14 +3,8 @@ import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { Colors, Button } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { ApolloConsumer, Mutation, MutationFunction } from "react-apollo";
+import { ApolloConsumer } from "react-apollo";
 
-import ExecutionStartButton from "./ExecutionStartButton";
-import {
-  handleStartExecutionResult,
-  HANDLE_START_EXECUTION_FRAGMENT
-} from "../runs/RunUtils";
 import { RunPreview } from "./RunPreview";
 import { SplitPanelChildren } from "../SplitPanelChildren";
 import SolidSelector from "./SolidSelector";
@@ -42,12 +36,9 @@ import {
   ExecutionSessionContainerEnvironmentSchemaFragment_ModeNotFoundError
 } from "./types/ExecutionSessionContainerEnvironmentSchemaFragment";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
-import {
-  StartPipelineExecution,
-  StartPipelineExecutionVariables
-} from "./types/StartPipelineExecution";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
+import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -148,31 +139,6 @@ export default class ExecutionSessionContainer extends React.Component<
 
   onModeChange = (mode: string) => {
     this.props.onSaveSession({ mode });
-  };
-
-  onExecute = async (
-    startPipelineExecution: MutationFunction<
-      StartPipelineExecution,
-      StartPipelineExecutionVariables
-    >
-  ) => {
-    const { preview } = this.state;
-    const pipeline = this.getPipeline();
-
-    if (!preview || !pipeline) {
-      alert(
-        "Dagit is still retrieving pipeline info. Please try again in a moment."
-      );
-      return;
-    }
-
-    const variables = this.buildExecutionVariables();
-    if (!variables) return;
-
-    const result = await startPipelineExecution({ variables });
-    handleStartExecutionResult(pipeline.name, result, {
-      openInNewWindow: true
-    });
   };
 
   buildExecutionVariables = () => {
@@ -365,26 +331,21 @@ export default class ExecutionSessionContainer extends React.Component<
           }
           right={
             <>
-              <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
-                mutation={START_PIPELINE_EXECUTION_MUTATION}
+              <div
+                style={{
+                  position: "absolute",
+                  top: -41,
+                  zIndex: 3,
+                  right: 10
+                }}
               >
-                {startPipelineExecution => (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: -41,
-                      zIndex: 3,
-                      right: 10
-                    }}
-                  >
-                    <ExecutionStartButton
-                      title="Start Execution"
-                      icon={IconNames.PLAY}
-                      onClick={() => this.onExecute(startPipelineExecution)}
-                    />
-                  </div>
+                {pipeline && (
+                  <PipelineExecutionButtonGroup
+                    pipelineName={pipeline.name}
+                    getVariables={this.buildExecutionVariables}
+                  />
                 )}
-              </Mutation>
+              </div>
               {preview ? (
                 <RunPreview
                   plan={preview.executionPlan}
@@ -484,32 +445,4 @@ const ConfigEditorDisplayOptionsContainer = styled.div`
   bottom: 10px;
   right: 10px;
   z-index: 10;
-`;
-
-const START_PIPELINE_EXECUTION_MUTATION = gql`
-  mutation StartPipelineExecution($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
-      __typename
-
-      ... on StartPipelineExecutionSuccess {
-        run {
-          runId
-          pipeline {
-            name
-          }
-        }
-      }
-      ... on PipelineNotFoundError {
-        message
-      }
-      ... on PipelineConfigValidationInvalid {
-        errors {
-          message
-        }
-      }
-      ...HandleStartExecutionFragment
-    }
-  }
-
-  ${HANDLE_START_EXECUTION_FRAGMENT}
 `;

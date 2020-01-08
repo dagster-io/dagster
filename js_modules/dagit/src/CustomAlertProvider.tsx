@@ -8,6 +8,7 @@ const CURRENT_ALERT_CHANGED = "alert-changed";
 interface ICustomAlert {
   body: React.ReactNode | string;
   title: string;
+  copySelector?: string;
 }
 
 let CurrentAlert: ICustomAlert | null = null;
@@ -52,9 +53,12 @@ export default class CustomAlertProvider extends React.Component<
           <div className={Classes.DIALOG_FOOTER_ACTIONS}>
             <Button
               autoFocus={false}
-              onClick={(e: React.MouseEvent<any, MouseEvent>) =>
-                copyValue(e, this.bodyRef.current!.textContent || "")
-              }
+              onClick={(e: React.MouseEvent<any, MouseEvent>) => {
+                const copyElement = alert?.copySelector
+                  ? this.bodyRef.current!.querySelector(alert.copySelector)
+                  : this.bodyRef.current;
+                copyValue(e, copyElement?.textContent || "");
+              }}
             >
               Copy
             </Button>

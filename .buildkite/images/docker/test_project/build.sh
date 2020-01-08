@@ -2,23 +2,23 @@
 
 ROOT=$(git rev-parse --show-toplevel)
 
-set -ux
-
 function cleanup {
     rm -rf $ROOT/.buildkite/images/docker/test_project/build_cache
     set +ux
 }
 
-export TOX_PY_VERSION=$1
-export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"
-export DAGSTER_DOCKER_IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
-
-aws ecr get-login --no-include-email --region us-west-1 | sh
-aws s3 cp s3://${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $GOOGLE_APPLICATION_CREDENTIALS
-
-
 # ensure cleanup happens on error or normal exit
 trap cleanup INT TERM EXIT ERR
+
+if [ "$#" -ne 1 ]; then
+    echo -e "Error: Must specify a base image.\n" 1>&2
+    echo -e "Usage: ./build.sh your/base_image:latest\n" 1>&2
+    exit 1
+fi
+
+set -ux
+
+export BASE_IMAGE=$1
 
 pushd $ROOT/.buildkite/images/docker/test_project
 
@@ -43,8 +43,6 @@ cp -R $ROOT/python_modules/dagster \
 find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
-docker build -t dagster-docker-buildkite .
-docker tag dagster-docker-buildkite $DAGSTER_DOCKER_IMAGE
-
-echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"
-docker push $DAGSTER_DOCKER_IMAGE
+docker build . \
+    --build-arg BASE_IMAGE=$BASE_IMAGE \
+    -t dagster-docker-buildkite

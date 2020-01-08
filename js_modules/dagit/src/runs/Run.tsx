@@ -14,8 +14,14 @@ import { SplitPanelChildren } from "../SplitPanelChildren";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunMetadataProvider } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
-import { handleStartExecutionResult, REEXECUTE_MUTATION } from "./RunUtils";
-import { Reexecute, ReexecuteVariables } from "./types/Reexecute";
+import {
+  handleExecutionResult,
+  START_PIPELINE_EXECUTION_MUTATION
+} from "./RunUtils";
+import {
+  StartPipelineExecution,
+  StartPipelineExecutionVariables
+} from "./types/StartPipelineExecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import ExecutionStartButton from "../execute/ExecutionStartButton";
 import InfoModal from "../InfoModal";
@@ -68,11 +74,7 @@ const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
           variables: { runId: run.runId }
         });
         setInFlight(false);
-        if (
-          res.data &&
-          res.data.cancelPipelineExecution &&
-          res.data.cancelPipelineExecution.message
-        ) {
+        if (res.data?.cancelPipelineExecution?.message) {
           SharedToaster.show({
             message: res.data.cancelPipelineExecution.message,
             icon: "error",
@@ -142,8 +144,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
         }
         ... on ExecutionStepFailureEvent {
           error {
-            message
-            stack
+            ...PythonErrorFragment
           }
         }
         ...LogsScrollingTableMessageFragment
@@ -152,6 +153,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
 
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 
@@ -177,14 +179,17 @@ export class Run extends React.Component<IRunProps, IRunState> {
   };
 
   onReexecute = async (
-    mutation: MutationFunction<Reexecute, ReexecuteVariables>,
+    mutation: MutationFunction<
+      StartPipelineExecution,
+      StartPipelineExecutionVariables
+    >,
     stepKey?: string,
     resumeRetry?: boolean
   ) => {
     const { run } = this.props;
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
 
-    const variables: ReexecuteVariables = {
+    const variables: StartPipelineExecutionVariables = {
       executionParams: {
         mode: run.mode,
         environmentConfigData: yaml.parse(run.environmentConfigYaml),
@@ -206,13 +211,16 @@ export class Run extends React.Component<IRunProps, IRunState> {
 
     const result = await mutation({ variables });
 
-    handleStartExecutionResult(run.pipeline.name, result, {
+    handleExecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
     });
   };
 
   renderRetry(
-    reexecuteMutation: MutationFunction<Reexecute, ReexecuteVariables>
+    reexecuteMutation: MutationFunction<
+      StartPipelineExecution,
+      StartPipelineExecutionVariables
+    >
   ) {
     const { run } = this.props;
     if (!run || !run.executionPlan) {
@@ -276,7 +284,9 @@ export class Run extends React.Component<IRunProps, IRunState> {
     };
 
     return (
-      <Mutation<Reexecute, ReexecuteVariables> mutation={REEXECUTE_MUTATION}>
+      <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
+        mutation={START_PIPELINE_EXECUTION_MUTATION}
+      >
         {reexecuteMutation => (
           <RunWrapper>
             <RunContext.Provider value={run}>

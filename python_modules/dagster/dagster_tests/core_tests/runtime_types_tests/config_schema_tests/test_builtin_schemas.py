@@ -110,7 +110,7 @@ def single_input_env(solid_name, input_name, input_spec):
 def test_int_input_schema_value():
     result = _execute_pipeline_with_subset(
         define_test_all_scalars_pipeline(),
-        environment_dict=single_input_env('take_int', 'num', {'value': 2}),
+        environment_dict={'solids': {'take_int': {'inputs': {'num': {'value': 2}}}}},
         solid_subset=['take_int'],
     )
 
@@ -118,7 +118,18 @@ def test_int_input_schema_value():
     assert result.result_for_solid('take_int').output_value() == 2
 
 
-def test_int_input_schema_failure():
+def test_int_input_schema_raw_value():
+    result = _execute_pipeline_with_subset(
+        define_test_all_scalars_pipeline(),
+        environment_dict={'solids': {'take_int': {'inputs': {'num': 2}}}},
+        solid_subset=['take_int'],
+    )
+
+    assert result.success
+    assert result.result_for_solid('take_int').output_value() == 2
+
+
+def test_int_input_schema_failure_wrong_value_type():
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         _execute_pipeline_with_subset(
             define_test_all_scalars_pipeline(),
@@ -126,8 +137,40 @@ def test_int_input_schema_failure():
             solid_subset=['take_int'],
         )
 
-    assert 'Type failure at path "root:solids:take_int:inputs:num:value" on type "Int"' in str(
-        exc_info.value
+    assert (
+        'Error 1: Type failure at path "root:solids:take_int:inputs:num:value" on type '
+        '"Int". Value at path root:solids:take_int:inputs:num:value is not valid. '
+        'Expected "Int"' in str(exc_info.value)
+    )
+
+
+def test_int_input_schema_failure_wrong_key():
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
+        _execute_pipeline_with_subset(
+            define_test_all_scalars_pipeline(),
+            environment_dict=single_input_env('take_int', 'num', {'wrong_key': 'dkjdfkdj'}),
+            solid_subset=['take_int'],
+        )
+
+    assert (
+        'Error 1: Undefined field "wrong_key" on type '
+        '"ScalarUnion[Int,Int.InputHydrationConfig]" '
+        'at path root:solids:take_int:inputs:num' in str(exc_info.value)
+    )
+
+
+def test_int_input_schema_failure_raw_string():
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
+        _execute_pipeline_with_subset(
+            define_test_all_scalars_pipeline(),
+            environment_dict=single_input_env('take_int', 'num', 'dkjdfkdj'),
+            solid_subset=['take_int'],
+        )
+
+    assert (
+        'Error 1: Type failure at path "root:solids:take_int:inputs:num" on type '
+        '"ScalarUnion[Int,Int.InputHydrationConfig]". Value at path '
+        'root:solids:take_int:inputs:num is not valid. Expected "Int".' in str(exc_info.value)
     )
 
 

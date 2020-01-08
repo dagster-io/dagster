@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import StepBuilder, wait_step
+from step_builder import INTEGRATION_IMAGE_VERSION, StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -83,11 +83,33 @@ def publish_test_images():
     for version in SupportedPythons + [SupportedPython.V3_8]:
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
 
+        aws_account_id = os.environ.get('AWS_ACCOUNT_ID')
+        base_image = "%s.dkr.ecr.us-west-1.amazonaws.com/buildkite-integration:py%s-%s" % (
+            aws_account_id,
+            version,
+            INTEGRATION_IMAGE_VERSION,
+        )
+
         tests.append(
             StepBuilder("test images {version}".format(version=version), key=key)
-            .run("./.buildkite/images/docker/test_project/build.sh " + TOX_MAP[version])
+            .run(
+                # credentials
+                "aws ecr get-login --no-include-email --region us-west-1 | sh",
+                "export GOOGLE_APPLICATION_CREDENTIALS=\"/tmp/gcp-key-elementl-dev.json\"",
+                "aws s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
+                #
+                # build test image
+                "./.buildkite/images/docker/test_project/build.sh " + base_image,
+                #
+                # tag and push the built image
+                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
+                + version,
+                "docker tag dagster-docker-buildkite $${TEST_IMAGE}",
+                "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
+                "docker push $${TEST_IMAGE}",
+            )
             .on_integration_image(
-                SupportedPython.V3_7,
+                version,
                 [
                     'AIRFLOW_HOME',
                     'AWS_ACCOUNT_ID',
@@ -197,7 +219,7 @@ def airflow_tests():
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "./.buildkite/scripts/dagster_airflow.sh {ver}".format(ver=TOX_MAP[version]),
+                "./.buildkite/scripts/dagster_airflow.sh %s %s" % (version, TOX_MAP[version]),
                 "pushd python_modules/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -230,7 +252,7 @@ def k8s_tests():
             .run(
                 "pip install kubernetes",
                 "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash",
-                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + TOX_MAP[version],
+                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
                 "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-k8s/",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
@@ -239,6 +261,7 @@ def k8s_tests():
                 "popd",
             )
             .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
+            .with_retry(2)
             .on_integration_image(
                 version,
                 [

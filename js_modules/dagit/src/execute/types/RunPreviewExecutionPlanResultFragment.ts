@@ -10,7 +10,7 @@ import { StepKind } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid" | "PythonError";
+  __typename: "PipelineConfigValidationInvalid";
 }
 
 export interface RunPreviewExecutionPlanResultFragment_ExecutionPlan_steps {
@@ -35,4 +35,17 @@ export interface RunPreviewExecutionPlanResultFragment_InvalidSubsetError {
   message: string;
 }
 
-export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError | RunPreviewExecutionPlanResultFragment_InvalidSubsetError;
+export interface RunPreviewExecutionPlanResultFragment_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPreviewExecutionPlanResultFragment_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPreviewExecutionPlanResultFragment_PythonError_cause | null;
+}
+
+export type RunPreviewExecutionPlanResultFragment = RunPreviewExecutionPlanResultFragment_PipelineConfigValidationInvalid | RunPreviewExecutionPlanResultFragment_ExecutionPlan | RunPreviewExecutionPlanResultFragment_PipelineNotFoundError | RunPreviewExecutionPlanResultFragment_InvalidSubsetError | RunPreviewExecutionPlanResultFragment_PythonError;

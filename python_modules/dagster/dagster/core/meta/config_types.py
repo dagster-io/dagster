@@ -182,9 +182,9 @@ def meta_from_config_type(config_type):
         enum_values=[
             ConfigEnumValueMeta(ev.config_value, ev.description) for ev in config_type.enum_values
         ]
-        if config_type.is_enum
+        if config_type.kind == ConfigTypeKind.ENUM
         else None,
         fields=[meta_from_field(name, field) for name, field in config_type.fields.items()]
-        if config_type.has_fields
+        if ConfigTypeKind.has_fields(config_type.kind)
         else None,
     )
