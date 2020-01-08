@@ -57,6 +57,7 @@ def _do_setup(name='dagster'):
             'future',
             'funcsigs',
             'functools32; python_version<"3"',
+            'makefun',
             'contextlib2>=0.5.4',
             'pathlib2>=2.3.4; python_version<"3"',
             # cli

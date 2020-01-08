@@ -118,6 +118,9 @@ from dagster.core.types.wrapping import (
     String,
     Tuple,
 )
+
+from dagster.helpers.solid_from_func import solid_from_func
+
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,
