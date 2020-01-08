@@ -141,32 +141,46 @@ def test_fetch_by_filter(run_storage_factory_cm_fn):
         assert len(storage.all_runs()) == 3
 
         some_runs = storage.get_runs(PipelineRunsFilter(run_id=one))
+        count = storage.get_runs_count(PipelineRunsFilter(run_id=one))
         assert len(some_runs) == 1
+        assert count == 1
         assert some_runs[0].run_id == one
 
         some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name='some_pipeline'))
+        count = storage.get_runs_count(PipelineRunsFilter(pipeline_name='some_pipeline'))
         assert len(some_runs) == 2
+        assert count == 2
         assert any(x.run_id == one for x in some_runs)
         assert any(x.run_id == two for x in some_runs)
 
         some_runs = storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
+        count = storage.get_runs_count(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
         assert len(some_runs) == 2
+        assert count == 2
         assert any(x.run_id == one for x in some_runs)
         assert any(x.run_id == three for x in some_runs)
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello'}))
+        count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello'}))
         assert len(some_runs) == 2
+        assert count == 2
         assert any(x.run_id == one for x in some_runs)
         assert any(x.run_id == two for x in some_runs)
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
+        count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
         assert len(some_runs) == 1
+        assert count == 1
         assert some_runs[0].run_id == one
 
         some_runs = storage.get_runs(
             PipelineRunsFilter(pipeline_name="some_pipeline", tags={'tag': 'hello'})
         )
+        count = storage.get_runs_count(
+            PipelineRunsFilter(pipeline_name="some_pipeline", tags={'tag': 'hello'})
+        )
         assert len(some_runs) == 2
+        assert count == 2
         assert any(x.run_id == one for x in some_runs)
         assert any(x.run_id == two for x in some_runs)
 
@@ -177,7 +191,15 @@ def test_fetch_by_filter(run_storage_factory_cm_fn):
                 status=PipelineRunStatus.SUCCESS,
             )
         )
+        count = storage.get_runs_count(
+            PipelineRunsFilter(
+                pipeline_name="some_pipeline",
+                tags={'tag': 'hello'},
+                status=PipelineRunStatus.SUCCESS,
+            )
+        )
         assert len(some_runs) == 1
+        assert count == 1
         assert some_runs[0].run_id == one
 
         # All filters
@@ -189,11 +211,22 @@ def test_fetch_by_filter(run_storage_factory_cm_fn):
                 status=PipelineRunStatus.SUCCESS,
             )
         )
+        count = storage.get_runs_count(
+            PipelineRunsFilter(
+                run_id=one,
+                pipeline_name="some_pipeline",
+                tags={'tag': 'hello'},
+                status=PipelineRunStatus.SUCCESS,
+            )
+        )
         assert len(some_runs) == 1
-
+        assert count == 1
         assert some_runs[0].run_id == one
+
         some_runs = storage.get_runs(PipelineRunsFilter())
+        count = storage.get_runs_count(PipelineRunsFilter())
         assert len(some_runs) == 3
+        assert count == 3
 
 
 @run_storage_test
@@ -220,13 +253,15 @@ def test_fetch_count_by_tag(run_storage_factory_cm_fn):
         storage.add_run(build_run(run_id=three, pipeline_name='some_pipeline'))
         assert len(storage.all_runs()) == 3
 
-        run_count = storage.get_run_count_with_matching_tags({'mytag': 'hello', 'mytag2': 'world'})
+        run_count = storage.get_runs_count(
+            filters=PipelineRunsFilter(tags={'mytag': 'hello', 'mytag2': 'world'})
+        )
         assert run_count == 1
 
-        run_count = storage.get_run_count_with_matching_tags({'mytag2': 'world'})
+        run_count = storage.get_runs_count(filters=PipelineRunsFilter(tags={'mytag2': 'world'}))
         assert run_count == 2
 
-        run_count = storage.get_run_count_with_matching_tags({})
+        run_count = storage.get_runs_count()
         assert run_count == 3
 
         assert storage.get_run_tags() == [('mytag', {'hello', 'goodbye'}), ('mytag2', {'world'})]

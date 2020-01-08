@@ -143,32 +143,46 @@ def test_fetch_by_filter(clean_storage):
     assert len(storage.all_runs()) == 3
 
     some_runs = storage.get_runs(PipelineRunsFilter(run_id=one))
+    count = storage.get_runs_count(PipelineRunsFilter(run_id=one))
     assert len(some_runs) == 1
+    assert count == 1
     assert some_runs[0].run_id == one
 
     some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name='some_pipeline'))
+    count = storage.get_runs_count(PipelineRunsFilter(pipeline_name='some_pipeline'))
     assert len(some_runs) == 2
+    assert count == 2
     assert any(x.run_id == one for x in some_runs)
     assert any(x.run_id == two for x in some_runs)
 
     some_runs = storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
+    count = storage.get_runs_count(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
     assert len(some_runs) == 2
+    assert count == 2
     assert any(x.run_id == one for x in some_runs)
     assert any(x.run_id == three for x in some_runs)
 
     some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello'}))
+    count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello'}))
     assert len(some_runs) == 2
+    assert count == 2
     assert any(x.run_id == one for x in some_runs)
     assert any(x.run_id == two for x in some_runs)
 
     some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
+    count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
     assert len(some_runs) == 1
+    assert count == 1
     assert some_runs[0].run_id == one
 
     some_runs = storage.get_runs(
         PipelineRunsFilter(pipeline_name="some_pipeline", tags={'tag': 'hello'})
     )
+    count = storage.get_runs_count(
+        PipelineRunsFilter(pipeline_name="some_pipeline", tags={'tag': 'hello'})
+    )
     assert len(some_runs) == 2
+    assert count == 2
     assert any(x.run_id == one for x in some_runs)
     assert any(x.run_id == two for x in some_runs)
 
@@ -177,7 +191,13 @@ def test_fetch_by_filter(clean_storage):
             pipeline_name="some_pipeline", tags={'tag': 'hello'}, status=PipelineRunStatus.SUCCESS,
         )
     )
+    count = storage.get_runs_count(
+        PipelineRunsFilter(
+            pipeline_name="some_pipeline", tags={'tag': 'hello'}, status=PipelineRunStatus.SUCCESS,
+        )
+    )
     assert len(some_runs) == 1
+    assert count == 1
     assert some_runs[0].run_id == one
 
     # All filters
@@ -189,11 +209,22 @@ def test_fetch_by_filter(clean_storage):
             status=PipelineRunStatus.SUCCESS,
         )
     )
+    count = storage.get_runs_count(
+        PipelineRunsFilter(
+            run_id=one,
+            pipeline_name="some_pipeline",
+            tags={'tag': 'hello'},
+            status=PipelineRunStatus.SUCCESS,
+        )
+    )
     assert len(some_runs) == 1
-
+    assert count == 1
     assert some_runs[0].run_id == one
+
     some_runs = storage.get_runs(PipelineRunsFilter())
+    count = storage.get_runs_count(PipelineRunsFilter())
     assert len(some_runs) == 3
+    assert count == 3
 
 
 def test_fetch_by_pipeline(clean_storage):

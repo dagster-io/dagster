@@ -120,7 +120,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
             )
         else:
-            base_query = db.select([RunsTable.c.run_body])
+            base_query = db.select([RunsTable.c.run_body]).select_from(RunsTable)
 
         if filters.run_id:
             base_query = base_query.where(RunsTable.c.run_id == filters.run_id)
@@ -149,6 +149,52 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = self._build_query(base_query, cursor, limit)
         rows = self.execute(query)
         return self._rows_to_runs(rows)
+
+    def get_runs_count(self, filters=None):
+        filters = check.opt_inst_param(
+            filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
+        )
+
+        # If we have a tags filter, then we need to select from a joined table
+        if filters.tags:
+            base_query = db.select([1]).select_from(
+                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+            )
+        else:
+            base_query = db.select([1]).select_from(RunsTable)
+
+        if filters.run_id:
+            base_query = base_query.where(RunsTable.c.run_id == filters.run_id)
+
+        if filters.pipeline_name:
+            base_query = base_query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+
+        if filters.status:
+            base_query = base_query.where(RunsTable.c.status == filters.status.value)
+
+        if filters.tags:
+            base_query = base_query.where(
+                db.or_(
+                    *(
+                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        for key, value in filters.tags.items()
+                    )
+                )
+            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+
+            if len(filters.tags) > 0:
+                base_query = base_query.having(
+                    db.func.count(RunsTable.c.run_id) == len(filters.tags)
+                )
+
+        # We use an alias here because Postgres requires subqueries to be
+        # aliased.
+        base_query = base_query.alias("base_query")
+
+        query = db.select([db.func.count()]).select_from(base_query)
+        rows = self.execute(query)
+        count = rows[0][0]
+        return count
 
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         '''Return all the runs present in the storage for a given pipeline.

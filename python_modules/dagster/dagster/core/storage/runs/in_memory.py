@@ -70,6 +70,11 @@ class InMemoryRunStorage(RunStorage):
         matching_runs = list(filter(run_filter, reversed(self._runs.values())))
         return self._slice(matching_runs, cursor=cursor, limit=limit)
 
+    def get_runs_count(self, filters=None):
+        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+
+        return len(self.get_runs(filters))
+
     def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
         check.str_param(pipeline_name, 'pipeline_name')
         return self._slice(
