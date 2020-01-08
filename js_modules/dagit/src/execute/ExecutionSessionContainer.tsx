@@ -129,11 +129,11 @@ export default class ExecutionSessionContainer extends React.Component<
 
   onSolidSubsetChange = (
     solidSubset: string[] | null,
-    solidSubsetLabel: string | null
+    solidSubsetQuery: string | null
   ) => {
     this.props.onSaveSession({
       solidSubset,
-      solidSubsetLabel
+      solidSubsetQuery
     });
   };
 
@@ -234,7 +234,7 @@ export default class ExecutionSessionContainer extends React.Component<
                   subsetError={subsetError}
                   pipelineName={currentSession.pipeline}
                   value={currentSession.solidSubset || null}
-                  label={currentSession.solidSubsetLabel || null}
+                  query={currentSession.solidSubsetQuery || null}
                   onChange={this.onSolidSubsetChange}
                 />
                 <div style={{ width: 5 }} />
