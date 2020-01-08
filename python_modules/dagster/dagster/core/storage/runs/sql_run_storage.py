@@ -83,7 +83,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _rows_to_runs(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def _build_query(self, query, cursor, limit):
+    def _add_cursor_limit_to_query(self, query, cursor, limit):
         ''' Helper function to deal with cursor/limit pagination args '''
 
         if cursor:
@@ -94,6 +94,33 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             query = query.limit(limit)
 
         query = query.order_by(RunsTable.c.id.desc())
+        return query
+
+    def _add_filters_to_query(self, query, filters):
+        check.inst_param(filters, 'filters', PipelineRunsFilter)
+
+        if filters.run_id:
+            query = query.where(RunsTable.c.run_id == filters.run_id)
+
+        if filters.pipeline_name:
+            query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+
+        if filters.status:
+            query = query.where(RunsTable.c.status == filters.status.value)
+
+        if filters.tags:
+            query = query.where(
+                db.or_(
+                    *(
+                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        for key, value in filters.tags.items()
+                    )
+                )
+            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+
+            if len(filters.tags) > 0:
+                query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
+
         return query
 
     def get_runs(self, filters=None, cursor=None, limit=None):
@@ -111,31 +138,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         else:
             base_query = db.select([RunsTable.c.run_body]).select_from(RunsTable)
 
-        if filters.run_id:
-            base_query = base_query.where(RunsTable.c.run_id == filters.run_id)
-
-        if filters.pipeline_name:
-            base_query = base_query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
-
-        if filters.status:
-            base_query = base_query.where(RunsTable.c.status == filters.status.value)
-
-        if filters.tags:
-            base_query = base_query.where(
-                db.or_(
-                    *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                        for key, value in filters.tags.items()
-                    )
-                )
-            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
-
-            if len(filters.tags) > 0:
-                base_query = base_query.having(
-                    db.func.count(RunsTable.c.run_id) == len(filters.tags)
-                )
-
-        query = self._build_query(base_query, cursor, limit)
+        query = self._add_filters_to_query(base_query, filters)
+        query = self._add_cursor_limit_to_query(query, cursor, limit)
         rows = self.execute(query)
         return self._rows_to_runs(rows)
 
@@ -146,41 +150,19 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         # If we have a tags filter, then we need to select from a joined table
         if filters.tags:
-            base_query = db.select([1]).select_from(
+            subquery = db.select([1]).select_from(
                 RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
             )
         else:
-            base_query = db.select([1]).select_from(RunsTable)
+            subquery = db.select([1]).select_from(RunsTable)
 
-        if filters.run_id:
-            base_query = base_query.where(RunsTable.c.run_id == filters.run_id)
-
-        if filters.pipeline_name:
-            base_query = base_query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
-
-        if filters.status:
-            base_query = base_query.where(RunsTable.c.status == filters.status.value)
-
-        if filters.tags:
-            base_query = base_query.where(
-                db.or_(
-                    *(
-                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                        for key, value in filters.tags.items()
-                    )
-                )
-            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
-
-            if len(filters.tags) > 0:
-                base_query = base_query.having(
-                    db.func.count(RunsTable.c.run_id) == len(filters.tags)
-                )
+        subquery = self._add_filters_to_query(subquery, filters)
 
         # We use an alias here because Postgres requires subqueries to be
         # aliased.
-        base_query = base_query.alias("base_query")
+        subquery = subquery.alias("subquery")
 
-        query = db.select([db.func.count()]).select_from(base_query)
+        query = db.select([db.func.count()]).select_from(subquery)
         rows = self.execute(query)
         count = rows[0][0]
         return count
