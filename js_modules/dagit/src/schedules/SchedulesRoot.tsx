@@ -87,7 +87,6 @@ export default class SchedulesRoot extends React.Component {
                   <ScrollContainer>
                     <ScheduleTable schedules={sortedRunningSchedules} />
                   </ScrollContainer>
-                  );
                 </>
               );
             }}

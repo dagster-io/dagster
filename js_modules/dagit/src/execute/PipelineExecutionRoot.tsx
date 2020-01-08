@@ -1,86 +1,118 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import { match } from "react-router";
-import PipelineExecutionContainer from "./PipelineExecutionContainer";
+import styled from "styled-components";
+import ExecutionSessionContainer, {
+  ExecutionSessionContainerError
+} from "./ExecutionSessionContainer";
 import { QueryResult, Query } from "react-apollo";
-import { NonIdealState } from "@blueprintjs/core";
+import { NonIdealState, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { useStorage } from "../LocalStorage";
+import {
+  useStorage,
+  IExecutionSessionChanges,
+  applyChangesToSession,
+  applyCreateSession
+} from "../LocalStorage";
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
+import { ExecutionTabs } from "./ExecutionTabs";
 
-interface IPipelineExecutionRootProps {
-  match: match<{ pipelineName: string }>;
-}
+export const PipelineExecutionRoot: React.FunctionComponent<{}> = () => {
+  const [data, onSave] = useStorage();
 
-export const PipelineExecutionRoot: React.FunctionComponent<IPipelineExecutionRootProps> = ({
-  match: { params }
-}) => {
-  const [data, onSave] = useStorage({ namespace: params.pipelineName });
   const vars = {
-    name: params.pipelineName,
-    solidSubset: data.sessions[data.current].solidSubset,
-    mode: data.sessions[data.current].mode
+    name: data.sessions[data.current].pipeline || "",
+    mode: data.sessions[data.current].mode,
+    solidSubset: data.sessions[data.current].solidSubset
+  };
+
+  const onSaveSession = (
+    session: string,
+    changes: IExecutionSessionChanges
+  ) => {
+    onSave(applyChangesToSession(data, session, changes));
   };
 
   return (
-    <Query
-      // never serve cached Pipeline given new vars by forcing teardown of the Query.
-      // Apollo's behaviors are sort of whacky, even with no-cache. Should just use
-      // window.fetch...
-      key={JSON.stringify(vars)}
-      query={PIPELINE_EXECUTION_ROOT_QUERY}
-      fetchPolicy="cache-and-network"
-      partialRefetch={true}
-      variables={vars}
-    >
-      {(result: QueryResult<PipelineExecutionRootQuery, any>) => {
-        const pipelineOrError = result.data && result.data.pipelineOrError;
-        const environmentSchemaOrError =
-          result.data && result.data.environmentSchemaOrError;
+    <PipelineExecutionWrapper>
+      <TabBarContainer>
+        <ExecutionTabs data={data} onSave={onSave} />
+        <div style={{ flex: 1 }} />
+      </TabBarContainer>
+      <Query
+        // never serve cached Pipeline given new vars by forcing teardown of the Query.
+        // Apollo's behaviors are sort of whacky, even with no-cache. Should just use
+        // window.fetch...
+        key={JSON.stringify(vars)}
+        query={PIPELINE_EXECUTION_ROOT_QUERY}
+        fetchPolicy="cache-and-network"
+        partialRefetch={true}
+        variables={vars}
+      >
+        {(result: QueryResult<PipelineExecutionRootQuery, any>) => {
+          const pipelineOrError = result.data && result.data.pipelineOrError;
+          const environmentSchemaOrError =
+            result.data && result.data.environmentSchemaOrError;
 
-        if (
-          (environmentSchemaOrError &&
-            environmentSchemaOrError.__typename === "PipelineNotFoundError") ||
-          (pipelineOrError &&
-            pipelineOrError.__typename === "PipelineNotFoundError")
-        ) {
-          const message =
-            pipelineOrError &&
-            pipelineOrError.__typename === "PipelineNotFoundError"
-              ? pipelineOrError.message
-              : "No data returned from GraphQL";
+          if (
+            environmentSchemaOrError?.__typename === "PipelineNotFoundError" ||
+            pipelineOrError?.__typename === "PipelineNotFoundError"
+          ) {
+            const message =
+              pipelineOrError?.__typename === "PipelineNotFoundError"
+                ? pipelineOrError.message
+                : "No data returned from GraphQL";
+
+            return (
+              <ExecutionSessionContainerError
+                currentSession={data.sessions[data.current]}
+                onSaveSession={changes => onSaveSession(data.current, changes)}
+              >
+                {vars.name !== "" ? (
+                  <NonIdealState
+                    icon={IconNames.FLOW_BRANCH}
+                    title="Pipeline Not Found"
+                    description={message}
+                  />
+                ) : (
+                  <NonIdealState
+                    icon={IconNames.FLOW_BRANCH}
+                    title="Select a Pipeline"
+                  />
+                )}
+              </ExecutionSessionContainerError>
+            );
+          }
+
+          if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
+            return (
+              <ExecutionSessionContainerError
+                currentSession={data.sessions[data.current]}
+                onSaveSession={changes => onSaveSession(data.current, changes)}
+              >
+                <NonIdealState
+                  icon={IconNames.ERROR}
+                  title="Python Error"
+                  description={pipelineOrError.message}
+                />
+              </ExecutionSessionContainerError>
+            );
+          }
 
           return (
-            <NonIdealState
-              icon={IconNames.FLOW_BRANCH}
-              title="Pipeline Not Found"
-              description={message}
+            <ExecutionSessionContainer
+              data={data}
+              onSaveSession={changes => onSaveSession(data.current, changes)}
+              onCreateSession={initial =>
+                onSave(applyCreateSession(data, initial))
+              }
+              pipelineOrError={pipelineOrError}
+              environmentSchemaOrError={environmentSchemaOrError}
+              currentSession={data.sessions[data.current]}
             />
           );
-        }
-
-        if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
-          return (
-            <NonIdealState
-              icon={IconNames.ERROR}
-              title="Python Error"
-              description={pipelineOrError.message}
-            />
-          );
-        }
-
-        return (
-          <PipelineExecutionContainer
-            data={data}
-            onSave={onSave}
-            pipelineOrError={pipelineOrError}
-            environmentSchemaOrError={environmentSchemaOrError}
-            pipelineName={params.pipelineName}
-            currentSession={data.sessions[data.current]}
-          />
-        );
-      }}
-    </Query>
+        }}
+      </Query>
+    </PipelineExecutionWrapper>
   );
 };
 
@@ -97,16 +129,36 @@ export const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ... on PythonError {
         message
       }
-      ...PipelineExecutionContainerFragment
+      ...ExecutionSessionContainerFragment
     }
     environmentSchemaOrError(
       selector: { name: $name, solidSubset: $solidSubset }
       mode: $mode
     ) {
-      ...PipelineExecutionContainerEnvironmentSchemaFragment
+      ...ExecutionSessionContainerEnvironmentSchemaFragment
     }
   }
 
-  ${PipelineExecutionContainer.fragments.PipelineExecutionContainerFragment}
-  ${PipelineExecutionContainer.fragments.EnvironmentSchemaOrErrorFragment}
+  ${ExecutionSessionContainer.fragments.ExecutionSessionContainerFragment}
+  ${ExecutionSessionContainer.fragments.EnvironmentSchemaOrErrorFragment}
+`;
+
+const PipelineExecutionWrapper = styled.div`
+  flex: 1 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+`;
+
+const TabBarContainer = styled.div`
+  height: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid ${Colors.GRAY5};
+  background: ${Colors.LIGHT_GRAY3};
+  padding: 8px;
+  z-index: 3;
 `;

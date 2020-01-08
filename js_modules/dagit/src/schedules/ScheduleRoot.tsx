@@ -54,7 +54,7 @@ export class ScheduleRoot extends React.Component<IScheduleRootProps> {
               if (scheduleOrError.__typename === "RunningSchedule") {
                 return (
                   <ScrollContainer>
-                    <Header>Schedule</Header>
+                    <Header>Schedules</Header>
                     <ScheduleRow schedule={scheduleOrError} />
                     <AttemptsTable attemptList={scheduleOrError.attemptList} />
                   </ScrollContainer>
@@ -101,7 +101,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
           <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
             {attempt.run ? (
               <div>
-                <Link to={`/runs/${attempt.run.runId}`}>
+                <Link to={`/runs/all/${attempt.run.runId}`}>
                   {attempt.run.runId}
                 </Link>
               </div>

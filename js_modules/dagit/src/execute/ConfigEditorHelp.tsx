@@ -24,7 +24,6 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
           <ConfigTypeSchema
             type={context.type}
             typesInScope={allInnerTypes}
-            theme="dark"
             maxDepth={2}
           />
         </ConfigScrollWrap>
@@ -48,9 +47,9 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${Colors.DARK_GRAY5};
+  border-top: 1px solid ${Colors.LIGHT_GRAY1};
   background: rgba(0, 0, 0, 0.07);
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(0, 0, 0, 0.7);
 `;
 
 const ConfigScrollWrap = styled.div`
@@ -61,11 +60,10 @@ const ConfigScrollWrap = styled.div`
 
 const Container = styled.div`
   width: 300px;
-  top: 50px;
+  top: 54px;
   right: 10px;
-  color: white;
-  border-top: 1px solid ${Colors.DARK_GRAY5};
-  background-color: rgba(30, 40, 45, 0.7);
+  color: black;
+  background-color: #e1e8edd1;
   position: absolute;
   align-items: center;
   z-index: 3;

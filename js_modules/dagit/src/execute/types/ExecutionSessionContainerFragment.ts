@@ -1,0 +1,44 @@
+// @generated
+/* tslint:disable */
+/* eslint-disable */
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL fragment: ExecutionSessionContainerFragment
+// ====================================================
+
+export interface ExecutionSessionContainerFragment_PipelineNotFoundError {
+  __typename: "PipelineNotFoundError" | "PythonError";
+}
+
+export interface ExecutionSessionContainerFragment_Pipeline_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+}
+
+export interface ExecutionSessionContainerFragment_Pipeline {
+  __typename: "Pipeline";
+  name: string;
+  modes: ExecutionSessionContainerFragment_Pipeline_modes[];
+}
+
+export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_modes {
+  __typename: "Mode";
+  name: string;
+  description: string | null;
+}
+
+export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline {
+  __typename: "Pipeline";
+  name: string;
+  modes: ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_modes[];
+}
+
+export interface ExecutionSessionContainerFragment_InvalidSubsetError {
+  __typename: "InvalidSubsetError";
+  message: string;
+  pipeline: ExecutionSessionContainerFragment_InvalidSubsetError_pipeline;
+}
+
+export type ExecutionSessionContainerFragment = ExecutionSessionContainerFragment_PipelineNotFoundError | ExecutionSessionContainerFragment_Pipeline | ExecutionSessionContainerFragment_InvalidSubsetError;

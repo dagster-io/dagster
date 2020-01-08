@@ -6,6 +6,7 @@ import CustomAlertProvider from "./CustomAlertProvider";
 import { NonIdealState } from "@blueprintjs/core";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
+import { PipelineNamesContext } from "./PipelineNamesContext";
 import PipelineExplorerRoot from "./PipelineExplorerRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
@@ -14,7 +15,7 @@ import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
 import { ScheduleRoot } from "./schedules/ScheduleRoot";
-import { TopNav } from "./TopNav";
+import { LeftNav } from "./LeftNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 
@@ -23,7 +24,10 @@ function extractData(result?: RootPipelinesQuery) {
     return { pipelines: [], error: null };
   }
   if (result.pipelinesOrError.__typename === "PipelineConnection") {
-    return { pipelines: result.pipelinesOrError.nodes, error: null };
+    return {
+      pipelines: result.pipelinesOrError.nodes.map(p => p.name),
+      error: null
+    };
   } else {
     return { pipelines: [], error: result.pipelinesOrError };
   }
@@ -31,47 +35,28 @@ function extractData(result?: RootPipelinesQuery) {
 
 const AppRoutes = () => (
   <Switch>
-    <Route path="/runs/:runId" component={RunRoot} />
+    <Route path="/runs/all/:runId" component={RunRoot} />
+    <Route path="/runs/:pipelineName/:runId" component={RunRoot} />
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solids/:name?" component={SolidsRoot} />
-    <Route path="/p/:pipelineName/runs/:runId" component={RunRoot} />
-    <Redirect
-      from="/p/:pipelineName"
-      exact={true}
-      to="/p/:pipelineName/explore"
-    />
 
-    <Route
-      path="/p/:pipelineName/execute/setup"
-      component={PipelineExecutionSetupRoot}
-    />
-    <Route path="/p/:pipelineName/execute" component={PipelineExecutionRoot} />
+    <Route path="/playground/setup" component={PipelineExecutionSetupRoot} />
+    <Route path="/playground" component={PipelineExecutionRoot} />
     {/* Capture solid subpath in a regex match */}
-    <Route
-      path="/p/:pipelineName/explore(/?.*)"
-      component={PipelineExplorerRoot}
-    />
-    {/* Legacy redirects */}
-    <Redirect
-      from="/execute/:pipelineName/setup"
-      to="/p/:pipelineName/execute/setup"
-    />
-    <Redirect from="/execute/:pipelineName" to="/p/:pipelineName/execute" />
-    <Redirect
-      from="/explore/:pipelineName/:rest?"
-      to="/p/:pipelineName/explore/:rest?"
-    />
-    {/* Index default */}
-    <Route path="/scheduler/:rest?" component={SchedulesRoot} />
-    <Route path="/schedule/:scheduleName" component={ScheduleRoot} />
-    <Route
-      render={() => (
-        <NonIdealState
-          title="No pipeline selected"
-          description="Select a pipeline in the navbar"
-        />
-      )}
-    />
+    <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
+
+    <Route path="/schedules" component={SchedulesRoot} />
+    <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
+
+    <PipelineNamesContext.Consumer>
+      {names =>
+        names.length ? (
+          <Redirect to={`/pipeline/${names[0]}/`} />
+        ) : (
+          <Route render={() => <NonIdealState title="No pipelines" />} />
+        )
+      }
+    </PipelineNamesContext.Consumer>
   </Switch>
 );
 
@@ -83,7 +68,6 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <BrowserRouter>
-      <TopNav pipelines={pipelines} />
       {error ? (
         <PythonErrorInfo
           contextMsg={`${error.__typename} encountered when loading pipelines:`}
@@ -91,9 +75,14 @@ export const App: React.FunctionComponent = () => {
           centered={true}
         />
       ) : (
-        <AppRoutes />
+        <PipelineNamesContext.Provider value={pipelines}>
+          <div style={{ display: "flex", height: "100%" }}>
+            <LeftNav />
+            <AppRoutes />
+            <CustomAlertProvider />
+          </div>
+        </PipelineNamesContext.Provider>
       )}
-      <CustomAlertProvider />
     </BrowserRouter>
   );
 };
@@ -105,12 +94,11 @@ export const ROOT_PIPELINES_QUERY = gql`
       ...PythonErrorFragment
       ... on PipelineConnection {
         nodes {
-          ...TopNavPipelinesFragment
+          name
         }
       }
     }
   }
 
-  ${TopNav.fragments.TopNavPipelinesFragment}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

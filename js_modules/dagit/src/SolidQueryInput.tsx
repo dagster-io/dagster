@@ -1,10 +1,11 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
-import { PipelineExplorerSolidHandleFragment_solid } from "./types/PipelineExplorerSolidHandleFragment";
+import { SolidQueryInputSolidFragment } from "./types/SolidQueryInputSolidFragment";
+import gql from "graphql-tag";
 
 interface SolidQueryInputProps {
-  solids: PipelineExplorerSolidHandleFragment_solid[];
+  solids: SolidQueryInputSolidFragment[];
   value: string;
   onChange: (value: string) => void;
 }
@@ -19,9 +20,7 @@ interface ActiveSuggestionInfo {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForSolids = (
-  solids: PipelineExplorerSolidHandleFragment_solid[]
-) => {
+const placeholderTextForSolids = (solids: SolidQueryInputSolidFragment[]) => {
   const seed = solids.length % 3;
 
   let placeholder = "Type a Solid Subset";
@@ -50,11 +49,19 @@ const placeholderTextForSolids = (
   return placeholder;
 };
 
-export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = props => {
+export const SolidQueryInput = (props: SolidQueryInputProps) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [focused, setFocused] = React.useState<boolean>(false);
+  const [pendingValue, setPendingValue] = React.useState<string>(props.value);
 
-  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(props.value);
+  React.useEffect(() => {
+    // props.value is our source of truth, but we hold "un-committed" changes in
+    // pendingValue while the field is being edited. Ensure the pending value
+    // is synced whenever props.value changes.
+    setPendingValue(props.value);
+  }, [props.value]);
+
+  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(pendingValue);
   let menu: JSX.Element | undefined = undefined;
 
   const [, prefix, lastSolidName, suffix] = lastClause || [];
@@ -66,8 +73,10 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
       : [];
 
   const onConfirmSuggestion = (suggestion: string) => {
-    const preceding = lastClause ? props.value.substr(0, lastClause.index) : "";
-    props.onChange(preceding + prefix + suggestion + suffix);
+    const preceding = lastClause
+      ? pendingValue.substr(0, lastClause.index)
+      : "";
+    setPendingValue(preceding + prefix + suggestion + suffix);
   };
 
   if (suggestions.length && focused) {
@@ -131,6 +140,19 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
     }
   };
 
+  const onKeyUp = (e: React.KeyboardEvent<any>) => {
+    if (
+      e.key === "Enter" ||
+      e.key === "Return" ||
+      e.key === "Tab" ||
+      e.key === "+" ||
+      (e.key === "*" && pendingValue.length > 1) ||
+      (e.key === "Backspace" && pendingValue.length)
+    ) {
+      props.onChange(pendingValue);
+    }
+  };
+
   return (
     <SolidQueryInputContainer>
       <Popover
@@ -141,19 +163,45 @@ export const SolidQueryInput: React.FunctionComponent<SolidQueryInputProps> = pr
       >
         <SolidQueryInputField
           type="text"
-          value={props.value}
-          placeholder={placeholderTextForSolids(props.solids)}
+          value={pendingValue}
           leftIcon={"send-to-graph"}
+          placeholder={placeholderTextForSolids(props.solids)}
           onChange={(e: React.ChangeEvent<any>) =>
-            props.onChange(e.target.value)
+            setPendingValue(e.target.value)
           }
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            props.onChange(pendingValue);
+          }}
           onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
         />
       </Popover>
     </SolidQueryInputContainer>
   );
+};
+
+SolidQueryInput.fragments = {
+  SolidQueryInputSolidFragment: gql`
+    fragment SolidQueryInputSolidFragment on Solid {
+      name
+      inputs {
+        dependsOn {
+          solid {
+            name
+          }
+        }
+      }
+      outputs {
+        dependedBy {
+          solid {
+            name
+          }
+        }
+      }
+    }
+  `
 };
 
 const SolidQueryInputContainer = styled.div`
@@ -165,8 +213,8 @@ const SolidQueryInputContainer = styled.div`
 `;
 
 const SolidQueryInputField = styled(InputGroup)`
-  font-size: 14px;
   width: 30vw;
+  font-size: 14px;
 `;
 
 const StyledMenu = styled(Menu)`

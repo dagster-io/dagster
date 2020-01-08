@@ -15,13 +15,14 @@ import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
-import { SolidJumpBar } from "./PipelineJumpComponents";
+import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
 
 interface PipelineExplorerProps {
   history: History;
   path: string[];
+  visibleSolidsQuery: string;
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
@@ -30,7 +31,6 @@ interface PipelineExplorerProps {
 }
 
 interface PipelineExplorerState {
-  visibleSolidsQuery: string;
   highlighted: string;
 }
 
@@ -65,19 +65,27 @@ export default class PipelineExplorer extends React.Component<
         solid {
           name
           ...PipelineGraphParentSolidFragment
+          ...SolidQueryInputSolidFragment
         }
       }
       ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
+      ${SolidQueryInput.fragments.SolidQueryInputSolidFragment}
     `
   };
 
+  pathOverlayEl = React.createRef<HTMLDivElement>();
+
   state = {
-    visibleSolidsQuery: "",
     highlighted: ""
   };
 
-  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
+  handleQueryChange = (query: string) => {
     const { history, pipeline, path } = this.props;
+    history.replace(`/pipeline/${pipeline.name}:${query}/${path.join("/")}`);
+  };
+
+  handleAdjustPath = (fn: (solidNames: string[]) => void) => {
+    const { history, pipeline, path, visibleSolidsQuery } = this.props;
     const next = [...path];
     const retValue = fn(next);
     if (retValue !== undefined) {
@@ -85,7 +93,9 @@ export default class PipelineExplorer extends React.Component<
         "handleAdjustPath function is expected to mutate the array"
       );
     }
-    history.push(`/p/${pipeline.name}/explore/${next.join("/")}`);
+    history.push(
+      `/pipeline/${pipeline.name}:${visibleSolidsQuery}/${next.join("/")}`
+    );
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -138,8 +148,14 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const { pipeline, parentHandle, path } = this.props;
-    const { visibleSolidsQuery, highlighted } = this.state;
+    const {
+      path,
+      history,
+      pipeline,
+      parentHandle,
+      visibleSolidsQuery
+    } = this.props;
+    const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
     const solidsQueryEnabled = !parentHandle;
@@ -174,16 +190,22 @@ export default class PipelineExplorer extends React.Component<
           leftInitialPercent={70}
           left={
             <>
-              <PathOverlay style={{ background: backgroundTranslucent }}>
-                <Link style={{ padding: 3 }} to={`/p/${pipeline.name}/explore`}>
-                  <Icon icon="diagram-tree" />
-                </Link>
+              <PathOverlay
+                style={{ background: backgroundTranslucent }}
+                ref={this.pathOverlayEl}
+              >
+                <PipelineJumpBar
+                  selectedPipelineName={pipeline.name}
+                  onChange={name => history.push(`/pipeline/${name}:/`)}
+                />
                 <Icon icon="chevron-right" />
                 {path.slice(0, path.length - 1).map((name, idx) => (
                   <React.Fragment key={idx}>
                     <Link
                       style={{ padding: 3 }}
-                      to={`/p/${pipeline.name}/explore/${path
+                      to={`/pipeline/${
+                        pipeline.name
+                      }:${visibleSolidsQuery}/${path
                         .slice(0, idx + 1)
                         .join("/")}`}
                     >
@@ -195,7 +217,7 @@ export default class PipelineExplorer extends React.Component<
                 <SolidJumpBar
                   solids={queryResultSolids.all}
                   selectedSolid={selectedHandle && selectedHandle.solid}
-                  onItemSelect={solid =>
+                  onChange={solid =>
                     this.handleClickSolid({ name: solid.name })
                   }
                 />
@@ -204,9 +226,10 @@ export default class PipelineExplorer extends React.Component<
                 <SolidQueryInput
                   solids={solids}
                   value={visibleSolidsQuery}
-                  onChange={q => this.setState({ visibleSolidsQuery: q })}
+                  onChange={this.handleQueryChange}
                 />
               )}
+
               <SearchOverlay style={{ background: backgroundTranslucent }}>
                 <SolidHighlightInput
                   type="text"
@@ -264,10 +287,7 @@ const PipelinesContainer = styled.div`
   flex: 1 1;
   display: flex;
   width: 100%;
-  height: 100vh;
-  top: 0;
-  position: absolute;
-  padding-top: 50px;
+  min-width: 0;
 `;
 
 const RightInfoPanel = styled.div`
@@ -287,6 +307,7 @@ const SearchOverlay = styled.div`
   display: inline-flex;
   align-items: stretch;
   position: absolute;
+  top: 0;
   right: 0;
 `;
 

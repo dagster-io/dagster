@@ -5,9 +5,10 @@ import styled from "styled-components/macro";
 import { Colors, Button, Icon, Tooltip, Intent } from "@blueprintjs/core";
 import { WebsocketStatusContext } from "./WebsocketStatus";
 import { ProcessStatusQuery } from "./types/ProcessStatusQuery";
+import { ShortcutHandler } from "./ShortcutHandler";
 import { SharedToaster } from "./DomUtils";
 
-export default () => {
+export const ProcessStatus: React.FunctionComponent = () => {
   const apollo = useApolloClient();
   const socketState = React.useContext(WebsocketStatusContext);
   const [reload] = useMutation(RELOAD_DAGIT_MUTATION);
@@ -44,8 +45,41 @@ export default () => {
     return <span />;
   }
 
+  const onClick = () => {
+    setReloadStatus("closing");
+    reload();
+  };
   return (
     <Label>
+      {data.reloadSupported && (
+        <ShortcutHandler
+          onShortcut={onClick}
+          shortcutLabel={`⌥R`}
+          shortcutFilter={e => e.keyCode === 82 && e.altKey}
+        >
+          <Tooltip
+            className="bp3-dark"
+            hoverOpenDelay={500}
+            content={
+              <div style={{ maxWidth: 300 }}>
+                Re-launch the web process and reload the UI to reflect the
+                latest metadata, including DAG structure, solid names, type
+                names, etc.
+                <br />
+                <br />
+                Executing a pipeline run always uses the latest code on disk.
+              </div>
+            }
+          >
+            <Button
+              icon={<Icon icon="refresh" iconSize={12} />}
+              disabled={reloadStatus !== "none"}
+              onClick={onClick}
+            />
+          </Tooltip>
+        </ShortcutHandler>
+      )}
+      <div style={{ height: 14 }} />
       {data.instance && data.instance.info ? (
         <Tooltip
           hoverOpenDelay={500}
@@ -57,32 +91,6 @@ export default () => {
         </Tooltip>
       ) : (
         data.version
-      )}
-      {data.reloadSupported && (
-        <Tooltip
-          hoverOpenDelay={500}
-          content={
-            <div style={{ maxWidth: 300 }}>
-              Re-launch the web process and reload the UI to reflect the latest
-              metadata, including DAG structure, solid names, type names, etc.
-              <br />
-              <br />
-              Executing a pipeline run always uses the latest code on disk.
-            </div>
-          }
-        >
-          <Button
-            small={true}
-            text="Reload"
-            style={{ marginLeft: 8 }}
-            icon={<Icon icon="refresh" iconSize={12} />}
-            disabled={reloadStatus !== "none"}
-            onClick={() => {
-              setReloadStatus("closing");
-              reload();
-            }}
-          />
-        </Tooltip>
       )}
     </Label>
   );
@@ -105,8 +113,9 @@ const RELOAD_DAGIT_MUTATION = gql`
 `;
 
 const Label = styled.span`
-  color: ${Colors.DARK_GRAY5};
+  color: ${Colors.LIGHT_GRAY1};
   font-size: 0.8rem;
   display: flex;
   align-items: center;
+  flex-direction: column;
 `;

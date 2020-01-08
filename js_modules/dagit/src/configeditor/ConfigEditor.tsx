@@ -74,10 +74,10 @@ const CodeMirrorWhitespaceStyle = createGlobalStyle`
     in Firefox and Chrome and doesn't change on zoom in / out, but may need to be
     modified if we change the Codemirror font.
   */
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAFJJREFUOBFjYBgFAx8CjLiccPnyZXFmZmY9kPzfv38v6erqvsSmlgmbIEgMpJmRkZEDhGEGYVOL0wBsirGJ4TQA5Oz/////AGEQG5vmUbHBEgIA9y0YCFtvw70AAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
 }
 .cm-whitespace.CodeMirror-lint-mark-error {
-  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAFJJREFUOBFjYBgFAx8CjLiccPnyZXFmZmY9kPzfv38v6erqvsSmlgmbIEgMpJmRkZEDhGEGYVOL0wBsirGJ4TQA5Oz/////AGEQG5vmUbHBEgIA9y0YCFtvw70AAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x, url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==") left bottom repeat-x;
+  background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAA0VXHyAAAAm0lEQVQ4Ee2RMQ7DIAxFMVIvBEvm7FXXniIXak4RhnTujMSBkKDfCgPCzg2whAzf9hN8jJlBmgUxxgf0DWvFykR0Ouc+yGXsFwAeRuOv1rr0zdACIC/k2uu2P7T9Ng6zDu2ZUnqP/RqAr61GKUXUNEBWpy9R1AQAbzzvAFpNAJrbQYHs3nuhi1/gQRhGbFh7c7bWfgE+FOiU4MAfhpIwd0LjE+wAAAAASUVORK5CYII=') center left / 8.4px 8.4px repeat-x;
 }
 `;
 
@@ -122,7 +122,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           options={
             {
               mode: "yaml",
-              theme: "material",
+              theme: "default",
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,

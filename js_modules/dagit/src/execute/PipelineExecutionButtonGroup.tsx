@@ -44,6 +44,8 @@ export const PipelineExecutionButtonGroup = (props: {
         icon={IconNames.PLAY}
         tooltip="Start execution in a subprocess"
         activeText="Starting..."
+        shortcutLabel={`⌥G`}
+        shortcutFilter={e => e.keyCode === 71 && e.altKey}
         onClick={async () => {
           const variables = props.getVariables();
           if (!variables) {
@@ -62,6 +64,8 @@ export const PipelineExecutionButtonGroup = (props: {
           icon={IconNames.SEND_TO}
           tooltip={`Launch execution via ${data.instance.runLauncher.name}`}
           activeText="Launching..."
+          shortcutLabel={`⌥L`}
+          shortcutFilter={e => e.keyCode === 76 && e.altKey}
           onClick={async () => {
             const variables = props.getVariables();
             if (variables == null) {

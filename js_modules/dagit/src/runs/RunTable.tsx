@@ -132,19 +132,19 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
     details = (
       <Details>
         <Link
-          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_success`}
+          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_success`}
         >{`${run.stats.stepsSucceeded} steps succeeded, `}</Link>
         <Link
-          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:step_failure`}
+          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:step_failure`}
         >
           {`${run.stats.stepsFailed} steps failed, `}{" "}
         </Link>
         <Link
-          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:materialization`}
+          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:materialization`}
         >{`${run.stats.materializations} materializations`}</Link>
         ,{" "}
         <Link
-          to={`/p/${run.pipeline.name}/runs/${run.runId}?q=type:expectation`}
+          to={`/runs/${run.pipeline.name}/${run.runId}?q=type:expectation`}
         >{`${run.stats.expectations} expectations passed`}</Link>
       </Details>
     );
@@ -196,14 +196,14 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
         <RunStatus status={run.status} />
       </RowColumn>
       <RowColumn style={{ flex: 2.4 }}>
-        <Link to={`/p/${run.pipeline.name}/runs/${run.runId}`}>
+        <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
           {titleForRun(run)}
         </Link>
         {details}
       </RowColumn>
       <RowColumn>
         {run.pipeline.__typename === "Pipeline" ? (
-          <Link to={`/p/${run.pipeline.name}/explore/`}>
+          <Link to={`/pipeline/${run.pipeline.name}/`}>
             <Icon icon="diagram-tree" /> {run.pipeline.name}
           </Link>
         ) : (
@@ -294,8 +294,9 @@ const RunActionsMenu: React.FunctionComponent<{
             disabled={run.pipeline.__typename !== "Pipeline"}
             icon="edit"
             target="_blank"
-            href={`/p/${run.pipeline.name}/execute/setup?${qs.stringify({
+            href={`/playground/setup?${qs.stringify({
               mode: run.mode,
+              pipeline: run.pipeline.name,
               config: run.environmentConfigYaml,
               solidSubset:
                 run.pipeline.__typename === "Pipeline"
