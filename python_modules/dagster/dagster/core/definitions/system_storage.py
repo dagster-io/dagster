@@ -54,9 +54,7 @@ class SystemStorageDefinition(object):
     ):
         self.name = check.str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a SystemStorageDefinition named {name}'.format(name=self.name),
-        )
+        self.config_field = check_user_facing_opt_config_param(config, 'config',)
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
         )

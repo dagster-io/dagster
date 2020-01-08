@@ -27,7 +27,6 @@ from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_date
 
 from dagster import (
     Any,
-    Dict,
     EventMetadataEntry,
     Field,
     Float,
@@ -417,29 +416,18 @@ def produce_training_set(
         'timeseries_train_test_breakpoint': Field(
             int, description='The breakpoint between training and test set'
         ),
-        'lstm_layer_config': Field(
-            Dict(
-                {
-                    'activation': Field(str, is_optional=True, default_value='relu'),
-                    'num_recurrant_units': Field(int, is_optional=True, default_value=50),
-                }
-            )
-        ),
+        'lstm_layer_config': {
+            'activation': Field(str, is_optional=True, default_value='relu'),
+            'num_recurrant_units': Field(int, is_optional=True, default_value=50),
+        },
         'num_dense_layers': Field(int, is_optional=True, default_value=1),
-        'model_trainig_config': Field(
-            Dict(
-                {
-                    'optimizer': Field(
-                        str,
-                        description='Type of optimizer to use',
-                        is_optional=True,
-                        default_value='adam',
-                    ),
-                    'loss': Field(str, is_optional=True, default_value='mse'),
-                    'num_epochs': Field(int, description='Number of epochs to optimize over'),
-                }
-            )
-        ),
+        'model_trainig_config': {
+            'optimizer': Field(
+                str, description='Type of optimizer to use', is_optional=True, default_value='adam',
+            ),
+            'loss': Field(str, is_optional=True, default_value='mse'),
+            'num_epochs': Field(int, description='Number of epochs to optimize over'),
+        },
     },
     input_defs=[InputDefinition('training_set', dagster_type=TrainingSet)],
     output_defs=[OutputDefinition(Any)],

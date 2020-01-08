@@ -3,6 +3,7 @@ import re
 import pytest
 
 from dagster import (
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DependencyDefinition,
     Field,
@@ -132,28 +133,34 @@ def test_list_dependencies():
 
 def test_pass_unrelated_type_to_field_error_solid_definition():
 
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
         @solid(config='nope')
-        def a_solid(_context):
+        def _a_solid(_context):
             pass
 
-        assert a_solid  # fool lint
-
-    assert str(exc_info.value) == (
-        'You have passed an object \'nope\' of incorrect type "str" in the parameter '
-        '"config" of a SolidDefinition or @solid named "a_solid" where a Field, '
-        'dict, or type was expected.'
+    assert str(exc_info.value).startswith(
+        "Error defining config. Original value passed: 'nope'. 'nope' cannot be resolved."
     )
 
 
 def test_pass_unrelated_type_to_field_error_resource_definition():
-    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
         ResourceDefinition(resource_fn=lambda: None, config='wut')
 
-    assert str(exc_info.value) == (
-        'You have passed an object \'wut\' of incorrect type "str" in the parameter '
-        '"config" of a ResourceDefinition or @resource where a Field, dict, or type was expected.'
+    assert str(exc_info.value).startswith(
+        "Error defining config. Original value passed: 'wut'. 'wut' cannot be resolved."
+    )
+
+
+def test_pass_unrelated_type_in_nested_field_error_resource_definition():
+    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+        ResourceDefinition(resource_fn=lambda: None, config={'field': {'nested_field': 'wut'}})
+    assert str(exc_info.value).startswith('Error')
+
+    assert str(exc_info.value).startswith(
+        "Error defining config. Original value passed: {'field': {'nested_field': 'wut'}}. "
+        "Error at stack path :field:nested_field. 'wut' cannot be resolved."
     )
 
 

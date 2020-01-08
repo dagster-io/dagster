@@ -36,10 +36,15 @@ def _is_config_type_class(obj):
 
 
 def resolve_to_config_type(dagster_type):
-    from dagster.core.types.wrapping.mapping import (
-        remap_python_builtin_for_config,
-        is_supported_config_python_builtin,
-    )
+    from .field_utils import convert_fields_to_dict_type
+
+    # Short circuit if it's already a Config Type
+    if isinstance(dagster_type, ConfigType):
+        return dagster_type
+
+    if isinstance(dagster_type, dict):
+        return convert_fields_to_dict_type(dagster_type)
+
     from dagster.core.types.runtime.runtime_type import RuntimeType
 
     if _is_config_type_class(dagster_type):
@@ -75,16 +80,17 @@ def resolve_to_config_type(dagster_type):
             'Cannot use Tuple in the context of a config field. Please use List instead.'
         )
 
-    # Short circuit if it's already a Config Type
-    if isinstance(dagster_type, ConfigType):
-        return dagster_type
-
     # If we are passed here either:
     #  1) We have been passed a python builtin
     #  2) We have been a dagster wrapping type that needs to be convert its config varient
     #     e.g. dagster.List
     #  2) We have been passed an invalid thing. We return False to signify this. It is
     #     up to callers to report a reasonable error.
+
+    from dagster.core.types.wrapping.mapping import (
+        remap_python_builtin_for_config,
+        is_supported_config_python_builtin,
+    )
 
     if is_supported_config_python_builtin(dagster_type):
         return remap_python_builtin_for_config(dagster_type)

@@ -1,10 +1,10 @@
 import pytest
 
-from dagster import Any, Dict, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
+from dagster import Any, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
 from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.types.config.field import resolve_to_config_type
-from dagster.core.types.config.field_utils import Selector, coerce_potential_field
+from dagster.core.types.config.field_utils import Selector
 from dagster.core.types.config.post_process import post_process_config
 
 
@@ -37,17 +37,14 @@ def test_post_process_config():
     assert post_process_config(nullable_list_config_type, [None]) == [None]
     assert post_process_config(nullable_list_config_type, None) == []
 
-    composite_config_field = coerce_potential_field(
+    composite_config_type = resolve_to_config_type(
         {
             'foo': String,
             'bar': {'baz': List[String]},
             'quux': Field(String, is_optional=True, default_value='zip'),
             'quiggle': Field(String, is_optional=True),
-        },
-        lambda: None,
+        }
     )
-
-    composite_config_type = composite_config_field.config_type
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
         post_process_config(composite_config_type, {})
@@ -71,19 +68,13 @@ def test_post_process_config():
     ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip', 'quiggle': 'squiggle'}
 
     nested_composite_config_type = resolve_to_config_type(
-        Dict(
-            {
-                'fruts': Field(
-                    Dict(
-                        {
-                            'apple': Field(String),
-                            'banana': Field(String, is_optional=True),
-                            'potato': Field(String, is_optional=True, default_value='pie'),
-                        }
-                    )
-                )
+        {
+            'fruts': {
+                'apple': Field(String),
+                'banana': Field(String, is_optional=True),
+                'potato': Field(String, is_optional=True, default_value='pie'),
             }
-        )
+        }
     )
 
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
@@ -112,9 +103,7 @@ def test_post_process_config():
         Selector(
             {
                 'one': Field(String),
-                'another': Field(
-                    Dict({'foo': Field(String, default_value='bar', is_optional=True)})
-                ),
+                'another': {'foo': Field(String, default_value='bar', is_optional=True)},
                 'yet_another': Field(String, default_value='quux', is_optional=True),
             }
         )

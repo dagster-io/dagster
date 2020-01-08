@@ -38,9 +38,7 @@ class ResourceDefinition(object):
 
     def __init__(self, resource_fn, config=None, description=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a ResourceDefinition or @resource'
-        )
+        self._config_field = check_user_facing_opt_config_param(config, 'config',)
         self._description = check.opt_str_param(description, 'description')
 
     @property

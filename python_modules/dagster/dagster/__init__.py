@@ -59,6 +59,7 @@ from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,

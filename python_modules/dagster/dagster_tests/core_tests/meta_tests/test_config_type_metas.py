@@ -7,11 +7,10 @@ from dagster.core.meta.config_types import (
 )
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.types.config.field import resolve_to_config_type
-from dagster.core.types.config.field_utils import coerce_potential_field
 
 
 def meta_from_dagster_type(dagster_type):
-    return meta_from_config_type(coerce_potential_field(dagster_type, lambda: None).config_type)
+    return meta_from_config_type(resolve_to_config_type(dagster_type))
 
 
 def test_basic_int_meta():

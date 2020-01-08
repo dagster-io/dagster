@@ -37,6 +37,50 @@ class DagsterInvalidDefinitionError(DagsterError):
     '''Indicates that the rules for a definition have been violated by the user.'''
 
 
+CONFIG_ERROR_VERBIAGE = '''
+This value can be a:
+    - :py:class:`Field`
+    - Python primitive types that resolve to dagster config types
+        - int, float, bool, str, list.
+    - A dagster config type: Int, Float, Bool, List, Optional, Selector, Dict
+    - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+    in the dictionary get resolved by the same rules, recursively.
+    - A python list with a single entry that can resolve to a type, e.g. [int]
+'''
+
+
+class DagsterInvalidConfigDefinitionError(DagsterError):
+    '''Indicates that you have attempted to construct a config with an invalid value
+    
+    This value can be a:
+        - :py:class:`Field`
+        - Python primitive types that resolve to dagster config types
+            - int, float, bool, str, list.
+        - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
+        - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
+        in the dictionary get resolved by the same rules, recursively.
+        - A python list with a single entry that can resolve to a type, e.g. [int]
+    '''
+
+    def __init__(self, original_root, current_value, stack, *args, **kwargs):
+        self.original_root = original_root
+        self.current_value = current_value
+        self.stack = stack
+        super(DagsterInvalidConfigDefinitionError, self).__init__(
+            (
+                'Error defining config. Original value passed: {original_root}. '
+                '{stack_str}{current_value} '
+                'cannot be resolved.' + CONFIG_ERROR_VERBIAGE
+            ).format(
+                original_root=repr(original_root),
+                stack_str='Error at stack path :' + ':'.join(stack) + '. ' if stack else '',
+                current_value=repr(current_value),
+            ),
+            *args,
+            **kwargs
+        )
+
+
 class DagsterInvariantViolationError(DagsterError):
     '''Indicates the user has violated a well-defined invariant that can only be enforced
     at runtime.'''
