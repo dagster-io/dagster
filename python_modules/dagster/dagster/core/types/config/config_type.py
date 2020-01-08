@@ -17,6 +17,7 @@ class ConfigTypeKind(PythonEnum):
     SELECTOR = 'SELECTOR'
     STRICT_DICT = 'STRICT_DICT'
     PERMISSIVE_DICT = 'PERMISSIVE_DICT'
+    SCALAR_UNION = 'SCALAR_UNION'
 
     @staticmethod
     def has_fields(kind):
@@ -295,6 +296,48 @@ class Enum(ConfigType):
                 'Should never reach this. config_value should be pre-validated. '
                 'Got {config_value}'
             ).format(config_value=config_value)
+        )
+
+    @classmethod
+    def from_python_enum(cls, enum, name=None):
+        '''
+        Create a Dagster enum corresponding to an existing Python enum.
+
+        Args:
+            enum (enum.EnumMeta):
+                The class representing the enum.
+            name (Optional[str]):
+                The name for the enum. If not present, `enum.__name__` will be used.
+
+        Example:
+            .. code-block:: python
+                class Color(enum.Enum):
+                    RED = enum.auto()
+                    GREEN = enum.auto()
+                    BLUE = enum.auto()
+
+                @solid(
+                    config={"color": Field(Enum.from_python_enum(Color))}
+                )
+                def select_color(context):
+                    # ...
+        '''
+        if name is None:
+            name = enum.__name__
+        return cls(name, [EnumValue(v.name, python_value=v) for v in enum])
+
+
+class ScalarUnion(ConfigType):
+    def __init__(self, scalar_type, non_scalar_type):
+        self.scalar_type = check.inst_param(scalar_type, 'scalar_type', ConfigType)
+        self.non_scalar_type = check.inst_param(non_scalar_type, 'non_scalar_type', ConfigType)
+        key = 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
+        name = 'ScalarUnion[{},{}]'.format(scalar_type.name, non_scalar_type.name)
+        super(ScalarUnion, self).__init__(
+            key=key,
+            name=name,
+            kind=ConfigTypeKind.SCALAR_UNION,
+            type_params=[scalar_type, non_scalar_type],
         )
 
 

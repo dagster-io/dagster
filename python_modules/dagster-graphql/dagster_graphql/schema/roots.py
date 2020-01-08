@@ -44,6 +44,7 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGr
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
@@ -716,14 +717,31 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
         )
 
 
+class DauhphinRunLauncher(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RunLauncher'
+
+    name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_launcher):
+        self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
+
+    def resolve_name(self, _graphene_info):
+        return self._run_launcher.__class__.__name__
+
+
 class DauhphinInstance(dauphin.ObjectType):
     class Meta(object):
         name = 'Instance'
 
     info = dauphin.NonNull(dauphin.String)
+    runLauncher = dauphin.Field('RunLauncher')
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
 
     def resolve_info(self, _graphene_info):
         return self._instance.info_str()
+
+    def resolve_runLauncher(self, _graphene_info):
+        return DauhphinRunLauncher(self._instance.run_launcher)

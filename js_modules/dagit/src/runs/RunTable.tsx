@@ -25,8 +25,8 @@ import {
 import {
   RunStatus,
   titleForRun,
-  handleStartExecutionResult,
-  REEXECUTE_MUTATION,
+  handleExecutionResult,
+  START_PIPELINE_EXECUTION_MUTATION,
   DELETE_MUTATION,
   CANCEL_MUTATION
 } from "./RunUtils";
@@ -260,7 +260,7 @@ const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment;
 }> = ({ run }) => {
   const variables = React.useContext(RunsQueryVariablesContext);
-  const [reexecute] = useMutation(REEXECUTE_MUTATION);
+  const [reexecute] = useMutation(START_PIPELINE_EXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, {
     refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
   });
@@ -325,7 +325,7 @@ const RunActionsMenu: React.FunctionComponent<{
                   }
                 }
               });
-              handleStartExecutionResult(run.pipeline.name, result, {
+              handleExecutionResult(run.pipeline.name, result, {
                 openInNewWindow: false
               });
             }}

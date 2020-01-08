@@ -164,7 +164,7 @@ class ConfigurableClassData(
 
     def rehydrate(self, **constructor_kwargs):
         from dagster.core.errors import DagsterInvalidConfigError
-        from dagster.core.types.config.evaluator.validate import validate_config
+        from dagster.core.types.config.evaluator.validate import process_config
 
         try:
             module = importlib.import_module(self.module_name)
@@ -197,7 +197,7 @@ class ConfigurableClassData(
             )
 
         config_dict = yaml.load(self.config_yaml)
-        result = validate_config(klass.config_type(), config_dict)
+        result = process_config(klass.config_type(), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(
                 'Errors whilst loading configuration for {}.'.format(klass.config_type()),
@@ -220,7 +220,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
             class: SplendidRunStorage
             config:
                 magic_word: "quux"
-    
+
     This same pattern should eventually be viable for other system components, e.g. engines.
 
     The ConfigurableClass mixin provides the necessary hooks for classes to be instantiated from
@@ -247,7 +247,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
         serialized in an instance of ConfigurableClassData.
-        
+
         This is usually an instance of dagster.core.definitions.environment_configs.SystemNamedDict.
         '''
 
@@ -257,7 +257,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
         '''New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
-        
+
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
                 `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.

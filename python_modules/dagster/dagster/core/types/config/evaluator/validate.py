@@ -94,8 +94,25 @@ def _validate_config(context, config_value):
         return validate_list_config(context, config_value)
     elif kind == ConfigTypeKind.ENUM:
         return validate_enum_config(context, config_value)
+    elif kind == ConfigTypeKind.SCALAR_UNION:
+        return _validate_scalar_union_config(context, config_value)
     else:
         check.failed('Unsupported ConfigTypeKind {}'.format(kind))
+
+
+def _validate_scalar_union_config(context, config_value):
+    check.inst_param(context, 'context', ValidationContext)
+    check.param_invariant(context.config_type.kind == ConfigTypeKind.SCALAR_UNION, 'context')
+    check.not_none_param(config_value, 'config_value')
+
+    if isinstance(config_value, dict) or isinstance(config_value, list):
+        return _validate_config(
+            context.for_new_config_type(context.config_type.non_scalar_type), config_value
+        )
+    else:
+        return _validate_config(
+            context.for_new_config_type(context.config_type.scalar_type), config_value
+        )
 
 
 def _validate_empty_selector_config(context):

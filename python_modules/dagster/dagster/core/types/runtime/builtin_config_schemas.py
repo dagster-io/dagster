@@ -9,39 +9,48 @@ from dagster.core.types.config.config_type import (
     ConfigPathInstance,
     ConfigStringInstance,
     ConfigTypeAttributes,
+    ScalarUnion,
 )
 from dagster.core.types.config.field import Field
 from dagster.core.types.config.field_utils import NamedSelector
 
-from .config_schema import input_selector_schema, make_bare_input_schema, output_selector_schema
+from .config_schema import input_hydration_config, make_bare_input_schema, output_selector_schema
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     check.str_param(scalar_name, 'scalar_name')
 
-    @input_selector_schema(
-        NamedSelector(
-            scalar_name + '.InputHydrationConfig',
-            {
-                'value': Field(config_scalar_type),
-                'json': define_path_dict_field(),
-                'pickle': define_path_dict_field(),
-            },
-            type_attributes=ConfigTypeAttributes(is_system_config=True),
+    @input_hydration_config(
+        ScalarUnion(
+            scalar_type=config_scalar_type,
+            non_scalar_type=NamedSelector(
+                scalar_name + '.InputHydrationConfig',
+                {
+                    'value': Field(config_scalar_type),
+                    'json': define_path_dict_field(),
+                    'pickle': define_path_dict_field(),
+                },
+                type_attributes=ConfigTypeAttributes(is_system_config=True),
+            ),
         )
     )
-    def _builtin_input_schema(_context, file_type, file_options):
-        if file_type == 'value':
-            return file_options
-        elif file_type == 'json':
-            with open(file_options['path'], 'r') as ff:
-                value_dict = seven.json.load(ff)
-                return value_dict['value']
-        elif file_type == 'pickle':
-            with open(file_options['path'], 'rb') as ff:
-                return pickle.load(ff)
+    def _builtin_input_schema(_context, config_value):
+        if isinstance(config_value, dict):
+            file_type, file_options = list(config_value.items())[0]
+            if file_type == 'value':
+                return file_options
+            elif file_type == 'json':
+                with open(file_options['path'], 'r') as ff:
+                    value_dict = seven.json.load(ff)
+                    return value_dict['value']
+            elif file_type == 'pickle':
+                with open(file_options['path'], 'rb') as ff:
+                    return pickle.load(ff)
+            else:
+                check.failed('Unsupported key {key}'.format(key=file_type))
         else:
-            check.failed('Unsupported key {key}'.format(key=file_type))
+            # scalar case
+            return config_value
 
     return _builtin_input_schema
 

@@ -1,5 +1,5 @@
 from dagster import List, Optional
-from dagster.core.types.config import Dict, Field, PermissiveDict, Selector
+from dagster.core.types.config import Dict, Field, PermissiveDict, ScalarUnion, Selector
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
@@ -491,3 +491,73 @@ def test_permissive_dict_with_fields():
     assert _validate(perm_dict_with_field, {'a_key': 'djfkdjkfd', 'extra_key': 'kdjkfd'}).success
     assert not _validate(perm_dict_with_field, {'a_key': 2}).success
     assert not _validate(perm_dict_with_field, {}).success
+
+
+def test_scalar_or_dict():
+
+    int_or_dict = ScalarUnion(
+        scalar_type=resolve_to_config_type(int), non_scalar_type=Dict({'a_string': str})
+    )
+
+    assert validate_config(int_or_dict, 2).success
+    assert not validate_config(int_or_dict, '2').success
+    assert not validate_config(int_or_dict, False).success
+
+    assert validate_config(int_or_dict, {'a_string': 'kjdfk'}).success
+    assert not validate_config(int_or_dict, {}).success
+    assert not validate_config(int_or_dict, {'wrong_key': 'kjdfd'}).success
+    assert not validate_config(int_or_dict, {'a_string': 2}).success
+    assert not validate_config(int_or_dict, {'a_string': 'kjdfk', 'extra_field': 'kd'}).success
+
+
+def test_scalar_or_selector():
+    int_or_selector = ScalarUnion(
+        scalar_type=resolve_to_config_type(int),
+        non_scalar_type=Selector({'a_string': str, 'an_int': int}),
+    )
+
+    assert validate_config(int_or_selector, 2).success
+    assert not validate_config(int_or_selector, '2').success
+    assert not validate_config(int_or_selector, False).success
+
+    assert validate_config(int_or_selector, {'a_string': 'kjdfk'}).success
+    assert validate_config(int_or_selector, {'an_int': 2}).success
+    assert not validate_config(int_or_selector, {}).success
+    assert not validate_config(int_or_selector, {'a_string': 'kjdfk', 'an_int': 2}).success
+    assert not validate_config(int_or_selector, {'wrong_key': 'kjdfd'}).success
+    assert not validate_config(int_or_selector, {'a_string': 2}).success
+    assert not validate_config(int_or_selector, {'a_string': 'kjdfk', 'extra_field': 'kd'}).success
+
+
+def test_scalar_or_list():
+    int_or_list = ScalarUnion(
+        scalar_type=resolve_to_config_type(int), non_scalar_type=resolve_to_config_type(List[str])
+    )
+
+    assert validate_config(int_or_list, 2).success
+    assert not validate_config(int_or_list, '2').success
+    assert not validate_config(int_or_list, False).success
+
+    assert validate_config(int_or_list, []).success
+    assert validate_config(int_or_list, ['ab']).success
+    assert not validate_config(int_or_list, [2]).success
+    assert not validate_config(int_or_list, {}).success
+
+
+def test_list_of_scalar_or_dict():
+    int_or_dict_list = resolve_to_config_type(
+        List[
+            ScalarUnion(
+                scalar_type=resolve_to_config_type(int), non_scalar_type=Dict({'a_string': str})
+            )
+        ]
+    )
+
+    assert validate_config(int_or_dict_list, []).success
+    assert validate_config(int_or_dict_list, [2]).success
+    assert validate_config(int_or_dict_list, [{'a_string': 'kjdfd'}]).success
+    assert validate_config(int_or_dict_list, [2, {'a_string': 'kjdfd'}]).success
+
+    assert not validate_config(int_or_dict_list, [2, {'wrong_key': 'kjdfd'}]).success
+    assert not validate_config(int_or_dict_list, [2, {'a_string': 2343}]).success
+    assert not validate_config(int_or_dict_list, ['kjdfkd', {'a_string': 'kjdfd'}]).success

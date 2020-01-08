@@ -5,6 +5,7 @@
 **New**
 
 - We are now more permissive when specifying configuration schema in order make constructing configuration schema more concise.
+- When specifying the value of scalar inputs in config, one can now specify that value directly as the key of the input, rather than having to embed it within a `value` key.
 
 **Breaking**
 

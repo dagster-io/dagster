@@ -95,3 +95,27 @@ def test_native_enum_dagster_enum():
     result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
     assert result.success
     assert called['yup']
+
+
+def test_native_enum_dagster_enum_from_classmethod():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+    called = {}
+
+    @solid(config=dagster_enum)
+    def dagster_enum_me(context):
+        assert context.solid_config == NativeEnum.BAR
+        called['yup'] = True
+
+    pipeline_def = PipelineDefinition(
+        name='native_enum_dagster_pipeline', solid_defs=[dagster_enum_me]
+    )
+
+    result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
+    assert result.success
+    assert called['yup']
+
+
+def test_native_enum_classmethod_creates_all_values():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+    for enum_value in NativeEnum:
+        assert enum_value is dagster_enum.to_python_value(enum_value.name)

@@ -31,6 +31,9 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
         else:
             return ttype
 
+    def for_new_type(self, config_type):
+        return EvaluationStack(config_type=config_type, entries=self.entries)
+
     def for_field(self, field_name, field_def):
         return EvaluationStack(
             config_type=self.config_type,

@@ -31,6 +31,12 @@ def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
     elif kind == ConfigTypeKind.NULLABLE:
         _do_print(config_type.inner_type, printer)
         printer.append('?')
+    elif kind == ConfigTypeKind.SCALAR_UNION:
+        printer.append('(')
+        _do_print(config_type.scalar_type, printer)
+        printer.append(' | ')
+        _do_print(config_type.non_scalar_type, printer)
+        printer.append(')')
     elif ConfigTypeKind.has_fields(kind):
         if config_type.name and shortcut_named:
             printer.append(config_type.name)
