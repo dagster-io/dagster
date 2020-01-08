@@ -116,6 +116,7 @@ def wait_for_pod(name, wait_for_termination=False):
                 time.sleep(1)
                 continue
             elif state.waiting.reason in [
+                'ErrImagePull',
                 'ImagePullBackOff',
                 'CrashLoopBackOff',
                 'RunContainerError',

@@ -68,11 +68,9 @@ spec:
 '''
 
 
-def test_valid_job_format(
-    run_launcher, docker_image, environments_path
-):  # pylint: disable=redefined-outer-name
+def test_valid_job_format(run_launcher, docker_image):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
-    environment_dict = load_yaml_from_path(os.path.join(environments_path, 'env.yaml'))
+    environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
     job = run_launcher.construct_job(run)
@@ -83,9 +81,9 @@ def test_valid_job_format(
     )
 
 
-def test_k8s_run_launcher(run_launcher, environments_path):  # pylint: disable=redefined-outer-name
+def test_k8s_run_launcher(run_launcher):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
-    environment_dict = load_yaml_from_path(os.path.join(environments_path, 'env.yaml'))
+    environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
 
