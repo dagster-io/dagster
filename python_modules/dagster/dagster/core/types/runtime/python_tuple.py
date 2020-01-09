@@ -86,3 +86,15 @@ def create_typed_tuple(*dagster_type_args):
     )
 
     return _TypedPythonTuple(runtime_types)
+
+
+class DagsterTupleApi:
+    def __getitem__(self, tuple_types):
+        check.not_none_param(tuple_types, 'tuple_types')
+        if isinstance(tuple_types, tuple):
+            return create_typed_tuple(*tuple_types)
+        else:
+            return create_typed_tuple(tuple_types)
+
+
+Tuple = DagsterTupleApi()

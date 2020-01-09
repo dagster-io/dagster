@@ -11,11 +11,9 @@ from dagster.core.types.config.config_type import Nullable as ConfigNullable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
 from dagster.core.types.wrapping.wrapping import (
     DagsterListApi,
-    DagsterTupleApi,
     Dict,
     WrappingListType,
     WrappingNullableType,
-    WrappingTupleType,
 )
 
 from .builtin_config_schemas import BuiltinSchemas
@@ -640,7 +638,7 @@ def resolve_to_runtime_type(dagster_type):
     # circular dep
     from .python_dict import PythonDict
     from .python_set import PythonSet, DagsterSetApi
-    from .python_tuple import PythonTuple
+    from .python_tuple import PythonTuple, DagsterTupleApi
     from dagster.core.types.config.config_type import ConfigType
     from dagster.core.types.wrapping.mapping import (
         remap_python_builtin_for_runtime,
@@ -703,8 +701,6 @@ def resolve_to_runtime_type(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
     if isinstance(dagster_type, WrappingListType):
         return resolve_to_runtime_list(dagster_type)
-    if isinstance(dagster_type, WrappingTupleType):
-        return resolve_to_runtime_tuple(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
 
@@ -726,15 +722,6 @@ def resolve_to_runtime_type(dagster_type):
 def resolve_to_runtime_list(list_type):
     check.inst_param(list_type, 'list_type', WrappingListType)
     return List(resolve_to_runtime_type(list_type.inner_type))
-
-
-def resolve_to_runtime_tuple(tuple_type):
-    from .python_tuple import create_typed_tuple, PythonTuple
-
-    check.inst_param(tuple_type, 'tuple_type', WrappingTupleType)
-    if tuple_type.inner_type is None:
-        return PythonTuple
-    return create_typed_tuple(*tuple_type.inner_type)
 
 
 def resolve_to_runtime_nullable(nullable_type):

@@ -107,6 +107,7 @@ from dagster.core.types.runtime import (
     output_materialization_config,
 )
 from dagster.core.types.runtime.python_set import Set
+from dagster.core.types.runtime.python_tuple import Tuple
 from dagster.core.types.wrapping import (
     Any,
     Bool,
@@ -118,7 +119,6 @@ from dagster.core.types.wrapping import (
     Optional,
     Path,
     String,
-    Tuple,
 )
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
