@@ -3,9 +3,9 @@ from botocore.handlers import disable_signing
 
 
 def create_s3_session(signed=True, region_name=None, endpoint_url=None):
-    s3 = boto3.resource(
+    s3 = boto3.resource(  # pylint:disable=C0103
         's3', region_name=region_name, endpoint_url=endpoint_url
-    ).meta.client  # pylint:disable=C0103
+    ).meta.client
     if not signed:
         s3.meta.events.register('choose-signer.s3.*', disable_signing)
     return s3
