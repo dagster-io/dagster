@@ -106,6 +106,7 @@ from dagster.core.types.runtime import (
     input_hydration_config,
     output_materialization_config,
 )
+from dagster.core.types.runtime.python_set import Set
 from dagster.core.types.wrapping import (
     Any,
     Bool,
@@ -116,7 +117,6 @@ from dagster.core.types.wrapping import (
     Nothing,
     Optional,
     Path,
-    Set,
     String,
     Tuple,
 )

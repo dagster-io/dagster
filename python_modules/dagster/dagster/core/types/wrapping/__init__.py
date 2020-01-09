@@ -1,5 +1,5 @@
 from .builtin_enum import BuiltinEnum
-from .wrapping import Dict, List, Optional, Set, Tuple
+from .wrapping import Dict, List, Optional, Tuple
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING

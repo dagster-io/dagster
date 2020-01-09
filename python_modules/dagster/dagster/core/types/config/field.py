@@ -3,11 +3,9 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
 from dagster.core.types.wrapping.wrapping import (
     DagsterListApi,
-    DagsterSetApi,
     DagsterTupleApi,
     WrappingListType,
     WrappingNullableType,
-    WrappingSetType,
     WrappingTupleType,
 )
 from dagster.utils.typing_api import is_typing_type
@@ -62,6 +60,7 @@ def resolve_to_config_type(dagster_type):
         return List(inner_type)
 
     from dagster.core.types.runtime.runtime_type import RuntimeType
+    from dagster.core.types.runtime.python_set import Set, _TypedPythonSet
 
     if _is_config_type_class(dagster_type):
         check.param_invariant(
@@ -87,10 +86,11 @@ def resolve_to_config_type(dagster_type):
             ).format(dagster_type=dagster_type)
         )
 
-    if isinstance(dagster_type, (WrappingSetType, DagsterSetApi)):
+    if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
         raise DagsterInvalidDefinitionError(
             'Cannot use Set in the context of a config field. Please use List instead.'
         )
+
     if isinstance(dagster_type, (WrappingTupleType, DagsterTupleApi)):
         raise DagsterInvalidDefinitionError(
             'Cannot use Tuple in the context of a config field. Please use List instead.'

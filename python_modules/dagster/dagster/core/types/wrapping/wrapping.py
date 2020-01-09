@@ -20,6 +20,7 @@ from .builtin_enum import BuiltinEnum
 
 def transform_typing_type(type_annotation):
     from dagster.core.types.runtime.python_dict import create_typed_runtime_dict
+    from dagster.core.types.runtime.python_set import Set
 
     if type_annotation is typing.List:
         return List
@@ -32,7 +33,7 @@ def transform_typing_type(type_annotation):
     elif is_closed_python_list_type(type_annotation):
         return WrappingListType(transform_typing_type(get_list_inner_type(type_annotation)))
     elif is_closed_python_set_type(type_annotation):
-        return WrappingSetType(transform_typing_type(get_set_inner_type(type_annotation)))
+        return Set[transform_typing_type(get_set_inner_type(type_annotation))]
     elif is_closed_python_tuple_type(type_annotation):
         transformed_types = [
             transform_typing_type(tt) for tt in get_tuple_type_params(type_annotation)
@@ -64,10 +65,6 @@ class WrappingListType(WrappingType):
     pass
 
 
-class WrappingSetType(WrappingType):
-    pass
-
-
 class WrappingTupleType(WrappingType):
     pass
 
@@ -94,12 +91,6 @@ class DagsterTupleApi:
         return WrappingTupleType(tuple_types)
 
 
-class DagsterSetApi:
-    def __getitem__(self, inner_type):
-        check.not_none_param(inner_type, 'inner_type')
-        return WrappingSetType(inner_type)
-
-
 class DagsterDictApi(object):
     def __call__(self, fields):
         from dagster.core.types.config.field_utils import build_config_dict
@@ -116,8 +107,6 @@ class DagsterDictApi(object):
 List = DagsterListApi()
 
 Optional = DagsterOptionalApi()
-
-Set = DagsterSetApi()
 
 Tuple = DagsterTupleApi()
 

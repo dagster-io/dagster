@@ -77,3 +77,11 @@ def create_typed_runtime_set(item_dagster_type):
     )
 
     return _TypedPythonSet(item_runtime_type)
+
+
+class DagsterSetApi:
+    def __getitem__(self, inner_type):
+        return create_typed_runtime_set(inner_type)
+
+
+Set = DagsterSetApi()
