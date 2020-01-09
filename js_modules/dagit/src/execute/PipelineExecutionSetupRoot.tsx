@@ -1,5 +1,5 @@
 import * as React from "react";
-import { match, Redirect } from "react-router";
+import { Redirect } from "react-router";
 import {
   useStorage,
   applyCreateSession,
@@ -7,19 +7,18 @@ import {
 } from "../LocalStorage";
 import * as querystring from "query-string";
 
-interface PipelineExecutionSetupRootProps {
-  match: match<{ pipelineName: string }>;
-}
+interface PipelineExecutionSetupRootProps {}
 
-export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = ({
-  match: { params }
-}) => {
-  const [data, onSave] = useStorage({ namespace: params.pipelineName });
+export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = () => {
+  const [data, onSave] = useStorage();
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
-    if (qs.config || qs.mode || qs.solidSubset) {
+    if (qs.pipeline && (qs.config || qs.mode || qs.solidSubset)) {
       const newSession: Partial<IExecutionSession> = {};
+      if (typeof qs.pipeline === "string") {
+        newSession.pipeline = qs.pipeline;
+      }
       if (typeof qs.config === "string") {
         newSession.environmentConfigYaml = qs.config;
       }
@@ -35,5 +34,5 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecuti
       onSave(applyCreateSession(data, newSession));
     }
   });
-  return <Redirect to={{ pathname: `/p/${params.pipelineName}/execute` }} />;
+  return <Redirect to={{ pathname: `/playground` }} />;
 };

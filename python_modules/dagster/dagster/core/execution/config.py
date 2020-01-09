@@ -108,10 +108,10 @@ class RunConfig(
 
     def with_mode(self, mode):
         '''Extend an existing RunConfig with a different mode.
-        
+
         Args:
             mode (str): The new mode to use.
-            
+
         Returns:
             RunConfig: The extended RunConfig.
         '''
@@ -122,7 +122,7 @@ class RunConfig(
 
         Args:
             step_keys_to_execute (List[str]): The step keys to execute.
-        
+
         Returns:
             RunConfig: The extended RunConfig.
         '''
@@ -139,7 +139,7 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         Args:
             instance (DagsterInstance): The available Dagster instance.
             system_storage_def (SystemStorageDefinition): The available system storage.
-        
+
         Raises if the executor config is not valid.
         '''
 
@@ -165,7 +165,7 @@ class MultiprocessExecutorConfig(ExecutorConfig):
         # TODO: These gnomic process boundary/execution target handle exceptions should link to
         # a fuller explanation in the docs.
         # https://github.com/dagster-io/dagster/issues/1649
-        self.handle = check.inst_param(
+        self._handle = check.inst_param(
             handle,
             'handle',
             ExecutionTargetHandle,
@@ -179,6 +179,15 @@ class MultiprocessExecutorConfig(ExecutorConfig):
     def check_requirements(self, instance, system_storage_def):
         check_persistent_storage_requirement(system_storage_def)
         check_non_ephemeral_instance(instance)
+
+    def load_pipeline(self, pipeline_run):
+        from dagster.core.storage.pipeline_run import PipelineRun
+
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+
+        return self._handle.build_pipeline_definition().build_sub_pipeline(
+            pipeline_run.selector.solid_subset
+        )
 
     def get_engine(self):
         from dagster.core.engine.engine_multiprocess import MultiprocessEngine

@@ -20,6 +20,7 @@ export interface IExecutionSessionPlan {
 export interface IExecutionSession {
   key: string;
   name: string;
+  pipeline: string;
   environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
@@ -31,17 +32,6 @@ export interface IExecutionSession {
 }
 
 export type IExecutionSessionChanges = Partial<IExecutionSession>;
-
-const DEFAULT_SESSION: IExecutionSession = {
-  key: "default",
-  name: "Workspace",
-  environmentConfigYaml: "",
-  mode: null,
-  solidSubset: null,
-  solidSubsetLabel: "All Solids",
-  runId: undefined,
-  configChangedSinceRun: false
-};
 
 export function applySelectSession(data: IStorageData, key: string) {
   return { ...data, current: key };
@@ -81,17 +71,25 @@ export function applyChangesToSession(
 export function applyCreateSession(
   data: IStorageData,
   initial: IExecutionSessionChanges = {}
-) {
+): IStorageData {
   const key = `s${Date.now()}`;
 
   return {
     current: key,
     sessions: {
       ...data.sessions,
-      [key]: Object.assign({}, DEFAULT_SESSION, initial, {
+      [key]: {
+        name: "Workspace",
+        environmentConfigYaml: "",
+        mode: null,
+        solidSubset: null,
+        solidSubsetLabel: "",
+        pipeline: "",
+        runId: undefined,
+        ...initial,
         configChangedSinceRun: false,
         key
-      })
+      }
     }
   };
 }
@@ -124,7 +122,7 @@ function getStorageDataForNamespace(namespace: string) {
     // noop
   }
   if (Object.keys(data.sessions).length === 0) {
-    data = applyCreateSession(data);
+    data = applyCreateSession(data, {});
   }
   if (!data.sessions[data.current]) {
     data.current = Object.keys(data.sessions)[0];
@@ -149,7 +147,7 @@ current localStorage namespace in memory (in _data above) and React keeps a simp
 version flag it can use to trigger a re-render after changes are saved, so changing
 namespaces changes the returned data immediately.
 */
-export function useStorage({ namespace }: { namespace: string }): StorageHook {
+export function useStorage(namespace = "shared"): StorageHook {
   const [version, setVersion] = React.useState<number>(0);
 
   const onSave = (newData: IStorageData) => {

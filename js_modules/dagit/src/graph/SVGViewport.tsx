@@ -45,6 +45,10 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       viewport._animation.cancel();
     }
 
+    if (!viewport.element.current) {
+      return;
+    }
+
     if (
       event.target instanceof HTMLElement &&
       event.target.closest("#zoom-slider-container")

@@ -15,14 +15,15 @@ import {
   SolidSelectorQuery_pipeline,
   SolidSelectorQuery_pipeline_solids
 } from "./types/SolidSelectorQuery";
+import { IconNames } from "@blueprintjs/icons";
+import { SubsetError } from "./ExecutionSessionContainer";
 import {
   getDagrePipelineLayout,
   layoutsIntersect,
   pointsToBox
 } from "../graph/getFullSolidLayout";
 import SVGViewport from "../graph/SVGViewport";
-import { IconNames } from "@blueprintjs/icons";
-import { SubsetError } from "./PipelineExecutionContainer";
+import { ShortcutHandler } from "../ShortcutHandler";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -147,7 +148,6 @@ class SolidSelectorModal extends React.PureComponent<
       this.handleOpen(this.props);
     }
   }
-
   handleSVGMouseDown = (
     viewport: SVGViewport,
     event: React.MouseEvent<HTMLDivElement>
@@ -290,6 +290,7 @@ class SolidSelectorModal extends React.PureComponent<
               {highlighted.length !== 1 || allSolidsSelected ? "s" : ""}{" "}
               selected
             </div>
+
             <Button onClick={this.close}>Cancel</Button>
             <Button intent="primary" onClick={this.handleSave}>
               Apply
@@ -337,26 +338,32 @@ export default (props: ISolidSelectorProps) => {
 
   return (
     <div>
-      <Dialog
-        icon="info-sign"
-        onClose={() => setOpen(false)}
-        style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
-        title={"Select Solids to Execute"}
-        usePortal={true}
-        isOpen={open}
+      <ShortcutHandler
+        shortcutLabel={"⌥S"}
+        shortcutFilter={e => e.keyCode === 83 && e.altKey}
+        onShortcut={() => setOpen(true)}
       >
-        <SolidSelectorModalContainer
-          {...props}
-          onRequestClose={onRequestClose}
-        />
-      </Dialog>
-      <Button
-        icon={subsetError ? IconNames.WARNING_SIGN : IconNames.SEARCH_AROUND}
-        intent={subsetError ? Intent.WARNING : Intent.NONE}
-        onClick={() => setOpen(true)}
-      >
-        {buttonText}
-      </Button>
+        <Dialog
+          icon="info-sign"
+          onClose={() => setOpen(false)}
+          style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
+          title={"Select Solids to Execute"}
+          usePortal={true}
+          isOpen={open}
+        >
+          <SolidSelectorModalContainer
+            {...props}
+            onRequestClose={onRequestClose}
+          />
+        </Dialog>
+        <Button
+          icon={subsetError ? IconNames.WARNING_SIGN : IconNames.SEARCH_AROUND}
+          intent={subsetError ? Intent.WARNING : Intent.NONE}
+          onClick={() => setOpen(true)}
+        >
+          {buttonText}
+        </Button>
+      </ShortcutHandler>
     </div>
   );
 };

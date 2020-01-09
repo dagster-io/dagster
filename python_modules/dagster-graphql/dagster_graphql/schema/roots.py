@@ -744,4 +744,8 @@ class DauhphinInstance(dauphin.ObjectType):
         return self._instance.info_str()
 
     def resolve_runLauncher(self, _graphene_info):
-        return DauhphinRunLauncher(self._instance.run_launcher)
+        return (
+            DauhphinRunLauncher(self._instance.run_launcher)
+            if self._instance.run_launcher
+            else None
+        )

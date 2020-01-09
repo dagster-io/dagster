@@ -56,7 +56,7 @@ it("renders without error", async () => {
 });
 
 it("renders pipeline page", async () => {
-  window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/explore");
+  window.history.pushState({}, "", "/pipelines/airline_demo_ingest_pipeline");
   const app = await testApp();
 
   // Sanity check that the pipeline page actually rendered the graph container. This ensures
@@ -69,7 +69,7 @@ it("renders pipeline solid page", async () => {
   window.history.pushState(
     {},
     "",
-    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather"
+    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather"
   );
   await testApp();
 });
@@ -78,7 +78,7 @@ it("renders type page", async () => {
   window.history.pushState(
     {},
     "",
-    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?types=true"
+    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?types=true"
   );
   await testApp();
 });
@@ -87,7 +87,7 @@ it("renders type page", async () => {
   window.history.pushState(
     {},
     "",
-    "/p/airline_demo_ingest_pipeline/explore/download_q2_sfo_weather?typeExplorer=PySparkDataFrame"
+    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?typeExplorer=PySparkDataFrame"
   );
   await testApp();
 });
@@ -98,6 +98,6 @@ it("renders solids explorer", async () => {
 });
 
 it("renders execution", async () => {
-  window.history.pushState({}, "", "/p/airline_demo_ingest_pipeline/execute");
+  window.history.pushState({}, "", "/playground/");
   await testApp();
 });

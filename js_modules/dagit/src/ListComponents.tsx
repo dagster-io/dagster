@@ -4,7 +4,7 @@ import styled from "styled-components/macro";
 export const Header = styled.div`
   color: ${Colors.BLACK};
   font-size: 1.1rem;
-  line-height: 3rem;
+  margin-bottom: 10px;
 `;
 
 export const Legend = styled.div`
@@ -51,7 +51,8 @@ export const ScrollContainer = styled.div`
   background-color: rgb(245, 248, 250);
   padding: 20px;
   overflow: auto;
-  min-height: calc(100vh - 50px);
+  min-height: 100%;
+  width: 100%;
 `;
 export const Details = styled.div`
   font-size: 0.8rem;
