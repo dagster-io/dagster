@@ -21,6 +21,9 @@ def publish_integration_images():
     return [
         StepBuilder("Integration Image %s" % python_version)
         .run(
+            r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/dockerhub-creds /tmp/dockerhub-creds",
+            "export DOCKERHUB_PASSWORD=`cat /tmp/dockerhub-creds`",
+            "export DOCKERHUB_USERNAME=elementldevtools",
             "aws ecr get-login --no-include-email --region us-west-1 | sh",
             "cd /workdir/.buildkite/images/",
             "make VERSION=\"{publish_date}\" build-integration-{python_version}".format(
