@@ -75,9 +75,9 @@ class DagsterOptionalApi:
 
 class DagsterDictApi(object):
     def __call__(self, fields):
-        from dagster.core.types.config.field_utils import build_config_dict
+        from dagster.core.types.config.field_utils import Dict as ConfigDict
 
-        return build_config_dict(fields)
+        return ConfigDict(fields)
 
     def __getitem__(self, *args):
         from dagster.core.types.runtime.python_dict import create_typed_runtime_dict

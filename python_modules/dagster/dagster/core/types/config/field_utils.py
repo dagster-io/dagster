@@ -138,10 +138,6 @@ class Dict(_ConfigHasFields):
         )
 
 
-def build_config_dict(fields, description=None, is_system_config=False):
-    return Dict(fields, description, is_system_config)
-
-
 def _define_permissive_dict_key(fields, description):
     return (
         'PermissiveDict.'
