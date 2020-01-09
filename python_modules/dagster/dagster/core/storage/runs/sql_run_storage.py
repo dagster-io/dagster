@@ -124,6 +124,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return self._rows_to_runs(rows)
 
     def get_run_count_with_matching_tags(self, tags):
+        check.dict_param(tags, 'tags', key_type=str, value_type=str)
+
         sub_query = db.select([1]).select_from(
             RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
         )
@@ -132,7 +134,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.or_(
                 *(
                     db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags
+                    for key, value in tags.items()
                 )
             )
         ).group_by(RunsTable.c.run_id)
@@ -150,7 +152,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return count
 
     def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.list_param(tags, 'tags', tuple)
+        check.dict_param(tags, 'tags', key_type=str, value_type=str)
 
         base_query = db.select([RunsTable.c.run_body]).select_from(
             RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
@@ -160,7 +162,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             db.or_(
                 *(
                     db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags
+                    for key, value in tags.items()
                 )
             )
         ).group_by(RunsTable.c.run_body, RunsTable.c.id)

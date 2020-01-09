@@ -71,7 +71,7 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
         runs = instance.get_runs_with_pipeline_name(filters.pipeline, cursor=cursor, limit=limit)
     elif filters.tag_key:
         runs = instance.get_runs_with_matching_tags(
-            [(filters.tag_key, filters.tag_value)], cursor=cursor, limit=limit
+            {filters.tag_key: filters.tag_value}, cursor=cursor, limit=limit
         )
     elif filters.status:
         runs = instance.get_runs_with_status(filters.status, cursor=cursor, limit=limit)

@@ -177,7 +177,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs_with_matching_tags(
-                [("dagster/schedule_id", self._schedule.schedule_id)], limit=kwargs.get('limit')
+                {'dagster/schedule_id': self._schedule.schedule_id}, limit=kwargs.get('limit')
             )
         ]
 
