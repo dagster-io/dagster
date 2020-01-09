@@ -86,7 +86,7 @@ def _validate_config(context, config_value):
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
-    elif kind == ConfigTypeKind.STRICT_DICT:
+    elif kind == ConfigTypeKind.STRICT_SHAPE:
         return validate_dict_config(context, config_value)
     elif kind == ConfigTypeKind.PERMISSIVE_DICT:
         return validate_permissive_dict_config(context, config_value)
@@ -235,7 +235,7 @@ def validate_permissive_dict_config(context, config_value):
 
 def validate_dict_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
-    check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_DICT)
+    check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_SHAPE)
     check.not_none_param(config_value, 'config_value')
 
     return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=True)

@@ -77,7 +77,7 @@ class Field(object):
             printer.append(']')
         # Dicts
         else:
-            printer.line('Dict(')
+            printer.line('Shape(')
             with printer.with_indent():
                 printer.line('fields={')
                 with printer.with_indent():
@@ -150,7 +150,7 @@ class ConfigParser(object):
     def extract_config(self, base_field, suffix):
         with IndentingBufferPrinter() as printer:
             printer.write_header()
-            printer.line('from dagster import Bool, Dict, Field, Int, PermissiveDict, String')
+            printer.line('from dagster import Bool, Field, Int, PermissiveDict, Shape, String')
             printer.blank_line()
 
             # Optionally write enum includes

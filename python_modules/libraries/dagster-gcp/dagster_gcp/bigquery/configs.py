@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 '''
 
-from dagster import Bool, Dict, Field, Int, String
+from dagster import Bool, Field, Int, String
 
 from .types import (
     BQCreateDisposition,
@@ -77,29 +77,27 @@ def _define_shared_fields():
     )
 
     time_partitioning = Field(
-        Dict(
-            fields={
-                'expiration_ms': Field(
-                    Int,
-                    description='''Number of milliseconds for which to keep the storage for a
+        {
+            'expiration_ms': Field(
+                Int,
+                description='''Number of milliseconds for which to keep the storage for a
                     partition.''',
-                    is_optional=True,
-                ),
-                'field': Field(
-                    String,
-                    description='''If set, the table is partitioned by this field. If not set, the
+                is_optional=True,
+            ),
+            'field': Field(
+                String,
+                description='''If set, the table is partitioned by this field. If not set, the
                     table is partitioned by pseudo column _PARTITIONTIME. The field must be a
                     top-level TIMESTAMP or DATE field. Its mode must be NULLABLE or REQUIRED.''',
-                    is_optional=True,
-                ),
-                'require_partition_filter': Field(
-                    Bool,
-                    description='''If set to true, queries over the partitioned table require a
+                is_optional=True,
+            ),
+            'require_partition_filter': Field(
+                Bool,
+                description='''If set to true, queries over the partitioned table require a
                     partition filter that can be used for partition elimination to be specified.''',
-                    is_optional=True,
-                ),
-            }
-        ),
+                is_optional=True,
+            ),
+        },
         description='Specifies time-based partitioning for the destination table.',
         is_optional=True,
     )
@@ -208,9 +206,9 @@ def define_bigquery_query_config():
     )
 
     # TODO:
-    # Type:	Dict[str, google.cloud.bigquery.external_config.ExternalConfig]
+    # Type:	Shape[str, google.cloud.bigquery.external_config.ExternalConfig]
     # table_definitions = Field(
-    #     PermissiveDict(),
+    #     PermissiveShape(),
     #     description='''Definitions for external tables or None if not set.
     #     See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.tableDefinitions
     #     ''',

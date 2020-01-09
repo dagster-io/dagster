@@ -1,4 +1,4 @@
-from dagster import Bool, Dict, Field, Float, Int, PermissiveDict, String
+from dagster import Bool, Field, Float, Int, PermissiveDict, Shape, String
 
 from .types import (
     EbsVolumeType,
@@ -19,7 +19,7 @@ from .types import (
 def _define_configurations():
     return Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Classification': Field(
                         String,
@@ -66,10 +66,10 @@ def _define_steps():
     )
 
     hadoopJarStep = Field(
-        Dict(
+        Shape(
             fields={
                 'Properties': Field(
-                    [Dict(fields={'Key': Field(String), 'Value': Field(String)})],
+                    [Shape(fields={'Key': Field(String), 'Value': Field(String)})],
                     description='''A list of Java properties that are set when the step runs. You
                     can use these properties to pass key value pairs to your main function.''',
                     is_optional=True,
@@ -98,7 +98,7 @@ def _define_steps():
 
     return Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Name': name,
                     'ActionOnFailure': actionOnFailure,
@@ -126,11 +126,11 @@ def _define_bootstrap_actions():
         is_optional=True,
     )
 
-    bootstrap_action = Dict(
+    bootstrap_action = Shape(
         fields={
             'Name': name,
             'ScriptBootstrapAction': Field(
-                Dict(fields={'Path': path, 'Args': args}),
+                Shape(fields={'Path': path, 'Args': args}),
                 description='The script run by the bootstrap action.',
                 is_optional=False,
             ),
@@ -147,7 +147,7 @@ def _define_bootstrap_actions():
 
 def _define_ebs_configuration():
     volume_specification = Field(
-        Dict(
+        Shape(
             fields={
                 'VolumeType': Field(
                     EbsVolumeType,
@@ -182,11 +182,11 @@ def _define_ebs_configuration():
     )
 
     return Field(
-        Dict(
+        Shape(
             fields={
                 'EbsBlockDeviceConfigs': Field(
                     [
-                        Dict(
+                        Shape(
                             fields={
                                 'VolumeSpecification': volume_specification,
                                 'VolumesPerInstance': volumes_per_instance,
@@ -212,7 +212,7 @@ def _define_ebs_configuration():
 
 def _define_auto_scaling_policy():
     simple_scaling_policy_configuration = Field(
-        Dict(
+        Shape(
             fields={
                 'AdjustmentType': Field(
                     EmrAdjustmentType,
@@ -255,7 +255,7 @@ def _define_auto_scaling_policy():
     )
 
     action = Field(
-        Dict(
+        Shape(
             fields={
                 'Market': Field(
                     EmrMarket,
@@ -272,7 +272,7 @@ def _define_auto_scaling_policy():
 
     dimensions = Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Key': Field(String, description='The dimension name.', is_optional=False),
                     'Value': Field(String, description='The dimension value.', is_optional=True),
@@ -284,10 +284,10 @@ def _define_auto_scaling_policy():
     )
 
     trigger = Field(
-        Dict(
+        Shape(
             fields={
                 'CloudWatchAlarmDefinition': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'ComparisonOperator': Field(
                                 EmrComparisonOperator,
@@ -357,10 +357,10 @@ def _define_auto_scaling_policy():
     )
 
     return Field(
-        Dict(
+        Shape(
             fields={
                 'Constraints': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'MinCapacity': Field(
                                 Int,
@@ -387,7 +387,7 @@ def _define_auto_scaling_policy():
                 ),
                 'Rules': Field(
                     [
-                        Dict(
+                        Shape(
                             fields={
                                 'Name': Field(
                                     String,
@@ -426,7 +426,7 @@ def _define_auto_scaling_policy():
 def _define_instance_groups():
     return Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Name': Field(
                         String,
@@ -520,7 +520,7 @@ def _define_instance_fleets():
 
     instance_type_configs = Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'InstanceType': Field(
                         String,
@@ -565,10 +565,10 @@ def _define_instance_fleets():
     )
 
     launch_specifications = Field(
-        Dict(
+        Shape(
             fields={
                 'SpotSpecification': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'TimeoutDurationMinutes': Field(
                                 Int,
@@ -617,7 +617,7 @@ def _define_instance_fleets():
 
     return Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Name': Field(
                         String,
@@ -675,7 +675,7 @@ def define_emr_run_job_flow_config():
     )
 
     instances = Field(
-        Dict(
+        Shape(
             fields={
                 'MasterInstanceType': Field(
                     String,
@@ -699,7 +699,7 @@ def define_emr_run_job_flow_config():
                     is_optional=True,
                 ),
                 'Placement': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'AvailabilityZone': Field(
                                 String,
@@ -815,7 +815,7 @@ def define_emr_run_job_flow_config():
 
     new_supported_products = Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Name': Field(String, is_optional=False),
                     'Args': Field([String], description='The list of user-supplied arguments.'),
@@ -847,7 +847,7 @@ def define_emr_run_job_flow_config():
 
     applications = Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Name': Field(
                         String, description='The name of the application.', is_optional=False
@@ -916,7 +916,7 @@ def define_emr_run_job_flow_config():
 
     tags = Field(
         [
-            Dict(
+            Shape(
                 fields={
                     'Key': Field(
                         String,
@@ -998,7 +998,7 @@ def define_emr_run_job_flow_config():
     )
 
     kerberos_attributes = Field(
-        Dict(
+        Shape(
             fields={
                 'Realm': Field(
                     String,
@@ -1041,7 +1041,7 @@ def define_emr_run_job_flow_config():
     )
 
     return Field(
-        Dict(
+        Shape(
             fields={
                 'Name': name,
                 'LogUri': log_uri,

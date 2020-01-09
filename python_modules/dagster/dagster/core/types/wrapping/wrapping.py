@@ -20,7 +20,7 @@ from .builtin_enum import BuiltinEnum
 
 def transform_typing_type(type_annotation):
     from dagster.core.types.runtime.runtime_type import List
-    from dagster.core.types.runtime.python_dict import create_typed_runtime_dict
+    from dagster.core.types.runtime.python_dict import create_typed_runtime_dict, Dict
     from dagster.core.types.runtime.python_set import Set
     from dagster.core.types.runtime.python_tuple import Tuple, create_typed_tuple
 
@@ -73,19 +73,4 @@ class DagsterOptionalApi:
         return WrappingNullableType(inner_type)
 
 
-class DagsterDictApi(object):
-    def __call__(self, fields):
-        from dagster.core.types.config.field_utils import Dict as ConfigDict
-
-        return ConfigDict(fields)
-
-    def __getitem__(self, *args):
-        from dagster.core.types.runtime.python_dict import create_typed_runtime_dict
-
-        check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
-        return create_typed_runtime_dict(args[0][0], args[0][1])
-
-
 Optional = DagsterOptionalApi()
-
-Dict = DagsterDictApi()

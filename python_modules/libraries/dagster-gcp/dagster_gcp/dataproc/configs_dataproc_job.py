@@ -8,18 +8,18 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Dict, Field, Int, PermissiveDict, String
+from dagster import Bool, Field, Int, PermissiveDict, Shape, String
 
 
 def define_dataproc_job_config():
     return Field(
-        Dict(
+        Shape(
             fields={
                 'status': Field(
-                    Dict(fields={}), description='''Cloud Dataproc job status.''', is_optional=True
+                    Shape(fields={}), description='''Cloud Dataproc job status.''', is_optional=True
                 ),
                 'placement': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'clusterName': Field(
                                 String,
@@ -33,7 +33,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'scheduling': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'maxFailuresPerHour': Field(
                                 Int,
@@ -50,7 +50,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'pigJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'queryFileUri': Field(
                                 String,
@@ -59,7 +59,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
                                             [String],
@@ -92,7 +92,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -130,7 +130,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'hiveJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'continueOnFailure': Field(
                                 Bool,
@@ -146,7 +146,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
                                             [String],
@@ -204,7 +204,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'sparkJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'archiveUris': Field(
                                 [String],
@@ -226,7 +226,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -278,10 +278,10 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'sparkSqlJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
                                             [String],
@@ -319,7 +319,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -348,7 +348,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'pysparkJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'jarFileUris': Field(
                                 [String],
@@ -357,7 +357,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -423,7 +423,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'reference': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'projectId': Field(
                                 String,
@@ -446,7 +446,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'hadoopJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'jarFileUris': Field(
                                 [String],
@@ -455,7 +455,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),

@@ -96,8 +96,8 @@ from dagster.core.storage.system_storage import (
     fs_system_storage,
     mem_system_storage,
 )
-from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector
-from dagster.core.types.config.config_type import Array
+from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector, Shape
+from dagster.core.types.config.config_type import Array, ScalarUnion
 from dagster.core.types.runtime import (
     RuntimeType,
     SerializationStrategy,
@@ -107,10 +107,11 @@ from dagster.core.types.runtime import (
     input_hydration_config,
     output_materialization_config,
 )
+from dagster.core.types.runtime.python_dict import Dict
 from dagster.core.types.runtime.python_set import Set
 from dagster.core.types.runtime.python_tuple import Tuple
 from dagster.core.types.runtime.runtime_type import List
-from dagster.core.types.wrapping import Any, Bool, Dict, Float, Int, Nothing, Optional, Path, String
+from dagster.core.types.wrapping import Any, Bool, Float, Int, Nothing, Optional, Path, String
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,
@@ -206,7 +207,6 @@ __all__ = [
     'Optional',
     'output_materialization_config',
     'Path',
-    'PermissiveDict',
     'String',
     'SerializationStrategy',
     'Nothing',
@@ -214,6 +214,12 @@ __all__ = [
     'as_dagster_type',
     'dagster_type',
     'define_python_dagster_type',
+    # config
+    'Array',
+    'Shape',
+    'PermissiveDict',
+    'Selector',
+    'ScalarUnion',
     # file things
     'FileHandle',
     'LocalFileHandle',

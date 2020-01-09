@@ -60,7 +60,7 @@ class NamedDict(_ConfigHasFields):
         super(NamedDict, self).__init__(
             key=name,
             name=name,
-            kind=ConfigTypeKind.STRICT_DICT,
+            kind=ConfigTypeKind.STRICT_SHAPE,
             fields=expand_fields_dict(fields),
             description=description,
             type_attributes=type_attributes,
@@ -105,11 +105,11 @@ def _compute_fields_hash(fields, description, is_system_config):
     return m.hexdigest()
 
 
-def _define_dict_key_hash(fields, description, is_system_config):
-    return 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+def _define_shape_key_hash(fields, description, is_system_config):
+    return 'Shape.' + _compute_fields_hash(fields, description, is_system_config)
 
 
-class Dict(_ConfigHasFields):
+class Shape(_ConfigHasFields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
@@ -120,16 +120,16 @@ class Dict(_ConfigHasFields):
     def __new__(cls, fields, description=None, is_system_config=False):
         return _memoize_inst_in_field_cache(
             cls,
-            Dict,
-            _define_dict_key_hash(expand_fields_dict(fields), description, is_system_config),
+            Shape,
+            _define_shape_key_hash(expand_fields_dict(fields), description, is_system_config),
         )
 
     def __init__(self, fields, description=None, is_system_config=False):
         fields = expand_fields_dict(fields)
-        super(Dict, self).__init__(
+        super(Shape, self).__init__(
             name=None,
-            kind=ConfigTypeKind.STRICT_DICT,
-            key=_define_dict_key_hash(fields, description, is_system_config),
+            kind=ConfigTypeKind.STRICT_SHAPE,
+            key=_define_shape_key_hash(fields, description, is_system_config),
             description=description,
             fields=fields,
             type_attributes=ConfigTypeAttributes(
@@ -284,7 +284,7 @@ def convert_fields_to_dict_type(fields):
 
 
 def _convert_fields_to_dict_type(original_root, fields, stack):
-    return Dict(_expand_fields_dict(original_root, fields, stack))
+    return Shape(_expand_fields_dict(original_root, fields, stack))
 
 
 def expand_fields_dict(fields):
@@ -329,7 +329,7 @@ def _convert_potential_type(original_root, potential_type, stack):
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
-        return Dict(_expand_fields_dict(original_root, potential_type, stack))
+        return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):
         return expand_list(original_root, potential_type, stack)

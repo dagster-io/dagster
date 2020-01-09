@@ -4,9 +4,7 @@ from dagster.core.decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind, Nullable
-from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import WrappingNullableType
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.utils import ensure_single_item
 
 
@@ -24,21 +22,6 @@ class InputHydrationConfig(object):
         return config_value
 
 
-def _resolve_config_schema_type(dagster_type):
-    # This replicates a subset of resolve_to_config_type
-    # Including resolve_to_config_type directly has a nasty circular
-    # dependency.
-    if isinstance(dagster_type, ConfigType):
-        return dagster_type
-
-    if BuiltinEnum.contains(dagster_type):
-        return ConfigType.from_builtin_enum(dagster_type)
-    elif isinstance(dagster_type, WrappingNullableType):
-        return Nullable(dagster_type.inner_type)
-
-    check.failed('should not reach. got {dagster_type}'.format(dagster_type=dagster_type))
-
-
 class BareInputSchema(InputHydrationConfig):
     def __init__(self, config_type):
         self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
@@ -49,7 +32,9 @@ class BareInputSchema(InputHydrationConfig):
 
 
 def make_bare_input_schema(config_cls):
-    config_type = _resolve_config_schema_type(config_cls)
+    from dagster.core.types.config.field import resolve_to_config_type
+
+    config_type = resolve_to_config_type(config_cls)
     return BareInputSchema(config_type)
 
 
@@ -103,7 +88,9 @@ def input_hydration_config(config_cls):
         def _dict_input(_context, value):
             return value
     '''
-    config_type = _resolve_config_schema_type(config_cls)
+    from dagster.core.types.config.field import resolve_to_config_type
+
+    config_type = resolve_to_config_type(config_cls)
     EXPECTED_POSITIONALS = ['context', '*']
 
     def wrapper(func):
@@ -130,7 +117,9 @@ def input_selector_schema(config_cls):
     Args:
         config_cls (Selector)
     '''
-    config_type = _resolve_config_schema_type(config_cls)
+    from dagster.core.types.config.field import resolve_to_config_type
+
+    config_type = resolve_to_config_type(config_cls)
     check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
 
     def _wrap(func):
@@ -189,7 +178,9 @@ def output_materialization_config(config_cls):
             return Materialization.file(path)
 
     '''
-    config_type = _resolve_config_schema_type(config_cls)
+    from dagster.core.types.config.field import resolve_to_config_type
+
+    config_type = resolve_to_config_type(config_cls)
     return lambda func: _create_output_schema(config_type, func)
 
 
@@ -201,7 +192,9 @@ def output_selector_schema(config_cls):
     Args:
         config_cls (Selector):
     '''
-    config_type = _resolve_config_schema_type(config_cls)
+    from dagster.core.types.config.field import resolve_to_config_type
+
+    config_type = resolve_to_config_type(config_cls)
     check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
 
     def _wrap(func):

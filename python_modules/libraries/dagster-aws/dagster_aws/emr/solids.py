@@ -2,7 +2,6 @@ import math
 import time
 
 from dagster import (
-    Dict,
     Field,
     InputDefinition,
     Nothing,
@@ -64,12 +63,8 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
             input_defs=[InputDefinition(_START, Nothing)],
             output_defs=[OutputDefinition(String)],
             compute_fn=_compute_fn,
-            config=Field(
-                Dict(
-                    {
-                        'aws_region': Field(String, is_optional=True),
-                        'job_config': define_emr_run_job_flow_config(),
-                    }
-                )
-            ),
+            config={
+                'aws_region': Field(String, is_optional=True),
+                'job_config': define_emr_run_job_flow_config(),
+            },
         )

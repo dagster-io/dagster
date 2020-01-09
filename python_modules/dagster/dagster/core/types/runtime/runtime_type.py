@@ -9,7 +9,7 @@ from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config.config_type import Array
 from dagster.core.types.config.config_type import Nullable as ConfigNullable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import Dict, WrappingNullableType
+from dagster.core.types.wrapping.wrapping import WrappingNullableType
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
@@ -646,7 +646,7 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 
 def resolve_to_runtime_type(dagster_type):
     # circular dep
-    from .python_dict import PythonDict
+    from .python_dict import PythonDict, Dict
     from .python_set import PythonSet, DagsterSetApi
     from .python_tuple import PythonTuple, DagsterTupleApi
     from dagster.core.types.config.config_type import ConfigType

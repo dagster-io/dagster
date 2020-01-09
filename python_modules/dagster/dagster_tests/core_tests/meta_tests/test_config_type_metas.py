@@ -1,4 +1,4 @@
-from dagster import Array, Dict, Field, Optional, Selector
+from dagster import Array, Field, Optional, Selector, Shape
 from dagster.core.meta.config_types import (
     ConfigTypeKind,
     ConfigTypeMeta,
@@ -27,7 +27,7 @@ def test_basic_int_meta():
 
 def test_basic_dict():
     dict_meta = meta_from_dagster_type({'foo': int})
-    assert dict_meta.key.startswith('Dict.')
+    assert dict_meta.key.startswith('Shape.')
     assert dict_meta.name is None
     assert dict_meta.inner_type_refs
     assert len(dict_meta.inner_type_refs) == 1
@@ -115,16 +115,16 @@ def test_basic_list_list():
 
 
 def test_list_of_dict():
-    inner_dict_dagster_type = Dict({'foo': Field(str)})
+    inner_dict_dagster_type = Shape({'foo': Field(str)})
     list_of_dict_meta = meta_from_dagster_type([inner_dict_dagster_type])
 
     assert list_of_dict_meta.key.startswith('Array')
     assert list_of_dict_meta.inner_type_refs
     assert len(list_of_dict_meta.inner_type_refs) == 1
-    # Both Dict[...] and str are NonGenericTypeRefMetas in this schema
+    # Both Shape[...] and str are NonGenericTypeRefMetas in this schema
     dict_ref = list_of_dict_meta.type_param_refs[0]
     assert isinstance(dict_ref, NonGenericTypeRefMeta)
-    assert dict_ref.key.startswith('Dict')
+    assert dict_ref.key.startswith('Shape')
 
     assert (
         len(list_of_dict_meta.type_param_refs) == 1
@@ -187,7 +187,7 @@ def test_kitchen_sink_break_out():
     assert kitchen_sink_meta.inner_type_refs[0].key == dict_within_list_key
     dict_within_list_meta = meta_from_dagster_type(dict_within_list_cls)
     assert dict_within_list_meta.type_param_refs is None
-    # List[int], Int, Dict.XXX
+    # List[int], Int, Shape.XXX
     assert len(dict_within_list_meta.inner_type_refs) == 3
     assert sorted([type_ref.key for type_ref in dict_within_list_meta.inner_type_refs]) == sorted(
         [nested_dict_cls.key, 'Int', 'Array.Int']

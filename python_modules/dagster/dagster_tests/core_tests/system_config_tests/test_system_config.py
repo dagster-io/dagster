@@ -3,7 +3,6 @@ import pytest
 from dagster import (
     Any,
     DependencyDefinition,
-    Dict,
     Field,
     InputDefinition,
     Int,
@@ -418,9 +417,7 @@ def test_optional_solid_with_optional_subfield():
         solid_defs=[
             SolidDefinition(
                 name='int_config_solid',
-                config=Field(
-                    Dict({'optional_field': Field(String, is_optional=True)}), is_optional=True
-                ),
+                config=Field({'optional_field': Field(String, is_optional=True)}, is_optional=True),
                 input_defs=[],
                 output_defs=[],
                 compute_fn=lambda *_args: None,

@@ -15,7 +15,7 @@ class ConfigTypeKind(PythonEnum):
     ENUM = 'ENUM'
 
     SELECTOR = 'SELECTOR'
-    STRICT_DICT = 'STRICT_DICT'
+    STRICT_SHAPE = 'STRICT_SHAPE'
     PERMISSIVE_DICT = 'PERMISSIVE_DICT'
     SCALAR_UNION = 'SCALAR_UNION'
 
@@ -36,7 +36,7 @@ class ConfigTypeKind(PythonEnum):
     @staticmethod
     def is_dict(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.STRICT_DICT or kind == ConfigTypeKind.PERMISSIVE_DICT
+        return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_DICT
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):

@@ -528,7 +528,7 @@ def test_smoke_test_config_type_system():
 
     config_types_data = result.data['environmentSchemaOrError']['allConfigTypes']
 
-    assert has_config_type_with_key_prefix(config_types_data, 'Dict.')
+    assert has_config_type_with_key_prefix(config_types_data, 'Shape.')
 
     for builtin_config_type in ALL_CONFIG_BUILTINS:
         assert has_config_type(config_types_data, builtin_config_type.name)

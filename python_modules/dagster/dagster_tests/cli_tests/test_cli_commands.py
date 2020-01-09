@@ -50,7 +50,7 @@ from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.types.config.field_utils import Dict
+from dagster.core.types.config.field_utils import Shape
 from dagster.utils import script_relative_path
 
 
@@ -901,7 +901,7 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return Dict({})
+        return Shape({})
 
     @classmethod
     def from_config_value(cls, inst_data, config_value, **kwargs):

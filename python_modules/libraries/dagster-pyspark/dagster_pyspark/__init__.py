@@ -3,17 +3,7 @@ import os
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
-from dagster import (
-    Bool,
-    Dict,
-    Field,
-    Materialization,
-    Path,
-    String,
-    as_dagster_type,
-    check,
-    resource,
-)
+from dagster import Bool, Field, Materialization, Path, String, as_dagster_type, check, resource
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config.field_utils import Selector
@@ -26,15 +16,11 @@ from .resources import PySparkResourceDefinition, pyspark_resource, spark_sessio
 @input_selector_schema(
     Selector(
         {
-            'csv': Field(
-                Dict(
-                    {
-                        'path': Field(Path),
-                        'sep': Field(String, is_optional=True),
-                        'header': Field(Bool, is_optional=True),
-                    }
-                )
-            )
+            'csv': {
+                'path': Field(Path),
+                'sep': Field(String, is_optional=True),
+                'header': Field(Bool, is_optional=True),
+            }
         }
     )
 )
@@ -51,13 +37,11 @@ def load_rdd(context, file_type, file_options):
     Selector(
         {
             'csv': Field(
-                Dict(
-                    {
-                        'path': Field(Path),
-                        'sep': Field(String, is_optional=True),
-                        'header': Field(Bool, is_optional=True),
-                    }
-                )
+                {
+                    'path': Field(Path),
+                    'sep': Field(String, is_optional=True),
+                    'header': Field(Bool, is_optional=True),
+                }
             )
         }
     )
@@ -81,15 +65,11 @@ SparkRDD = as_dagster_type(
 @output_selector_schema(
     Selector(
         {
-            'csv': Field(
-                Dict(
-                    {
-                        'path': Field(Path),
-                        'sep': Field(String, is_optional=True),
-                        'header': Field(Bool, is_optional=True),
-                    }
-                )
-            )
+            'csv': {
+                'path': Field(Path),
+                'sep': Field(String, is_optional=True),
+                'header': Field(Bool, is_optional=True),
+            },
         }
     )
 )

@@ -4,7 +4,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.config import Field, Selector
 from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.core.types.config.field import check_opt_field_param
-from dagster.core.types.config.field_utils import Dict
+from dagster.core.types.config.field_utils import Shape
 from dagster.core.types.config.iterate_types import iterate_config_types
 from dagster.core.types.runtime.runtime_type import construct_runtime_type_dictionary
 from dagster.utils import check, ensure_single_item
@@ -20,11 +20,11 @@ from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 def SystemNamedDict(_name, fields, description=None):
     '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
     '''
-    return Dict(fields, description, is_system_config=True)
+    return Shape(fields, description, is_system_config=True)
 
 
 def SystemDict(fields, description=None):
-    return Dict(fields, description, is_system_config=True)
+    return Shape(fields, description, is_system_config=True)
 
 
 def SystemSelector(fields, description=None):
