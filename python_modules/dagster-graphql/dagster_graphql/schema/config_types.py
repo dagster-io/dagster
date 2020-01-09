@@ -15,7 +15,7 @@ def to_dauphin_config_type(config_type):
     elif ConfigTypeKind.has_fields(kind):
         return DauphinCompositeConfigType(config_type)
     elif kind == ConfigTypeKind.ARRAY:
-        return DauphinListConfigType(config_type)
+        return DauphinArrayConfigType(config_type)
     elif kind == ConfigTypeKind.NULLABLE:
         return DauphinNullableConfigType(config_type)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
@@ -32,8 +32,6 @@ def _ctor_kwargs(config_type):
         name=config_type.name,
         description=config_type.description,
         is_builtin=config_type.type_attributes.is_builtin,
-        is_list=config_type.kind == ConfigTypeKind.ARRAY,
-        is_nullable=config_type.kind == ConfigTypeKind.NULLABLE,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
         is_system_generated=config_type.type_attributes.is_system_config,
         type_param_keys=[tp.key for tp in config_type.type_params]
@@ -77,8 +75,6 @@ This returns the keys for type parameters of any closed generic type,
 navigating the full schema client-side and not innerTypes.
     ''',
     )
-    is_nullable = dauphin.NonNull(dauphin.Boolean)
-    is_list = dauphin.NonNull(dauphin.Boolean)
     is_selector = dauphin.NonNull(dauphin.Boolean)
 
     is_builtin = dauphin.NonNull(
@@ -124,13 +120,13 @@ class DauphinWrappingConfigType(dauphin.Interface):
     of_type = dauphin.Field(dauphin.NonNull(DauphinConfigType))
 
 
-class DauphinListConfigType(dauphin.ObjectType):
+class DauphinArrayConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        super(DauphinListConfigType, self).__init__(**_ctor_kwargs(config_type))
+        super(DauphinArrayConfigType, self).__init__(**_ctor_kwargs(config_type))
 
     class Meta(object):
-        name = 'ListConfigType'
+        name = 'ArrayConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
     def resolve_of_type(self, _graphene_info):

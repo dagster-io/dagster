@@ -1,3 +1,15 @@
+type ArrayConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  name: String
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  isBuiltin: Boolean!
+  isSystemGenerated: Boolean!
+  ofType: ConfigType!
+}
+
 type CancelPipelineExecutionFailure {
   run: PipelineRun!
   message: String!
@@ -15,8 +27,6 @@ type CompositeConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
   isBuiltin: Boolean!
   isSystemGenerated: Boolean!
@@ -61,8 +71,6 @@ interface ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
   isBuiltin: Boolean!
   isSystemGenerated: Boolean!
@@ -114,8 +122,6 @@ type EnumConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
   isBuiltin: Boolean!
   isSystemGenerated: Boolean!
@@ -400,20 +406,6 @@ type LaunchPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-type ListConfigType implements ConfigType & WrappingConfigType {
-  key: String!
-  name: String
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
-  isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
-  ofType: ConfigType!
-}
-
 type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   key: String!
   name: String
@@ -525,8 +517,6 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
   isBuiltin: Boolean!
   isSystemGenerated: Boolean!
@@ -870,8 +860,6 @@ type RegularConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
   isBuiltin: Boolean!
   isSystemGenerated: Boolean!

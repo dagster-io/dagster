@@ -540,8 +540,6 @@ fragment configTypeFragment on ConfigType {
   key
   name
   description
-  isNullable
-  isList
   isSelector
   isBuiltin
   isSystemGenerated

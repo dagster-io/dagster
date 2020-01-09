@@ -32,7 +32,7 @@ interface CompositeTypeData extends CommonTypeData {
 }
 
 interface ListTypeData extends CommonTypeData {
-  __typename: "ListConfigType";
+  __typename: "ArrayConfigType";
   typeParamKeys: string[];
 }
 
@@ -103,7 +103,7 @@ function renderTypeRecursive(
       </>
     );
   }
-  if (type.__typename === "ListConfigType") {
+  if (type.__typename === "ArrayConfigType") {
     const ofTypeKey = type.typeParamKeys[0];
     return (
       <>

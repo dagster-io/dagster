@@ -11,8 +11,8 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_PipelineNotFoundE
   __typename: "PipelineNotFoundError" | "RuntimeTypeNotFoundError" | "PythonError";
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -20,7 +20,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -28,26 +28,26 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   configTypeKey: string;
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_fields {
@@ -58,8 +58,8 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   configTypeKey: string;
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -85,7 +85,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -98,10 +98,10 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_inputSchemaType_CompositeConfigType;
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -109,7 +109,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   typeParamKeys: string[];
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -117,26 +117,26 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   configTypeKey: string;
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
 }
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_fields {
@@ -147,8 +147,8 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   configTypeKey: string;
 }
 
-export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -174,7 +174,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   fields: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -187,7 +187,7 @@ export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeTyp
   recursiveConfigTypes: TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_EnumConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType;
+export type TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType = TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_ArrayConfigType | TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType_outputSchemaType_CompositeConfigType;
 
 export interface TypeExplorerContainerQuery_runtimeTypeOrError_RegularRuntimeType {
   __typename: "RegularRuntimeType";

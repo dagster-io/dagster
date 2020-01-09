@@ -12,12 +12,12 @@ export interface ExecutionSessionContainerEnvironmentSchemaFragment_PipelineNotF
 }
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_rootEnvironmentType {
-  __typename: "CompositeConfigType" | "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
 }
 
-export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType {
-  __typename: "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -59,7 +59,7 @@ export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentS
   fields: ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export type ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ListConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType;
+export type ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ArrayConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType;
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema {
   __typename: "EnvironmentSchema";
