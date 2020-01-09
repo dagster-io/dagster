@@ -106,6 +106,8 @@ class GithubResource:
             )
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
+        if installation_id is None:
+            installation_id = self.default_installation_id
         res = self.execute(
             query="""
             query get_repo_id($repo_name: String!, $repo_owner: String!) {
