@@ -3,7 +3,6 @@ import subprocess
 import uuid
 
 import click
-
 from celery.utils.nodenames import default_nodename, host_format
 
 from dagster import check, seven

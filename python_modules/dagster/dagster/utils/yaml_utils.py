@@ -1,10 +1,9 @@
 import glob
 
-
 from dagster import check
 
-from .merger import dict_merge
 from ..seven import yaml
+from .merger import dict_merge
 
 
 def load_yaml_from_globs(*globs):

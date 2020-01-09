@@ -6,9 +6,9 @@ import six
 
 from dagster import check, seven
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.seven import yaml
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
-from dagster.seven import yaml
 
 
 def construct_environment_yaml(preset_name, env, pipeline_name, module_name):

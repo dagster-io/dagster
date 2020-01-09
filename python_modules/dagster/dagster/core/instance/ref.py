@@ -1,7 +1,6 @@
 import os
 from collections import namedtuple
 
-
 from dagster import check
 from dagster.core.serdes import ConfigurableClassData, whitelist_for_serdes
 from dagster.seven import yaml

@@ -2,7 +2,6 @@ import os
 import uuid
 
 import pytest
-
 from dagster_spark import SparkSolidDefinition, SparkSolidError
 
 from dagster import PipelineDefinition, execute_pipeline
