@@ -16,7 +16,7 @@ def to_dauphin_config_type(config_type):
         return DauphinCompositeConfigType(config_type)
     elif kind == ConfigTypeKind.ARRAY:
         return DauphinArrayConfigType(config_type)
-    elif kind == ConfigTypeKind.NULLABLE:
+    elif kind == ConfigTypeKind.NONEABLE:
         return DauphinNullableConfigType(config_type)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
         return DauphinRegularConfigType(config_type)

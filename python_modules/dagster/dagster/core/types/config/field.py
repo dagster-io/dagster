@@ -1,17 +1,11 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import WrappingNullableType
 from dagster.utils.typing_api import is_typing_type
 
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind, Nullable
+from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 from .post_process import post_process_config
-
-
-def resolve_to_config_nullable(nullable_type):
-    check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Nullable(resolve_to_config_type(nullable_type.inner_type))
 
 
 def _is_config_type_class(obj):
@@ -113,8 +107,6 @@ def resolve_to_config_type(dagster_type):
         return ConfigAnyInstance
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, WrappingNullableType):
-        return resolve_to_config_nullable(dagster_type)
 
     # This means that this is an error and we are return False to a callsite
     # We do the error reporting there because those callsites have more context

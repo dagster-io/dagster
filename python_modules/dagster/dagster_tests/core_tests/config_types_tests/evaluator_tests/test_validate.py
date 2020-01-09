@@ -1,4 +1,4 @@
-from dagster import Field, Optional, PermissiveDict, ScalarUnion, Selector, Shape
+from dagster import Field, Noneable, PermissiveDict, ScalarUnion, Selector, Shape
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
@@ -405,9 +405,9 @@ def test_nullable_int():
     assert _validate(int, 0).success
     assert _validate(int, 1).success
 
-    assert _validate(Optional[int], None).success
-    assert _validate(Optional[int], 0).success
-    assert _validate(Optional[int], 1).success
+    assert _validate(Noneable(int), None).success
+    assert _validate(Noneable(int), 0).success
+    assert _validate(Noneable(int), 1).success
 
 
 def test_nullable_list():
@@ -418,21 +418,21 @@ def test_nullable_list():
     assert not _validate(list_of_ints, [None]).success
     assert _validate(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Optional[[int]]
+    nullable_list_of_ints = Noneable([int])
 
     assert _validate(nullable_list_of_ints, None).success
     assert _validate(nullable_list_of_ints, []).success
     assert not _validate(nullable_list_of_ints, [None]).success
     assert _validate(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = [Optional[int]]
+    list_of_nullable_ints = [Noneable(int)]
 
     assert not _validate(list_of_nullable_ints, None).success
     assert _validate(list_of_nullable_ints, []).success
     assert _validate(list_of_nullable_ints, [None]).success
     assert _validate(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Optional[[Optional[int]]]
+    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
 
     assert _validate(nullable_list_of_nullable_ints, None).success
     assert _validate(nullable_list_of_nullable_ints, []).success
@@ -448,21 +448,21 @@ def test_nullable_dict():
     assert not _validate(dict_with_int, {'int_field': None}).success
     assert _validate(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = Optional[Shape({'int_field': int})]
+    nullable_dict_with_int = Noneable(Shape({'int_field': int}))
 
     assert _validate(nullable_dict_with_int, None).success
     assert not _validate(nullable_dict_with_int, {}).success
     assert not _validate(nullable_dict_with_int, {'int_field': None}).success
     assert _validate(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = Shape({'int_field': Field(Optional[int])})
+    dict_with_nullable_int = Shape({'int_field': Field(Noneable(int))})
 
     assert not _validate(dict_with_nullable_int, None).success
     assert not _validate(dict_with_nullable_int, {}).success
     assert _validate(dict_with_nullable_int, {'int_field': None}).success
     assert _validate(dict_with_nullable_int, {'int_field': 1}).success
 
-    nullable_dict_with_nullable_int = Optional[Shape({'int_field': Field(Optional[int])})]
+    nullable_dict_with_nullable_int = Noneable(Shape({'int_field': Field(Noneable(int))}))
 
     assert _validate(nullable_dict_with_nullable_int, None).success
     assert not _validate(nullable_dict_with_nullable_int, {}).success

@@ -7,9 +7,8 @@ from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config.config_type import Array
-from dagster.core.types.config.config_type import Nullable as ConfigNullable
+from dagster.core.types.config.config_type import Noneable as ConfigNoneable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import WrappingNullableType
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
@@ -400,13 +399,13 @@ def define_python_dagster_type(
     )
 
 
-class NullableInputSchema(InputHydrationConfig):
+class NoneableInputSchema(InputHydrationConfig):
     def __init__(self, inner_runtime_type):
         self._inner_runtime_type = check.inst_param(
             inner_runtime_type, 'inner_runtime_type', RuntimeType
         )
         check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
-        self._schema_type = ConfigNullable(inner_runtime_type.input_hydration_config.schema_type)
+        self._schema_type = ConfigNoneable(inner_runtime_type.input_hydration_config.schema_type)
 
     @property
     def schema_type(self):
@@ -424,14 +423,21 @@ def _create_nullable_input_schema(inner_type):
     if not inner_type.input_hydration_config:
         return None
 
-    return NullableInputSchema(inner_type)
+    return NoneableInputSchema(inner_type)
 
 
-class NullableType(RuntimeType):
+class OptionalType(RuntimeType):
     def __init__(self, inner_type):
+        inner_type = resolve_to_runtime_type(inner_type)
+
+        if inner_type is Nothing:
+            raise DagsterInvalidDefinitionError(
+                'Type Nothing can not be wrapped in List or Optional'
+            )
+
         key = 'Optional.' + inner_type.key
         self.inner_type = inner_type
-        super(NullableType, self).__init__(
+        super(OptionalType, self).__init__(
             key=key,
             name=None,
             type_check_fn=self.type_check_method,
@@ -514,11 +520,6 @@ class ListType(RuntimeType):
     @property
     def inner_types(self):
         return [self.inner_type] + self.inner_type.inner_types
-
-
-def Optional(inner_type):
-    check.inst_param(inner_type, 'inner_type', RuntimeType)
-    return NullableType(inner_type)
 
 
 class DagsterListApi:
@@ -709,9 +710,6 @@ def resolve_to_runtime_type(dagster_type):
         return List(Any)
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, WrappingNullableType):
-        return resolve_to_runtime_nullable(dagster_type)
-
     if not isinstance(dagster_type, type):
         raise DagsterInvalidDefinitionError(
             DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
@@ -727,11 +725,6 @@ def resolve_to_runtime_type(dagster_type):
     return create_anonymous_type(dagster_type)
 
 
-def resolve_to_runtime_nullable(nullable_type):
-    check.inst_param(nullable_type, 'nullable_type', WrappingNullableType)
-    return Optional(resolve_to_runtime_type(nullable_type.inner_type))
-
-
 ALL_RUNTIME_BUILTINS = set(_RUNTIME_MAP.values())
 
 
@@ -742,3 +735,12 @@ def construct_runtime_type_dictionary(solid_defs):
             type_dict[runtime_type.name] = runtime_type
 
     return type_dict
+
+
+class DagsterOptionalApi:
+    def __getitem__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return OptionalType(inner_type)
+
+
+Optional = DagsterOptionalApi()

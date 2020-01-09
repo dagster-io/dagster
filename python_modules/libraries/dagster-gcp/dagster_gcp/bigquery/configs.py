@@ -88,7 +88,7 @@ def _define_shared_fields():
                 String,
                 description='''If set, the table is partitioned by this field. If not set, the
                     table is partitioned by pseudo column _PARTITIONTIME. The field must be a
-                    top-level TIMESTAMP or DATE field. Its mode must be NULLABLE or REQUIRED.''',
+                    top-level TIMESTAMP or DATE field. Its mode must be NONEABLE or REQUIRED.''',
                 is_optional=True,
             ),
             'require_partition_filter': Field(

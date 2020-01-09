@@ -12,7 +12,7 @@ from dagster import (
     Int,
     List,
     ModeDefinition,
-    Optional,
+    Noneable,
     PermissiveDict,
     PipelineDefinition,
     ResourceDefinition,
@@ -760,7 +760,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config=Optional[Int])
+    @solid(config=Noneable(int))
     def good_error_handling(_context):
         pass
 

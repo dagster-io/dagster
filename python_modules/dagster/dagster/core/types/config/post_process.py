@@ -19,7 +19,7 @@ def post_process_config(config_type, config_value):
         return post_process_dict_config(config_type, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return post_process_list_config(config_type, config_value)
-    elif kind == ConfigTypeKind.NULLABLE:
+    elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return None
         return post_process_config(config_type.inner_type, config_value)
@@ -96,7 +96,7 @@ def post_process_list_config(list_type, config_value):
     if not config_value:
         return []
 
-    if list_type.inner_type.kind != ConfigTypeKind.NULLABLE:
+    if list_type.inner_type.kind != ConfigTypeKind.NONEABLE:
         if any((cv is None for cv in config_value)):
             check.failed('Null list member not caught in validation')
 

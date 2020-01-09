@@ -1,5 +1,4 @@
 from .builtin_enum import BuiltinEnum
-from .wrapping import Optional
 
 Any = BuiltinEnum.ANY
 String = BuiltinEnum.STRING

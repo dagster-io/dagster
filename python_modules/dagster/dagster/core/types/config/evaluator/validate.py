@@ -67,7 +67,7 @@ def _validate_config(context, config_value):
 
     kind = context.config_type.kind
 
-    if kind == ConfigTypeKind.NULLABLE:
+    if kind == ConfigTypeKind.NONEABLE:
         return (
             EvaluateValueResult.for_value(None)
             if config_value is None

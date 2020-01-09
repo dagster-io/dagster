@@ -23,7 +23,7 @@ from dagster import (
     Int,
     Materialization,
     ModeDefinition,
-    Optional,
+    Noneable,
     Output,
     OutputDefinition,
     Path,
@@ -264,7 +264,7 @@ def more_complicated_nested_config():
             'nested_field': {
                 'field_four_str': String,
                 'field_five_int': Int,
-                'field_six_nullable_int_list': Field([Optional[Int]], is_optional=True),
+                'field_six_nullable_int_list': Field([Noneable(int)], is_optional=True),
             },
         },
     )

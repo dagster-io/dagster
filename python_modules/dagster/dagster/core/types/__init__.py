@@ -1,4 +1,4 @@
-from .wrapping import Any, Bool, Float, Int, Nothing, Optional, Path, String
+from .wrapping import Any, Bool, Float, Int, Nothing, Path, String
 
 # What sort of witchcraft is this?
 
