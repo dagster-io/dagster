@@ -12,7 +12,7 @@ class GithubResource:
         self.app_id = app_id
         self.default_installation_id = default_installation_id
         self.installation_tokens = {}
-        self.set_app_token()
+        self.app_token = {}
 
     def set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
@@ -41,7 +41,7 @@ class GithubResource:
         }
 
     def check_app_token(self):
-        if self.app_token["expires"] > (int(time.time()) - 60):
+        if (("expires" not in self.app_token) or (self.app_token["expires"] > (int(time.time()) - 60))):
             self.set_app_token()
 
     def get_installations(self, headers={}):
