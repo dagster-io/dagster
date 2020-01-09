@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.builtins import BuiltinEnum
 from dagster.utils.typing_api import is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
@@ -95,7 +95,7 @@ def resolve_to_config_type(dagster_type):
     #  2) We have been passed an invalid thing. We return False to signify this. It is
     #     up to callers to report a reasonable error.
 
-    from dagster.core.types.wrapping.mapping import (
+    from dagster.core.types.primitive_mapping import (
         remap_python_builtin_for_config,
         is_supported_config_python_builtin,
     )

@@ -1,12 +1,13 @@
 from dagster import check
-from dagster.core.types.config.config_type import Array
-from dagster.core.types.config.config_type import ConfigAnyInstance as ConfigAny
-from dagster.core.types.runtime.python_dict import PythonDict
-from dagster.core.types.runtime.python_set import PythonSet
-from dagster.core.types.runtime.python_tuple import PythonTuple
-from dagster.core.types.runtime.runtime_type import Any as RuntimeAny
-from dagster.core.types.runtime.runtime_type import List
-from dagster.core.types.wrapping import Bool, Float, Int, String
+
+from .builtins import Bool, Float, Int, String
+from .config.config_type import Array
+from .config.config_type import ConfigAnyInstance as ConfigAny
+from .runtime.python_dict import PythonDict
+from .runtime.python_set import PythonSet
+from .runtime.python_tuple import PythonTuple
+from .runtime.runtime_type import Any as RuntimeAny
+from .runtime.runtime_type import List
 
 SUPPORTED_RUNTIME_BUILTINS = {
     int: Int,
@@ -53,7 +54,7 @@ def remap_python_builtin_for_config(ttype):
     remapped.
     '''
 
-    from dagster.core.types.config.field import resolve_to_config_type
+    from .config.field import resolve_to_config_type
 
     check.param_invariant(is_supported_config_python_builtin(ttype), 'ttype')
 

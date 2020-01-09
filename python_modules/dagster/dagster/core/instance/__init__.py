@@ -14,7 +14,6 @@ from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types import String
 from dagster.core.types.config import Field, PermissiveDict
 from dagster.utils.yaml_utils import load_yaml_from_globs
 

@@ -6,9 +6,9 @@ from dagster import check
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.type_storage import TypeStoragePlugin
+from dagster.core.types.builtins import BuiltinEnum
 from dagster.core.types.config.config_type import Array
 from dagster.core.types.config.config_type import Noneable as ConfigNoneable
-from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
@@ -650,12 +650,12 @@ def resolve_to_runtime_type(dagster_type):
     from .python_dict import PythonDict, Dict
     from .python_set import PythonSet, DagsterSetApi
     from .python_tuple import PythonTuple, DagsterTupleApi
+    from .transform_typing import transform_typing_type
     from dagster.core.types.config.config_type import ConfigType
-    from dagster.core.types.wrapping.mapping import (
+    from dagster.core.types.primitive_mapping import (
         remap_python_builtin_for_runtime,
         is_supported_runtime_python_builtin,
     )
-    from dagster.core.types.wrapping.wrapping import transform_typing_type
     from dagster.utils.typing_api import is_typing_type
 
     check.invariant(
@@ -669,7 +669,6 @@ def resolve_to_runtime_type(dagster_type):
     )
 
     # First check to see if it part of python's typing library
-    # Transform to our wrapping type system.
     if is_typing_type(dagster_type):
         dagster_type = transform_typing_type(dagster_type)
 
