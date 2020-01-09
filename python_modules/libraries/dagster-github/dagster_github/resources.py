@@ -14,7 +14,7 @@ class GithubResource:
         self.installation_tokens = {}
         self.app_token = {}
 
-    def set_app_token(self):
+    def __set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
         # needing to self-sign a JWT
         now = int(time.time())
@@ -40,12 +40,12 @@ class GithubResource:
             "expires": expires,
         }
 
-    def check_app_token(self):
+    def __check_app_token(self):
         if (("expires" not in self.app_token) or (self.app_token["expires"] > (int(time.time()) - 60))):
-            self.set_app_token()
+            self.__set_app_token()
 
     def get_installations(self, headers={}):
-        self.check_app_token()
+        self.__check_app_token()
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get(
@@ -60,8 +60,8 @@ class GithubResource:
                 )
             )
 
-    def set_installation_token(self, installation_id, headers={}):
-        self.check_app_token()
+    def __set_installation_token(self, installation_id, headers={}):
+        self.__check_app_token()
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = requests.post(
@@ -81,15 +81,15 @@ class GithubResource:
                 )
             )
 
-    def check_installation_tokens(self, installation_id):
+    def __check_installation_tokens(self, installation_id):
         if ((installation_id not in self.installation_tokens) or
         (self.installation_tokens[installation_id]["expires"] > (int(time.time()) - 60))):
-            self.set_installation_token(installation_id)
+            self.__set_installation_token(installation_id)
 
     def execute(self, query, variables, headers={}, installation_id=None):
         if installation_id is None:
             installation_id = self.default_installation_id
-        self.check_installation_tokens(installation_id)
+        self.__check_installation_tokens(installation_id)
         headers["Authorization"] = "token {}".format(self.installation_tokens[installation_id]["value"])
         request = requests.post(
             "https://api.github.com/graphql",
@@ -153,10 +153,10 @@ class GithubResource:
             String,
             description="Github Application Private RSA key text, for more info see https://developer.github.com/apps/",
         ),
-        "default_github_installation_id": Field(
+        "github_installation_id": Field(
             Int,
             is_optional=True,
-            description="Default Github Application Installation ID, for more info see https://developer.github.com/apps/",
+            description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
         )
     },
     description='This resource is for connecting to Github',
@@ -166,5 +166,5 @@ def github_resource(context):
         client=requests.Session(),
         app_id=context.resource_config["github_app_id"],
         app_private_rsa_key=context.resource_config["github_app_private_rsa_key"],
-        default_installation_id=context.resource_config["default_github_installation_id"],
+        default_installation_id=context.resource_config["github_installation_id"],
     )
