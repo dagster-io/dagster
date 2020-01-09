@@ -1,4 +1,4 @@
-from dagster import List, Optional
+from dagster import Optional
 from dagster.core.types.config import Dict, Field, PermissiveDict, ScalarUnion, Selector
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.stack import (
@@ -325,46 +325,42 @@ def test_selector_within_dict_no_subfields():
 
 
 def test_evaluate_list_string():
-    string_list = List[str]
-    result = _validate(string_list, ["foo"])
+    result = _validate([str], ["foo"])
     assert result.success
     assert result.value == ["foo"]
 
 
 def test_evaluate_list_error_item_mismatch():
-    string_list = List[str]
-    result = _validate(string_list, [1])
+    result = _validate([str], [1])
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_list_error_top_level_mismatch():
-    string_list = List[str]
-    result = _validate(string_list, 1)
+    result = _validate([str], 1)
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_double_list():
-    string_double_list = List[List[str]]
-    result = _validate(string_double_list, [['foo']])
+    result = _validate([[str]], [['foo']])
     assert result.success
     assert result.value == [['foo']]
 
 
 def test_config_list_in_dict():
-    nested_list = Dict({'nested_list': Field(List[int])})
+    nested_list_type = {'nested_list': [int]}
 
     value = {'nested_list': [1, 2, 3]}
-    result = _validate(nested_list, value)
+    result = _validate(nested_list_type, value)
     assert result.success
     assert result.value == value
 
 
 def test_config_list_in_dict_error():
-    nested_list = Dict({'nested_list': Field(List[int])})
+    nested_list = {'nested_list': [int]}
 
     value = {'nested_list': [1, 'bar', 3]}
     result = _validate(nested_list, value)
@@ -382,7 +378,7 @@ def test_config_list_in_dict_error():
 
 
 def test_config_double_list():
-    nested_lists = Dict({'nested_list_one': Field(List[int]), 'nested_list_two': Field(List[str])})
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
 
@@ -397,9 +393,7 @@ def test_config_double_list():
 
 
 def test_config_double_list_double_error():
-    nested_lists = Dict(
-        fields={'nested_list_one': Field(List[int]), 'nested_list_two': Field(List[str])}
-    )
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
     error_result = _validate(nested_lists, error_value)
@@ -418,28 +412,28 @@ def test_nullable_int():
 
 
 def test_nullable_list():
-    list_of_ints = List[int]
+    list_of_ints = [int]
 
     assert not _validate(list_of_ints, None).success
     assert _validate(list_of_ints, []).success
     assert not _validate(list_of_ints, [None]).success
     assert _validate(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Optional[List[int]]
+    nullable_list_of_ints = Optional[[int]]
 
     assert _validate(nullable_list_of_ints, None).success
     assert _validate(nullable_list_of_ints, []).success
     assert not _validate(nullable_list_of_ints, [None]).success
     assert _validate(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = List[Optional[int]]
+    list_of_nullable_ints = [Optional[int]]
 
     assert not _validate(list_of_nullable_ints, None).success
     assert _validate(list_of_nullable_ints, []).success
     assert _validate(list_of_nullable_ints, [None]).success
     assert _validate(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Optional[List[Optional[int]]]
+    nullable_list_of_nullable_ints = Optional[[Optional[int]]]
 
     assert _validate(nullable_list_of_nullable_ints, None).success
     assert _validate(nullable_list_of_nullable_ints, []).success
@@ -531,7 +525,7 @@ def test_scalar_or_selector():
 
 def test_scalar_or_list():
     int_or_list = ScalarUnion(
-        scalar_type=resolve_to_config_type(int), non_scalar_type=resolve_to_config_type(List[str])
+        scalar_type=resolve_to_config_type(int), non_scalar_type=resolve_to_config_type([str])
     )
 
     assert validate_config(int_or_list, 2).success
@@ -546,7 +540,7 @@ def test_scalar_or_list():
 
 def test_list_of_scalar_or_dict():
     int_or_dict_list = resolve_to_config_type(
-        List[
+        [
             ScalarUnion(
                 scalar_type=resolve_to_config_type(int), non_scalar_type=Dict({'a_string': str})
             )

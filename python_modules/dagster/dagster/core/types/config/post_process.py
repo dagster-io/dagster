@@ -17,7 +17,7 @@ def post_process_config(config_type, config_value):
         return post_process_config_to_selector(config_type, config_value)
     elif ConfigTypeKind.is_dict(kind):
         return post_process_dict_config(config_type, config_value)
-    elif kind == ConfigTypeKind.LIST:
+    elif kind == ConfigTypeKind.ARRAY:
         return post_process_list_config(config_type, config_value)
     elif kind == ConfigTypeKind.NULLABLE:
         if config_value is None:
@@ -91,7 +91,7 @@ def post_process_dict_config(dict_type, config_value):
 
 
 def post_process_list_config(list_type, config_value):
-    check.param_invariant(list_type.kind == ConfigTypeKind.LIST, 'list_type')
+    check.param_invariant(list_type.kind == ConfigTypeKind.ARRAY, 'list_type')
 
     if not config_value:
         return []

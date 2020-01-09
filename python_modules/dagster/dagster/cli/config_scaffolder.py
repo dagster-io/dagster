@@ -45,7 +45,7 @@ def scaffold_type(config_type, skip_optional=True):
         defaults = {'String': '', 'Path': 'path/to/something', 'Int': 0, 'Bool': True}
 
         return defaults[config_type.name]
-    elif config_type.kind == ConfigTypeKind.LIST:
+    elif config_type.kind == ConfigTypeKind.ARRAY:
         return []
     elif config_type.kind == ConfigTypeKind.ENUM:
         return '|'.join(sorted(map(lambda v: v.config_value, config_type.enum_values)))

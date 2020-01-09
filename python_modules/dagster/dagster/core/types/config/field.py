@@ -1,25 +1,12 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import (
-    DagsterListApi,
-    WrappingListType,
-    WrappingNullableType,
-)
+from dagster.core.types.wrapping.wrapping import WrappingNullableType
 from dagster.utils.typing_api import is_typing_type
 
-from .config_type import ConfigAnyInstance, ConfigType, ConfigTypeKind, List, Nullable
+from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind, Nullable
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 from .post_process import post_process_config
-
-
-def resolve_to_config_list(list_type):
-    check.inst_param(list_type, 'list_type', (WrappingListType, DagsterListApi))
-
-    if isinstance(list_type, DagsterListApi):
-        return List(resolve_to_config_type(BuiltinEnum.ANY))
-
-    return List(resolve_to_config_type(list_type.inner_type))
 
 
 def resolve_to_config_nullable(nullable_type):
@@ -29,6 +16,10 @@ def resolve_to_config_nullable(nullable_type):
 
 def _is_config_type_class(obj):
     return isinstance(obj, type) and issubclass(obj, ConfigType)
+
+
+def helpful_list_error_string():
+    return 'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
 
 
 def resolve_to_config_type(dagster_type):
@@ -43,21 +34,19 @@ def resolve_to_config_type(dagster_type):
 
     if isinstance(dagster_type, list):
         if len(dagster_type) != 1:
-            raise DagsterInvalidDefinitionError('List specifications must only be of length 1')
+            raise DagsterInvalidDefinitionError('Array specifications must only be of length 1')
 
         inner_type = resolve_to_config_type(dagster_type[0])
 
         if not inner_type:
             raise DagsterInvalidDefinitionError(
-                (
-                    'Invalid member of list specification: {value} in list {the_list}. '
-                    'List specifications must only be of length 1 i.e. [str]'
-                ).format(value=repr(dagster_type[0]), the_list=dagster_type)
+                'Invalid member of array specification: {value} in list {the_list}'.format(
+                    value=repr(dagster_type[0]), the_list=dagster_type
+                )
             )
+        return Array(inner_type)
 
-        return List(inner_type)
-
-    from dagster.core.types.runtime.runtime_type import RuntimeType
+    from dagster.core.types.runtime.runtime_type import RuntimeType, List, ListType
     from dagster.core.types.runtime.python_set import Set, _TypedPythonSet
     from dagster.core.types.runtime.python_tuple import Tuple, _TypedPythonTuple
 
@@ -85,15 +74,25 @@ def resolve_to_config_type(dagster_type):
             ).format(dagster_type=dagster_type)
         )
 
+    if dagster_type is List or isinstance(dagster_type, ListType):
+        raise DagsterInvalidDefinitionError(
+            'Cannot use List in the context of a config file. ' + helpful_list_error_string()
+        )
+
     if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
         raise DagsterInvalidDefinitionError(
-            'Cannot use Set in the context of a config field. Please use List instead.'
+            'Cannot use Set in the context of a config field. ' + helpful_list_error_string()
         )
 
     if dagster_type is Tuple or isinstance(dagster_type, _TypedPythonTuple):
         raise DagsterInvalidDefinitionError(
-            'Cannot use Tuple in the context of a config field. Please use List instead.'
+            'Cannot use Tuple in the context of a config field. ' + helpful_list_error_string()
         )
+
+    check.invariant(
+        not (isinstance(dagster_type, RuntimeType)),
+        'Cannot resolve a runtime type to a config type',
+    )
 
     # If we are passed here either:
     #  1) We have been passed a python builtin
@@ -114,8 +113,6 @@ def resolve_to_config_type(dagster_type):
         return ConfigAnyInstance
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, (WrappingListType, DagsterListApi)):
-        return resolve_to_config_list(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_config_nullable(dagster_type)
 

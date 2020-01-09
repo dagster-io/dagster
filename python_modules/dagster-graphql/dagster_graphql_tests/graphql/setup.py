@@ -21,7 +21,6 @@ from dagster import (
     Field,
     InputDefinition,
     Int,
-    List,
     Materialization,
     ModeDefinition,
     Optional,
@@ -265,7 +264,7 @@ def more_complicated_nested_config():
             'nested_field': {
                 'field_four_str': String,
                 'field_five_int': Int,
-                'field_six_nullable_int_list': Field(List[Optional[Int]], is_optional=True),
+                'field_six_nullable_int_list': Field([Optional[Int]], is_optional=True),
             },
         },
     )
@@ -317,7 +316,7 @@ def csv_hello_world_two():
     return sum_solid()
 
 
-@solid(name='solid_with_list', input_defs=[], output_defs=[], config=Field(List[Int]))
+@solid(name='solid_with_list', input_defs=[], output_defs=[], config=[int])
 def solid_def(_):
     return None
 

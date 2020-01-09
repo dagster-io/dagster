@@ -8,7 +8,7 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String
+from dagster import Bool, Dict, Field, Int, PermissiveDict, String
 
 from .types_dataproc_cluster import Component
 
@@ -21,7 +21,7 @@ def define_dataproc_cluster_config():
                     Dict(
                         fields={
                             'accelerators': Field(
-                                List[
+                                [
                                     Dict(
                                         fields={
                                             'acceleratorCount': Field(
@@ -132,7 +132,7 @@ def define_dataproc_cluster_config():
                     Dict(
                         fields={
                             'accelerators': Field(
-                                List[
+                                [
                                     Dict(
                                         fields={
                                             'acceleratorCount': Field(
@@ -371,7 +371,7 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'initializationActions': Field(
-                    List[
+                    [
                         Dict(
                             fields={
                                 'executionTimeout': Field(
@@ -415,7 +415,7 @@ def define_dataproc_cluster_config():
                     Dict(
                         fields={
                             'accelerators': Field(
-                                List[
+                                [
                                     Dict(
                                         fields={
                                             'acceleratorCount': Field(
@@ -568,7 +568,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'serviceAccountScopes': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. The URIs of service account scopes to be
                                 included in Compute Engine instances. The following base set of
                                 scopes is always included:
@@ -583,7 +583,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'tags': Field(
-                                List[String],
+                                [String],
                                 description='''The Compute Engine tags to add to all instances (see
                                 Tagging instances).''',
                                 is_optional=True,
@@ -630,7 +630,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'optionalComponents': Field(
-                                List[Component],
+                                [Component],
                                 description='''The set of optional components to activate on the
                                 cluster.''',
                                 is_optional=True,

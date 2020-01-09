@@ -1,4 +1,4 @@
-from dagster import Bool, Dict, Field, Float, Int, List, PermissiveDict, String
+from dagster import Bool, Dict, Field, Float, Int, PermissiveDict, String
 
 from .types import (
     EbsVolumeType,
@@ -18,7 +18,7 @@ from .types import (
 
 def _define_configurations():
     return Field(
-        List[
+        [
             Dict(
                 fields={
                     'Classification': Field(
@@ -27,7 +27,7 @@ def _define_configurations():
                         is_optional=True,
                     ),
                     'Configurations': Field(
-                        List[PermissiveDict()],
+                        [PermissiveDict()],
                         description='''A list of additional configurations to apply within a
                                 configuration object.''',
                         is_optional=True,
@@ -69,7 +69,7 @@ def _define_steps():
         Dict(
             fields={
                 'Properties': Field(
-                    List[Dict(fields={'Key': Field(String), 'Value': Field(String)})],
+                    [Dict(fields={'Key': Field(String), 'Value': Field(String)})],
                     description='''A list of Java properties that are set when the step runs. You
                     can use these properties to pass key value pairs to your main function.''',
                     is_optional=True,
@@ -86,7 +86,7 @@ def _define_steps():
                     is_optional=True,
                 ),
                 'Args': Field(
-                    List[String],
+                    [String],
                     description='''A list of command line arguments passed to the JAR file's main
                     function when executed.''',
                     is_optional=True,
@@ -97,7 +97,7 @@ def _define_steps():
     )
 
     return Field(
-        List[
+        [
             Dict(
                 fields={
                     'Name': name,
@@ -121,7 +121,7 @@ def _define_bootstrap_actions():
     )
 
     args = Field(
-        List[String],
+        [String],
         description='A list of command line arguments to pass to the bootstrap action script.',
         is_optional=True,
     )
@@ -138,7 +138,7 @@ def _define_bootstrap_actions():
     )
 
     return Field(
-        List[bootstrap_action],
+        [bootstrap_action],
         description='''A list of bootstrap actions to run before Hadoop starts on the cluster
         nodes.''',
         is_optional=True,
@@ -185,7 +185,7 @@ def _define_ebs_configuration():
         Dict(
             fields={
                 'EbsBlockDeviceConfigs': Field(
-                    List[
+                    [
                         Dict(
                             fields={
                                 'VolumeSpecification': volume_specification,
@@ -271,7 +271,7 @@ def _define_auto_scaling_policy():
     )
 
     dimensions = Field(
-        List[
+        [
             Dict(
                 fields={
                     'Key': Field(String, description='The dimension name.', is_optional=False),
@@ -386,7 +386,7 @@ def _define_auto_scaling_policy():
                     is_optional=False,
                 ),
                 'Rules': Field(
-                    List[
+                    [
                         Dict(
                             fields={
                                 'Name': Field(
@@ -425,7 +425,7 @@ def _define_auto_scaling_policy():
 
 def _define_instance_groups():
     return Field(
-        List[
+        [
             Dict(
                 fields={
                     'Name': Field(
@@ -519,7 +519,7 @@ def _define_instance_fleets():
     )
 
     instance_type_configs = Field(
-        List[
+        [
             Dict(
                 fields={
                     'InstanceType': Field(
@@ -616,7 +616,7 @@ def _define_instance_fleets():
     )
 
     return Field(
-        List[
+        [
             Dict(
                 fields={
                     'Name': Field(
@@ -709,7 +709,7 @@ def define_emr_run_job_flow_config():
                                 is_optional=True,
                             ),
                             'AvailabilityZones': Field(
-                                List[String],
+                                [String],
                                 description='''When multiple Availability Zones are specified,
                                 Amazon EMR evaluates them and launches instances in the optimal
                                 Availability Zone. AvailabilityZones is used for instance fleets,
@@ -760,7 +760,7 @@ def define_emr_run_job_flow_config():
                     is_optional=True,
                 ),
                 'Ec2SubnetIds': Field(
-                    List[String],
+                    [String],
                     description='''Applies to clusters that use the instance fleet configuration.
                     When multiple EC2 subnet IDs are specified, Amazon EMR evaluates them and
                     launches instances in the optimal subnet.''',
@@ -785,13 +785,13 @@ def define_emr_run_job_flow_config():
                     is_optional=True,
                 ),
                 'AdditionalMasterSecurityGroups': Field(
-                    List[String],
+                    [String],
                     description='''A list of additional Amazon EC2 security group IDs for the master
                     node.''',
                     is_optional=True,
                 ),
                 'AdditionalSlaveSecurityGroups': Field(
-                    List[String],
+                    [String],
                     description='''A list of additional Amazon EC2 security group IDs for the core
                     and task nodes.''',
                     is_optional=True,
@@ -803,7 +803,7 @@ def define_emr_run_job_flow_config():
     )
 
     supported_products = Field(
-        List[EmrSupportedProducts],
+        [EmrSupportedProducts],
         description='''A list of strings that indicates third-party software to use. For
                     more information, see the Amazon EMR Developer Guide. Currently supported
                     values are:
@@ -814,11 +814,11 @@ def define_emr_run_job_flow_config():
     )
 
     new_supported_products = Field(
-        List[
+        [
             Dict(
                 fields={
                     'Name': Field(String, is_optional=False),
-                    'Args': Field(List[String], description='The list of user-supplied arguments.'),
+                    'Args': Field([String], description='The list of user-supplied arguments.'),
                 }
             )
         ],
@@ -846,7 +846,7 @@ def define_emr_run_job_flow_config():
     )
 
     applications = Field(
-        List[
+        [
             Dict(
                 fields={
                     'Name': Field(
@@ -856,7 +856,7 @@ def define_emr_run_job_flow_config():
                         String, description='The version of the application.', is_optional=True
                     ),
                     'Args': Field(
-                        List[String],
+                        [String],
                         description='Arguments for Amazon EMR to pass to the application.',
                         is_optional=True,
                     ),
@@ -915,7 +915,7 @@ def define_emr_run_job_flow_config():
     )
 
     tags = Field(
-        List[
+        [
             Dict(
                 fields={
                     'Key': Field(

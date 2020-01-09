@@ -1,4 +1,4 @@
-from dagster import Field, List, PermissiveDict, String
+from dagster import Field, PermissiveDict, String
 from dagster.core.definitions.executor import executor
 
 from .config import CeleryConfig
@@ -23,7 +23,7 @@ from .config import CeleryConfig
             description='The URL of the Celery results backend. Default: \'rpc://\'.',
         ),
         'include': Field(
-            List[String], is_optional=True, description='List of modules every worker should import'
+            [str], is_optional=True, description='List of modules every worker should import'
         ),
         'config_source': Field(
             PermissiveDict(), is_optional=True, description='Settings for the Celery app.'

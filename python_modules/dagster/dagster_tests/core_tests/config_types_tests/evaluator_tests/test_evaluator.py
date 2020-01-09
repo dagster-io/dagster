@@ -1,4 +1,4 @@
-from dagster import Any, Bool, Dict, Field, Int, List, Optional, String
+from dagster import Any, Bool, Dict, Field, Int, Optional, String
 from dagster.core.types.config import Selector
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.evaluate_value_result import EvaluateValueResult
@@ -366,22 +366,21 @@ def test_selector_with_defaults():
 
 
 def test_evaluate_list_string():
-    string_list = List[String]
+    string_list = [str]
     result = eval_config_value_from_dagster_type(string_list, ["foo"])
     assert result.success
     assert result.value == ["foo"]
 
 
 def test_evaluate_list_error_item_mismatch():
-    string_list = List[String]
-    result = eval_config_value_from_dagster_type(string_list, [1])
+    result = eval_config_value_from_dagster_type([str], [1])
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_list_error_top_level_mismatch():
-    string_list = List[String]
+    string_list = [str]
     result = eval_config_value_from_dagster_type(string_list, 1)
     assert not result.success
     assert len(result.errors) == 1
@@ -389,14 +388,14 @@ def test_evaluate_list_error_top_level_mismatch():
 
 
 def test_evaluate_double_list():
-    string_double_list = List[List[String]]
+    string_double_list = [[str]]
     result = eval_config_value_from_dagster_type(string_double_list, [['foo']])
     assert result.success
     assert result.value == [['foo']]
 
 
 def test_config_list_in_dict():
-    nested_list = Dict({'nested_list': Field(List[Int])})
+    nested_list = {'nested_list': [int]}
 
     value = {'nested_list': [1, 2, 3]}
     result = eval_config_value_from_dagster_type(nested_list, value)
@@ -405,7 +404,7 @@ def test_config_list_in_dict():
 
 
 def test_config_list_in_dict_error():
-    nested_list = Dict({'nested_list': Field(List[Int])})
+    nested_list = {'nested_list': [int]}
 
     value = {'nested_list': [1, 'bar', 3]}
     result = eval_config_value_from_dagster_type(nested_list, value)
@@ -423,9 +422,7 @@ def test_config_list_in_dict_error():
 
 
 def test_config_double_list():
-    nested_lists = Dict(
-        {'nested_list_one': Field(List[Int]), 'nested_list_two': Field(List[String])}
-    )
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
 
@@ -440,9 +437,7 @@ def test_config_double_list():
 
 
 def test_config_double_list_double_error():
-    nested_lists = Dict(
-        fields={'nested_list_one': Field(List[Int]), 'nested_list_two': Field(List[String])}
-    )
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
     error_result = eval_config_value_from_dagster_type(nested_lists, error_value)
@@ -461,28 +456,28 @@ def test_nullable_int():
 
 
 def test_nullable_list():
-    list_of_ints = List[Int]
+    list_of_ints = [int]
 
     assert not eval_config_value_from_dagster_type(list_of_ints, None).success
     assert eval_config_value_from_dagster_type(list_of_ints, []).success
     assert not eval_config_value_from_dagster_type(list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Optional[List[Int]]
+    nullable_list_of_ints = Optional[[int]]
 
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, []).success
     assert not eval_config_value_from_dagster_type(nullable_list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = List[Optional[Int]]
+    list_of_nullable_ints = [Optional[int]]
 
     assert not eval_config_value_from_dagster_type(list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, []).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Optional[List[Optional[Int]]]
+    nullable_list_of_nullable_ints = Optional[[Optional[Int]]]
 
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, []).success

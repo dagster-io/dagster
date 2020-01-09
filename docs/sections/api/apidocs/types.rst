@@ -276,7 +276,7 @@ Built-in types
         def concat_list_py2(_, xs) -> String:
             return ''.join(xs)
 
-        @solid(config=Field(List[String]))
+        @solid(config=[str])
         def concat_config(context) -> String:
             return ''.join(context.solid_config)
 

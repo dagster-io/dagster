@@ -25,13 +25,13 @@ class ConfigTypeKind(PythonEnum):
         return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_dict(kind)
 
     # Closed generic types
-    LIST = 'LIST'
+    ARRAY = 'ARRAY'
     NULLABLE = 'NULLABLE'
 
     @staticmethod
     def is_closed_generic(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.LIST or kind == ConfigTypeKind.NULLABLE
+        return kind == ConfigTypeKind.ARRAY or kind == ConfigTypeKind.NULLABLE
 
     @staticmethod
     def is_dict(kind):
@@ -197,15 +197,17 @@ class Nullable(ConfigType):
         return [self.inner_type] + self.inner_type.recursive_config_types
 
 
-class List(ConfigType):
+class Array(ConfigType):
     def __init__(self, inner_type):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(List, self).__init__(
-            key='List.{inner_type}'.format(inner_type=inner_type.key),
-            name='List[{inner_name}]'.format(inner_name=inner_type.name),
+        from .field import resolve_to_config_type
+
+        self.inner_type = resolve_to_config_type(inner_type)
+        super(Array, self).__init__(
+            key='Array.{inner_type}'.format(inner_type=self.inner_type.key),
+            name='Array[{inner_name}]'.format(inner_name=self.inner_type.name),
             type_attributes=ConfigTypeAttributes(is_builtin=True),
-            type_params=[inner_type],
-            kind=ConfigTypeKind.LIST,
+            type_params=[self.inner_type],
+            kind=ConfigTypeKind.ARRAY,
         )
 
     @property

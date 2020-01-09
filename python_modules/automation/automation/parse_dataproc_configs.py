@@ -72,7 +72,7 @@ class Field(object):
             printer.append(self.fields.name)
         # Lists
         elif isinstance(self.fields, List):
-            printer.append('List[')
+            printer.append('[')
             self.fields.inner_type.write(printer, field_wrapped=False)
             printer.append(']')
         # Dicts
@@ -150,7 +150,7 @@ class ConfigParser(object):
     def extract_config(self, base_field, suffix):
         with IndentingBufferPrinter() as printer:
             printer.write_header()
-            printer.line('from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String')
+            printer.line('from dagster import Bool, Dict, Field, Int, PermissiveDict, String')
             printer.blank_line()
 
             # Optionally write enum includes

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import Any, Enum, EnumValue, Field, List, Optional, PermissiveDict, String
+from dagster import Any, Enum, EnumValue, Field, Optional, PermissiveDict, String
 from dagster.check import CheckError, ParameterCheckError
 from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.types.config.field import resolve_to_config_type
@@ -25,14 +25,14 @@ def test_post_process_config():
     with pytest.raises(CheckError, match='config_value should be pre-validated'):
         post_process_config(enum_config_type, None)
 
-    list_config_type = resolve_to_config_type(List[String])
+    list_config_type = resolve_to_config_type([str])
 
     assert post_process_config(list_config_type, ['foo']) == ['foo']
     assert post_process_config(list_config_type, None) == []
     with pytest.raises(CheckError, match='Null list member not caught'):
         assert post_process_config(list_config_type, [None]) == [None]
 
-    nullable_list_config_type = resolve_to_config_type(List[Optional[String]])
+    nullable_list_config_type = resolve_to_config_type([Optional[str]])
     assert post_process_config(nullable_list_config_type, ['foo']) == ['foo']
     assert post_process_config(nullable_list_config_type, [None]) == [None]
     assert post_process_config(nullable_list_config_type, None) == []
@@ -40,9 +40,9 @@ def test_post_process_config():
     composite_config_type = resolve_to_config_type(
         {
             'foo': String,
-            'bar': {'baz': List[String]},
-            'quux': Field(String, is_optional=True, default_value='zip'),
-            'quiggle': Field(String, is_optional=True),
+            'bar': {'baz': [str]},
+            'quux': Field(str, is_optional=True, default_value='zip'),
+            'quiggle': Field(str, is_optional=True),
         }
     )
 

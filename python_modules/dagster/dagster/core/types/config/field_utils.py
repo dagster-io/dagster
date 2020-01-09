@@ -304,7 +304,7 @@ def _expand_fields_dict(original_root, fields, stack):
 
 
 def expand_list(original_root, the_list, stack):
-    from .config_type import List
+    from .config_type import Array
 
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
@@ -322,7 +322,7 @@ def expand_list(original_root, the_list, stack):
             ),
         )
 
-    return List(inner_type)
+    return Array(inner_type)
 
 
 def convert_potential_field(potential_field):

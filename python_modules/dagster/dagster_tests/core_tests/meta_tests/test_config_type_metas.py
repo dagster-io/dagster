@@ -1,4 +1,4 @@
-from dagster import Dict, Field, List, Optional, Selector
+from dagster import Array, Dict, Field, Optional, Selector
 from dagster.core.meta.config_types import (
     ConfigTypeKind,
     ConfigTypeMeta,
@@ -68,8 +68,8 @@ def test_field_things():
 
 
 def test_basic_list():
-    list_meta = meta_from_dagster_type(List[int])
-    assert list_meta.key.startswith('List')
+    list_meta = meta_from_dagster_type(Array(int))
+    assert list_meta.key.startswith('Array')
     assert list_meta.inner_type_refs
     assert len(list_meta.inner_type_refs) == 1
     assert list_meta.inner_type_refs[0].key == 'Int'
@@ -93,15 +93,15 @@ def test_basic_optional():
 
 
 def test_basic_list_list():
-    list_meta = meta_from_dagster_type(List[List[int]])
-    assert list_meta.key.startswith('List')
+    list_meta = meta_from_dagster_type([[int]])
+    assert list_meta.key.startswith('Array')
     assert list_meta.inner_type_refs
     assert len(list_meta.inner_type_refs) == 2
     refs = {ref.key: ref for ref in list_meta.inner_type_refs}
     assert (
-        len(refs['List.Int'].inner_type_refs) == 1
-        and isinstance(refs['List.Int'], ConfigTypeMeta)
-        and refs['List.Int'].inner_type_refs[0].key == 'Int'
+        len(refs['Array.Int'].inner_type_refs) == 1
+        and isinstance(refs['Array.Int'], ConfigTypeMeta)
+        and refs['Array.Int'].inner_type_refs[0].key == 'Int'
     )
     assert refs['Int'].key == 'Int'
     assert list_meta.is_builtin is True
@@ -110,15 +110,15 @@ def test_basic_list_list():
 
     assert (
         len(list_meta.type_param_refs) == 1
-        and list_meta.type_param_refs[0].kind == ConfigTypeKind.LIST
+        and list_meta.type_param_refs[0].kind == ConfigTypeKind.ARRAY
     )
 
 
 def test_list_of_dict():
     inner_dict_dagster_type = Dict({'foo': Field(str)})
-    list_of_dict_meta = meta_from_dagster_type(List[inner_dict_dagster_type])
+    list_of_dict_meta = meta_from_dagster_type([inner_dict_dagster_type])
 
-    assert list_of_dict_meta.key.startswith('List')
+    assert list_of_dict_meta.key.startswith('Array')
     assert list_of_dict_meta.inner_type_refs
     assert len(list_of_dict_meta.inner_type_refs) == 1
     # Both Dict[...] and str are NonGenericTypeRefMetas in this schema
@@ -144,19 +144,19 @@ def test_selector_of_things():
 
 
 def test_kitchen_sink():
-    kitchen_sink = List[
-        Dict(
+    kitchen_sink = resolve_to_config_type(
+        [
             {
-                'opt_list_of_int': Field(List[int], is_optional=True),
+                'opt_list_of_int': Field(int, is_optional=True),
                 'nested_dict': {
-                    'list_list': List[List[int]],
+                    'list_list': [[int]],
                     'nested_selector': Field(
-                        Selector({'some_field': int, 'more_list': Optional[List[bool]]})
+                        Selector({'some_field': int, 'more_list': Optional[[bool]]})
                     ),
                 },
             }
-        )
-    ]
+        ]
+    )
 
     kitchen_sink_meta = meta_from_dagster_type(kitchen_sink)
 
@@ -167,21 +167,16 @@ def test_kitchen_sink():
 
 
 def test_kitchen_sink_break_out():
-    nested_dict_cls = Dict(
+    nested_dict_cls = resolve_to_config_type(
         {
-            'list_list': Field(List[List[int]]),
-            'nested_selector': Field(
-                Selector({'some_field': Field(int), 'list': Field(Optional[List[bool]])})
-            ),
+            'list_list': [[int]],
+            'nested_selector': Selector({'some_field': int, 'list': Optional[[bool]]}),
         }
     )
-    dict_within_list_cls = Dict(
-        {
-            'opt_list_of_int': Field(List[int], is_optional=True),
-            'nested_dict': Field(nested_dict_cls),
-        }
+    dict_within_list_cls = resolve_to_config_type(
+        {'opt_list_of_int': Field([int], is_optional=True), 'nested_dict': Field(nested_dict_cls)}
     )
-    kitchen_sink = List[dict_within_list_cls]
+    kitchen_sink = Array(dict_within_list_cls)
 
     dict_within_list_key = dict_within_list_cls.key
     kitchen_sink_meta = meta_from_dagster_type(kitchen_sink)
@@ -195,5 +190,5 @@ def test_kitchen_sink_break_out():
     # List[int], Int, Dict.XXX
     assert len(dict_within_list_meta.inner_type_refs) == 3
     assert sorted([type_ref.key for type_ref in dict_within_list_meta.inner_type_refs]) == sorted(
-        [nested_dict_cls.key, 'Int', 'List.Int']
+        [nested_dict_cls.key, 'Int', 'Array.Int']
     )

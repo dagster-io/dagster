@@ -4,9 +4,9 @@ from dagster.core.decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind, List, Nullable
+from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind, Nullable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import WrappingListType, WrappingNullableType
+from dagster.core.types.wrapping.wrapping import WrappingNullableType
 from dagster.utils import ensure_single_item
 
 
@@ -33,8 +33,6 @@ def _resolve_config_schema_type(dagster_type):
 
     if BuiltinEnum.contains(dagster_type):
         return ConfigType.from_builtin_enum(dagster_type)
-    elif isinstance(dagster_type, WrappingListType):
-        return List(dagster_type.inner_type)
     elif isinstance(dagster_type, WrappingNullableType):
         return Nullable(dagster_type.inner_type)
 

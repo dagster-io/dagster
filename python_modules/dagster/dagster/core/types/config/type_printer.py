@@ -24,7 +24,7 @@ def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
 
     kind = config_type.kind
 
-    if kind == ConfigTypeKind.LIST:
+    if kind == ConfigTypeKind.ARRAY:
         printer.append('[')
         _do_print(config_type.inner_type, printer)
         printer.append(']')

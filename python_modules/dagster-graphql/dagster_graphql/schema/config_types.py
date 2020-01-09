@@ -14,7 +14,7 @@ def to_dauphin_config_type(config_type):
         return DauphinEnumConfigType(config_type)
     elif ConfigTypeKind.has_fields(kind):
         return DauphinCompositeConfigType(config_type)
-    elif kind == ConfigTypeKind.LIST:
+    elif kind == ConfigTypeKind.ARRAY:
         return DauphinListConfigType(config_type)
     elif kind == ConfigTypeKind.NULLABLE:
         return DauphinNullableConfigType(config_type)
@@ -32,7 +32,7 @@ def _ctor_kwargs(config_type):
         name=config_type.name,
         description=config_type.description,
         is_builtin=config_type.type_attributes.is_builtin,
-        is_list=config_type.kind == ConfigTypeKind.LIST,
+        is_list=config_type.kind == ConfigTypeKind.ARRAY,
         is_nullable=config_type.kind == ConfigTypeKind.NULLABLE,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
         is_system_generated=config_type.type_attributes.is_system_config,

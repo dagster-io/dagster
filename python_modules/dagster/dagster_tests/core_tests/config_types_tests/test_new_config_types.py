@@ -1,4 +1,4 @@
-from dagster.core.types import Int, List, Optional
+from dagster import Array, Int, Optional
 from dagster.core.types.config.config_type import ConfigTypeKind
 from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.core.types.config.field import resolve_to_config_type
@@ -41,7 +41,7 @@ def test_list_int():
 
 
 def test_list_nullable_int():
-    lni = resolve_to_config_type(List[Optional[Int]])
+    lni = resolve_to_config_type(Array(Optional[Int]))
 
     assert validate_config(lni, [1]).success
     assert validate_config(lni, [1, 2]).success

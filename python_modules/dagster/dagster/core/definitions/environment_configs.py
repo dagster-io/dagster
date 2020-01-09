@@ -1,9 +1,8 @@
 from collections import namedtuple
 
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import List
 from dagster.core.types.config import Field, Selector
-from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS, ConfigType
+from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
 from dagster.core.types.config.field import check_opt_field_param
 from dagster.core.types.config.field_utils import build_config_dict
 from dagster.core.types.config.iterate_types import iterate_config_types
@@ -204,7 +203,7 @@ def get_outputs_field(solid, handle):
 
     output_entry_dict = SystemDict(output_dict_fields)
 
-    return Field(List[output_entry_dict], is_optional=True)
+    return Field(Array(output_entry_dict), is_optional=True)
 
 
 def filtered_system_dict(fields):

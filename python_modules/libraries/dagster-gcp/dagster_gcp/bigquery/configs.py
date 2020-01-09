@@ -4,7 +4,7 @@ See the BigQuery Python API documentation for reference:
     https://googleapis.github.io/google-cloud-python/latest/bigquery/reference.html
 '''
 
-from dagster import Bool, Dict, Field, Int, List, String
+from dagster import Bool, Dict, Field, Int, String
 
 from .types import (
     BQCreateDisposition,
@@ -42,7 +42,7 @@ def _define_shared_fields():
     '''
 
     clustering_fields = Field(
-        List[String],
+        [String],
         description='''Fields defining clustering for the table
 
         (Defaults to None).
@@ -70,7 +70,7 @@ def _define_shared_fields():
     )
 
     schema_update_options = Field(
-        List[BQSchemaUpdateOption],
+        [BQSchemaUpdateOption],
         description='''Specifies updates to the destination table schema to allow as a side effect
         of the query job.''',
         is_optional=True,
@@ -200,7 +200,7 @@ def define_bigquery_query_config():
     )
 
     query_parameters = Field(
-        List[String],
+        [String],
         description='''list of parameters for parameterized query (empty by default)
         See: https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.queryParameters
         ''',
@@ -218,7 +218,7 @@ def define_bigquery_query_config():
     # )
 
     # TODO: Need to add this
-    # Type:	List[google.cloud.bigquery.query.UDFResource]
+    # Type:	[google.cloud.bigquery.query.UDFResource]
     # udf_resources = Field(
     #     String,
     #     description='''user defined function resources (empty by default)

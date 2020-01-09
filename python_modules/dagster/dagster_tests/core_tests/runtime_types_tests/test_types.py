@@ -6,6 +6,9 @@ from dagster import (
     DagsterTypeCheckError,
     EventMetadataEntry,
     InputDefinition,
+    Int,
+    List,
+    Optional,
     OutputDefinition,
     TypeCheck,
     execute_pipeline,
@@ -13,7 +16,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types import Int, List, Optional
 from dagster.core.types.runtime.runtime_type import (
     PythonObjectType,
     RuntimeType,

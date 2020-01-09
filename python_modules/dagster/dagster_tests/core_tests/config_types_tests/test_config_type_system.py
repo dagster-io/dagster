@@ -414,10 +414,6 @@ def test_config_with_and_without_config():
     assert result_using_default.result_for_solid('print_value').output_value() == '_id_12345'
 
 
-def single_elem(ddict):
-    return List[ddict.items()[0]]
-
-
 def test_build_optionality():
     optional_test_type = convert_potential_field(
         {'required': {'value': String}, 'optional': {'value': Field(String, is_optional=True)},}
@@ -475,7 +471,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=List[Int])
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=[int])
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
@@ -494,7 +490,7 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        input_defs=[], config={'list_one': List[Int], 'list_two': List[Int]},
+        input_defs=[], config={'list_one': [int], 'list_two': [int]},
     )
     def two_list_type(context):
         return context.solid_config
@@ -632,7 +628,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config=List[Int])
+    @solid(config=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -652,7 +648,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config=List[Int])
+    @solid(config=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -673,6 +669,19 @@ def test_item_error_list_path():
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
     assert 'Type failure at path "root:solids:required_list_int_solid:config[1]"' in str(pe)
+
+
+def test_list_in_config_error():
+    error_msg = (
+        'Cannot use List in the context of a config file. '
+        'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
+
+        @solid(config=List[int])
+        def _no_runtime_list_in_config(_):
+            pass
 
 
 def test_required_resource_not_given():

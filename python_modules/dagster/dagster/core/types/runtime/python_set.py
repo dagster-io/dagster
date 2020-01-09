@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.config_type import List
+from dagster.core.types.config.config_type import Array
 
 from .config_schema import InputHydrationConfig
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
@@ -17,7 +17,7 @@ class TypedSetInputHydrationConfig(InputHydrationConfig):
 
     @property
     def schema_type(self):
-        return List(self._item_runtime_type.input_hydration_config.schema_type)
+        return Array(self._item_runtime_type.input_hydration_config.schema_type)
 
     def construct_from_config_value(self, context, config_value):
         runtime_value = set()

@@ -1,18 +1,19 @@
 from dagster import check
+from dagster.core.types.config.config_type import Array
+from dagster.core.types.config.config_type import ConfigAnyInstance as ConfigAny
 from dagster.core.types.runtime.python_dict import PythonDict
 from dagster.core.types.runtime.python_set import PythonSet
 from dagster.core.types.runtime.python_tuple import PythonTuple
+from dagster.core.types.runtime.runtime_type import Any as RuntimeAny
+from dagster.core.types.runtime.runtime_type import List
 from dagster.core.types.wrapping import Bool, Float, Int, String
-
-from .builtin_enum import BuiltinEnum
-from .wrapping import WrappingListType
 
 SUPPORTED_RUNTIME_BUILTINS = {
     int: Int,
     float: Float,
     bool: Bool,
     str: String,
-    list: WrappingListType(BuiltinEnum.ANY),
+    list: List(RuntimeAny),
     tuple: PythonTuple,
     set: PythonSet,
     dict: PythonDict,
@@ -39,7 +40,7 @@ SUPPORTED_CONFIG_BUILTINS = {
     float: Float,
     bool: Bool,
     str: String,
-    list: WrappingListType(BuiltinEnum.ANY),
+    list: Array(ConfigAny),
 }
 
 
