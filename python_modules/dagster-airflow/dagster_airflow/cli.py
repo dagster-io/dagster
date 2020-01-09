@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 
 import click
 import six
+import yaml
 
 from dagster import check, seven
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
-from dagster.seven import yaml
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
@@ -57,7 +57,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
     printer.line('\'\'\'')
     printer.line('import datetime')
     printer.blank_line()
-    printer.line('from dagster.seven import yaml')
+    printer.line('import yaml')
     printer.line('from dagster_airflow.factory import make_airflow_dag')
     printer.blank_line()
     printer.line('#' * 80)

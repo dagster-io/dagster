@@ -19,9 +19,9 @@ from collections import namedtuple
 from enum import Enum
 
 import six
+import yaml
 
 from dagster import check, seven
-from dagster.seven import yaml
 
 _WHITELISTED_TUPLE_MAP = {}
 _WHITELISTED_ENUM_MAP = {}

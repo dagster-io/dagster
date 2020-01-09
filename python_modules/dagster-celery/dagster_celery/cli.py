@@ -3,12 +3,12 @@ import subprocess
 import uuid
 
 import click
+import yaml
 from celery.utils.nodenames import default_nodename, host_format
 
 from dagster import check, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.config.evaluator.validate import validate_config
-from dagster.seven import yaml
 from dagster.utils import load_yaml_from_path, mkdir_p
 from dagster.utils.indenting_printer import IndentingPrinter
 

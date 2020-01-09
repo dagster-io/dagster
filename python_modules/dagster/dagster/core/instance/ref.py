@@ -1,9 +1,10 @@
 import os
 from collections import namedtuple
 
+import yaml
+
 from dagster import check
 from dagster.core.serdes import ConfigurableClassData, whitelist_for_serdes
-from dagster.seven import yaml
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 

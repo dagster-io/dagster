@@ -1,8 +1,9 @@
 import glob
 
+import yaml
+
 from dagster import check
 
-from ..seven import yaml
 from .merger import dict_merge
 
 

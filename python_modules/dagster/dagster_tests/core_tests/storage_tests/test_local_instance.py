@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import yaml
 
 from dagster import (
     DagsterEventType,
@@ -18,7 +19,6 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
-from dagster.seven import yaml
 
 
 def test_fs_stores():

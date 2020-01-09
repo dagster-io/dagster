@@ -2,6 +2,7 @@ import heapq
 import json
 import os
 
+import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import (
     get_dagster_schedule_def,
@@ -16,7 +17,6 @@ from dagster import check, seven
 from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.scheduler import Schedule
-from dagster.seven import yaml
 
 
 class DauphinScheduleStatus(dauphin.Enum):

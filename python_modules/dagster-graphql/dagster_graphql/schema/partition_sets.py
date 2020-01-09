@@ -1,3 +1,4 @@
+import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
     DauphinPartitionSetNotFoundError,
@@ -7,7 +8,6 @@ from dagster_graphql.schema.errors import (
 
 from dagster import check
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
-from dagster.seven import yaml
 
 
 class DauphinPartition(dauphin.ObjectType):

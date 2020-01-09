@@ -3,9 +3,9 @@ from collections import namedtuple
 
 import six
 import terminaltables
+import yaml
 
 from dagster import check
-from dagster.seven import yaml
 
 from .term import Term
 

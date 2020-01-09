@@ -3,10 +3,10 @@ from collections import namedtuple
 from glob import glob
 
 import six
+import yaml
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.seven import yaml
 from dagster.utils.yaml_utils import merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
