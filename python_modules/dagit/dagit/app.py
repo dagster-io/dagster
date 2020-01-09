@@ -7,7 +7,10 @@ import uuid
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SubprocessExecutionManager
+from dagster_graphql.implementation.pipeline_execution_manager import (
+    QueueingSubprocessExecutionManager,
+    SubprocessExecutionManager,
+)
 from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
@@ -152,7 +155,13 @@ def create_app(handle, instance, reloader=None):
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
 
-    execution_manager = SubprocessExecutionManager(instance)
+    execution_manager_settings = instance.dagit_settings.get('execution_manager')
+    if execution_manager_settings and execution_manager_settings.get('max_concurrent_runs'):
+        execution_manager = QueueingSubprocessExecutionManager(
+            instance, execution_manager_settings.get('max_concurrent_runs')
+        )
+    else:
+        execution_manager = SubprocessExecutionManager(instance)
 
     warn_if_compute_logs_disabled()
 
