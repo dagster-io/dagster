@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import logging
 
-import yaml
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from dagster_graphql.implementation.fetch_runs import get_stats
@@ -27,6 +26,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
 )
+from dagster.seven import yaml
 
 from .pipelines import DauphinPipeline
 

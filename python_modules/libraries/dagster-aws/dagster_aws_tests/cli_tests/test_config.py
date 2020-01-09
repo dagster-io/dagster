@@ -1,10 +1,10 @@
 import os
 import uuid
 
-import yaml
 from dagster_aws.cli.config import HOST_CONFIG_FILE, EC2Config, RDSConfig
 
 from dagster import seven
+from dagster.seven import yaml
 
 
 def test_write_configs():
