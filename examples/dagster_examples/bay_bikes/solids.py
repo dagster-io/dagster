@@ -29,9 +29,7 @@ from dagster import (
     Any,
     EventMetadataEntry,
     Field,
-    Float,
     InputDefinition,
-    Int,
     List,
     Materialization,
     Output,
@@ -60,7 +58,7 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
 
 
 @solid(
-    config={'chunk_size': Field(Int, is_optional=True, default_value=8192)},
+    config={'chunk_size': Field(int, is_optional=True, default_value=8192)},
     required_resource_keys={'volume'},
 )
 def download_zipfiles_from_urls(
@@ -102,7 +100,7 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
 @solid(
     config={
         'delimiter': Field(
-            String,
+            str,
             default_value=',',
             is_optional=True,
             description=('A one-character string used to separate fields.'),
@@ -146,19 +144,19 @@ def download_csv_from_bucket_and_return_dataframe(
 @solid(
     config={
         'latitude': Field(
-            Float,
+            float,
             default_value=37.8267,
             is_optional=True,
             description=('Latitude coordinate to get weather data about. Default is SF.'),
         ),
         'longitude': Field(
-            Float,
+            float,
             default_value=-122.4233,
             is_optional=True,
             description=('Longitude coordinate to get weather data about. Default is SF.'),
         ),
         'times_to_exclude': Field(
-            List[String],
+            [str],
             default_value=['currently', 'minutely', 'hourly', 'alerts', 'flags'],
             is_optional=True,
             description='data granularities to exclude when making this api call',
@@ -388,7 +386,7 @@ class MultivariateTimeseries:
 
 
 @solid(
-    config={'memory_length': Field(Int, description='The window memory length')},
+    config={'memory_length': Field(int, description='The window memory length')},
     input_defs=[
         InputDefinition('traffic_dataset', dagster_type=TrafficDataFrame),
         InputDefinition('weather_dataset', dagster_type=WeatherDataFrame),

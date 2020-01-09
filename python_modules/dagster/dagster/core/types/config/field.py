@@ -45,6 +45,22 @@ def resolve_to_config_type(dagster_type):
     if isinstance(dagster_type, dict):
         return convert_fields_to_dict_type(dagster_type)
 
+    if isinstance(dagster_type, list):
+        if len(dagster_type) != 1:
+            raise DagsterInvalidDefinitionError('List specifications must only be of length 1')
+
+        inner_type = resolve_to_config_type(dagster_type[0])
+
+        if not inner_type:
+            raise DagsterInvalidDefinitionError(
+                (
+                    'Invalid member of list specification: {value} in list {the_list}. '
+                    'List specifications must only be of length 1 i.e. [str]'
+                ).format(value=repr(dagster_type[0]), the_list=dagster_type)
+            )
+
+        return List(inner_type)
+
     from dagster.core.types.runtime.runtime_type import RuntimeType
 
     if _is_config_type_class(dagster_type):

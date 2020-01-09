@@ -29,7 +29,7 @@ def test_optional_int():
 
 
 def test_list_int():
-    list_int = resolve_to_config_type(List[Int])
+    list_int = resolve_to_config_type([Int])
 
     assert validate_config(list_int, [1]).success
     assert validate_config(list_int, [1, 2]).success

@@ -278,7 +278,9 @@ class NamedSelector(_ConfigHasFields):
 def is_potential_field(potential_field):
     from .field import Field, resolve_to_config_type
 
-    return isinstance(potential_field, (Field, dict)) or resolve_to_config_type(potential_field)
+    return isinstance(potential_field, (Field, dict, list)) or resolve_to_config_type(
+        potential_field
+    )
 
 
 def convert_fields_to_dict_type(fields):
@@ -301,20 +303,51 @@ def _expand_fields_dict(original_root, fields, stack):
     }
 
 
+def expand_list(original_root, the_list, stack):
+    from .config_type import List
+
+    if len(the_list) != 1:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, the_list, stack, 'List must be of length 1'
+        )
+
+    inner_type = _convert_potential_type(original_root, the_list[0], stack)
+    if not inner_type:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root,
+            the_list,
+            stack,
+            'List have a single item and contain a valid type i.e. [int]. Got item {}'.format(
+                repr(the_list[0])
+            ),
+        )
+
+    return List(inner_type)
+
+
 def convert_potential_field(potential_field):
     return _convert_potential_field(potential_field, potential_field, [])
 
 
+def _convert_potential_type(original_root, potential_type, stack):
+    from .field import resolve_to_config_type
+
+    if isinstance(potential_type, dict):
+        return Dict(_expand_fields_dict(original_root, potential_type, stack))
+
+    if isinstance(potential_type, list):
+        return expand_list(original_root, potential_type, stack)
+
+    return resolve_to_config_type(potential_type)
+
+
 def _convert_potential_field(original_root, potential_field, stack):
-    from .field import Field, resolve_to_config_type
+    from .field import Field
 
     if not is_potential_field(potential_field):
         raise DagsterInvalidConfigDefinitionError(original_root, potential_field, stack)
 
-    return (
-        potential_field
-        if isinstance(potential_field, Field)
-        else Field(_expand_fields_dict(original_root, potential_field, stack))
-        if isinstance(potential_field, dict)
-        else Field(resolve_to_config_type(potential_field))
-    )
+    if isinstance(potential_field, Field):
+        return potential_field
+
+    return Field(_convert_potential_type(original_root, potential_field, stack))

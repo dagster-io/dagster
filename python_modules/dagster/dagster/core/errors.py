@@ -39,7 +39,7 @@ class DagsterInvalidDefinitionError(DagsterError):
 
 CONFIG_ERROR_VERBIAGE = '''
 This value can be a:
-    - :py:class:`Field`
+    - Field
     - Python primitive types that resolve to dagster config types
         - int, float, bool, str, list.
     - A dagster config type: Int, Float, Bool, List, Optional, Selector, Dict
@@ -62,7 +62,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
         - A python list with a single entry that can resolve to a type, e.g. [int]
     '''
 
-    def __init__(self, original_root, current_value, stack, *args, **kwargs):
+    def __init__(self, original_root, current_value, stack, reason=None, **kwargs):
         self.original_root = original_root
         self.current_value = current_value
         self.stack = stack
@@ -70,13 +70,13 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
             (
                 'Error defining config. Original value passed: {original_root}. '
                 '{stack_str}{current_value} '
-                'cannot be resolved.' + CONFIG_ERROR_VERBIAGE
+                'cannot be resolved.{reason_str}' + CONFIG_ERROR_VERBIAGE
             ).format(
                 original_root=repr(original_root),
                 stack_str='Error at stack path :' + ':'.join(stack) + '. ' if stack else '',
                 current_value=repr(current_value),
+                reason_str=' Reason: {reason}.'.format(reason=reason) if reason else '',
             ),
-            *args,
             **kwargs
         )
 

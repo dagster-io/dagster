@@ -22,6 +22,7 @@ from dagster import (
     check,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )
@@ -493,19 +494,49 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        name='two_list_type',
-        input_defs=[],
-        output_defs=[],
-        config=convert_potential_field({'list_one': List[Int], 'list_two': List[Int]}),
+        input_defs=[], config={'list_one': List[Int], 'list_two': List[Int]},
     )
-    def two_list_type(_):
-        return None
+    def two_list_type(context):
+        return context.solid_config
 
-    @pipeline(name='two_types')
-    def pipeline_def():
-        two_list_type()
+    assert execute_solid(
+        two_list_type,
+        environment_dict={
+            'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
 
-    assert pipeline_def
+    @solid(
+        input_defs=[], config={'list_one': [Int], 'list_two': [Int]},
+    )
+    def two_list_type_condensed_syntax(context):
+        return context.solid_config
+
+    assert execute_solid(
+        two_list_type_condensed_syntax,
+        environment_dict={
+            'solids': {
+                'two_list_type_condensed_syntax': {'config': {'list_one': [1], 'list_two': [2]}}
+            }
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
+
+    @solid(
+        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+    )
+    def two_list_type_condensed_syntax_primitives(context):
+        return context.solid_config
+
+    assert execute_solid(
+        two_list_type_condensed_syntax_primitives,
+        environment_dict={
+            'solids': {
+                'two_list_type_condensed_syntax_primitives': {
+                    'config': {'list_one': [1], 'list_two': [2]}
+                }
+            }
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
 
 
 def test_multilevel_default_handling():
