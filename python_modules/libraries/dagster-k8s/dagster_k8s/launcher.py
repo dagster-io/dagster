@@ -15,9 +15,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self,
         postgres_host,
         postgres_port,
-        image_pull_secrets,
         service_account_name,
         job_image,
+        instance_config_map,
+        image_pull_secrets=None,
         load_kubeconfig=False,
         kubeconfig_file=None,
         inst_data=None,
@@ -25,9 +26,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
         self.postgres_host = check.str_param(postgres_host, 'postgres_host')
         self.postgres_port = check.str_param(postgres_port, 'postgres_port')
-        self.image_pull_secrets = check.list_param(image_pull_secrets, 'image_pull_secrets')
-        self.service_account_name = check.str_param(service_account_name, 'service_account_name')
         self.job_image = check.str_param(job_image, 'job_image')
+        self.instance_config_map = check.str_param(instance_config_map, 'instance_config_map')
+        self.image_pull_secrets = check.opt_list_param(image_pull_secrets, 'image_pull_secrets')
+        self.service_account_name = check.str_param(service_account_name, 'service_account_name')
         check.bool_param(load_kubeconfig, 'load_kubeconfig')
         check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
@@ -45,9 +47,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             {
                 'postgres_host': Field(str),
                 'postgres_port': Field(str),
-                'image_pull_secrets': Field(list),
                 'service_account_name': Field(str),
                 'job_image': Field(str),
+                'instance_config_map': Field(str),
+                'image_pull_secrets': Field(list, is_optional=True),
             },
         )
 
@@ -94,7 +97,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             image=self.job_image,
             command=['dagster-graphql'],
             args=["-p", "startPipelineExecution", "-v", json.dumps(execution_params)],
-            image_pull_policy='IfNotPresent',
+            image_pull_policy='Always',
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
             volume_mounts=[
                 client.V1VolumeMount(
@@ -107,7 +110,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         config_map_volume = client.V1Volume(
             name='dagster-instance',
-            config_map=client.V1ConfigMapVolumeSource(name='dagster-instance'),
+            config_map=client.V1ConfigMapVolumeSource(name=self.instance_config_map),
         )
 
         template = client.V1PodTemplateSpec(
@@ -138,4 +141,4 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job = self.construct_job(run)
         api_response = self._kube_api.create_namespaced_job(body=job, namespace="default")
         print("Job created. status='%s'" % str(api_response.status))
-        return api_response
+        return run
