@@ -1,9 +1,8 @@
 import os
 import uuid
 
-import yaml
-
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.seven import yaml
 from dagster.utils import load_yaml_from_path
 
 from .conftest import docker_image, environments_path  # pylint: disable=unused-import

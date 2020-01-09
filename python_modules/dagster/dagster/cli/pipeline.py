@@ -10,7 +10,6 @@ import time
 
 import click
 import six
-import yaml
 
 from dagster import (
     PipelineDefinition,
@@ -26,7 +25,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
-from dagster.seven import IS_WINDOWS
+from dagster.seven import IS_WINDOWS, yaml
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
