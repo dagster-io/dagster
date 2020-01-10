@@ -5,6 +5,7 @@ import requests
 import jwt
 import pem
 
+
 def to_seconds(dt):
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
@@ -77,9 +78,7 @@ class GithubResource:
             auth = request.json()
             self.installation_tokens[installation_id] = {
                 "value": auth["token"],
-                "expires": to_seconds(
-                    datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')
-                ),
+                "expires": to_seconds(datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')),
             }
         else:
             raise Exception(
