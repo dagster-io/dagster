@@ -1,7 +1,7 @@
 # dagster-github
 
-##Introduction
-This library provides an integration with github apps, to support performing various automation operations within your github repositories and with the tighter permissions scopes that github applications allow for vs using a personal token.
+## Introduction
+This library provides an integration with github apps, to support performing various automation operations within your github repositories and with the tighter permissions scopes that github apps allow for vs using a personal token.
 
 Presently, it provides a thin wrapper on the [github v4 graphql API](https://developer.github.com/v4/).
 
