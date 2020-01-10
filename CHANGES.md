@@ -1,6 +1,40 @@
 # Changelog
 
-## 0.7.0 (Upcoming)
+## 0.7.0
+
+**Breaking**
+
+- `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
+- `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
+- Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
+- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
+
+- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
+
+  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
+
+  So instead of
+
+  ````
+  g
+  e
+  e
+      'some_int' : Field(Int),
+      'some_list: Field(Array[String]) # List prior to change
+  })
+
+  `
+
+  one can instead write:
+
+  `
+  }
+
+
+  No imports and much simpler, cleaner syntax.
+  ````
+
+## 0.6.7
 
 **New**
 
@@ -9,46 +43,80 @@
 
 **Breaking**
 
-- `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
-- `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-- The implementation of SQL-based event log and run storages has been consolidated, which has
-  entailed a schema change. If you have event logs stored in a Postgres- or SQLite-backed event
-  log storage, and you would like to maintain access to these logs, you should run
-  `dagster instance migrate`. To check what event log storages you are using, run
-  `dagster instance info`.
-- Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
-- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
-- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
+- The implementation of SQL-based event log storages has been consolidated,
+  which has entailed a schema change. If you have event logs stored in a
+  Postgres- or SQLite-backed event log storage, and you would like to maintain
+  access to these logs, you should run `dagster instance migrate`. To check
+  what event log storages you are using, run `dagster instance info`.
+- Type matches on both sides of an `InputMapping` or `OutputMapping` are now enforced.
 
-    Our recommended fix is *not* to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
+**New**
 
-    So instead of
-
-    ```
-	from dagster import Shape, Field, Int, Array, String
-	# ... code
-	config=Shape({ # Dict prior to change
-        'some_int' : Field(Int),
-        'some_list: Field(Array[String]) # List prior to change
-    })
-
-	```
-
-    one can instead write:
-
-	```
-	config={'some_int': int, 'some_list': [str]}
-	``` 
-
-    No imports and much simpler, cleaner syntax.
+- Dagster is now tested on Python 3.8
+- Added the dagster-celery library, which implements a Celery-based engine for parallel pipeline
+  execution.
+- Added the dagster-k8s library, which includes a Helm chart for a simple Dagit installation on a
+  Kubernetes cluster.
 
 **Dagit**
 
 - The Explore UI now allows you to render a subset of a large DAG via a new solid
   query bar that accepts terms like `solid_name+*` and `+solid_name+`. When viewing
   very large DAGs, nothing is displayed by default and `*` produces the original behavior.
-
+- Performance improvements in the Explore UI and config editor for large pipelines.
 - The Explore UI now includes a zoom slider that makes it easier to navigate large DAGs.
+- Dagit pages now render more gracefully in the presence of inconsistent run storage and event logs.
+- Improved handling of GraphQL errors and backend programming errors.
+- Minor display improvements.
+
+**dagster-aws**
+
+- A default prefix is now configurable on APIs that use S3.
+- S3 APIs now parametrize `region_name` and `endpoint_url`.
+
+**dagster-gcp**
+
+- A default prefix is now configurable on APIs that use GCS.
+
+**dagster-postgres**
+
+- Performance improvements for Postgres-backed storages.
+
+**dagster-pyspark**
+
+- Pyspark sessions may now be configured to be held open after pipeline execution completes, to
+  enable extended test cases.
+
+**dagster-spark**
+
+- `spark_outputs` must now be specified when initializing a `SparkSolidDefinition`, rather than in
+  config.
+- Added new `create_spark_solid` helper and new `spark_resource`.
+- Improved EMR implementation.
+
+**Bugfix**
+
+- Fixed an issue retrieving output values using `SolidExecutionResult` (e.g., in test) for
+  dagster-pyspark solids.
+- Fixes an issue when expanding composite solids in Dagit.
+- Better errors when solid names collide.
+- Config mapping in composite solids now works as expected when the composite solid has no top
+  level config.
+- Compute log filenames are now guaranteed not to exceed the POSIX limit of 255 chars.
+- Fixes an issue when copying and pasting solid names from Dagit.
+- Termination now works as expected in the multiprocessing executor.
+- The multiprocessing executor now executes parallel steps in the expected order.
+- The multiprocessing executor now correctly handles solid subsets.
+- Fixed a bad error condition in `dagster_ssh.sftp_solid`.
+- Fixed a bad error message giving incorrect log level suggestions.
+
+**Documentation**
+
+- Minor fixes and improvements.
+
+**Thank you**
+Thank you to all of the community contributors to this release!! In alphabetical order: @cclauss,
+@deem0n, @irabinovitch, @pseudoPixels, @Ramshackle-Jamathon, @rparrapy, @yamrzou.
 
 ## 0.6.6
 
