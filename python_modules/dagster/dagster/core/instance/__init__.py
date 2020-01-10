@@ -10,6 +10,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -96,6 +97,7 @@ class DagsterInstance:
         event_storage,
         compute_log_manager,
         run_launcher=None,
+        dagit_settings=None,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -114,6 +116,7 @@ class DagsterInstance:
             compute_log_manager, 'compute_log_manager', ComputeLogManager
         )
         self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
+        self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
         self._subscribers = defaultdict(list)
@@ -177,6 +180,7 @@ class DagsterInstance:
             event_storage=instance_ref.event_storage,
             compute_log_manager=instance_ref.compute_log_manager,
             run_launcher=instance_ref.run_launcher,
+            dagit_settings=instance_ref.dagit_settings,
             ref=instance_ref,
         )
 
@@ -208,9 +212,16 @@ class DagsterInstance:
 
     def info_str(self):
         def _info(component):
+            prefix = '     '
             if isinstance(component, ConfigurableClass):
-                return component.inst_data.info_str(prefix='    ')
-            return '    {}'.format(component.__class__.__name__)
+                return component.inst_data.info_str(prefix)
+            if type(component) is dict:
+                return prefix + yaml.dump(component, default_flow_style=False).replace(
+                    '\n', '\n' + prefix
+                )
+            return '{}{}\n'.format(prefix, component.__class__.__name__)
+
+        dagit_settings = self._dagit_settings if self._dagit_settings else None
 
         return (
             'DagsterInstance components:\n\n'
@@ -219,12 +230,14 @@ class DagsterInstance:
             '  Event Log Storage:\n{event}\n'
             '  Compute Log Manager:\n{compute}\n'
             '  Run Launcher:\n{run_launcher}\n'
+            '  Dagit:\n{dagit}\n'
             ''.format(
                 artifact=_info(self._local_artifact_storage),
                 run=_info(self._run_storage),
                 event=_info(self._event_storage),
                 compute=_info(self._compute_log_manager),
                 run_launcher=_info(self._run_launcher),
+                dagit=_info(dagit_settings),
             )
         )
 
@@ -239,6 +252,12 @@ class DagsterInstance:
     @property
     def compute_log_manager(self):
         return self._compute_log_manager
+
+    @property
+    def dagit_settings(self):
+        if self._dagit_settings:
+            return self._dagit_settings
+        return {}
 
     def upgrade(self, print_fn=lambda _: None):
         print_fn('Updating run storage...')
@@ -291,20 +310,11 @@ class DagsterInstance:
     def has_run(self, run_id):
         return self._run_storage.has_run(run_id)
 
-    def all_runs(self, cursor=None, limit=None):
-        return self._run_storage.all_runs(cursor, limit)
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        return self._run_storage.get_runs(filters, cursor, limit)
 
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_pipeline_name(pipeline_name, cursor, limit)
-
-    def get_run_count_with_matching_tags(self, tags):
-        return self._run_storage.get_run_count_with_matching_tags(tags)
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_matching_tags(tags, cursor, limit)
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        return self._run_storage.get_runs_with_status(run_status, cursor, limit)
+    def get_runs_count(self, filters=None):
+        return self._run_storage.get_runs_count(filters)
 
     def wipe(self):
         self._run_storage.wipe()

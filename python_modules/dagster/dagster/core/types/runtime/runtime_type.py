@@ -6,19 +6,10 @@ from dagster import check
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.type_storage import TypeStoragePlugin
-from dagster.core.types.config.config_type import List as ConfigList
+from dagster.core.types.config.config_type import Array
 from dagster.core.types.config.config_type import Nullable as ConfigNullable
 from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
-from dagster.core.types.wrapping.wrapping import (
-    DagsterListApi,
-    DagsterSetApi,
-    DagsterTupleApi,
-    Dict,
-    WrappingListType,
-    WrappingNullableType,
-    WrappingSetType,
-    WrappingTupleType,
-)
+from dagster.core.types.wrapping.wrapping import WrappingNullableType
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
@@ -469,7 +460,7 @@ class ListInputSchema(InputHydrationConfig):
             inner_runtime_type, 'inner_runtime_type', RuntimeType
         )
         check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
-        self._schema_type = ConfigList(inner_runtime_type.input_hydration_config.schema_type)
+        self._schema_type = Array(inner_runtime_type.input_hydration_config.schema_type)
 
     @property
     def schema_type(self):
@@ -530,8 +521,23 @@ def Optional(inner_type):
     return NullableType(inner_type)
 
 
-def List(inner_type):
+class DagsterListApi:
+    def __getitem__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return _List(resolve_to_runtime_type(inner_type))
+
+    def __call__(self, inner_type):
+        check.not_none_param(inner_type, 'inner_type')
+        return _List(inner_type)
+
+
+List = DagsterListApi()
+
+
+def _List(inner_type):
     check.inst_param(inner_type, 'inner_type', RuntimeType)
+    if inner_type is Nothing:
+        raise DagsterInvalidDefinitionError('Type Nothing can not be wrapped in List or Optional')
     return ListType(inner_type)
 
 
@@ -640,9 +646,9 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 
 def resolve_to_runtime_type(dagster_type):
     # circular dep
-    from .python_dict import PythonDict
-    from .python_set import PythonSet
-    from .python_tuple import PythonTuple
+    from .python_dict import PythonDict, Dict
+    from .python_set import PythonSet, DagsterSetApi
+    from .python_tuple import PythonTuple, DagsterTupleApi
     from dagster.core.types.config.config_type import ConfigType
     from dagster.core.types.wrapping.mapping import (
         remap_python_builtin_for_runtime,
@@ -700,15 +706,9 @@ def resolve_to_runtime_type(dagster_type):
     if isinstance(dagster_type, DagsterSetApi):
         return PythonSet
     if isinstance(dagster_type, DagsterListApi):
-        return resolve_to_runtime_list(WrappingListType(BuiltinEnum.ANY))
+        return List(Any)
     if BuiltinEnum.contains(dagster_type):
         return RuntimeType.from_builtin_enum(dagster_type)
-    if isinstance(dagster_type, WrappingListType):
-        return resolve_to_runtime_list(dagster_type)
-    if isinstance(dagster_type, WrappingSetType):
-        return resolve_to_runtime_set(dagster_type)
-    if isinstance(dagster_type, WrappingTupleType):
-        return resolve_to_runtime_tuple(dagster_type)
     if isinstance(dagster_type, WrappingNullableType):
         return resolve_to_runtime_nullable(dagster_type)
 
@@ -725,27 +725,6 @@ def resolve_to_runtime_type(dagster_type):
         return __ANONYMOUS_TYPE_REGISTRY[dagster_type]
 
     return create_anonymous_type(dagster_type)
-
-
-def resolve_to_runtime_list(list_type):
-    check.inst_param(list_type, 'list_type', WrappingListType)
-    return List(resolve_to_runtime_type(list_type.inner_type))
-
-
-def resolve_to_runtime_set(set_type):
-    from .python_set import create_typed_runtime_set
-
-    check.inst_param(set_type, 'set_type', WrappingSetType)
-    return create_typed_runtime_set(set_type.inner_type)
-
-
-def resolve_to_runtime_tuple(tuple_type):
-    from .python_tuple import create_typed_tuple, PythonTuple
-
-    check.inst_param(tuple_type, 'tuple_type', WrappingTupleType)
-    if tuple_type.inner_type is None:
-        return PythonTuple
-    return create_typed_tuple(*tuple_type.inner_type)
 
 
 def resolve_to_runtime_nullable(nullable_type):

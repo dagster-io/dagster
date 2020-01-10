@@ -1,4 +1,4 @@
-from dagster import Dict, Field, String
+from dagster import Field, String
 
 from .configs_dataproc_cluster import define_dataproc_cluster_config
 from .configs_dataproc_job import define_dataproc_job_config
@@ -12,28 +12,20 @@ def define_dataproc_create_cluster_config():
         is_optional=False,
     )
 
-    return Field(
-        Dict(
-            fields={
-                'projectId': _define_project_id_config(),
-                'region': _define_region_config(),
-                'clusterName': cluster_name,
-                'cluster_config': define_dataproc_cluster_config(),
-            }
-        )
-    )
+    return {
+        'projectId': _define_project_id_config(),
+        'region': _define_region_config(),
+        'clusterName': cluster_name,
+        'cluster_config': define_dataproc_cluster_config(),
+    }
 
 
 def define_dataproc_submit_job_config():
-    return Field(
-        Dict(
-            fields={
-                'job': define_dataproc_job_config(),
-                'projectId': _define_project_id_config(),
-                'region': _define_region_config(),
-            }
-        )
-    )
+    return {
+        'job': define_dataproc_job_config(),
+        'projectId': _define_project_id_config(),
+        'region': _define_region_config(),
+    }
 
 
 def _define_project_id_config():

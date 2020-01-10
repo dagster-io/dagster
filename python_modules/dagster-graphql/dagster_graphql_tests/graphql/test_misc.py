@@ -99,8 +99,6 @@ def test_enum_query():
 TYPE_RENDER_QUERY = '''
 fragment innerInfo on ConfigType {
   name
-  isList
-  isNullable
   recursiveConfigTypes {
     name
   }

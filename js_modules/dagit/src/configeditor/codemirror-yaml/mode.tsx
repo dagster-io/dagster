@@ -386,7 +386,7 @@ CodeMirror.registerHelper(
         return false;
       }
       return (
-        type.__typename === "ListConfigType" ||
+        type.__typename === "ArrayConfigType" ||
         type.__typename === "CompositeConfigType"
       );
     };
@@ -529,7 +529,7 @@ function findAutocompletionContext(
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
-      if (parentConfigType.__typename === "ListConfigType") {
+      if (parentConfigType.__typename === "ArrayConfigType") {
         childTypeKey = parentConfigType.typeParamKeys[0];
         childEntriesUnique = false;
       }

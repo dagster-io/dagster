@@ -22,6 +22,7 @@ from dagster import (
     check,
     composite_solid,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )
@@ -31,15 +32,7 @@ from dagster.core.types.config.evaluator.errors import (
     DagsterEvaluationErrorReason,
 )
 from dagster.core.types.config.evaluator.validate import process_config, validate_config
-from dagster.core.types.config.field_utils import coerce_potential_field
-
-
-def _raise_error():
-    raise Exception('error in test')
-
-
-def _to_field(ddict):
-    return coerce_potential_field(ddict, _raise_error)
+from dagster.core.types.config.field_utils import convert_potential_field
 
 
 def test_noop_config():
@@ -47,7 +40,7 @@ def test_noop_config():
 
 
 def test_int_field():
-    config_field = _to_field({'int_field': Int})
+    config_field = convert_potential_field({'int_field': Int})
     assert validate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
@@ -62,37 +55,39 @@ def assert_eval_failure(config_type, value):
 
 
 def test_int_fails():
-    config_field = _to_field({'int_field': Int})
+    config_field = convert_potential_field({'int_field': Int})
 
     assert_eval_failure(config_field.config_type, {'int_field': 'fjkdj'})
     assert_eval_failure(config_field.config_type, {'int_field': True})
 
 
 def test_default_arg():
-    config_field = _to_field({'int_field': Field(Int, default_value=2, is_optional=True)})
+    config_field = convert_potential_field(
+        {'int_field': Field(Int, default_value=2, is_optional=True)}
+    )
 
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
 
 
 def _single_required_string_config_dict():
-    return _to_field({'string_field': String})
+    return convert_potential_field({'string_field': String})
 
 
 def _multiple_required_fields_config_dict():
-    return _to_field({'field_one': String, 'field_two': String})
+    return convert_potential_field({'field_one': String, 'field_two': String})
 
 
 def _single_optional_string_config_dict():
-    return _to_field({'optional_field': Field(String, is_optional=True)})
+    return convert_potential_field({'optional_field': Field(String, is_optional=True)})
 
 
 def _single_optional_string_field_config_dict_with_default():
     optional_field_def = Field(String, is_optional=True, default_value='some_default')
-    return _to_field({'optional_field': optional_field_def})
+    return convert_potential_field({'optional_field': optional_field_def})
 
 
 def _mixed_required_optional_string_config_dict_with_default():
-    return _to_field(
+    return convert_potential_field(
         {
             'optional_arg': Field(String, is_optional=True, default_value='some_default'),
             'required_arg': Field(String, is_optional=False),
@@ -270,15 +265,17 @@ def test_mixed_args_passing():
 
 
 def _single_nested_config():
-    return _to_field({'nested': {'int_field': Int}})
+    return convert_potential_field({'nested': {'int_field': Int}})
 
 
 def _nested_optional_config_with_default():
-    return _to_field({'nested': {'int_field': Field(Int, is_optional=True, default_value=3)}})
+    return convert_potential_field(
+        {'nested': {'int_field': Field(Int, is_optional=True, default_value=3)}}
+    )
 
 
 def _nested_optional_config_with_no_default():
-    return _to_field({'nested': {'int_field': Field(Int, is_optional=True)}})
+    return convert_potential_field({'nested': {'int_field': Field(Int, is_optional=True)}})
 
 
 def test_single_nested_config():
@@ -417,12 +414,8 @@ def test_config_with_and_without_config():
     assert result_using_default.result_for_solid('print_value').output_value() == '_id_12345'
 
 
-def single_elem(ddict):
-    return List[ddict.items()[0]]
-
-
 def test_build_optionality():
-    optional_test_type = _to_field(
+    optional_test_type = convert_potential_field(
         {'required': {'value': String}, 'optional': {'value': Field(String, is_optional=True)},}
     ).config_type
 
@@ -478,7 +471,7 @@ def test_solid_list_config():
     value = [1, 2]
     called = {}
 
-    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=List[Int])
+    @solid(name='solid_list_config', input_defs=[], output_defs=[], config=[int])
     def solid_list_config(context):
         assert context.solid_config == value
         called['yup'] = True
@@ -497,19 +490,49 @@ def test_solid_list_config():
 
 def test_two_list_types():
     @solid(
-        name='two_list_type',
-        input_defs=[],
-        output_defs=[],
-        config=_to_field({'list_one': List[Int], 'list_two': List[Int]}),
+        input_defs=[], config={'list_one': [int], 'list_two': [int]},
     )
-    def two_list_type(_):
-        return None
+    def two_list_type(context):
+        return context.solid_config
 
-    @pipeline(name='two_types')
-    def pipeline_def():
-        two_list_type()
+    assert execute_solid(
+        two_list_type,
+        environment_dict={
+            'solids': {'two_list_type': {'config': {'list_one': [1], 'list_two': [2]}}}
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
 
-    assert pipeline_def
+    @solid(
+        input_defs=[], config={'list_one': [Int], 'list_two': [Int]},
+    )
+    def two_list_type_condensed_syntax(context):
+        return context.solid_config
+
+    assert execute_solid(
+        two_list_type_condensed_syntax,
+        environment_dict={
+            'solids': {
+                'two_list_type_condensed_syntax': {'config': {'list_one': [1], 'list_two': [2]}}
+            }
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
+
+    @solid(
+        input_defs=[], config={'list_one': [int], 'list_two': [int]},
+    )
+    def two_list_type_condensed_syntax_primitives(context):
+        return context.solid_config
+
+    assert execute_solid(
+        two_list_type_condensed_syntax_primitives,
+        environment_dict={
+            'solids': {
+                'two_list_type_condensed_syntax_primitives': {
+                    'config': {'list_one': [1], 'list_two': [2]}
+                }
+            }
+        },
+    ).output_value() == {'list_one': [1], 'list_two': [2]}
 
 
 def test_multilevel_default_handling():
@@ -605,7 +628,7 @@ def test_deeper_path():
 def test_working_list_path():
     called = {}
 
-    @solid(config=List[Int])
+    @solid(config=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -625,7 +648,7 @@ def test_working_list_path():
 def test_item_error_list_path():
     called = {}
 
-    @solid(config=List[Int])
+    @solid(config=[int])
     def required_list_int_solid(context):
         assert context.solid_config == [1, 2]
         called['yup'] = True
@@ -646,6 +669,19 @@ def test_item_error_list_path():
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
     assert 'Type failure at path "root:solids:required_list_int_solid:config[1]"' in str(pe)
+
+
+def test_list_in_config_error():
+    error_msg = (
+        'Cannot use List in the context of a config file. '
+        'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
+    )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
+
+        @solid(config=List[int])
+        def _no_runtime_list_in_config(_):
+            pass
 
 
 def test_required_resource_not_given():

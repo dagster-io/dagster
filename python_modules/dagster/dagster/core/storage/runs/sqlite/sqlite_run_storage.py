@@ -70,7 +70,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             path_to_old_db = path_to_old_db.lstrip('/')
         if os.path.exists(path_to_old_db):
             old_storage = SqliteRunStorage(old_conn_string)
-            old_runs = old_storage.all_runs()
+            old_runs = old_storage.get_runs()
             for run in old_runs:
                 self.add_run(run)
             os.unlink(path_to_old_db)

@@ -16,7 +16,7 @@ def test_0_6_4():
     with restore_directory(test_dir):
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
-        runs = instance.all_runs()
+        runs = instance.get_runs()
         with pytest.raises(
             DagsterInstanceMigrationRequired,
             match=re.escape(
@@ -33,7 +33,7 @@ def test_0_6_6_sqlite_exc():
     test_dir = file_relative_path(__file__, 'snapshot_0_6_6/sqlite')
     with restore_directory(test_dir):
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        runs = instance.all_runs()
+        runs = instance.get_runs()
         # Note that this is a deliberate choice -- old runs are simply invisible, and their
         # presence won't raise DagsterInstanceMigrationRequired. This is a reasonable choice since
         # the runs.db has moved and otherwise we would have to do a check for the existence of an
@@ -64,7 +64,7 @@ def test_0_6_6_sqlite_migrate():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         instance.upgrade()
 
-        runs = instance.all_runs()
+        runs = instance.get_runs()
         assert len(runs) == 1
 
         run_ids = instance._event_storage.get_all_run_ids()

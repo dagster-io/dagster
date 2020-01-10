@@ -36,7 +36,7 @@ export interface ParentSolidNodeDefinitionFragment_SolidDefinition_outputDefinit
 }
 
 export interface ParentSolidNodeDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "CompositeConfigType" | "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   name: string | null;
   description: string | null;
 }

@@ -1,8 +1,6 @@
 replicaCount: 1
 
-imagepullPolicy: IfNotPresent
-imagePullSecrets:
-  - name: element-dev-key
+imagepullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
@@ -35,11 +33,9 @@ serviceAccount:
   create: true
   name: "dagit-admin"
 
-podSecurityContext:
-  {}
+podSecurityContext: {}
 
-securityContext:
-  {}
+securityContext: {}
 
 service:
   type: ClusterIP

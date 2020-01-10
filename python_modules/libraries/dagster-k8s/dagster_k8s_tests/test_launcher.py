@@ -43,7 +43,7 @@ spec:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
         image: {job_image}
-        image_pull_policy: IfNotPresent
+        image_pull_policy: Always
         name: dagster-job-{run_id}
         volume_mounts:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml

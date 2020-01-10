@@ -5,6 +5,7 @@ from datetime import datetime
 import sqlalchemy as db
 
 from dagster import check
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
@@ -82,7 +83,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _rows_to_runs(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def _build_query(self, query, cursor, limit):
+    def _add_cursor_limit_to_query(self, query, cursor, limit):
         ''' Helper function to deal with cursor/limit pagination args '''
 
         if cursor:
@@ -95,93 +96,76 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = query.order_by(RunsTable.c.id.desc())
         return query
 
-    def all_runs(self, cursor=None, limit=None):
-        '''Return all the runs present in the storage.
+    def _add_filters_to_query(self, query, filters):
+        check.inst_param(filters, 'filters', PipelineRunsFilter)
 
-        Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
-        '''
-        query = self._build_query(db.select([RunsTable.c.run_body]), cursor, limit)
-        rows = self.execute(query)
-        return self._rows_to_runs(rows)
+        if filters.run_id:
+            query = query.where(RunsTable.c.run_id == filters.run_id)
 
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        '''Return all the runs present in the storage for a given pipeline.
+        if filters.pipeline_name:
+            query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
 
-        Args:
-            pipeline_name (str): The pipeline to index on
+        if filters.status:
+            query = query.where(RunsTable.c.status == filters.status.value)
 
-        Returns:
-            List[PipelineRun]: Tuples of run_id, pipeline_run.
-        '''
-        check.str_param(pipeline_name, 'pipeline_name')
-
-        base_query = db.select([RunsTable.c.run_body]).where(
-            RunsTable.c.pipeline_name == pipeline_name
-        )
-        query = self._build_query(base_query, cursor, limit)
-        rows = self.execute(query)
-        return self._rows_to_runs(rows)
-
-    def get_run_count_with_matching_tags(self, tags):
-        sub_query = db.select([1]).select_from(
-            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-        )
-
-        sub_query = sub_query.where(
-            db.or_(
-                *(
-                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags
+        if filters.tags:
+            query = query.where(
+                db.or_(
+                    *(
+                        db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
+                        for key, value in filters.tags.items()
+                    )
                 )
+            ).group_by(RunsTable.c.run_body, RunsTable.c.id)
+
+            if len(filters.tags) > 0:
+                query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
+
+        return query
+
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        filters = check.opt_inst_param(
+            filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
+        )
+        check.opt_str_param(cursor, 'cursor')
+        check.opt_int_param(limit, 'limit')
+
+        # If we have a tags filter, then we need to select from a joined table
+        if filters.tags:
+            base_query = db.select([RunsTable.c.run_body]).select_from(
+                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
             )
-        ).group_by(RunsTable.c.run_id)
+        else:
+            base_query = db.select([RunsTable.c.run_body]).select_from(RunsTable)
 
-        if len(tags) > 0:
-            sub_query = sub_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
-
-        sub_query = sub_query.alias("matching_runs")
-
-        query = db.select([db.func.count()]).select_from(sub_query)
-
+        query = self._add_filters_to_query(base_query, filters)
+        query = self._add_cursor_limit_to_query(query, cursor, limit)
         rows = self.execute(query)
+        return self._rows_to_runs(rows)
 
+    def get_runs_count(self, filters=None):
+        filters = check.opt_inst_param(
+            filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
+        )
+
+        # If we have a tags filter, then we need to select from a joined table
+        if filters.tags:
+            subquery = db.select([1]).select_from(
+                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+            )
+        else:
+            subquery = db.select([1]).select_from(RunsTable)
+
+        subquery = self._add_filters_to_query(subquery, filters)
+
+        # We use an alias here because Postgres requires subqueries to be
+        # aliased.
+        subquery = subquery.alias("subquery")
+
+        query = db.select([db.func.count()]).select_from(subquery)
+        rows = self.execute(query)
         count = rows[0][0]
         return count
-
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.list_param(tags, 'tags', tuple)
-
-        base_query = db.select([RunsTable.c.run_body]).select_from(
-            RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-        )
-
-        base_query = base_query.where(
-            db.or_(
-                *(
-                    db.and_(RunTagsTable.c.key == key, RunTagsTable.c.value == value)
-                    for key, value in tags
-                )
-            )
-        ).group_by(RunsTable.c.run_body, RunsTable.c.id)
-
-        if len(tags) > 0:
-            base_query = base_query.having(db.func.count(RunsTable.c.run_id) == len(tags))
-
-        query = self._build_query(base_query, cursor, limit)
-
-        rows = self.execute(query)
-
-        return self._rows_to_runs(rows)
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        check.inst_param(run_status, 'run_status', PipelineRunStatus)
-
-        base_query = db.select([RunsTable.c.run_body]).where(RunsTable.c.status == run_status.value)
-        query = self._build_query(base_query, cursor, limit)
-        rows = self.execute(query)
-
-        return self._rows_to_runs(rows)
 
     def get_run_by_id(self, run_id):
         '''Get a run by its id.

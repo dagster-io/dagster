@@ -114,6 +114,9 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': 'Any.MaterializationSchema'
             },
             {
+                'name': 'Array[None]'
+            },
+            {
                 'name': 'Bool'
             },
             {
@@ -130,9 +133,6 @@ snapshots['test_successful_enviroment_schema 1'] = {
             },
             {
                 'name': 'Int.MaterializationSchema'
-            },
-            {
-                'name': 'List[None]'
             },
             {
                 'name': 'Path'

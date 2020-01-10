@@ -1,4 +1,4 @@
-from dagster import Dict, Field, Int, List, Optional, PipelineDefinition, String, solid
+from dagster import Field, Int, Optional, PipelineDefinition, String, solid
 from dagster.core.types.config.field import resolve_to_config_type
 from dagster.core.types.config.type_printer import print_type_to_string
 
@@ -15,14 +15,14 @@ def test_basic_type_print():
 
 
 def test_basic_list_type_print():
-    assert print_type_to_string(List[Int]) == '[Int]'
-    assert_inner_types(List[Int], Int)
+    assert print_type_to_string([int]) == '[Int]'
+    assert_inner_types([int], Int)
 
 
 def test_double_list_type_print():
-    assert print_type_to_string(List[List[Int]]) == '[[Int]]'
-    int_list = List[Int]
-    list_int_list = List[int_list]
+    assert print_type_to_string([[int]]) == '[[Int]]'
+    int_list = [int]
+    list_int_list = [int_list]
     assert_inner_types(list_int_list, Int, int_list)
 
 
@@ -33,14 +33,14 @@ def test_basic_nullable_type_print():
 
 
 def test_nullable_list_combos():
-    assert print_type_to_string(List[Int]) == '[Int]'
-    assert print_type_to_string(Optional[List[Int]]) == '[Int]?'
-    assert print_type_to_string(List[Optional[Int]]) == '[Int?]'
-    assert print_type_to_string(Optional[List[Optional[Int]]]) == '[Int?]?'
+    assert print_type_to_string([int]) == '[Int]'
+    assert print_type_to_string(Optional[[int]]) == '[Int]?'
+    assert print_type_to_string([Optional[int]]) == '[Int?]'
+    assert print_type_to_string(Optional[[Optional[int]]]) == '[Int?]?'
 
 
 def test_basic_dict():
-    output = print_type_to_string(Dict({'int_field': Int}))
+    output = print_type_to_string({'int_field': int})
 
     expected = '''{
   int_field: Int
@@ -50,7 +50,7 @@ def test_basic_dict():
 
 
 def test_two_field_dicts():
-    two_field_dict = Dict({'int_field': Int, 'string_field': Field(String)})
+    two_field_dict = {'int_field': int, 'string_field': str}
     assert_inner_types(two_field_dict, Int, String)
 
     output = print_type_to_string(two_field_dict)
@@ -64,7 +64,7 @@ def test_two_field_dicts():
 
 
 def test_two_field_dicts_same_type():
-    two_field_dict = Dict({'int_field1': Int, 'int_field2': Int})
+    two_field_dict = {'int_field1': int, 'int_field2': int}
     assert_inner_types(two_field_dict, Int)
 
     output = print_type_to_string(two_field_dict)
@@ -78,7 +78,7 @@ def test_two_field_dicts_same_type():
 
 
 def test_optional_field():
-    output = print_type_to_string(Dict({'int_field': Field(Int, is_optional=True)}))
+    output = print_type_to_string({'int_field': Field(int, is_optional=True)})
 
     expected = '''{
   int_field?: Int
@@ -89,13 +89,11 @@ def test_optional_field():
 
 def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
-        Dict(
-            {
-                'nullable_int_field': Field(Optional[Int]),
-                'optional_int_field': Field(Int, is_optional=True),
-                'string_list_field': Field(List[String]),
-            }
-        )
+        {
+            'nullable_int_field': Optional[int],
+            'optional_int_field': Field(int, is_optional=True),
+            'string_list_field': [str],
+        }
     )
 
     expected = '''{
@@ -108,8 +106,8 @@ def test_single_level_dict_lists_and_nullable():
 
 
 def test_nested_dict():
-    nested_type = Dict({'int_field': Int})
-    outer_type = Dict({'nested': Field(nested_type)})
+    nested_type = {'int_field': int}
+    outer_type = {'nested': nested_type}
     output = print_type_to_string(outer_type)
 
     assert_inner_types(outer_type, Int, nested_type)
@@ -141,22 +139,22 @@ def define_test_type_pipeline():
     return PipelineDefinition(
         name='test_type_pipeline',
         solid_defs=[
-            define_solid_for_test_type('int_config', Int),
-            define_solid_for_test_type('list_of_int_config', List[Int]),
-            define_solid_for_test_type('nullable_list_of_int_config', Optional[List[Int]]),
-            define_solid_for_test_type('list_of_nullable_int_config', List[Optional[Int]]),
+            define_solid_for_test_type('int_config', int),
+            define_solid_for_test_type('list_of_int_config', [int]),
+            define_solid_for_test_type('nullable_list_of_int_config', Optional[[int]]),
+            define_solid_for_test_type('list_of_nullable_int_config', [Optional[int]]),
             define_solid_for_test_type(
-                'nullable_list_of_nullable_int_config', Optional[List[Optional[Int]]]
+                'nullable_list_of_nullable_int_config', Optional[[Optional[int]]]
             ),
-            define_solid_for_test_type('simple_dict', {'int_field': Int, 'string_field': String}),
+            define_solid_for_test_type('simple_dict', {'int_field': int, 'string_field': str}),
             define_solid_for_test_type(
                 'dict_with_optional_field',
                 {
-                    'nullable_int_field': Optional[Int],
-                    'optional_int_field': Field(Int, is_optional=True),
-                    'string_list_field': List[String],
+                    'nullable_int_field': Optional[int],
+                    'optional_int_field': Field(int, is_optional=True),
+                    'string_list_field': [str],
                 },
             ),
-            define_solid_for_test_type('nested_dict', {'nested': {'int_field': Int}}),
+            define_solid_for_test_type('nested_dict', {'nested': {'int_field': int}}),
         ],
     )

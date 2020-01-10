@@ -256,7 +256,7 @@ def test_set_solid_configable_input_bad():
         DagsterInvalidConfigError,
         match=re.escape(
             'Error 1: Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[ScalarUnion[String,String.InputHydrationConfig]]". Value at path '
+            '"Array[ScalarUnion[String,String.InputHydrationConfig]]". Value at path '
             'root:solids:set_solid:inputs:set_input must be list. Expected: '
             '[(String | { json: { path: Path } pickle: { path: Path } value: String })].'
         ),
@@ -332,12 +332,12 @@ def unpickle(context) -> Any:
         return pickle.load(fd)
 
 
-@solid(config=Field(List))
+@solid(config=Field(list))
 def concat_typeless_list_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config=Field(List[String]))
+@solid(config=Field([str]))
 def concat_config(context) -> String:
     return ''.join(context.solid_config)
 

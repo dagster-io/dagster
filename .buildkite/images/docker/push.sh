@@ -30,3 +30,10 @@ docker tag "dagster/buildkite-integration:py${PYTHON_VERSION}-${IMAGE_VERSION}" 
     "${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/buildkite-integration:py${PYTHON_VERSION}-${IMAGE_VERSION}"
 
 docker push "${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/buildkite-integration:py${PYTHON_VERSION}-${IMAGE_VERSION}"
+
+docker tag "dagster/buildkite-integration:py${PYTHON_VERSION}-${IMAGE_VERSION}" \
+    "dagster/buildkite-integration:py${PYTHON_VERSION}-latest"
+
+docker login -u ${DOCKERHUB_USERNAME} -p ${DOCKERHUB_PASSWORD}
+
+docker push "dagster/buildkite-integration:py${PYTHON_VERSION}-latest"

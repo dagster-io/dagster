@@ -8,12 +8,12 @@
 // ====================================================
 
 export interface ConfigEditorEnvironmentSchemaFragment_rootEnvironmentType {
-  __typename: "CompositeConfigType" | "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
 }
 
-export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType {
-  __typename: "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -55,7 +55,7 @@ export interface ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeC
   fields: ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export type ConfigEditorEnvironmentSchemaFragment_allConfigTypes = ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ListConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType;
+export type ConfigEditorEnvironmentSchemaFragment_allConfigTypes = ConfigEditorEnvironmentSchemaFragment_allConfigTypes_ArrayConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_EnumConfigType | ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType;
 
 export interface ConfigEditorEnvironmentSchemaFragment {
   __typename: "EnvironmentSchema";

@@ -264,9 +264,7 @@ def define_dagstermill_solid(
         input_defs=input_defs,
         compute_fn=_dm_solid_compute(name, notebook_path),
         output_defs=output_defs,
-        config=check_user_facing_opt_config_param(
-            config, 'config', 'of a dagstermill solid named "{name}"'.format(name=name)
-        ),
+        config=check_user_facing_opt_config_param(config, 'config'),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
         metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},

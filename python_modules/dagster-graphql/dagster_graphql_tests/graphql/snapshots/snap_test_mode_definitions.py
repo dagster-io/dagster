@@ -67,6 +67,9 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': 'Any.MaterializationSchema'
             },
             {
+                'name': 'Array[None]'
+            },
+            {
                 'name': 'Bool'
             },
             {
@@ -83,9 +86,6 @@ snapshots['test_query_multi_mode 1'] = {
             },
             {
                 'name': 'Int.MaterializationSchema'
-            },
-            {
-                'name': 'List[None]'
             },
             {
                 'name': 'Path'

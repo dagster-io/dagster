@@ -3,6 +3,7 @@ from dagster_pandas.constraints import (
     ColumnExistsConstraint,
     ColumnTypeConstraint,
     Constraint,
+    DataFrameConstraint,
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
     UniqueColumnConstraint,
@@ -133,11 +134,18 @@ class PandasColumn:
         )
 
 
-def validate_collection_schema(collection_schema, dataframe):
+def validate_collection_schema(collection_schema, dataframe, dataframe_constraints=None):
     collection_schema = check.list_param(
         collection_schema, 'collection_schema', of_type=PandasColumn
     )
     dataframe = check.inst_param(dataframe, 'dataframe', DataFrame)
+    dataframe_constraints = check.opt_list_param(
+        dataframe_constraints, 'dataframe_constraints', of_type=DataFrameConstraint
+    )
 
     for column in collection_schema:
         column.validate(dataframe)
+
+    if dataframe_constraints:
+        for dataframe_constraint in dataframe_constraints:
+            dataframe_constraint.validate(dataframe)

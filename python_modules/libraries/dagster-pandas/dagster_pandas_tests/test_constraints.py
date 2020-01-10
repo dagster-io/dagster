@@ -8,6 +8,8 @@ from dagster_pandas.constraints import (
     MaxValueColumnConstraint,
     MinValueColumnConstraint,
     NonNullableColumnConstraint,
+    RowCountConstraint,
+    StrictColumnsConstraint,
     UniqueColumnConstraint,
 )
 from pandas import DataFrame
@@ -75,3 +77,47 @@ def test_in_range_value_column_constraint():
     assert InRangeColumnConstraint(1, 4).validate(test_dataframe, 'foo') is None
     with pytest.raises(ConstraintViolationException):
         assert InRangeColumnConstraint(2, 3).validate(test_dataframe, 'foo')
+
+
+def test_strict_columns_constraint():
+    assert (
+        StrictColumnsConstraint(['foo', 'bar']).validate(DataFrame({'foo': [1, 2], 'bar': [1, 2]}))
+        is None
+    )
+    with pytest.raises(ConstraintViolationException):
+        StrictColumnsConstraint(['foo', 'bar']).validate(
+            DataFrame({'foo': [1, 2], 'bar': [1, 2], 'baz': [1, 2]})
+        )
+
+    assert (
+        StrictColumnsConstraint(['foo', 'bar'], enforce_ordering=True).validate(
+            DataFrame([[1, 2], [1, 2]], columns=['foo', 'bar'])
+        )
+        is None
+    )
+    with pytest.raises(ConstraintViolationException):
+        StrictColumnsConstraint(['foo', 'bar'], enforce_ordering=True).validate(
+            DataFrame([[1, 2], [1, 2]], columns=['bar', 'foo'])
+        )
+
+
+def test_row_count_constraint():
+    test_dataframe = DataFrame({'foo': [1, 2, 3, 4, 5, 6]})
+    assert RowCountConstraint(6).validate(test_dataframe) is None
+    with pytest.raises(ConstraintViolationException):
+        RowCountConstraint(5).validate(test_dataframe)
+
+    assert (
+        RowCountConstraint(5, error_tolerance=1).validate(DataFrame({'foo': [1, 2, 3, 4]})) is None
+    )
+    with pytest.raises(ConstraintViolationException):
+        assert RowCountConstraint(5, error_tolerance=1).validate(DataFrame({'foo': [1, 2]}))
+
+    assert (
+        RowCountConstraint(5, error_tolerance=1).validate(DataFrame({'foo': [1, 2, 3, 4, 5, 6]}))
+        is None
+    )
+    with pytest.raises(ConstraintViolationException):
+        assert RowCountConstraint(5, error_tolerance=1).validate(
+            DataFrame({'foo': [1, 2, 3, 4, 5, 6, 7]})
+        )

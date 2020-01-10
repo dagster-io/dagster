@@ -151,9 +151,9 @@ def create_dagster_pandas_dataframe_description(description, columns):
 
 
 def create_dagster_pandas_dataframe_type(
-    name=None, description=None, columns=None, summary_statistics=None
+    name=None, description=None, columns=None, event_metadata_fn=None, dataframe_constraints=None
 ):
-    summary_statistics = check.opt_callable_param(summary_statistics, 'summary_statistics')
+    event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, 'description', default=''),
         check.opt_list_param(columns, 'columns', of_type=PandasColumn),
@@ -170,14 +170,16 @@ def create_dagster_pandas_dataframe_type(
 
         if columns is not None:
             try:
-                validate_collection_schema(columns, value)
+                validate_collection_schema(
+                    columns, value, dataframe_constraints=dataframe_constraints
+                )
             except ConstraintViolationException as e:
                 return TypeCheck(success=False, description=str(e))
 
         return TypeCheck(
             success=True,
-            metadata_entries=_execute_summary_stats(name, value, summary_statistics)
-            if summary_statistics
+            metadata_entries=_execute_summary_stats(name, value, event_metadata_fn)
+            if event_metadata_fn
             else None,
         )
 
@@ -188,8 +190,8 @@ def create_dagster_pandas_dataframe_type(
     )
 
 
-def _execute_summary_stats(type_name, value, summary_statistics_fn):
-    metadata_entries = summary_statistics_fn(value)
+def _execute_summary_stats(type_name, value, event_metadata_fn):
+    metadata_entries = event_metadata_fn(value)
 
     if not (
         isinstance(metadata_entries, list)

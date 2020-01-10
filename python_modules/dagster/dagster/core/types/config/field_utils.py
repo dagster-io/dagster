@@ -2,7 +2,7 @@
 import hashlib
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidConfigDefinitionError
 
 from .config_type import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, ConfigTypeKind
 
@@ -32,43 +32,15 @@ FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
-def raise_bad_user_facing_field_argument(obj, param_name, error_context_str):
-    from .field import resolve_to_config_type
-    from .type_printer import print_config_type_to_string
-
-    raise DagsterInvalidDefinitionError(
-        (
-            'You have passed an object {value_repr} of incorrect type '
-            '"{type_name}" in the parameter "{param_name}" '
-            '{error_context_str} where a Field, dict, or type was expected.'
-        ).format(
-            error_context_str=error_context_str,
-            param_name=param_name,
-            value_repr=repr(obj),
-            type_name=type(obj).__name__,
-        )
-    )
-
-
-def check_user_facing_opt_config_param(obj, param_name, error_context_str):
+def check_user_facing_opt_config_param(potential_field, param_name):
     check.str_param(param_name, 'param_name')
 
-    if obj is None:
-        return None
-
-    return coerce_potential_field(
-        obj,
-        lambda potential_field: raise_bad_user_facing_field_argument(
-            potential_field, param_name, error_context_str
-        ),
-    )
+    return None if potential_field is None else convert_potential_field(potential_field)
 
 
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, **kwargs):
-        from dagster.core.types.config.field import Field
-
-        self.fields = check.dict_param(fields, 'fields', key_type=str, value_type=Field)
+        self.fields = expand_fields_dict(fields)
         super(_ConfigHasFields, self).__init__(**kwargs)
 
     @property
@@ -82,77 +54,14 @@ class _ConfigHasFields(ConfigType):
                 yield recursive_config_type
 
 
-def is_potential_field(potential_field):
-    from .field import Field, resolve_to_config_type
-
-    return isinstance(potential_field, (Field, dict)) or resolve_to_config_type(potential_field)
-
-
-def coerce_potential_field(potential_field, raise_error_callback):
-    from .field import Field, resolve_to_config_type
-
-    if not is_potential_field(potential_field):
-        raise_error_callback(potential_field)
-
-    return (
-        potential_field
-        if isinstance(potential_field, Field)
-        else Field(Dict(_process_fields_dict(potential_field, raise_error_callback)))
-        if isinstance(potential_field, dict)
-        else Field(resolve_to_config_type(potential_field))
-    )
-
-
-def _process_fields_dict(fields, throw_error_callback):
-    check.dict_param(fields, 'fields', key_type=str)
-    check.callable_param(throw_error_callback, 'throw_error_callback')
-
-    return {
-        name: coerce_potential_field(value, throw_error_callback) for name, value in fields.items()
-    }
-
-
-def process_user_facing_fields_dict(fields, type_name_msg):
-    check.dict_param(fields, 'fields', key_type=str)
-    check.str_param(type_name_msg, 'type_name_msg')
-
-    return {
-        name: coerce_potential_field(
-            value, lambda: _throw_for_bad_fields_dict(fields, type_name_msg)
-        )
-        for name, value in fields.items()
-    }
-
-
-def _throw_for_bad_fields_dict(fields, type_name_msg):
-    from .field import Field
-
-    sorted_field_names = sorted(list(fields.keys()))
-
-    for field_name, potential_field in fields.items():
-        if isinstance(potential_field, (Field, dict)):
-            continue
-
-        raise_bad_user_facing_field_argument(
-            potential_field,
-            'fields',
-            (
-                'and it is in the "{field_name}" entry of that dict. It is from '
-                'a {type_name_msg} with fields {field_names}'
-            ).format(
-                type_name_msg=type_name_msg, field_name=field_name, field_names=sorted_field_names
-            ),
-        )
-
-
 class NamedDict(_ConfigHasFields):
     def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-        process_user_facing_fields_dict(fields, 'NamedDict named "{}"'.format(name))
+        expand_fields_dict(fields)
         super(NamedDict, self).__init__(
             key=name,
             name=name,
-            kind=ConfigTypeKind.STRICT_DICT,
-            fields=fields,
+            kind=ConfigTypeKind.STRICT_SHAPE,
+            fields=expand_fields_dict(fields),
             description=description,
             type_attributes=type_attributes,
         )
@@ -196,11 +105,11 @@ def _compute_fields_hash(fields, description, is_system_config):
     return m.hexdigest()
 
 
-def _define_dict_key_hash(fields, description, is_system_config):
-    return 'Dict.' + _compute_fields_hash(fields, description, is_system_config)
+def _define_shape_key_hash(fields, description, is_system_config):
+    return 'Shape.' + _compute_fields_hash(fields, description, is_system_config)
 
 
-class Dict(_ConfigHasFields):
+class Shape(_ConfigHasFields):
     '''
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
@@ -209,27 +118,24 @@ class Dict(_ConfigHasFields):
     '''
 
     def __new__(cls, fields, description=None, is_system_config=False):
-        fields = process_user_facing_fields_dict(fields, 'Dict')
         return _memoize_inst_in_field_cache(
-            cls, Dict, _define_dict_key_hash(fields, description, is_system_config)
+            cls,
+            Shape,
+            _define_shape_key_hash(expand_fields_dict(fields), description, is_system_config),
         )
 
     def __init__(self, fields, description=None, is_system_config=False):
-        fields = process_user_facing_fields_dict(fields, 'Dict')
-        super(Dict, self).__init__(
+        fields = expand_fields_dict(fields)
+        super(Shape, self).__init__(
             name=None,
-            kind=ConfigTypeKind.STRICT_DICT,
-            key=_define_dict_key_hash(fields, description, is_system_config),
+            kind=ConfigTypeKind.STRICT_SHAPE,
+            key=_define_shape_key_hash(fields, description, is_system_config),
             description=description,
             fields=fields,
             type_attributes=ConfigTypeAttributes(
                 is_builtin=True, is_system_config=is_system_config,
             ),
         )
-
-
-def build_config_dict(fields, description=None, is_system_config=False):
-    return Dict(fields, description, is_system_config)
 
 
 def _define_permissive_dict_key(fields, description):
@@ -261,16 +167,16 @@ class PermissiveDict(_ConfigHasFields):
     '''
 
     def __new__(cls, fields=None, description=None):
-        if fields:
-            fields = process_user_facing_fields_dict(fields, 'PermissiveDict')
-
         return _memoize_inst_in_field_cache(
-            cls, PermissiveDict, _define_permissive_dict_key(fields, description)
+            cls,
+            PermissiveDict,
+            _define_permissive_dict_key(
+                expand_fields_dict(fields) if fields else None, description
+            ),
         )
 
     def __init__(self, fields=None, description=None):
-        if fields:
-            fields = process_user_facing_fields_dict(fields, 'PermissiveDict')
+        fields = expand_fields_dict(fields) if fields else None
         super(PermissiveDict, self).__init__(
             key=_define_permissive_dict_key(fields, description),
             name=None,
@@ -329,13 +235,14 @@ class Selector(_ConfigHasFields):
     '''
 
     def __new__(cls, fields, description=None, is_system_config=False):
-        fields = process_user_facing_fields_dict(fields, 'Selector')
         return _memoize_inst_in_field_cache(
-            cls, Selector, _define_selector_key(fields, description, is_system_config)
+            cls,
+            Selector,
+            _define_selector_key(expand_fields_dict(fields), description, is_system_config),
         )
 
     def __init__(self, fields, description=None, is_system_config=False):
-        fields = process_user_facing_fields_dict(fields, 'Selector')
+        fields = expand_fields_dict(fields)
         super(Selector, self).__init__(
             key=_define_selector_key(fields, description, is_system_config),
             name=None,
@@ -351,12 +258,92 @@ class Selector(_ConfigHasFields):
 class NamedSelector(_ConfigHasFields):
     def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
         check.str_param(name, 'name')
-        fields = process_user_facing_fields_dict(fields, 'NamedSelector named "{}"'.format(name))
         super(NamedSelector, self).__init__(
             key=name,
             name=name,
             kind=ConfigTypeKind.SELECTOR,
-            fields=fields,
+            fields=expand_fields_dict(fields),
             description=description,
             type_attributes=type_attributes,
         )
+
+
+# Config syntax expansion code below
+
+
+def is_potential_field(potential_field):
+    from .field import Field, resolve_to_config_type
+
+    return isinstance(potential_field, (Field, dict, list)) or resolve_to_config_type(
+        potential_field
+    )
+
+
+def convert_fields_to_dict_type(fields):
+    return _convert_fields_to_dict_type(fields, fields, [])
+
+
+def _convert_fields_to_dict_type(original_root, fields, stack):
+    return Shape(_expand_fields_dict(original_root, fields, stack))
+
+
+def expand_fields_dict(fields):
+    return _expand_fields_dict(fields, fields, [])
+
+
+def _expand_fields_dict(original_root, fields, stack):
+    check.dict_param(fields, 'fields')
+    return {
+        name: _convert_potential_field(original_root, value, stack + [name])
+        for name, value in fields.items()
+    }
+
+
+def expand_list(original_root, the_list, stack):
+    from .config_type import Array
+
+    if len(the_list) != 1:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, the_list, stack, 'List must be of length 1'
+        )
+
+    inner_type = _convert_potential_type(original_root, the_list[0], stack)
+    if not inner_type:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root,
+            the_list,
+            stack,
+            'List have a single item and contain a valid type i.e. [int]. Got item {}'.format(
+                repr(the_list[0])
+            ),
+        )
+
+    return Array(inner_type)
+
+
+def convert_potential_field(potential_field):
+    return _convert_potential_field(potential_field, potential_field, [])
+
+
+def _convert_potential_type(original_root, potential_type, stack):
+    from .field import resolve_to_config_type
+
+    if isinstance(potential_type, dict):
+        return Shape(_expand_fields_dict(original_root, potential_type, stack))
+
+    if isinstance(potential_type, list):
+        return expand_list(original_root, potential_type, stack)
+
+    return resolve_to_config_type(potential_type)
+
+
+def _convert_potential_field(original_root, potential_field, stack):
+    from .field import Field
+
+    if not is_potential_field(potential_field):
+        raise DagsterInvalidConfigDefinitionError(original_root, potential_field, stack)
+
+    if isinstance(potential_field, Field):
+        return potential_field
+
+    return Field(_convert_potential_type(original_root, potential_field, stack))

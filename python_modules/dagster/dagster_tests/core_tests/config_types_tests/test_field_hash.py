@@ -1,6 +1,6 @@
 from six import string_types
 
-from dagster import Dict, Field, PermissiveDict, Selector
+from dagster import Field, PermissiveDict, Selector, Shape
 from dagster.core.types.config.field_utils import _compute_fields_hash
 
 
@@ -32,8 +32,8 @@ def test_hash_diff():
 
 
 def test_construct_same_dicts():
-    int_dict_1 = Dict(fields={'an_int': Field(int)})
-    int_dict_2 = Dict(fields={'an_int': Field(int)})
+    int_dict_1 = Shape(fields={'an_int': Field(int)})
+    int_dict_2 = Shape(fields={'an_int': Field(int)})
 
     # assert identical object
     assert int_dict_1 is int_dict_2
@@ -42,9 +42,9 @@ def test_construct_same_dicts():
 
 
 def test_field_order_irrelevant():
-    int_dict_1 = Dict(fields={'an_int': Field(int), 'another_int': Field(int)})
+    int_dict_1 = Shape(fields={'an_int': Field(int), 'another_int': Field(int)})
 
-    int_dict_2 = Dict(fields={'another_int': Field(int), 'an_int': Field(int)})
+    int_dict_2 = Shape(fields={'another_int': Field(int), 'an_int': Field(int)})
 
     # assert identical object
     assert int_dict_1 is int_dict_2
@@ -53,8 +53,8 @@ def test_field_order_irrelevant():
 
 
 def test_construct_different_dicts():
-    int_dict = Dict(fields={'an_int': Field(int)})
-    string_dict = Dict(fields={'a_string': Field(str)})
+    int_dict = Shape(fields={'an_int': Field(int)})
+    string_dict = Shape(fields={'a_string': Field(str)})
 
     assert int_dict is not string_dict
     assert int_dict.key != string_dict.key
@@ -101,11 +101,11 @@ def test_construct_different_selectors():
 
 
 def test_kitchen_sink():
-    big_dict_1 = Dict(
+    big_dict_1 = Shape(
         {
             'field_one': Field(int, default_value=2, is_optional=True),
             'field_two': Field(
-                Dict(
+                Shape(
                     {
                         'nested_field_one': Field(bool),
                         'nested_selector': Field(
@@ -125,11 +125,11 @@ def test_kitchen_sink():
         }
     )
 
-    big_dict_2 = Dict(
+    big_dict_2 = Shape(
         {
             'field_one': Field(int, default_value=2, is_optional=True),
             'field_two': Field(
-                Dict(
+                Shape(
                     fields={
                         'nested_field_one': Field(bool),
                         'nested_selector': Field(
@@ -153,11 +153,11 @@ def test_kitchen_sink():
     assert big_dict_1.key == big_dict_2.key
 
     # differs way down in tree
-    big_dict_3 = Dict(
+    big_dict_3 = Shape(
         {
             'field_one': Field(int, default_value=2, is_optional=True),
             'field_two': Field(
-                Dict(
+                Shape(
                     fields={
                         'nested_field_one': Field(bool),
                         'nested_selector': Field(

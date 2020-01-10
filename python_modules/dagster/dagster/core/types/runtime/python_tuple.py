@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.config_type import ConfigAnyInstance, List
+from dagster.core.types.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
@@ -15,7 +15,7 @@ class TypedTupleInputHydrationConfig(InputHydrationConfig):
 
     @property
     def schema_type(self):
-        return List(ConfigAnyInstance)
+        return Array(ConfigAnyInstance)
 
     def construct_from_config_value(self, context, config_value):
         return tuple(
@@ -86,3 +86,15 @@ def create_typed_tuple(*dagster_type_args):
     )
 
     return _TypedPythonTuple(runtime_types)
+
+
+class DagsterTupleApi:
+    def __getitem__(self, tuple_types):
+        check.not_none_param(tuple_types, 'tuple_types')
+        if isinstance(tuple_types, tuple):
+            return create_typed_tuple(*tuple_types)
+        else:
+            return create_typed_tuple(tuple_types)
+
+
+Tuple = DagsterTupleApi()

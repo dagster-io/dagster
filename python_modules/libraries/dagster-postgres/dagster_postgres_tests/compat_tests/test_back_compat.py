@@ -45,7 +45,7 @@ def test_0_6_6_postgres(hostname, conn_string):
         instance = DagsterInstance.from_config(tempdir)
 
         # Runs will appear in DB, but event logs need migration
-        runs = instance.all_runs()
+        runs = instance.get_runs()
         assert len(runs) == 1
         assert instance.get_run_by_id(run_id)
 
@@ -54,7 +54,7 @@ def test_0_6_6_postgres(hostname, conn_string):
         # Post migration, event logs appear in DB
         instance.upgrade()
 
-        runs = instance.all_runs()
+        runs = instance.get_runs()
         assert len(runs) == 1
         assert instance.get_run_by_id(run_id)
 

@@ -21,6 +21,7 @@ data:
         {{- end }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
         job_image: "{{ .Values.job_image.image.repository }}:{{ .Values.job_image.image.tag }}"
+        instance_config_map: "{{ template "dagster.fullname" .}}-instance"
 
     run_storage:
       module: dagster_postgres.run_storage

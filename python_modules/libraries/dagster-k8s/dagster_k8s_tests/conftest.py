@@ -148,6 +148,7 @@ def run_launcher(helm_chart, docker_image):  # pylint: disable=redefined-outer-n
         postgres_port='5432',
         image_pull_secrets=[{'name': 'element-dev-key'}],
         service_account_name='dagit-admin',
+        instance_config_map='dagster-instance',
         job_image=docker_image,
         load_kubeconfig=True,
         kubeconfig_file=KUBECONFIG_FILE,

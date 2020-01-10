@@ -86,7 +86,7 @@ class DataFrameValidator(object):
                     )
 
 
-def compute_trip_dataframe_summary_statistics(dataframe):
+def compute_trip_dataframe_event_metadata(dataframe):
     return [
         EventMetadataEntry.text(
             str(min(dataframe['start_time'])), 'min_start_time', 'Date data collection started',
@@ -124,11 +124,11 @@ RawTripDataFrame = create_dagster_pandas_dataframe_type(
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name='TripDataFrame',
     columns=TripDataFrameSchema,
-    summary_statistics=compute_trip_dataframe_summary_statistics,
+    event_metadata_fn=compute_trip_dataframe_event_metadata,
 )
 
 
-def compute_traffic_dataframe_summary_statistics(dataframe):
+def compute_traffic_dataframe_event_metadata(dataframe):
     return [
         EventMetadataEntry.text(
             str(min(dataframe['peak_traffic_load'])), 'min_traffic_load', 'Best Peak Load'
@@ -159,11 +159,11 @@ TrafficDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.string_column('interval_date'),
         PandasColumn.integer_column('peak_traffic_load', min_value=0),
     ],
-    summary_statistics=compute_traffic_dataframe_summary_statistics,
+    event_metadata_fn=compute_traffic_dataframe_event_metadata,
 )
 
 
-def compute_weather_dataframe_summary_statistics(dataframe):
+def compute_weather_dataframe_event_metadata(dataframe):
     return [
         EventMetadataEntry.text(
             str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
@@ -262,7 +262,7 @@ RawWeatherDataFrame = create_dagster_pandas_dataframe_type(
 WeatherDataFrame = create_dagster_pandas_dataframe_type(
     name='WeatherDataFrame',
     columns=WeatherDataFrameSchema,
-    summary_statistics=compute_weather_dataframe_summary_statistics,
+    event_metadata_fn=compute_weather_dataframe_event_metadata,
 )
 
 

@@ -7,8 +7,8 @@
 // GraphQL fragment: ConfigEditorHelpConfigTypeFragment
 // ====================================================
 
-export interface ConfigEditorHelpConfigTypeFragment_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface ConfigEditorHelpConfigTypeFragment_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -34,4 +34,4 @@ export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType {
   fields: ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields[];
 }
 
-export type ConfigEditorHelpConfigTypeFragment = ConfigEditorHelpConfigTypeFragment_EnumConfigType | ConfigEditorHelpConfigTypeFragment_CompositeConfigType;
+export type ConfigEditorHelpConfigTypeFragment = ConfigEditorHelpConfigTypeFragment_ArrayConfigType | ConfigEditorHelpConfigTypeFragment_CompositeConfigType;

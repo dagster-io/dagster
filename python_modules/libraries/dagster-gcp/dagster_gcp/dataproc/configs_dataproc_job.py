@@ -8,18 +8,18 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String
+from dagster import Bool, Field, Int, PermissiveDict, Shape, String
 
 
 def define_dataproc_job_config():
     return Field(
-        Dict(
+        Shape(
             fields={
                 'status': Field(
-                    Dict(fields={}), description='''Cloud Dataproc job status.''', is_optional=True
+                    Shape(fields={}), description='''Cloud Dataproc job status.''', is_optional=True
                 ),
                 'placement': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'clusterName': Field(
                                 String,
@@ -33,7 +33,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'scheduling': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'maxFailuresPerHour': Field(
                                 Int,
@@ -50,7 +50,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'pigJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'queryFileUri': Field(
                                 String,
@@ -59,10 +59,10 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
-                                            List[String],
+                                            [String],
                                             description='''Required. The queries to execute. You do
                                             not need to terminate a query with a semicolon. Multiple
                                             queries can be specified in one string by separating
@@ -79,7 +79,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of jar files to add to the
                                 CLASSPATH of the Pig Client and Hadoop MapReduce (MR) tasks. Can
                                 contain Pig UDFs.''',
@@ -92,7 +92,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -130,7 +130,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'hiveJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'continueOnFailure': Field(
                                 Bool,
@@ -146,10 +146,10 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
-                                            List[String],
+                                            [String],
                                             description='''Required. The queries to execute. You do
                                             not need to terminate a query with a semicolon. Multiple
                                             queries can be specified in one string by separating
@@ -166,7 +166,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of jar files to add to the
                                 CLASSPATH of the Hive server and Hadoop MapReduce (MR) tasks. Can
                                 contain Hive SerDes and UDFs.''',
@@ -204,10 +204,10 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'sparkJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'archiveUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of archives to be extracted in
                                 the working directory of Spark drivers and tasks. Supported file
                                 types: .jar, .tar, .tar.gz, .tgz, and .zip.''',
@@ -220,13 +220,13 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of jar files to add to the
                                 CLASSPATHs of the Spark driver and tasks.''',
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -250,7 +250,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'args': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. The arguments to pass to the driver. Do not
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision may occur that causes an incorrect job
@@ -258,7 +258,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'fileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of files to be copied to the
                                 working directory of Spark drivers and distributed tasks. Useful for
                                 naively parallel tasks.''',
@@ -278,13 +278,13 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'sparkSqlJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'queryList': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'queries': Field(
-                                            List[String],
+                                            [String],
                                             description='''Required. The queries to execute. You do
                                             not need to terminate a query with a semicolon. Multiple
                                             queries can be specified in one string by separating
@@ -313,13 +313,13 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of jar files to be added to the
                                 Spark CLASSPATH.''',
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -348,16 +348,16 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'pysparkJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of jar files to add to the
                                 CLASSPATHs of the Python driver and tasks.''',
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -382,7 +382,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'args': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. The arguments to pass to the driver. Do not
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision may occur that causes an incorrect job
@@ -390,14 +390,14 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'fileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of files to be copied to the
                                 working directory of Python drivers and distributed tasks. Useful
                                 for naively parallel tasks.''',
                                 is_optional=True,
                             ),
                             'pythonFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS file URIs of Python files to pass to
                                 the PySpark framework. Supported file types: .py, .egg, and
                                 .zip.''',
@@ -410,7 +410,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'archiveUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of archives to be extracted in
                                 the working directory of .jar, .tar, .tar.gz, .tgz, and .zip.''',
                                 is_optional=True,
@@ -423,7 +423,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'reference': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'projectId': Field(
                                 String,
@@ -446,16 +446,16 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'hadoopJob': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'jarFileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. Jar file URIs to add to the CLASSPATHs of
                                 the Hadoop driver and tasks.''',
                                 is_optional=True,
                             ),
                             'loggingConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'driverLogLevels': Field(
                                             PermissiveDict(),
@@ -479,7 +479,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'args': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. The arguments to pass to the driver. Do not
                                 include arguments, such as -libjars or -Dfoo=bar, that can be set as
                                 job properties, since a collision may occur that causes an incorrect
@@ -487,7 +487,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'fileUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS (Hadoop Compatible Filesystem) URIs of
                                 files to be copied to the working directory of Hadoop drivers and
                                 distributed tasks. Useful for naively parallel tasks.''',
@@ -501,7 +501,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'archiveUris': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. HCFS URIs of archives to be extracted in
                                 the working directory of Hadoop drivers and tasks. Supported file
                                 types: .jar, .tar, .tar.gz, .tgz, or .zip.''',

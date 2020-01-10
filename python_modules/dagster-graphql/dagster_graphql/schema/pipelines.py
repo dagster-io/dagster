@@ -10,6 +10,7 @@ from dagster import (
     ResourceDefinition,
     check,
 )
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.seven import lru_cache
 
 from .config_types import to_dauphin_config_type
@@ -77,7 +78,9 @@ class DauphinPipeline(dauphin.ObjectType):
     def resolve_runs(self, graphene_info):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
-            for r in graphene_info.context.instance.get_runs_with_pipeline_name(self._pipeline.name)
+            for r in graphene_info.context.instance.get_runs(
+                filters=PipelineRunsFilter(pipeline_name=self._pipeline.name)
+            )
         ]
 
     def get_dagster_pipeline(self):

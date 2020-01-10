@@ -3,7 +3,7 @@ import os
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.types import String
+from dagster.core.types import Int, String
 from dagster.core.types.config import Field, PermissiveDict
 from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.utils import merge_dicts
@@ -56,6 +56,20 @@ def define_dagster_config_cls():
             ),
             'run_launcher': config_field_for_configurable_class(
                 'DagsterInstanceRunLauncherConfig', is_optional=True
+            ),
+            'dagit': Field(
+                SystemNamedDict(
+                    'DagitSettings',
+                    {
+                        'execution_manager': Field(
+                            SystemNamedDict(
+                                'DagitSettingsExecutionManager', {'max_concurrent_runs': Field(Int)}
+                            ),
+                            is_optional=True,
+                        ),
+                    },
+                ),
+                is_optional=True,
             ),
         },
     )

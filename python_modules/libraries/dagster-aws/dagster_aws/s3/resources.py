@@ -30,9 +30,21 @@ class S3Resource(object):
             description='Specifies whether to use an unsigned S3 session',
             is_optional=True,
             default_value=True,
-        )
+        ),
+        'region_name': Field(
+            str, description='Specifies a custom region for the S3 session', is_optional=True
+        ),
+        'endpoint_url': Field(
+            str, description='Specifies a custom endpoint for the S3 session', is_optional=True
+        ),
     }
 )
 def s3_resource(context):
     use_unsigned_session = context.resource_config['use_unsigned_session']
-    return S3Resource(create_s3_session(signed=not use_unsigned_session))
+    region_name = context.resource_config.get('region_name')
+    endpoint_url = context.resource_config.get('endpoint_url')
+    return S3Resource(
+        create_s3_session(
+            signed=not use_unsigned_session, region_name=region_name, endpoint_url=endpoint_url
+        )
+    )

@@ -12,7 +12,6 @@ from dagster_gcp import (
 )
 
 from dagster import (
-    Field,
     List,
     ModeDefinition,
     PresetDefinition,
@@ -30,7 +29,7 @@ LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
 
 
 @solid(
-    config={'paths': Field(List[String])},
+    config={'paths': [str]},
     description='pass configured output paths to BigQuery load command inputs',
 )
 def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argument
@@ -83,11 +82,7 @@ def events_dataproc_fn(context, cfg):
 
 @composite_solid(
     config_fn=events_dataproc_fn,
-    config={
-        'cluster_name': Field(String),
-        'input_bucket': Field(String),
-        'output_bucket': Field(String),
-    },
+    config={'cluster_name': str, 'input_bucket': str, 'output_bucket': str,},
 )
 def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())
@@ -114,7 +109,7 @@ def bq_load_events_fn(context, cfg):
     }
 
 
-@composite_solid(config_fn=bq_load_events_fn, config={'table': Field(String)})
+@composite_solid(config_fn=bq_load_events_fn, config={'table': str})
 def bq_load_events(source_uris: List[String]):
     return import_gcs_paths_to_bq(source_uris)
 
@@ -135,7 +130,7 @@ def explore_visits_by_hour_fn(_, cfg):
     }
 
 
-@composite_solid(config_fn=explore_visits_by_hour_fn, config={'table': Field(String)})
+@composite_solid(config_fn=explore_visits_by_hour_fn, config={'table': str})
 def explore_visits_by_hour(start):
     with open(file_relative_path(__file__, 'sql/explore_visits_by_hour.sql'), 'r') as f:
         query = f.read()

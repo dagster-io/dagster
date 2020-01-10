@@ -42,7 +42,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
 
     def for_list_index(self, list_index):
         list_type = self.type_in_context
-        check.invariant(list_type.kind == ConfigTypeKind.LIST)
+        check.invariant(list_type.kind == ConfigTypeKind.ARRAY)
         return EvaluationStack(
             config_type=self.config_type,
             entries=self.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],

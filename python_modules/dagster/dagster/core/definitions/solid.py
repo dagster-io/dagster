@@ -181,9 +181,7 @@ class SolidDefinition(ISolidDefinition):
         step_metadata_fn=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a SolidDefinition or @solid named "{name}"'.format(name=name),
-        )
+        self._config_field = check_user_facing_opt_config_param(config, 'config',)
         self._required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
