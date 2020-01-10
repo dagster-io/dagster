@@ -5,6 +5,7 @@ import requests
 import jwt
 import pem
 
+
 class GithubResource:
     def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
         self.client = client
@@ -35,22 +36,23 @@ class GithubResource:
             str(certs[0]),
             algorithm="RS256",
         ).decode("utf-8")
-        self.app_token={
+        self.app_token = {
             "value": encoded_token,
             "expires": expires,
         }
 
     def __check_app_token(self):
-        if (("expires" not in self.app_token) or (self.app_token["expires"] > (int(time.time()) - 60))):
+        print("check app token")
+        if ("expires" not in self.app_token) or (
+            self.app_token["expires"] < (int(time.time()) + 60)
+        ):
             self.__set_app_token()
 
     def get_installations(self, headers={}):
         self.__check_app_token()
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
-        request = self.client.get(
-            "https://api.github.com/app/installations", headers=headers,
-        )
+        request = self.client.get("https://api.github.com/app/installations", headers=headers,)
         if request.status_code == 200:
             return request.json()
         else:
@@ -72,7 +74,9 @@ class GithubResource:
             auth = request.json()
             self.installation_tokens[installation_id] = {
                 "value": auth["token"],
-                "expires": datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
+                "expires": int(
+                    datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ').timestamp()
+                ),
             }
         else:
             raise Exception(
@@ -82,15 +86,18 @@ class GithubResource:
             )
 
     def __check_installation_tokens(self, installation_id):
-        if ((installation_id not in self.installation_tokens) or
-        (self.installation_tokens[installation_id]["expires"] > (int(time.time()) - 60))):
+        if (installation_id not in self.installation_tokens) or (
+            self.installation_tokens[installation_id]["expires"] < (int(time.time()) + 60)
+        ):
             self.__set_installation_token(installation_id)
 
     def execute(self, query, variables, headers={}, installation_id=None):
         if installation_id is None:
             installation_id = self.default_installation_id
         self.__check_installation_tokens(installation_id)
-        headers["Authorization"] = "token {}".format(self.installation_tokens[installation_id]["value"])
+        headers["Authorization"] = "token {}".format(
+            self.installation_tokens[installation_id]["value"]
+        )
         request = requests.post(
             "https://api.github.com/graphql",
             json={"query": query, "variables": variables},
@@ -100,9 +107,7 @@ class GithubResource:
             return request.json()
         else:
             raise Exception(
-                "Query failed to run by returning code of {}. {}".format(
-                    request.status_code, query
-                )
+                "Query failed to run by returning code of {}. {}".format(request.status_code, query)
             )
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
@@ -117,7 +122,7 @@ class GithubResource:
             }
             """,
             variables={"repo_name": repo_name, "repo_owner": repo_owner},
-            installation_id=installation_id
+            installation_id=installation_id,
         )
 
         return self.execute(
@@ -137,13 +142,10 @@ class GithubResource:
                 }
                 }
             """,
-            variables={
-                "id": res["data"]["repository"]["id"],
-                "title": title,
-                "body": body,
-            },
-            installation_id=installation_id
+            variables={"id": res["data"]["repository"]["id"], "title": title, "body": body,},
+            installation_id=installation_id,
         )
+
 
 @resource(
     config={
@@ -159,7 +161,7 @@ class GithubResource:
             Int,
             is_optional=True,
             description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
-        )
+        ),
     },
     description='This resource is for connecting to Github',
 )
