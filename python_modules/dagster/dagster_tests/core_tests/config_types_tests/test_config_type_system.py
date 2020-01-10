@@ -13,7 +13,7 @@ from dagster import (
     List,
     ModeDefinition,
     Noneable,
-    PermissiveDict,
+    Permissive,
     PipelineDefinition,
     ResourceDefinition,
     Set,
@@ -97,7 +97,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _multiple_required_fields_config_permissive_dict():
-    return Field(PermissiveDict({'field_one': Field(String), 'field_two': Field(String)}))
+    return Field(Permissive({'field_one': Field(String), 'field_two': Field(String)}))
 
 
 def _validate(config_field, value):

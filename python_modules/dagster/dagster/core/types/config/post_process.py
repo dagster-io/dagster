@@ -15,10 +15,10 @@ def post_process_config(config_type, config_value):
         return config_type.to_python_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
         return post_process_config_to_selector(config_type, config_value)
-    elif ConfigTypeKind.is_dict(kind):
-        return post_process_dict_config(config_type, config_value)
+    elif ConfigTypeKind.is_shape(kind):
+        return post_process_shape_config(config_type, config_value)
     elif kind == ConfigTypeKind.ARRAY:
-        return post_process_list_config(config_type, config_value)
+        return post_process_array_config(config_type, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return None
@@ -57,11 +57,11 @@ def post_process_config_to_selector(selector_type, config_value):
     return {field_name: field_value}
 
 
-def post_process_dict_config(dict_type, config_value):
-    check.param_invariant(ConfigTypeKind.is_dict(dict_type.kind), 'dict_type')
+def post_process_shape_config(shape_type, config_value):
+    check.param_invariant(ConfigTypeKind.is_shape(shape_type.kind), 'shape_type')
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
-    fields = dict_type.fields
+    fields = shape_type.fields
     incoming_fields = set(config_value.keys())
 
     processed_fields = {}
@@ -81,7 +81,7 @@ def post_process_dict_config(dict_type, config_value):
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
 
-    if dict_type.kind == ConfigTypeKind.PERMISSIVE_DICT:
+    if shape_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE:
         defined_fields = set(fields.keys())
         extra_fields = incoming_fields - defined_fields
         for extra_field in extra_fields:
@@ -90,14 +90,14 @@ def post_process_dict_config(dict_type, config_value):
     return processed_fields
 
 
-def post_process_list_config(list_type, config_value):
-    check.param_invariant(list_type.kind == ConfigTypeKind.ARRAY, 'list_type')
+def post_process_array_config(array_type, config_value):
+    check.param_invariant(array_type.kind == ConfigTypeKind.ARRAY, 'array_type')
 
     if not config_value:
         return []
 
-    if list_type.inner_type.kind != ConfigTypeKind.NONEABLE:
+    if array_type.inner_type.kind != ConfigTypeKind.NONEABLE:
         if any((cv is None for cv in config_value)):
-            check.failed('Null list member not caught in validation')
+            check.failed('Null array member not caught in validation')
 
-    return [post_process_config(list_type.inner_type, item) for item in config_value]
+    return [post_process_config(array_type.inner_type, item) for item in config_value]

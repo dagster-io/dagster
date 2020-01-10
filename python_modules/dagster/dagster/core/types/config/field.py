@@ -125,7 +125,7 @@ class Field(object):
         dagster_type (Any):
             The type of this field. Users should provide one of the
             :ref:`built-in types <builtin>`, a composite constructed using :py:func:`Selector`
-            or :py:func:`PermissiveDict`, or a dagster type constructed with
+            or :py:func:`Permissive`, or a dagster type constructed with
             :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type`, or
             :py:func:`define_python_dagster_type` that has an ``input_hydration_config`` defined.
             Note that these constructs can be nested -- i.e., a :py:class:`Dict` can itself contain

@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Float, Int, PermissiveDict, Shape, String
+from dagster import Bool, Field, Float, Int, Permissive, Shape, String
 
 from .types import (
     EbsVolumeType,
@@ -27,13 +27,13 @@ def _define_configurations():
                         is_optional=True,
                     ),
                     'Configurations': Field(
-                        [PermissiveDict()],
+                        [Permissive()],
                         description='''A list of additional configurations to apply within a
                                 configuration object.''',
                         is_optional=True,
                     ),
                     'Properties': Field(
-                        PermissiveDict(),
+                        Permissive(),
                         description='''A set of properties specified within a configuration
                                 classification.''',
                         is_optional=True,
@@ -861,7 +861,7 @@ def define_emr_run_job_flow_config():
                         is_optional=True,
                     ),
                     'AdditionalInfo': Field(
-                        PermissiveDict(),
+                        Permissive(),
                         description='''This option is for advanced users only. This is meta
                             information about third-party applications that third-party vendors use
                             for testing purposes.''',

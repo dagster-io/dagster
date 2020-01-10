@@ -1,4 +1,4 @@
-from dagster import Field, Noneable, PermissiveDict, ScalarUnion, Selector, Shape
+from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.stack import (
     EvaluationStackListItemEntry,
@@ -471,14 +471,14 @@ def test_nullable_dict():
 
 
 def test_bare_permissive_dict():
-    assert _validate(PermissiveDict(), {}).success
-    assert _validate(PermissiveDict(), {'some_key': 1}).success
-    assert not _validate(PermissiveDict(), None).success
-    assert not _validate(PermissiveDict(), 1).success
+    assert _validate(Permissive(), {}).success
+    assert _validate(Permissive(), {'some_key': 1}).success
+    assert not _validate(Permissive(), None).success
+    assert not _validate(Permissive(), 1).success
 
 
 def test_permissive_dict_with_fields():
-    perm_dict_with_field = PermissiveDict({'a_key': Field(str)})
+    perm_dict_with_field = Permissive({'a_key': Field(str)})
 
     assert _validate(perm_dict_with_field, {'a_key': 'djfkdjkfd'}).success
     assert _validate(perm_dict_with_field, {'a_key': 'djfkdjkfd', 'extra_key': 'kdjkfd'}).success

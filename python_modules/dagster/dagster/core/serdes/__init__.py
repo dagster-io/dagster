@@ -231,7 +231,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
         SystemNamedDict(
             name,
-            {'module': Field(String), 'class': Field(String), 'config': Field(PermissiveDict())},
+            {'module': Field(String), 'class': Field(String), 'config': Field(Permissive())},
         )
     '''
 

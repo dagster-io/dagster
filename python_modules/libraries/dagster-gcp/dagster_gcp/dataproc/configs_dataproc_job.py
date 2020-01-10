@@ -8,7 +8,7 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Field, Int, PermissiveDict, Shape, String
+from dagster import Bool, Field, Int, Permissive, Shape, String
 
 
 def define_dataproc_job_config():
@@ -86,7 +86,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'scriptVariables': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. Mapping of query variable names to values
                                 (equivalent to the Pig command: name=[value]).''',
                                 is_optional=True,
@@ -95,7 +95,7 @@ def define_dataproc_job_config():
                                 Shape(
                                     fields={
                                         'driverLogLevels': Field(
-                                            PermissiveDict(),
+                                            Permissive(),
                                             description='''The per-package log levels for the
                                             driver. This may include "root" package name to
                                             configure rootLogger. Examples:  \'com.google = FATAL\',
@@ -108,7 +108,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names to values, used
                                 to configure Pig. Properties that conflict with values set by the
                                 Cloud Dataproc API may be overwritten. Can include properties set in
@@ -173,13 +173,13 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'scriptVariables': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. Mapping of query variable names to values
                                 (equivalent to the Hive command: SET name="value";).''',
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names and values,
                                 used to configure Hive. Properties that conflict with values set by
                                 the Cloud Dataproc API may be overwritten. Can include properties
@@ -194,7 +194,7 @@ def define_dataproc_job_config():
                     is_optional=True,
                 ),
                 'labels': Field(
-                    PermissiveDict(),
+                    Permissive(),
                     description='''Optional. The labels to associate with this job. Label keys must
                     contain 1 to 63 characters, and must conform to RFC 1035
                     (https://www.ietf.org/rfc/rfc1035.txt). Label values may be empty, but, if
@@ -229,7 +229,7 @@ def define_dataproc_job_config():
                                 Shape(
                                     fields={
                                         'driverLogLevels': Field(
-                                            PermissiveDict(),
+                                            Permissive(),
                                             description='''The per-package log levels for the
                                             driver. This may include "root" package name to
                                             configure rootLogger. Examples:  \'com.google = FATAL\',
@@ -242,7 +242,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names to values, used
                                 to configure Spark. Properties that conflict with values set by the
                                 Cloud Dataproc API may be overwritten. Can include properties set in
@@ -307,7 +307,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'scriptVariables': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. Mapping of query variable names to values
                                 (equivalent to the Spark SQL command: SET name="value";).''',
                                 is_optional=True,
@@ -322,7 +322,7 @@ def define_dataproc_job_config():
                                 Shape(
                                     fields={
                                         'driverLogLevels': Field(
-                                            PermissiveDict(),
+                                            Permissive(),
                                             description='''The per-package log levels for the
                                             driver. This may include "root" package name to
                                             configure rootLogger. Examples:  \'com.google = FATAL\',
@@ -335,7 +335,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names to values, used
                                 to configure Spark SQL\'s SparkConf. Properties that conflict with
                                 values set by the Cloud Dataproc API may be overwritten.''',
@@ -360,7 +360,7 @@ def define_dataproc_job_config():
                                 Shape(
                                     fields={
                                         'driverLogLevels': Field(
-                                            PermissiveDict(),
+                                            Permissive(),
                                             description='''The per-package log levels for the
                                             driver. This may include "root" package name to
                                             configure rootLogger. Examples:  \'com.google = FATAL\',
@@ -373,7 +373,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names to values, used
                                 to configure PySpark. Properties that conflict with values set by
                                 the Cloud Dataproc API may be overwritten. Can include properties
@@ -458,7 +458,7 @@ def define_dataproc_job_config():
                                 Shape(
                                     fields={
                                         'driverLogLevels': Field(
-                                            PermissiveDict(),
+                                            Permissive(),
                                             description='''The per-package log levels for the
                                             driver. This may include "root" package name to
                                             configure rootLogger. Examples:  \'com.google = FATAL\',
@@ -471,7 +471,7 @@ def define_dataproc_job_config():
                                 is_optional=True,
                             ),
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. A mapping of property names to values, used
                                 to configure Hadoop. Properties that conflict with values set by the
                                 Cloud Dataproc API may be overwritten. Can include properties set in

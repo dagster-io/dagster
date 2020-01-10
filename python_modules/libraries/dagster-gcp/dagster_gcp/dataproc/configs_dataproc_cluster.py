@@ -8,7 +8,7 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Field, Int, PermissiveDict, Shape, String
+from dagster import Bool, Field, Int, Permissive, Shape, String
 
 from .types_dataproc_cluster import Component
 
@@ -550,7 +550,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'metadata': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''The Compute Engine metadata entries to add to all
                                 instances (see Project and instance metadata
                                 (https://cloud.google.com/compute/docs/storing-retrieving-metadata#project_and_instance_metadata)).''',
@@ -618,7 +618,7 @@ def define_dataproc_cluster_config():
                     Shape(
                         fields={
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. The properties to set on daemon config
                                 files.Property keys are specified in prefix:property format, for
                                 example core:hadoop.tmp.dir. The following are supported prefixes

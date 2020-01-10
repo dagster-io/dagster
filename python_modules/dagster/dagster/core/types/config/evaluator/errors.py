@@ -218,7 +218,7 @@ def create_field_not_defined_error(context, received_field):
     )
 
 
-def create_list_error(context, config_value):
+def create_array_error(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.ARRAY, 'config_type')
 

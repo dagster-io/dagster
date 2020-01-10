@@ -16,13 +16,13 @@ class ConfigTypeKind(PythonEnum):
 
     SELECTOR = 'SELECTOR'
     STRICT_SHAPE = 'STRICT_SHAPE'
-    PERMISSIVE_DICT = 'PERMISSIVE_DICT'
+    PERMISSIVE_SHAPE = 'PERMISSIVE_SHAPE'
     SCALAR_UNION = 'SCALAR_UNION'
 
     @staticmethod
     def has_fields(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_dict(kind)
+        return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_shape(kind)
 
     # Closed generic types
     ARRAY = 'ARRAY'
@@ -34,9 +34,9 @@ class ConfigTypeKind(PythonEnum):
         return kind == ConfigTypeKind.ARRAY or kind == ConfigTypeKind.NONEABLE
 
     @staticmethod
-    def is_dict(kind):
+    def is_shape(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_DICT
+        return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):

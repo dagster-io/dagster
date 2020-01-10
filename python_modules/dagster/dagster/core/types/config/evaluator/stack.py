@@ -40,7 +40,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
             entries=self.entries + [EvaluationStackPathEntry(field_name, field_def)],
         )
 
-    def for_list_index(self, list_index):
+    def for_array_index(self, list_index):
         list_type = self.type_in_context
         check.invariant(list_type.kind == ConfigTypeKind.ARRAY)
         return EvaluationStack(

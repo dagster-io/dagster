@@ -15,12 +15,12 @@ from dagster.core.types.config.post_process import post_process_config
 from dagster.utils import ensure_single_item, frozendict
 
 from .errors import (
+    create_array_error,
     create_dict_type_mismatch_error,
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
     create_field_not_defined_error,
     create_fields_not_defined_error,
-    create_list_error,
     create_missing_required_field_error,
     create_missing_required_fields_error,
     create_none_not_allowed_error,
@@ -87,11 +87,11 @@ def _validate_config(context, config_value):
     elif kind == ConfigTypeKind.SELECTOR:
         return validate_selector_config(context, config_value)
     elif kind == ConfigTypeKind.STRICT_SHAPE:
-        return validate_dict_config(context, config_value)
-    elif kind == ConfigTypeKind.PERMISSIVE_DICT:
-        return validate_permissive_dict_config(context, config_value)
+        return validate_shape_config(context, config_value)
+    elif kind == ConfigTypeKind.PERMISSIVE_SHAPE:
+        return validate_permissive_shape_config(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
-        return validate_list_config(context, config_value)
+        return validate_array_config(context, config_value)
     elif kind == ConfigTypeKind.ENUM:
         return validate_enum_config(context, config_value)
     elif kind == ConfigTypeKind.SCALAR_UNION:
@@ -183,7 +183,7 @@ def validate_selector_config(context, config_value):
         return child_evaluate_value_result
 
 
-def _validate_dict_config(context, config_value, check_for_extra_incoming_fields):
+def _validate_shape_config(context, config_value, check_for_extra_incoming_fields):
     check.inst_param(context, 'context', ValidationContext)
     check.not_none_param(config_value, 'config_value')
     check.bool_param(check_for_extra_incoming_fields, 'check_for_extra_incoming_fields')
@@ -225,20 +225,20 @@ def _validate_dict_config(context, config_value, check_for_extra_incoming_fields
         return EvaluateValueResult.for_value(frozendict(config_value))
 
 
-def validate_permissive_dict_config(context, config_value):
+def validate_permissive_shape_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
-    check.invariant(context.config_type.kind == ConfigTypeKind.PERMISSIVE_DICT)
+    check.invariant(context.config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE)
     check.not_none_param(config_value, 'config_value')
 
-    return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=False)
+    return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=False)
 
 
-def validate_dict_config(context, config_value):
+def validate_shape_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_SHAPE)
     check.not_none_param(config_value, 'config_value')
 
-    return _validate_dict_config(context, config_value, check_for_extra_incoming_fields=True)
+    return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=True)
 
 
 def _append_if_error(errors, maybe_error):
@@ -270,16 +270,16 @@ def _compute_missing_fields_error(context, field_defs, incoming_fields):
             return create_missing_required_fields_error(context, missing_fields)
 
 
-def validate_list_config(context, config_value):
+def validate_array_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY)
     check.not_none_param(config_value, 'config_value')
 
     if not isinstance(config_value, list):
-        return EvaluateValueResult.for_error(create_list_error(context, config_value))
+        return EvaluateValueResult.for_error(create_array_error(context, config_value))
 
     evaluation_results = [
-        _validate_config(context.for_list(index), config_item)
+        _validate_config(context.for_array(index), config_item)
         for index, config_item in enumerate(config_value)
     ]
 

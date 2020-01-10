@@ -1,6 +1,6 @@
 from six import string_types
 
-from dagster import Field, PermissiveDict, Selector, Shape
+from dagster import Field, Permissive, Selector, Shape
 from dagster.core.types.config.field_utils import _compute_fields_hash
 
 
@@ -61,12 +61,12 @@ def test_construct_different_dicts():
 
 
 def test_construct_permissive_dict_same_same():
-    assert PermissiveDict() is PermissiveDict()
+    assert Permissive() is Permissive()
 
 
 def test_construct_same_perm_dicts():
-    int_perm_dict_1 = PermissiveDict(fields={'an_int': Field(int)})
-    int_perm_dict_2 = PermissiveDict(fields={'an_int': Field(int)})
+    int_perm_dict_1 = Permissive(fields={'an_int': Field(int)})
+    int_perm_dict_2 = Permissive(fields={'an_int': Field(int)})
 
     # assert identical object
     assert int_perm_dict_1 is int_perm_dict_2
@@ -75,8 +75,8 @@ def test_construct_same_perm_dicts():
 
 
 def test_construct_different_perm_dicts():
-    int_perm_dict = PermissiveDict(fields={'an_int': Field(int)})
-    string_perm_dict = PermissiveDict(fields={'a_string': Field(str)})
+    int_perm_dict = Permissive(fields={'an_int': Field(int)})
+    string_perm_dict = Permissive(fields={'a_string': Field(str)})
 
     assert int_perm_dict is not string_perm_dict
     assert int_perm_dict.key != string_perm_dict.key
@@ -112,9 +112,9 @@ def test_kitchen_sink():
                             Selector(
                                 {
                                     'int_field_in_selector': Field(int),
-                                    'permissive_dict_in_selector': Field(PermissiveDict()),
+                                    'permissive_dict_in_selector': Field(Permissive()),
                                     'permissive_dict_with_fields_in_selector': Field(
-                                        PermissiveDict({'string_field': Field(str)})
+                                        Permissive({'string_field': Field(str)})
                                     ),
                                 }
                             )
@@ -135,10 +135,10 @@ def test_kitchen_sink():
                         'nested_selector': Field(
                             Selector(
                                 fields={
-                                    'permissive_dict_in_selector': Field(PermissiveDict()),
+                                    'permissive_dict_in_selector': Field(Permissive()),
                                     'int_field_in_selector': Field(int),
                                     'permissive_dict_with_fields_in_selector': Field(
-                                        PermissiveDict(fields={'string_field': Field(str)})
+                                        Permissive(fields={'string_field': Field(str)})
                                     ),
                                 }
                             )
@@ -163,10 +163,10 @@ def test_kitchen_sink():
                         'nested_selector': Field(
                             Selector(
                                 fields={
-                                    'permissive_dict_in_selector': Field(PermissiveDict()),
+                                    'permissive_dict_in_selector': Field(Permissive()),
                                     'int_field_in_selector': Field(int),
                                     'permissive_dict_with_fields_in_selector': Field(
-                                        PermissiveDict(fields={'int_field': Field(int)})
+                                        Permissive(fields={'int_field': Field(int)})
                                     ),
                                 }
                             )

@@ -1,11 +1,11 @@
 from dagster import check
-from dagster.core.types.config.field_utils import PermissiveDict
+from dagster.core.types.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
 
 
-@input_hydration_config(PermissiveDict())
+@input_hydration_config(Permissive())
 def _dict_input(_context, value):
     return value
 

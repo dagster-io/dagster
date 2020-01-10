@@ -3,7 +3,7 @@ import os
 from dagster import check
 from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.types.config import Field, PermissiveDict
+from dagster.core.types.config import Field, Permissive
 from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
@@ -29,7 +29,7 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
 
 def config_field_for_configurable_class(name, **field_opts):
     return Field(
-        SystemNamedDict(name, {'module': str, 'class': str, 'config': Field(PermissiveDict())},),
+        SystemNamedDict(name, {'module': str, 'class': str, 'config': Field(Permissive())},),
         **field_opts
     )
 

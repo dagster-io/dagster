@@ -97,7 +97,7 @@ from dagster.core.storage.system_storage import (
     mem_system_storage,
 )
 from dagster.core.types.builtins import Any, Bool, Float, Int, Nothing, Path, String
-from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector, Shape
+from dagster.core.types.config import Enum, EnumValue, Field, Permissive, Selector, Shape
 from dagster.core.types.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.types.runtime import (
     RuntimeType,
@@ -217,7 +217,7 @@ __all__ = [
     # config
     'Array',
     'Noneable',
-    'PermissiveDict',
+    'Permissive',
     'ScalarUnion',
     'Selector',
     'Shape',
