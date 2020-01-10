@@ -46,7 +46,6 @@ class GithubResource:
         }
 
     def __check_app_token(self):
-        print("check app token")
         if ("expires" not in self.app_token) or (
             self.app_token["expires"] < (int(time.time()) + 60)
         ):
