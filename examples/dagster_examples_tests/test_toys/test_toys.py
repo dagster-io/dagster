@@ -159,5 +159,3 @@ def test_composition_pipeline():
     )
 
     assert result.success
-
-    assert result.output_for_solid('div_four') == 7.0 / 4.0

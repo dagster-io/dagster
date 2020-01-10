@@ -7,8 +7,7 @@ from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
-from dagster.core.types import String
-from dagster.core.types.config import Field
+from dagster.core.types import Field, String
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):

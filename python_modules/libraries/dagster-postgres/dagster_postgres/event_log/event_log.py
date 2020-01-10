@@ -20,6 +20,7 @@ from dagster.core.storage.event_log import (
     SqlEventLogStorageTable,
 )
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.types import Field, String
 
 from ..pynotify import await_pg_notifications
 
