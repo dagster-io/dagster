@@ -18,6 +18,29 @@
   `dagster instance info`.
 - Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
 - The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
+- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
+
+    Our recommended fix is *not* to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
+
+    So instead of
+
+    ```
+	from dagster import Shape, Field, Int, Array, String
+	# ... code
+	config=Shape({ # Dict prior to change
+        'some_int' : Field(Int),
+        'some_list: Field(Array[String]) # List prior to change
+    })
+
+	```
+
+    one can instead write:
+
+	```
+	config={'some_int': int, 'some_list': [str]}
+	``` 
+
+    No imports and much simpler, cleaner syntax.
 
 **Dagit**
 
