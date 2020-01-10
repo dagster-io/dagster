@@ -17,6 +17,7 @@
   `dagster instance migrate`. To check what event log storages you are using, run
   `dagster instance info`.
 - Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
+- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
 
 **Dagit**
 
