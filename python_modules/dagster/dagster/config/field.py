@@ -40,9 +40,9 @@ def resolve_to_config_type(dagster_type):
             )
         return Array(inner_type)
 
-    from dagster.core.types.runtime.runtime_type import RuntimeType, List, ListType
-    from dagster.core.types.runtime.python_set import Set, _TypedPythonSet
-    from dagster.core.types.runtime.python_tuple import Tuple, _TypedPythonTuple
+    from dagster.core.types.runtime_type import RuntimeType, List, ListType
+    from dagster.core.types.python_set import Set, _TypedPythonSet
+    from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
 
     if _is_config_type_class(dagster_type):
         check.param_invariant(

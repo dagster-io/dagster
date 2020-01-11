@@ -4,7 +4,7 @@ import six
 
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.types.runtime.runtime_type import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import RuntimeType, resolve_to_runtime_type
 
 from .object_store import FilesystemObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry

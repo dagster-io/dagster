@@ -7,10 +7,10 @@ from dagster import Bool, List, Optional, String, check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.runtime.marshal import SerializationStrategy
-from dagster.core.types.runtime.runtime_type import Bool as RuntimeBool
-from dagster.core.types.runtime.runtime_type import String as RuntimeString
-from dagster.core.types.runtime.runtime_type import create_any_type, resolve_to_runtime_type
+from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.runtime_type import Bool as RuntimeBool
+from dagster.core.types.runtime_type import String as RuntimeString
+from dagster.core.types.runtime_type import create_any_type, resolve_to_runtime_type
 from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 

@@ -26,9 +26,9 @@ from dagster.core.execution.api import create_execution_plan, execute_plan, scop
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.runtime.runtime_type import Bool as RuntimeBool
-from dagster.core.types.runtime.runtime_type import String as RuntimeString
-from dagster.core.types.runtime.runtime_type import create_any_type, resolve_to_runtime_type
+from dagster.core.types.runtime_type import Bool as RuntimeBool
+from dagster.core.types.runtime_type import String as RuntimeString
+from dagster.core.types.runtime_type import create_any_type, resolve_to_runtime_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 

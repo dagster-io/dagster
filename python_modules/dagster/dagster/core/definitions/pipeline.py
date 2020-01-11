@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.runtime_type import construct_runtime_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
