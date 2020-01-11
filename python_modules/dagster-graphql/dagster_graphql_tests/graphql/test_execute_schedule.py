@@ -232,3 +232,53 @@ def test_partition_based_custom_selector():
         tags = result_two.data['startScheduledExecution']['run']['tags']
         # get a different partition based on the subsequent run storage
         assert any(tag['key'] == 'dagster/partition' and tag['value'] == '8' for tag in tags)
+
+
+def test_partition_based_decorator():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'partition_based_decorator'},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+
+
+def test_partition_based_multi_mode_decorator():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'partition_based_multi_mode_decorator'},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )

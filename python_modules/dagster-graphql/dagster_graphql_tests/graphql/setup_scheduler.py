@@ -1,6 +1,8 @@
+import datetime
+
 from dagster_tests.utils import FilesytemTestScheduler
 
-from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, schedules
+from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, daily_schedule, schedules
 from dagster.core.definitions.partition import last_empty_partition
 
 integer_partition_set = PartitionSetDefinition(
@@ -62,6 +64,23 @@ def define_scheduler():
         partition_selector=last_empty_partition,
     )
 
+    @daily_schedule(
+        pipeline_name='no_config_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+    )
+    def partition_based_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
+    @daily_schedule(
+        pipeline_name='multi_mode_with_loggers',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+        mode='foo_mode',
+    )
+    def partition_based_multi_mode_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_schedule_id_tag,
@@ -70,4 +89,6 @@ def define_scheduler():
         dynamic_config,
         partition_based,
         partition_based_custom_selector,
+        partition_based_decorator,
+        partition_based_multi_mode_decorator,
     ]
