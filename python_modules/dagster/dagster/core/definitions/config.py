@@ -1,10 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.builtins import BuiltinEnum
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.execution.config import IRunConfig
-from dagster.core.types.builtins import BuiltinEnum
-from dagster.core.types.primitive_mapping import is_supported_config_python_builtin
+from dagster.primitive_mapping import is_supported_config_python_builtin
 
 
 def is_callable_valid_config_arg(config):

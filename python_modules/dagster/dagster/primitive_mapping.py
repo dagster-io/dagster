@@ -3,11 +3,11 @@ from dagster.config.config_type import Array
 from dagster.config.config_type import ConfigAnyInstance as ConfigAny
 
 from .builtins import Bool, Float, Int, String
-from .runtime.python_dict import PythonDict
-from .runtime.python_set import PythonSet
-from .runtime.python_tuple import PythonTuple
-from .runtime.runtime_type import Any as RuntimeAny
-from .runtime.runtime_type import List
+from .core.types.runtime.python_dict import PythonDict
+from .core.types.runtime.python_set import PythonSet
+from .core.types.runtime.python_tuple import PythonTuple
+from .core.types.runtime.runtime_type import Any as RuntimeAny
+from .core.types.runtime.runtime_type import List
 
 SUPPORTED_RUNTIME_BUILTINS = {
     int: Int,

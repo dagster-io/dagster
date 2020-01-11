@@ -1,10 +1,10 @@
 from functools import update_wrapper
 
 from dagster import check
+from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
-from dagster.core.types.builtins import Int
 
 
 class ExecutorDefinition(object):

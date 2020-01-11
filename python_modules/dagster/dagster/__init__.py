@@ -1,3 +1,4 @@
+from dagster.builtins import Any, Bool, Float, Int, Nothing, Path, String
 from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
@@ -98,7 +99,6 @@ from dagster.core.storage.system_storage import (
     fs_system_storage,
     mem_system_storage,
 )
-from dagster.core.types.builtins import Any, Bool, Float, Int, Nothing, Path, String
 from dagster.core.types.runtime import (
     RuntimeType,
     SerializationStrategy,
