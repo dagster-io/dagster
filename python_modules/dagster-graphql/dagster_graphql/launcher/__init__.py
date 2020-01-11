@@ -8,11 +8,11 @@ from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
 from dagster import Bool, Field, Float, String, check, seven
+from dagster.config.field_utils import NamedDict
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.types.config.field_utils import NamedDict
 from dagster.seven import urljoin, urlparse
 
 

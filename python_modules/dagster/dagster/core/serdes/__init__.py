@@ -164,7 +164,7 @@ class ConfigurableClassData(
 
     def rehydrate(self, **constructor_kwargs):
         from dagster.core.errors import DagsterInvalidConfigError
-        from dagster.core.types.config.evaluator.validate import process_config
+        from dagster.config.validate import process_config
 
         try:
             module = importlib.import_module(self.module_name)

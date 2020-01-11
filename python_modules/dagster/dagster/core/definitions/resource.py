@@ -1,8 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class ResourceDefinition(object):

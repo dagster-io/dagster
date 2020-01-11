@@ -18,6 +18,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.config.errors import DagsterEvaluateConfigValueError
+from dagster.config.field_utils import NamedDict
 from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
@@ -26,8 +28,6 @@ from dagster.core.definitions.environment_configs import (
 )
 from dagster.core.system_config.objects import EnvironmentConfig, SolidConfig
 from dagster.core.test_utils import throwing_validate_config_value
-from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
-from dagster.core.types.config.field_utils import NamedDict
 from dagster.loggers import default_loggers
 
 

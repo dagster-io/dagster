@@ -1,3 +1,5 @@
+from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
@@ -97,8 +99,6 @@ from dagster.core.storage.system_storage import (
     mem_system_storage,
 )
 from dagster.core.types.builtins import Any, Bool, Float, Int, Nothing, Path, String
-from dagster.core.types.config import Enum, EnumValue, Field, Permissive, Selector, Shape
-from dagster.core.types.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.types.runtime import (
     RuntimeType,
     SerializationStrategy,

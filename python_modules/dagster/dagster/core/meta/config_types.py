@@ -1,9 +1,9 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.config_type import ConfigType, ConfigTypeKind
+from dagster.config.field import Field
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
-from dagster.core.types.config.field import Field
 
 
 @whitelist_for_serdes

@@ -1,6 +1,6 @@
 from dagster import PipelineDefinition, check
+from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 
 
 def scaffold_pipeline_config(pipeline_def, skip_optional=True, mode=None):

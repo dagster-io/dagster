@@ -4,9 +4,9 @@ from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 from dagster import Bool, Field, Materialization, Path, String, as_dagster_type, check, resource
+from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
-from dagster.core.types.config.field_utils import Selector
 from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
 
 from .decorators import pyspark_solid

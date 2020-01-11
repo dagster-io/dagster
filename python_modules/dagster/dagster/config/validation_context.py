@@ -1,8 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types.config.config_type import ConfigType
-from dagster.core.types.config.field import Field
+from dagster.config.config_type import ConfigType
+from dagster.config.field import Field
 
 from .stack import EvaluationStack
 

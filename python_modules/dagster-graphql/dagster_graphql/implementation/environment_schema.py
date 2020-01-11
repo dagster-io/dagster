@@ -1,9 +1,9 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import EnvironmentSchema, create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineDefinition
-from dagster.core.types.config.evaluator.validate import validate_config
 
 from .fetch_pipelines import get_dagster_pipeline_from_selector
 from .utils import UserFacingGraphQLError, capture_dauphin_error

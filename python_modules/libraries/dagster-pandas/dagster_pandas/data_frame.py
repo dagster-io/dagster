@@ -18,7 +18,7 @@ from dagster import (
     as_dagster_type,
     check,
 )
-from dagster.core.types.config.field_utils import NamedSelector
+from dagster.config.field_utils import NamedSelector
 from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}

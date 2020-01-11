@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.config_type import Array, ConfigAnyInstance
+from dagster.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type

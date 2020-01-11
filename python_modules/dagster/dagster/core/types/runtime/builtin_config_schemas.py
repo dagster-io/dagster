@@ -1,7 +1,7 @@
 import pickle
 
 from dagster import check, seven
-from dagster.core.types.config.config_type import (
+from dagster.config.config_type import (
     ConfigAnyInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
@@ -11,8 +11,8 @@ from dagster.core.types.config.config_type import (
     ConfigTypeAttributes,
     ScalarUnion,
 )
-from dagster.core.types.config.field import Field
-from dagster.core.types.config.field_utils import NamedSelector
+from dagster.config.field import Field
+from dagster.config.field_utils import NamedSelector
 
 from .config_schema import input_hydration_config, make_bare_input_schema, output_selector_schema
 

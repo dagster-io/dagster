@@ -1,8 +1,8 @@
 from dagster import check
+from dagster.config.config_type import Array
+from dagster.config.config_type import ConfigAnyInstance as ConfigAny
 
 from .builtins import Bool, Float, Int, String
-from .config.config_type import Array
-from .config.config_type import ConfigAnyInstance as ConfigAny
 from .runtime.python_dict import PythonDict
 from .runtime.python_set import PythonSet
 from .runtime.python_tuple import PythonTuple
@@ -54,7 +54,7 @@ def remap_python_builtin_for_config(ttype):
     remapped.
     '''
 
-    from .config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     check.param_invariant(is_supported_config_python_builtin(ttype), 'ttype')
 

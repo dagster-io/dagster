@@ -4,10 +4,10 @@ from enum import Enum
 from dagster import check
 from dagster.core.errors import DagsterError
 
-from ..config_type import ConfigType, ConfigTypeKind
-from ..field import check_field_param
-from ..type_printer import print_config_type_to_string
+from .config_type import ConfigType, ConfigTypeKind
+from .field import check_field_param
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
+from .type_printer import print_config_type_to_string
 from .validation_context import ValidationContext
 
 

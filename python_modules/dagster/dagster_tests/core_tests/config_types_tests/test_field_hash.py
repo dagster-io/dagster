@@ -1,7 +1,7 @@
 from six import string_types
 
 from dagster import Field, Permissive, Selector, Shape
-from dagster.core.types.config.field_utils import _compute_fields_hash
+from dagster.config.field_utils import _compute_fields_hash
 
 
 def _hash(fields):

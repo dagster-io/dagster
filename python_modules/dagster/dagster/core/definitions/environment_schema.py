@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types.config.config_type import ConfigType
+from dagster.config.config_type import ConfigType
 
 from .pipeline import PipelineDefinition
 

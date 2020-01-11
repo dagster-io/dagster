@@ -1,6 +1,6 @@
 from dagster import Field, Int, Noneable, PipelineDefinition, String, solid
-from dagster.core.types.config.field import resolve_to_config_type
-from dagster.core.types.config.type_printer import print_type_to_string
+from dagster.config.field import resolve_to_config_type
+from dagster.config.type_printer import print_type_to_string
 
 
 def assert_inner_types(parent_type, *dagster_types):

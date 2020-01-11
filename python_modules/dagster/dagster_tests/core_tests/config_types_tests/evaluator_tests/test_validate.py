@@ -1,11 +1,8 @@
 from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
-from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
-from dagster.core.types.config.evaluator.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackPathEntry,
-)
-from dagster.core.types.config.evaluator.validate import validate_config
-from dagster.core.types.config.field import resolve_to_config_type
+from dagster.config.errors import DagsterEvaluationErrorReason
+from dagster.config.field import resolve_to_config_type
+from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.validate import validate_config
 
 
 def _validate(dagster_type, config_value):

@@ -43,6 +43,7 @@ from dagster.cli.schedule import (
     schedule_up_command,
     schedule_wipe_command,
 )
+from dagster.config.field_utils import Shape
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass
@@ -50,7 +51,6 @@ from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.types.config.field_utils import Shape
 from dagster.utils import script_relative_path
 
 
