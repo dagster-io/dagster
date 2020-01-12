@@ -108,58 +108,43 @@ snapshots['test_successful_enviroment_schema 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Any'
-            },
-            {
-                'name': 'Any.MaterializationSchema'
-            },
-            {
-                'name': 'Array[None]'
             },
             {
                 'name': 'Bool'
             },
             {
-                'name': 'Bool.MaterializationSchema'
-            },
-            {
                 'name': 'Float'
-            },
-            {
-                'name': 'Float.MaterializationSchema'
             },
             {
                 'name': 'Int'
             },
             {
-                'name': 'Int.MaterializationSchema'
-            },
-            {
                 'name': 'Path'
             },
             {
-                'name': 'Path.MaterializationSchema'
-            },
-            {
-                'name': 'ScalarUnion[Any,Any.InputHydrationConfig]'
-            },
-            {
-                'name': 'ScalarUnion[Bool,Bool.InputHydrationConfig]'
-            },
-            {
-                'name': 'ScalarUnion[Float,Float.InputHydrationConfig]'
-            },
-            {
-                'name': 'ScalarUnion[Int,Int.InputHydrationConfig]'
-            },
-            {
-                'name': 'ScalarUnion[String,String.InputHydrationConfig]'
-            },
-            {
                 'name': 'String'
-            },
-            {
-                'name': 'String.MaterializationSchema'
             }
         ],
         'rootEnvironmentType': {

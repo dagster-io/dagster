@@ -10,7 +10,6 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes

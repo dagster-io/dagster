@@ -7,8 +7,7 @@ from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
-from dagster import Bool, Field, Float, String, check, seven
-from dagster.config.field_utils import NamedDict
+from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -35,13 +34,10 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return NamedDict(
-            'RemoteDagitExecutionServerConfig',
-            {
-                'address': Field(String),
-                'timeout': Field(Float, is_optional=True, default_value=30.0),
-            },
-        )
+        return {
+            'address': str,
+            'timeout': Field(float, is_optional=True, default_value=30.0),
+        }
 
     @classmethod
     def from_config_value(cls, inst_data, config_value, **kwargs):

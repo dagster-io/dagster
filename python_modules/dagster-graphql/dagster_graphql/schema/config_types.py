@@ -29,7 +29,7 @@ def to_dauphin_config_type(config_type):
 def _ctor_kwargs(config_type):
     return dict(
         key=config_type.key,
-        name=config_type.name,
+        name=config_type.given_name,
         description=config_type.description,
         is_builtin=config_type.type_attributes.is_builtin,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,

@@ -16,13 +16,6 @@ from .resource import ResourceDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 
 
-# Used elsewhere
-def SystemNamedDict(_name, fields, description=None):
-    '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
-    '''
-    return Shape(fields, description, is_system_config=True)
-
-
 def SystemDict(fields, description=None):
     return Shape(fields, description, is_system_config=True)
 
@@ -316,14 +309,15 @@ def construct_config_type_dictionary(solid_defs, environment_type):
     check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.inst_param(environment_type, 'environment_type', ConfigType)
 
-    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS}
+    # type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(solid_defs, environment_type)) + list(
         _gather_all_schemas(solid_defs)
     )
 
     for config_type in all_types:
-        name = config_type.name
+        name = config_type.given_name
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
@@ -333,7 +327,7 @@ def construct_config_type_dictionary(solid_defs, environment_type):
                     ).format(name=name)
                 )
         elif name:
-            type_dict_by_name[config_type.name] = config_type
+            type_dict_by_name[name] = config_type
 
         type_dict_by_key[config_type.key] = config_type
 

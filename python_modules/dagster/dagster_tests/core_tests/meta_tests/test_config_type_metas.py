@@ -15,7 +15,7 @@ def meta_from_dagster_type(dagster_type):
 
 def test_basic_int_meta():
     int_meta = meta_from_dagster_type(int)
-    assert int_meta.name == 'Int'
+    assert int_meta.given_name == 'Int'
     assert int_meta.key == 'Int'
     assert int_meta.kind == ConfigTypeKind.SCALAR
     assert int_meta.inner_type_refs == []
@@ -28,7 +28,7 @@ def test_basic_int_meta():
 def test_basic_dict():
     dict_meta = meta_from_dagster_type({'foo': int})
     assert dict_meta.key.startswith('Shape.')
-    assert dict_meta.name is None
+    assert dict_meta.given_name is None
     assert dict_meta.inner_type_refs
     assert len(dict_meta.inner_type_refs) == 1
     assert dict_meta.inner_type_refs[0].key == 'Int'

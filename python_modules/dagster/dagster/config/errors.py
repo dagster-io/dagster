@@ -103,15 +103,15 @@ def friendly_string_for_error(error):
 
     path_msg, path = get_friendly_path_info(error.stack)
 
-    type_msg = _get_type_msg(error, type_in_context)
+    type_msg = _get_type_msg(type_in_context)
 
     if error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD:
         return error.message
     elif error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS:
         return error.message
     elif error.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED:
-        return 'Undefined field "{field_name}"{type_msg} {path_msg}'.format(
-            field_name=error.error_data.field_name, path_msg=path_msg, type_msg=type_msg
+        return ('Undefined field "{field_name}" {path_msg}.').format(
+            field_name=error.error_data.field_name, path_msg=path_msg,
         )
     elif error.reason == DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED:
         return error.message
@@ -125,11 +125,11 @@ def friendly_string_for_error(error):
         check.failed('{} (friendly message for this type not yet provided)'.format(error.reason))
 
 
-def _get_type_msg(error, type_in_context):
-    if error.stack.type_in_context.is_system_config:
+def _get_type_msg(type_in_context):
+    if type_in_context.is_system_config or type_in_context.given_name is None:
         return ''
     else:
-        return ' on type "{type_name}"'.format(type_name=type_in_context.name)
+        return ' on type "{type_name}"'.format(type_name=type_in_context.given_name)
 
 
 def create_dict_type_mismatch_error(context, config_value):
@@ -180,7 +180,7 @@ def create_enum_type_mismatch_error(context, config_value):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value for enum type {type_name} must be a string'.format(
-            type_name=context.config_type.name
+            type_name=context.config_type.given_name
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
     )
@@ -192,7 +192,9 @@ def create_enum_value_missing_error(context, config_value):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Value not in enum type {type_name}'.format(type_name=context.config_type.name),
+        message='Value not in enum type {type_name}'.format(
+            type_name=context.config_type.given_name
+        ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
     )
 
@@ -280,7 +282,7 @@ def create_scalar_error(context, config_value):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} is not valid. Expected "{type_name}"'.format(
-            path_msg=get_friendly_path_msg(context.stack), type_name=context.config_type.name
+            path_msg=get_friendly_path_msg(context.stack), type_name=context.config_type.given_name
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
     )
@@ -331,8 +333,8 @@ def create_selector_type_error(context, config_value):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Value for selector type {type_name} must be a dict'.format(
-            type_name=context.config_type.name
+        message='Value for selector type {path_msg} must be a dict'.format(
+            path_msg=get_friendly_path_msg(context.stack)
         ),
         error_data=RuntimeMismatchErrorData(
             config_type=context.config_type, value_rep=repr(config_value)

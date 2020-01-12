@@ -3,7 +3,6 @@ from kubernetes import client, config
 from dagster import Field
 from dagster import __version__ as dagster_version
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -42,17 +41,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict(
-            'RemoteDagitExecutionServerConfig',
-            {
-                'postgres_host': Field(str),
-                'postgres_port': Field(str),
-                'service_account_name': Field(str),
-                'job_image': Field(str),
-                'instance_config_map': Field(str),
-                'image_pull_secrets': Field(list, is_optional=True),
-            },
-        )
+        return {
+            'postgres_host': str,
+            'postgres_port': str,
+            'service_account_name': str,
+            'job_image': str,
+            'instance_config_map': str,
+            'image_pull_secrets': Field(list, is_optional=True),
+        }
 
     @classmethod
     def from_config_value(cls, inst_data, config_value, **kwargs):

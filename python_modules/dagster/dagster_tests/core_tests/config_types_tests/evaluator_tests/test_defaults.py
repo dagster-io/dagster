@@ -97,7 +97,9 @@ def test_post_process_config():
 
     assert post_process_config(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
 
-    assert post_process_config(ConfigType('gargle', 'bargle', ConfigTypeKind.ANY), 3)
+    assert post_process_config(
+        ConfigType('gargle', given_name='bargle', kind=ConfigTypeKind.ANY), 3
+    )
 
     selector_config_type = resolve_to_config_type(
         Selector(

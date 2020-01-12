@@ -11,7 +11,6 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
@@ -58,7 +57,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('SqliteEventLogStorageConfig', {'base_dir': str})
+        return {'base_dir': str}
 
     @staticmethod
     def from_config_value(inst_data, config_value, **kwargs):

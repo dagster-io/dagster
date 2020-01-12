@@ -16,7 +16,7 @@ class NonGenericTypeRefMeta(namedtuple('_NonGenericTypeRefMeta', 'key')):
 class ConfigTypeMeta(
     namedtuple(
         '_ConfigTypeMeta',
-        'kind key name description is_builtin is_system_config '
+        'kind key given_name description is_builtin is_system_config '
         'type_param_refs '  # only valid for closed generics (Set, Tuple, List, Optional)
         'enum_values '  # only valid for enums
         'fields',  # only valid for dicts and selectors
@@ -26,7 +26,7 @@ class ConfigTypeMeta(
         cls,
         kind,
         key,
-        name,
+        given_name,
         type_param_refs,
         enum_values,
         fields,
@@ -38,7 +38,7 @@ class ConfigTypeMeta(
             cls,
             kind=check.inst_param(kind, 'kind', ConfigTypeKind),
             key=check.str_param(key, 'key'),
-            name=check.opt_str_param(name, 'name'),
+            given_name=check.opt_str_param(given_name, 'given_name'),
             type_param_refs=None
             if type_param_refs is None
             else check.list_param(type_param_refs, 'type_param_refs', of_type=TypeRef),
@@ -173,7 +173,7 @@ def meta_from_config_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
     return ConfigTypeMeta(
         key=config_type.key,
-        name=config_type.name,
+        given_name=config_type.given_name,
         kind=config_type.kind,
         description=config_type.description,
         is_builtin=config_type.is_builtin,

@@ -1,6 +1,5 @@
 import os
 import pickle
-import re
 import time
 
 import pytest
@@ -252,21 +251,21 @@ def test_set_solid_configable_input():
 
 
 def test_set_solid_configable_input_bad():
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Error 1: Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"Array[ScalarUnion[String,String.InputHydrationConfig]]". Value at path '
-            'root:solids:set_solid:inputs:set_input must be list. Expected: '
-            '[(String | { json: { path: Path } pickle: { path: Path } value: String })].'
-        ),
-    ):
+    with pytest.raises(DagsterInvalidConfigError,) as exc_info:
         execute_solid(
             set_solid,
             environment_dict={
                 'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}
             },
         )
+
+    expected = (
+        'Error 1: Type failure at path "root:solids:set_solid:inputs:set_input". '
+        'Value at path root:solids:set_solid:inputs:set_input must be list. '
+        'Expected: [(String | { json: { path: Path } pickle: { path: Path } value: String })].'
+    )
+
+    assert expected in str(exc_info.value)
 
 
 def test_tuple_solid():

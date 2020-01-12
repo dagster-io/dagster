@@ -18,8 +18,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.config.config_type import ConfigTypeKind
 from dagster.config.errors import DagsterEvaluateConfigValueError
-from dagster.config.field_utils import NamedDict
 from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
@@ -51,16 +51,9 @@ def test_all_types_provided():
                 resource_defs={
                     'some_resource': ResourceDefinition(
                         lambda: None,
-                        config=Field(
-                            NamedDict(
-                                'SomeModeNamedDict',
-                                {
-                                    'with_default_int': Field(
-                                        Int, is_optional=True, default_value=23434
-                                    )
-                                },
-                            )
-                        ),
+                        config={
+                            'with_default_int': Field(Int, is_optional=True, default_value=23434)
+                        },
                     )
                 },
             )
@@ -70,8 +63,13 @@ def test_all_types_provided():
     environment_schema = create_environment_schema(pipeline_def)
 
     all_types = list(environment_schema.all_config_types())
-    type_names = set(t.name for t in all_types)
-    assert 'SomeModeNamedDict' in type_names
+
+    matching_types = [
+        tt
+        for tt in all_types
+        if tt.kind == ConfigTypeKind.STRICT_SHAPE and 'with_default_int' in tt.fields.keys()
+    ]
+    assert len(matching_types) == 1
 
 
 def test_provided_default_on_resources_config():

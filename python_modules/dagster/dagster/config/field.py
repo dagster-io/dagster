@@ -200,7 +200,9 @@ class Field(object):
                 config_type.is_config_scalar_valid(self._default_value),
                 'default_value',
                 'default value not valid for config type {name}, got value {val} of type {type}'.format(
-                    name=config_type.name, val=self._default_value, type=type(self._default_value)
+                    name=config_type.given_name,
+                    val=self._default_value,
+                    type=type(self._default_value),
                 ),
             )
 

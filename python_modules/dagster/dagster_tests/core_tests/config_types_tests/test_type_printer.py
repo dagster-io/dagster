@@ -5,8 +5,8 @@ from dagster.config.type_printer import print_type_to_string
 
 def assert_inner_types(parent_type, *dagster_types):
     assert set(
-        list(map(lambda t: t.name, resolve_to_config_type(parent_type).recursive_config_types))
-    ) == set(map(lambda x: x.name, map(resolve_to_config_type, dagster_types)))
+        list(map(lambda t: t.key, resolve_to_config_type(parent_type).recursive_config_types))
+    ) == set(map(lambda x: x.key, map(resolve_to_config_type, dagster_types)))
 
 
 def test_basic_type_print():

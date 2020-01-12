@@ -164,6 +164,7 @@ class ConfigurableClassData(
 
     def rehydrate(self, **constructor_kwargs):
         from dagster.core.errors import DagsterInvalidConfigError
+        from dagster.config.field import resolve_to_config_type
         from dagster.config.validate import process_config
 
         try:
@@ -197,7 +198,7 @@ class ConfigurableClassData(
             )
 
         config_dict = yaml.load(self.config_yaml)
-        result = process_config(klass.config_type(), config_dict)
+        result = process_config(resolve_to_config_type(klass.config_type()), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(
                 'Errors whilst loading configuration for {}.'.format(klass.config_type()),
@@ -229,10 +230,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
     type such as:
 
-        SystemNamedDict(
-            name,
-            {'module': Field(String), 'class': Field(String), 'config': Field(Permissive())},
-        )
+        {'module': str, 'class': str, 'config': Field(Permissive())},
     '''
 
     @abstractproperty
@@ -247,8 +245,6 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
         serialized in an instance of ConfigurableClassData.
-
-        This is usually an instance of dagster.core.definitions.environment_configs.SystemNamedDict.
         '''
 
     @staticmethod

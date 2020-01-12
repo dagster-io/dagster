@@ -18,7 +18,7 @@ from dagster import (
     as_dagster_type,
     check,
 )
-from dagster.config.field_utils import NamedSelector
+from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
@@ -29,8 +29,7 @@ def dict_without_keys(ddict, *keys):
 
 
 @output_selector_schema(
-    NamedSelector(
-        'DataFrameOutputSchema',
+    Selector(
         {
             'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
             'parquet': {'path': Path},
@@ -57,8 +56,7 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
 
 
 @input_selector_schema(
-    NamedSelector(
-        'DataFrameInputSchema',
+    Selector(
         {
             'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
             'parquet': {'path': Path},

@@ -4,7 +4,7 @@ import hashlib
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
 
-from .config_type import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttributes, ConfigTypeKind
+from .config_type import ConfigType, ConfigTypeAttributes, ConfigTypeKind
 
 
 def all_optional_type(config_type):
@@ -52,19 +52,6 @@ class _ConfigHasFields(ConfigType):
             yield field.config_type
             for recursive_config_type in field.config_type.recursive_config_types:
                 yield recursive_config_type
-
-
-class NamedDict(_ConfigHasFields):
-    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-        expand_fields_dict(fields)
-        super(NamedDict, self).__init__(
-            key=name,
-            name=name,
-            kind=ConfigTypeKind.STRICT_SHAPE,
-            fields=expand_fields_dict(fields),
-            description=description,
-            type_attributes=type_attributes,
-        )
 
 
 FIELD_HASH_CACHE = {}
@@ -127,7 +114,6 @@ class Shape(_ConfigHasFields):
     def __init__(self, fields, description=None, is_system_config=False):
         fields = expand_fields_dict(fields)
         super(Shape, self).__init__(
-            name=None,
             kind=ConfigTypeKind.STRICT_SHAPE,
             key=_define_shape_key_hash(fields, description, is_system_config),
             description=description,
@@ -179,7 +165,6 @@ class Permissive(_ConfigHasFields):
         fields = expand_fields_dict(fields) if fields else None
         super(Permissive, self).__init__(
             key=_define_permissive_dict_key(fields, description),
-            name=None,
             kind=ConfigTypeKind.PERMISSIVE_SHAPE,
             fields=fields or dict(),
             type_attributes=ConfigTypeAttributes(is_builtin=True),
@@ -245,26 +230,12 @@ class Selector(_ConfigHasFields):
         fields = expand_fields_dict(fields)
         super(Selector, self).__init__(
             key=_define_selector_key(fields, description, is_system_config),
-            name=None,
             kind=ConfigTypeKind.SELECTOR,
             fields=fields,
             type_attributes=ConfigTypeAttributes(
                 is_builtin=True, is_system_config=is_system_config
             ),
             description=description,
-        )
-
-
-class NamedSelector(_ConfigHasFields):
-    def __init__(self, name, fields, description=None, type_attributes=DEFAULT_TYPE_ATTRIBUTES):
-        check.str_param(name, 'name')
-        super(NamedSelector, self).__init__(
-            key=name,
-            name=name,
-            kind=ConfigTypeKind.SELECTOR,
-            fields=expand_fields_dict(fields),
-            description=description,
-            type_attributes=type_attributes,
         )
 
 

@@ -5,8 +5,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 
-from dagster import Field, String, check
-from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
     ConfigurableClass,
@@ -58,7 +57,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('PostgresRunStorageConfig', {'postgres_url': Field(String)})
+        return {'postgres_url': str}
 
     @staticmethod
     def from_config_value(inst_data, config_value, **kwargs):
