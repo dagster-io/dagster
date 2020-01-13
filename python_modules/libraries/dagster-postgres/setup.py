@@ -37,6 +37,13 @@ def _do_setup(name='dagster-postgres'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
+        package_data={
+            name: [
+                'dagster_postgres/event_log/alembic/*',
+                'dagster_postgres/run_storage/alembic/*',
+            ]
+        },
+        include_package_data=True,
         install_requires=['dagster', 'psycopg2-binary'],
         zip_safe=False,
     )
