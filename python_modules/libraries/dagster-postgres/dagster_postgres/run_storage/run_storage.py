@@ -7,6 +7,8 @@ from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 
+from ..utils import pg_config, pg_url_from_config
+
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
@@ -31,11 +33,13 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'postgres_url': str}
+        return pg_config()
 
     @staticmethod
     def from_config_value(inst_data, config_value, **kwargs):
-        return PostgresRunStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+        return PostgresRunStorage(
+            inst_data=inst_data, postgres_url=pg_url_from_config(config_value)
+        )
 
     @staticmethod
     def create_clean_storage(postgres_url):
