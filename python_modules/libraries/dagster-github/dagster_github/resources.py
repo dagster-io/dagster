@@ -1,9 +1,11 @@
 import time
 from datetime import datetime
-from dagster import resource, Field, String, Int
+
 import requests
 import jwt
 import pem
+
+from dagster import resource, Field, String, Int
 
 
 def to_seconds(dt):
@@ -51,7 +53,9 @@ class GithubResource:
         ):
             self.__set_app_token()
 
-    def get_installations(self, headers={}):
+    def get_installations(self, headers=None):
+        if headers is None:
+            headers = {}
         self.__check_app_token()
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
@@ -59,13 +63,11 @@ class GithubResource:
         if request.status_code == 200:
             return request.json()
         else:
-            raise Exception(
-                "Request failed and returned code of {}, {}".format(
-                    request.status_code, request.json()
-                )
-            )
+            request.raise_for_status()
 
-    def __set_installation_token(self, installation_id, headers={}):
+    def __set_installation_token(self, installation_id, headers=None):
+        if headers is None:
+            headers = {}
         self.__check_app_token()
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
@@ -80,11 +82,7 @@ class GithubResource:
                 "expires": to_seconds(datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')),
             }
         else:
-            raise Exception(
-                "Request failed and returned code of {}, {}".format(
-                    request.status_code, request.json()
-                )
-            )
+            request.raise_for_status()
 
     def __check_installation_tokens(self, installation_id):
         if (installation_id not in self.installation_tokens) or (
@@ -92,7 +90,9 @@ class GithubResource:
         ):
             self.__set_installation_token(installation_id)
 
-    def execute(self, query, variables, headers={}, installation_id=None):
+    def execute(self, query, variables, headers=None, installation_id=None):
+        if headers is None:
+            headers = {}
         if installation_id is None:
             installation_id = self.default_installation_id
         self.__check_installation_tokens(installation_id)
@@ -107,9 +107,7 @@ class GithubResource:
         if request.status_code == 200:
             return request.json()
         else:
-            raise Exception(
-                "Query failed to run by returning code of {}. {}".format(request.status_code, query)
-            )
+            request.raise_for_status()
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
         if installation_id is None:
