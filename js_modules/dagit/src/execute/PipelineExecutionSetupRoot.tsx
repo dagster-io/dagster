@@ -30,6 +30,9 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecuti
       } else if (typeof qs.solidSubset === "string") {
         newSession.solidSubset = [qs.solidSubset];
       }
+      if (typeof qs.solidSubsetQuery === "string") {
+        newSession.solidSubsetQuery = qs.solidSubsetQuery;
+      }
 
       onSave(applyCreateSession(data, newSession));
     }

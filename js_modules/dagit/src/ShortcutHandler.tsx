@@ -136,8 +136,17 @@ export class ShortcutHandler extends React.Component<
       this.props.shortcutFilter &&
       this.props.shortcutFilter(event)
     ) {
-      this.props.onShortcut(event);
       event.preventDefault();
+
+      // Pull the focus out of the currently focused field (if there is one). This better
+      // simulates typical onClick behavior where the button is focused by mousedown before
+      // the click so shortcut activation doesn't need to be  tested separately. It also
+      // ensures the value of the codemirror / text input is "committed" before the click.
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+
+      this.props.onShortcut(event);
     }
   };
 

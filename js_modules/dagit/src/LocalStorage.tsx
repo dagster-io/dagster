@@ -24,7 +24,7 @@ export interface IExecutionSession {
   environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
-  solidSubsetLabel: string | null;
+  solidSubsetQuery: string | null;
 
   // this is set when you execute the session and freeze it
   runId?: string;
@@ -83,7 +83,7 @@ export function applyCreateSession(
         environmentConfigYaml: "",
         mode: null,
         solidSubset: null,
-        solidSubsetLabel: "",
+        solidSubsetQuery: "*",
         pipeline: "",
         runId: undefined,
         ...initial,
