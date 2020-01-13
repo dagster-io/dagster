@@ -67,6 +67,16 @@ class RuntimeType(object):
             'All types must have a valid display name, got None for key {}'.format(key),
         )
 
+    def __eq__(self, other):
+        check.inst_param(other, 'other', RuntimeType)
+
+        if isinstance(other, self.__class__):
+            return len(self.inner_types) == len(other.inner_types) and all(
+                t1 == t2 for t1, t2 in zip(self.inner_types, other.inner_types)
+            )
+        else:
+            return False
+
     @staticmethod
     def from_builtin_enum(builtin_enum):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'must be member of BuiltinEnum')
@@ -724,7 +734,7 @@ def resolve_to_runtime_type(dagster_type):
     return create_anonymous_type(dagster_type)
 
 
-ALL_RUNTIME_BUILTINS = set(_RUNTIME_MAP.values())
+ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
 def construct_runtime_type_dictionary(solid_defs):

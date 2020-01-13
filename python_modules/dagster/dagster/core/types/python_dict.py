@@ -55,6 +55,10 @@ class _TypedPythonDict(RuntimeType):
             key=self.key_type.display_name, value=self.value_type.display_name
         )
 
+    @property
+    def inner_types(self):
+        return [self.key_type, self.value_type]
+
 
 def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
     key_type = resolve_to_runtime_type(key_dagster_type)

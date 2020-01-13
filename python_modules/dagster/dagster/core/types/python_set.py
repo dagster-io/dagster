@@ -66,6 +66,10 @@ class _TypedPythonSet(RuntimeType):
     def display_name(self):
         return 'Set[{}]'.format(self.item_type.display_name)
 
+    @property
+    def inner_types(self):
+        return [self.item_type]
+
 
 def create_typed_runtime_set(item_dagster_type):
     item_runtime_type = resolve_to_runtime_type(item_dagster_type)
