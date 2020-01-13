@@ -14,12 +14,12 @@ LOGGER_QUERY = '''
           description
           configField {
             configType {
-              name
+              key 
               ... on CompositeConfigType {
                 fields {
                   name
                   configType {
-                    name
+                    key 
                   }
                 }
               }

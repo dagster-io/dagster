@@ -61,7 +61,7 @@ def test_enum_query():
       ... on EnvironmentSchema {
         allConfigTypes {
           __typename
-          name
+          key 
           ... on EnumConfigType {
             values
             {
@@ -83,12 +83,12 @@ def test_enum_query():
     enum_type_data = None
 
     for td in result.data['environmentSchemaOrError']['allConfigTypes']:
-        if td['name'] == 'TestEnum':
+        if td['key'] == 'TestEnum':
             enum_type_data = td
             break
 
     assert enum_type_data
-    assert enum_type_data['name'] == 'TestEnum'
+    assert enum_type_data['key'] == 'TestEnum'
     assert enum_type_data['values'] == [
         {'value': 'ENUM_VALUE_ONE', 'description': 'An enum value.'},
         {'value': 'ENUM_VALUE_TWO', 'description': 'An enum value.'},
@@ -98,15 +98,15 @@ def test_enum_query():
 
 TYPE_RENDER_QUERY = '''
 fragment innerInfo on ConfigType {
-  name
+  key 
   recursiveConfigTypes {
-    name
+    key 
   }
   ... on CompositeConfigType {
     fields {
       name
       configType {
-       name
+        key 
       }
       isOptional
     }

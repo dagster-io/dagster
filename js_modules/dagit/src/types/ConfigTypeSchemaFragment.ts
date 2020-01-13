@@ -8,9 +8,26 @@
 // ====================================================
 
 export interface ConfigTypeSchemaFragment_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface ConfigTypeSchemaFragment_EnumConfigType {
+  __typename: "EnumConfigType";
+  givenName: string;
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface ConfigTypeSchemaFragment_RegularConfigType {
+  __typename: "RegularConfigType";
+  givenName: string;
+  key: string;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
@@ -27,11 +44,20 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType_fields {
 export interface ConfigTypeSchemaFragment_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: ConfigTypeSchemaFragment_CompositeConfigType_fields[];
 }
 
-export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_CompositeConfigType;
+export interface ConfigTypeSchemaFragment_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_EnumConfigType | ConfigTypeSchemaFragment_RegularConfigType | ConfigTypeSchemaFragment_CompositeConfigType | ConfigTypeSchemaFragment_ScalarUnionConfigType;

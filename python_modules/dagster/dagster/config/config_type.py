@@ -283,6 +283,14 @@ class ScalarUnion(ConfigType):
     def __init__(self, scalar_type, non_scalar_type):
         self.scalar_type = check.inst_param(scalar_type, 'scalar_type', ConfigType)
         self.non_scalar_type = check.inst_param(non_scalar_type, 'non_scalar_type', ConfigType)
+
+        check.param_invariant(scalar_type.kind == ConfigTypeKind.SCALAR, 'scalar_type')
+        check.param_invariant(
+            non_scalar_type.kind
+            in {ConfigTypeKind.STRICT_SHAPE, ConfigTypeKind.SELECTOR, ConfigTypeKind.ARRAY},
+            'non_scalar_type',
+        )
+
         key = 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
         super(ScalarUnion, self).__init__(
             key=key, kind=ConfigTypeKind.SCALAR_UNION, type_params=[scalar_type, non_scalar_type],

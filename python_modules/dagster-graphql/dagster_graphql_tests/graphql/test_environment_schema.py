@@ -9,10 +9,10 @@ query($selector: ExecutionSelector! $mode: String!)
     __typename
     ... on EnvironmentSchema {
       rootEnvironmentType {
-        name
+        key
       }
       allConfigTypes {
-        name
+        key
       }
     }
   }
@@ -20,15 +20,13 @@ query($selector: ExecutionSelector! $mode: String!)
 '''
 
 
-def test_successful_enviroment_schema(snapshot):
+def test_successful_enviroment_schema():
     result = execute_dagster_graphql(
         define_context(),
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'add_mode'},
     )
     assert result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'
-
-    snapshot.assert_match(result.data)
 
 
 def test_environment_schema_pipeline_not_found():
@@ -103,7 +101,7 @@ query PipelineQuery(
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {
-                    type { name }
+                    type { key }
                     valueRep
                 }
                 ... on MissingFieldConfigError {
@@ -130,7 +128,7 @@ query PipelineQuery(
                             field {
                                 name
                                 configType {
-                                    name
+                                    key
                                 }
                             }
                         }

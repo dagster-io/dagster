@@ -473,7 +473,7 @@ CodeMirror.registerHelper(
     // Completion of boolean field values
     if (
       context.type.__typename === "RegularConfigType" &&
-      context.type.name === "Bool"
+      context.type.givenName === "Bool"
     ) {
       return {
         list: ["True", "False"]

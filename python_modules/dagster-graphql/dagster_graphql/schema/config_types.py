@@ -21,7 +21,7 @@ def to_dauphin_config_type(config_type):
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
         return DauphinRegularConfigType(config_type)
     elif kind == ConfigTypeKind.SCALAR_UNION:
-        return DauphinRegularConfigType(config_type)
+        return DauphinScalarUnionConfigType(config_type)
     else:
         check.failed('Should never reach')
 
@@ -29,7 +29,6 @@ def to_dauphin_config_type(config_type):
 def _ctor_kwargs(config_type):
     return dict(
         key=config_type.key,
-        name=config_type.given_name,
         description=config_type.description,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
         type_param_keys=[tp.key for tp in config_type.type_params]
@@ -43,7 +42,6 @@ class DauphinConfigType(dauphin.Interface):
         name = 'ConfigType'
 
     key = dauphin.NonNull(dauphin.String)
-    name = dauphin.String()
     description = dauphin.String()
 
     recursive_config_types = dauphin.Field(
@@ -90,6 +88,11 @@ class DauphinRegularConfigType(dauphin.ObjectType):
         interfaces = [DauphinConfigType]
         description = 'Regular is an odd name in this context. It really means Scalar or Any.'
 
+    given_name = dauphin.NonNull(dauphin.String)
+
+    def resolve_given_name(self, _):
+        return self._config_type.given_name
+
     def resolve_recursive_config_types(self, _graphene_info):
         return _resolve_recursive_config_types(self._config_type)
 
@@ -112,6 +115,39 @@ class DauphinArrayConfigType(dauphin.ObjectType):
 
     def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(self._config_type.inner_type)
+
+    def resolve_recursive_config_types(self, _graphene_info):
+        return _resolve_recursive_config_types(self._config_type)
+
+
+class DauphinScalarUnionConfigType(dauphin.ObjectType):
+    def __init__(self, config_type):
+        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
+        check.param_invariant(config_type.kind == ConfigTypeKind.SCALAR_UNION, 'config_type')
+
+        super(DauphinScalarUnionConfigType, self).__init__(**_ctor_kwargs(config_type))
+
+    class Meta(object):
+        name = 'ScalarUnionConfigType'
+        interfaces = [DauphinConfigType]
+
+    scalar_type = dauphin.NonNull(DauphinConfigType)
+    non_scalar_type = dauphin.NonNull(DauphinConfigType)
+
+    scalar_type_key = dauphin.NonNull(dauphin.String)
+    non_scalar_type_key = dauphin.NonNull(dauphin.String)
+
+    def resolve_scalar_type_key(self, _):
+        return self._config_type.scalar_type.key
+
+    def resolve_non_scalar_type_key(self, _):
+        return self._config_type.non_scalar_type.key
+
+    def resolve_scalar_type(self, _):
+        return to_dauphin_config_type(self._config_type.scalar_type)
+
+    def resolve_non_scalar_type(self, _):
+        return to_dauphin_config_type(self._config_type.non_scalar_type)
 
     def resolve_recursive_config_types(self, _graphene_info):
         return _resolve_recursive_config_types(self._config_type)
@@ -145,12 +181,16 @@ class DauphinEnumConfigType(dauphin.ObjectType):
         interfaces = [DauphinConfigType]
 
     values = dauphin.non_null_list('EnumConfigValue')
+    given_name = dauphin.NonNull(dauphin.String)
 
     def resolve_values(self, _graphene_info):
         return [
             DauphinEnumConfigValue(value=ev.config_value, description=ev.description)
             for ev in self._config_type.enum_values
         ]
+
+    def resolve_given_name(self, _):
+        return self._config_type.given_name
 
     def resolve_recursive_config_types(self, _graphene_info):
         return _resolve_recursive_config_types(self._config_type)

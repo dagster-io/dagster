@@ -12,12 +12,29 @@ export interface PipelineExplorerRootQuery_pipelineOrError_InvalidSubsetError {
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -31,23 +48,161 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resour
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_fields {
@@ -59,12 +214,29 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resour
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -78,19 +250,27 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resour
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
@@ -98,7 +278,73 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resour
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField_configType_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resources_configField {
   __typename: "ConfigTypeField";
@@ -113,12 +359,29 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_resour
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -132,23 +395,161 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_logger
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes[];
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_fields {
@@ -160,12 +561,29 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_logger
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -179,19 +597,27 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_logger
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
@@ -199,7 +625,73 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_logger
   recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType = PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ArrayConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_EnumConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_RegularConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_CompositeConfigType | PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField_configType_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_modes_loggers_configField {
   __typename: "ConfigTypeField";
@@ -316,8 +808,8 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
-  name: string | null;
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  key: string;
   description: string | null;
 }
 
@@ -574,8 +1066,8 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
 }
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
-  name: string | null;
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  key: string;
   description: string | null;
 }
 
