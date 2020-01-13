@@ -36,7 +36,6 @@ class _TypedPythonSet(RuntimeType):
         super(_TypedPythonSet, self).__init__(
             key='TypedPythonSet.{}'.format(item_runtime_type.key),
             name=None,
-            is_builtin=True,
             input_hydration_config=(
                 TypedSetInputHydrationConfig(item_runtime_type)
                 if item_runtime_type.input_hydration_config

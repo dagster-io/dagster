@@ -4,7 +4,7 @@ import hashlib
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
 
-from .config_type import ConfigType, ConfigTypeAttributes, ConfigTypeKind
+from .config_type import ConfigType, ConfigTypeKind
 
 
 def all_optional_type(config_type):
@@ -116,7 +116,6 @@ class Shape(_ConfigHasFields):
             key=_define_shape_key_hash(fields, description),
             description=description,
             fields=fields,
-            type_attributes=ConfigTypeAttributes(is_builtin=True,),
         )
 
 
@@ -162,7 +161,6 @@ class Permissive(_ConfigHasFields):
             key=_define_permissive_dict_key(fields, description),
             kind=ConfigTypeKind.PERMISSIVE_SHAPE,
             fields=fields or dict(),
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
             description=description,
         )
 
@@ -223,7 +221,6 @@ class Selector(_ConfigHasFields):
             key=_define_selector_key(fields, description),
             kind=ConfigTypeKind.SELECTOR,
             fields=fields,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
             description=description,
         )
 

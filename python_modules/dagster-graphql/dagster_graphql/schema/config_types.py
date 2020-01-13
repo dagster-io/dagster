@@ -31,7 +31,6 @@ def _ctor_kwargs(config_type):
         key=config_type.key,
         name=config_type.given_name,
         description=config_type.description,
-        is_builtin=config_type.type_attributes.is_builtin,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
         type_param_keys=[tp.key for tp in config_type.type_params]
         if config_type.type_params
@@ -75,13 +74,6 @@ navigating the full schema client-side and not innerTypes.
     ''',
     )
     is_selector = dauphin.NonNull(dauphin.Boolean)
-
-    is_builtin = dauphin.NonNull(
-        dauphin.Boolean,
-        description='''
-True if the system defines it and it is the same type across pipelines.
-Examples include "Int" and "String."''',
-    )
 
 
 def _resolve_recursive_config_types(config_type):

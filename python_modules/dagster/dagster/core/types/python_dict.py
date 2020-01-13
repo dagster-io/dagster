@@ -25,7 +25,6 @@ class _TypedPythonDict(RuntimeType):
         super(_TypedPythonDict, self).__init__(
             key='TypedPythonDict.{}.{}'.format(key_type.key, value_type.key),
             name=None,
-            is_builtin=True,
             type_check_fn=self.type_check_method,
         )
 

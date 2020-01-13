@@ -1,4 +1,3 @@
-from collections import namedtuple
 from enum import Enum as PythonEnum
 
 import six
@@ -39,38 +38,19 @@ class ConfigTypeKind(PythonEnum):
         return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
 
-class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin')):
-    def __new__(cls, is_builtin=False):
-        return super(ConfigTypeAttributes, cls).__new__(
-            cls, is_builtin=check.bool_param(is_builtin, 'is_builtin'),
-        )
-
-
-DEFAULT_TYPE_ATTRIBUTES = ConfigTypeAttributes()
-
-
 class ConfigType(object):
     '''
     The class backing DagsterTypes as they are used processing configuration data.
     '''
 
     def __init__(
-        self,
-        key,
-        kind,
-        given_name=None,
-        type_attributes=DEFAULT_TYPE_ATTRIBUTES,
-        description=None,
-        type_params=None,
+        self, key, kind, given_name=None, description=None, type_params=None,
     ):
 
         self.key = check.str_param(key, 'key')
         self.kind = check.inst_param(kind, 'kind', ConfigTypeKind)
         self.given_name = check.opt_str_param(given_name, 'given_name')
         self._description = check.opt_str_param(description, 'description')
-        self.type_attributes = check.inst_param(
-            type_attributes, 'type_attributes', ConfigTypeAttributes
-        )
         self.type_params = (
             check.list_param(type_params, 'type_params', of_type=ConfigType)
             if type_params
@@ -91,10 +71,6 @@ class ConfigType(object):
     @property
     def is_closed_generic(self):
         return ConfigTypeKind.is_closed_generic(self.kind)
-
-    @property
-    def is_builtin(self):
-        return self.type_attributes.is_builtin
 
     @property
     def recursive_config_types(self):
@@ -121,10 +97,7 @@ class ConfigScalar(ConfigType):
 class BuiltinConfigScalar(ConfigScalar):
     def __init__(self, description=None):
         super(BuiltinConfigScalar, self).__init__(
-            key=type(self).__name__,
-            given_name=type(self).__name__,
-            description=description,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            key=type(self).__name__, given_name=type(self).__name__, description=description,
         )
 
 
@@ -170,10 +143,7 @@ class Float(BuiltinConfigScalar):
 class Any(ConfigType):
     def __init__(self):
         super(Any, self).__init__(
-            key='Any',
-            given_name='Any',
-            kind=ConfigTypeKind.ANY,
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
+            key='Any', given_name='Any', kind=ConfigTypeKind.ANY,
         )
 
 
@@ -186,7 +156,6 @@ class Noneable(ConfigType):
             key='Noneable.{inner_type}'.format(inner_type=self.inner_type.key),
             kind=ConfigTypeKind.NONEABLE,
             type_params=[self.inner_type],
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
 
     @property
@@ -201,7 +170,6 @@ class Array(ConfigType):
         self.inner_type = resolve_to_config_type(inner_type)
         super(Array, self).__init__(
             key='Array.{inner_type}'.format(inner_type=self.inner_type.key),
-            type_attributes=ConfigTypeAttributes(is_builtin=True),
             type_params=[self.inner_type],
             kind=ConfigTypeKind.ARRAY,
         )

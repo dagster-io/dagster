@@ -541,7 +541,6 @@ fragment configTypeFragment on ConfigType {
   name
   description
   isSelector
-  isBuiltin
   typeParamKeys
   recursiveConfigTypes {
     key
