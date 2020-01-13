@@ -66,12 +66,6 @@ class ConfigType(object):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'param must be member of BuiltinEnum')
         return _CONFIG_MAP[builtin_enum]
 
-    # An instantiated List, Tuple, Set, or Noneable
-    # e.g. List[Int] or Tuple[Int, Str]
-    @property
-    def is_closed_generic(self):
-        return ConfigTypeKind.is_closed_generic(self.kind)
-
     @property
     def recursive_config_types(self):
         return []
@@ -85,10 +79,6 @@ class ConfigScalar(ConfigType):
         super(ConfigScalar, self).__init__(
             key, given_name=given_name, kind=ConfigTypeKind.SCALAR, **kwargs
         )
-
-    # @property
-    # def is_scalar(self):
-    #     return True
 
     def is_config_scalar_valid(self, _config_value):
         check.not_implemented('must implement')
@@ -244,10 +234,6 @@ class Enum(ConfigType):
     @property
     def config_values(self):
         return [ev.config_value for ev in self.enum_values]
-
-    @property
-    def is_enum(self):
-        return True
 
     def is_valid_config_enum_value(self, config_value):
         return config_value in self._valid_config_values

@@ -136,7 +136,7 @@ class DauphinNullableConfigType(dauphin.ObjectType):
 class DauphinEnumConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
         check.inst_param(config_type, 'config_type', ConfigType)
-        check.param_invariant(config_type.is_enum, 'config_type')
+        check.param_invariant(config_type.kind == ConfigTypeKind.ENUM, 'config_type')
         self._config_type = config_type
         super(DauphinEnumConfigType, self).__init__(**_ctor_kwargs(config_type))
 
