@@ -57,10 +57,8 @@ class GithubResource:
         headers["Authorization"] = "Bearer {}".format(self.app_token["value"])
         headers["Accept"] = "application/vnd.github.machine-man-preview+json"
         request = self.client.get("https://api.github.com/app/installations", headers=headers,)
-        if request.status_code == 200:
-            return request.json()
-        else:
-            request.raise_for_status()
+        request.raise_for_status()
+        return request.json()
 
     def __set_installation_token(self, installation_id, headers=None):
         if headers is None:
@@ -72,14 +70,12 @@ class GithubResource:
             "https://api.github.com/app/installations/{}/access_tokens".format(installation_id),
             headers=headers,
         )
-        if request.status_code == 201:
-            auth = request.json()
-            self.installation_tokens[installation_id] = {
-                "value": auth["token"],
-                "expires": to_seconds(datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')),
-            }
-        else:
-            request.raise_for_status()
+        request.raise_for_status()
+        auth = request.json()
+        self.installation_tokens[installation_id] = {
+            "value": auth["token"],
+            "expires": to_seconds(datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')),
+        }
 
     def __check_installation_tokens(self, installation_id):
         if (installation_id not in self.installation_tokens) or (
@@ -101,10 +97,8 @@ class GithubResource:
             json={"query": query, "variables": variables},
             headers=headers,
         )
-        if request.status_code == 200:
-            return request.json()
-        else:
-            request.raise_for_status()
+        request.raise_for_status()
+        return request.json()
 
     def create_issue(self, repo_name, repo_owner, title, body, installation_id=None):
         if installation_id is None:
