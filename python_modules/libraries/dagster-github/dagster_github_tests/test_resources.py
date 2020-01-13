@@ -143,10 +143,13 @@ def test_github_resource_execute():
 
 class GithubResourceTesting(GithubResource):
     def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
-        self.client = client
-        self.app_private_rsa_key = app_private_rsa_key
-        self.app_id = app_id
-        self.default_installation_id = default_installation_id
+        GithubResource.__init__(
+            self,
+            client=client,
+            app_id=app_id,
+            app_private_rsa_key=app_private_rsa_key,
+            default_installation_id=default_installation_id
+        )
         self.installation_tokens = {'123': {"value": "test", "expires": int(time.time()) - 1000}}
         self.app_token = {
             "value": "test",

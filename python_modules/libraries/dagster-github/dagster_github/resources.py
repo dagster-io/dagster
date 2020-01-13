@@ -20,6 +20,7 @@ class GithubResource:
         self.default_installation_id = default_installation_id
         self.installation_tokens = {}
         self.app_token = {}
+        self.app_cert = str(pem.parse(str.encode(self.app_private_rsa_key))[0])
 
     def __set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
@@ -27,9 +28,6 @@ class GithubResource:
         now = int(time.time())
         # JWT expiration time (10 minute maximum)
         expires = now + (10 * 60)
-        certs = pem.parse(str.encode(self.app_private_rsa_key))
-        if len(certs) == 0:
-            raise Exception("Invalid app_private_rsa_key")
         encoded_token = jwt.encode(
             {
                 # issued at time
@@ -39,7 +37,7 @@ class GithubResource:
                 # GitHub App's identifier
                 "iss": self.app_id,
             },
-            str(certs[0]),
+            self.app_cert,
             algorithm="RS256",
         ).decode("utf-8")
         self.app_token = {
