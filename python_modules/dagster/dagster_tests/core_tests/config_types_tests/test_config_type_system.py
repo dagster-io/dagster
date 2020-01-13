@@ -12,8 +12,8 @@ from dagster import (
     Int,
     List,
     ModeDefinition,
-    Optional,
-    PermissiveDict,
+    Noneable,
+    Permissive,
     PipelineDefinition,
     ResourceDefinition,
     Set,
@@ -97,7 +97,7 @@ def _mixed_required_optional_string_config_dict_with_default():
 
 
 def _multiple_required_fields_config_permissive_dict():
-    return Field(PermissiveDict({'field_one': Field(String), 'field_two': Field(String)}))
+    return Field(Permissive({'field_one': Field(String), 'field_two': Field(String)}))
 
 
 def _validate(config_field, value):
@@ -760,7 +760,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
 
 def test_multilevel_good_error_handling_config_solids_name_solids():
-    @solid(config=Optional[Int])
+    @solid(config=Noneable(int))
     def good_error_handling(_context):
         pass
 

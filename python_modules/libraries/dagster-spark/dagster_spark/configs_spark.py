@@ -10,19 +10,19 @@ parse_spark_configs.py \
 '''
 
 
-from dagster import Bool, Field, Float, Int, PermissiveDict, String
+from dagster import Bool, Field, Float, Int, Permissive, String
 
 
 # pylint: disable=line-too-long
 def spark_config():
     return Field(
-        PermissiveDict(
+        Permissive(
             fields={
                 'spark': Field(
-                    PermissiveDict(
+                    Permissive(
                         fields={
                             'app': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'name': Field(
                                             String,
@@ -33,7 +33,7 @@ def spark_config():
                                 )
                             ),
                             'driver': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'cores': Field(
                                             Int,
@@ -81,7 +81,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'blockManager': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'port': Field(
                                                         String,
@@ -110,7 +110,7 @@ def spark_config():
                                 )
                             ),
                             'executor': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'memory': Field(
                                             String,
@@ -118,7 +118,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'pyspark': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'memory': Field(
                                                         String,
@@ -149,10 +149,10 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'logs': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'rolling': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'maxRetainedFiles': Field(
                                                                     Int,
@@ -175,7 +175,7 @@ def spark_config():
                                                                     is_optional=True,
                                                                 ),
                                                                 'time': Field(
-                                                                    PermissiveDict(
+                                                                    Permissive(
                                                                         fields={
                                                                             'interval': Field(
                                                                                 String,
@@ -215,7 +215,7 @@ def spark_config():
                                 is_optional=True,
                             ),
                             'local': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'dir': Field(
                                             String,
@@ -236,7 +236,7 @@ def spark_config():
                                 is_optional=True,
                             ),
                             'submit': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'deployMode': Field(
                                             String,
@@ -252,7 +252,7 @@ def spark_config():
                                 )
                             ),
                             'log': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'callerContext': Field(
                                             String,
@@ -263,7 +263,7 @@ def spark_config():
                                 )
                             ),
                             'redaction': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'regex': Field(
                                             String,
@@ -274,10 +274,10 @@ def spark_config():
                                 )
                             ),
                             'python': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'profile': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'root': Field(
                                                         Bool,
@@ -293,7 +293,7 @@ def spark_config():
                                             )
                                         ),
                                         'worker': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'memory': Field(
                                                         String,
@@ -312,7 +312,7 @@ def spark_config():
                                 )
                             ),
                             'files': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'root': Field(
                                             String,
@@ -348,7 +348,7 @@ def spark_config():
                                 )
                             ),
                             'jars': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'root': Field(
                                             String,
@@ -384,10 +384,10 @@ def spark_config():
                                 )
                             ),
                             'pyspark': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'driver': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'python': Field(
                                                         String,
@@ -406,7 +406,7 @@ def spark_config():
                                 )
                             ),
                             'reducer': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'maxSizeInFlight': Field(
                                             String,
@@ -432,7 +432,7 @@ def spark_config():
                                 is_optional=True,
                             ),
                             'shuffle': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'compress': Field(
                                             Bool,
@@ -440,7 +440,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'file': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'buffer': Field(
                                                         String,
@@ -451,7 +451,7 @@ def spark_config():
                                             )
                                         ),
                                         'io': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxRetries': Field(
                                                         Int,
@@ -477,7 +477,7 @@ def spark_config():
                                             )
                                         ),
                                         'service': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         Bool,
@@ -490,10 +490,10 @@ def spark_config():
                                                         is_optional=True,
                                                     ),
                                                     'index': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'cache': Field(
-                                                                    PermissiveDict(
+                                                                    Permissive(
                                                                         fields={
                                                                             'size': Field(
                                                                                 String,
@@ -515,7 +515,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'sort': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'bypassMergeThreshold': Field(
                                                         Int,
@@ -526,7 +526,7 @@ def spark_config():
                                             )
                                         ),
                                         'spill': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'compress': Field(
                                                         Bool,
@@ -542,7 +542,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'registration': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'timeout': Field(
                                                         Int,
@@ -566,10 +566,10 @@ def spark_config():
                                 )
                             ),
                             'eventLog': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'logBlockUpdates': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         String,
@@ -580,7 +580,7 @@ def spark_config():
                                             )
                                         ),
                                         'longForm': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         String,
@@ -611,7 +611,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'buffer': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'kb': Field(
                                                         String,
@@ -625,10 +625,10 @@ def spark_config():
                                 )
                             ),
                             'ui': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'dagGraph': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'retainedRootRDDs': Field(
                                                         String,
@@ -649,7 +649,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'liveUpdate': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'period': Field(
                                                         String,
@@ -708,10 +708,10 @@ def spark_config():
                                 )
                             ),
                             'worker': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'ui': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'retainedExecutors': Field(
                                                         String,
@@ -730,10 +730,10 @@ def spark_config():
                                 )
                             ),
                             'sql': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'ui': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'retainedExecutions': Field(
                                                         String,
@@ -747,10 +747,10 @@ def spark_config():
                                 )
                             ),
                             'streaming': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'ui': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'retainedBatches': Field(
                                                         String,
@@ -761,7 +761,7 @@ def spark_config():
                                             )
                                         ),
                                         'backpressure': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         String,
@@ -782,7 +782,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'receiver': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxRate': Field(
                                                         String,
@@ -790,7 +790,7 @@ def spark_config():
                                                         is_optional=True,
                                                     ),
                                                     'writeAheadLog': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'enable': Field(
                                                                     String,
@@ -819,7 +819,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'kafka': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxRatePerPartition': Field(
                                                         String,
@@ -840,10 +840,10 @@ def spark_config():
                                             )
                                         ),
                                         'driver': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'writeAheadLog': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'closeFileAfterWrite': Field(
                                                                     String,
@@ -860,7 +860,7 @@ def spark_config():
                                 )
                             ),
                             'broadcast': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'compress': Field(
                                             String,
@@ -881,10 +881,10 @@ def spark_config():
                                 )
                             ),
                             'io': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'compression': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'codec': Field(
                                                         String,
@@ -892,7 +892,7 @@ def spark_config():
                                                         is_optional=True,
                                                     ),
                                                     'lz4': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'blockSize': Field(
                                                                     String,
@@ -903,7 +903,7 @@ def spark_config():
                                                         )
                                                     ),
                                                     'snappy': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'blockSize': Field(
                                                                     String,
@@ -914,7 +914,7 @@ def spark_config():
                                                         )
                                                     ),
                                                     'zstd': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'level': Field(
                                                                     String,
@@ -936,7 +936,7 @@ def spark_config():
                                 )
                             ),
                             'kryo': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'classesToRegister': Field(
                                             String,
@@ -967,10 +967,10 @@ def spark_config():
                                 )
                             ),
                             'kryoserializer': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'buffer': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'root': Field(
                                                         String,
@@ -989,7 +989,7 @@ def spark_config():
                                 )
                             ),
                             'rdd': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'compress': Field(
                                             String,
@@ -1000,7 +1000,7 @@ def spark_config():
                                 )
                             ),
                             'serializer': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'root': Field(
                                             String,
@@ -1016,7 +1016,7 @@ def spark_config():
                                 )
                             ),
                             'memory': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'fraction': Field(
                                             Float,
@@ -1029,7 +1029,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'offHeap': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         Bool,
@@ -1053,7 +1053,7 @@ def spark_config():
                                 )
                             ),
                             'storage': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'memoryFraction': Field(
                                             Float,
@@ -1066,7 +1066,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'replication': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'proactive': Field(
                                                         Bool,
@@ -1085,10 +1085,10 @@ def spark_config():
                                 )
                             ),
                             'cleaner': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'periodicGC': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'interval': Field(
                                                         String,
@@ -1099,7 +1099,7 @@ def spark_config():
                                             )
                                         ),
                                         'referenceTracking': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'root': Field(
                                                         Bool,
@@ -1107,7 +1107,7 @@ def spark_config():
                                                         is_optional=True,
                                                     ),
                                                     'blocking': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'root': Field(
                                                                     Bool,
@@ -1134,7 +1134,7 @@ def spark_config():
                                 )
                             ),
                             'default': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'parallelism': Field(
                                             Int,
@@ -1145,7 +1145,7 @@ def spark_config():
                                 )
                             ),
                             'hadoop': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'cloneConf': Field(
                                             Bool,
@@ -1158,13 +1158,13 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'mapreduce': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'fileoutputcommitter': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'algorithm': Field(
-                                                                    PermissiveDict(
+                                                                    Permissive(
                                                                         fields={
                                                                             'version': Field(
                                                                                 Int,
@@ -1184,10 +1184,10 @@ def spark_config():
                                 )
                             ),
                             'rpc': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'message': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxSize': Field(
                                                         String,
@@ -1203,7 +1203,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'retry': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'wait': Field(
                                                         String,
@@ -1227,7 +1227,7 @@ def spark_config():
                                 )
                             ),
                             'blockManager': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'port': Field(
                                             String,
@@ -1238,7 +1238,7 @@ def spark_config():
                                 )
                             ),
                             'network': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'timeout': Field(
                                             String,
@@ -1249,7 +1249,7 @@ def spark_config():
                                 )
                             ),
                             'port': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'maxRetries': Field(
                                             String,
@@ -1260,16 +1260,16 @@ def spark_config():
                                 )
                             ),
                             'core': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'connection': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'ack': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'wait': Field(
-                                                                    PermissiveDict(
+                                                                    Permissive(
                                                                         fields={
                                                                             'timeout': Field(
                                                                                 String,
@@ -1289,7 +1289,7 @@ def spark_config():
                                 )
                             ),
                             'cores': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'max': Field(
                                             String,
@@ -1300,10 +1300,10 @@ def spark_config():
                                 )
                             ),
                             'locality': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'wait': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'root': Field(
                                                         String,
@@ -1332,7 +1332,7 @@ def spark_config():
                                 )
                             ),
                             'scheduler': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'maxRegisteredResourcesWaitingTime': Field(
                                             String,
@@ -1350,7 +1350,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'revive': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'interval': Field(
                                                         String,
@@ -1361,10 +1361,10 @@ def spark_config():
                                             )
                                         ),
                                         'listenerbus': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'eventqueue': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'capacity': Field(
                                                                     String,
@@ -1381,7 +1381,7 @@ def spark_config():
                                 )
                             ),
                             'blacklist': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'enabled': Field(
                                             String,
@@ -1394,7 +1394,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'task': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxTaskAttemptsPerExecutor': Field(
                                                         String,
@@ -1410,7 +1410,7 @@ def spark_config():
                                             )
                                         ),
                                         'stage': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxFailedTasksPerExecutor': Field(
                                                         String,
@@ -1426,7 +1426,7 @@ def spark_config():
                                             )
                                         ),
                                         'application': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'maxFailedTasksPerExecutor': Field(
                                                         String,
@@ -1439,7 +1439,7 @@ def spark_config():
                                                         is_optional=True,
                                                     ),
                                                     'fetchFailure': Field(
-                                                        PermissiveDict(
+                                                        Permissive(
                                                             fields={
                                                                 'enabled': Field(
                                                                     String,
@@ -1461,7 +1461,7 @@ def spark_config():
                                 )
                             ),
                             'speculation': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'root': Field(
                                             String,
@@ -1487,7 +1487,7 @@ def spark_config():
                                 )
                             ),
                             'task': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'cpus': Field(
                                             String,
@@ -1500,7 +1500,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'reaper': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'enabled': Field(
                                                         String,
@@ -1529,7 +1529,7 @@ def spark_config():
                                 )
                             ),
                             'stage': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'maxConsecutiveAttempts': Field(
                                             String,
@@ -1540,7 +1540,7 @@ def spark_config():
                                 )
                             ),
                             'dynamicAllocation': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'enabled': Field(
                                             String,
@@ -1591,7 +1591,7 @@ def spark_config():
                                 )
                             ),
                             'r': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'numRBackendThreads': Field(
                                             String,
@@ -1604,7 +1604,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'driver': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'command': Field(
                                                         String,
@@ -1615,7 +1615,7 @@ def spark_config():
                                             )
                                         ),
                                         'shell': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'command': Field(
                                                         String,
@@ -1639,10 +1639,10 @@ def spark_config():
                                 )
                             ),
                             'graphx': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'pregel': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'checkpointInterval': Field(
                                                         String,
@@ -1656,7 +1656,7 @@ def spark_config():
                                 )
                             ),
                             'deploy': Field(
-                                PermissiveDict(
+                                Permissive(
                                     fields={
                                         'recoveryMode': Field(
                                             String,
@@ -1664,7 +1664,7 @@ def spark_config():
                                             is_optional=True,
                                         ),
                                         'zookeeper': Field(
-                                            PermissiveDict(
+                                            Permissive(
                                                 fields={
                                                     'url': Field(
                                                         String,

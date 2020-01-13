@@ -16,3 +16,15 @@ To test / validate Helm charts, you can run:
 helm install dagster --dry-run --debug .
 helm lint
 ```
+
+## Running tests
+
+You must have [Docker](https://docs.docker.com/install/),
+[kind](https://kind.sigs.k8s.io/docs/user/quick-start#installation),
+and [helm](https://helm.sh/docs/intro/install/) installed. On OS X:
+
+    brew install kind
+    brew install helm
+
+Docker must be running. You may experience slow first test runs thanks to image pulls (run
+`pytest -sv --fulltrace` for visibility).

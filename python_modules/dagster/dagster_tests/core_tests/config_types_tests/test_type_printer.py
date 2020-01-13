@@ -1,4 +1,4 @@
-from dagster import Field, Int, Optional, PipelineDefinition, String, solid
+from dagster import Field, Int, Noneable, PipelineDefinition, String, solid
 from dagster.core.types.config.field import resolve_to_config_type
 from dagster.core.types.config.type_printer import print_type_to_string
 
@@ -27,16 +27,16 @@ def test_double_list_type_print():
 
 
 def test_basic_nullable_type_print():
-    assert print_type_to_string(Optional[Int]) == 'Int?'
-    nullable_int = Optional[Int]
+    assert print_type_to_string(Noneable(int)) == 'Int?'
+    nullable_int = Noneable(int)
     assert_inner_types(nullable_int, Int)
 
 
 def test_nullable_list_combos():
     assert print_type_to_string([int]) == '[Int]'
-    assert print_type_to_string(Optional[[int]]) == '[Int]?'
-    assert print_type_to_string([Optional[int]]) == '[Int?]'
-    assert print_type_to_string(Optional[[Optional[int]]]) == '[Int?]?'
+    assert print_type_to_string(Noneable([int])) == '[Int]?'
+    assert print_type_to_string([Noneable(int)]) == '[Int?]'
+    assert print_type_to_string(Noneable([Noneable(int)])) == '[Int?]?'
 
 
 def test_basic_dict():
@@ -90,7 +90,7 @@ def test_optional_field():
 def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
         {
-            'nullable_int_field': Optional[int],
+            'nullable_int_field': Noneable(int),
             'optional_int_field': Field(int, is_optional=True),
             'string_list_field': [str],
         }
@@ -141,16 +141,16 @@ def define_test_type_pipeline():
         solid_defs=[
             define_solid_for_test_type('int_config', int),
             define_solid_for_test_type('list_of_int_config', [int]),
-            define_solid_for_test_type('nullable_list_of_int_config', Optional[[int]]),
-            define_solid_for_test_type('list_of_nullable_int_config', [Optional[int]]),
+            define_solid_for_test_type('nullable_list_of_int_config', Noneable([int])),
+            define_solid_for_test_type('list_of_nullable_int_config', [Noneable(int)]),
             define_solid_for_test_type(
-                'nullable_list_of_nullable_int_config', Optional[[Optional[int]]]
+                'nullable_list_of_nullable_int_config', Noneable([Noneable(int)])
             ),
             define_solid_for_test_type('simple_dict', {'int_field': int, 'string_field': str}),
             define_solid_for_test_type(
                 'dict_with_optional_field',
                 {
-                    'nullable_int_field': Optional[int],
+                    'nullable_int_field': Noneable(int),
                     'optional_int_field': Field(int, is_optional=True),
                     'string_list_field': [str],
                 },

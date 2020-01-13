@@ -10,7 +10,7 @@ from .config_type import DEFAULT_TYPE_ATTRIBUTES, ConfigType, ConfigTypeAttribut
 def all_optional_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if ConfigTypeKind.is_dict(config_type.kind):
+    if ConfigTypeKind.is_shape(config_type.kind):
         for field in config_type.fields.values():
             if not field.is_optional:
                 return False
@@ -140,14 +140,14 @@ class Shape(_ConfigHasFields):
 
 def _define_permissive_dict_key(fields, description):
     return (
-        'PermissiveDict.'
+        'Permissive.'
         + _compute_fields_hash(fields, description=description, is_system_config=False)
         if fields
-        else 'PermissiveDict'
+        else 'Permissive'
     )
 
 
-class PermissiveDict(_ConfigHasFields):
+class Permissive(_ConfigHasFields):
     '''Defines a config dict with a partially specified schema.
     
     A permissive dict allows partial specification of the config schema. Any fields with a
@@ -161,7 +161,7 @@ class PermissiveDict(_ConfigHasFields):
 
     .. code-block:: python
 
-        @solid(config=Field(PermissiveDict({'required': Field(String)})))
+        @solid(config=Field(Permissive({'required': Field(String)})))
         def partially_specified_config(context) -> List:
             return sorted(list(context.solid_config.items()))
     '''
@@ -169,7 +169,7 @@ class PermissiveDict(_ConfigHasFields):
     def __new__(cls, fields=None, description=None):
         return _memoize_inst_in_field_cache(
             cls,
-            PermissiveDict,
+            Permissive,
             _define_permissive_dict_key(
                 expand_fields_dict(fields) if fields else None, description
             ),
@@ -177,10 +177,10 @@ class PermissiveDict(_ConfigHasFields):
 
     def __init__(self, fields=None, description=None):
         fields = expand_fields_dict(fields) if fields else None
-        super(PermissiveDict, self).__init__(
+        super(Permissive, self).__init__(
             key=_define_permissive_dict_key(fields, description),
             name=None,
-            kind=ConfigTypeKind.PERMISSIVE_DICT,
+            kind=ConfigTypeKind.PERMISSIVE_SHAPE,
             fields=fields or dict(),
             type_attributes=ConfigTypeAttributes(is_builtin=True),
             description=description,

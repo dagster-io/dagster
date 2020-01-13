@@ -150,7 +150,7 @@ class ConfigParser(object):
     def extract_config(self, base_field, suffix):
         with IndentingBufferPrinter() as printer:
             printer.write_header()
-            printer.line('from dagster import Bool, Field, Int, PermissiveDict, Shape, String')
+            printer.line('from dagster import Bool, Field, Int, Permissive, Shape, String')
             printer.blank_line()
 
             # Optionally write enum includes
@@ -208,7 +208,7 @@ class ConfigParser(object):
         elif obj_type == 'object':
             # This is a generic k:v map
             if 'additionalProperties' in obj:
-                fields = 'PermissiveDict()'
+                fields = 'Permissive()'
             else:
                 fields = {
                     k: self.parse_object(v, k, depth + 1) for k, v in obj['properties'].items()

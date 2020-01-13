@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import DagsterInvalidConfigDefinitionError, Optional, Selector, execute_solid, solid
+from dagster import DagsterInvalidConfigDefinitionError, Noneable, Selector, execute_solid, solid
 
 
 def test_kitchen_sink():
@@ -17,7 +17,7 @@ def test_kitchen_sink():
             ),
             # this is a good argument to use () instead of [] for type parameterization in
             # the config system
-            'optional_list_of_optional_string': Optional[[Optional[str]]],
+            'optional_list_of_optional_string': Noneable([Noneable(str)]),
         }
     )
     def kitchen_sink(context):

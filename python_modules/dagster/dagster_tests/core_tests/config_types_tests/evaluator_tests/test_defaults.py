@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import Any, Enum, EnumValue, Field, Optional, PermissiveDict, String
+from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
 from dagster.check import CheckError, ParameterCheckError
 from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.types.config.field import resolve_to_config_type
@@ -29,10 +29,10 @@ def test_post_process_config():
 
     assert post_process_config(list_config_type, ['foo']) == ['foo']
     assert post_process_config(list_config_type, None) == []
-    with pytest.raises(CheckError, match='Null list member not caught'):
+    with pytest.raises(CheckError, match='Null array member not caught'):
         assert post_process_config(list_config_type, [None]) == [None]
 
-    nullable_list_config_type = resolve_to_config_type([Optional[str]])
+    nullable_list_config_type = resolve_to_config_type([Noneable(str)])
     assert post_process_config(nullable_list_config_type, ['foo']) == ['foo']
     assert post_process_config(nullable_list_config_type, [None]) == [None]
     assert post_process_config(nullable_list_config_type, None) == []
@@ -136,7 +136,7 @@ def test_post_process_config():
     assert post_process_config(singleton_selector_config_type, None) == {'foo': 'bar'}
 
     permissive_dict_config_type = resolve_to_config_type(
-        PermissiveDict(
+        Permissive(
             {'foo': Field(String), 'bar': Field(String, default_value='baz', is_optional=True)}
         )
     )

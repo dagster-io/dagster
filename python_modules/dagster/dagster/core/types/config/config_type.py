@@ -5,7 +5,7 @@ import six
 
 from dagster import check
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.wrapping.builtin_enum import BuiltinEnum
+from dagster.core.types.builtins import BuiltinEnum
 
 
 @whitelist_for_serdes
@@ -16,27 +16,27 @@ class ConfigTypeKind(PythonEnum):
 
     SELECTOR = 'SELECTOR'
     STRICT_SHAPE = 'STRICT_SHAPE'
-    PERMISSIVE_DICT = 'PERMISSIVE_DICT'
+    PERMISSIVE_SHAPE = 'PERMISSIVE_SHAPE'
     SCALAR_UNION = 'SCALAR_UNION'
 
     @staticmethod
     def has_fields(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_dict(kind)
+        return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_shape(kind)
 
     # Closed generic types
     ARRAY = 'ARRAY'
-    NULLABLE = 'NULLABLE'
+    NONEABLE = 'NONEABLE'
 
     @staticmethod
     def is_closed_generic(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.ARRAY or kind == ConfigTypeKind.NULLABLE
+        return kind == ConfigTypeKind.ARRAY or kind == ConfigTypeKind.NONEABLE
 
     @staticmethod
-    def is_dict(kind):
+    def is_shape(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_DICT
+        return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
 
 class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
@@ -88,7 +88,7 @@ class ConfigType(object):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'param must be member of BuiltinEnum')
         return _CONFIG_MAP[builtin_enum]
 
-    # An instantiated List, Tuple, Set, or Nullable
+    # An instantiated List, Tuple, Set, or Noneable
     # e.g. List[Int] or Tuple[Int, Str]
     @property
     def is_closed_generic(self):
@@ -181,14 +181,16 @@ class Any(ConfigType):
         )
 
 
-class Nullable(ConfigType):
+class Noneable(ConfigType):
     def __init__(self, inner_type):
-        self.inner_type = check.inst_param(inner_type, 'inner_type', ConfigType)
-        super(Nullable, self).__init__(
-            key='Optional.{inner_type}'.format(inner_type=inner_type.key),
-            name='Optional[{inner_name}]'.format(inner_name=inner_type.name),
-            kind=ConfigTypeKind.NULLABLE,
-            type_params=[inner_type],
+        from .field import resolve_to_config_type
+
+        self.inner_type = resolve_to_config_type(inner_type)
+        super(Noneable, self).__init__(
+            key='Noneable.{inner_type}'.format(inner_type=self.inner_type.key),
+            name='Noneable[{inner_name}]'.format(inner_name=self.inner_type.name),
+            kind=ConfigTypeKind.NONEABLE,
+            type_params=[self.inner_type],
             type_attributes=ConfigTypeAttributes(is_builtin=True),
         )
 

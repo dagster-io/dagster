@@ -1,4 +1,4 @@
-from dagster import Array, Field, Optional, Selector, Shape
+from dagster import Array, Field, Noneable, Selector, Shape
 from dagster.core.meta.config_types import (
     ConfigTypeKind,
     ConfigTypeMeta,
@@ -79,14 +79,14 @@ def test_basic_list():
 
 
 def test_basic_optional():
-    optional_meta = meta_from_dagster_type(Optional[int])
-    assert optional_meta.key.startswith('Optional')
+    optional_meta = meta_from_dagster_type(Noneable(int))
+    assert optional_meta.key.startswith('Noneable')
     assert optional_meta.inner_type_refs
     assert len(optional_meta.inner_type_refs) == 1
     assert optional_meta.inner_type_refs[0].key == 'Int'
     # https://github.com/dagster-io/dagster/issues/1933
     # TODO reconcile names
-    assert optional_meta.kind == ConfigTypeKind.NULLABLE
+    assert optional_meta.kind == ConfigTypeKind.NONEABLE
     assert optional_meta.is_builtin is True
     assert optional_meta.is_system_config is False
     assert optional_meta.enum_values is None
@@ -151,7 +151,7 @@ def test_kitchen_sink():
                 'nested_dict': {
                     'list_list': [[int]],
                     'nested_selector': Field(
-                        Selector({'some_field': int, 'more_list': Optional[[bool]]})
+                        Selector({'some_field': int, 'more_list': Noneable([bool])})
                     ),
                 },
             }
@@ -170,7 +170,7 @@ def test_kitchen_sink_break_out():
     nested_dict_cls = resolve_to_config_type(
         {
             'list_list': [[int]],
-            'nested_selector': Selector({'some_field': int, 'list': Optional[[bool]]}),
+            'nested_selector': Selector({'some_field': int, 'list': Noneable([bool])}),
         }
     )
     dict_within_list_cls = resolve_to_config_type(

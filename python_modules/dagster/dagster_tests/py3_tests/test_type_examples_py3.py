@@ -18,7 +18,7 @@ from dagster import (
     Nothing,
     Optional,
     Path,
-    PermissiveDict,
+    Permissive,
     Selector,
     Set,
     String,
@@ -378,7 +378,7 @@ def hello_world_default(context) -> str:
         return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
 
 
-@solid(config=Field(PermissiveDict({'required': Field(String)})))
+@solid(config=Field(Permissive({'required': Field(String)})))
 def partially_specified_config(context) -> List:
     return sorted(list(context.solid_config.items()))
 

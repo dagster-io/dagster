@@ -28,7 +28,7 @@ def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
         printer.append('[')
         _do_print(config_type.inner_type, printer)
         printer.append(']')
-    elif kind == ConfigTypeKind.NULLABLE:
+    elif kind == ConfigTypeKind.NONEABLE:
         _do_print(config_type.inner_type, printer)
         printer.append('?')
     elif kind == ConfigTypeKind.SCALAR_UNION:

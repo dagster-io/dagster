@@ -1,4 +1,4 @@
-from dagster import Any, Bool, Field, Int, Optional, Shape, String
+from dagster import Any, Bool, Field, Int, Noneable, Shape, String
 from dagster.core.types.config import Selector
 from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
 from dagster.core.types.config.evaluator.evaluate_value_result import EvaluateValueResult
@@ -450,9 +450,9 @@ def test_nullable_int():
     assert eval_config_value_from_dagster_type(Int, 0).success
     assert eval_config_value_from_dagster_type(Int, 1).success
 
-    assert eval_config_value_from_dagster_type(Optional[Int], None).success
-    assert eval_config_value_from_dagster_type(Optional[Int], 0).success
-    assert eval_config_value_from_dagster_type(Optional[Int], 1).success
+    assert eval_config_value_from_dagster_type(Noneable(int), None).success
+    assert eval_config_value_from_dagster_type(Noneable(int), 0).success
+    assert eval_config_value_from_dagster_type(Noneable(int), 1).success
 
 
 def test_nullable_list():
@@ -463,21 +463,21 @@ def test_nullable_list():
     assert not eval_config_value_from_dagster_type(list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Optional[[int]]
+    nullable_list_of_ints = Noneable([int])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, []).success
     assert not eval_config_value_from_dagster_type(nullable_list_of_ints, [None]).success
     assert eval_config_value_from_dagster_type(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = [Optional[int]]
+    list_of_nullable_ints = [Noneable(int)]
 
     assert not eval_config_value_from_dagster_type(list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, []).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [None]).success
     assert eval_config_value_from_dagster_type(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Optional[[Optional[Int]]]
+    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
 
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, None).success
     assert eval_config_value_from_dagster_type(nullable_list_of_nullable_ints, []).success
@@ -493,7 +493,7 @@ def test_nullable_dict():
     assert not eval_config_value_from_dagster_type(dict_with_int, {'int_field': None}).success
     assert eval_config_value_from_dagster_type(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = Optional[Shape({'int_field': Int})]
+    nullable_dict_with_int = Noneable(Shape({'int_field': Int}))
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, None).success
     assert not eval_config_value_from_dagster_type(nullable_dict_with_int, {}).success
@@ -502,14 +502,14 @@ def test_nullable_dict():
     ).success
     assert eval_config_value_from_dagster_type(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = Shape({'int_field': Field(Optional[Int])})
+    dict_with_nullable_int = Shape({'int_field': Field(Noneable(int))})
 
     assert not eval_config_value_from_dagster_type(dict_with_nullable_int, None).success
     assert not eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {'int_field': None}).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {'int_field': 1}).success
 
-    nullable_dict_with_nullable_int = Optional[Shape({'int_field': Field(Optional[Int])})]
+    nullable_dict_with_nullable_int = Noneable(Shape({'int_field': Field(Noneable(int))}))
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).success
     assert not eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, {}).success

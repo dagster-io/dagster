@@ -1,4 +1,4 @@
-from dagster import Field, PermissiveDict, String
+from dagster import Field, Permissive, String
 from dagster.core.definitions.executor import executor
 
 from .config import CeleryConfig
@@ -26,7 +26,7 @@ from .config import CeleryConfig
             [str], is_optional=True, description='List of modules every worker should import'
         ),
         'config_source': Field(
-            PermissiveDict(), is_optional=True, description='Settings for the Celery app.'
+            Permissive(), is_optional=True, description='Settings for the Celery app.'
         ),
     },
 )

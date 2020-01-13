@@ -26,7 +26,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
     def type_in_context(self):
         ttype = self.entries[-1].config_type if self.entries else self.config_type
         # TODO: should we be unwrapping the nullable type here?
-        if ttype.kind == ConfigTypeKind.NULLABLE:
+        if ttype.kind == ConfigTypeKind.NONEABLE:
             return ttype.inner_type
         else:
             return ttype
@@ -40,7 +40,7 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
             entries=self.entries + [EvaluationStackPathEntry(field_name, field_def)],
         )
 
-    def for_list_index(self, list_index):
+    def for_array_index(self, list_index):
         list_type = self.type_in_context
         check.invariant(list_type.kind == ConfigTypeKind.ARRAY)
         return EvaluationStack(

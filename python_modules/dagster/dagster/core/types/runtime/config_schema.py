@@ -78,13 +78,13 @@ def input_hydration_config(config_cls):
     Args:
         config_cls (Any): The type of the config data expected by the decorated function. Users
             should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
-            using :py:func:`Selector` or :py:func:`PermissiveDict`.
+            using :py:func:`Selector` or :py:func:`Permissive`.
     
     Examples:
 
     .. code-block:: python
 
-        @input_hydration_config(PermissiveDict())
+        @input_hydration_config(Permissive())
         def _dict_input(_context, value):
             return value
     '''
@@ -160,7 +160,7 @@ def output_materialization_config(config_cls):
     Args:
         config_cls (Any): The type of the config data expected by the decorated function. Users
             should provide one of the :ref:`built-in types <builtin>`, or a composite constructed
-            using :py:func:`Selector` or :py:func:`PermissiveDict`.
+            using :py:func:`Selector` or :py:func:`Permissive`.
 
     Examples:
 

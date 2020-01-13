@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.types import String
 from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
@@ -65,7 +64,7 @@ class ResourceDefinition(object):
     def string_resource(description=None):
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
-            config=String,
+            config=str,
             description=description,
         )
 

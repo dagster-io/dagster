@@ -3,7 +3,7 @@ import signal
 from subprocess import PIPE, STDOUT, Popen
 from tempfile import NamedTemporaryFile
 
-from dagster import Enum, EnumValue, Failure, Field, PermissiveDict, check, seven, solid
+from dagster import Enum, EnumValue, Failure, Field, Permissive, check, seven, solid
 
 
 def bash_command_solid(bash_command, name=None, output_encoding=None):
@@ -32,7 +32,7 @@ def bash_command_solid(bash_command, name=None, output_encoding=None):
                 default_value='STREAM',
             ),
             'env': Field(
-                PermissiveDict(),
+                Permissive(),
                 description='Environment variables to pass to the child process; if not provided, '
                 'the current process environment will be passed.',
                 is_optional=True,

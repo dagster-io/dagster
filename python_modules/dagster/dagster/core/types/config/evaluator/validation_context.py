@@ -15,10 +15,10 @@ class ValidationContext(namedtuple('_ValidationContext', 'config_type stack')):
             check.inst_param(stack, 'stack', EvaluationStack),
         )
 
-    def for_list(self, index):
+    def for_array(self, index):
         check.int_param(index, 'index')
         return ValidationContext(
-            config_type=self.config_type.inner_type, stack=self.stack.for_list_index(index),
+            config_type=self.config_type.inner_type, stack=self.stack.for_array_index(index),
         )
 
     def for_field(self, field_def, key):
