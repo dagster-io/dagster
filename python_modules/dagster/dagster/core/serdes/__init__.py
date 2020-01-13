@@ -162,7 +162,7 @@ class ConfigurableClassData(
             )
         )
 
-    def rehydrate(self, **constructor_kwargs):
+    def rehydrate(self):
         from dagster.core.errors import DagsterInvalidConfigError
         from dagster.config.field import resolve_to_config_type
         from dagster.config.validate import process_config
@@ -205,7 +205,7 @@ class ConfigurableClassData(
                 result.errors,
                 config_dict,
             )
-        return klass.from_config_value(self, result.value, **constructor_kwargs)
+        return klass.from_config_value(self, result.value)
 
 
 class ConfigurableClass(six.with_metaclass(ABCMeta)):
@@ -249,7 +249,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
     @staticmethod
     @abstractmethod
-    def from_config_value(inst_data, config_value, **kwargs):
+    def from_config_value(inst_data, config_value):
         '''New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
@@ -259,11 +259,11 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
                 `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.
 
 
-        A common pattern is for the implementation to splat the config_value with the kwargs, to
-        align with the signature of the ConfigurableClass's constructor and allow overrides:
+        A common pattern is for the implementation to align the config_value with the signature
+        of the ConfigurableClass's constructor:
 
             @staticmethod
-            def from_config_value(inst_data, config_value, **kwargs):
-                return MyConfigurableClass(inst_data=inst_data, **dict(config_value, **kwargs))
+            def from_config_value(inst_data, config_value):
+                return MyConfigurableClass(inst_data=inst_data, **config_value)
 
         '''

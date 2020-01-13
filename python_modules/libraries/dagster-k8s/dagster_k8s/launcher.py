@@ -51,8 +51,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         }
 
     @classmethod
-    def from_config_value(cls, inst_data, config_value, **kwargs):
-        return cls(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(cls, inst_data, config_value):
+        return cls(inst_data=inst_data, **config_value)
 
     @property
     def inst_data(self):

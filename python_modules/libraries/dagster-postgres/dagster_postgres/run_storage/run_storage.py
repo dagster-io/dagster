@@ -36,7 +36,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         return pg_config()
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
+    def from_config_value(inst_data, config_value):
         return PostgresRunStorage(
             inst_data=inst_data, postgres_url=pg_url_from_config(config_value)
         )

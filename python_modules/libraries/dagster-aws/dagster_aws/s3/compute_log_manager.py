@@ -41,8 +41,8 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         }
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return S3ComputeLogManager(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return S3ComputeLogManager(inst_data=inst_data, **config_value)
 
     def get_local_path(self, run_id, step_key, io_type):
         return self.local_manager.get_local_path(run_id, step_key, io_type)

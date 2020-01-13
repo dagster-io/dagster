@@ -60,8 +60,8 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return SqliteEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 
     def get_all_run_ids(self):
         all_filenames = glob.glob(os.path.join(self._base_dir, '*.db'))

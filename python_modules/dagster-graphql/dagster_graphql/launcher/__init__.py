@@ -40,7 +40,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         }
 
     @classmethod
-    def from_config_value(cls, inst_data, config_value, **kwargs):
+    def from_config_value(cls, inst_data, config_value):
         return cls(
             address=config_value['address'], timeout=config_value['timeout'], inst_data=inst_data,
         )

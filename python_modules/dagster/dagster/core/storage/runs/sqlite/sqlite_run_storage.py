@@ -28,8 +28,8 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return SqliteRunStorage.from_local(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
     @staticmethod
     def from_local(base_dir, inst_data=None):
