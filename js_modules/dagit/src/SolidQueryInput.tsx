@@ -147,6 +147,7 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
       e.key === "Return" ||
       e.key === "Tab" ||
       e.key === "+" ||
+      e.key === " " ||
       (e.key === "*" && pendingValue.length > 1) ||
       (e.key === "Backspace" && pendingValue.length)
     ) {

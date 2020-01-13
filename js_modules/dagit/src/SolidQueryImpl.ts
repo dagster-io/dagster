@@ -68,7 +68,7 @@ export function filterSolidsByQuery(solids: Solid[], query: string) {
 
   const traverser = new SolidGraphTraverser(solids);
   const results = new Set<Solid>();
-  const clauses = query.split(/(,| AND | and )/g);
+  const clauses = query.split(/(,| AND | and | )/g);
   const focus = new Set<Solid>();
 
   for (const clause of clauses) {
