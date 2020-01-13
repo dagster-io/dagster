@@ -88,12 +88,23 @@ class SolidSelectorModal extends React.PureComponent<
 
   handleSave = () => {
     const { pipeline, onChange } = this.props;
-    const { query } = this.state;
+    let { query } = this.state;
 
     const queryResultSolids = filterSolidsByQuery(pipeline.solids, query);
     let solidSubset: string[] | null = queryResultSolids.all.map(s => s.name);
+    if (queryResultSolids.all.length === 0) {
+      alert(
+        "Please type a solid query that matches at least one solid " +
+          "or `*` to execute the entire pipeline."
+      );
+      return;
+    }
+
+    // If all solids are returned, we set the subset to null rather than sending
+    // a comma separated list of evey solid to the API
     if (queryResultSolids.all.length === pipeline.solids.length) {
       solidSubset = null;
+      query = "*";
     }
 
     onChange(solidSubset, query);
@@ -106,6 +117,8 @@ class SolidSelectorModal extends React.PureComponent<
     const queryResultSolids = pipeline
       ? filterSolidsByQuery(pipeline.solids, query).all
       : [];
+
+    const queryInvalid = queryResultSolids.length === 0 || query.length === 0;
 
     return (
       <>
@@ -151,7 +164,16 @@ class SolidSelectorModal extends React.PureComponent<
               shortcutFilter={e => e.keyCode === 13 && e.altKey}
               onShortcut={this.handleSave}
             >
-              <Button intent="primary" onClick={this.handleSave}>
+              <Button
+                intent="primary"
+                onClick={this.handleSave}
+                disabled={queryInvalid}
+                title={
+                  queryInvalid
+                    ? `You must provie a solid query or * to execute the entire pipeline.`
+                    : `Apply solid query`
+                }
+              >
                 Apply
               </Button>
             </ShortcutHandler>
