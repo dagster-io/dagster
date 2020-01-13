@@ -33,7 +33,6 @@ def _ctor_kwargs(config_type):
         description=config_type.description,
         is_builtin=config_type.type_attributes.is_builtin,
         is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
-        is_system_generated=config_type.type_attributes.is_system_config,
         type_param_keys=[tp.key for tp in config_type.type_params]
         if config_type.type_params
         else [],
@@ -82,16 +81,6 @@ navigating the full schema client-side and not innerTypes.
         description='''
 True if the system defines it and it is the same type across pipelines.
 Examples include "Int" and "String."''',
-    )
-
-    is_system_generated = dauphin.NonNull(
-        dauphin.Boolean,
-        description='''
-Dagster generates types for base elements of the config system (e.g. the solids and
-context field of the base environment). These types are always present
-and are typically not relevant to an end user. This flag allows tool authors to
-filter out those types by default.
-''',
     )
 
 

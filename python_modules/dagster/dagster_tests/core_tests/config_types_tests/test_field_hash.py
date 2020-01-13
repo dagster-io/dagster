@@ -5,7 +5,7 @@ from dagster.config.field_utils import _compute_fields_hash
 
 
 def _hash(fields):
-    return _compute_fields_hash(fields, description=None, is_system_config=False)
+    return _compute_fields_hash(fields, description=None)
 
 
 def test_compute_fields_hash():

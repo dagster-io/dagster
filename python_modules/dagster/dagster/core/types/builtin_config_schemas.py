@@ -28,7 +28,6 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
                     'json': define_path_dict_field(),
                     'pickle': define_path_dict_field(),
                 },
-                is_system_config=True,
             ),
         )
     )
@@ -60,10 +59,7 @@ def define_path_dict_field():
 def define_builtin_scalar_output_schema(scalar_name):
     check.str_param(scalar_name, 'scalar_name')
 
-    schema_cls = Selector(
-        {'json': define_path_dict_field(), 'pickle': define_path_dict_field()},
-        is_system_config=True,
-    )
+    schema_cls = Selector({'json': define_path_dict_field(), 'pickle': define_path_dict_field()},)
 
     @output_selector_schema(schema_cls)
     def _builtin_output_schema(_context, file_type, file_options, runtime_value):

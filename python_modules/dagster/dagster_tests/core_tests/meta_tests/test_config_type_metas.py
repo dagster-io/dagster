@@ -20,7 +20,6 @@ def test_basic_int_meta():
     assert int_meta.kind == ConfigTypeKind.SCALAR
     assert int_meta.inner_type_refs == []
     assert int_meta.is_builtin is True
-    assert int_meta.is_system_config is False
     assert int_meta.enum_values is None
     assert int_meta.fields is None
 
@@ -33,7 +32,6 @@ def test_basic_dict():
     assert len(dict_meta.inner_type_refs) == 1
     assert dict_meta.inner_type_refs[0].key == 'Int'
     assert dict_meta.is_builtin is True
-    assert dict_meta.is_system_config is False
     assert dict_meta.enum_values is None
 
     assert dict_meta.fields and len(dict_meta.fields) == 1
@@ -74,7 +72,6 @@ def test_basic_list():
     assert len(list_meta.inner_type_refs) == 1
     assert list_meta.inner_type_refs[0].key == 'Int'
     assert list_meta.is_builtin is True
-    assert list_meta.is_system_config is False
     assert list_meta.enum_values is None
 
 
@@ -88,7 +85,6 @@ def test_basic_optional():
     # TODO reconcile names
     assert optional_meta.kind == ConfigTypeKind.NONEABLE
     assert optional_meta.is_builtin is True
-    assert optional_meta.is_system_config is False
     assert optional_meta.enum_values is None
 
 
@@ -105,7 +101,6 @@ def test_basic_list_list():
     )
     assert refs['Int'].key == 'Int'
     assert list_meta.is_builtin is True
-    assert list_meta.is_system_config is False
     assert list_meta.enum_values is None
 
     assert (

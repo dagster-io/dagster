@@ -39,12 +39,10 @@ class ConfigTypeKind(PythonEnum):
         return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
 
-class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin is_system_config')):
-    def __new__(cls, is_builtin=False, is_system_config=False):
+class ConfigTypeAttributes(namedtuple('_ConfigTypeAttributes', 'is_builtin')):
+    def __new__(cls, is_builtin=False):
         return super(ConfigTypeAttributes, cls).__new__(
-            cls,
-            is_builtin=check.bool_param(is_builtin, 'is_builtin'),
-            is_system_config=check.bool_param(is_system_config, 'is_system_config'),
+            cls, is_builtin=check.bool_param(is_builtin, 'is_builtin'),
         )
 
 
@@ -93,10 +91,6 @@ class ConfigType(object):
     @property
     def is_closed_generic(self):
         return ConfigTypeKind.is_closed_generic(self.kind)
-
-    @property
-    def is_system_config(self):
-        return self.type_attributes.is_system_config
 
     @property
     def is_builtin(self):

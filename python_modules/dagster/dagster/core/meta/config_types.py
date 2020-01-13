@@ -16,23 +16,14 @@ class NonGenericTypeRefMeta(namedtuple('_NonGenericTypeRefMeta', 'key')):
 class ConfigTypeMeta(
     namedtuple(
         '_ConfigTypeMeta',
-        'kind key given_name description is_builtin is_system_config '
+        'kind key given_name description is_builtin '
         'type_param_refs '  # only valid for closed generics (Set, Tuple, List, Optional)
         'enum_values '  # only valid for enums
         'fields',  # only valid for dicts and selectors
     )
 ):
     def __new__(
-        cls,
-        kind,
-        key,
-        given_name,
-        type_param_refs,
-        enum_values,
-        fields,
-        description,
-        is_builtin,
-        is_system_config,
+        cls, kind, key, given_name, type_param_refs, enum_values, fields, description, is_builtin,
     ):
         return super(ConfigTypeMeta, cls).__new__(
             cls,
@@ -50,7 +41,6 @@ class ConfigTypeMeta(
             else check.list_param(fields, 'field', of_type=ConfigFieldMeta),
             description=check.opt_str_param(description, 'description'),
             is_builtin=check.bool_param(is_builtin, 'is_builtin'),
-            is_system_config=check.bool_param(is_system_config, 'is_system_config'),
         )
 
     @property
@@ -177,7 +167,6 @@ def meta_from_config_type(config_type):
         kind=config_type.kind,
         description=config_type.description,
         is_builtin=config_type.is_builtin,
-        is_system_config=config_type.is_system_config,
         type_param_refs=type_refs_of(config_type.type_params),
         enum_values=[
             ConfigEnumValueMeta(ev.config_value, ev.description) for ev in config_type.enum_values

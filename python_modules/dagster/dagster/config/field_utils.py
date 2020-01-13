@@ -71,13 +71,11 @@ def _add_hash(m, string):
     m.update(string.encode())
 
 
-def _compute_fields_hash(fields, description, is_system_config):
+def _compute_fields_hash(fields, description):
 
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
     if description:
         _add_hash(m, ':description: ' + description)
-
-    _add_hash(m, ':is_system_config: ' + str(is_system_config))
 
     for field_name in sorted(list(fields.keys())):
         field = fields[field_name]
@@ -92,8 +90,8 @@ def _compute_fields_hash(fields, description, is_system_config):
     return m.hexdigest()
 
 
-def _define_shape_key_hash(fields, description, is_system_config):
-    return 'Shape.' + _compute_fields_hash(fields, description, is_system_config)
+def _define_shape_key_hash(fields, description):
+    return 'Shape.' + _compute_fields_hash(fields, description)
 
 
 class Shape(_ConfigHasFields):
@@ -104,30 +102,27 @@ class Shape(_ConfigHasFields):
         fields (Dict[str, Field])
     '''
 
-    def __new__(cls, fields, description=None, is_system_config=False):
+    def __new__(
+        cls, fields, description=None,
+    ):
         return _memoize_inst_in_field_cache(
-            cls,
-            Shape,
-            _define_shape_key_hash(expand_fields_dict(fields), description, is_system_config),
+            cls, Shape, _define_shape_key_hash(expand_fields_dict(fields), description),
         )
 
-    def __init__(self, fields, description=None, is_system_config=False):
+    def __init__(self, fields, description=None):
         fields = expand_fields_dict(fields)
         super(Shape, self).__init__(
             kind=ConfigTypeKind.STRICT_SHAPE,
-            key=_define_shape_key_hash(fields, description, is_system_config),
+            key=_define_shape_key_hash(fields, description),
             description=description,
             fields=fields,
-            type_attributes=ConfigTypeAttributes(
-                is_builtin=True, is_system_config=is_system_config,
-            ),
+            type_attributes=ConfigTypeAttributes(is_builtin=True,),
         )
 
 
 def _define_permissive_dict_key(fields, description):
     return (
-        'Permissive.'
-        + _compute_fields_hash(fields, description=description, is_system_config=False)
+        'Permissive.' + _compute_fields_hash(fields, description=description)
         if fields
         else 'Permissive'
     )
@@ -172,10 +167,8 @@ class Permissive(_ConfigHasFields):
         )
 
 
-def _define_selector_key(fields, description, is_system_config):
-    return 'Selector.' + _compute_fields_hash(
-        fields, description=description, is_system_config=is_system_config
-    )
+def _define_selector_key(fields, description):
+    return 'Selector.' + _compute_fields_hash(fields, description=description)
 
 
 class Selector(_ConfigHasFields):
@@ -219,22 +212,18 @@ class Selector(_ConfigHasFields):
                 return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
     '''
 
-    def __new__(cls, fields, description=None, is_system_config=False):
+    def __new__(cls, fields, description=None):
         return _memoize_inst_in_field_cache(
-            cls,
-            Selector,
-            _define_selector_key(expand_fields_dict(fields), description, is_system_config),
+            cls, Selector, _define_selector_key(expand_fields_dict(fields), description),
         )
 
-    def __init__(self, fields, description=None, is_system_config=False):
+    def __init__(self, fields, description=None):
         fields = expand_fields_dict(fields)
         super(Selector, self).__init__(
-            key=_define_selector_key(fields, description, is_system_config),
+            key=_define_selector_key(fields, description),
             kind=ConfigTypeKind.SELECTOR,
             fields=fields,
-            type_attributes=ConfigTypeAttributes(
-                is_builtin=True, is_system_config=is_system_config
-            ),
+            type_attributes=ConfigTypeAttributes(is_builtin=True),
             description=description,
         )
 

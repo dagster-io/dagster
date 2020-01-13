@@ -96,7 +96,6 @@ def test_provided_default_on_resources_config():
         some_solid()
 
     env_type = create_environment_type(pipeline_def)
-    assert env_type.type_attributes.is_system_config
     some_resource_field = env_type.fields['resources'].config_type.fields['some_resource']
     assert some_resource_field.is_optional
 
@@ -126,15 +125,10 @@ def test_solid_config():
     solid_config_type = define_solid_config_cls(Field(Int), None, None)
     solid_inst = throwing_validate_config_value(solid_config_type, {'config': 1})
     assert solid_inst['config'] == 1
-    assert solid_config_type.type_attributes.is_system_config
 
 
 def test_solid_dictionary_type():
     pipeline_def = define_test_solids_config_pipeline()
-
-    solid_dict_type = define_solid_dictionary_cls(
-        pipeline_def.solids, pipeline_def.dependency_structure
-    )
 
     env_obj = EnvironmentConfig.build(
         pipeline_def,
@@ -145,14 +139,6 @@ def test_solid_dictionary_type():
 
     assert set(['int_config_solid', 'string_config_solid']) == set(value.keys())
     assert value == {'int_config_solid': SolidConfig(1), 'string_config_solid': SolidConfig('bar')}
-
-    assert solid_dict_type.type_attributes.is_system_config
-
-    for specific_solid_config_field in solid_dict_type.fields.values():
-        specific_solid_config_type = specific_solid_config_field.config_type
-        assert specific_solid_config_type.type_attributes.is_system_config
-        user_config_field = specific_solid_config_field.config_type.fields['config']
-        assert user_config_field.config_type.type_attributes.is_system_config is False
 
 
 def define_test_solids_config_pipeline():

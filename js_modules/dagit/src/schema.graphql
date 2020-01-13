@@ -6,7 +6,6 @@ type ArrayConfigType implements ConfigType & WrappingConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   ofType: ConfigType!
 }
 
@@ -29,7 +28,6 @@ type CompositeConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   fields: [ConfigTypeField!]!
 }
 
@@ -73,7 +71,6 @@ interface ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
 }
 
 type ConfigTypeField {
@@ -124,7 +121,6 @@ type EnumConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   values: [EnumConfigValue!]!
 }
 
@@ -519,7 +515,6 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   ofType: ConfigType!
 }
 
@@ -862,7 +857,6 @@ type RegularConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
 }
 
 type RegularRuntimeType implements RuntimeType {
