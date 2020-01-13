@@ -172,7 +172,7 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringGCSTypeStoragePlugin}
+            [(RuntimeString, FancyStringGCSTypeStoragePlugin)]
         ),
     )
 
@@ -195,7 +195,7 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringGCSTypeStoragePlugin}
+            [(RuntimeString, FancyStringGCSTypeStoragePlugin)]
         ),
     )
 

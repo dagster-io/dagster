@@ -173,7 +173,7 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
         run_id=run_id,
         s3_bucket=s3_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringS3TypeStoragePlugin}
+            [(RuntimeString, FancyStringS3TypeStoragePlugin)]
         ),
     )
 
@@ -196,7 +196,7 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
         run_id=run_id,
         s3_bucket=s3_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringS3TypeStoragePlugin}
+            [(RuntimeString, FancyStringS3TypeStoragePlugin)]
         ),
     )
 

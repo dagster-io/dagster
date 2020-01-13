@@ -123,7 +123,7 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
         instance.intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringFilesystemTypeStoragePlugin}
+            [(RuntimeString, FancyStringFilesystemTypeStoragePlugin)]
         ),
     )
 
@@ -145,7 +145,7 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
         DagsterInstance.ephemeral().intermediates_directory,
         run_id=run_id,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringFilesystemTypeStoragePlugin}
+            [(RuntimeString, FancyStringFilesystemTypeStoragePlugin)]
         ),
     )
 

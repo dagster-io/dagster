@@ -128,5 +128,5 @@ def build_fs_intermediate_store(root_for_run_id, run_id, type_storage_plugin_reg
         run_id,
         type_storage_plugin_registry
         if type_storage_plugin_registry
-        else TypeStoragePluginRegistry(types_to_register={}),
+        else TypeStoragePluginRegistry(types_to_register=[]),
     )

@@ -122,6 +122,13 @@ def inst(obj, ttype, desc=None):
     return obj
 
 
+def subclass(obj, superclass, desc=None):
+    if not issubclass(obj, superclass):
+        raise_with_traceback(_type_mismatch_error(obj, superclass, desc))
+
+    return obj
+
+
 def is_callable(obj, desc=None):
     if not callable(obj):
         if desc:
