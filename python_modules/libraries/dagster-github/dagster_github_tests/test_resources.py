@@ -141,25 +141,24 @@ def test_github_resource_execute():
     assert result.success
 
 
-class GithubResourceTesting(GithubResource):
-    def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
-        GithubResource.__init__(
-            self,
-            client=client,
-            app_id=app_id,
-            app_private_rsa_key=app_private_rsa_key,
-            default_installation_id=default_installation_id
-        )
-        self.installation_tokens = {'123': {"value": "test", "expires": int(time.time()) - 1000}}
-        self.app_token = {
-            "value": "test",
-            "expires": int(time.time()) - 1000,
-        }
-
-
 @responses.activate
 def test_github_resource_token_expiration():
-    github_resource = GithubResourceTesting(
+    class GithubResourceTesting(GithubResource):
+        def __init__(self, client, app_id, app_private_rsa_key, default_installation_id):
+            GithubResource.__init__(
+                self,
+                client=client,
+                app_id=app_id,
+                app_private_rsa_key=app_private_rsa_key,
+                default_installation_id=default_installation_id
+            )
+            self.installation_tokens = {'123': {"value": "test", "expires": int(time.time()) - 1000}}
+            self.app_token = {
+                "value": "test",
+                "expires": int(time.time()) - 1000,
+            }
+
+    resource = GithubResourceTesting(
         client=requests.Session(),
         app_id="abc",
         app_private_rsa_key=FAKE_PRIVATE_RSA_KEY,
@@ -178,7 +177,7 @@ def test_github_resource_token_expiration():
             status=200,
             json={'data': {'repository': {'id': 123}},},
         )
-        res = github_resource.execute(
+        res = resource.execute(
             query="""
             query get_repo_id($repo_name: String!, $repo_owner: String!) {
                 repository(name: $repo_name, owner: $repo_owner) {
