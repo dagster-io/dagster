@@ -3,7 +3,6 @@ from datetime import datetime
 
 import requests
 import jwt
-import pem
 
 from dagster import resource, Field, String, Int
 
@@ -20,7 +19,7 @@ class GithubResource:
         self.default_installation_id = default_installation_id
         self.installation_tokens = {}
         self.app_token = {}
-        self.app_cert = str(pem.parse(str.encode(self.app_private_rsa_key))[0])
+
 
     def __set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
@@ -37,7 +36,7 @@ class GithubResource:
                 # GitHub App's identifier
                 "iss": self.app_id,
             },
-            self.app_cert,
+            self.app_private_rsa_key,
             algorithm="RS256",
         ).decode("utf-8")
         self.app_token = {
