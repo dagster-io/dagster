@@ -1,25 +1,24 @@
 import time
 
-import responses
 import requests
+import responses
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.backends import default_backend
-
 from dagster_github import github_resource
 from dagster_github.resources import GithubResource
+
 from dagster import ModeDefinition, execute_solid, solid
 
-
-FAKE_PRIVATE_RSA_KEY = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=1024,
-    backend=default_backend()
-).private_bytes(
-    encoding=serialization.Encoding.PEM,
-    format=serialization.PrivateFormat.TraditionalOpenSSL,
-    encryption_algorithm=serialization.NoEncryption()
-).decode()
+FAKE_PRIVATE_RSA_KEY = (
+    rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
+    .private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    .decode()
+)
 
 
 @responses.activate
@@ -150,9 +149,11 @@ def test_github_resource_token_expiration():
                 client=client,
                 app_id=app_id,
                 app_private_rsa_key=app_private_rsa_key,
-                default_installation_id=default_installation_id
+                default_installation_id=default_installation_id,
             )
-            self.installation_tokens = {'123': {"value": "test", "expires": int(time.time()) - 1000}}
+            self.installation_tokens = {
+                '123': {"value": "test", "expires": int(time.time()) - 1000}
+            }
             self.app_token = {
                 "value": "test",
                 "expires": int(time.time()) - 1000,

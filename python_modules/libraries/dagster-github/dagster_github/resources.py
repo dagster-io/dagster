@@ -1,10 +1,10 @@
 import time
 from datetime import datetime
 
-import requests
 import jwt
+import requests
 
-from dagster import resource, Field, String, Int
+from dagster import Field, Int, String, resource
 
 
 def to_seconds(dt):
@@ -19,7 +19,6 @@ class GithubResource:
         self.default_installation_id = default_installation_id
         self.installation_tokens = {}
         self.app_token = {}
-
 
     def __set_app_token(self):
         # from https://developer.github.com/apps/building-github-apps/authenticating-with-github-apps/
