@@ -731,7 +731,19 @@ def construct_runtime_type_dictionary(solid_defs):
     type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for runtime_type in solid_def.all_runtime_types():
-            type_dict[runtime_type.name] = runtime_type
+            if not runtime_type.name:
+                continue
+            if runtime_type.name not in type_dict:
+                type_dict[runtime_type.name] = runtime_type
+                continue
+
+            if type_dict[runtime_type.name] is not runtime_type:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'You have created two dagster types with the same name "{type_name}". '
+                        'Dagster types have must have unique names.'
+                    ).format(type_name=runtime_type.name)
+                )
 
     return type_dict
 

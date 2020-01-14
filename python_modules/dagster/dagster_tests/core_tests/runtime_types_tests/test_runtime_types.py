@@ -1,5 +1,21 @@
-from dagster import InputDefinition, Int, List, Optional, PipelineDefinition, lambda_solid
-from dagster.core.types.runtime_type import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
+import pytest
+
+from dagster import (
+    DagsterInvalidDefinitionError,
+    InputDefinition,
+    Int,
+    List,
+    Optional,
+    OutputDefinition,
+    PipelineDefinition,
+    lambda_solid,
+    pipeline,
+)
+from dagster.core.types.runtime_type import (
+    ALL_RUNTIME_BUILTINS,
+    RuntimeType,
+    resolve_to_runtime_type,
+)
 
 
 def inner_type_key_set(runtime_type):
@@ -38,10 +54,10 @@ def test_display_name():
 
 
 def test_builtins_available():
-    pipeline = PipelineDefinition(name='test_builting_available', solid_defs=[])
+    pipeline_def = PipelineDefinition(name='test_builting_available', solid_defs=[])
     for builtin_type in ALL_RUNTIME_BUILTINS:
-        assert pipeline.has_runtime_type(builtin_type.name)
-        assert pipeline.runtime_type_named(builtin_type.name).is_builtin
+        assert pipeline_def.has_runtime_type(builtin_type.name)
+        assert pipeline_def.runtime_type_named(builtin_type.name).is_builtin
 
 
 def test_python_mapping():
@@ -69,3 +85,31 @@ def test_python_mapping():
     runtime.type_check(True)
     res = runtime.type_check(1)
     assert not res.success
+
+
+def test_double_runtime_type():
+
+    AlwaysSucceedsFoo = RuntimeType('Foo', 'Foo', type_check_fn=lambda _: True)
+    AlwaysFailsFoo = RuntimeType('Foo', 'Foo', type_check_fn=lambda _: False)
+
+    @lambda_solid
+    def return_a_thing():
+        return 1
+
+    @lambda_solid(
+        input_defs=[InputDefinition('succeeds', AlwaysSucceedsFoo)],
+        output_def=OutputDefinition(AlwaysFailsFoo),
+    )
+    def yup(succeeds):
+        return succeeds
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @pipeline
+        def _should_fail():
+            yup(return_a_thing())
+
+    assert str(exc_info.value) == (
+        'You have created two dagster types with the same name "Foo". '
+        'Dagster types have must have unique names.'
+    )
