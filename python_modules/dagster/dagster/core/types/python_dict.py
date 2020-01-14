@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.field_utils import Permissive
+from dagster.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
@@ -25,7 +25,6 @@ class _TypedPythonDict(RuntimeType):
         super(_TypedPythonDict, self).__init__(
             key='TypedPythonDict.{}.{}'.format(key_type.key, value_type.key),
             name=None,
-            is_builtin=True,
             type_check_fn=self.type_check_method,
         )
 

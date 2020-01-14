@@ -41,9 +41,10 @@ except ImportError:
     import thread
 
 try:
-    from urllib.parse import urljoin, urlparse, urlunparse
+    from urllib.parse import urljoin, urlparse, urlunparse, quote_plus
 except ImportError:
     from urlparse import urljoin, urlparse, urlunparse
+    from urllib import quote_plus
 
 IS_WINDOWS = os.name == 'nt'
 

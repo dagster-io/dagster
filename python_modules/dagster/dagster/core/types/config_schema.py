@@ -1,10 +1,10 @@
 from dagster import check
+from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.decorator_utils import (
     split_function_parameters,
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
 from dagster.utils import ensure_single_item
 
 
@@ -32,7 +32,7 @@ class BareInputSchema(InputHydrationConfig):
 
 
 def make_bare_input_schema(config_cls):
-    from dagster.core.types.config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
     return BareInputSchema(config_type)
@@ -88,7 +88,7 @@ def input_hydration_config(config_cls):
         def _dict_input(_context, value):
             return value
     '''
-    from dagster.core.types.config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
     EXPECTED_POSITIONALS = ['context', '*']
@@ -117,7 +117,7 @@ def input_selector_schema(config_cls):
     Args:
         config_cls (Selector)
     '''
-    from dagster.core.types.config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
     check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
@@ -178,7 +178,7 @@ def output_materialization_config(config_cls):
             return Materialization.file(path)
 
     '''
-    from dagster.core.types.config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
     return lambda func: _create_output_schema(config_type, func)
@@ -192,7 +192,7 @@ def output_selector_schema(config_cls):
     Args:
         config_cls (Selector):
     '''
-    from dagster.core.types.config.field import resolve_to_config_type
+    from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
     check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')

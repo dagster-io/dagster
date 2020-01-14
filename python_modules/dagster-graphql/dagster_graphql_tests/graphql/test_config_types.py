@@ -1,7 +1,7 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
-from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS
+from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
 from .setup import csv_hello_world_solids_config, define_context
@@ -531,7 +531,7 @@ def test_smoke_test_config_type_system():
     assert has_config_type_with_key_prefix(config_types_data, 'Shape.')
 
     for builtin_config_type in ALL_CONFIG_BUILTINS:
-        assert has_config_type(config_types_data, builtin_config_type.name)
+        assert has_config_type(config_types_data, builtin_config_type.given_name)
 
 
 ALL_CONFIG_TYPES_QUERY = '''
@@ -541,8 +541,6 @@ fragment configTypeFragment on ConfigType {
   name
   description
   isSelector
-  isBuiltin
-  isSystemGenerated
   typeParamKeys
   recursiveConfigTypes {
     key

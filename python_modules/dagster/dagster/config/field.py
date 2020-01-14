@@ -1,6 +1,6 @@
 from dagster import check
+from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.types.builtins import BuiltinEnum
 from dagster.utils.typing_api import is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
@@ -40,9 +40,9 @@ def resolve_to_config_type(dagster_type):
             )
         return Array(inner_type)
 
-    from dagster.core.types.runtime.runtime_type import RuntimeType, List, ListType
-    from dagster.core.types.runtime.python_set import Set, _TypedPythonSet
-    from dagster.core.types.runtime.python_tuple import Tuple, _TypedPythonTuple
+    from dagster.core.types.runtime_type import RuntimeType, List, ListType
+    from dagster.core.types.python_set import Set, _TypedPythonSet
+    from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
 
     if _is_config_type_class(dagster_type):
         check.param_invariant(
@@ -95,7 +95,7 @@ def resolve_to_config_type(dagster_type):
     #  2) We have been passed an invalid thing. We return False to signify this. It is
     #     up to callers to report a reasonable error.
 
-    from dagster.core.types.primitive_mapping import (
+    from dagster.primitive_mapping import (
         remap_python_builtin_for_config,
         is_supported_config_python_builtin,
     )
@@ -200,7 +200,9 @@ class Field(object):
                 config_type.is_config_scalar_valid(self._default_value),
                 'default_value',
                 'default value not valid for config type {name}, got value {val} of type {type}'.format(
-                    name=config_type.name, val=self._default_value, type=type(self._default_value)
+                    name=config_type.given_name,
+                    val=self._default_value,
+                    type=type(self._default_value),
                 ),
             )
 

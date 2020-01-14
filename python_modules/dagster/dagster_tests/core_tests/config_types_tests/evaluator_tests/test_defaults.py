@@ -2,10 +2,10 @@ import pytest
 
 from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
 from dagster.check import CheckError, ParameterCheckError
-from dagster.core.types.config.config_type import ConfigType, ConfigTypeKind
-from dagster.core.types.config.field import resolve_to_config_type
-from dagster.core.types.config.field_utils import Selector
-from dagster.core.types.config.post_process import post_process_config
+from dagster.config.config_type import ConfigType, ConfigTypeKind
+from dagster.config.field import resolve_to_config_type
+from dagster.config.field_utils import Selector
+from dagster.config.post_process import post_process_config
 
 
 def test_post_process_config():
@@ -97,7 +97,9 @@ def test_post_process_config():
 
     assert post_process_config(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
 
-    assert post_process_config(ConfigType('gargle', 'bargle', ConfigTypeKind.ANY), 3)
+    assert post_process_config(
+        ConfigType('gargle', given_name='bargle', kind=ConfigTypeKind.ANY), 3
+    )
 
     selector_config_type = resolve_to_config_type(
         Selector(

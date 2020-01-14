@@ -1,13 +1,10 @@
 from dagster import Any, Bool, Field, Int, Noneable, Shape, String
-from dagster.core.types.config import Selector
-from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
-from dagster.core.types.config.evaluator.evaluate_value_result import EvaluateValueResult
-from dagster.core.types.config.evaluator.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackPathEntry,
-)
-from dagster.core.types.config.evaluator.validate import process_config
-from dagster.core.types.config.field import resolve_to_config_type
+from dagster.config import Selector
+from dagster.config.errors import DagsterEvaluationErrorReason
+from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster.config.field import resolve_to_config_type
+from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.validate import process_config
 
 
 def eval_config_value_from_dagster_type(dagster_type, value):
@@ -33,7 +30,7 @@ def test_evaluate_scalar_failure():
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '2343'
 
 
@@ -57,7 +54,7 @@ def test_single_level_scalar_mismatch():
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 1
     assert error.stack.entries[0].field_name == 'level_one'
-    assert error.stack.entries[0].field_def.config_type.name == 'String'
+    assert error.stack.entries[0].field_def.config_type.given_name == 'String'
 
 
 def test_single_level_dict_not_a_dict():
@@ -249,7 +246,7 @@ def test_deep_scalar():
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '123'
     assert len(error.stack.entries) == 3
 

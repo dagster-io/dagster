@@ -1,19 +1,9 @@
 import six
 
 from dagster import check
-from dagster.core.types.config.config_type import (
-    Bool,
-    ConfigScalar,
-    ConfigType,
-    ConfigTypeKind,
-    Float,
-    Int,
-    Path,
-    String,
-)
-from dagster.core.types.config.post_process import post_process_config
 from dagster.utils import ensure_single_item, frozendict
 
+from .config_type import Bool, ConfigScalar, ConfigType, ConfigTypeKind, Float, Int, Path, String
 from .errors import (
     create_array_error,
     create_dict_type_mismatch_error,
@@ -31,6 +21,7 @@ from .errors import (
     create_selector_unspecified_value_error,
 )
 from .evaluate_value_result import EvaluateValueResult
+from .post_process import post_process_config
 from .stack import EvaluationStack
 from .validation_context import ValidationContext
 

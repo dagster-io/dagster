@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
@@ -26,11 +25,11 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('SqliteRunStorageConfig', {'base_dir': str})
+        return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return SqliteRunStorage.from_local(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
     @staticmethod
     def from_local(base_dir, inst_data=None):

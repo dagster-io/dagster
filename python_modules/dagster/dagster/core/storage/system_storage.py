@@ -1,5 +1,5 @@
+from dagster.config import Field
 from dagster.core.definitions.system_storage import SystemStorageData, system_storage
-from dagster.core.types.config import Field
 
 from .file_manager import LocalFileManager
 from .intermediate_store import build_fs_intermediate_store

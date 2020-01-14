@@ -1,11 +1,8 @@
 from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
-from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
-from dagster.core.types.config.evaluator.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackPathEntry,
-)
-from dagster.core.types.config.evaluator.validate import validate_config
-from dagster.core.types.config.field import resolve_to_config_type
+from dagster.config.errors import DagsterEvaluationErrorReason
+from dagster.config.field import resolve_to_config_type
+from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.validate import validate_config
 
 
 def _validate(dagster_type, config_value):
@@ -26,7 +23,7 @@ def test_parse_scalar_failure():
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '2343'
 
 
@@ -48,7 +45,7 @@ def test_single_level_scalar_mismatch():
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 1
     assert error.stack.entries[0].field_name == 'level_one'
-    assert error.stack.entries[0].field_def.config_type.name == 'String'
+    assert error.stack.entries[0].field_def.config_type.given_name == 'String'
 
 
 def test_root_missing_field():
@@ -219,7 +216,7 @@ def test_deep_scalar():
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '123'
     assert len(error.stack.entries) == 3
 

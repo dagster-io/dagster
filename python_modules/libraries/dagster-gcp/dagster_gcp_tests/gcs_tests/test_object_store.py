@@ -3,7 +3,7 @@ from io import BytesIO
 
 from dagster_gcp.gcs.object_store import GCSObjectStore
 
-from dagster.core.types.runtime.marshal import PickleSerializationStrategy
+from dagster.core.types.marshal import PickleSerializationStrategy
 
 
 def test_gcs_object_store(gcs_bucket):

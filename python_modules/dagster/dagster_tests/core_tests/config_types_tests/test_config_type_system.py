@@ -26,13 +26,10 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.config.errors import DagsterEvaluateConfigValueError, DagsterEvaluationErrorReason
+from dagster.config.field_utils import convert_potential_field
+from dagster.config.validate import process_config, validate_config
 from dagster.core.test_utils import throwing_validate_config_value
-from dagster.core.types.config.evaluator.errors import (
-    DagsterEvaluateConfigValueError,
-    DagsterEvaluationErrorReason,
-)
-from dagster.core.types.config.evaluator.validate import process_config, validate_config
-from dagster.core.types.config.field_utils import convert_potential_field
 
 
 def test_noop_config():

@@ -21,11 +21,11 @@ from dagster import (
     check,
     seven,
 )
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import ComputeExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.serdes import pack_value
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 from dagster.utils import mkdir_p, safe_tempfile_path
 
 from .engine import DagstermillNBConvertEngine

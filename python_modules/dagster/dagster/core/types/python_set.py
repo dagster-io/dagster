@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.config_type import Array
+from dagster.config.config_type import Array
 
 from .config_schema import InputHydrationConfig
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
@@ -36,7 +36,6 @@ class _TypedPythonSet(RuntimeType):
         super(_TypedPythonSet, self).__init__(
             key='TypedPythonSet.{}'.format(item_runtime_type.key),
             name=None,
-            is_builtin=True,
             input_hydration_config=(
                 TypedSetInputHydrationConfig(item_runtime_type)
                 if item_runtime_type.input_hydration_config

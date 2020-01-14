@@ -151,11 +151,8 @@ def test_int_input_schema_failure_wrong_key():
             environment_dict=single_input_env('take_int', 'num', {'wrong_key': 'dkjdfkdj'}),
             solid_subset=['take_int'],
         )
-
-    assert (
-        'Error 1: Undefined field "wrong_key" on type '
-        '"ScalarUnion[Int,Int.InputHydrationConfig]" '
-        'at path root:solids:take_int:inputs:num' in str(exc_info.value)
+    assert 'Error 1: Undefined field "wrong_key" at path root:solids:take_int:inputs:num.' in str(
+        exc_info.value
     )
 
 
@@ -168,10 +165,9 @@ def test_int_input_schema_failure_raw_string():
         )
 
     assert (
-        'Error 1: Type failure at path "root:solids:take_int:inputs:num" on type '
-        '"ScalarUnion[Int,Int.InputHydrationConfig]". Value at path '
-        'root:solids:take_int:inputs:num is not valid. Expected "Int".' in str(exc_info.value)
-    )
+        'Error 1: Type failure at path "root:solids:take_int:inputs:num". '
+        'Value at path root:solids:take_int:inputs:num is not valid. Expected "Int".'
+    ) in str(exc_info.value)
 
 
 def single_output_env(solid_name, output_spec):

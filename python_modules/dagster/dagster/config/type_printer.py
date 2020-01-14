@@ -19,7 +19,7 @@ def print_type(config_type, print_fn=print, with_lines=True):
     printer.line('')
 
 
-def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
+def _do_print(config_type, printer, with_lines=True):
     line_break_fn = printer.line if with_lines else lambda string: printer.append(string + ' ')
 
     kind = config_type.kind
@@ -38,24 +38,21 @@ def _do_print(config_type, printer, with_lines=True, shortcut_named=False):
         _do_print(config_type.non_scalar_type, printer)
         printer.append(')')
     elif ConfigTypeKind.has_fields(kind):
-        if config_type.name and shortcut_named:
-            printer.append(config_type.name)
-        else:
-            line_break_fn('{')
-            with printer.with_indent():
-                for name, field in sorted(config_type.fields.items()):
-                    if field.is_optional:
-                        printer.append(name + '?: ')
-                    else:
-                        printer.append(name + ': ')
-                    _do_print(
-                        field.config_type, printer, with_lines=with_lines, shortcut_named=True
-                    )
-                    line_break_fn('')
+        line_break_fn('{')
+        with printer.with_indent():
+            for name, field in sorted(config_type.fields.items()):
+                if field.is_optional:
+                    printer.append(name + '?: ')
+                else:
+                    printer.append(name + ': ')
+                _do_print(
+                    field.config_type, printer, with_lines=with_lines,
+                )
+                line_break_fn('')
 
-            printer.append('}')
-    elif config_type.name:
-        printer.append(config_type.name)
+        printer.append('}')
+    elif config_type.given_name:
+        printer.append(config_type.given_name)
     else:
         check.failed('not supported')
 

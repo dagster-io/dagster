@@ -1,4 +1,5 @@
 from dagster import Array, Field, Noneable, Selector, Shape
+from dagster.config.field import resolve_to_config_type
 from dagster.core.meta.config_types import (
     ConfigTypeKind,
     ConfigTypeMeta,
@@ -6,7 +7,6 @@ from dagster.core.meta.config_types import (
     meta_from_config_type,
 )
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.core.types.config.field import resolve_to_config_type
 
 
 def meta_from_dagster_type(dagster_type):
@@ -15,12 +15,10 @@ def meta_from_dagster_type(dagster_type):
 
 def test_basic_int_meta():
     int_meta = meta_from_dagster_type(int)
-    assert int_meta.name == 'Int'
+    assert int_meta.given_name == 'Int'
     assert int_meta.key == 'Int'
     assert int_meta.kind == ConfigTypeKind.SCALAR
     assert int_meta.inner_type_refs == []
-    assert int_meta.is_builtin is True
-    assert int_meta.is_system_config is False
     assert int_meta.enum_values is None
     assert int_meta.fields is None
 
@@ -28,12 +26,10 @@ def test_basic_int_meta():
 def test_basic_dict():
     dict_meta = meta_from_dagster_type({'foo': int})
     assert dict_meta.key.startswith('Shape.')
-    assert dict_meta.name is None
+    assert dict_meta.given_name is None
     assert dict_meta.inner_type_refs
     assert len(dict_meta.inner_type_refs) == 1
     assert dict_meta.inner_type_refs[0].key == 'Int'
-    assert dict_meta.is_builtin is True
-    assert dict_meta.is_system_config is False
     assert dict_meta.enum_values is None
 
     assert dict_meta.fields and len(dict_meta.fields) == 1
@@ -73,8 +69,6 @@ def test_basic_list():
     assert list_meta.inner_type_refs
     assert len(list_meta.inner_type_refs) == 1
     assert list_meta.inner_type_refs[0].key == 'Int'
-    assert list_meta.is_builtin is True
-    assert list_meta.is_system_config is False
     assert list_meta.enum_values is None
 
 
@@ -87,8 +81,6 @@ def test_basic_optional():
     # https://github.com/dagster-io/dagster/issues/1933
     # TODO reconcile names
     assert optional_meta.kind == ConfigTypeKind.NONEABLE
-    assert optional_meta.is_builtin is True
-    assert optional_meta.is_system_config is False
     assert optional_meta.enum_values is None
 
 
@@ -104,8 +96,6 @@ def test_basic_list_list():
         and refs['Array.Int'].inner_type_refs[0].key == 'Int'
     )
     assert refs['Int'].key == 'Int'
-    assert list_meta.is_builtin is True
-    assert list_meta.is_system_config is False
     assert list_meta.enum_values is None
 
     assert (

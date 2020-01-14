@@ -1,7 +1,10 @@
 import uuid
 
+import yaml
+
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 
@@ -408,3 +411,35 @@ def test_fetch_by_status_cursored(clean_storage):
     )
     assert len(cursor_four_limit_one) == 1
     assert cursor_four_limit_one[0].run_id == two
+
+
+def test_load_from_config(hostname):
+    url_cfg = '''
+      run_storage:
+        module: dagster_postgres.run_storage
+        class: PostgresRunStorage
+        config:
+            postgres_url: postgresql://test:test@{hostname}:5432/test
+    '''.format(
+        hostname=hostname
+    )
+
+    explicit_cfg = '''
+      run_storage:
+        module: dagster_postgres.run_storage
+        class: PostgresRunStorage
+        config:
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+    '''.format(
+        hostname=hostname
+    )
+
+    # pylint: disable=protected-access
+    from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._run_storage
+    from_explicit = DagsterInstance.local_temp(overrides=yaml.safe_load(explicit_cfg))._run_storage
+
+    assert from_url.postgres_url == from_explicit.postgres_url

@@ -250,7 +250,7 @@ class DagsterInvalidConfigError(DagsterError):
     schema).'''
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
-        from dagster.core.types.config.evaluator.errors import (
+        from dagster.config.errors import (
             friendly_string_for_error,
             EvaluationError,
         )

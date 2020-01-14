@@ -1,6 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.evaluate_value_result import EvaluateValueResult
+from dagster.config.validate import process_config
 from dagster.core.definitions.config import ConfigMappingContext
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.environment_configs import define_solid_dictionary_cls
@@ -13,9 +15,6 @@ from dagster.core.errors import (
 )
 from dagster.core.execution.config import IRunConfig, RunConfig
 from dagster.core.system_config.objects import SolidConfig
-
-from .evaluate_value_result import EvaluateValueResult
-from .validate import process_config
 
 
 class SolidConfigEntry(namedtuple('_SolidConfigEntry', 'handle solid_config')):

@@ -8,6 +8,7 @@ interface SolidQueryInputProps {
   solids: SolidQueryInputSolidFragment[];
   value: string;
   onChange: (value: string) => void;
+  autoFocus?: boolean;
 }
 
 interface ActiveSuggestionInfo {
@@ -146,6 +147,7 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
       e.key === "Return" ||
       e.key === "Tab" ||
       e.key === "+" ||
+      e.key === " " ||
       (e.key === "*" && pendingValue.length > 1) ||
       (e.key === "Backspace" && pendingValue.length)
     ) {
@@ -165,6 +167,7 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
           type="text"
           value={pendingValue}
           leftIcon={"send-to-graph"}
+          autoFocus={props.autoFocus}
           placeholder={placeholderTextForSolids(props.solids)}
           onChange={(e: React.ChangeEvent<any>) =>
             setPendingValue(e.target.value)

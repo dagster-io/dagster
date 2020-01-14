@@ -1,18 +1,17 @@
 import pickle
 
 from dagster import check, seven
-from dagster.core.types.config.config_type import (
+from dagster.config.config_type import (
     ConfigAnyInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
     ConfigIntInstance,
     ConfigPathInstance,
     ConfigStringInstance,
-    ConfigTypeAttributes,
     ScalarUnion,
 )
-from dagster.core.types.config.field import Field
-from dagster.core.types.config.field_utils import NamedSelector
+from dagster.config.field import Field
+from dagster.config.field_utils import Selector
 
 from .config_schema import input_hydration_config, make_bare_input_schema, output_selector_schema
 
@@ -23,14 +22,12 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
     @input_hydration_config(
         ScalarUnion(
             scalar_type=config_scalar_type,
-            non_scalar_type=NamedSelector(
-                scalar_name + '.InputHydrationConfig',
+            non_scalar_type=Selector(
                 {
                     'value': Field(config_scalar_type),
                     'json': define_path_dict_field(),
                     'pickle': define_path_dict_field(),
                 },
-                type_attributes=ConfigTypeAttributes(is_system_config=True),
             ),
         )
     )
@@ -62,11 +59,7 @@ def define_path_dict_field():
 def define_builtin_scalar_output_schema(scalar_name):
     check.str_param(scalar_name, 'scalar_name')
 
-    schema_cls = NamedSelector(
-        scalar_name + '.MaterializationSchema',
-        {'json': define_path_dict_field(), 'pickle': define_path_dict_field()},
-        type_attributes=ConfigTypeAttributes(is_system_config=True),
-    )
+    schema_cls = Selector({'json': define_path_dict_field(), 'pickle': define_path_dict_field()},)
 
     @output_selector_schema(schema_cls)
     def _builtin_output_schema(_context, file_type, file_options, runtime_value):

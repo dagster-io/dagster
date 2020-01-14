@@ -560,10 +560,10 @@ def test_dagster_type_resource_decorator_config():
     def dagster_type_resource_config(_):
         raise Exception('not called')
 
-    assert dagster_type_resource_config.config_field.config_type.name == 'Int'
+    assert dagster_type_resource_config.config_field.config_type.given_name == 'Int'
 
     @resource(int)
     def python_type_resource_config(_):
         raise Exception('not called')
 
-    assert python_type_resource_config.config_field.config_type.name == 'Int'
+    assert python_type_resource_config.config_field.config_type.given_name == 'Int'

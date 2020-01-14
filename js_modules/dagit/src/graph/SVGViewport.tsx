@@ -147,7 +147,7 @@ export default class SVGViewport extends React.Component<
 
   autocenter(animate = false) {
     const el = this.element.current!;
-    const ownerRect = el.getBoundingClientRect();
+    const ownerRect = { width: el.clientWidth, height: el.clientHeight };
 
     const dw = ownerRect.width / this.props.graphWidth;
     const dh = ownerRect.height / this.props.graphHeight;

@@ -1,7 +1,6 @@
 import os
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 
 
@@ -30,9 +29,9 @@ class LocalArtifactStorage(ConfigurableClass):
         return os.path.join(self.base_dir, 'schedules')
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return LocalArtifactStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return LocalArtifactStorage(inst_data=inst_data, **config_value)
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('LocalArtifactStorageConfig', {'base_dir': str})
+        return {'base_dir': str}

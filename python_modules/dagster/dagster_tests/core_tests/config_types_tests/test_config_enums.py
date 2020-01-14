@@ -11,8 +11,8 @@ from dagster import (
     execute_pipeline,
     solid,
 )
-from dagster.core.types.config import Enum as ConfigEnum
-from dagster.core.types.config.evaluator.validate import validate_config
+from dagster.config import Enum as ConfigEnum
+from dagster.config.validate import validate_config
 
 
 def define_test_enum_type():

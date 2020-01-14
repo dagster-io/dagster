@@ -1,5 +1,5 @@
 from dagster import InputDefinition, Int, List, Optional, PipelineDefinition, lambda_solid
-from dagster.core.types.runtime.runtime_type import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
+from dagster.core.types.runtime_type import ALL_RUNTIME_BUILTINS, resolve_to_runtime_type
 
 
 def inner_type_key_set(runtime_type):

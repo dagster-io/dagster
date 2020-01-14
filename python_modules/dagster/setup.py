@@ -51,6 +51,13 @@ def _do_setup(name='dagster'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['dagster_tests']),
+        package_data={
+            name: [
+                'dagster/core/storage/event_log/sqlite/alembic/*',
+                'dagster/core/storage/runs/sqlite/alembic/*',
+            ]
+        },
+        include_package_data=True,
         install_requires=[
             # standard python 2/3 compatability things
             'enum-compat>=0.0.1',

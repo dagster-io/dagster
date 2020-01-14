@@ -2,12 +2,14 @@ import time
 import uuid
 from collections import Counter
 
+import yaml
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
 
 from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
+from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.loggers import colored_console_logger
 
@@ -448,3 +450,37 @@ def test_listen_notify_filter_run_event(conn_string):
 
     finally:
         del event_log_storage
+
+
+def test_load_from_config(hostname):
+    url_cfg = '''
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            postgres_url: postgresql://test:test@{hostname}:5432/test
+    '''.format(
+        hostname=hostname
+    )
+
+    explicit_cfg = '''
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+    '''.format(
+        hostname=hostname
+    )
+
+    # pylint: disable=protected-access
+    from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._event_storage
+    from_explicit = DagsterInstance.local_temp(
+        overrides=yaml.safe_load(explicit_cfg)
+    )._event_storage
+
+    assert from_url.postgres_url == from_explicit.postgres_url

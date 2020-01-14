@@ -918,6 +918,7 @@ def daily_schedule(
             pipeline_name=pipeline_name,
             partition_fn=date_partition_range(start_date),
             environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            mode=mode,
         )
 
         return partition_set.create_schedule_definition(
@@ -984,6 +985,7 @@ def hourly_schedule(
                 start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
             ),
             environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            mode=mode,
         )
 
         return partition_set.create_schedule_definition(

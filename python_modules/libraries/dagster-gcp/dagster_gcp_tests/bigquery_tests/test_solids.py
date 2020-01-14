@@ -28,8 +28,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.config.evaluator.validate import validate_config
 from dagster.seven import mock
 
 

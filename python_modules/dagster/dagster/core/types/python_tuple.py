@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.types.config.config_type import Array, ConfigAnyInstance
+from dagster.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
 from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
@@ -37,7 +37,6 @@ class _TypedPythonTuple(RuntimeType):
         super(_TypedPythonTuple, self).__init__(
             key='TypedPythonTuple' + '.'.join(map(lambda t: t.key, runtime_types)),
             name=None,
-            is_builtin=True,
             input_hydration_config=(
                 TypedTupleInputHydrationConfig(runtime_types) if all_have_input_configs else None
             ),
