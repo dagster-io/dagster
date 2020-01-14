@@ -268,7 +268,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             self.step_keys,
         )
 
-        return '-v \'{variables}\' -t \'{query}\''.format(
+        return 'dagster-graphql -v \'{variables}\' -t \'{query}\''.format(
             variables=seven.json.dumps(variables), query=RAW_EXECUTE_PLAN_MUTATION
         )
 

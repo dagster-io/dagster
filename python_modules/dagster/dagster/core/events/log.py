@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from dagster import check, seven
+from dagster import check
 from dagster.core.events import DagsterEvent
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.serdes import (
@@ -71,17 +71,6 @@ class LogMessageRecord(EventRecord):
     pass
 
 
-def construct_error_info(logger_message):
-    if 'error_info' not in logger_message.meta:
-        return None
-
-    raw_error_info = logger_message.meta['error_info']
-
-    message, stack = seven.json.loads(raw_error_info)
-
-    return SerializableErrorInfo(message, stack)
-
-
 def construct_event_record(logger_message):
     check.inst_param(logger_message, 'logger_message', StructuredLoggerMessage)
 
@@ -98,7 +87,7 @@ def construct_event_record(logger_message):
         step_key=logger_message.meta.get('step_key'),
         pipeline_name=logger_message.meta.get('pipeline_name'),
         dagster_event=logger_message.meta.get('dagster_event'),
-        error_info=construct_error_info(logger_message),
+        error_info=None,
     )
 
 

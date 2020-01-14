@@ -8,8 +8,8 @@ from dagster import (
     check,
 )
 from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
+from dagster.config import config_type
 from dagster.core.definitions import create_environment_type
-from dagster.core.types.config import config_type
 
 
 def fail_me():

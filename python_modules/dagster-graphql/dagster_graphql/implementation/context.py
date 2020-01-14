@@ -9,7 +9,7 @@ from .reloader import Reloader
 class DagsterGraphQLContext(object):
     def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        self.instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
@@ -23,6 +23,10 @@ class DagsterGraphQLContext(object):
         self._cached_pipelines = {}
 
         self.partitions_handle = self.get_handle().build_partitions_handle()
+
+    @property
+    def instance(self):
+        return self._instance
 
     def get_scheduler(self):
         return self.scheduler_handle.get_scheduler() if self.scheduler_handle else None

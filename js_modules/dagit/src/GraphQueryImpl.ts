@@ -87,7 +87,7 @@ export function filterByQuery<T extends GraphQueryItem>(
 
   const traverser = new GraphTraverser<T>(items);
   const results = new Set<T>();
-  const clauses = query.split(/(,| AND | and )/g);
+  const clauses = query.split(/(,| AND | and | )/g);
   const focus = new Set<T>();
 
   for (const clause of clauses) {

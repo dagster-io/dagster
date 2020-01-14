@@ -82,6 +82,7 @@ export class ConfigEditorConfigPicker extends React.Component<
             <>
               <Icon icon="chevron-right" style={{ padding: "0 10px" }} />
               <ConfigEditorPartitionPicker
+                pipelineName={this.props.pipelineName}
                 partitionSet={selectedConfigGenerator}
                 selectedPartition={this.state.selectedPartition}
                 onSelectPartition={this.onSelectPartition}
@@ -95,6 +96,7 @@ export class ConfigEditorConfigPicker extends React.Component<
 }
 
 interface ConfigEditorPartitionPickerProps {
+  pipelineName: string;
   partitionSet: PartitionSet;
   selectedPartition: Partition | null;
   onSelectPartition: (partition: Partition) => void;
@@ -104,6 +106,7 @@ interface ConfigEditorPartitionPickerProps {
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
   props => {
     const {
+      pipelineName,
       partitionSet,
       onCreateSession,
       onSelectPartition,
@@ -113,6 +116,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
     const onPartitionSelect = async (partition: Partition) => {
       onCreateSession({
         name: partition.name,
+        pipeline: pipelineName,
         environmentConfigYaml: partition.environmentConfigYaml || "",
         solidSubset: partition.solidSubset,
         mode: partition.mode
@@ -184,6 +188,7 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
       }
       onCreateSession({
         name: updatedPreset.name,
+        pipeline: pipelineName,
         environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
         solidSubset: updatedPreset.solidSubset,
         mode: updatedPreset.mode

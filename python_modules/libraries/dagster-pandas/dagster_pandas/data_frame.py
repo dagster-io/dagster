@@ -1,6 +1,10 @@
 import pandas as pd
-from dagster_pandas.constraints import ConstraintViolationException
-from dagster_pandas.validation import validate_collection_schema
+from dagster_pandas.constraints import (
+    ColumnExistsConstraint,
+    ColumnTypeConstraint,
+    ConstraintViolationException,
+)
+from dagster_pandas.validation import PandasColumn, validate_collection_schema
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -8,14 +12,16 @@ from dagster import (
     Field,
     Materialization,
     Path,
+    RuntimeType,
     String,
     TypeCheck,
     as_dagster_type,
     check,
-    dagster_type,
 )
-from dagster.core.types.config.field_utils import NamedSelector
-from dagster.core.types.runtime.config_schema import input_selector_schema, output_selector_schema
+from dagster.config.field_utils import Selector
+from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
+
+CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
 
 
 def dict_without_keys(ddict, *keys):
@@ -23,8 +29,7 @@ def dict_without_keys(ddict, *keys):
 
 
 @output_selector_schema(
-    NamedSelector(
-        'DataFrameOutputSchema',
+    Selector(
         {
             'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
             'parquet': {'path': Path},
@@ -51,8 +56,7 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
 
 
 @input_selector_schema(
-    NamedSelector(
-        'DataFrameInputSchema',
+    Selector(
         {
             'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
             'parquet': {'path': Path},
@@ -102,39 +106,101 @@ DataFrame = as_dagster_type(
 )
 
 
+def _construct_constraint_list(constraints):
+    def add_bullet(constraint_list, constraint_description):
+        return constraint_list + "+ {constraint_description}\n".format(
+            constraint_description=constraint_description
+        )
+
+    constraint_list = ""
+    for constraint in constraints:
+        if constraint.__class__ not in CONSTRAINT_BLACKLIST:
+            constraint_list = add_bullet(constraint_list, constraint.markdown_description)
+    return constraint_list
+
+
+def _build_column_header(column_name, constraints):
+    expected_column_types = None
+    column_type_constraint = [
+        constraint for constraint in constraints if isinstance(constraint, ColumnTypeConstraint)
+    ]
+    if column_type_constraint:
+        expected_types = tuple(column_type_constraint[0].expected_pandas_dtypes)
+        if expected_types:
+            expected_column_types = (
+                expected_types[0] if len(expected_types) == 1 else tuple(expected_types)
+            )
+
+    column_header = '**{column_name}**'.format(column_name=column_name)
+    if expected_column_types:
+        column_header += ": `{expected_dtypes}`".format(expected_dtypes=expected_column_types)
+    return column_header
+
+
+def create_dagster_pandas_dataframe_description(description, columns):
+    title = "\n".join([description, '### Columns', ''])
+    buildme = title
+    for column in columns:
+        buildme += "{}\n{}\n".format(
+            _build_column_header(column.name, column.constraints),
+            _construct_constraint_list(column.constraints),
+        )
+    return buildme
+
+
 def create_dagster_pandas_dataframe_type(
-    name=None, type_check=None, columns=None, summary_statistics=None
+    name=None, description=None, columns=None, event_metadata_fn=None, dataframe_constraints=None
 ):
-    summary_statistics = check.opt_callable_param(summary_statistics, 'summary_statistics')
+    event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
+    description = create_dagster_pandas_dataframe_description(
+        check.opt_str_param(description, 'description', default=''),
+        check.opt_list_param(columns, 'columns', of_type=PandasColumn),
+    )
 
     def _dagster_type_check(value):
-        event_metadata = []
+        if not isinstance(value, DataFrame):
+            return TypeCheck(
+                success=False,
+                description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(
+                    type_name=type(value).__name__
+                ),
+            )
+
         if columns is not None:
             try:
-                validate_collection_schema(columns, value)
+                validate_collection_schema(
+                    columns, value, dataframe_constraints=dataframe_constraints
+                )
             except ConstraintViolationException as e:
                 return TypeCheck(success=False, description=str(e))
 
-        if type_check:
-            type_check_object = check.inst_param(
-                type_check(value), 'user_type_check_object', TypeCheck
-            )
-            if not type_check_object.success:
-                return type_check_object
-            event_metadata += type_check_object.metadata_entries
+        return TypeCheck(
+            success=True,
+            metadata_entries=_execute_summary_stats(name, value, event_metadata_fn)
+            if event_metadata_fn
+            else None,
+        )
 
-        if summary_statistics:
-            metadata_entries = summary_statistics(value)
-            event_metadata += check.opt_list_param(
-                metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
-            )
-        return TypeCheck(success=True, metadata_entries=event_metadata)
-
-    @dagster_type(  # pylint: disable=W0223
-        name=name, type_check=_dagster_type_check,
+    # add input_hydration_confign and output_materialization_config
+    # https://github.com/dagster-io/dagster/issues/2027
+    return RuntimeType(
+        name=name, key=name, type_check_fn=_dagster_type_check, description=description
     )
-    class _DataFrameDagsterType(DataFrame):
-        pass
 
-    # Did this instead of as_dagster_type because multiple dataframe types can be created
-    return _DataFrameDagsterType
+
+def _execute_summary_stats(type_name, value, event_metadata_fn):
+    metadata_entries = event_metadata_fn(value)
+
+    if not (
+        isinstance(metadata_entries, list)
+        and all(isinstance(item, EventMetadataEntry) for item in metadata_entries)
+    ):
+        raise DagsterInvariantViolationError(
+            (
+                'The return value of the user-defined summary_statistics function '
+                'for pandas data frame type {type_name} returned {value}. '
+                'This function must return List[EventMetadataEntry]'
+            ).format(type_name=type_name, value=repr(metadata_entries))
+        )
+
+    return metadata_entries

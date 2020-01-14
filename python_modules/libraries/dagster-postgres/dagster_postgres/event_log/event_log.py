@@ -5,8 +5,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 
-from dagster import Field, String, check
-from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import (
     ConfigurableClass,
@@ -22,6 +21,7 @@ from dagster.core.storage.event_log import (
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 
 from ..pynotify import await_pg_notifications
+from ..utils import pg_config, pg_url_from_config
 
 CHANNEL_NAME = 'run_events'
 
@@ -58,11 +58,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('PostgresRunStorageConfig', {'postgres_url': Field(String)})
+        return pg_config()
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return PostgresEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return PostgresEventLogStorage(
+            inst_data=inst_data, postgres_url=pg_url_from_config(config_value)
+        )
 
     @staticmethod
     def create_clean_storage(conn_string):

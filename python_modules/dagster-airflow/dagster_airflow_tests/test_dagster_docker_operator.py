@@ -5,12 +5,14 @@ from airflow.exceptions import AirflowException
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
 from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
-from .conftest import IMAGE
+from .conftest import dagster_docker_image  # pylint: disable=unused-import
 
 
-def test_init_modified_docker_operator():
+def test_init_modified_docker_operator(
+    dagster_docker_image,
+):  # pylint: disable=redefined-outer-name
     DagsterDockerOperator(
-        image=IMAGE,
+        image=dagster_docker_image,
         api_version='auto',
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -18,13 +20,15 @@ def test_init_modified_docker_operator():
     )
 
 
-def test_modified_docker_operator_bad_docker_conn():
+def test_modified_docker_operator_bad_docker_conn(
+    dagster_docker_image,
+):  # pylint: disable=redefined-outer-name
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=dagster_docker_image,
         api_version='auto',
         task_id='nonce',
         docker_conn_id='foo_conn',
-        command='--help',
+        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -33,12 +37,12 @@ def test_modified_docker_operator_bad_docker_conn():
         operator.execute({})
 
 
-def test_modified_docker_operator_env():
+def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=redefined-outer-name
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=dagster_docker_image,
         api_version='auto',
         task_id='nonce',
-        command='--help',
+        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -46,12 +50,14 @@ def test_modified_docker_operator_env():
         operator.execute({})
 
 
-def test_modified_docker_operator_bad_command():
+def test_modified_docker_operator_bad_command(
+    dagster_docker_image,
+):  # pylint: disable=redefined-outer-name
     operator = DagsterDockerOperator(
-        image=IMAGE,
+        image=dagster_docker_image,
         api_version='auto',
         task_id='nonce',
-        command='gargle bargle',
+        command='dagster-graphql gargle bargle',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
     )
@@ -59,7 +65,7 @@ def test_modified_docker_operator_bad_command():
         operator.execute({})
 
 
-def test_modified_docker_operator_url():
+def test_modified_docker_operator_url(dagster_docker_image):  # pylint: disable=redefined-outer-name
     try:
         docker_host = os.getenv('DOCKER_HOST')
         docker_tls_verify = os.getenv('DOCKER_TLS_VERIFY')
@@ -70,13 +76,13 @@ def test_modified_docker_operator_url():
         os.environ['DOCKER_CERT_PATH'] = 'farfle'
 
         operator = DagsterDockerOperator(
-            image=IMAGE,
+            image=dagster_docker_image,
             api_version='auto',
             task_id='nonce',
             docker_url=docker_host or 'unix:///var/run/docker.sock',
             tls_hostname=docker_host if docker_tls_verify else False,
             tls_ca_cert=docker_cert_path,
-            command='--help',
+            command='dagster-graphql --help',
             environment_dict={'storage': {'filesystem': {}}},
             pipeline_name='',
         )

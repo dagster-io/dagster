@@ -1,13 +1,12 @@
 from collections import namedtuple
 
+from dagster.config import Field, Selector
+from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
+from dagster.config.field import check_opt_field_param
+from dagster.config.field_utils import Shape
+from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types import List
-from dagster.core.types.config import Field, Selector
-from dagster.core.types.config.config_type import ALL_CONFIG_BUILTINS, ConfigType
-from dagster.core.types.config.field import check_opt_field_param
-from dagster.core.types.config.field_utils import build_config_dict
-from dagster.core.types.config.iterate_types import iterate_config_types
-from dagster.core.types.runtime.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.runtime_type import construct_runtime_type_dictionary
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -15,21 +14,6 @@ from .logger import LoggerDefinition
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
-
-
-# Used elsewhere
-def SystemNamedDict(_name, fields, description=None):
-    '''A SystemNamedDict object is simply a NamedDict intended for internal (dagster) use.
-    '''
-    return build_config_dict(fields, description, is_system_config=True)
-
-
-def SystemDict(fields, description=None):
-    return build_config_dict(fields, description, is_system_config=True)
-
-
-def SystemSelector(fields, description=None):
-    return Selector(fields, description, is_system_config=True)
 
 
 def _is_selector_field_optional(config_type):
@@ -47,9 +31,9 @@ def define_resource_dictionary_cls(resource_defs):
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_field:
-            fields[resource_name] = Field(SystemDict({'config': resource_def.config_field}))
+            fields[resource_name] = Field(Shape({'config': resource_def.config_field}))
 
-    return SystemDict(fields=fields)
+    return Shape(fields=fields)
 
 
 def remove_none_entries(ddict):
@@ -61,7 +45,7 @@ def define_solid_config_cls(config_field, inputs_field, outputs_field):
     check_opt_field_param(inputs_field, 'inputs_field')
     check_opt_field_param(outputs_field, 'outputs_field')
 
-    return SystemDict(
+    return Shape(
         remove_none_entries(
             {'config': config_field, 'inputs': inputs_field, 'outputs': outputs_field}
         ),
@@ -96,17 +80,17 @@ def define_logger_dictionary_cls(creation_data):
 
     for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
-            SystemDict(remove_none_entries({'config': logger_definition.config_field}),),
+            Shape(remove_none_entries({'config': logger_definition.config_field}),),
             is_optional=True,
         )
 
-    return SystemDict(fields)
+    return Shape(fields)
 
 
 def define_environment_cls(creation_data):
     check.inst_param(creation_data, 'creation_data', EnvironmentClassCreationData)
 
-    return SystemDict(
+    return Shape(
         fields=remove_none_entries(
             {
                 'solids': Field(
@@ -136,12 +120,10 @@ def define_storage_config_cls(mode_definition):
 
     for storage_def in mode_definition.system_storage_defs:
         fields[storage_def.name] = Field(
-            SystemDict(
-                fields={'config': storage_def.config_field} if storage_def.config_field else {},
-            )
+            Shape(fields={'config': storage_def.config_field} if storage_def.config_field else {},)
         )
 
-    return SystemSelector(fields)
+    return Selector(fields)
 
 
 def define_executor_config_cls(mode_definition):
@@ -151,12 +133,12 @@ def define_executor_config_cls(mode_definition):
 
     for executor_def in mode_definition.executor_defs:
         fields[executor_def.name] = Field(
-            SystemDict(
+            Shape(
                 fields={'config': executor_def.config_field} if executor_def.config_field else {},
             )
         )
 
-    return SystemSelector(fields)
+    return Selector(fields)
 
 
 def get_inputs_field(solid, handle, dependency_structure):
@@ -183,7 +165,7 @@ def get_inputs_field(solid, handle, dependency_structure):
     if not inputs_field_fields:
         return None
 
-    return Field(SystemDict(inputs_field_fields))
+    return Field(Shape(inputs_field_fields))
 
 
 def get_outputs_field(solid, handle):
@@ -202,13 +184,13 @@ def get_outputs_field(solid, handle):
                 out.runtime_type.output_materialization_config.schema_type, is_optional=True
             )
 
-    output_entry_dict = SystemDict(output_dict_fields)
+    output_entry_dict = Shape(output_dict_fields)
 
-    return Field(List[output_entry_dict], is_optional=True)
+    return Field(Array(output_entry_dict), is_optional=True)
 
 
 def filtered_system_dict(fields):
-    return Field(SystemDict(remove_none_entries(fields)))
+    return Field(Shape(remove_none_entries(fields)))
 
 
 def construct_leaf_solid_config(solid, handle, dependency_structure, config_field):
@@ -272,7 +254,7 @@ def define_solid_dictionary_cls(solids, dependency_structure, parent_handle=None
                 dependency_structure,
             )
 
-    return SystemDict(fields)
+    return Shape(fields)
 
 
 def iterate_solid_def_types(solid_def):
@@ -317,14 +299,15 @@ def construct_config_type_dictionary(solid_defs, environment_type):
     check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.inst_param(environment_type, 'environment_type', ConfigType)
 
-    type_dict_by_name = {t.name: t for t in ALL_CONFIG_BUILTINS}
+    type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS}
+    # type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(solid_defs, environment_type)) + list(
         _gather_all_schemas(solid_defs)
     )
 
     for config_type in all_types:
-        name = config_type.name
+        name = config_type.given_name
         if name and name in type_dict_by_name:
             if type(config_type) is not type(type_dict_by_name[name]):
                 raise DagsterInvalidDefinitionError(
@@ -334,7 +317,7 @@ def construct_config_type_dictionary(solid_defs, environment_type):
                     ).format(name=name)
                 )
         elif name:
-            type_dict_by_name[config_type.name] = config_type
+            type_dict_by_name[name] = config_type
 
         type_dict_by_key[config_type.key] = config_type
 

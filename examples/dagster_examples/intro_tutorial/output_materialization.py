@@ -2,7 +2,6 @@ import csv
 import os
 
 from dagster import (
-    Dict,
     EventMetadataEntry,
     Field,
     Materialization,
@@ -30,14 +29,10 @@ def less_simple_data_frame_input_hydration_config(context, selector):
     Selector(
         {
             'csv': Field(
-                Dict(
-                    {
-                        'path': Field(String),
-                        'sep': Field(
-                            String, is_optional=True, default_value=','
-                        ),
-                    }
-                ),
+                {
+                    'path': String,
+                    'sep': Field(String, is_optional=True, default_value=','),
+                },
                 is_optional=True,
             )
         }

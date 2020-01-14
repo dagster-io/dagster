@@ -6,6 +6,8 @@ import { IconNames } from "@blueprintjs/icons";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
+import PythonErrorInfo from "../PythonErrorInfo";
+import InfoModal from "../InfoModal";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
@@ -13,7 +15,7 @@ interface IRunPreviewProps {
 }
 
 interface IErrorMessage {
-  message: string;
+  message: string | JSX.Element;
 }
 
 export class RunPreview extends React.Component<IRunPreviewProps> {
@@ -41,27 +43,46 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
         ... on InvalidSubsetError {
           message
         }
+        ...PythonErrorFragment
       }
       ${ExecutionPlan.fragments.ExecutionPlanFragment}
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
+  };
+
+  state = {
+    showErrorModal: false
   };
 
   render() {
     const { plan, validation } = this.props;
-
+    let pythonError = null;
     let errors: IErrorMessage[] = [];
-    if (
-      validation &&
-      validation.__typename === "PipelineConfigValidationInvalid"
-    ) {
+    if (validation?.__typename === "PipelineConfigValidationInvalid") {
       errors = validation.errors;
     }
 
-    if (plan && plan.__typename === "InvalidSubsetError") {
+    if (plan?.__typename === "InvalidSubsetError") {
       errors = [plan];
     }
 
-    return plan && plan.__typename === "ExecutionPlan" ? (
+    if (plan?.__typename === "PythonError") {
+      pythonError = plan;
+      const message = (
+        <>
+          PythonError{" "}
+          <span
+            style={{ cursor: "pointer", textDecoration: "underline" }}
+            onClick={() => this.setState({ showErrorModal: true })}
+          >
+            click for details
+          </span>
+        </>
+      );
+      errors = [{ message: message }];
+    }
+
+    return plan?.__typename === "ExecutionPlan" ? (
       <ExecutionPlan executionPlan={plan} />
     ) : (
       <NonIdealWrap>
@@ -86,6 +107,13 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
             </ErrorRow>
           ))}
         </ErrorsWrap>
+        {pythonError && this.state.showErrorModal && (
+          <InfoModal
+            onRequestClose={() => this.setState({ showErrorModal: false })}
+          >
+            <PythonErrorInfo error={pythonError} />
+          </InfoModal>
+        )}
       </NonIdealWrap>
     );
   }

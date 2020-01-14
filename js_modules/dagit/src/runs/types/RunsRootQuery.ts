@@ -27,7 +27,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline
 
 export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_UnknownPipeline | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline;
 
-export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats {
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
   stepsSucceeded: number;
   stepsFailed: number;
@@ -36,6 +36,21 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats {
   expectations: number;
   materializations: number;
 }
+
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError_cause | null;
+}
+
+export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats = RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot | RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError;
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags {
   __typename: "PipelineTag";

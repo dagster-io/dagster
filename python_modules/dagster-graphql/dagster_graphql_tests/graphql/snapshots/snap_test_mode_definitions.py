@@ -61,58 +61,43 @@ snapshots['test_query_multi_mode 1'] = {
                 'name': None
             },
             {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
+                'name': None
+            },
+            {
                 'name': 'Any'
-            },
-            {
-                'name': 'Any.InputHydrationConfig'
-            },
-            {
-                'name': 'Any.MaterializationSchema'
             },
             {
                 'name': 'Bool'
             },
             {
-                'name': 'Bool.InputHydrationConfig'
-            },
-            {
-                'name': 'Bool.MaterializationSchema'
-            },
-            {
                 'name': 'Float'
-            },
-            {
-                'name': 'Float.InputHydrationConfig'
-            },
-            {
-                'name': 'Float.MaterializationSchema'
             },
             {
                 'name': 'Int'
             },
             {
-                'name': 'Int.InputHydrationConfig'
-            },
-            {
-                'name': 'Int.MaterializationSchema'
-            },
-            {
-                'name': 'List[None]'
-            },
-            {
                 'name': 'Path'
             },
             {
-                'name': 'Path.MaterializationSchema'
-            },
-            {
                 'name': 'String'
-            },
-            {
-                'name': 'String.InputHydrationConfig'
-            },
-            {
-                'name': 'String.MaterializationSchema'
             }
         ],
         'rootEnvironmentType': {

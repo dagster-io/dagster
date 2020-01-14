@@ -8,9 +8,9 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check, seven
+from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger import logger
 from dagster.core.log_manager import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
-from dagster.core.types.config import Enum, EnumValue
 
 LogLevelEnum = Enum('log_level', list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 

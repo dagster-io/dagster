@@ -2,7 +2,13 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { Icon, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { IExecutionSessionChanges, IExecutionSession } from "../LocalStorage";
+import {
+  IStorageData,
+  applySelectSession,
+  applyChangesToSession,
+  applyCreateSession,
+  applyRemoveSession
+} from "../LocalStorage";
 
 interface ExecutationTabProps {
   title: string;
@@ -76,59 +82,54 @@ class ExecutionTab extends React.Component<
 }
 
 interface ExecutionTabsProps {
-  currentSession: IExecutionSession;
-  sessions: { [name: string]: IExecutionSession };
-  onCreateSession: (initial?: IExecutionSessionChanges) => void;
-  onSelectSession: (session: string) => void;
-  onRemoveSession: (session: string) => void;
-  onSaveSession: (session: string, changes: IExecutionSessionChanges) => void;
+  data: IStorageData;
+  onSave: (data: IStorageData) => void;
+}
+
+function sessionNamesAndKeysHash(data: IStorageData) {
+  return Object.values(data.sessions)
+    .map(s => s.name + s.key)
+    .join(",");
 }
 
 export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   shouldComponentUpdate(prevProps: ExecutionTabsProps) {
-    const prevSessions = Object.values(prevProps.sessions)
-      .map(s => s.name + s.key)
-      .join(",");
-    const nextSessions = Object.values(this.props.sessions)
-      .map(s => s.name + s.key)
-      .join(",");
     return (
-      prevSessions !== nextSessions ||
-      prevProps.currentSession.key !== this.props.currentSession.key
+      sessionNamesAndKeysHash(prevProps.data) !==
+        sessionNamesAndKeysHash(this.props.data) ||
+      prevProps.data.current !== this.props.data.current
     );
   }
 
   render() {
-    const {
-      sessions,
-      currentSession,
-      onSelectSession,
-      onSaveSession,
-      onRemoveSession,
-      onCreateSession
-    } = this.props;
+    const { data } = this.props;
+
+    const onApply = (mutator: any, ...args: any[]) => {
+      // note: this function /cannot/ use props bound to local vars above
+      // because this component implements shouldComponentUpdate and data
+      // used during render and captured here may be stale.
+      this.props.onSave(mutator(this.props.data, ...args));
+    };
 
     return (
       <ExecutionTabsContainer>
-        {Object.keys(sessions).map(key => (
+        {Object.keys(data.sessions).map(key => (
           <ExecutionTab
             key={key}
-            active={key === currentSession.key}
-            title={sessions[key].name}
-            onClick={() => onSelectSession(key)}
-            onChange={name => onSaveSession(key, { name })}
+            active={key === data.current}
+            title={data.sessions[key].name}
+            onClick={() => onApply(applySelectSession, key)}
+            onChange={name => onApply(applyChangesToSession, key, { name })}
             onRemove={
-              Object.keys(sessions).length > 1
-                ? () => onRemoveSession(key)
+              Object.keys(data.sessions).length > 1
+                ? () => onApply(applyRemoveSession, key)
                 : undefined
             }
           />
         ))}
         <ExecutionTab
           title={"Add..."}
-          onClick={() => {
-            onCreateSession();
-          }}
+          onClick={() => onApply(applyCreateSession, {})}
         />
       </ExecutionTabsContainer>
     );
@@ -144,16 +145,18 @@ export const ExecutionTabsContainer = styled.div`
   `;
 
 const TabContainer = styled.div<{ active: boolean }>`
-  color: ${({ active }) => (active ? Colors.WHITE : Colors.GRAY3)};
+  color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
   padding: 6px 9px;
   height: 36px;
   display: inline-flex;
   align-items: center;
-  border-left: 1px solid ${Colors.DARK_GRAY2};
+  border-left: 1px solid ${Colors.GRAY4};
   user-select: none;
-  background: ${({ active }) => (active ? "#263238" : Colors.BLACK)};
+  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
+  border-top: 2px solid ${({ active }) => (active ? "#2965CC" : "transparent")};
+
   &:hover {
-    background: ${({ active }) => (!active ? Colors.DARK_GRAY4 : "#263238")};
+    background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
   }
   input {
     line-height: 1.28581;

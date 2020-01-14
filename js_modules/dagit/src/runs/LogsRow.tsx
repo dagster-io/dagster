@@ -130,6 +130,7 @@ export class Structured extends React.Component<
         }
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
+      ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
 

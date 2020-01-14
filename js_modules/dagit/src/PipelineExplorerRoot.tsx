@@ -15,16 +15,14 @@ import {
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
-  match: match<{ pipelineName: string; 0: string }>;
+  match: match<{ 0: string }>;
   history: History<any>;
 }
 
 const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> = props => {
-  const urlPathParts = props.match.params["0"];
-  const solidPath = urlPathParts.startsWith("/")
-    ? urlPathParts.slice(1)
-    : urlPathParts; // from the React Router regex
-  const pathSolids = solidPath.split("/");
+  const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
+  const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
+
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 
@@ -35,7 +33,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
     variables: {
-      pipeline: props.match.params.pipelineName,
+      pipeline: pipelineName,
       parentHandleID: parentNames.join(".")
     }
   });
@@ -63,6 +61,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
               <PipelineExplorer
                 history={props.history}
                 path={pathSolids}
+                visibleSolidsQuery={query}
                 pipeline={pipelineOrError}
                 handles={displayedHandles}
                 parentHandle={parentSolidHandle ? parentSolidHandle : undefined}

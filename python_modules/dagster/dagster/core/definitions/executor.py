@@ -1,10 +1,10 @@
 from functools import update_wrapper
 
 from dagster import check
+from dagster.builtins import Int
+from dagster.config.field import Field
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
-from dagster.core.types.config.field import Field
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.types.wrapping import Int
 
 
 class ExecutorDefinition(object):
@@ -29,9 +29,7 @@ class ExecutorDefinition(object):
 
     def __init__(self, name, config=None, executor_creation_fn=None, required_resource_keys=None):
         self._name = check.str_param(name, 'name')
-        self._config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of an ExecutorDefinition named {name}'.format(name=self.name),
-        )
+        self._config_field = check_user_facing_opt_config_param(config, 'config')
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )

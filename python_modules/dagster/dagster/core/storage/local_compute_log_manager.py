@@ -6,10 +6,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.types import String
-from dagster.core.types.config import Field
 from dagster.utils import ensure_dir, touch_file
 
 from .compute_log_manager import (
@@ -39,11 +36,11 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('SqliteEventLogStorageConfig', {'base_dir': Field(String)})
+        return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return LocalComputeLogManager(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
     def _run_directory(self, run_id):
         return os.path.join(self._base_dir, run_id, 'compute_logs')

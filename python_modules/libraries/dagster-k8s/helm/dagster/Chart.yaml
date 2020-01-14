@@ -1,0 +1,11 @@
+apiVersion: v2
+name: dagster
+description: Dagster is a system for building modern data applications.
+type: application
+version: 0.1.0
+appVersion: 0.6.6
+dependencies:
+  - name: postgresql
+    version: 8.1.0
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    condition: postgresql.enabled

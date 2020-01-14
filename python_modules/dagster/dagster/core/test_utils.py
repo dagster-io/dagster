@@ -6,8 +6,8 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types.config.evaluator.errors import DagsterEvaluateConfigValueError
-from dagster.core.types.config.evaluator.validate import process_config
+from dagster.config.errors import DagsterEvaluateConfigValueError
+from dagster.config.validate import process_config
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):

@@ -1,6 +1,7 @@
-from dagster.core.types import Int, List, Optional
-from dagster.core.types.config.evaluator.validate import validate_config
-from dagster.core.types.config.field import resolve_to_config_type
+from dagster import Array, Int, Noneable
+from dagster.config.config_type import ConfigTypeKind
+from dagster.config.field import resolve_to_config_type
+from dagster.config.validate import validate_config
 
 
 def test_config_any():
@@ -8,9 +9,7 @@ def test_config_any():
     assert validate_config(any_inst, 1).success
     assert validate_config(any_inst, None).success
     assert validate_config(any_inst, 'r').success
-    assert not any_inst.is_list
-    assert not any_inst.is_nullable
-    assert any_inst.is_any
+    assert any_inst.kind == ConfigTypeKind.ANY
 
 
 def test_config_int():
@@ -18,13 +17,11 @@ def test_config_int():
     assert validate_config(int_inst, 1).success
     assert not validate_config(int_inst, None).success
     assert not validate_config(int_inst, 'r').success
-    assert not int_inst.is_list
-    assert not int_inst.is_nullable
-    assert not (int_inst.is_nullable or int_inst.is_list)
+    assert int_inst.kind == ConfigTypeKind.SCALAR
 
 
 def test_optional_int():
-    optional_int_inst = resolve_to_config_type(Optional[Int])
+    optional_int_inst = resolve_to_config_type(Noneable(int))
 
     assert validate_config(optional_int_inst, 1).success
     assert validate_config(optional_int_inst, None).success
@@ -32,7 +29,7 @@ def test_optional_int():
 
 
 def test_list_int():
-    list_int = resolve_to_config_type(List[Int])
+    list_int = resolve_to_config_type([Int])
 
     assert validate_config(list_int, [1]).success
     assert validate_config(list_int, [1, 2]).success
@@ -44,7 +41,7 @@ def test_list_int():
 
 
 def test_list_nullable_int():
-    lni = resolve_to_config_type(List[Optional[Int]])
+    lni = resolve_to_config_type(Array(Noneable(int)))
 
     assert validate_config(lni, [1]).success
     assert validate_config(lni, [1, 2]).success

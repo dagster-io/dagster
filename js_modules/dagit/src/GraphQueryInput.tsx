@@ -2,11 +2,13 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
 import { GraphQueryItem } from "./GraphQueryImpl";
+import gql from "graphql-tag";
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
+  autoFocus?: boolean;
 }
 
 interface ActiveSuggestionInfo {
@@ -48,11 +50,19 @@ const placeholderTextForItems = (items: GraphQueryItem[]) => {
   return placeholder;
 };
 
-export const GraphQueryInput: React.FunctionComponent<GraphQueryInputProps> = props => {
+export const GraphQueryInput = (props: GraphQueryInputProps) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [focused, setFocused] = React.useState<boolean>(false);
+  const [pendingValue, setPendingValue] = React.useState<string>(props.value);
 
-  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(props.value);
+  React.useEffect(() => {
+    // props.value is our source of truth, but we hold "un-committed" changes in
+    // pendingValue while the field is being edited. Ensure the pending value
+    // is synced whenever props.value changes.
+    setPendingValue(props.value);
+  }, [props.value]);
+
+  const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(pendingValue);
   let menu: JSX.Element | undefined = undefined;
 
   const [, prefix, lastElementName, suffix] = lastClause || [];
@@ -64,8 +74,10 @@ export const GraphQueryInput: React.FunctionComponent<GraphQueryInputProps> = pr
       : [];
 
   const onConfirmSuggestion = (suggestion: string) => {
-    const preceding = lastClause ? props.value.substr(0, lastClause.index) : "";
-    props.onChange(preceding + prefix + suggestion + suffix);
+    const preceding = lastClause
+      ? pendingValue.substr(0, lastClause.index)
+      : "";
+    setPendingValue(preceding + prefix + suggestion + suffix);
   };
 
   if (suggestions.length && focused) {
@@ -129,6 +141,20 @@ export const GraphQueryInput: React.FunctionComponent<GraphQueryInputProps> = pr
     }
   };
 
+  const onKeyUp = (e: React.KeyboardEvent<any>) => {
+    if (
+      e.key === "Enter" ||
+      e.key === "Return" ||
+      e.key === "Tab" ||
+      e.key === "+" ||
+      e.key === " " ||
+      (e.key === "*" && pendingValue.length > 1) ||
+      (e.key === "Backspace" && pendingValue.length)
+    ) {
+      props.onChange(pendingValue);
+    }
+  };
+
   return (
     <GraphQueryInputContainer>
       <Popover
@@ -139,19 +165,46 @@ export const GraphQueryInput: React.FunctionComponent<GraphQueryInputProps> = pr
       >
         <GraphQueryInputField
           type="text"
-          value={props.value}
-          placeholder={placeholderTextForItems(props.items)}
+          value={pendingValue}
           leftIcon={"send-to-graph"}
+          autoFocus={props.autoFocus}
+          placeholder={placeholderTextForItems(props.items)}
           onChange={(e: React.ChangeEvent<any>) =>
-            props.onChange(e.target.value)
+            setPendingValue(e.target.value)
           }
           onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            props.onChange(pendingValue);
+          }}
           onKeyDown={onKeyDown}
+          onKeyUp={onKeyUp}
         />
       </Popover>
     </GraphQueryInputContainer>
   );
+};
+
+GraphQueryInput.fragments = {
+  SolidQueryInputSolidFragment: gql`
+    fragment SolidQueryInputSolidFragment on Solid {
+      name
+      inputs {
+        dependsOn {
+          solid {
+            name
+          }
+        }
+      }
+      outputs {
+        dependedBy {
+          solid {
+            name
+          }
+        }
+      }
+    }
+  `
 };
 
 const GraphQueryInputContainer = styled.div`
@@ -165,6 +218,7 @@ const GraphQueryInputContainer = styled.div`
 const GraphQueryInputField = styled(InputGroup)`
   font-size: 14px;
   width: 30vw;
+  font-size: 14px;
 `;
 
 const StyledMenu = styled(Menu)`

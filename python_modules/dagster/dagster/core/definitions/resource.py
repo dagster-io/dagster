@@ -1,9 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.types import String
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class ResourceDefinition(object):
@@ -38,9 +37,7 @@ class ResourceDefinition(object):
 
     def __init__(self, resource_fn, config=None, description=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a ResourceDefinition or @resource'
-        )
+        self._config_field = check_user_facing_opt_config_param(config, 'config',)
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -67,7 +64,7 @@ class ResourceDefinition(object):
     def string_resource(description=None):
         return ResourceDefinition(
             resource_fn=lambda init_context: init_context.resource_config,
-            config=String,
+            config=str,
             description=description,
         )
 

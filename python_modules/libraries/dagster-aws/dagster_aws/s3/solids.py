@@ -1,5 +1,4 @@
 from dagster import (
-    Dict,
     EventMetadataEntry,
     Field,
     FileHandle,
@@ -12,7 +11,7 @@ from dagster import (
     input_hydration_config,
     solid,
 )
-from dagster.core.types.runtime.runtime_type import PythonObjectType
+from dagster.core.types.runtime_type import PythonObjectType
 
 from .file_manager import S3FileHandle
 
@@ -22,7 +21,7 @@ def dict_with_fields(name, fields):
     check.dict_param(fields, 'fields', key_type=str)
     field_names = set(fields.keys())
 
-    @input_hydration_config(Dict(fields))
+    @input_hydration_config(fields)
     def _input_schema(_context, value):
         check.dict_param(value, 'value')
         check.param_invariant(set(value.keys()) == field_names, 'value')
@@ -34,7 +33,7 @@ def dict_with_fields(name, fields):
                 python_type=dict, name=name, input_hydration_config=_input_schema
             )
 
-    return _DictWithSchema
+    return _DictWithSchema()
 
 
 S3Coordinate = dict_with_fields(

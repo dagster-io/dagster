@@ -9,7 +9,7 @@ import six
 
 from dagster import check
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.runtime.decorator import dagster_type
+from dagster.core.types.decorator import dagster_type
 from dagster.utils import mkdir_p
 
 from .temp_file_manager import TempfileManager

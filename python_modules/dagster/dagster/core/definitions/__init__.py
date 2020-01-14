@@ -49,18 +49,11 @@ from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
-from .partition import (
-    FirstPartitionSelector,
-    IPartitionSelector,
-    LastPartitionSelector,
-    Partition,
-    PartitionSetDefinition,
-    repository_partitions,
-)
+from .partition import Partition, PartitionSetDefinition, repository_partitions
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
-from .schedule import ScheduleDefinition
+from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
 from .system_storage import SystemStorageData, SystemStorageDefinition, system_storage

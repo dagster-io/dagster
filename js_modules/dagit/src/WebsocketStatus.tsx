@@ -58,28 +58,44 @@ export class WebsocketStatusProvider extends React.Component<
 
 const Circle = styled.div`
   align-self: center;
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   display: inline-block;
-  border-radius: 5px;
-  margin: 5px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 `;
 
-export default () => (
+export const WebsocketStatus: React.FunctionComponent = props => (
   <WebsocketStatusContext.Consumer>
     {status =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{ background: Colors.GREEN5 }} title="Connecting..." />
+          <Circle
+            style={{ background: Colors.GREEN5 }}
+            title="Connecting..."
+            {...props}
+          />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{ background: Colors.GREEN3 }} title="Connected" />
+          <Circle
+            style={{ background: Colors.GREEN3 }}
+            title="Connected"
+            {...props}
+          />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{ background: Colors.GRAY3 }} title="Closing..." />
+          <Circle
+            style={{ background: Colors.GRAY3 }}
+            title="Closing..."
+            {...props}
+          />
         )
       }[status] || (
-        <Circle style={{ background: Colors.GRAY3 }} title="Disconnected" />
+        <Circle
+          style={{ background: Colors.GRAY3 }}
+          title="Disconnected"
+          {...props}
+        />
       ))
     }
   </WebsocketStatusContext.Consumer>

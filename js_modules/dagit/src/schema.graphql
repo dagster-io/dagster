@@ -1,3 +1,13 @@
+type ArrayConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  name: String
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
+}
+
 type CancelPipelineExecutionFailure {
   run: PipelineRun!
   message: String!
@@ -15,11 +25,7 @@ type CompositeConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   fields: [ConfigTypeField!]!
 }
 
@@ -61,11 +67,7 @@ interface ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
 }
 
 type ConfigTypeField {
@@ -114,11 +116,7 @@ type EnumConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   values: [EnumConfigValue!]!
 }
 
@@ -364,6 +362,7 @@ type InputMapping {
 
 type Instance {
   info: String!
+  runLauncher: RunLauncher
 }
 
 type InvalidOutputError {
@@ -397,20 +396,6 @@ union LaunchPipelineExecutionResult = LaunchPipelineExecutionSuccess | RunLaunch
 
 type LaunchPipelineExecutionSuccess {
   run: PipelineRun!
-}
-
-type ListConfigType implements ConfigType & WrappingConfigType {
-  key: String!
-  name: String
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
-  isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
-  ofType: ConfigType!
 }
 
 type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
@@ -524,11 +509,7 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
   ofType: ConfigType!
 }
 
@@ -734,7 +715,7 @@ type PipelineRun {
   runId: String!
   status: PipelineRunStatus!
   pipeline: PipelineReference!
-  stats: PipelineRunStatsSnapshot!
+  stats: PipelineRunStatsOrError!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -772,13 +753,14 @@ type PipelineRuns {
 
 input PipelineRunsFilter {
   runId: String
-  pipeline: String
-  tagKey: String
-  tagValue: String
+  pipelineName: String
+  tags: [ExecutionTag!]
   status: PipelineRunStatus
 }
 
 union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+
+union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
 
 type PipelineRunStatsSnapshot {
   runId: String!
@@ -836,6 +818,7 @@ type PresetNotFoundError implements Error {
 type PythonError implements Error {
   message: String!
   stack: [String!]!
+  cause: PythonError
 }
 
 type Query {
@@ -867,11 +850,7 @@ type RegularConfigType implements ConfigType {
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
-  isNullable: Boolean!
-  isList: Boolean!
   isSelector: Boolean!
-  isBuiltin: Boolean!
-  isSystemGenerated: Boolean!
 }
 
 type RegularRuntimeType implements RuntimeType {
@@ -896,6 +875,10 @@ type Resource {
 
 type ResourceRequirement {
   resourceKey: String!
+}
+
+type RunLauncher {
+  name: String!
 }
 
 type RunLauncherNotDefinedError implements Error {

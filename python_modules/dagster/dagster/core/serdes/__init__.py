@@ -162,9 +162,10 @@ class ConfigurableClassData(
             )
         )
 
-    def rehydrate(self, **constructor_kwargs):
+    def rehydrate(self):
         from dagster.core.errors import DagsterInvalidConfigError
-        from dagster.core.types.config.evaluator.validate import validate_config
+        from dagster.config.field import resolve_to_config_type
+        from dagster.config.validate import process_config
 
         try:
             module = importlib.import_module(self.module_name)
@@ -197,14 +198,14 @@ class ConfigurableClassData(
             )
 
         config_dict = yaml.load(self.config_yaml)
-        result = validate_config(klass.config_type(), config_dict)
+        result = process_config(resolve_to_config_type(klass.config_type()), config_dict)
         if not result.success:
             raise DagsterInvalidConfigError(
                 'Errors whilst loading configuration for {}.'.format(klass.config_type()),
                 result.errors,
                 config_dict,
             )
-        return klass.from_config_value(self, result.value, **constructor_kwargs)
+        return klass.from_config_value(self, result.value)
 
 
 class ConfigurableClass(six.with_metaclass(ABCMeta)):
@@ -220,7 +221,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
             class: SplendidRunStorage
             config:
                 magic_word: "quux"
-    
+
     This same pattern should eventually be viable for other system components, e.g. engines.
 
     The ConfigurableClass mixin provides the necessary hooks for classes to be instantiated from
@@ -229,10 +230,7 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
     type such as:
 
-        SystemNamedDict(
-            name,
-            {'module': Field(String), 'class': Field(String), 'config': Field(PermissiveDict())},
-        )
+        {'module': str, 'class': str, 'config': Field(Permissive())},
     '''
 
     @abstractproperty
@@ -247,27 +245,25 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     def config_type(cls):
         '''dagster.ConfigType: The config type against which to validate a config yaml fragment
         serialized in an instance of ConfigurableClassData.
-        
-        This is usually an instance of dagster.core.definitions.environment_configs.SystemNamedDict.
         '''
 
     @staticmethod
     @abstractmethod
-    def from_config_value(inst_data, config_value, **kwargs):
+    def from_config_value(inst_data, config_value):
         '''New up an instance of the ConfigurableClass from a validated config value.
 
         Called by ConfigurableClassData.rehydrate.
-        
+
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
                 `value` attribute of a dagster.core.types.evaluator.evaluation.EvaluateValueResult.
 
 
-        A common pattern is for the implementation to splat the config_value with the kwargs, to
-        align with the signature of the ConfigurableClass's constructor and allow overrides:
+        A common pattern is for the implementation to align the config_value with the signature
+        of the ConfigurableClass's constructor:
 
             @staticmethod
-            def from_config_value(inst_data, config_value, **kwargs):
-                return MyConfigurableClass(inst_data=inst_data, **dict(config_value, **kwargs))
+            def from_config_value(inst_data, config_value):
+                return MyConfigurableClass(inst_data=inst_data, **config_value)
 
         '''

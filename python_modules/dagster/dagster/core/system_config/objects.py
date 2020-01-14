@@ -63,8 +63,8 @@ class EnvironmentConfig(
 
     @staticmethod
     def build(pipeline, environment_dict=None, run_config=None):
-        from dagster.core.types.config.evaluator.composite_descent import composite_descent
-        from dagster.core.types.config.evaluator.validate import process_config
+        from dagster.config.validate import process_config
+        from .composite_descent import composite_descent
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')

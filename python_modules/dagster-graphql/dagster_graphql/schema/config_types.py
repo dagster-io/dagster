@@ -1,22 +1,26 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.config.config_type import ConfigType
-from dagster.core.types.config.field import Field
+from dagster.config.config_type import ConfigType, ConfigTypeKind
+from dagster.config.field import Field
 
 
 def to_dauphin_config_type(config_type):
     check.inst_param(config_type, 'config_type', ConfigType)
 
-    if config_type.is_enum:
+    kind = config_type.kind
+
+    if kind == ConfigTypeKind.ENUM:
         return DauphinEnumConfigType(config_type)
-    elif config_type.has_fields:
+    elif ConfigTypeKind.has_fields(kind):
         return DauphinCompositeConfigType(config_type)
-    elif config_type.is_list:
-        return DauphinListConfigType(config_type)
-    elif config_type.is_nullable:
+    elif kind == ConfigTypeKind.ARRAY:
+        return DauphinArrayConfigType(config_type)
+    elif kind == ConfigTypeKind.NONEABLE:
         return DauphinNullableConfigType(config_type)
-    elif config_type.is_any or config_type.is_scalar:
+    elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
+        return DauphinRegularConfigType(config_type)
+    elif kind == ConfigTypeKind.SCALAR_UNION:
         return DauphinRegularConfigType(config_type)
     else:
         check.failed('Should never reach')
@@ -25,13 +29,9 @@ def to_dauphin_config_type(config_type):
 def _ctor_kwargs(config_type):
     return dict(
         key=config_type.key,
-        name=config_type.name,
+        name=config_type.given_name,
         description=config_type.description,
-        is_builtin=config_type.type_attributes.is_builtin,
-        is_list=config_type.is_list,
-        is_nullable=config_type.is_nullable,
-        is_selector=config_type.is_selector,
-        is_system_generated=config_type.type_attributes.is_system_config,
+        is_selector=config_type.kind == ConfigTypeKind.SELECTOR,
         type_param_keys=[tp.key for tp in config_type.type_params]
         if config_type.type_params
         else [],
@@ -73,26 +73,7 @@ This returns the keys for type parameters of any closed generic type,
 navigating the full schema client-side and not innerTypes.
     ''',
     )
-    is_nullable = dauphin.NonNull(dauphin.Boolean)
-    is_list = dauphin.NonNull(dauphin.Boolean)
     is_selector = dauphin.NonNull(dauphin.Boolean)
-
-    is_builtin = dauphin.NonNull(
-        dauphin.Boolean,
-        description='''
-True if the system defines it and it is the same type across pipelines.
-Examples include "Int" and "String."''',
-    )
-
-    is_system_generated = dauphin.NonNull(
-        dauphin.Boolean,
-        description='''
-Dagster generates types for base elements of the config system (e.g. the solids and
-context field of the base environment). These types are always present
-and are typically not relevant to an end user. This flag allows tool authors to
-filter out those types by default.
-''',
-    )
 
 
 def _resolve_recursive_config_types(config_type):
@@ -120,13 +101,13 @@ class DauphinWrappingConfigType(dauphin.Interface):
     of_type = dauphin.Field(dauphin.NonNull(DauphinConfigType))
 
 
-class DauphinListConfigType(dauphin.ObjectType):
+class DauphinArrayConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
         self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        super(DauphinListConfigType, self).__init__(**_ctor_kwargs(config_type))
+        super(DauphinArrayConfigType, self).__init__(**_ctor_kwargs(config_type))
 
     class Meta(object):
-        name = 'ListConfigType'
+        name = 'ArrayConfigType'
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
     def resolve_of_type(self, _graphene_info):
@@ -155,7 +136,7 @@ class DauphinNullableConfigType(dauphin.ObjectType):
 class DauphinEnumConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
         check.inst_param(config_type, 'config_type', ConfigType)
-        check.param_invariant(config_type.is_enum, 'config_type')
+        check.param_invariant(config_type.kind == ConfigTypeKind.ENUM, 'config_type')
         self._config_type = config_type
         super(DauphinEnumConfigType, self).__init__(**_ctor_kwargs(config_type))
 
@@ -186,7 +167,7 @@ class DauphinEnumConfigValue(dauphin.ObjectType):
 class DauphinCompositeConfigType(dauphin.ObjectType):
     def __init__(self, config_type):
         check.inst_param(config_type, 'config_type', ConfigType)
-        check.param_invariant(config_type.has_fields, 'config_type')
+        check.param_invariant(ConfigTypeKind.has_fields(config_type.kind), 'config_type')
         self._config_type = config_type
         super(DauphinCompositeConfigType, self).__init__(**_ctor_kwargs(config_type))
 

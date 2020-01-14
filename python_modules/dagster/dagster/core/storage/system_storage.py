@@ -1,6 +1,5 @@
+from dagster.config import Field
 from dagster.core.definitions.system_storage import SystemStorageData, system_storage
-from dagster.core.types import String
-from dagster.core.types.config import Field
 
 from .file_manager import LocalFileManager
 from .intermediate_store import build_fs_intermediate_store
@@ -36,7 +35,7 @@ def mem_system_storage(init_context):
 
 
 @system_storage(
-    name='filesystem', is_persistent=True, config={'base_dir': Field(String, is_optional=True)}
+    name='filesystem', is_persistent=True, config={'base_dir': Field(str, is_optional=True)}
 )
 def fs_system_storage(init_context):
     '''The default filesystem system storage.

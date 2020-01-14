@@ -2,12 +2,14 @@ import time
 import uuid
 from collections import Counter
 
+import yaml
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
 
 from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
+from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.loggers import colored_console_logger
 
@@ -263,6 +265,9 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
 
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
+    stats_one = event_log_storage.get_stats_for_run(result_one.run_id)
+    assert stats_one.steps_succeeded == 1
+
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id)
     assert len(out_events_two) == 7
 
@@ -279,6 +284,9 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     )
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}
+
+    stats_two = event_log_storage.get_stats_for_run(result_two.run_id)
+    assert stats_two.steps_succeeded == 1
 
 
 def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
@@ -442,3 +450,37 @@ def test_listen_notify_filter_run_event(conn_string):
 
     finally:
         del event_log_storage
+
+
+def test_load_from_config(hostname):
+    url_cfg = '''
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            postgres_url: postgresql://test:test@{hostname}:5432/test
+    '''.format(
+        hostname=hostname
+    )
+
+    explicit_cfg = '''
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+    '''.format(
+        hostname=hostname
+    )
+
+    # pylint: disable=protected-access
+    from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._event_storage
+    from_explicit = DagsterInstance.local_temp(
+        overrides=yaml.safe_load(explicit_cfg)
+    )._event_storage
+
+    assert from_url.postgres_url == from_explicit.postgres_url

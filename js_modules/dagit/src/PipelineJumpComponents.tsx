@@ -3,51 +3,22 @@ import * as ReactDOM from "react-dom";
 import { Select } from "@blueprintjs/select";
 import { Button, MenuItem } from "@blueprintjs/core";
 import gql from "graphql-tag";
-import { PipelineJumpBarFragment } from "./types/PipelineJumpBarFragment";
 import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
+import { PipelineNamesContext } from "./PipelineNamesContext";
+import { ShortcutHandler } from "./ShortcutHandler";
 
-interface IPipelineJumpBarProps {
-  pipelines: Array<PipelineJumpBarFragment>;
+interface PipelineJumpBarProps {
   selectedPipelineName: string | undefined;
-  selectedPipeline: PipelineJumpBarFragment | undefined;
-  onItemSelect: (pipeline: PipelineJumpBarFragment) => void;
+  onChange: (pipelineName: string) => void;
 }
 
-interface ISolidJumpBarProps {
+interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;
   selectedSolid: SolidJumpBarFragment_solids | undefined;
-  onItemSelect: (solid: SolidJumpBarFragment_solids) => void;
+  onChange: (solid: SolidJumpBarFragment_solids) => void;
 }
 
-class GlobalKeyHandler extends React.Component<{
-  onGlobalKeydown: (event: KeyboardEvent) => void;
-}> {
-  componentDidMount() {
-    window.addEventListener("keydown", this.onGlobalKeydown);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener("keydown", this.onGlobalKeydown);
-  }
-
-  onGlobalKeydown = (event: KeyboardEvent) => {
-    const { target } = event;
-
-    if (
-      (target && (target as HTMLElement).nodeName === "INPUT") ||
-      (target as HTMLElement).nodeName === "TEXTAREA"
-    ) {
-      return;
-    }
-    this.props.onGlobalKeydown(event);
-  };
-
-  render() {
-    return this.props.children;
-  }
-}
-
-export class SolidJumpBar extends React.Component<ISolidJumpBarProps> {
+export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
   static fragments = {
     SolidJumpBarFragment: gql`
       fragment SolidJumpBarFragment on Pipeline {
@@ -58,113 +29,95 @@ export class SolidJumpBar extends React.Component<ISolidJumpBarProps> {
     `
   };
 
-  select: React.RefObject<
-    Select<SolidJumpBarFragment_solids>
-  > = React.createRef();
-
-  onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.key === "s") {
-      activateSelect(this.select.current);
-    }
-  };
+  select: React.RefObject<Select<string>> = React.createRef();
 
   render() {
-    const { solids, selectedSolid, onItemSelect } = this.props;
+    const { solids, selectedSolid, onChange } = this.props;
 
     return (
-      <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
-        <SolidSelect
+      <ShortcutHandler
+        onShortcut={() => activateSelect(this.select.current)}
+        shortcutLabel={`⌥S`}
+        shortcutFilter={e => e.keyCode === 83 && e.altKey}
+      >
+        <StringSelect
           ref={this.select}
-          items={solids}
-          itemRenderer={BasicNameRenderer}
-          itemListPredicate={BasicNamePredicate}
+          items={solids.map(s => s.name)}
+          itemRenderer={BasicStringRenderer}
+          itemListPredicate={BasicStringPredicate}
           noResults={<MenuItem disabled={true} text="No results." />}
-          onItemSelect={onItemSelect}
+          onItemSelect={name => onChange(solids.find(s => s.name === name)!)}
         >
           <Button
             text={selectedSolid ? selectedSolid.name : "Select a Solid..."}
             rightIcon="double-caret-vertical"
           />
-        </SolidSelect>
-      </GlobalKeyHandler>
+        </StringSelect>
+      </ShortcutHandler>
     );
   }
 }
 
-export class PipelineJumpBar extends React.Component<IPipelineJumpBarProps> {
-  static fragments = {
-    PipelineJumpBarFragment: gql`
-      fragment PipelineJumpBarFragment on Pipeline {
-        name
-      }
-    `
-  };
+export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
+  select: React.RefObject<Select<string>> = React.createRef();
 
-  select: React.RefObject<Select<PipelineJumpBarFragment>> = React.createRef();
-
-  onGlobalKeydown = (event: KeyboardEvent) => {
-    if (event.key === "p") {
+  onGlobalKeyDown = (event: KeyboardEvent) => {
+    if (event.keyCode === 80 && event.altKey) {
+      // Opt-P
       activateSelect(this.select.current);
+      event.preventDefault();
     }
     if (this.select.current && this.select.current.state.isOpen) {
-      if (event.key === "Escape" && this.props.selectedPipeline) {
-        this.props.onItemSelect(this.props.selectedPipeline);
+      if (event.key === "Escape" && this.props.selectedPipelineName) {
+        this.props.onChange(this.props.selectedPipelineName);
       }
     }
   };
 
   render() {
-    const {
-      onItemSelect,
-      pipelines,
-      selectedPipeline,
-      selectedPipelineName
-    } = this.props;
+    const { onChange, selectedPipelineName } = this.props;
 
     return (
-      <GlobalKeyHandler onGlobalKeydown={this.onGlobalKeydown}>
-        <PipelineSelect
-          ref={this.select}
-          items={pipelines}
-          itemRenderer={BasicNameRenderer}
-          itemListPredicate={BasicNamePredicate}
-          noResults={<MenuItem disabled={true} text="No results." />}
-          onItemSelect={onItemSelect}
-        >
-          <Button
-            style={{ minWidth: 230, justifyContent: "space-between" }}
-            text={
-              selectedPipeline
-                ? selectedPipeline.name
-                : selectedPipelineName
-                ? selectedPipelineName
-                : "Select a pipeline..."
-            }
-            disabled={!selectedPipeline && !!selectedPipelineName}
-            rightIcon="double-caret-vertical"
-          />
-        </PipelineSelect>
-      </GlobalKeyHandler>
+      <ShortcutHandler
+        onGlobalKeyDown={this.onGlobalKeyDown}
+        shortcutLabel={`⌥P`}
+      >
+        <PipelineNamesContext.Consumer>
+          {pipelineNames => (
+            <StringSelect
+              ref={this.select}
+              items={pipelineNames}
+              itemRenderer={BasicStringRenderer}
+              itemListPredicate={BasicStringPredicate}
+              noResults={<MenuItem disabled={true} text="No results." />}
+              onItemSelect={onChange}
+            >
+              <Button
+                text={selectedPipelineName || "Select a pipeline..."}
+                disabled={pipelineNames.length === 0}
+                rightIcon="double-caret-vertical"
+                icon="send-to-graph"
+              />
+            </StringSelect>
+          )}
+        </PipelineNamesContext.Consumer>
+      </ShortcutHandler>
     );
   }
 }
 
-const PipelineSelect = Select.ofType<PipelineJumpBarFragment>();
+const StringSelect = Select.ofType<string>();
 
-const SolidSelect = Select.ofType<SolidJumpBarFragment_solids>();
+const BasicStringPredicate = (text: string, items: string[]) =>
+  items.filter(i => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
 
-const BasicNamePredicate = (text: string, items: any) =>
-  items
-    .filter((i: any) => i.name.toLowerCase().includes(text.toLowerCase()))
-    .slice(0, 20);
-
-const BasicNameRenderer = (
-  item: { name: string },
+const BasicStringRenderer = (
+  item: string,
   options: { handleClick: any; modifiers: any }
 ) => (
   <MenuItem
-    key={item.name}
-    text={item.name}
+    key={item}
+    text={item}
     active={options.modifiers.active}
     onClick={options.handleClick}
   />

@@ -131,7 +131,7 @@ def events_of_type(result, event_type):
 
 
 @contextmanager
-def execute_pipeline_on_celery(pipeline_name):
+def execute_pipeline_on_celery(pipeline_name,):
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
             ExecutionTargetHandle.for_pipeline_python_file(

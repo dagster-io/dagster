@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 from google.cloud import storage
 from six import with_metaclass
 
-from dagster import Field, List, String, resource, seven
+from dagster import resource, seven
 
 
 class AbstractFileTransporter(with_metaclass(ABCMeta)):
@@ -90,19 +90,19 @@ class CredentialsVault(object):
         return cls(credentials)
 
 
-@resource(config={'environment_variable_names': Field(List[str])})
+@resource(config={'environment_variable_names': [str]})
 def credentials_vault(context):
     return CredentialsVault.instantiate_vault_from_environment_variables(
         context.resource_config['environment_variable_names']
     )
 
 
-@resource(config={'bucket_path': Field(String)})
+@resource(config={'bucket_path': str})
 def local_transporter(context):
     return LocalFileTransporter(context.resource_config['bucket_path'])
 
 
-@resource(config={'bucket_name': Field(String)})
+@resource(config={'bucket_name': str})
 def production_transporter(context):
     return GoogleCloudStorageFileTransporter(context.resource_config['bucket_name'])
 
@@ -113,7 +113,7 @@ def temporary_directory_mount(_):
         yield tmpdir_path
 
 
-@resource(config={'mount_location': Field(String)})
+@resource(config={'mount_location': str})
 def mount(context):
     mount_location = context.resource_config['mount_location']
     if os.path.exists(mount_location):

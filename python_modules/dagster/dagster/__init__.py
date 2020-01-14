@@ -1,3 +1,6 @@
+from dagster.builtins import Any, Bool, Float, Int, Nothing, Path, String
+from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
@@ -8,11 +11,9 @@ from dagster.core.definitions import (
     ExecutorDefinition,
     ExpectationResult,
     Failure,
-    FirstPartitionSelector,
     InputDefinition,
     InputMapping,
     JsonMetadataEntryData,
-    LastPartitionSelector,
     LoggerDefinition,
     MarkdownMetadataEntryData,
     Materialization,
@@ -29,6 +30,7 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ResourceDefinition,
     ScheduleDefinition,
+    ScheduleExecutionContext,
     SolidDefinition,
     SolidInvocation,
     SystemStorageData,
@@ -60,6 +62,7 @@ from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -96,29 +99,13 @@ from dagster.core.storage.system_storage import (
     fs_system_storage,
     mem_system_storage,
 )
-from dagster.core.types.config import Enum, EnumValue, Field, PermissiveDict, Selector
-from dagster.core.types.runtime import (
-    SerializationStrategy,
-    as_dagster_type,
-    dagster_type,
-    define_python_dagster_type,
-    input_hydration_config,
-    output_materialization_config,
-)
-from dagster.core.types.wrapping import (
-    Any,
-    Bool,
-    Dict,
-    Float,
-    Int,
-    List,
-    Nothing,
-    Optional,
-    Path,
-    Set,
-    String,
-    Tuple,
-)
+from dagster.core.types.config_schema import input_hydration_config, output_materialization_config
+from dagster.core.types.decorator import as_dagster_type, dagster_type, define_python_dagster_type
+from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.types.python_dict import Dict
+from dagster.core.types.python_set import Set
+from dagster.core.types.python_tuple import Tuple
+from dagster.core.types.runtime_type import List, Optional, RuntimeType
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,
@@ -214,7 +201,6 @@ __all__ = [
     'Optional',
     'output_materialization_config',
     'Path',
-    'PermissiveDict',
     'String',
     'SerializationStrategy',
     'Nothing',
@@ -222,6 +208,13 @@ __all__ = [
     'as_dagster_type',
     'dagster_type',
     'define_python_dagster_type',
+    # config
+    'Array',
+    'Noneable',
+    'Permissive',
+    'ScalarUnion',
+    'Selector',
+    'Shape',
     # file things
     'FileHandle',
     'LocalFileHandle',

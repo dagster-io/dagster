@@ -1,6 +1,6 @@
 from dagster import check
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class LoggerDefinition(object):
@@ -27,9 +27,7 @@ class LoggerDefinition(object):
 
     def __init__(self, logger_fn, config=None, description=None):
         self._logger_fn = check.callable_param(logger_fn, 'logger_fn')
-        self._config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a LoggerDefinition or @logger'
-        )
+        self._config_field = check_user_facing_opt_config_param(config, 'config')
         self._description = check.opt_str_param(description, 'description')
 
     @property

@@ -2,7 +2,7 @@ import pytest
 
 from dagster import String
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.runtime.config_schema import input_hydration_config
+from dagster.core.types.config_schema import input_hydration_config
 
 
 def test_input_hydration_config_one():

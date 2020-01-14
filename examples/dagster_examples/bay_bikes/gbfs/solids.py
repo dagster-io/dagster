@@ -22,7 +22,7 @@ from .types import validated_json_type_from_schema_file
 @solid(
     config={
         'from_url': Field(String),
-        # Consider an additional requests kwargs config parameter here, perhaps a PermissiveDict
+        # Consider an additional requests kwargs config parameter here, perhaps a Permissive
     }
 )
 def get_json_from_url(context) -> dict:

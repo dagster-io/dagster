@@ -77,9 +77,9 @@ Dagster works with the tools and systems that you're already using with your dat
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349731-f36f8e00-7e18-11e9-8a2e-86e086caab66.png"></td>
-			<td style="border-left: 0px"> <b>DataDog</b></td>
+			<td style="border-left: 0px"> <b>Datadog</b></td>
 			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog" />dagster-datadog</a>
-			<br />Provides a Dagster resource for publishing metrics to DataDog.
+			<br />Provides a Dagster resource for publishing metrics to Datadog.
 			</td>
 		</tr>
         <!-- Commenting out until we rebuild dagster-ge on ExpectationResult et al

@@ -11,10 +11,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.types import String
-from dagster.core.types.config import Field
 from dagster.utils import mkdir_p
 
 from ...pipeline_run import PipelineRunStatus
@@ -60,11 +57,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('SqliteEventLogStorageConfig', {'base_dir': Field(String)})
+        return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return SqliteEventLogStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 
     def get_all_run_ids(self):
         all_filenames = glob.glob(os.path.join(self._base_dir, '*.db'))
@@ -80,6 +77,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def _initdb(self, engine, run_id):
         try:
             SqlEventLogStorageMetadata.create_all(engine)
+            engine.execute('PRAGMA journal_mode=WAL;')
         except (db.exc.DatabaseError, sqlite3.DatabaseError) as exc:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
 

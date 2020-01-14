@@ -46,8 +46,8 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_requiredResource
   resourceKey: string;
 }
 
-export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -55,7 +55,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   typeParamKeys: string[];
 }
 
-export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
   __typename: "ConfigTypeField";
   name: string;
   description: string | null;
@@ -63,26 +63,26 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   configTypeKey: string;
 }
 
-export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  fields: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+  fields: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType;
+export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
 
-export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  recursiveConfigTypes: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes[];
+  recursiveConfigTypes: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes[];
 }
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_fields {
@@ -93,8 +93,8 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   configTypeKey: string;
 }
 
-export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -120,7 +120,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   fields: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
@@ -133,7 +133,7 @@ export interface SidebarSolidDefinitionFragment_SolidDefinition_configField_conf
   recursiveConfigTypes: SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType;
+export type SidebarSolidDefinitionFragment_SolidDefinition_configField_configType = SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType | SidebarSolidDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType;
 
 export interface SidebarSolidDefinitionFragment_SolidDefinition_configField {
   __typename: "ConfigTypeField";

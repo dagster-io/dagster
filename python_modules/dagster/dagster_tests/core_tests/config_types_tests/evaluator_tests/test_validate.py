@@ -1,12 +1,8 @@
-from dagster import List, Optional
-from dagster.core.types.config import Dict, Field, PermissiveDict, Selector
-from dagster.core.types.config.evaluator.errors import DagsterEvaluationErrorReason
-from dagster.core.types.config.evaluator.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackPathEntry,
-)
-from dagster.core.types.config.evaluator.validate import validate_config
-from dagster.core.types.config.field import resolve_to_config_type
+from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
+from dagster.config.errors import DagsterEvaluationErrorReason
+from dagster.config.field import resolve_to_config_type
+from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.validate import validate_config
 
 
 def _validate(dagster_type, config_value):
@@ -27,21 +23,21 @@ def test_parse_scalar_failure():
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert not error.stack.entries
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '2343'
 
 
-SingleLevelDict = Dict({'level_one': Field(str)})
+SingleLevelShape = Shape({'level_one': Field(str)})
 
 
 def test_single_dict():
     success_value = {'level_one': 'ksjdfd'}
-    assert _validate(SingleLevelDict, success_value).success
+    assert _validate(SingleLevelShape, success_value).success
 
 
 def test_single_level_scalar_mismatch():
     value = {'level_one': 234}
-    result = _validate(SingleLevelDict, value)
+    result = _validate(SingleLevelShape, value)
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -49,11 +45,11 @@ def test_single_level_scalar_mismatch():
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
     assert len(error.stack.entries) == 1
     assert error.stack.entries[0].field_name == 'level_one'
-    assert error.stack.entries[0].field_def.config_type.name == 'String'
+    assert error.stack.entries[0].field_def.config_type.given_name == 'String'
 
 
 def test_root_missing_field():
-    result = _validate(SingleLevelDict, {})
+    result = _validate(SingleLevelShape, {})
     assert not result.success
     assert result.value is None
     assert len(result.errors) == 1
@@ -63,10 +59,10 @@ def test_root_missing_field():
     assert error.error_data.field_name == 'level_one'
 
 
-DoubleLevelDict = Dict(
+DoubleLevelShape = Shape(
     {
         'level_one': Field(
-            Dict(
+            Shape(
                 {
                     'string_field': Field(str),
                     'int_field': Field(int, is_optional=True, default_value=989),
@@ -81,8 +77,8 @@ DoubleLevelDict = Dict(
 def test_nested_success():
     value = {'level_one': {'string_field': 'skdsjfkdj', 'int_field': 123, 'bool_field': True}}
 
-    assert _validate(DoubleLevelDict, value).success
-    assert not _validate(DoubleLevelDict, None).success
+    assert _validate(DoubleLevelShape, value).success
+    assert not _validate(DoubleLevelShape, None).success
 
 
 def test_nested_error_one_field_not_defined():
@@ -95,7 +91,7 @@ def test_nested_error_one_field_not_defined():
         }
     }
 
-    result = _validate(DoubleLevelDict, value)
+    result = _validate(DoubleLevelShape, value)
 
     assert not result.success
     assert len(result.errors) == 1
@@ -105,7 +101,7 @@ def test_nested_error_one_field_not_defined():
     assert len(error.stack.entries) == 1
     stack_entry = error.stack.entries[0]
     assert stack_entry.field_name == 'level_one'
-    assert 'Dict' in stack_entry.field_def.config_type.key
+    assert 'Shape' in stack_entry.field_def.config_type.key
 
 
 def test_nested_error_two_fields_not_defined():
@@ -119,7 +115,7 @@ def test_nested_error_two_fields_not_defined():
         }
     }
 
-    result = _validate(DoubleLevelDict, value)
+    result = _validate(DoubleLevelShape, value)
 
     assert not result.success
     assert len(result.errors) == 1
@@ -134,7 +130,7 @@ def test_nested_error_two_fields_not_defined():
 def test_nested_error_missing_fields():
     value = {'level_one': {'string_field': 'skdsjfkdj'}}
 
-    result = _validate(DoubleLevelDict, value)
+    result = _validate(DoubleLevelShape, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -145,7 +141,7 @@ def test_nested_error_missing_fields():
 def test_nested_error_multiple_missing_fields():
     value = {'level_one': {}}
 
-    result = _validate(DoubleLevelDict, value)
+    result = _validate(DoubleLevelShape, value)
     assert not result.success
     assert len(result.errors) == 1
 
@@ -157,7 +153,7 @@ def test_nested_error_multiple_missing_fields():
 def test_nested_missing_and_not_defined():
     value = {'level_one': {'not_defined': 'kjdfkdj'}}
 
-    result = _validate(DoubleLevelDict, value)
+    result = _validate(DoubleLevelShape, value)
     assert not result.success
     assert len(result.errors) == 2
 
@@ -183,7 +179,7 @@ def get_field_name_error(result, field_name):
     assert False
 
 
-MultiLevelDictType = Dict(
+MultiLevelShapeType = Shape(
     {
         'level_one_string_field': str,
         'level_two_dict': {
@@ -203,7 +199,7 @@ def test_multilevel_success():
         },
     }
 
-    assert _validate(MultiLevelDictType, working_value).success
+    assert _validate(MultiLevelShapeType, working_value).success
 
 
 def test_deep_scalar():
@@ -215,12 +211,12 @@ def test_deep_scalar():
         },
     }
 
-    result = _validate(MultiLevelDictType, value)
+    result = _validate(MultiLevelShapeType, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
-    assert error.error_data.config_type.name == 'String'
+    assert error.error_data.config_type.given_name == 'String'
     assert error.error_data.value_rep == '123'
     assert len(error.stack.entries) == 3
 
@@ -249,7 +245,7 @@ def test_deep_mixed_level_errors():
         },
     }
 
-    result = _validate(MultiLevelDictType, value)
+    result = _validate(MultiLevelShapeType, value)
     assert not result.success
     assert len(result.errors) == 3
 
@@ -315,7 +311,7 @@ def test_example_selector_multiple_fields():
 
 
 def test_selector_within_dict_no_subfields():
-    result = _validate(Dict({'selector': Field(ExampleSelector)}), {'selector': {}})
+    result = _validate(Shape({'selector': Field(ExampleSelector)}), {'selector': {}})
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].message == (
@@ -325,46 +321,42 @@ def test_selector_within_dict_no_subfields():
 
 
 def test_evaluate_list_string():
-    string_list = List[str]
-    result = _validate(string_list, ["foo"])
+    result = _validate([str], ["foo"])
     assert result.success
     assert result.value == ["foo"]
 
 
 def test_evaluate_list_error_item_mismatch():
-    string_list = List[str]
-    result = _validate(string_list, [1])
+    result = _validate([str], [1])
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_list_error_top_level_mismatch():
-    string_list = List[str]
-    result = _validate(string_list, 1)
+    result = _validate([str], 1)
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
 def test_evaluate_double_list():
-    string_double_list = List[List[str]]
-    result = _validate(string_double_list, [['foo']])
+    result = _validate([[str]], [['foo']])
     assert result.success
     assert result.value == [['foo']]
 
 
 def test_config_list_in_dict():
-    nested_list = Dict({'nested_list': Field(List[int])})
+    nested_list_type = {'nested_list': [int]}
 
     value = {'nested_list': [1, 2, 3]}
-    result = _validate(nested_list, value)
+    result = _validate(nested_list_type, value)
     assert result.success
     assert result.value == value
 
 
 def test_config_list_in_dict_error():
-    nested_list = Dict({'nested_list': Field(List[int])})
+    nested_list = {'nested_list': [int]}
 
     value = {'nested_list': [1, 'bar', 3]}
     result = _validate(nested_list, value)
@@ -382,7 +374,7 @@ def test_config_list_in_dict_error():
 
 
 def test_config_double_list():
-    nested_lists = Dict({'nested_list_one': Field(List[int]), 'nested_list_two': Field(List[str])})
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     value = {'nested_list_one': [1, 2, 3], 'nested_list_two': ['foo', 'bar']}
 
@@ -397,9 +389,7 @@ def test_config_double_list():
 
 
 def test_config_double_list_double_error():
-    nested_lists = Dict(
-        fields={'nested_list_one': Field(List[int]), 'nested_list_two': Field(List[str])}
-    )
+    nested_lists = {'nested_list_one': [int], 'nested_list_two': [str]}
 
     error_value = {'nested_list_one': 'kjdfkdj', 'nested_list_two': ['bar', 2]}
     error_result = _validate(nested_lists, error_value)
@@ -412,34 +402,34 @@ def test_nullable_int():
     assert _validate(int, 0).success
     assert _validate(int, 1).success
 
-    assert _validate(Optional[int], None).success
-    assert _validate(Optional[int], 0).success
-    assert _validate(Optional[int], 1).success
+    assert _validate(Noneable(int), None).success
+    assert _validate(Noneable(int), 0).success
+    assert _validate(Noneable(int), 1).success
 
 
 def test_nullable_list():
-    list_of_ints = List[int]
+    list_of_ints = [int]
 
     assert not _validate(list_of_ints, None).success
     assert _validate(list_of_ints, []).success
     assert not _validate(list_of_ints, [None]).success
     assert _validate(list_of_ints, [1]).success
 
-    nullable_list_of_ints = Optional[List[int]]
+    nullable_list_of_ints = Noneable([int])
 
     assert _validate(nullable_list_of_ints, None).success
     assert _validate(nullable_list_of_ints, []).success
     assert not _validate(nullable_list_of_ints, [None]).success
     assert _validate(nullable_list_of_ints, [1]).success
 
-    list_of_nullable_ints = List[Optional[int]]
+    list_of_nullable_ints = [Noneable(int)]
 
     assert not _validate(list_of_nullable_ints, None).success
     assert _validate(list_of_nullable_ints, []).success
     assert _validate(list_of_nullable_ints, [None]).success
     assert _validate(list_of_nullable_ints, [1]).success
 
-    nullable_list_of_nullable_ints = Optional[List[Optional[int]]]
+    nullable_list_of_nullable_ints = Noneable([Noneable(int)])
 
     assert _validate(nullable_list_of_nullable_ints, None).success
     assert _validate(nullable_list_of_nullable_ints, []).success
@@ -448,28 +438,28 @@ def test_nullable_list():
 
 
 def test_nullable_dict():
-    dict_with_int = Dict({'int_field': int})
+    dict_with_int = Shape({'int_field': int})
 
     assert not _validate(dict_with_int, None).success
     assert not _validate(dict_with_int, {}).success
     assert not _validate(dict_with_int, {'int_field': None}).success
     assert _validate(dict_with_int, {'int_field': 1}).success
 
-    nullable_dict_with_int = Optional[Dict({'int_field': int})]
+    nullable_dict_with_int = Noneable(Shape({'int_field': int}))
 
     assert _validate(nullable_dict_with_int, None).success
     assert not _validate(nullable_dict_with_int, {}).success
     assert not _validate(nullable_dict_with_int, {'int_field': None}).success
     assert _validate(nullable_dict_with_int, {'int_field': 1}).success
 
-    dict_with_nullable_int = Dict({'int_field': Field(Optional[int])})
+    dict_with_nullable_int = Shape({'int_field': Field(Noneable(int))})
 
     assert not _validate(dict_with_nullable_int, None).success
     assert not _validate(dict_with_nullable_int, {}).success
     assert _validate(dict_with_nullable_int, {'int_field': None}).success
     assert _validate(dict_with_nullable_int, {'int_field': 1}).success
 
-    nullable_dict_with_nullable_int = Optional[Dict({'int_field': Field(Optional[int])})]
+    nullable_dict_with_nullable_int = Noneable(Shape({'int_field': Field(Noneable(int))}))
 
     assert _validate(nullable_dict_with_nullable_int, None).success
     assert not _validate(nullable_dict_with_nullable_int, {}).success
@@ -478,16 +468,86 @@ def test_nullable_dict():
 
 
 def test_bare_permissive_dict():
-    assert _validate(PermissiveDict(), {}).success
-    assert _validate(PermissiveDict(), {'some_key': 1}).success
-    assert not _validate(PermissiveDict(), None).success
-    assert not _validate(PermissiveDict(), 1).success
+    assert _validate(Permissive(), {}).success
+    assert _validate(Permissive(), {'some_key': 1}).success
+    assert not _validate(Permissive(), None).success
+    assert not _validate(Permissive(), 1).success
 
 
 def test_permissive_dict_with_fields():
-    perm_dict_with_field = PermissiveDict({'a_key': Field(str)})
+    perm_dict_with_field = Permissive({'a_key': Field(str)})
 
     assert _validate(perm_dict_with_field, {'a_key': 'djfkdjkfd'}).success
     assert _validate(perm_dict_with_field, {'a_key': 'djfkdjkfd', 'extra_key': 'kdjkfd'}).success
     assert not _validate(perm_dict_with_field, {'a_key': 2}).success
     assert not _validate(perm_dict_with_field, {}).success
+
+
+def test_scalar_or_dict():
+
+    int_or_dict = ScalarUnion(
+        scalar_type=resolve_to_config_type(int), non_scalar_type=Shape({'a_string': str})
+    )
+
+    assert validate_config(int_or_dict, 2).success
+    assert not validate_config(int_or_dict, '2').success
+    assert not validate_config(int_or_dict, False).success
+
+    assert validate_config(int_or_dict, {'a_string': 'kjdfk'}).success
+    assert not validate_config(int_or_dict, {}).success
+    assert not validate_config(int_or_dict, {'wrong_key': 'kjdfd'}).success
+    assert not validate_config(int_or_dict, {'a_string': 2}).success
+    assert not validate_config(int_or_dict, {'a_string': 'kjdfk', 'extra_field': 'kd'}).success
+
+
+def test_scalar_or_selector():
+    int_or_selector = ScalarUnion(
+        scalar_type=resolve_to_config_type(int),
+        non_scalar_type=Selector({'a_string': str, 'an_int': int}),
+    )
+
+    assert validate_config(int_or_selector, 2).success
+    assert not validate_config(int_or_selector, '2').success
+    assert not validate_config(int_or_selector, False).success
+
+    assert validate_config(int_or_selector, {'a_string': 'kjdfk'}).success
+    assert validate_config(int_or_selector, {'an_int': 2}).success
+    assert not validate_config(int_or_selector, {}).success
+    assert not validate_config(int_or_selector, {'a_string': 'kjdfk', 'an_int': 2}).success
+    assert not validate_config(int_or_selector, {'wrong_key': 'kjdfd'}).success
+    assert not validate_config(int_or_selector, {'a_string': 2}).success
+    assert not validate_config(int_or_selector, {'a_string': 'kjdfk', 'extra_field': 'kd'}).success
+
+
+def test_scalar_or_list():
+    int_or_list = ScalarUnion(
+        scalar_type=resolve_to_config_type(int), non_scalar_type=resolve_to_config_type([str])
+    )
+
+    assert validate_config(int_or_list, 2).success
+    assert not validate_config(int_or_list, '2').success
+    assert not validate_config(int_or_list, False).success
+
+    assert validate_config(int_or_list, []).success
+    assert validate_config(int_or_list, ['ab']).success
+    assert not validate_config(int_or_list, [2]).success
+    assert not validate_config(int_or_list, {}).success
+
+
+def test_list_of_scalar_or_dict():
+    int_or_dict_list = resolve_to_config_type(
+        [
+            ScalarUnion(
+                scalar_type=resolve_to_config_type(int), non_scalar_type=Shape({'a_string': str})
+            )
+        ]
+    )
+
+    assert validate_config(int_or_dict_list, []).success
+    assert validate_config(int_or_dict_list, [2]).success
+    assert validate_config(int_or_dict_list, [{'a_string': 'kjdfd'}]).success
+    assert validate_config(int_or_dict_list, [2, {'a_string': 'kjdfd'}]).success
+
+    assert not validate_config(int_or_dict_list, [2, {'wrong_key': 'kjdfd'}]).success
+    assert not validate_config(int_or_dict_list, [2, {'a_string': 2343}]).success
+    assert not validate_config(int_or_dict_list, ['kjdfkd', {'a_string': 'kjdfd'}]).success

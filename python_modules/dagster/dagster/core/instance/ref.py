@@ -36,7 +36,7 @@ class InstanceRef(
     namedtuple(
         '_InstanceRef',
         'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data '
-        'run_launcher_data',
+        'run_launcher_data dagit_settings',
     )
 ):
     def __new__(
@@ -46,6 +46,7 @@ class InstanceRef(
         event_storage_data,
         compute_logs_data,
         run_launcher_data,
+        dagit_settings,
     ):
         return super(self, InstanceRef).__new__(
             self,
@@ -64,6 +65,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, 'run_launcher_data', ConfigurableClassData
             ),
+            dagit_settings=check.opt_dict_param(dagit_settings, 'dagit_settings'),
         )
 
     @staticmethod
@@ -123,16 +125,19 @@ class InstanceRef(
             event_storage_data=event_storage_data,
             compute_logs_data=compute_logs_data,
             run_launcher_data=run_launcher_data,
+            dagit_settings=config_value.get('dagit'),
         )
 
     @staticmethod
     def from_dict(instance_ref_dict):
-        return InstanceRef(
-            **{
-                k: (ConfigurableClassData(*v) if v is not None else None)
-                for k, v in instance_ref_dict.items()
-            }
-        )
+        def value_for_ref_item(k, v):
+            if v is None:
+                return None
+            if k == 'dagit_settings':
+                return v
+            return ConfigurableClassData(*v)
+
+        return InstanceRef(**{k: value_for_ref_item(k, v) for k, v in instance_ref_dict.items()})
 
     @property
     def local_artifact_storage(self):

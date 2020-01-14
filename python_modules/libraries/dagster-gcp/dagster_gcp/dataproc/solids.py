@@ -1,4 +1,4 @@
-from dagster import Bool, Dict, Field, solid
+from dagster import Bool, Field, solid
 from dagster.seven import json
 
 from .configs import define_dataproc_submit_job_config
@@ -6,19 +6,15 @@ from .configs import define_dataproc_submit_job_config
 
 @solid(
     required_resource_keys={'dataproc'},
-    config=Field(
-        Dict(
-            fields={
-                'job_config': define_dataproc_submit_job_config(),
-                'job_scoped_cluster': Field(
-                    Bool,
-                    description='whether to create a cluster or use an existing cluster',
-                    is_optional=True,
-                    default_value=True,
-                ),
-            }
-        )
-    ),
+    config={
+        'job_config': define_dataproc_submit_job_config(),
+        'job_scoped_cluster': Field(
+            Bool,
+            description='whether to create a cluster or use an existing cluster',
+            is_optional=True,
+            default_value=True,
+        ),
+    },
 )
 def dataproc_solid(context):
     job_config = context.solid_config['job_config']

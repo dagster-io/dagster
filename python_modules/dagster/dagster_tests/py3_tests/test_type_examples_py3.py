@@ -1,6 +1,5 @@
 import os
 import pickle
-import re
 import time
 
 import pytest
@@ -18,7 +17,7 @@ from dagster import (
     Nothing,
     Optional,
     Path,
-    PermissiveDict,
+    Permissive,
     Selector,
     Set,
     String,
@@ -252,21 +251,21 @@ def test_set_solid_configable_input():
 
 
 def test_set_solid_configable_input_bad():
-    with pytest.raises(
-        DagsterInvalidConfigError,
-        match=re.escape(
-            'Type failure at path "root:solids:set_solid:inputs:set_input" on type '
-            '"List[String.InputHydrationConfig]". Value at path '
-            'root:solids:set_solid:inputs:set_input must be list. '
-            'Expected: [{ json: { path: Path } pickle: { path: Path } value: String }].'
-        ),
-    ):
+    with pytest.raises(DagsterInvalidConfigError,) as exc_info:
         execute_solid(
             set_solid,
             environment_dict={
                 'solids': {'set_solid': {'inputs': {'set_input': {'foo', 'bar', 'baz'}}}}
             },
         )
+
+    expected = (
+        'Error 1: Type failure at path "root:solids:set_solid:inputs:set_input". '
+        'Value at path root:solids:set_solid:inputs:set_input must be list. '
+        'Expected: [(String | { json: { path: Path } pickle: { path: Path } value: String })].'
+    )
+
+    assert expected in str(exc_info.value)
 
 
 def test_tuple_solid():
@@ -332,12 +331,12 @@ def unpickle(context) -> Any:
         return pickle.load(fd)
 
 
-@solid(config=Field(List))
+@solid(config=Field(list))
 def concat_typeless_list_config(context) -> String:
     return ''.join(context.solid_config)
 
 
-@solid(config=Field(List[String]))
+@solid(config=Field([str]))
 def concat_config(context) -> String:
     return ''.join(context.solid_config)
 
@@ -378,7 +377,7 @@ def hello_world_default(context) -> str:
         return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
 
 
-@solid(config=Field(PermissiveDict({'required': Field(String)})))
+@solid(config=Field(Permissive({'required': Field(String)})))
 def partially_specified_config(context) -> List:
     return sorted(list(context.solid_config.items()))
 

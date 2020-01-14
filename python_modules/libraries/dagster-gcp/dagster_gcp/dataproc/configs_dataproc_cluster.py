@@ -8,21 +8,21 @@ parse_dataproc_configs.py \
 '''
 
 
-from dagster import Bool, Dict, Field, Int, List, PermissiveDict, String
+from dagster import Bool, Field, Int, Permissive, Shape, String
 
 from .types_dataproc_cluster import Component
 
 
 def define_dataproc_cluster_config():
     return Field(
-        Dict(
+        Shape(
             fields={
                 'masterConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'accelerators': Field(
-                                List[
-                                    Dict(
+                                [
+                                    Shape(
                                         fields={
                                             'acceleratorCount': Field(
                                                 Int,
@@ -58,7 +58,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'diskConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'numLocalSsds': Field(
                                             Int,
@@ -92,7 +92,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
-                                Dict(fields={}),
+                                Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
                                 is_optional=True,
@@ -129,11 +129,11 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'secondaryWorkerConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'accelerators': Field(
-                                List[
-                                    Dict(
+                                [
+                                    Shape(
                                         fields={
                                             'acceleratorCount': Field(
                                                 Int,
@@ -169,7 +169,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'diskConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'numLocalSsds': Field(
                                             Int,
@@ -203,7 +203,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
-                                Dict(fields={}),
+                                Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
                                 is_optional=True,
@@ -240,7 +240,7 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'encryptionConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'gcePdKmsKeyName': Field(
                                 String,
@@ -254,10 +254,10 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'securityConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'kerberosConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'truststorePasswordUri': Field(
                                             String,
@@ -371,8 +371,8 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'initializationActions': Field(
-                    List[
-                        Dict(
+                    [
+                        Shape(
                             fields={
                                 'executionTimeout': Field(
                                     String,
@@ -412,11 +412,11 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'workerConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'accelerators': Field(
-                                List[
-                                    Dict(
+                                [
+                                    Shape(
                                         fields={
                                             'acceleratorCount': Field(
                                                 Int,
@@ -452,7 +452,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'diskConfig': Field(
-                                Dict(
+                                Shape(
                                     fields={
                                         'numLocalSsds': Field(
                                             Int,
@@ -486,7 +486,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'managedGroupConfig': Field(
-                                Dict(fields={}),
+                                Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
                                 is_optional=True,
@@ -523,7 +523,7 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'gceClusterConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'networkUri': Field(
                                 String,
@@ -550,7 +550,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'metadata': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''The Compute Engine metadata entries to add to all
                                 instances (see Project and instance metadata
                                 (https://cloud.google.com/compute/docs/storing-retrieving-metadata#project_and_instance_metadata)).''',
@@ -568,7 +568,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'serviceAccountScopes': Field(
-                                List[String],
+                                [String],
                                 description='''Optional. The URIs of service account scopes to be
                                 included in Compute Engine instances. The following base set of
                                 scopes is always included:
@@ -583,7 +583,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'tags': Field(
-                                List[String],
+                                [String],
                                 description='''The Compute Engine tags to add to all instances (see
                                 Tagging instances).''',
                                 is_optional=True,
@@ -615,10 +615,10 @@ def define_dataproc_cluster_config():
                     is_optional=True,
                 ),
                 'softwareConfig': Field(
-                    Dict(
+                    Shape(
                         fields={
                             'properties': Field(
-                                PermissiveDict(),
+                                Permissive(),
                                 description='''Optional. The properties to set on daemon config
                                 files.Property keys are specified in prefix:property format, for
                                 example core:hadoop.tmp.dir. The following are supported prefixes
@@ -630,7 +630,7 @@ def define_dataproc_cluster_config():
                                 is_optional=True,
                             ),
                             'optionalComponents': Field(
-                                List[Component],
+                                [Component],
                                 description='''The set of optional components to activate on the
                                 cluster.''',
                                 is_optional=True,

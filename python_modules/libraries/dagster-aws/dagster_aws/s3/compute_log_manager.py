@@ -1,7 +1,6 @@
 import os
 
-from dagster import Field, String, check, seven
-from dagster.core.definitions.environment_configs import SystemNamedDict
+from dagster import Field, check, seven
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -35,18 +34,15 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict(
-            'S3ComputeLogManagerConfig',
-            {
-                'bucket': Field(String),
-                'local_dir': Field(String, is_optional=True),
-                'prefix': Field(String, is_optional=True, default_value='dagster'),
-            },
-        )
+        return {
+            'bucket': str,
+            'local_dir': Field(str, is_optional=True),
+            'prefix': Field(str, is_optional=True, default_value='dagster'),
+        }
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return S3ComputeLogManager(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return S3ComputeLogManager(inst_data=inst_data, **config_value)
 
     def get_local_path(self, run_id, step_key, io_type):
         return self.local_manager.get_local_path(run_id, step_key, io_type)

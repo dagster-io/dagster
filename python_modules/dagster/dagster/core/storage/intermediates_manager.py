@@ -5,7 +5,7 @@ import six
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.types.runtime.runtime_type import RuntimeType
+from dagster.core.types.runtime_type import RuntimeType
 
 from .intermediate_store import IntermediateStore
 

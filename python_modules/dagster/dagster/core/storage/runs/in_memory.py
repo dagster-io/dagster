@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus
@@ -38,27 +39,38 @@ class InMemoryRunStorage(RunStorage):
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
             self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
 
-    def all_runs(self, cursor=None, limit=None):
-        return self._slice(list(self._runs.values())[::-1], cursor, limit)
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+        check.opt_str_param(cursor, 'cursor')
+        check.opt_int_param(limit, 'limit')
 
-    def get_runs_with_pipeline_name(self, pipeline_name, cursor=None, limit=None):
-        check.str_param(pipeline_name, 'pipeline_name')
-        return self._slice(
-            [r for r in self.all_runs() if r.pipeline_name == pipeline_name], cursor, limit
-        )
+        if not filters:
+            return self._slice(list(self._runs.values())[::-1], cursor, limit)
 
-    def get_run_count_with_matching_tags(self, tags):
-        check.list_param(tags, 'tags', tuple)
-        return len(self.get_runs_with_matching_tags(tags))
+        def run_filter(run):
+            if filters.run_id and filters.run_id != run.run_id:
+                return False
 
-    def get_runs_with_matching_tags(self, tags, cursor=None, limit=None):
-        check.list_param(tags, 'tags', tuple)
+            if filters.status and filters.status != run.status:
+                return False
 
-        return self._slice(
-            [r for r in self.all_runs() if all(r.tags.get(key) == value for key, value in tags)],
-            cursor,
-            limit,
-        )
+            if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
+                return False
+
+            if filters.tags and not all(
+                run.tags.get(key) == value for key, value in filters.tags.items()
+            ):
+                return False
+
+            return True
+
+        matching_runs = list(filter(run_filter, reversed(self._runs.values())))
+        return self._slice(matching_runs, cursor=cursor, limit=limit)
+
+    def get_runs_count(self, filters=None):
+        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+
+        return len(self.get_runs(filters))
 
     def _slice(self, runs, cursor, limit):
         if cursor:
@@ -83,13 +95,6 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_tags(self):
         return sorted([(k, v) for k, v in self._run_tags.items()], key=lambda x: x[0])
-
-    def get_runs_with_status(self, run_status, cursor=None, limit=None):
-        check.inst_param(run_status, 'run_status', PipelineRunStatus)
-        matching_runs = list(
-            filter(lambda run: run.status == run_status, reversed(self._runs.values()))
-        )
-        return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')

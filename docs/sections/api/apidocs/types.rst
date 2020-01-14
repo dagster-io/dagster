@@ -276,7 +276,7 @@ Built-in types
         def concat_list_py2(_, xs) -> String:
             return ''.join(xs)
 
-        @solid(config=Field(List[String]))
+        @solid(config=[str])
         def concat_config(context) -> String:
             return ''.join(context.solid_config)
 
@@ -311,7 +311,7 @@ Built-in types
 
     For config values, you should pass an argument that is itself a dict from string keys to
     :py:func:`Field <Field>` values, which will define the schema of the config dict. For config
-    values where you do not intend to enforce a schema on the dict, use :py:class:`PermissiveDict`.
+    values where you do not intend to enforce a schema on the dict, use :py:class:`Permissive`.
     (If the top level ``config_field`` of a solid is a dict, as is usually the case, you may also
     use the ``config`` param on :py:func:`@solid <solid>` and omit the top-level ``Dict`` type.)
 
@@ -428,7 +428,7 @@ builtin types above.
 
 .. autofunction:: Selector
 
-.. autofunction:: PermissiveDict
+.. autofunction:: Permissive
 
 .. autofunction:: Enum
 

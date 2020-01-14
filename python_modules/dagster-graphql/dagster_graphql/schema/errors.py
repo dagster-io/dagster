@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.config.evaluator.errors import (
+from dagster.config.errors import (
     EvaluationError,
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
@@ -12,10 +12,7 @@ from dagster.core.types.config.evaluator.errors import (
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
 )
-from dagster.core.types.config.evaluator.stack import (
-    EvaluationStackListItemEntry,
-    EvaluationStackPathEntry,
-)
+from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import to_dauphin_config_type
@@ -35,12 +32,14 @@ class DauphinPythonError(dauphin.ObjectType):
         interfaces = (DauphinError,)
 
     stack = dauphin.non_null_list(dauphin.String)
+    cause = dauphin.Field('PythonError')
 
     def __init__(self, error_info):
         super(DauphinPythonError, self).__init__()
         check.inst_param(error_info, 'error_info', SerializableErrorInfo)
         self.message = error_info.message
         self.stack = error_info.stack
+        self.cause = error_info.cause
 
 
 class DauphinSchedulerNotDefinedError(dauphin.ObjectType):

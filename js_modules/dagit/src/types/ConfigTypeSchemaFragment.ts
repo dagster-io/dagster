@@ -7,8 +7,8 @@
 // GraphQL fragment: ConfigTypeSchemaFragment
 // ====================================================
 
-export interface ConfigTypeSchemaFragment_EnumConfigType {
-  __typename: "EnumConfigType" | "ListConfigType" | "NullableConfigType" | "RegularConfigType";
+export interface ConfigTypeSchemaFragment_ArrayConfigType {
+  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
   key: string;
   name: string | null;
   description: string | null;
@@ -34,4 +34,4 @@ export interface ConfigTypeSchemaFragment_CompositeConfigType {
   fields: ConfigTypeSchemaFragment_CompositeConfigType_fields[];
 }
 
-export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_EnumConfigType | ConfigTypeSchemaFragment_CompositeConfigType;
+export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_CompositeConfigType;

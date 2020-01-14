@@ -4,10 +4,7 @@ from contextlib import contextmanager
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.core.types import String
-from dagster.core.types.config import Field
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
@@ -28,11 +25,11 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('SqliteRunStorageConfig', {'base_dir': Field(String)})
+        return {'base_dir': str}
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return SqliteRunStorage.from_local(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
     @staticmethod
     def from_local(base_dir, inst_data=None):
@@ -41,6 +38,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         path_components = os.path.abspath(base_dir).split(os.sep)
         conn_string = 'sqlite:///{}'.format('/'.join(path_components + ['runs.db']))
         engine = create_engine(conn_string, poolclass=NullPool)
+        engine.execute('PRAGMA journal_mode=WAL;')
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
         conn = engine.connect()
@@ -69,7 +67,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             path_to_old_db = path_to_old_db.lstrip('/')
         if os.path.exists(path_to_old_db):
             old_storage = SqliteRunStorage(old_conn_string)
-            old_runs = old_storage.all_runs()
+            old_runs = old_storage.get_runs()
             for run in old_runs:
                 self.add_run(run)
             os.unlink(path_to_old_db)

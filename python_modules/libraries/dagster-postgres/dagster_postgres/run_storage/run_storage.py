@@ -3,12 +3,11 @@ from contextlib import contextmanager
 import sqlalchemy as db
 
 from dagster import check
-from dagster.core.definitions.environment_configs import SystemNamedDict
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
-from dagster.core.types import String
-from dagster.core.types.config import Field
+
+from ..utils import pg_config, pg_url_from_config
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
@@ -34,11 +33,13 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return SystemNamedDict('PostgresRunStorageConfig', {'postgres_url': Field(String)})
+        return pg_config()
 
     @staticmethod
-    def from_config_value(inst_data, config_value, **kwargs):
-        return PostgresRunStorage(inst_data=inst_data, **dict(config_value, **kwargs))
+    def from_config_value(inst_data, config_value):
+        return PostgresRunStorage(
+            inst_data=inst_data, postgres_url=pg_url_from_config(config_value)
+        )
 
     @staticmethod
     def create_clean_storage(postgres_url):

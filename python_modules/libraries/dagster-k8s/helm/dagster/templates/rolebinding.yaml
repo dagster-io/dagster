@@ -1,0 +1,18 @@
+{{- if .Values.rbacEnabled }}
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "dagster.fullname" . }}-job-runner
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" .  }}
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.serviceAccount.name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ template "dagster.fullname" . }}-job-runner
+{{- end -}}

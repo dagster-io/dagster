@@ -2,6 +2,9 @@ import time
 
 import psycopg2
 
+from dagster.config import Field, Selector
+from dagster.seven import quote_plus as urlquote
+
 
 def get_conn(conn_string):
     conn = psycopg2.connect(conn_string)
@@ -9,9 +12,35 @@ def get_conn(conn_string):
     return conn
 
 
+def pg_config():
+    return Selector(
+        {
+            'postgres_url': str,
+            'postgres_db': {
+                'username': str,
+                'password': str,
+                'hostname': str,
+                'db_name': str,
+                'port': Field(int, is_optional=True, default_value=5432),
+            },
+        }
+    )
+
+
+def pg_url_from_config(config_value):
+    if config_value.get('postgres_url'):
+        return config_value['postgres_url']
+
+    return get_conn_string(**config_value['postgres_db'])
+
+
 def get_conn_string(username, password, hostname, db_name, port='5432'):
     return 'postgresql://{username}:{password}@{hostname}:{port}/{db_name}'.format(
-        username=username, password=password, hostname=hostname, db_name=db_name, port=port
+        username=username,
+        password=urlquote(password),
+        hostname=hostname,
+        db_name=db_name,
+        port=port,
     )
 
 

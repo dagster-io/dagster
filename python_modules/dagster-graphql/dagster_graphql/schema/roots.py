@@ -44,6 +44,7 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGr
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 
@@ -164,14 +165,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
         filters = kwargs['filter'].to_selector()
-        provided = [
-            i for i in [filters.run_id, filters.pipeline, filters.tag_key, filters.status] if i
-        ]
-
-        if len(provided) > 1:
-            return graphene_info.schema.type_named('InvalidPipelineRunsFilterError')(
-                message="You may only provide one of the filter options."
-            )
 
         return graphene_info.schema.type_named('PipelineRuns')(
             results=get_runs(graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit'))
@@ -593,10 +586,9 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
         Currently, you may only pass one of the filter options.'''
 
     # Currently you may choose one of the following
-    runId = dauphin.Field(dauphin.String)
-    pipeline = dauphin.Field(dauphin.String)
-    tagKey = dauphin.Field(dauphin.String)
-    tagValue = dauphin.Field(dauphin.String)
+    run_id = dauphin.Field(dauphin.String)
+    pipeline_name = dauphin.Field(dauphin.String)
+    tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
     status = dauphin.Field(DauphinPipelineRunStatus)
 
     def to_selector(self):
@@ -604,12 +596,15 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
             status = PipelineRunStatus[self.status]
         else:
             status = None
+
+        if self.tags:
+            # We are wrapping self.tags in a list because dauphin.List is not marked as iterable
+            tags = {tag['key']: tag['value'] for tag in list(self.tags)}
+        else:
+            tags = None
+
         return PipelineRunsFilter(
-            run_id=self.runId,
-            pipeline=self.pipeline,
-            tag_key=self.tagKey,
-            tag_value=self.tagValue,
-            status=status,
+            run_id=self.run_id, pipeline_name=self.pipeline_name, tags=tags, status=status,
         )
 
 
@@ -716,14 +711,35 @@ class DauphinEnvironmentSchemaOrError(dauphin.Union):
         )
 
 
+class DauhphinRunLauncher(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RunLauncher'
+
+    name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_launcher):
+        self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
+
+    def resolve_name(self, _graphene_info):
+        return self._run_launcher.__class__.__name__
+
+
 class DauhphinInstance(dauphin.ObjectType):
     class Meta(object):
         name = 'Instance'
 
     info = dauphin.NonNull(dauphin.String)
+    runLauncher = dauphin.Field('RunLauncher')
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
 
     def resolve_info(self, _graphene_info):
         return self._instance.info_str()
+
+    def resolve_runLauncher(self, _graphene_info):
+        return (
+            DauhphinRunLauncher(self._instance.run_launcher)
+            if self._instance.run_launcher
+            else None
+        )

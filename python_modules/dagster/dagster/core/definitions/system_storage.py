@@ -1,9 +1,9 @@
 from functools import update_wrapper
 
 from dagster import check
+from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
-from dagster.core.types.config.field_utils import check_user_facing_opt_config_param
 
 
 class SystemStorageDefinition(object):
@@ -54,9 +54,7 @@ class SystemStorageDefinition(object):
     ):
         self.name = check.str_param(name, 'name')
         self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config_field = check_user_facing_opt_config_param(
-            config, 'config', 'of a SystemStorageDefinition named {name}'.format(name=self.name),
-        )
+        self.config_field = check_user_facing_opt_config_param(config, 'config',)
         self.system_storage_creation_fn = check.opt_callable_param(
             system_storage_creation_fn, 'system_storage_creation_fn'
         )

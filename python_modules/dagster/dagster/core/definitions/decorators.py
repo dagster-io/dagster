@@ -850,7 +850,7 @@ def schedule(
     tags_fn=None,
     solid_subset=None,
     mode="default",
-    should_execute=lambda: True,
+    should_execute=None,
     environment_vars=None,
 ):
     def inner(fn):
@@ -883,7 +883,7 @@ def daily_schedule(
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
-    should_execute=lambda: True,
+    should_execute=None,
     environment_vars=None,
 ):
 
@@ -897,7 +897,7 @@ def daily_schedule(
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.callable_param(should_execute, 'should_execute')
+    check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
 
     cron_schedule = '{minute} {hour} * * *'.format(
@@ -918,6 +918,7 @@ def daily_schedule(
             pipeline_name=pipeline_name,
             partition_fn=date_partition_range(start_date),
             environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            mode=mode,
         )
 
         return partition_set.create_schedule_definition(
@@ -939,7 +940,7 @@ def hourly_schedule(
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
-    should_execute=lambda: True,
+    should_execute=None,
     environment_vars=None,
 ):
 
@@ -953,7 +954,7 @@ def hourly_schedule(
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.callable_param(should_execute, 'should_execute')
+    check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
 
     if execution_time.hour != 0:
@@ -984,6 +985,7 @@ def hourly_schedule(
                 start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
             ),
             environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            mode=mode,
         )
 
         return partition_set.create_schedule_definition(

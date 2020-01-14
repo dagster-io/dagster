@@ -41,9 +41,10 @@ except ImportError:
     import thread
 
 try:
-    from urllib.parse import urljoin, urlparse, urlunparse
+    from urllib.parse import urljoin, urlparse, urlunparse, quote_plus
 except ImportError:
     from urlparse import urljoin, urlparse, urlunparse
+    from urllib import quote_plus
 
 IS_WINDOWS = os.name == 'nt'
 
@@ -121,8 +122,10 @@ def get_args(callble):
     else:
         try:
             if inspect.isclass(callble):
-                return inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
-            return inspect.getargspec(callble)  # pylint: disable=deprecated-method
+                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+            else:
+                arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
+            return arg_spec.args
         except TypeError:
             # This will happen when we try to get the argspec for a slot wrapper, e.g.:
             # TypeError: <slot wrapper '__init__' of 'object' objects> is not a Python function

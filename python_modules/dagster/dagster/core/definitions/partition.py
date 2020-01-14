@@ -1,11 +1,10 @@
-from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
-import six
-
 from dagster import check
-from dagster.core.definitions.schedule import ScheduleDefinition
+from dagster.core.definitions.pipeline import PipelineRunsFilter
+from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
@@ -30,44 +29,52 @@ class Partition(namedtuple('_Partition', ('value name'))):
         )
 
 
-class IPartitionSelector(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    '''
-    Interface for a strategy of selecting a partition for a given pipeline
-    '''
+def last_partition(context, partition_set_def):
+    check.inst_param(context, 'context', ScheduleExecutionContext)
+    partition_set_def = check.inst_param(
+        partition_set_def, 'partition_set_def', PartitionSetDefinition
+    )
 
-    @abstractmethod
-    def select_partition(self, partition_set_def):
-        pass
+    partitions = partition_set_def.get_partitions()
+    if not partitions:
+        return None
+    return partitions[-1]
 
 
-class SortedPartitionSelector(IPartitionSelector):
-    def __init__(self, sort_key_fn=None, reverse=False):
-        self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', default=by_name)
-        self._reverse = check.bool_param(reverse, 'reverse')
-
-    def select_partition(self, partition_set_def):
-
-        partition_set_def = check.inst_param(
-            partition_set_def, 'partition_set_def', PartitionSetDefinition
+def last_empty_partition(context, partition_set_def):
+    check.inst_param(context, 'context', ScheduleExecutionContext)
+    partition_set_def = check.inst_param(
+        partition_set_def, 'partition_set_def', PartitionSetDefinition
+    )
+    partitions = partition_set_def.get_partitions()
+    if not partitions:
+        return None
+    selected = None
+    for partition in reversed(partitions):
+        filters = PipelineRunsFilter(
+            tags={
+                "dagster/partition": partition.name,
+                'dagster/partition_set': partition_set_def.name,
+            }
         )
-
-        partitions = partition_set_def.get_partitions()
-        if not partitions:
-            raise DagsterInvalidDefinitionError(
-                'Tried to select partition from an empty partition set.'
-            )
-        sorted_partitions = sorted(partitions, key=self._sort_key_fn, reverse=self._reverse)
-        return sorted_partitions[-1]
+        matching = context.instance.get_runs(filters)
+        if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
+            selected = partition
+            break
+    return selected
 
 
-class LastPartitionSelector(SortedPartitionSelector):
-    def __init__(self, sort_key_fn=None):
-        super(LastPartitionSelector, self).__init__(sort_key_fn=sort_key_fn, reverse=False)
+def first_partition(context, partition_set_def=None):
+    check.inst_param(context, 'context', ScheduleExecutionContext)
+    partition_set_def = check.inst_param(
+        partition_set_def, 'partition_set_def', PartitionSetDefinition
+    )
 
+    partitions = partition_set_def.get_partitions()
+    if not partitions:
+        return None
 
-class FirstPartitionSelector(SortedPartitionSelector):
-    def __init__(self, sort_key_fn=None):
-        super(FirstPartitionSelector, self).__init__(sort_key_fn=sort_key_fn, reverse=True)
+    return partitions[0]
 
 
 class PartitionSetDefinition(
@@ -152,9 +159,9 @@ class PartitionSetDefinition(
         self,
         schedule_name,
         cron_schedule,
-        should_execute=lambda: True,
+        should_execute=None,
+        partition_selector=last_partition,
         environment_vars=None,
-        partition_selector=LastPartitionSelector(),
     ):
         '''Create a ScheduleDefinition from a PartitionSetDefinition.
 
@@ -164,38 +171,53 @@ class PartitionSetDefinition(
             should_execute (Optional[function]): Function that runs at schedule execution time that
             determines whether a schedule should execute. Defaults to a function that always returns
             ``True``.
+            partition_selector (Callable[PartitionSet], Partition): A partition selector for the
+                schedule
             environment_vars (Optional[dict]): The environment variables to set for the schedule
-            partition_selector (IPartitionSelector): A partition selector for the schedule
 
         Returns:
-            ScheduleDefinition -- The generated ScheduleDefinition for the IPartitionSelector
+            ScheduleDefinition -- The generated ScheduleDefinition for the partition selector
         '''
 
         check.str_param(schedule_name, 'schedule_name')
         check.str_param(cron_schedule, 'cron_schedule')
-        check.callable_param(should_execute, 'should_execute')
+        check.opt_callable_param(should_execute, 'should_execute')
         check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
-        check.inst_param(partition_selector, 'partition_selector', IPartitionSelector)
+        check.callable_param(partition_selector, 'partition_selector')
 
-        def _environment_dict_fn_wrapper():
-            selected_partition = partition_selector.select_partition(partition_set_def=self)
+        def _should_execute_wrapper(context):
+            check.inst_param(context, 'context', ScheduleExecutionContext)
+            selected_partition = partition_selector(context, self)
+            if not selected_partition:
+                return False
+            elif not should_execute:
+                return True
+            else:
+                return should_execute(context)
+
+        def _environment_dict_fn_wrapper(context):
+            check.inst_param(context, 'context', ScheduleExecutionContext)
+            selected_partition = partition_selector(context, self)
             if not selected_partition:
                 raise DagsterInvariantViolationError(
-                    "PartitionSelector {selector} did not return "
+                    "The partition selection function `{selector}` did not return "
                     "a partition from PartitionSet {partition_set}".format(
-                        selector=partition_selector.__class__.__name__, partition_set=self.name
+                        selector=getattr(partition_selector, '__name__', repr(partition_selector)),
+                        partition_set=self.name,
                     )
                 )
 
             return self.environment_dict_for_partition(selected_partition)
 
-        def _tags_fn_wrapper():
-            selected_partition = partition_selector.select_partition(partition_set_def=self)
+        def _tags_fn_wrapper(context):
+            check.inst_param(context, 'context', ScheduleExecutionContext)
+            selected_partition = partition_selector(context, self)
             if not selected_partition:
                 raise DagsterInvariantViolationError(
-                    "PartitionSelector {selector} did not return "
+                    "The partition selection function `{selector}` did not return "
                     "a partition from PartitionSet {partition_set}".format(
-                        selector=partition_selector.__class__.__name__, partition_set=self.name
+                        selector=getattr(partition_selector, '__name__', repr(partition_selector)),
+                        partition_set=self.name,
                     )
                 )
 
@@ -209,7 +231,7 @@ class PartitionSetDefinition(
             tags_fn=_tags_fn_wrapper,
             solid_subset=self.solid_subset,
             mode=self.mode,
-            should_execute=should_execute,
+            should_execute=_should_execute_wrapper,
             environment_vars=environment_vars,
             partition_set=self,
         )

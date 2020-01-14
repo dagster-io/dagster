@@ -27,6 +27,10 @@ interface TokenizingFieldProps {
   maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
   suggestionProviders: SuggestionProvider[];
+  suggestionProvidersFilter?: (
+    suggestionProvider: SuggestionProvider[],
+    values: TokenizingFieldValue[]
+  ) => SuggestionProvider[];
   placeholder?: string;
   loading?: boolean;
 }
@@ -67,6 +71,7 @@ one or more SuggestionProviders to build the tree of autocompletions. The
 input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   suggestionProviders,
+  suggestionProvidersFilter,
   values,
   maxValues,
   onChange,
@@ -78,6 +83,10 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   const [typed, setTyped] = React.useState<string>("");
   const atMaxValues =
     maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
+
+  const filteredSuggestionProviders = suggestionProvidersFilter
+    ? suggestionProvidersFilter(suggestionProviders, values)
+    : suggestionProviders;
 
   // Build the set of suggestions that should be displayed for the current input value.
   // Note: "typed" is the text that has not yet been submitted, separate from values[].
@@ -105,14 +114,14 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
   if (parts.length === 1) {
     // Suggest providers (eg: `pipeline:`) so users can discover the search space
-    suggestions = suggestionProviders
+    suggestions = filteredSuggestionProviders
       .map(s => ({ text: `${s.token}:`, final: false }))
       .filter(suggestionMatchesTypedText);
 
     // Suggest value completions so users can type "airline_" without the "pipeline"
     // prefix and get the correct suggestion.
     if (typed.length > 0) {
-      for (const p of suggestionProviders) {
+      for (const p of filteredSuggestionProviders) {
         suggestions.push(...availableSuggestionsForProvider(p));
       }
     }
@@ -120,7 +129,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
   if (parts.length === 2) {
     // Suggest values from the chosen provider (eg: `pipeline:abc`)
-    const provider = findProviderByToken(parts[0], suggestionProviders);
+    const provider = findProviderByToken(parts[0], filteredSuggestionProviders);
     suggestions = provider ? availableSuggestionsForProvider(provider) : [];
   }
 
@@ -185,7 +194,10 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (str.endsWith(":")) return;
     if (str === "") return;
 
-    onChange([...values, tokenizedValueFromString(str, suggestionProviders)]);
+    onChange([
+      ...values,
+      tokenizedValueFromString(str, filteredSuggestionProviders)
+    ]);
     setTyped("");
   };
 

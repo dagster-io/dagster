@@ -7,10 +7,17 @@
 // GraphQL query operation: RootPipelinesQuery
 // ====================================================
 
+export interface RootPipelinesQuery_pipelinesOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface RootPipelinesQuery_pipelinesOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: RootPipelinesQuery_pipelinesOrError_PythonError_cause | null;
 }
 
 export interface RootPipelinesQuery_pipelinesOrError_PipelineConnection_nodes {

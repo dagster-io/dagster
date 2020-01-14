@@ -201,7 +201,7 @@ class SparkConfigNode(object):
             printer.append('Field(')
             printer.line('')
             with printer.with_indent():
-                printer.line('PermissiveDict(')
+                printer.line('Permissive(')
                 with printer.with_indent():
                     printer.line('fields={')
                     with printer.with_indent():
@@ -253,7 +253,7 @@ def extract(spark_docs_markdown_text):
 def serialize(result):
     with IndentingBufferPrinter() as printer:
         printer.write_header()
-        printer.line('from dagster import Bool, Field, Float, Int, PermissiveDict, String')
+        printer.line('from dagster import Bool, Field, Float, Int, Permissive, String')
         printer.blank_line()
         printer.blank_line()
         printer.line('# pylint: disable=line-too-long')

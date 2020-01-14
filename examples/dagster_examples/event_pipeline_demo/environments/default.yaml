@@ -17,7 +17,7 @@ solids:
       target_folder: "/tmp/dagster/events/data"
   event_ingest:
     config:
-      application_jar: "/tmp/dagster/events/events-assembly-0.1.0-SNAPSHOT.jar"
+      application_jar: "{jar_path}"
       deploy_mode: "client"
       application_arguments: "--local-path /tmp/dagster/events/data --date 2019-01-01"
       master_url: "local[*]"
