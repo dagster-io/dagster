@@ -8,22 +8,24 @@ import { RunFragment } from "./runs/types/RunFragment";
 import { GraphQueryInput } from "./GraphQueryInput";
 import { filterByQuery } from "./GraphQueryImpl";
 
+type IGaantNode = ILayoutSolid;
+
 interface GaantChartProps {
   metadata: IRunMetadataDict;
   plan: ExecutionPlanFragment;
   run: RunFragment;
 }
 
-interface GaantChartRow {
-  children: GaantChartRow[];
-  solid: ILayoutSolid;
+interface GaantChartBox {
+  children: GaantChartBox[];
+  node: IGaantNode;
   x: number;
   width: number;
   y: number;
 }
 
 interface GaantChartLayout {
-  rows: GaantChartRow[];
+  boxes: GaantChartBox[];
 }
 
 enum GaantChartLayoutMode {
@@ -32,8 +34,9 @@ enum GaantChartLayoutMode {
   WATERFALL_TIMED = "waterfall-timed"
 }
 
-const ROW_HEIGHT = 30;
-const ROW_MARGIN = 5;
+const BOX_HEIGHT = 30;
+const BOX_MARGIN_Y = 5;
+const BOX_MARGIN_X = 10;
 const BOX_WIDTH = 100;
 const LINE_SIZE = 2;
 
@@ -41,10 +44,10 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
   if (!run.executionPlan) {
     throw new Error("tld");
   }
-  const solidsTable: { [key: string]: ILayoutSolid } = {};
+  const solidsTable: { [key: string]: IGaantNode } = {};
 
   for (const step of run.executionPlan.steps) {
-    const solid: ILayoutSolid = {
+    const solid: IGaantNode = {
       name: step.key,
       inputs: [],
       outputs: []
@@ -84,6 +87,7 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
       }
     }
   }
+
   return Object.values(solidsTable);
 });
 
@@ -93,35 +97,33 @@ const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
       i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
     );
 
-  const rows: GaantChartRow[] = solidGraph
+  const boxes: GaantChartBox[] = solidGraph
     .filter(hasNoDependencies)
     .map(solid => ({
-      solid: solid,
+      node: solid,
       children: [],
       x: 0,
       y: -1,
       width: BOX_WIDTH
     }));
 
-  const rowZero = [...rows];
-
   const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
     if (parentIdx < childIdx) {
       return;
     }
-    const [child] = rows.splice(childIdx, 1);
-    rows.push(child);
-    const newIdx = rows.length - 1;
+    const [child] = boxes.splice(childIdx, 1);
+    boxes.push(child);
+    const newIdx = boxes.length - 1;
     child.children.forEach(subchild =>
-      ensureSubtreeBelow(rows.indexOf(subchild), newIdx)
+      ensureSubtreeBelow(boxes.indexOf(subchild), newIdx)
     );
   };
 
-  const addChildren = (row: GaantChartRow) => {
-    const idx = rows.indexOf(row);
+  const addChildren = (row: GaantChartBox) => {
+    const idx = boxes.indexOf(row);
     const seen: string[] = [];
 
-    for (const out of row.solid.outputs) {
+    for (const out of row.node.outputs) {
       for (const dep of out.dependedBy) {
         const depSolid = solidGraph.find(n => dep.solid.name === n.name);
         if (!depSolid) continue;
@@ -129,21 +131,21 @@ const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
         if (seen.includes(depSolid.name)) continue;
         seen.push(depSolid.name);
 
-        const depRowIdx = rows.findIndex(r => r.solid === depSolid);
-        let depRow: GaantChartRow;
+        const depRowIdx = boxes.findIndex(r => r.node === depSolid);
+        let depRow: GaantChartBox;
 
         if (depRowIdx === -1) {
           depRow = {
             children: [],
-            solid: depSolid,
+            node: depSolid,
             width: BOX_WIDTH,
             x: 0,
             y: -1
           };
-          rows.push(depRow);
+          boxes.push(depRow);
           addChildren(depRow);
         } else {
-          depRow = rows[depRowIdx];
+          depRow = boxes[depRowIdx];
           ensureSubtreeBelow(depRowIdx, idx);
         }
 
@@ -152,34 +154,36 @@ const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
     }
   };
 
-  rowZero.forEach(addChildren);
+  const roots = [...boxes];
 
-  const deepen = (row: GaantChartRow, x: number) => {
+  roots.forEach(addChildren);
+
+  const deepen = (row: GaantChartBox, x: number) => {
     row.x = Math.max(x, row.x);
     row.children.forEach(child => deepen(child, x + row.width));
   };
-  rowZero.forEach(row => deepen(row, 0));
+  roots.forEach(row => deepen(row, 0));
 
   // now assign Y values
-  const parents: { [name: string]: GaantChartRow[] } = {};
-  rows.forEach((row, idx) => {
+  const parents: { [name: string]: GaantChartBox[] } = {};
+  boxes.forEach((row, idx) => {
     row.y = idx;
     row.children.forEach(child => {
-      parents[child.solid.name] = parents[child.solid.name] || [];
-      parents[child.solid.name].push(row);
+      parents[child.node.name] = parents[child.node.name] || [];
+      parents[child.node.name].push(row);
     });
   });
 
   let changed = true;
   while (changed) {
     changed = false;
-    for (let idx = rows.length - 1; idx > 0; idx--) {
-      const row = rows[idx];
-      const rowParents = parents[row.solid.name] || [];
+    for (let idx = boxes.length - 1; idx > 0; idx--) {
+      const row = boxes[idx];
+      const rowParents = parents[row.node.name] || [];
       const highestYParent = rowParents.sort((a, b) => b.y - a.y)[0];
       if (!highestYParent) continue;
 
-      const onTargetY = rows.filter(r => r.y === highestYParent.y);
+      const onTargetY = boxes.filter(r => r.y === highestYParent.y);
       const taken = onTargetY.find(r => r.x === row.x);
       if (taken) continue;
 
@@ -202,18 +206,18 @@ const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
   changed = true;
   while (changed) {
     changed = false;
-    const maxY = rows.reduce((m, r) => Math.max(m, r.y), 0);
+    const maxY = boxes.reduce((m, r) => Math.max(m, r.y), 0);
     for (let y = 0; y < maxY; y++) {
-      const empty = !rows.some(r => r.y === y);
+      const empty = !boxes.some(r => r.y === y);
       if (empty) {
-        rows.filter(r => r.y > y).forEach(r => (r.y -= 1));
+        boxes.filter(r => r.y > y).forEach(r => (r.y -= 1));
         changed = true;
         break;
       }
     }
   }
 
-  return { rows } as GaantChartLayout;
+  return { boxes } as GaantChartLayout;
 };
 
 interface GaantChartState {
@@ -243,32 +247,33 @@ export class GaantChart extends React.Component<
       <div style={{ height: "100%" }}>
         <div style={{ overflow: "scroll", height: "100%" }}>
           <div style={{ position: "relative" }}>
-            {l.rows.map((row, idx) => (
-              <React.Fragment key={row.solid.name}>
+            {l.boxes.map((row, idx) => (
+              <React.Fragment key={row.node.name}>
                 <GaantBox
-                  key={row.solid.name}
+                  key={row.node.name}
                   style={{
-                    top: ROW_HEIGHT * row.y + 5,
+                    top: BOX_HEIGHT * row.y + 5,
                     left: row.x + 10,
                     width: row.width - 20
                   }}
                   highlighted={
                     hoveredIdx === idx ||
-                    l.rows[hoveredIdx]?.children.includes(row)
+                    l.boxes[hoveredIdx]?.children.includes(row)
                   }
                   onMouseEnter={() => this.setState({ hoveredIdx: idx })}
                   onMouseLeave={() => this.setState({ hoveredIdx: -1 })}
                 >
-                  {row.solid.name}
+                  {row.node.name}
                 </GaantBox>
                 {row.children.map((child, childIdx) => (
                   <GaantLine
-                    key={`${row.solid.name}-${child.solid.name}-${childIdx}`}
+                    key={`${row.node.name}-${child.node.name}-${childIdx}`}
                     start={row}
                     end={child}
                     depIdx={childIdx}
                     highlighted={
-                      hoveredIdx === idx || hoveredIdx === l.rows.indexOf(child)
+                      hoveredIdx === idx ||
+                      hoveredIdx === l.boxes.indexOf(child)
                     }
                   />
                 ))}
@@ -292,8 +297,8 @@ const GaantLine = ({
   highlighted,
   depIdx
 }: {
-  start: GaantChartRow;
-  end: GaantChartRow;
+  start: GaantChartBox;
+  end: GaantChartBox;
   highlighted: boolean;
   depIdx: number;
 }) => {
@@ -302,16 +307,17 @@ const GaantLine = ({
   const minIdx = Math.min(startIdx, endIdx);
   const maxIdx = Math.max(startIdx, endIdx);
 
-  const maxY = maxIdx * ROW_HEIGHT + ROW_MARGIN;
-  const minY = minIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+  const maxY = maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
+  const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
 
-  const minX = Math.min(start.x + start.width, end.x + start.width) - 10;
+  const minX =
+    Math.min(start.x + start.width, end.x + start.width) - BOX_MARGIN_X;
   const maxX = Math.max(start.x + start.width / 2, end.x + end.width / 2);
 
   return (
     <>
       <Line
-        data-info={`from ${start.solid.name} to ${end.solid.name}`}
+        data-info={`from ${start.node.name} to ${end.node.name}`}
         style={{
           height: LINE_SIZE,
           left: minX,
@@ -323,7 +329,7 @@ const GaantLine = ({
       />
       {maxIdx !== minIdx && (
         <Line
-          data-info={`from ${start.solid.name} to ${end.solid.name}`}
+          data-info={`from ${start.node.name} to ${end.node.name}`}
           style={{
             width: LINE_SIZE,
             left: maxX + (depIdx % 10) * LINE_SIZE,
@@ -347,7 +353,7 @@ const Line = styled.div`
 const GaantBox = styled.div<{ highlighted: boolean }>`
   display: inline-block;
   position: absolute;
-  height: ${ROW_HEIGHT - ROW_MARGIN * 2}px;
+  height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
   background: ${({ highlighted }) => (highlighted ? "red" : "#2491eb")};
   color: white;
   font-size: 11px;
