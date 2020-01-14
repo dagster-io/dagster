@@ -39,9 +39,9 @@ def create_dataproc_cluster(_):
     DataprocResource(DATAPROC_CLUSTER_CONFIG).create_cluster()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(config={'date': str}, input_defs=[InputDefinition('start', Nothing)])
 def data_proc_spark_operator(context):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+    dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
 
     cluster_resource = DataprocResource(DATAPROC_CLUSTER_CONFIG)
     job_config = {
@@ -76,9 +76,9 @@ def delete_dataproc_cluster(_):
     DataprocResource(DATAPROC_CLUSTER_CONFIG).delete_cluster()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(config={'date': str}, input_defs=[InputDefinition('start', Nothing)])
 def gcs_to_bigquery(context):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+    dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
     bq = BigQueryClient(PROJECT_ID)
 
     destination = '{project_id}.events.events${date}'.format(

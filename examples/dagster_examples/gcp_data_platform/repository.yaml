@@ -1,3 +1,6 @@
 repository:
   module: dagster_examples.gcp_data_platform.repo
   fn: define_repo
+scheduler:
+  module: dagster_examples.gcp_data_platform.repo
+  fn: define_schedule
