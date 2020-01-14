@@ -1,14 +1,14 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { weakmapMemoize } from "./Util";
-import { ILayoutSolid } from "./graph/layout";
 import { IRunMetadataDict } from "./RunMetadataProvider";
 import { ExecutionPlanFragment } from "./plan/types/ExecutionPlanFragment";
 import { RunFragment } from "./runs/types/RunFragment";
 import { GraphQueryInput } from "./GraphQueryInput";
-import { filterByQuery } from "./GraphQueryImpl";
+import { filterByQuery, GraphQueryItem } from "./GraphQueryImpl";
+import { Slider, ButtonGroup, Button, Colors } from "@blueprintjs/core";
 
-type IGaantNode = ILayoutSolid;
+type IGaantNode = GraphQueryItem;
 
 interface GaantChartProps {
   metadata: IRunMetadataDict;
@@ -28,6 +28,12 @@ interface GaantChartLayout {
   boxes: GaantChartBox[];
 }
 
+interface GaantChartLayoutOptions {
+  mode: GaantChartLayoutMode;
+  scale: number;
+  hideWaiting: boolean;
+}
+
 enum GaantChartLayoutMode {
   FLAT = "flat",
   WATERFALL = "waterfall",
@@ -40,31 +46,30 @@ const BOX_MARGIN_X = 10;
 const BOX_WIDTH = 100;
 const LINE_SIZE = 2;
 
-const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
+/**
+ * Converts a Run execution plan into a tree of `GraphQueryItem` items that
+ * can be used as the input to the "solid query" filtering algorithm. The idea
+ * is that this data structure is generic, but it's really a fake solid tree.
+ */
+const toGraphQueryItems = weakmapMemoize((run: RunFragment) => {
   if (!run.executionPlan) {
     throw new Error("tld");
   }
-  const solidsTable: { [key: string]: IGaantNode } = {};
+  const nodeTable: { [key: string]: IGaantNode } = {};
 
   for (const step of run.executionPlan.steps) {
-    const solid: IGaantNode = {
+    const node: IGaantNode = {
       name: step.key,
       inputs: [],
       outputs: []
     };
-    solidsTable[step.key] = solid;
+    nodeTable[step.key] = node;
   }
 
   for (const step of run.executionPlan.steps) {
     for (const input of step.inputs) {
-      solidsTable[step.key].inputs.push({
-        definition: {
-          name: ""
-        },
+      nodeTable[step.key].inputs.push({
         dependsOn: input.dependsOn.map(d => ({
-          definition: {
-            name: ""
-          },
           solid: {
             name: d.key
           }
@@ -72,39 +77,77 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
       });
 
       for (const upstream of input.dependsOn) {
-        let output = solidsTable[upstream.key].outputs[0];
+        let output = nodeTable[upstream.key].outputs[0];
         if (!output) {
           output = {
-            definition: { name: "" },
             dependedBy: []
           };
-          solidsTable[upstream.key].outputs.push(output);
+          nodeTable[upstream.key].outputs.push(output);
         }
         output.dependedBy.push({
-          definition: { name: "" },
           solid: { name: step.key }
         });
       }
     }
   }
 
-  return Object.values(solidsTable);
+  return Object.values(nodeTable);
 });
 
-const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
-  const hasNoDependencies = (g: ILayoutSolid) =>
+const boxWidthFor = (
+  step: GraphQueryItem,
+  metadata: IRunMetadataDict,
+  options: GaantChartLayoutOptions
+) => {
+  const stepInfo = metadata.steps[step.name] || {};
+  if (options.mode === GaantChartLayoutMode.WATERFALL_TIMED) {
+    return (
+      10 +
+      (stepInfo.finish && stepInfo.start
+        ? Math.max(0, stepInfo.finish - stepInfo.start) * options.scale
+        : BOX_WIDTH * options.scale)
+    );
+  }
+  return BOX_WIDTH;
+};
+
+const boxColorFor = (
+  step: GraphQueryItem,
+  metadata: IRunMetadataDict,
+  options: GaantChartLayoutOptions
+) => {
+  const stepInfo = metadata.steps[step.name] || {};
+  if (options.mode === GaantChartLayoutMode.WATERFALL_TIMED) {
+    return (
+      {
+        running: Colors.GRAY3,
+        succeeded: Colors.GREEN2,
+        skipped: Colors.GOLD3,
+        failed: Colors.RED3
+      }[stepInfo.state] || Colors.GRAY1
+    );
+  }
+  return "#2491eb";
+};
+
+const layout = (
+  solidGraph: IGaantNode[],
+  metadata: IRunMetadataDict,
+  options: GaantChartLayoutOptions
+) => {
+  const hasNoDependencies = (g: IGaantNode) =>
     !g.inputs.some(i =>
       i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
     );
 
-  const boxes: GaantChartBox[] = solidGraph
+  let boxes: GaantChartBox[] = solidGraph
     .filter(hasNoDependencies)
     .map(solid => ({
       node: solid,
       children: [],
       x: 0,
       y: -1,
-      width: BOX_WIDTH
+      width: boxWidthFor(solid, metadata, options)
     }));
 
   const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
@@ -217,12 +260,20 @@ const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
     }
   }
 
+  // apply display options
+  if (options.hideWaiting) {
+    boxes = boxes.filter(b => {
+      const state = metadata.steps[b.node.name]?.state || "waiting";
+      return state !== "waiting";
+    });
+  }
+
   return { boxes } as GaantChartLayout;
 };
 
 interface GaantChartState {
   hoveredIdx: number;
-  layoutMode: GaantChartLayoutMode;
+  options: GaantChartLayoutOptions;
   query: string;
 }
 
@@ -233,42 +284,82 @@ export class GaantChart extends React.Component<
   state: GaantChartState = {
     hoveredIdx: -1,
     query: "*trials_raw",
-    layoutMode: GaantChartLayoutMode.FLAT
+    options: {
+      mode: GaantChartLayoutMode.WATERFALL,
+      hideWaiting: true,
+      scale: 0.2
+    }
   };
 
   render() {
-    const { hoveredIdx, query, layoutMode } = this.state;
+    const { run, metadata } = this.props;
+    const { hoveredIdx, query, options } = this.state;
 
-    const graph = toMockSolidGraph(this.props.run);
+    const graph = toGraphQueryItems(run);
     const graphFiltered = filterByQuery(graph, query);
-    const l = layout(graphFiltered.all, layoutMode);
+    const l = layout(graphFiltered.all, metadata, options);
 
     return (
       <div style={{ height: "100%" }}>
+        <div style={{ width: 200 }}>
+          <ButtonGroup>
+            {[
+              GaantChartLayoutMode.FLAT,
+              GaantChartLayoutMode.WATERFALL,
+              GaantChartLayoutMode.WATERFALL_TIMED
+            ].map(mode => (
+              <Button
+                key={mode}
+                text={mode.toLowerCase()}
+                small={true}
+                active={options.mode === mode}
+                onClick={() =>
+                  this.setState({
+                    ...this.state,
+                    options: { ...options, mode: mode as GaantChartLayoutMode }
+                  })
+                }
+              />
+            ))}
+          </ButtonGroup>
+          <Slider
+            min={0.01}
+            max={1}
+            stepSize={0.05}
+            value={options.scale}
+            onChange={v =>
+              this.setState({
+                ...this.state,
+                options: { ...options, scale: v }
+              })
+            }
+          />
+        </div>
         <div style={{ overflow: "scroll", height: "100%" }}>
           <div style={{ position: "relative" }}>
-            {l.boxes.map((row, idx) => (
-              <React.Fragment key={row.node.name}>
+            {l.boxes.map((box, idx) => (
+              <React.Fragment key={box.node.name}>
                 <GaantBox
-                  key={row.node.name}
+                  key={box.node.name}
                   style={{
-                    top: BOX_HEIGHT * row.y + 5,
-                    left: row.x + 10,
-                    width: row.width - 20
+                    top: BOX_HEIGHT * box.y + 5,
+                    left: box.x + 10,
+                    width: box.width - 20
                   }}
                   highlighted={
                     hoveredIdx === idx ||
-                    l.boxes[hoveredIdx]?.children.includes(row)
+                    l.boxes[hoveredIdx]?.children.includes(box)
                   }
+                  color={boxColorFor(box.node, metadata, options)}
                   onMouseEnter={() => this.setState({ hoveredIdx: idx })}
                   onMouseLeave={() => this.setState({ hoveredIdx: -1 })}
                 >
-                  {row.node.name}
+                  {box.node.name}
                 </GaantBox>
-                {row.children.map((child, childIdx) => (
+                {box.children.map((child, childIdx) => (
                   <GaantLine
-                    key={`${row.node.name}-${child.node.name}-${childIdx}`}
-                    start={row}
+                    key={`${box.node.name}-${child.node.name}-${childIdx}`}
+                    start={box}
                     end={child}
                     depIdx={childIdx}
                     highlighted={
@@ -282,7 +373,7 @@ export class GaantChart extends React.Component<
           </div>
         </div>
         <GraphQueryInput
-          items={toMockSolidGraph(this.props.run)}
+          items={graph}
           value={query}
           onChange={q => this.setState({ query: q })}
         />
@@ -346,15 +437,17 @@ const GaantLine = ({
 
 const Line = styled.div`
   position: absolute;
+  user-select: none;
+  pointer-events: none;
   transition: top 200ms linear, left 200ms linear, width 200ms linear,
     height 200ms linear;
 `;
 
-const GaantBox = styled.div<{ highlighted: boolean }>`
+const GaantBox = styled.div<{ highlighted: boolean; color: string }>`
   display: inline-block;
   position: absolute;
   height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-  background: ${({ highlighted }) => (highlighted ? "red" : "#2491eb")};
+  background: ${({ highlighted, color }) => (highlighted ? "red" : color)};
   color: white;
   font-size: 11px;
   border: 1px solid darkgreen;
