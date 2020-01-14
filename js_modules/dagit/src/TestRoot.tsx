@@ -1,9 +1,7 @@
 import * as React from "react";
-import { IRunMetadataDict } from "./RunMetadataProvider";
-import { ExecutionPlanFragment } from "./plan/types/ExecutionPlanFragment";
-import { RunFragment } from "./runs/types/RunFragment";
 import { GaantChart } from "./GaantChart";
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const Data = require("./fake-data");
 
 interface TestRootProps {}

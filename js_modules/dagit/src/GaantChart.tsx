@@ -15,13 +15,21 @@ interface GaantChartProps {
 }
 
 interface GaantChartRow {
-  depth: number;
   children: GaantChartRow[];
   solid: ILayoutSolid;
+  x: number;
+  width: number;
   y: number;
 }
+
 interface GaantChartLayout {
   rows: GaantChartRow[];
+}
+
+enum GaantChartLayoutMode {
+  FLAT = "flat",
+  WATERFALL = "waterfall",
+  WATERFALL_TIMED = "waterfall-timed"
 }
 
 const ROW_HEIGHT = 30;
@@ -79,15 +87,21 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
   return Object.values(solidsTable);
 });
 
-const layout = (solidGraph: ILayoutSolid[]) => {
+const layout = (solidGraph: ILayoutSolid[], mode: GaantChartLayoutMode) => {
+  const hasNoDependencies = (g: ILayoutSolid) =>
+    !g.inputs.some(i =>
+      i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
+    );
+
   const rows: GaantChartRow[] = solidGraph
-    .filter(
-      g =>
-        g.inputs.filter(i =>
-          i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
-        ).length === 0
-    )
-    .map(solid => ({ solid: solid, children: [], depth: 0, y: -1 }));
+    .filter(hasNoDependencies)
+    .map(solid => ({
+      solid: solid,
+      children: [],
+      x: 0,
+      y: -1,
+      width: BOX_WIDTH
+    }));
 
   const rowZero = [...rows];
 
@@ -120,9 +134,10 @@ const layout = (solidGraph: ILayoutSolid[]) => {
 
         if (depRowIdx === -1) {
           depRow = {
-            solid: depSolid,
-            depth: 0,
             children: [],
+            solid: depSolid,
+            width: BOX_WIDTH,
+            x: 0,
             y: -1
           };
           rows.push(depRow);
@@ -139,9 +154,9 @@ const layout = (solidGraph: ILayoutSolid[]) => {
 
   rowZero.forEach(addChildren);
 
-  const deepen = (row: GaantChartRow, depth: number) => {
-    row.depth = Math.max(depth, row.depth);
-    row.children.forEach(child => deepen(child, depth + 1));
+  const deepen = (row: GaantChartRow, x: number) => {
+    row.x = Math.max(x, row.x);
+    row.children.forEach(child => deepen(child, x + row.width));
   };
   rowZero.forEach(row => deepen(row, 0));
 
@@ -165,17 +180,15 @@ const layout = (solidGraph: ILayoutSolid[]) => {
       if (!highestYParent) continue;
 
       const onTargetY = rows.filter(r => r.y === highestYParent.y);
-      const taken = onTargetY.find(r => r.depth === row.depth);
+      const taken = onTargetY.find(r => r.x === row.x);
       if (taken) continue;
 
-      const parentDepth = highestYParent.depth;
-      const willCross = onTargetY.some(
-        r => r.depth > parentDepth && r.depth < row.depth
-      );
+      const parentX = highestYParent.x;
+      const willCross = onTargetY.some(r => r.x > parentX && r.x < row.x);
       const willCauseCrossing = onTargetY.some(
         r =>
-          r.depth < row.depth &&
-          r.children.some(c => c.y >= highestYParent.y && c.depth > row.depth)
+          r.x < row.x &&
+          r.children.some(c => c.y >= highestYParent.y && c.x > row.x)
       );
       if (willCross || willCauseCrossing) continue;
 
@@ -186,7 +199,6 @@ const layout = (solidGraph: ILayoutSolid[]) => {
   }
 
   // reflow to fill empty rows
-
   changed = true;
   while (changed) {
     changed = false;
@@ -206,6 +218,7 @@ const layout = (solidGraph: ILayoutSolid[]) => {
 
 interface GaantChartState {
   hoveredIdx: number;
+  layoutMode: GaantChartLayoutMode;
   query: string;
 }
 
@@ -215,15 +228,16 @@ export class GaantChart extends React.Component<
 > {
   state: GaantChartState = {
     hoveredIdx: -1,
-    query: "*trials_raw"
+    query: "*trials_raw",
+    layoutMode: GaantChartLayoutMode.FLAT
   };
 
   render() {
-    const { hoveredIdx, query } = this.state;
+    const { hoveredIdx, query, layoutMode } = this.state;
 
     const graph = toMockSolidGraph(this.props.run);
     const graphFiltered = filterByQuery(graph, query);
-    const l = layout(graphFiltered.all);
+    const l = layout(graphFiltered.all, layoutMode);
 
     return (
       <div style={{ height: "100%" }}>
@@ -235,8 +249,8 @@ export class GaantChart extends React.Component<
                   key={row.solid.name}
                   style={{
                     top: ROW_HEIGHT * row.y + 5,
-                    left: row.depth * BOX_WIDTH + 10,
-                    width: BOX_WIDTH - 20
+                    left: row.x + 10,
+                    width: row.width - 20
                   }}
                   highlighted={
                     hoveredIdx === idx ||
@@ -250,7 +264,6 @@ export class GaantChart extends React.Component<
                 {row.children.map((child, childIdx) => (
                   <GaantLine
                     key={`${row.solid.name}-${child.solid.name}-${childIdx}`}
-                    rows={l.rows}
                     start={row}
                     end={child}
                     depIdx={childIdx}
@@ -273,50 +286,51 @@ export class GaantChart extends React.Component<
   }
 }
 
-const GaantLine = (props: {
-  rows: GaantChartRow[];
+const GaantLine = ({
+  start,
+  end,
+  highlighted,
+  depIdx
+}: {
   start: GaantChartRow;
   end: GaantChartRow;
   highlighted: boolean;
   depIdx: number;
 }) => {
-  const minDepth = Math.min(props.start.depth, props.end.depth);
-  const maxDepth = Math.max(props.start.depth, props.end.depth);
-
-  const startIdx = props.start.y; //props.rows.indexOf(props.start);
-  const endIdx = props.end.y; //.indexOf(props.end);
+  const startIdx = start.y;
+  const endIdx = end.y;
   const minIdx = Math.min(startIdx, endIdx);
   const maxIdx = Math.max(startIdx, endIdx);
 
-  const offsetX = maxIdx === minIdx ? 0 : 80 / 2;
   const maxY = maxIdx * ROW_HEIGHT + ROW_MARGIN;
   const minY = minIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
-  const maxX = maxDepth * BOX_WIDTH + offsetX + 10;
-  const minX = (minDepth + 1) * BOX_WIDTH - 10;
+
+  const minX = Math.min(start.x + start.width, end.x + start.width) - 10;
+  const maxX = Math.max(start.x + start.width / 2, end.x + end.width / 2);
 
   return (
     <>
       <Line
-        data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
+        data-info={`from ${start.solid.name} to ${end.solid.name}`}
         style={{
           height: LINE_SIZE,
           left: minX,
-          width: maxX + (props.depIdx % 10) * LINE_SIZE - minX,
+          width: maxX + (depIdx % 10) * LINE_SIZE - minX,
           top: minY,
-          background: props.highlighted ? "red" : "#eee",
-          zIndex: props.highlighted ? 100 : 1
+          background: highlighted ? "red" : "#eee",
+          zIndex: highlighted ? 100 : 1
         }}
       />
       {maxIdx !== minIdx && (
         <Line
-          data-info={`from ${props.start.solid.name} to ${props.end.solid.name}`}
+          data-info={`from ${start.solid.name} to ${end.solid.name}`}
           style={{
             width: LINE_SIZE,
-            left: maxX + (props.depIdx % 10) * LINE_SIZE,
+            left: maxX + (depIdx % 10) * LINE_SIZE,
             top: minY,
             height: maxY - minY,
-            background: props.highlighted ? "red" : "#eee",
-            zIndex: props.highlighted ? 100 : 1
+            background: highlighted ? "red" : "#eee",
+            zIndex: highlighted ? 100 : 1
           }}
         />
       )}
