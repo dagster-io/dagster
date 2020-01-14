@@ -10,10 +10,15 @@ from dagster_gcp import (
     dataproc_solid,
     import_gcs_paths_to_bq,
 )
+from dagster_pandas import DataFrame
 
 from dagster import (
+    InputDefinition,
     List,
     ModeDefinition,
+    Nothing,
+    OutputDefinition,
+    Path,
     PresetDefinition,
     String,
     composite_solid,
@@ -109,8 +114,10 @@ def bq_load_events_fn(context, cfg):
     }
 
 
-@composite_solid(config_fn=bq_load_events_fn, config={'table': str})
-def bq_load_events(source_uris: List[String]):
+@composite_solid(
+    config_fn=bq_load_events_fn, config={'table': str}, output_defs=[OutputDefinition(Nothing)],
+)
+def bq_load_events(source_uris: List[Path]):
     return import_gcs_paths_to_bq(source_uris)
 
 
@@ -130,7 +137,12 @@ def explore_visits_by_hour_fn(_, cfg):
     }
 
 
-@composite_solid(config_fn=explore_visits_by_hour_fn, config={'table': str})
+@composite_solid(
+    config_fn=explore_visits_by_hour_fn,
+    config={'table': str},
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[OutputDefinition(List[DataFrame])],
+)
 def explore_visits_by_hour(start):
     with open(file_relative_path(__file__, 'sql/explore_visits_by_hour.sql'), 'r') as f:
         query = f.read()
