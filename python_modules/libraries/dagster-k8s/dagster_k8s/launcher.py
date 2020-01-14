@@ -8,6 +8,10 @@ from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.seven import json
 
+BACKOFF_LIMIT = 4
+
+TTL_SECONDS_AFTER_FINISHED = 100
+
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(
@@ -127,7 +131,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             api_version="batch/v1",
             kind="Job",
             metadata=client.V1ObjectMeta(name='dagster-job-%s' % run.run_id, labels=dagster_labels),
-            spec=client.V1JobSpec(template=template, backoff_limit=4),
+            spec=client.V1JobSpec(
+                template=template,
+                backoff_limit=BACKOFF_LIMIT,
+                ttl_seconds_after_finished=TTL_SECONDS_AFTER_FINISHED,
+            ),
         )
         return job
 

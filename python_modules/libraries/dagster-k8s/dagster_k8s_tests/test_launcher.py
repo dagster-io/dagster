@@ -65,6 +65,7 @@ spec:
       - config_map:
           name: dagster-instance
         name: dagster-instance
+  ttl_seconds_after_finished: 100
 '''
 
 
