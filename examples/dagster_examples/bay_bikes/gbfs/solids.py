@@ -56,7 +56,7 @@ def download_and_validate_json(schema_file, from_url, **kwargs):
 
     @composite_solid(
         config={},
-        config_fn=lambda _ctx, _cfg: {'get_json_from_url': {'config': {'from_url': from_url}}},
+        config_fn=lambda _cfg: {'get_json_from_url': {'config': {'from_url': from_url}}},
         **kwargs
     )
     def _download_and_validate_json() -> dict:

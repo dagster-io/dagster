@@ -340,7 +340,7 @@ def test_config_defaults():
         return prev_sum + _context.solid_config['sum']
 
     # addition_composite_solid
-    def addition_composite_solid_config_fn(_, config):
+    def addition_composite_solid_config_fn(config):
         child_config = {'config': {"sum": config['a'] + config['b'] + config['c']}}
         return {'one': child_config, 'two': child_config}
 
@@ -372,7 +372,7 @@ def test_config_with_and_without_config():
         return '{prefix}{v}'.format(prefix=context.solid_config["prefix"], v=v)
 
     @composite_solid(
-        config_fn=lambda _, cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
+        config_fn=lambda cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
         config={'prefix': Field(str, is_optional=True, default_value='_id_')},
     )
     def prefix_id(val):

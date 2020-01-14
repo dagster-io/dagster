@@ -1,4 +1,4 @@
-from .config import ConfigMapping, ConfigMappingContext
+from .config import ConfigMapping
 from .container import IContainSolids, create_execution_structure, solids_in_topological_order
 from .decorators import (
     composite_solid,

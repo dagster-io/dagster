@@ -86,7 +86,7 @@ def test_single_layer_pipeline_hardcoded_config_mapping():
     def return_int(context):
         return context.solid_config
 
-    @composite_solid(config={}, config_fn=lambda _ctx, _cfg: {'return_int': {'config': 35}})
+    @composite_solid(config={}, config_fn=lambda _cfg: {'return_int': {'config': 35}})
     def return_int_hardcode_wrap():
         return_int()
 
@@ -104,7 +104,7 @@ def test_single_layer_pipeline_computed_config_mapping():
     def return_int(context):
         return context.solid_config
 
-    def _config_fn(_, cfg):
+    def _config_fn(cfg):
         return {'return_int': {'config': cfg['number'] + 1}}
 
     @composite_solid(config={'number': int}, config_fn=_config_fn)
@@ -128,13 +128,12 @@ def test_mix_layer_computed_mapping():
         return context.solid_config
 
     @composite_solid(
-        config={'number': int},
-        config_fn=lambda _, cfg: {'return_int': {'config': cfg['number'] + 1}},
+        config={'number': int}, config_fn=lambda cfg: {'return_int': {'config': cfg['number'] + 1}},
     )
     def layer_three_wrap():
         return_int()
 
-    def _layer_two_double_wrap_cfg_fn(_, cfg):
+    def _layer_two_double_wrap_cfg_fn(cfg):
         if cfg['inject_error']:
             return {'layer_three_wrap': {'config': {'number': 'a_string'}}}
         else:
@@ -230,7 +229,7 @@ def test_nested_input_via_config_mapping():
         return num + 1
 
     @composite_solid(
-        config={}, config_fn=lambda _cxt, _cfg: {'add_one': {'inputs': {'num': {'value': 2}}}}
+        config={}, config_fn=lambda _cfg: {'add_one': {'inputs': {'num': {'value': 2}}}}
     )
     def wrap_add_one():
         add_one()
@@ -252,9 +251,7 @@ def test_double_nested_input_via_config_mapping():
     def number(num):
         return num
 
-    @composite_solid(
-        config_fn=lambda context, _: {'number': {'inputs': {'num': {'value': 4}}}}, config={}
-    )
+    @composite_solid(config_fn=lambda _: {'number': {'inputs': {'num': {'value': 4}}}}, config={})
     def wrap_solid():  # pylint: disable=unused-variable
         return number()
 
@@ -298,7 +295,7 @@ def test_provide_one_of_two_inputs_via_config():
 
     @composite_solid(
         input_defs=[InputDefinition('input_a', String)],
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'basic': {
                 'config': {
                     'config_field_a': cfg['config_field_a'],
@@ -345,7 +342,7 @@ def required_scalar_config_solid(context):
 
 @composite_solid(
     config={'override_str': Field(String)},
-    config_fn=lambda _, cfg: {'layer2': {'config': cfg['override_str']}},
+    config_fn=lambda cfg: {'layer2': {'config': cfg['override_str']}},
 )
 def wrap():
     return scalar_config_solid.alias('layer2')()
@@ -353,7 +350,7 @@ def wrap():
 
 @composite_solid(
     config={'nesting_override': Field(String)},
-    config_fn=lambda _, cfg: {'layer1': {'config': {'override_str': cfg['nesting_override']}}},
+    config_fn=lambda cfg: {'layer1': {'config': {'override_str': cfg['nesting_override']}}},
 )
 def nesting_wrap():
     return wrap.alias('layer1')()
@@ -388,14 +385,14 @@ def get_fully_unwrapped_config():
 def test_direct_composite_descent_with_error():
     @composite_solid(
         config={'override_str': Field(int)},
-        config_fn=lambda _, cfg: {'layer2': {'config': cfg['override_str']}},
+        config_fn=lambda cfg: {'layer2': {'config': cfg['override_str']}},
     )
     def wrap_coerce_to_wrong_type():
         return scalar_config_solid.alias('layer2')()
 
     @composite_solid(
         config={'nesting_override': Field(int)},
-        config_fn=lambda _, cfg: {'layer1': {'config': {'override_str': cfg['nesting_override']}}},
+        config_fn=lambda cfg: {'layer1': {'config': {'override_str': cfg['nesting_override']}}},
     )
     def nesting_wrap_wrong_type_at_leaf():
         return wrap_coerce_to_wrong_type.alias('layer1')()
@@ -465,7 +462,7 @@ def test_config_mapped_enum():
 
     @composite_solid(
         config={'num': int},
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'return_enum': {'config': {'enum': 'VALUE_ONE' if cfg['num'] == 1 else 'OTHER'}}
         },
     )
@@ -498,7 +495,7 @@ def test_config_mapped_enum():
 
     @composite_solid(
         config={'enum': DagsterEnumType},
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'return_int': {'config': {'num': 1 if cfg['enum'] == TestPythonEnum.VALUE_ONE else 2}}
         },
     )

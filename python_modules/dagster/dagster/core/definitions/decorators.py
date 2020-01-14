@@ -720,7 +720,7 @@ def composite_solid(
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
                 - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
                 in the dictionary get resolved by the same rules, recursively.
-        config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
+        config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.
 

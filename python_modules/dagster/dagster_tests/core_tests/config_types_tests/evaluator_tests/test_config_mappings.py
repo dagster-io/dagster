@@ -31,7 +31,7 @@ def scalar_config_solid(context):
 
 @composite_solid(
     config={'override_str': Field(String)},
-    config_fn=lambda _, cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
+    config_fn=lambda cfg: {'scalar_config_solid': {'config': cfg['override_str']}},
 )
 def wrap():
     return scalar_config_solid()
@@ -40,7 +40,7 @@ def wrap():
 def test_multiple_overrides_pipeline():
     @composite_solid(
         config={'nesting_override': Field(String)},
-        config_fn=lambda _, cfg: {'wrap': {'config': {'override_str': cfg['nesting_override']}}},
+        config_fn=lambda cfg: {'wrap': {'config': {'override_str': cfg['nesting_override']}}},
     )
     def nesting_wrap():
         return wrap()
@@ -133,7 +133,7 @@ def test_missing_config():
 def test_bad_override():
     @composite_solid(
         config={'does_not_matter': Field(String)},
-        config_fn=lambda _context, _cfg: {'scalar_config_solid': {'config': 1234}},
+        config_fn=lambda _cfg: {'scalar_config_solid': {'config': 1234}},
     )
     def bad_wrap():
         return scalar_config_solid()
@@ -166,7 +166,7 @@ def test_config_mapper_throws():
     class SomeUserException(Exception):
         pass
 
-    def _config_fn_throws(_cxt, _cfg):
+    def _config_fn_throws(_cfg):
         raise SomeUserException()
 
     @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
@@ -193,7 +193,7 @@ def test_config_mapper_throws_nested():
     class SomeUserException(Exception):
         pass
 
-    def _config_fn_throws(_cxt, _cfg):
+    def _config_fn_throws(_cfg):
         raise SomeUserException()
 
     @composite_solid(config={'does_not_matter': Field(String)}, config_fn=_config_fn_throws)
@@ -228,7 +228,7 @@ def test_composite_config_field():
 
     @composite_solid(
         config={'override': Int},
-        config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
+        config_fn=lambda cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
     )
     def test():
         return inner_solid()
@@ -249,14 +249,14 @@ def test_nested_composite_config_field():
 
     @composite_solid(
         config={'override': Int},
-        config_fn=lambda _, cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
+        config_fn=lambda cfg: {'inner_solid': {'config': {'inner': str(cfg['override'])}}},
     )
     def outer():
         return inner_solid()
 
     @composite_solid(
         config={'override': Int},
-        config_fn=lambda _, cfg: {'outer': {'config': {'override': cfg['override']}}},
+        config_fn=lambda cfg: {'outer': {'config': {'override': cfg['override']}}},
     )
     def test():
         return outer()
@@ -279,7 +279,7 @@ def test_nested_with_inputs():
 
     @composite_solid(
         input_defs=[InputDefinition('some_input', String)],
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'basic': {'config': {'basic_key': 'override.' + cfg['inner_first']}}
         },
         config={'inner_first': Field(String)},
@@ -287,7 +287,7 @@ def test_nested_with_inputs():
     def inner_wrap(some_input):
         return basic(some_input)
 
-    def outer_wrap_fn(_, cfg):
+    def outer_wrap_fn(cfg):
         return {
             'inner_wrap': {
                 'inputs': {'some_input': {'value': 'foobar'}},
@@ -440,7 +440,7 @@ def test_wrap_all_config_no_inputs():
 
     @composite_solid(
         input_defs=[InputDefinition('input_a', String), InputDefinition('input_b', String)],
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'basic': {
                 'config': {
                     'config_field_a': cfg['config_field_a'],
@@ -535,7 +535,7 @@ def test_wrap_all_config_one_input():
 
     @composite_solid(
         input_defs=[InputDefinition('input_a', String)],
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'basic': {
                 'config': {
                     'config_field_a': cfg['config_field_a'],
@@ -624,7 +624,7 @@ def test_wrap_all_config_and_inputs():
         yield Output(res)
 
     @composite_solid(
-        config_fn=lambda _, cfg: {
+        config_fn=lambda cfg: {
             'basic': {
                 'config': {
                     'config_field_a': cfg['config_field_a'],
@@ -693,9 +693,7 @@ def test_wrap_all_config_and_inputs():
 def test_empty_config():
     # Testing that this definition does *not* raise
     # See: https://github.com/dagster-io/dagster/issues/1606
-    @composite_solid(
-        config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}}, config={}
-    )
+    @composite_solid(config_fn=lambda _: {'scalar_config_solid': {'config': 'an input'}}, config={})
     def wrap_solid():  # pylint: disable=unused-variable
         return scalar_config_solid()
 
@@ -711,9 +709,7 @@ def test_empty_config():
 
 
 def test_nested_empty_config():
-    @composite_solid(
-        config_fn=lambda context, _: {'scalar_config_solid': {'config': 'an input'}}, config={}
-    )
+    @composite_solid(config_fn=lambda _: {'scalar_config_solid': {'config': 'an input'}}, config={})
     def wrap_solid():  # pylint: disable=unused-variable
         return scalar_config_solid()
 
@@ -737,9 +733,7 @@ def test_nested_empty_config_input():
     def number(num):
         return num
 
-    @composite_solid(
-        config_fn=lambda context, _: {'number': {'inputs': {'num': {'value': 4}}}}, config={}
-    )
+    @composite_solid(config_fn=lambda _: {'number': {'inputs': {'num': {'value': 4}}}}, config={})
     def wrap_solid():  # pylint: disable=unused-variable
         return number()
 
@@ -774,7 +768,7 @@ def test_bad_solid_def():
 
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
 
-        @composite_solid(config_fn=lambda _context, _cfg: {})
+        @composite_solid(config_fn=lambda _cfg: {})
         def config_fn_only():  # pylint: disable=unused-variable
             scalar_config_solid()
 

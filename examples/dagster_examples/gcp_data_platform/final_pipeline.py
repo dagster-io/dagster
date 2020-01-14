@@ -41,7 +41,7 @@ def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argu
     return context.solid_config['paths']
 
 
-def events_dataproc_fn(_, cfg):
+def events_dataproc_fn(cfg):
     dt = datetime.datetime.strptime(cfg.get('date'), "%Y-%m-%d")
 
     return {
@@ -93,7 +93,7 @@ def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())
 
 
-def bq_load_events_fn(_, cfg):
+def bq_load_events_fn(cfg):
     dt = datetime.datetime.strptime(cfg.get('date'), "%Y-%m-%d")
 
     table = cfg.get('table')
@@ -123,7 +123,7 @@ def bq_load_events(source_uris: List[Path]):
     return import_gcs_paths_to_bq(source_uris)
 
 
-def explore_visits_by_hour_fn(_, cfg):
+def explore_visits_by_hour_fn(cfg):
     return {
         'explore_visits_by_hour_internal': {
             'config': {
