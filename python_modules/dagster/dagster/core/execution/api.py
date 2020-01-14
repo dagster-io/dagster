@@ -14,7 +14,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster.utils import ensure_gen, merge_dicts
 
-from .config import EXECUTION_TIME_KEY, IRunConfig, RunConfig
+from .config import IRunConfig, RunConfig
 from .context_creation_pipeline import scoped_pipeline_context
 from .results import PipelineExecutionResult
 
@@ -313,7 +313,6 @@ def step_output_event_filter(pipe_iterator):
 
 
 def _create_run(instance, pipeline_def, run_config, environment_dict):
-    tags = _add_execution_time_tag(run_config.tags)
     return instance.create_run(
         PipelineRun(
             pipeline_name=pipeline_def.name,
@@ -322,25 +321,11 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             mode=run_config.mode,
             selector=pipeline_def.selector,
             step_keys_to_execute=run_config.step_keys_to_execute,
-            tags=tags,
+            tags=run_config.tags,
             status=PipelineRunStatus.NOT_STARTED,
             previous_run_id=run_config.previous_run_id,
         )
     )
-
-
-def _add_execution_time_tag(tags):
-    if not tags:
-        return {EXECUTION_TIME_KEY: time.time()}
-
-    if EXECUTION_TIME_KEY in tags:
-        # execution_epoch_time expected to be able to be cast to float
-        # can be passed in as a string from airflow integration
-        execution_time = float(tags[EXECUTION_TIME_KEY])
-    else:
-        execution_time = time.time()
-
-    return merge_dicts(tags, {EXECUTION_TIME_KEY: execution_time})
 
 
 def execute_partition_set(partition_set, partition_filter, instance=None):

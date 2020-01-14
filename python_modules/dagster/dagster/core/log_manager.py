@@ -43,7 +43,6 @@ def construct_log_string(synth_props, logging_tags, message_props):
     skip_keys = [
         'dagster_event',  #         separately included
         'event_type_value',  #      separately included
-        'execution_epoch_time',  #  noise
         'logging_tags',  #          separately included
         'message',  #               dupe
         'pipeline_name',  #         separately included

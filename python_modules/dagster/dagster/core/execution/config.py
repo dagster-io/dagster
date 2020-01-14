@@ -8,8 +8,6 @@ from dagster import check
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 
-EXECUTION_TIME_KEY = 'execution_epoch_time'
-
 
 class IRunConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''
@@ -60,11 +58,6 @@ class RunConfig(
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         tags = check.opt_dict_param(tags, 'tags', key_type=str)
-
-        if EXECUTION_TIME_KEY in tags:
-            # execution_epoch_time expected to be able to be cast to float
-            # can be passed in as a string from airflow integration
-            tags[EXECUTION_TIME_KEY] = float(tags[EXECUTION_TIME_KEY])
 
         return super(RunConfig, cls).__new__(
             cls,
