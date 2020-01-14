@@ -2,11 +2,7 @@ import re
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.execution.config import (
-    ExecutorConfig,
-    check_non_ephemeral_instance,
-    check_persistent_storage_requirement,
-)
+from dagster.core.execution.config import ExecutorConfig
 
 
 class DaskConfig(
@@ -44,10 +40,6 @@ class DaskConfig(
     @property
     def is_remote_execution(self):
         return self.address and not re.match(r'127\.0\.0\.1|0\.0\.0\.0|localhost', self.address)
-
-    def check_requirements(self, instance, system_storage_def):
-        check_non_ephemeral_instance(instance)
-        check_persistent_storage_requirement(system_storage_def)
 
     @staticmethod
     def get_engine():

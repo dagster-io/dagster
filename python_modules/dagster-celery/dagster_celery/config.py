@@ -2,11 +2,7 @@ import os
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.execution.config import (
-    ExecutorConfig,
-    check_non_ephemeral_instance,
-    check_persistent_storage_requirement,
-)
+from dagster.core.execution.config import ExecutorConfig
 
 DEFAULT_PRIORITY = 5
 
@@ -46,6 +42,7 @@ class CeleryConfig(
     def __new__(
         cls, broker=None, backend='rpc://', include=None, config_source=None,
     ):
+
         return super(CeleryConfig, cls).__new__(
             cls,
             broker=check.opt_str_param(broker, 'broker', default=DEFAULT_BROKER),
@@ -55,10 +52,6 @@ class CeleryConfig(
                 dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
             ),
         )
-
-    def check_requirements(self, instance, system_storage_def):
-        check_non_ephemeral_instance(instance)
-        check_persistent_storage_requirement(system_storage_def)
 
     @staticmethod
     def get_engine():

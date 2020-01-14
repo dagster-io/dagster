@@ -130,6 +130,28 @@ def test_invalid_instance():
     assert not result.success
     assert len(result.event_list) == 1
     assert result.event_list[0].is_failure
+    assert (
+        result.event_list[0].pipeline_init_failure_data.error.cls_name
+        == 'DagsterUnmetExecutorRequirementsError'
+    )
+    assert 'non-ephemeral instance' in result.event_list[0].pipeline_init_failure_data.error.message
+
+
+def test_no_handle():
+    result = execute_pipeline(
+        define_diamond_pipeline(),
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.ephemeral(),
+        raise_on_error=False,
+    )
+    assert not result.success
+    assert len(result.event_list) == 1
+    assert result.event_list[0].is_failure
+    assert (
+        result.event_list[0].pipeline_init_failure_data.error.cls_name
+        == 'DagsterUnmetExecutorRequirementsError'
+    )
+    assert 'ExecutionTargetHandle' in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_solid_subset():
