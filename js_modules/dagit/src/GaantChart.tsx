@@ -79,50 +79,8 @@ const toMockSolidGraph = weakmapMemoize((run: RunFragment) => {
   return Object.values(solidsTable);
 });
 
-const forEachDep = (solid: ILayoutSolid, cb: (name: string) => void) => {
-  for (const out of solid.outputs) {
-    for (const dep of out.dependedBy) {
-      cb(dep.solid.name);
-    }
-  }
-};
-
-const collapseRunsInSolidGraph = (
-  solidGraph: ILayoutSolid[],
-  solidNames: string[]
-) => {
-  solidGraph = JSON.parse(JSON.stringify(solidGraph));
-
-  for (const name of solidNames) {
-    // find the node
-    const solid = solidGraph.find(s => s.name === name);
-    if (!solid) continue;
-
-    // merge the node with it's immediate children
-    const nextSet: string[] = [];
-    forEachDep(solid, childName => {
-      const childSolidIdx = solidGraph.findIndex(s => s.name === childName);
-      if (childSolidIdx === -1) return;
-      const [childSolid] = solidGraph.splice(childSolidIdx, 1);
-      forEachDep(childSolid, name => {
-        nextSet.push(name);
-      });
-    });
-
-    if (nextSet.length) {
-      solid.outputs[0].definition.name = "COLLAPSED";
-      solid.outputs[0].dependedBy = nextSet.map(m => ({
-        solid: { name: m },
-        definition: { name: "" }
-      }));
-    }
-  }
-
-  return solidGraph;
-};
-
-const layout = (solidGraph: ILayoutSolid[], steps: number) => {
-  let rows: GaantChartRow[] = solidGraph
+const layout = (solidGraph: ILayoutSolid[]) => {
+  const rows: GaantChartRow[] = solidGraph
     .filter(
       g =>
         g.inputs.filter(i =>
@@ -131,7 +89,7 @@ const layout = (solidGraph: ILayoutSolid[], steps: number) => {
     )
     .map(solid => ({ solid: solid, children: [], depth: 0, y: -1 }));
 
-  let rowZero = [...rows];
+  const rowZero = [...rows];
 
   const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
     if (parentIdx < childIdx) {
@@ -232,7 +190,7 @@ const layout = (solidGraph: ILayoutSolid[], steps: number) => {
   changed = true;
   while (changed) {
     changed = false;
-    let maxY = rows.reduce((m, r) => Math.max(m, r.y), 0);
+    const maxY = rows.reduce((m, r) => Math.max(m, r.y), 0);
     for (let y = 0; y < maxY; y++) {
       const empty = !rows.some(r => r.y === y);
       if (empty) {
@@ -249,8 +207,6 @@ const layout = (solidGraph: ILayoutSolid[], steps: number) => {
 interface GaantChartState {
   hoveredIdx: number;
   query: string;
-  collapsed: string[];
-  n: number;
 }
 
 export class GaantChart extends React.Component<
@@ -259,27 +215,18 @@ export class GaantChart extends React.Component<
 > {
   state: GaantChartState = {
     hoveredIdx: -1,
-    collapsed: [],
-    query: "*trials_raw",
-    n: 100
+    query: "*trials_raw"
   };
 
   render() {
-    const { hoveredIdx, query, collapsed, n } = this.state;
+    const { hoveredIdx, query } = this.state;
 
     const graph = toMockSolidGraph(this.props.run);
     const graphFiltered = filterByQuery(graph, query);
-    const graphCollapsed = collapseRunsInSolidGraph(
-      graphFiltered.all,
-      collapsed
-    );
-    const l = layout(graphCollapsed, n);
+    const l = layout(graphFiltered.all);
 
     return (
       <div style={{ height: "100%" }}>
-        <div onClick={() => this.setState({ n: n + 1 })}>+1</div>
-        <div onClick={() => this.setState({ n: n - 1 })}>-1</div>
-        <div>{n}</div>
         <div style={{ overflow: "scroll", height: "100%" }}>
           <div style={{ position: "relative" }}>
             {l.rows.map((row, idx) => (
@@ -291,22 +238,12 @@ export class GaantChart extends React.Component<
                     left: row.depth * BOX_WIDTH + 10,
                     width: BOX_WIDTH - 20
                   }}
-                  collapsed={
-                    row.solid.outputs[0]?.definition.name === "COLLAPSED"
-                  }
                   highlighted={
                     hoveredIdx === idx ||
                     l.rows[hoveredIdx]?.children.includes(row)
                   }
                   onMouseEnter={() => this.setState({ hoveredIdx: idx })}
                   onMouseLeave={() => this.setState({ hoveredIdx: -1 })}
-                  onClick={() =>
-                    this.setState({
-                      collapsed: collapsed.includes(row.solid.name)
-                        ? collapsed.filter(c => c !== row.solid.name)
-                        : [...collapsed, row.solid.name]
-                    })
-                  }
                 >
                   {row.solid.name}
                 </GaantBox>
@@ -393,18 +330,11 @@ const Line = styled.div`
     height 200ms linear;
 `;
 
-const GaantRow = styled.div`
-  display: block;
-  height: ${ROW_HEIGHT}px;
-  border-bottom: 1px solid #ccc;
-`;
-
-const GaantBox = styled.div<{ collapsed: boolean; highlighted: boolean }>`
+const GaantBox = styled.div<{ highlighted: boolean }>`
   display: inline-block;
   position: absolute;
   height: ${ROW_HEIGHT - ROW_MARGIN * 2}px;
-  background: ${({ collapsed, highlighted }) =>
-    highlighted ? "red" : collapsed ? "#1c71bc" : "#2491eb"};
+  background: ${({ highlighted }) => (highlighted ? "red" : "#2491eb")};
   color: white;
   font-size: 11px;
   border: 1px solid darkgreen;
