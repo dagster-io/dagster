@@ -17,6 +17,10 @@ DEFAULT_CONFIG = {
     'worker_prefetch_multiplier': 1,
 }
 
+DEFAULT_BROKER = 'pyamqp://guest@{hostname}:5672//'.format(
+    hostname=os.getenv('DAGSTER_CELERY_BROKER_HOST', 'localhost')
+)
+
 
 class dict_wrapper(object):
     '''Wraps a dict to convert `obj['attr']` to `obj.attr`.'''
@@ -34,7 +38,7 @@ class CeleryConfig(
         broker (Optional[str]): The URL of the Celery broker.
         backend (Optional[str]): The URL of the Celery backend.
         include (Optional[List[str]]): List of modules every worker should import.
-        queues (Optional[List[Dict]]): 
+        queues (Optional[List[Dict]]):
         config_source (Optional[Dict]): Config settings for the Celery app.
 
     '''
@@ -44,13 +48,7 @@ class CeleryConfig(
     ):
         return super(CeleryConfig, cls).__new__(
             cls,
-            broker=check.opt_str_param(
-                broker,
-                'broker',
-                default='pyamqp://guest@{hostname}'.format(
-                    hostname=os.getenv('DAGSTER_CELERY_BROKER_HOST', 'localhost')
-                ),
-            ),
+            broker=check.opt_str_param(broker, 'broker', default=DEFAULT_BROKER),
             backend=check.opt_str_param(backend, 'backend'),
             include=check.opt_list_param(include, 'include', of_type=str),
             config_source=dict_wrapper(
