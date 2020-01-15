@@ -443,8 +443,18 @@ CodeMirror.registerHelper(
       to: { line: cursor.line, ch: token.end }
     });
 
-    // Completion of composite field keys
-    if (context.availableFields.length) {
+    // Calculate if this is on a new-line child of a scalar union type, as an indication that we
+    // should autocomplete the selector fields of the scalar union
+    const isScalarUnionNewLine =
+      context.type.__typename === "ScalarUnionConfigType" && !prevToken.end;
+
+    // The context will have available fields if the type is a composite config type OR a scalar
+    // union type
+    if (
+      context.availableFields.length &&
+      (context.type.__typename === "CompositeConfigType" ||
+        isScalarUnionNewLine)
+    ) {
       return {
         list: context.availableFields
           .filter(field => field.name.startsWith(searchString))
@@ -480,6 +490,42 @@ CodeMirror.registerHelper(
           .filter(val => val.startsWith(searchString))
           .map(val => buildSuggestion(val, val, null))
       };
+    }
+
+    // Completion of Scalar Union field values, the union of the scalar suggestions and the
+    // non-scalar suggestions
+    const type = context.type;
+    if (type.__typename === "ScalarUnionConfigType") {
+      const scalarType = options.schema.allConfigTypes.find(
+        x => x.key === type.scalarTypeKey
+      );
+      const nonScalarType = options.schema.allConfigTypes.find(
+        x => x.key === type.nonScalarTypeKey
+      );
+      let scalarSuggestions: CodemirrorHint[] = [];
+      if (
+        scalarType &&
+        scalarType.__typename === "RegularConfigType" &&
+        scalarType.givenName === "Bool"
+      ) {
+        scalarSuggestions = ["True", "False"]
+          .filter(val => val.startsWith(searchString))
+          .map(val => buildSuggestion(val, val, null));
+      }
+      let nonScalarSuggestions: CodemirrorHint[] = [];
+      if (nonScalarType && nonScalarType.__typename === "CompositeConfigType") {
+        nonScalarSuggestions = nonScalarType.fields
+          .filter(field => field.name.startsWith(searchString))
+          .map(field =>
+            buildSuggestion(
+              field.name,
+              formatReplacement(field, start, token, prevToken),
+              field.description
+            )
+          );
+      }
+
+      return { list: [...scalarSuggestions, ...nonScalarSuggestions] };
     }
 
     return { list: [] };
@@ -539,9 +585,19 @@ function findAutocompletionContext(
         return null;
       }
 
-      if (type.__typename !== "CompositeConfigType") {
+      if (type.__typename === "ScalarUnionConfigType") {
         available = [];
-      } else {
+        const nonScalarTypeKey = type.nonScalarTypeKey;
+        const nonScalarType = schema.allConfigTypes.find(
+          x => x.key === nonScalarTypeKey
+        );
+        if (
+          nonScalarType &&
+          nonScalarType.__typename === "CompositeConfigType"
+        ) {
+          available = nonScalarType.fields;
+        }
+      } else if (type.__typename === "CompositeConfigType") {
         closestCompositeType = type;
         available = type.fields;
 
@@ -550,6 +606,8 @@ function findAutocompletionContext(
             item => immediateParent.childKeys.indexOf(item.name) === -1
           );
         }
+      } else {
+        available = [];
       }
     }
   }
