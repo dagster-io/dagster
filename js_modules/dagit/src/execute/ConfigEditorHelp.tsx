@@ -54,7 +54,7 @@ const AutocompletionsNote = styled.div`
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  max-height: calc(100vh - 230px);
+  max-height: 20vh;
   overflow-y: auto;
 `;
 

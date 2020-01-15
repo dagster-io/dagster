@@ -220,6 +220,7 @@ export default class ExecutionSessionContainer extends React.Component<
     return (
       <SplitPanelFlexbox>
         <SplitPanelChildren
+          axis="vertical"
           identifier={"execution"}
           leftInitialPercent={75}
           left={
@@ -330,31 +331,31 @@ export default class ExecutionSessionContainer extends React.Component<
             </>
           }
           right={
-            <>
-              <div
-                style={{
-                  position: "absolute",
-                  top: -41,
-                  zIndex: 3,
-                  right: 10
-                }}
-              >
-                {pipeline && (
-                  <PipelineExecutionButtonGroup
-                    pipelineName={pipeline.name}
-                    getVariables={this.buildExecutionVariables}
-                  />
-                )}
-              </div>
-              {preview ? (
-                <RunPreview
-                  plan={preview.executionPlan}
-                  validation={preview.isPipelineConfigValid}
-                />
-              ) : (
-                <RunPreview />
-              )}
-            </>
+            preview ? (
+              <RunPreview
+                plan={preview.executionPlan}
+                validation={preview.isPipelineConfigValid}
+                toolbarActions={
+                  pipeline && (
+                    <PipelineExecutionButtonGroup
+                      pipelineName={pipeline.name}
+                      getVariables={this.buildExecutionVariables}
+                    />
+                  )
+                }
+              />
+            ) : (
+              <RunPreview
+                toolbarActions={
+                  pipeline && (
+                    <PipelineExecutionButtonGroup
+                      pipelineName={pipeline.name}
+                      getVariables={this.buildExecutionVariables}
+                    />
+                  )
+                }
+              />
+            )
           }
         />
       </SplitPanelFlexbox>
@@ -417,7 +418,7 @@ const PREVIEW_CONFIG_QUERY = gql`
 
 const SplitPanelFlexbox = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex: 1 1;
 `;
 

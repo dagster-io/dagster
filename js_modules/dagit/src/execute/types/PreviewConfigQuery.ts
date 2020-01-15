@@ -53,10 +53,33 @@ export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvali
   __typename: "PipelineConfigValidationInvalid";
 }
 
+export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn[];
+}
+
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
   __typename: "ExecutionStep";
   key: string;
   kind: StepKind;
+  inputs: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs[];
 }
 
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan {

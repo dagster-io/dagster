@@ -35,6 +35,7 @@ import {
 } from "./types/RunPipelineRunEventFragment";
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../DomUtils";
+import { GaantChart, GaantChartLayoutMode } from "../GaantChart";
 
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 const REEXECUTE_PIPELINE_UNKNOWN =
@@ -268,15 +269,48 @@ export class Run extends React.Component<IRunProps, IRunState> {
     );
   }
 
+  renderActionButtons() {
+    const { run } = this.props;
+    const isUnknown = run?.pipeline.__typename === "UnknownPipeline";
+
+    return (
+      <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
+        mutation={START_PIPELINE_EXECUTION_MUTATION}
+      >
+        {reexecuteMutation => (
+          <>
+            <Tooltip
+              hoverOpenDelay={300}
+              position={Position.BOTTOM}
+              content={
+                isUnknown ? REEXECUTE_PIPELINE_UNKNOWN : REEXECUTE_DESCRIPTION
+              }
+            >
+              <ExecutionStartButton
+                title="Re-execute"
+                icon={IconNames.REPEAT}
+                small={true}
+                disabled={isUnknown}
+                onClick={() => this.onReexecute(reexecuteMutation)}
+              />
+            </Tooltip>
+            {run && run.canCancel ? (
+              <>
+                <div style={{ minWidth: 6 }} />
+                <CancelRunButton run={run} />
+              </>
+            ) : null}
+            {this.renderRetry(reexecuteMutation)}
+          </>
+        )}
+      </Mutation>
+    );
+  }
+
   render() {
     const { client, run } = this.props;
     const { logsFilter, highlightedError } = this.state;
 
-    const stepKeysToExecute: (string | null)[] | null = run
-      ? run.stepKeysToExecute
-      : null;
-
-    const isUnknown = run?.pipeline.__typename === "UnknownPipeline";
     const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
       __typename: "ExecutionPlan",
       steps: [],
@@ -284,116 +318,90 @@ export class Run extends React.Component<IRunProps, IRunState> {
     };
 
     return (
-      <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
-        mutation={START_PIPELINE_EXECUTION_MUTATION}
-      >
-        {reexecuteMutation => (
-          <RunWrapper>
-            <RunContext.Provider value={run}>
-              {run && <RunStatusToPageAttributes run={run} />}
-              <LogsProvider
-                client={client}
-                runId={run ? run.runId : ""}
-                filter={logsFilter}
-              >
-                {({ filteredNodes, allNodes }) => (
-                  <SplitPanelChildren
-                    identifier="run"
-                    leftInitialPercent={75}
-                    leftMinWidth={680}
-                    left={
-                      <LogsContainer>
-                        <LogsToolbar
-                          showSpinner={false}
-                          filter={logsFilter}
-                          onSetFilter={filter =>
-                            this.setState({ logsFilter: filter })
+      <RunWrapper>
+        <RunContext.Provider value={run}>
+          {run && <RunStatusToPageAttributes run={run} />}
+          <LogsProvider
+            client={client}
+            runId={run ? run.runId : ""}
+            filter={logsFilter}
+          >
+            {({ filteredNodes, allNodes }) => (
+              <SplitPanelChildren
+                axis="vertical"
+                identifier="run"
+                leftInitialPercent={75}
+                leftMinWidth={680}
+                left={
+                  <>
+                    <RunMetadataProvider logs={allNodes}>
+                      {metadata => (
+                        <GaantChart
+                          options={{
+                            mode: GaantChartLayoutMode.WATERFALL_TIMED
+                          }}
+                          toolbarActions={this.renderActionButtons()}
+                          plan={executionPlan}
+                          metadata={metadata}
+                          // run={run}
+                          // runMetadata={metadata}
+                          // executionPlan={executionPlan}
+                          // stepKeysToExecute={stepKeysToExecute}
+                          // onShowStateDetails={stepKey => {
+                          //   this.onShowStateDetails(stepKey, allNodes);
+                          // }}
+                          // onReexecuteStep={stepKey =>
+                          //   this.onReexecute(reexecuteMutation, stepKey)
+                          // }
+                          onApplyStepFilter={stepKey =>
+                            this.setState({
+                              logsFilter: {
+                                ...this.state.logsFilter,
+                                text: `step:${stepKey}`
+                              }
+                            })
                           }
-                        >
-                          <Tooltip
-                            hoverOpenDelay={300}
-                            position={Position.BOTTOM}
-                            content={
-                              isUnknown
-                                ? REEXECUTE_PIPELINE_UNKNOWN
-                                : REEXECUTE_DESCRIPTION
-                            }
-                          >
-                            <ExecutionStartButton
-                              title="Re-execute"
-                              icon={IconNames.REPEAT}
-                              small={true}
-                              disabled={isUnknown}
-                              onClick={() =>
-                                this.onReexecute(reexecuteMutation)
-                              }
-                            />
-                          </Tooltip>
-                          {run && run.canCancel ? (
-                            <>
-                              <div style={{ minWidth: 6 }} />
-                              <CancelRunButton run={run} />
-                            </>
-                          ) : null}
-                          {this.renderRetry(reexecuteMutation)}
-                        </LogsToolbar>
-                        <LogsScrollingTable
-                          nodes={filteredNodes}
-                          filterKey={JSON.stringify(logsFilter)}
                         />
-                      </LogsContainer>
-                    }
-                    right={
-                      <>
-                        <RunMetadataProvider logs={allNodes}>
-                          {metadata => (
-                            <ExecutionPlan
-                              run={run}
-                              runMetadata={metadata}
-                              executionPlan={executionPlan}
-                              stepKeysToExecute={stepKeysToExecute}
-                              onShowStateDetails={stepKey => {
-                                this.onShowStateDetails(stepKey, allNodes);
-                              }}
-                              onReexecuteStep={stepKey =>
-                                this.onReexecute(reexecuteMutation, stepKey)
-                              }
-                              onApplyStepFilter={stepKey =>
-                                this.setState({
-                                  logsFilter: {
-                                    ...this.state.logsFilter,
-                                    text: `step:${stepKey}`
-                                  }
-                                })
-                              }
-                            />
-                          )}
-                        </RunMetadataProvider>
-                        {highlightedError && (
-                          <InfoModal
-                            onRequestClose={() =>
-                              this.setState({ highlightedError: undefined })
-                            }
-                          >
-                            <PythonErrorInfo error={highlightedError} />
-                          </InfoModal>
-                        )}
-                      </>
-                    }
-                  />
-                )}
-              </LogsProvider>
-            </RunContext.Provider>
-          </RunWrapper>
-        )}
-      </Mutation>
+                      )}
+                    </RunMetadataProvider>
+                    {highlightedError && (
+                      <InfoModal
+                        onRequestClose={() =>
+                          this.setState({ highlightedError: undefined })
+                        }
+                      >
+                        <PythonErrorInfo error={highlightedError} />
+                      </InfoModal>
+                    )}
+                  </>
+                }
+                right={
+                  <LogsContainer>
+                    <LogsToolbar
+                      showSpinner={false}
+                      filter={logsFilter}
+                      onSetFilter={filter =>
+                        this.setState({ logsFilter: filter })
+                      }
+                    />
+                    <LogsScrollingTable
+                      nodes={filteredNodes}
+                      filterKey={JSON.stringify(logsFilter)}
+                    />
+                  </LogsContainer>
+                }
+              />
+            )}
+          </LogsProvider>
+        </RunContext.Provider>
+      </RunWrapper>
     );
   }
 }
 
 const RunWrapper = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex: 1 1;
   min-height: 0;
 `;

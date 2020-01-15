@@ -3,15 +3,16 @@ import styled from "styled-components/macro";
 import gql from "graphql-tag";
 import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
+import { GaantChart, GaantChartLayoutMode } from "../GaantChart";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
   validation?: RunPreviewConfigValidationFragment;
+  toolbarActions?: React.ReactChild;
 }
 
 interface IErrorMessage {
@@ -35,7 +36,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
       fragment RunPreviewExecutionPlanResultFragment on ExecutionPlanResult {
         __typename
         ... on ExecutionPlan {
-          ...ExecutionPlanFragment
+          ...GaantChartExecutionPlanFragment
         }
         ... on PipelineNotFoundError {
           message
@@ -45,7 +46,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
         }
         ...PythonErrorFragment
       }
-      ${ExecutionPlan.fragments.ExecutionPlanFragment}
+      ${GaantChart.fragments.GaantChartExecutionPlanFragment}
       ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
@@ -55,7 +56,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
   };
 
   render() {
-    const { plan, validation } = this.props;
+    const { plan, validation, toolbarActions } = this.props;
     let pythonError = null;
     let errors: IErrorMessage[] = [];
     if (validation?.__typename === "PipelineConfigValidationInvalid") {
@@ -83,7 +84,11 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
     }
 
     return plan?.__typename === "ExecutionPlan" ? (
-      <ExecutionPlan executionPlan={plan} />
+      <GaantChart
+        plan={plan}
+        options={{ mode: GaantChartLayoutMode.WATERFALL }}
+        toolbarActions={toolbarActions}
+      />
     ) : (
       <NonIdealWrap>
         <NonIdealState

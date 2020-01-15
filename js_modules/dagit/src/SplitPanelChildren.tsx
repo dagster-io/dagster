@@ -11,6 +11,7 @@ interface IDividerState {
 }
 
 interface SplitPanelChildrenProps {
+  axis?: "horizontal" | "vertical";
   identifier: string;
   left: React.ReactNode;
   leftInitialPercent: number;
@@ -46,14 +47,19 @@ export class SplitPanelChildren extends React.Component<
   render() {
     const { leftMinWidth, left, right } = this.props;
     const { width } = this.state;
+    const axis = this.props.axis || "horizontal";
 
     return (
       <>
-        <Split width={width} style={{ flexShrink: 0, minWidth: leftMinWidth }}>
+        <Split
+          axis={axis}
+          axisSize={width}
+          style={{ flexShrink: 0, minWidth: leftMinWidth }}
+        >
           {left}
         </Split>
-        <PanelDivider axis="horizontal" onMove={this.onChangeWidth} />
-        <Split>{right}</Split>
+        <PanelDivider axis={axis} onMove={this.onChangeWidth} />
+        <Split axis={axis}>{right}</Split>
       </>
     );
   }
@@ -134,10 +140,20 @@ const DividerHitArea = {
   `
 };
 
-const Split = styled.div<{ width?: number }>`
-  ${props => (props.width ? `width: ${props.width}vw` : `flex: 1`)};
+const Split = styled.div<{
+  axisSize?: number;
+  axis: "vertical" | "horizontal";
+}>`
+  ${props =>
+    props.axis === "horizontal"
+      ? props.axisSize
+        ? `width: ${props.axisSize}vw`
+        : `flex: 1`
+      : props.axisSize
+      ? `height: ${props.axisSize}vh`
+      : `flex: 1`};
   position: relative;
   flex-direction: column;
   display: flex;
-  min-width: 0;
+  ${props => (props.axis === "horizontal" ? "min-width: 0" : "min-height: 0")};
 `;

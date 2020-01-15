@@ -1,7 +1,8 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
+import { MenuItem, Menu, Popover, InputGroup, Button } from "@blueprintjs/core";
 import { GraphQueryItem } from "./GraphQueryImpl";
+import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
 
 interface GraphQueryInputProps {
@@ -9,6 +10,7 @@ interface GraphQueryInputProps {
   value: string;
   onChange: (value: string) => void;
   autoFocus?: boolean;
+  presets?: { name: string; value: string }[];
 }
 
 interface ActiveSuggestionInfo {
@@ -181,6 +183,42 @@ export const GraphQueryInput = (props: GraphQueryInputProps) => {
           onKeyUp={onKeyUp}
         />
       </Popover>
+      {props.presets &&
+        (props.presets.find(p => p.value === pendingValue) ? (
+          <Button
+            style={{ marginLeft: 5 }}
+            icon={IconNames.LAYERS}
+            rightIcon={IconNames.CROSS}
+            onClick={() => {
+              props.onChange("");
+            }}
+          />
+        ) : (
+          <Popover
+            content={
+              <Menu>
+                <Menu.Divider title="Presets" />
+                {props.presets.map(preset => (
+                  <MenuItem
+                    key={preset.name}
+                    text={preset.name}
+                    onMouseDown={(e: React.MouseEvent<any>) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      props.onChange(preset.value);
+                    }}
+                  />
+                ))}
+              </Menu>
+            }
+          >
+            <Button
+              style={{ marginLeft: 5 }}
+              icon={IconNames.LAYERS}
+              rightIcon={IconNames.CARET_UP}
+            />
+          </Popover>
+        ))}
     </GraphQueryInputContainer>
   );
 };
