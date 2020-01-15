@@ -4,7 +4,7 @@ from datetime import datetime
 import jwt
 import requests
 
-from dagster import Field, Int, String, resource
+from dagster import Field, resource
 
 
 def to_seconds(dt):
@@ -139,15 +139,15 @@ class GithubResource:
 @resource(
     config={
         "github_app_id": Field(
-            Int,
+            int,
             description="Github Application ID, for more info see https://developer.github.com/apps/",
         ),
         "github_app_private_rsa_key": Field(
-            String,
+            str,
             description="Github Application Private RSA key text, for more info see https://developer.github.com/apps/",
         ),
         "github_installation_id": Field(
-            Int,
+            int,
             is_optional=True,
             description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
         ),
