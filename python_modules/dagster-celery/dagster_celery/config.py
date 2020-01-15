@@ -11,6 +11,12 @@ DEFAULT_QUEUE = 'dagster'
 DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,
     'worker_prefetch_multiplier': 1,
+    'broker_transport_options': {
+        "max_retries": 3,
+        "interval_start": 0,
+        "interval_step": 0.2,
+        "interval_max": 0.5,
+    },
 }
 
 DEFAULT_BROKER = 'pyamqp://guest@{hostname}:5672//'.format(
