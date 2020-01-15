@@ -6,23 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_required_resources 1'] = {
-    'pipeline': {
-        'name': 'required_resource_pipeline',
-        'solids': [
-            {
-                'definition': {
-                    'requiredResources': [
-                        {
-                            'resourceKey': 'R1'
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-}
-
 snapshots['test_mode_fetch_resources 1'] = {
     'pipeline': {
         '__typename': 'Pipeline',
@@ -33,7 +16,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': {
                             'configType': {
-                                'name': 'Int'
+                                'key': 'Int'
                             }
                         },
                         'description': None,
@@ -50,18 +33,18 @@ snapshots['test_mode_fetch_resources 1'] = {
                                 'fields': [
                                     {
                                         'configType': {
-                                            'name': 'Int'
+                                            'key': 'Int'
                                         },
                                         'name': 'num_one'
                                     },
                                     {
                                         'configType': {
-                                            'name': 'Int'
+                                            'key': 'Int'
                                         },
                                         'name': 'num_two'
                                     }
                                 ],
-                                'name': None
+                                'key': 'Shape.46ed531fb407db3450eaf305b9b22d72e404a01f'
                             }
                         },
                         'description': None,
@@ -75,13 +58,30 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': {
                             'configType': {
-                                'name': 'Int'
+                                'key': 'Int'
                             }
                         },
                         'description': None,
                         'name': 'op'
                     }
                 ]
+            }
+        ]
+    }
+}
+
+snapshots['test_required_resources 1'] = {
+    'pipeline': {
+        'name': 'required_resource_pipeline',
+        'solids': [
+            {
+                'definition': {
+                    'requiredResources': [
+                        {
+                            'resourceKey': 'R1'
+                        }
+                    ]
+                }
             }
         ]
     }

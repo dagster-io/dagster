@@ -29,18 +29,15 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
 ALL_RUNTIME_TYPES_QUERY = '''
 fragment schemaTypeFragment on ConfigType {
   key
-  name
   ... on CompositeConfigType {
     fields {
       name
       configType {
         key
-        name
       }
     }
     recursiveConfigTypes {
       key
-      name
     }
   }
 }

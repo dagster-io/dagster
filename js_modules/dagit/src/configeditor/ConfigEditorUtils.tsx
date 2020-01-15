@@ -10,11 +10,14 @@ export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
     allConfigTypes {
       __typename
       key
-      name
       description
       isSelector
       typeParamKeys
+      ... on RegularConfigType {
+        givenName
+      }
       ... on EnumConfigType {
+        givenName
         values {
           value
           description
@@ -27,6 +30,11 @@ export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
           isOptional
           configTypeKey
         }
+      }
+      ... on ScalarUnionConfigType {
+        key
+        scalarTypeKey
+        nonScalarTypeKey
       }
     }
   }

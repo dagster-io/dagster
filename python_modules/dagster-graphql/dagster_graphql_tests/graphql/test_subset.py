@@ -9,14 +9,14 @@ query EnvironmentQuery($pipelineName: String!, $solidSubset: [String!]){
         ... on EnvironmentSchema {
             allConfigTypes {
                 __typename
-                name
+                key 
                 ... on CompositeConfigType {
                     __typename
                     fields {
                         __typename
                         name
                         configType {
-                            name
+                            key 
                             __typename
                         }
                     }

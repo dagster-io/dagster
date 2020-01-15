@@ -12,17 +12,25 @@ export interface ExecutionSessionContainerEnvironmentSchemaFragment_PipelineNotF
 }
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_rootEnvironmentType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
   key: string;
 }
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_values {
@@ -34,10 +42,10 @@ export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentS
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+  givenName: string;
   values: ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType_values[];
 }
 
@@ -52,14 +60,23 @@ export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentS
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export type ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ArrayConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType;
+export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes = ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ArrayConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_RegularConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_EnumConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_CompositeConfigType | ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema_allConfigTypes_ScalarUnionConfigType;
 
 export interface ExecutionSessionContainerEnvironmentSchemaFragment_EnvironmentSchema {
   __typename: "EnvironmentSchema";

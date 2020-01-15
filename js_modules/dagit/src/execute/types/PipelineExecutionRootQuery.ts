@@ -54,17 +54,25 @@ export interface PipelineExecutionRootQuery_environmentSchemaOrError_PipelineNot
 }
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_rootEnvironmentType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
   key: string;
 }
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType_values {
@@ -76,10 +84,10 @@ export interface PipelineExecutionRootQuery_environmentSchemaOrError_Environment
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType {
   __typename: "EnumConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+  givenName: string;
   values: PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType_values[];
 }
 
@@ -94,14 +102,23 @@ export interface PipelineExecutionRootQuery_environmentSchemaOrError_Environment
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType_fields[];
 }
 
-export type PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes = PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ArrayConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType;
+export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes = PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ArrayConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_RegularConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_EnumConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_CompositeConfigType | PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema_allConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExecutionRootQuery_environmentSchemaOrError_EnvironmentSchema {
   __typename: "EnvironmentSchema";

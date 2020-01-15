@@ -684,7 +684,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
     def resolve_allConfigTypes(self, _graphene_info):
         return sorted(
             list(map(to_dauphin_config_type, self._environment_schema.all_config_types())),
-            key=lambda ct: ct.name if ct.name else '',
+            key=lambda ct: ct.key,
         )
 
     def resolve_rootEnvironmentType(self, _graphene_info):

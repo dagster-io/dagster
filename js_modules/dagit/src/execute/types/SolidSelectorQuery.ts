@@ -138,8 +138,8 @@ export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_o
 }
 
 export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
-  name: string | null;
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  key: string;
   description: string | null;
 }
 

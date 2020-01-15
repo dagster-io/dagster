@@ -204,7 +204,7 @@ def check_persistent_storage_requirement(system_storage_def):
     if not system_storage_def.is_persistent:
         raise DagsterUnmetExecutorRequirementsError(
             (
-                'You have attempted use a multi process executor while using system '
+                'You have attempted to use an executor that uses multiple processes while using system '
                 'storage {storage_name} which does not persist intermediates. '
                 'This means there would be no way to move data between different '
                 'processes. Please configure your pipeline in the storage config '
@@ -216,8 +216,8 @@ def check_persistent_storage_requirement(system_storage_def):
 def check_non_ephemeral_instance(instance):
     if instance.is_ephemeral:
         raise DagsterUnmetExecutorRequirementsError(
-            'You have attempted to use a multi process executor with an ephemeral DagsterInstance. '
-            'A non-ephermal instance is needed to coordinate execution between multiple processes. '
-            'You can configure your default instance via $DAGSTER_HOME or ensure a valid one is '
-            'passed when invoking the python APIs.'
+            'You have attempted to use an executor that uses multiple processes with an '
+            'ephemeral DagsterInstance. A non-ephermal instance is needed to coordinate '
+            'execution between multiple processes. You can configure your default instance '
+            'via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs.'
         )

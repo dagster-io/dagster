@@ -23,4 +23,8 @@ def iterate_config_types(config_type):
             for inner_type in iterate_config_types(field_type.config_type):
                 yield inner_type
 
+    if config_type.kind == ConfigTypeKind.SCALAR_UNION:
+        yield config_type.scalar_type
+        yield config_type.non_scalar_type
+
     yield config_type

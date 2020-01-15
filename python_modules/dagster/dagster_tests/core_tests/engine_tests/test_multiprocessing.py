@@ -77,7 +77,7 @@ def define_diamond_pipeline():
                 {
                     'storage': {'filesystem': {}},
                     'execution': {'multiprocess': {}},
-                    'solids': {'adder': {'inputs': {'left': 1, 'right': 1}}},
+                    'solids': {'adder': {'inputs': {'left': {'value': 1}, 'right': {'value': 1}}}},
                 },
                 solid_subset=['adder'],
             )
