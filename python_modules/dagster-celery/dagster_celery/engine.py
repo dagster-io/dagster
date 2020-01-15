@@ -1,11 +1,14 @@
+import sys
 import time
 from collections import defaultdict
 
 from dagster import check
 from dagster.core.engine.engine_base import Engine
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import DEFAULT_PRIORITY, DEFAULT_QUEUE, CeleryConfig
 from .tasks import create_task, make_app
@@ -108,9 +111,19 @@ class CeleryEngine(Engine):
             # case has m >> n to exhibit this behavior in the absence of this sort step.
             to_execute = sorted(pending_to_pop, key=sort_by_priority)
             for step_key in to_execute:
-                step_results[step_key] = task_signatures[step_key].apply_async(
-                    **apply_kwargs[step_key]
-                )
+                try:
+                    step_results[step_key] = task_signatures[step_key].apply_async(
+                        **apply_kwargs[step_key]
+                    )
+                except Exception:
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        'Encountered error during celery task submission.'.format(),
+                        event_specific_data=EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info()),
+                        ),
+                    )
+                    raise
 
             for step_key in pending_to_pop:
                 if step_key in pending_steps:
