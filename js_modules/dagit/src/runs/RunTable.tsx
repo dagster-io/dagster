@@ -13,7 +13,8 @@ import {
   Tooltip,
   NonIdealState,
   Tag,
-  Intent
+  Intent,
+  Position
 } from "@blueprintjs/core";
 import {
   Details,
@@ -35,7 +36,10 @@ import { SharedToaster } from "../DomUtils";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { Link } from "react-router-dom";
-import { RunTableRunFragment } from "./types/RunTableRunFragment";
+import {
+  RunTableRunFragment,
+  RunTableRunFragment_tags
+} from "./types/RunTableRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
 import { useMutation } from "react-apollo";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
@@ -227,25 +231,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
                 : `${run.stepKeysToExecute.length} Steps`}
             </div>
           )}
-          <div>
-            {run.tags.map((t, idx) => {
-              // Manually hide 'dagster/schedule_id` tags
-              if (t.key === "dagster/schedule_id") {
-                return null;
-              }
-
-              return (
-                <Tooltip
-                  content={`${t.key}=${t.value}`}
-                  key={idx}
-                  wrapperTagName="div"
-                  targetTagName="div"
-                >
-                  <Tag style={{ margin: 1 }}>{`${t.key}=${t.value}`}</Tag>
-                </Tooltip>
-              );
-            })}
-          </div>
+          <RunTags tags={run.tags} />
         </div>
       </RowColumn>
       <RowColumn style={{ flex: 1.8, borderRight: 0 }}>{time}</RowColumn>
@@ -254,6 +240,130 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
       </RowColumn>
     </RowContainer>
   );
+};
+
+const DAGSTER_TAG_NAMESPACE = "dagster/";
+
+const RunTags: React.FunctionComponent<{
+  tags: RunTableRunFragment_tags[];
+}> = ({ tags }) => {
+  const [open, setOpen] = React.useState(false);
+
+  if (!tags.length) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        height: open ? undefined : 22,
+        position: "relative",
+        overflow: "hidden"
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          minWidth: open ? undefined : "fit-content",
+          width: "100%",
+          whiteSpace: open ? "pre-wrap" : "nowrap",
+          display: open ? "block" : "flex",
+          flexDirection: open ? undefined : "row"
+        }}
+      >
+        {tags.map((tag, idx) => {
+          if (tag.key.startsWith(DAGSTER_TAG_NAMESPACE)) {
+            const tagKey = tag.key.substr(DAGSTER_TAG_NAMESPACE.length);
+            const [h, s, l] = strToHSL(tagKey);
+            return (
+              <Tooltip
+                key={idx}
+                content={`${tag.key}=${tag.value}`}
+                wrapperTagName="div"
+                targetTagName="div"
+                position={Position.LEFT}
+              >
+                <Tag
+                  style={{
+                    margin: 1,
+                    backgroundColor: `hsl(${h}, ${s}%, ${l}%)`
+                  }}
+                >
+                  {`${tagKey}=${tag.value}`}
+                </Tag>
+              </Tooltip>
+            );
+          }
+          return (
+            <Tag
+              key={idx}
+              style={{ margin: 1 }}
+            >{`${tag.key}=${tag.value}`}</Tag>
+          );
+        })}
+        <div
+          style={{
+            display: open ? "none" : "block",
+            margin: 0,
+            position: "absolute",
+            height: 22,
+            zIndex: 2,
+            right: 0,
+            bottom: 0,
+            padding: "0 5px",
+            backgroundColor: "#ffffff",
+            userSelect: "none",
+            color: "#ffffff"
+          }}
+        >
+          ...
+        </div>
+      </div>
+      <div
+        style={{
+          display: open ? "none" : "block",
+          margin: 0,
+          position: "absolute",
+          height: 24,
+          zIndex: 1,
+          right: 0,
+          bottom: 0,
+          padding: "0 10px",
+          textAlign: "center",
+          backgroundColor: "#ffffff",
+          cursor: "pointer"
+        }}
+        onClick={() => setOpen(true)}
+      >
+        ...
+      </div>
+    </div>
+  );
+};
+
+const strToNumber = (str: string) => {
+  const seed = 113;
+  const seed2 = 149;
+  let current = 0;
+  str += "x";
+  const MAX_SAFE_INTEGER: number = Math.floor(Number.MAX_SAFE_INTEGER / seed);
+  for (let i = 0; i < str.length; i++) {
+    if (current > MAX_SAFE_INTEGER) {
+      current = Math.floor(current / seed);
+    }
+    current = current * seed2 + str.charCodeAt(i);
+  }
+  return current;
+};
+
+const strToHSL = (str: string) => {
+  const seed = 37;
+  const h = 218;
+  const s = (strToNumber(str) % 25) + 25;
+  const l = ((strToNumber(str) * seed) % 20) + 60;
+  return [h, s, l];
 };
 
 const RunActionsMenu: React.FunctionComponent<{
