@@ -51,6 +51,8 @@ the data ecosystem.
       Dataproc for hosted cluster compute.
     - **dagster-ge** includes tools for working with the
       `Great Expectations <https://greatexpectations.io/>`_ data quality testing library.
+    - **dagster-github** includes a resource that lets you interact with `Github <https://github.com/>`_
+      from within dagster pipelines.
     - **dagster-pagerduty** includes a resource that lets you trigger
       `PagerDuty <https://www.pagerduty.com/>`_ alerts from within dagster pipelines.
     - **dagster-pandas** includes tools for working with the common
