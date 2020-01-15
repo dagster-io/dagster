@@ -12,6 +12,7 @@ DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,
     'worker_prefetch_multiplier': 1,
     'broker_transport_options': {
+        # these defaults were lifted from examples - worth updating
         "max_retries": 3,
         "interval_start": 0,
         "interval_step": 0.2,
