@@ -3,6 +3,7 @@ from kubernetes import client, config
 from dagster import Field
 from dagster import __version__ as dagster_version
 from dagster import check
+from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -154,10 +155,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         )
         return job
 
-    def launch_run(self, run):
+    def launch_run(self, instance, run):
         check.inst_param(run, 'run', PipelineRun)
+        check.inst_param(instance, 'instance', DagsterInstance)
 
+        instance.create_run(run)
         job = self.construct_job(run)
         api_response = self._kube_api.create_namespaced_job(body=job, namespace="default")
+        # FIXME add an event here
         print("Job created. status='%s'" % str(api_response.status))
         return run

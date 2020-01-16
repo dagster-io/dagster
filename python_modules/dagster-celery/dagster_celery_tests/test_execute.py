@@ -342,7 +342,7 @@ def test_bad_broker():
         ).build_pipeline_definition(),
         environment_dict={
             'storage': {'filesystem': {}},
-            'execution': {'celery': {'config': {'config_source': {'broker_url': 'bad@bad.bad'}}}},
+            'execution': {'celery': {'config': {'broker': 'bad@bad.bad'}}},
         },
         instance=DagsterInstance.local_temp(),
     )

@@ -1,28 +1,23 @@
-import os
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.execution.config import ExecutorConfig
 
-DEFAULT_PRIORITY = 5
-
-DEFAULT_QUEUE = 'dagster'
+from .defaults import (
+    broker_transport_options,
+    broker_url,
+    result_backend,
+    task_default_priority,
+    task_default_queue,
+)
 
 DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,
     'worker_prefetch_multiplier': 1,
-    'broker_transport_options': {
-        # these defaults were lifted from examples - worth updating
-        "max_retries": 3,
-        "interval_start": 0,
-        "interval_step": 0.2,
-        "interval_max": 0.5,
-    },
+    'broker_transport_options': broker_transport_options,
+    'task_default_priority': task_default_priority,
+    'task_default_queue': task_default_queue,
 }
-
-DEFAULT_BROKER = 'pyamqp://guest@{hostname}:5672//'.format(
-    hostname=os.getenv('DAGSTER_CELERY_BROKER_HOST', 'localhost')
-)
 
 
 class dict_wrapper(object):
@@ -47,13 +42,13 @@ class CeleryConfig(
     '''
 
     def __new__(
-        cls, broker=None, backend='rpc://', include=None, config_source=None,
+        cls, broker=None, backend=None, include=None, config_source=None,
     ):
 
         return super(CeleryConfig, cls).__new__(
             cls,
-            broker=check.opt_str_param(broker, 'broker', default=DEFAULT_BROKER),
-            backend=check.opt_str_param(backend, 'backend'),
+            broker=check.opt_str_param(broker, 'broker', default=broker_url),
+            backend=check.opt_str_param(backend, 'backend', default=result_backend),
             include=check.opt_list_param(include, 'include', of_type=str),
             config_source=dict_wrapper(
                 dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))

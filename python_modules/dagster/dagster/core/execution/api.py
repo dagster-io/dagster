@@ -354,4 +354,4 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
         # Remove once we can handle synchronous execution... currently limited by sqlite
         time.sleep(0.1)
 
-        instance.run_launcher.launch_run(run)
+        instance.launch_run(run)

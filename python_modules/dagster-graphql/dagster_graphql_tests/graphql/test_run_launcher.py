@@ -29,7 +29,7 @@ class InMemoryRunLauncher(RunLauncher):
     def __init__(self):
         self._queue = []
 
-    def launch_run(self, run):
+    def launch_run(self, _instance, run):
         self._queue.append(run)
         return run
 

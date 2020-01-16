@@ -14,15 +14,40 @@ dagit:
 # Image to use for executing jobs; this is typically the same image as dagit
 job_image: "dagster-docker-buildkite:latest"
 
+workers:
+  nameOverride: ""
+
 # Configuration values for postgresql
 # https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
 postgresql:
+  # set postgresql.enabled to be false to disable deploy of a Postgres database (e.g., to use
+  # RDS instead, etc.)
   enabled: true
-  postgresqlUsername: dagster
-  postgresqlPassword: test123
-  postgresqlDatabase: dagster
+  postgresqlUsername: test
+  # Note when changing this password (e.g. in test) that credentials will
+  # persist as long as the PVCs do -- see:
+  # https://github.com/helm/charts/issues/12836#issuecomment-524552358
+  postgresqlPassword: test
+  postgresqlDatabase: test
   service:
     port: 5432
+
+# Configuration values for rabbitmq and celery
+celery:
+  # set celery.enabled to be false to disable deploy of the celery workers & rabbitmq
+  enabled: true
+  replicaCount: 5
+
+# This is gated by celery.enabled above
+# https://github.com/helm/charts/issues/17250#issuecomment-533444837
+rabbitmq:
+  rabbitmq:
+    username: test
+    password: test
+  service:
+    port: 5672
+  volumePermissions:
+    enabled: true
 
 serviceAccount:
   create: true
@@ -37,10 +62,8 @@ service:
 
 resources:
   {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 100m
   #   memory: 128Mi

@@ -29,6 +29,16 @@ If release name contains chart name it will be used as a full name.
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "dagster.workers.fullname" -}}
+{{- $name := default "dagster-celery-workers" .Values.workers.nameOverride -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "dagster.rabbitmq.fullname" -}}
+{{- $name := default "rabbitmq" .Values.rabbitmq.nameOverride -}}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{/*
 Create a default fully qualified postgresql name or use the `postgresHost` value if defined.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).

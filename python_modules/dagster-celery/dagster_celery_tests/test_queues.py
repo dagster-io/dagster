@@ -53,11 +53,11 @@ def start_celery_worker(queue=None):
         runargs += ['-q', queue]
     result = runner.invoke(main, runargs)
     assert result.exit_code == 0, str(result.exception)
-
-    yield
-
-    result = runner.invoke(main, ['worker', 'terminate'])
-    assert result.exit_code == 0, str(result.exception)
+    try:
+        yield
+    finally:
+        result = runner.invoke(main, ['worker', 'terminate'])
+        assert result.exit_code == 0, str(result.exception)
 
 
 @solid(metadata={'dagster-celery/queue': 'fooqueue'})
@@ -83,6 +83,7 @@ def test_multiqueue():
     done = threading.Event()
     with start_celery_worker():
         execute_thread = threading.Thread(target=execute_on_thread, args=(done,))
+        execute_thread.daemon = True
         execute_thread.start()
         time.sleep(1)
         assert not done.is_set()

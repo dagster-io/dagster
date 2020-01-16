@@ -31,10 +31,19 @@ def assert_called(mck):
 def pythonpath(path):
     '''Inserts a path into the PYTHONPATH, then restores the previous PYTHONPATH when it
     cleans up'''
-    old_path = sys.path
-    sys.path.insert(0, path)
-    yield
-    sys.path = old_path
+    unset = 'PYTHONPATH' not in os.environ
+    old_path = os.environ.get('PYTHONPATH', '')
+    old_sys_path = sys.path
+    try:
+        os.environ['PYTHONPATH'] = '{old_path}{path}:'.format(old_path=old_path, path=path)
+        sys.path.insert(0, path)
+        yield
+    finally:
+        if unset:
+            del os.environ['PYTHONPATH']
+        else:
+            os.environ['PYTHONPATH'] = old_path
+        sys.path = old_sys_path
 
 
 def start_worker(name, args=None, exit_code=0, exception_str=''):
@@ -49,10 +58,12 @@ def start_worker(name, args=None, exit_code=0, exception_str=''):
 @contextmanager
 def cleanup_worker(name, args=None):
     args = check.opt_list_param(args, 'args')
-    yield
-    runner = CliRunner()
-    result = runner.invoke(main, ['worker', 'terminate'] + args + [name])
-    assert result.exit_code == 0, str(result.exception)
+    try:
+        yield
+    finally:
+        runner = CliRunner()
+        result = runner.invoke(main, ['worker', 'terminate'] + args + [name])
+        assert result.exit_code == 0, str(result.exception)
 
 
 def check_for_worker(name, args=None, present=True):
@@ -66,7 +77,6 @@ def check_for_worker(name, args=None, present=True):
         if present
         else '{name}@'.format(name=name) in result.output
     ):
-        print(retry_count)
         time.sleep(1)
         result = runner.invoke(main, ['worker', 'list'] + args)
         assert result.exit_code == 0, str(result.exception)
@@ -130,40 +140,6 @@ def test_start_worker_config_from_yaml():
         assert check_for_worker('dagster_test_worker')
 
 
-@skip_ci
-def test_start_worker_config_from_empty_module():
-    args = ['-m', 'empty']
-    with pythonpath(os.path.dirname(os.path.realpath(__file__))):
-        with cleanup_worker('dagster_test_worker', args=args):
-            start_worker('dagster_test_worker', args=args)
-            assert check_for_worker('dagster_test_worker', args=args)
-
-
-@skip_ci
-def test_start_worker_config_from_module():
-    args = ['-m', 'engine_config']
-    with pythonpath(os.path.dirname(os.path.realpath(__file__))):
-        with cleanup_worker('dagster_test_worker', args=args):
-            start_worker('dagster_test_worker', args=args)
-            assert check_for_worker('dagster_test_worker', args=args)
-
-
-@skip_ci
-def test_start_worker_config_from_empty_config_file():
-    args = ['-f', file_relative_path(__file__, 'empty.py')]
-    with cleanup_worker('dagster_test_worker', args=args):
-        start_worker('dagster_test_worker', args=args)
-        assert check_for_worker('dagster_test_worker', args=args)
-
-
-@skip_ci
-def test_start_worker_config_from_config_file():
-    args = ['-f', file_relative_path(__file__, 'engine_config.py')]
-    with cleanup_worker('dagster_test_worker', args=args):
-        start_worker('dagster_test_worker', args=args)
-        assert check_for_worker('dagster_test_worker', args=args)
-
-
 @mock.patch('dagster_celery.cli.launch_background_worker')
 def test_mock_start_worker(worker_patch):
     start_worker('dagster_test_worker')
@@ -180,36 +156,6 @@ def test_mock_start_worker_config_from_empty_yaml(worker_patch):
 @mock.patch('dagster_celery.cli.launch_background_worker')
 def test_start_mock_worker_config_from_yaml(worker_patch):
     args = ['-y', file_relative_path(__file__, 'engine_config.yaml')]
-    start_worker('dagster_test_worker', args=args)
-    assert_called(worker_patch)
-
-
-@mock.patch('dagster_celery.cli.launch_background_worker')
-def test_mock_start_worker_config_from_empty_module(worker_patch):
-    args = ['-m', 'empty']
-    with pythonpath(os.path.dirname(os.path.realpath(__file__))):
-        start_worker('dagster_test_worker', args=args)
-    assert_called(worker_patch)
-
-
-@mock.patch('dagster_celery.cli.launch_background_worker')
-def test_mock_start_worker_config_from_module(worker_patch):
-    args = ['-m', 'engine_config']
-    with pythonpath(os.path.dirname(os.path.realpath(__file__))):
-        start_worker('dagster_test_worker', args=args)
-    assert_called(worker_patch)
-
-
-@mock.patch('dagster_celery.cli.launch_background_worker')
-def test_mock_start_worker_config_from_empty_config_file(worker_patch):
-    args = ['-f', file_relative_path(__file__, 'empty.py')]
-    start_worker('dagster_test_worker', args=args)
-    assert_called(worker_patch)
-
-
-@mock.patch('dagster_celery.cli.launch_background_worker')
-def test_mock_start_worker_config_from_config_file(worker_patch):
-    args = ['-f', file_relative_path(__file__, 'engine_config.py')]
     start_worker('dagster_test_worker', args=args)
     assert_called(worker_patch)
 

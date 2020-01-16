@@ -17,7 +17,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
-from .ref import InstanceRef, _compute_logs_directory
+from .ref import InstanceRef, compute_logs_directory
 
 
 def _is_dagster_home_set():
@@ -136,7 +136,7 @@ class DagsterInstance:
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(_compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
         )
 
     @staticmethod
@@ -170,7 +170,6 @@ class DagsterInstance:
     @staticmethod
     def from_ref(instance_ref):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
-
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
@@ -365,3 +364,8 @@ class DagsterInstance:
 
     def schedules_directory(self):
         return self._local_artifact_storage.schedules_dir
+
+    # Run launcher
+
+    def launch_run(self, run):
+        return self._run_launcher.launch_run(self, run)

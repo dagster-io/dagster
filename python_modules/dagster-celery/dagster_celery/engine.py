@@ -10,7 +10,8 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DEFAULT_PRIORITY, DEFAULT_QUEUE, CeleryConfig
+from .config import CeleryConfig
+from .defaults import task_default_priority, task_default_queue
 from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
@@ -55,8 +56,8 @@ class CeleryEngine(Engine):
 
         for step_key in execution_plan.step_keys_to_execute:
             step = execution_plan.get_step_by_key(step_key)
-            priority = step.metadata.get('dagster-celery/priority', DEFAULT_PRIORITY)
-            queue = step.metadata.get('dagster-celery/queue', DEFAULT_QUEUE)
+            priority = step.metadata.get('dagster-celery/priority', task_default_priority)
+            queue = step.metadata.get('dagster-celery/queue', task_default_queue)
             task = create_task(app)
 
             variables = {
@@ -79,7 +80,6 @@ class CeleryEngine(Engine):
         completed_steps = set({})  # Set[step_key]
 
         while pending_steps or step_results:
-
             results_to_pop = []
             for step_key, result in sorted(
                 step_results.items(), key=lambda x: sort_by_priority(x[0])

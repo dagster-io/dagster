@@ -8,7 +8,7 @@ from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
-from ...sql import create_engine, get_alembic_config, stamp_alembic_rev
+from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev
 from ..schema import RunStorageSqlMetadata
 from ..sql_run_storage import SqlRunStorage
 
@@ -43,7 +43,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         alembic_config = get_alembic_config(__file__)
         conn = engine.connect()
         try:
-            stamp_alembic_rev(alembic_config, conn)
+            db_revision, head_revision = check_alembic_revision(alembic_config, conn)
+            if not (db_revision and head_revision and db_revision == head_revision):
+                stamp_alembic_rev(alembic_config, conn)
         finally:
             conn.close()
 

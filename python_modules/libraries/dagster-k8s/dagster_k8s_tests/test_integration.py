@@ -11,13 +11,13 @@ from .utils import parse_raw_res, wait_for_job_success
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher(run_launcher):  # pylint: disable=redefined-outer-name
+def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
 
-    run_launcher.launch_run(run)
+    dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
     result = parse_raw_res(raw_logs.split('\n'))
 
@@ -28,13 +28,13 @@ def test_k8s_run_launcher(run_launcher):  # pylint: disable=redefined-outer-name
 
 
 @pytest.mark.integration
-def test_failing_k8s_run_launcher(run_launcher):
+def test_failing_k8s_run_launcher(dagster_instance):
     run_id = uuid.uuid4().hex
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
 
-    run_launcher.launch_run(run)
+    dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
     result = parse_raw_res(raw_logs.split('\n'))
 
