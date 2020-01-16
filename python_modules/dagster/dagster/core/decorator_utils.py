@@ -45,11 +45,11 @@ def validate_decorated_fn_positionals(decorated_fn_positionals, expected_positio
                 return expected_name
 
 
-def validate_decorated_fn_non_positionals(input_def_names, decorated_fn_non_positional_params):
+def validate_decorated_fn_input_args(input_def_names, decorated_fn_input_args):
     used_inputs = set()
     has_kwargs = False
 
-    for param in decorated_fn_non_positional_params:
+    for param in decorated_fn_input_args:
         if param.kind == funcsigs.Parameter.VAR_KEYWORD:
             has_kwargs = True
         elif param.kind == funcsigs.Parameter.VAR_POSITIONAL:
@@ -70,3 +70,16 @@ def validate_decorated_fn_non_positionals(input_def_names, decorated_fn_non_posi
         return InvalidDecoratedFunctionInfo(
             InvalidDecoratedFunctionInfo.TYPES['extra'], missing_names=undeclared_inputs
         )
+
+
+def positional_arg_name_list(params):
+    return list(
+        map(
+            lambda p: p.name,
+            filter(
+                lambda p: p.kind
+                in [funcsigs.Parameter.POSITIONAL_OR_KEYWORD, funcsigs.Parameter.POSITIONAL_ONLY],
+                params,
+            ),
+        )
+    )
