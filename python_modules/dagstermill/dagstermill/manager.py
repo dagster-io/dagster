@@ -182,7 +182,6 @@ class Manager(object):
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode_def.name,
-            reexecution_config=None,
             selector=None,
             step_keys_to_execute=None,
             status=PipelineRunStatus.NOT_STARTED,

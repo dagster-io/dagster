@@ -321,7 +321,6 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             environment_dict=environment_dict,
             mode=run_config.mode,
             selector=pipeline_def.selector,
-            reexecution_config=run_config.reexecution_config,
             step_keys_to_execute=run_config.step_keys_to_execute,
             tags=tags,
             status=PipelineRunStatus.NOT_STARTED,

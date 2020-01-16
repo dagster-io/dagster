@@ -120,13 +120,11 @@ def get_args(callble):
             if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
         ]
     else:
-        try:
-            if inspect.isclass(callble):
-                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+        if inspect.isclass(callble):
+            if issubclass(callble, tuple):
+                arg_spec = inspect.getargspec(callble.__new__)  # pylint: disable=deprecated-method
             else:
-                arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
-            return arg_spec.args
-        except TypeError:
-            # This will happen when we try to get the argspec for a slot wrapper, e.g.:
-            # TypeError: <slot wrapper '__init__' of 'object' objects> is not a Python function
-            return None
+                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+        else:
+            arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
+        return arg_spec.args

@@ -107,11 +107,7 @@ def _unpack_value(val, enum_map, tuple_map):
         # The call to seven.get_args turns out to be pretty expensive -- we should probably turn
         # to, e.g., manually managing the deprecated keys on the serdes constructor.
         args_for_class = seven.get_args(klass)
-        filtered_val = (
-            {k: v for k, v in unpacked_val.items() if k in args_for_class}
-            if args_for_class
-            else unpacked_val
-        )
+        filtered_val = {k: v for k, v in unpacked_val.items() if k in args_for_class}
         return klass(**filtered_val)
     if isinstance(val, dict) and val.get('__enum__'):
         name, member = val['__enum__'].split('.')

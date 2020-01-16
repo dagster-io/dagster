@@ -53,7 +53,6 @@ def in_pipeline_manager(
             mode=mode or 'default',
             environment_dict=None,
             selector=None,
-            reexecution_config=None,
             step_keys_to_execute=None,
             status=PipelineRunStatus.NOT_STARTED,
         )
