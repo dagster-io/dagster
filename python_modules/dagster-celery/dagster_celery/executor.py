@@ -1,5 +1,5 @@
 from dagster import Field, Permissive, String
-from dagster.core.definitions.executor import executor
+from dagster.core.definitions.executor import check_cross_process_constraints, executor
 
 from .config import CeleryConfig
 
@@ -38,7 +38,7 @@ def celery_executor(init_context):
     in Celery version 4.0 and the object constructed from config will be passed to the
     :py:class:`celery.Celery` constructor as its ``config_source`` argument.
     (See https://docs.celeryproject.org/en/latest/userguide/configuration.html for details.)
-    
+
     The executor also exposes the ``broker``, `backend`, and ``include`` arguments to the
     :py:class:`celery.Celery` constructor.
 
@@ -74,5 +74,6 @@ def celery_executor(init_context):
             pass
 
     '''
+    check_cross_process_constraints(init_context)
 
     return CeleryConfig(**init_context.executor_config)

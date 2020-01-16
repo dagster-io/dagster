@@ -5,7 +5,6 @@ from collections import namedtuple
 import six
 
 from dagster import check
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
@@ -133,25 +132,11 @@ class RunConfig(
 
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
-    def check_requirements(self, instance, system_storage_def):
-        '''Check whether this executor config is valid given the instance and system storage.
-
-        Args:
-            instance (DagsterInstance): The available Dagster instance.
-            system_storage_def (SystemStorageDefinition): The available system storage.
-
-        Raises if the executor config is not valid.
-        '''
-
-    @abstractmethod
     def get_engine(self):
         '''(Engine): Return the corresponding engine class.'''
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    def check_requirements(self, _instance, _system_storage_def):
-        pass
-
     def get_engine(self):
         from dagster.core.engine.engine_inprocess import InProcessEngine
 
@@ -162,23 +147,9 @@ class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, handle, max_concurrent=None):
         from dagster import ExecutionTargetHandle
 
-        # TODO: These gnomic process boundary/execution target handle exceptions should link to
-        # a fuller explanation in the docs.
-        # https://github.com/dagster-io/dagster/issues/1649
-        self._handle = check.inst_param(
-            handle,
-            'handle',
-            ExecutionTargetHandle,
-            additional_message='Multiprocessing can only be configured when a pipeline is executed '
-            'from an ExecutionTargetHandle: do not pass a pure in-memory pipeline definition.',
-        )
-
+        self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle,)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
-
-    def check_requirements(self, instance, system_storage_def):
-        check_persistent_storage_requirement(system_storage_def)
-        check_non_ephemeral_instance(instance)
 
     def load_pipeline(self, pipeline_run):
         from dagster.core.storage.pipeline_run import PipelineRun
@@ -198,26 +169,3 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 @whitelist_for_serdes
 class ReexecutionConfig(namedtuple('_ReexecutionConfig', 'previous_run_id step_output_handles')):
     pass
-
-
-def check_persistent_storage_requirement(system_storage_def):
-    if not system_storage_def.is_persistent:
-        raise DagsterUnmetExecutorRequirementsError(
-            (
-                'You have attempted to use an executor that uses multiple processes while using system '
-                'storage {storage_name} which does not persist intermediates. '
-                'This means there would be no way to move data between different '
-                'processes. Please configure your pipeline in the storage config '
-                'section to use persistent system storage such as the filesystem.'
-            ).format(storage_name=system_storage_def.name)
-        )
-
-
-def check_non_ephemeral_instance(instance):
-    if instance.is_ephemeral:
-        raise DagsterUnmetExecutorRequirementsError(
-            'You have attempted to use an executor that uses multiple processes with an '
-            'ephemeral DagsterInstance. A non-ephermal instance is needed to coordinate '
-            'execution between multiple processes. You can configure your default instance '
-            'via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs.'
-        )

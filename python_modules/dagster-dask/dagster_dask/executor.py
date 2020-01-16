@@ -1,5 +1,5 @@
 from dagster import Bool, Field, Int, String
-from dagster.core.definitions.executor import executor
+from dagster.core.definitions.executor import check_cross_process_constraints, executor
 
 from .config import DaskConfig
 
@@ -70,5 +70,6 @@ def dask_executor(init_context):
             pass
 
     '''
+    check_cross_process_constraints(init_context)
 
     return DaskConfig(**init_context.executor_config)

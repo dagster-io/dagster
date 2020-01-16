@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0
+## 0.7.0 (Upcoming)
 
 **Breaking**
 
@@ -15,24 +15,22 @@
 
   So instead of
 
-  ````
-  g
-  e
-  e
-      'some_int' : Field(Int),
-      'some_list: Field(Array[String]) # List prior to change
-  })
-
-  `
+  ```
+  from dagster import Shape, Field, Int, Array, String
+  # ... code
+  config=Shape({ # Dict prior to change
+        'some_int' : Field(Int),
+        'some_list: Field(Array[String]) # List prior to change
+    })
+  ```
 
   one can instead write:
 
-  `
-  }
-
+  ```
+  config={'some_int': int, 'some_list': [str]}
+  ```
 
   No imports and much simpler, cleaner syntax.
-  ````
 
 ## 0.6.7
 

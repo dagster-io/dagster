@@ -130,12 +130,10 @@ def scoped_pipeline_context(
         pipeline_def, environment_dict, pipeline_run, instance
     )
 
-    executor_config = create_executor_config(context_creation_data)
-
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     pipeline_context = None
     try:
-        executor_config.check_requirements(instance, context_creation_data.system_storage_def)
+        executor_config = create_executor_config(context_creation_data)
 
         log_manager = create_log_manager(context_creation_data)
 
@@ -227,21 +225,16 @@ def create_system_storage_data(
 def create_executor_config(context_creation_data):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
 
-    environment_config, pipeline_def, executor_def, pipeline_run = (
-        context_creation_data.environment_config,
-        context_creation_data.pipeline_def,
-        context_creation_data.executor_def,
-        context_creation_data.pipeline_run,
-    )
-
     return construct_executor_config(
         InitExecutorContext(
-            pipeline_def=pipeline_def,
+            pipeline_def=context_creation_data.pipeline_def,
             mode_def=context_creation_data.mode_def,
-            executor_def=executor_def,
-            pipeline_run=pipeline_run,
-            environment_config=environment_config,
-            executor_config=environment_config.execution.execution_engine_config,
+            executor_def=context_creation_data.executor_def,
+            pipeline_run=context_creation_data.pipeline_run,
+            environment_config=context_creation_data.environment_config,
+            executor_config=context_creation_data.environment_config.execution.execution_engine_config,
+            system_storage_def=context_creation_data.system_storage_def,
+            instance=context_creation_data.instance,
         )
     )
 
