@@ -6,7 +6,6 @@ import time
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
 from dagster_graphql_tests.graphql.setup import define_context_for_repository_yaml
-from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     InputDefinition,
@@ -22,6 +21,7 @@ from dagster import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import file_relative_path
+from dagster.utils.test import FilesytemTestScheduler
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
