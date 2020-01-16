@@ -9,8 +9,9 @@ from dagster.core.partition.utils import date_partition_range
 
 from ..decorator_utils import (
     InvalidDecoratedFunctionInfo,
+    positional_arg_name_list,
     split_function_parameters,
-    validate_decorated_fn_non_positionals,
+    validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
 from ..scheduler import Scheduler, SchedulerHandle
@@ -65,7 +66,7 @@ class _LambdaSolid(object):
             else infer_output_definitions('@lambda_solid', self.name, fn)[0]
         )
 
-        validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
+        positional_inputs = validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
         compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
 
         return SolidDefinition(
@@ -74,6 +75,7 @@ class _LambdaSolid(object):
             output_defs=[output_def],
             compute_fn=compute_fn,
             description=self.description,
+            positional_inputs=positional_inputs,
         )
 
 
@@ -125,7 +127,7 @@ class _Solid(object):
             else infer_output_definitions('@solid', self.name, fn)
         )
 
-        validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
+        positional_inputs = validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
         compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
         return SolidDefinition(
@@ -138,6 +140,7 @@ class _Solid(object):
             required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
             step_metadata_fn=self.step_metadata_fn,
+            positional_inputs=positional_inputs,
         )
 
 
@@ -491,7 +494,7 @@ def validate_solid_fn(
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
-    fn_positionals, fn_non_positionals = split_function_parameters(compute_fn, expected_positionals)
+    fn_positionals, input_args = split_function_parameters(compute_fn, expected_positionals)
 
     # Validate Positional Parameters
     missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
@@ -505,7 +508,7 @@ def validate_solid_fn(
         )
 
     # Validate non positional parameters
-    invalid_function_info = validate_decorated_fn_non_positionals(names, fn_non_positionals)
+    invalid_function_info = validate_decorated_fn_input_args(names, input_args)
     if invalid_function_info:
         if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
@@ -551,6 +554,8 @@ def validate_solid_fn(
                 )
             )
 
+    return positional_arg_name_list(input_args)
+
 
 class _CompositeSolid(object):
     def __init__(
@@ -591,7 +596,9 @@ class _CompositeSolid(object):
             explicit_outputs = has_explicit_return_type(fn)
             output_defs = infer_output_definitions('@composite_solid', self.name, fn)
 
-        validate_solid_fn('@composite_solid', self.name, fn, input_defs, exclude_nothing=False)
+        positional_inputs = validate_solid_fn(
+            '@composite_solid', self.name, fn, input_defs, exclude_nothing=False
+        )
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
@@ -655,6 +662,7 @@ class _CompositeSolid(object):
             solid_defs=context.solid_defs,
             description=self.description,
             config_mapping=config_mapping,
+            positional_inputs=positional_inputs,
         )
 
 
