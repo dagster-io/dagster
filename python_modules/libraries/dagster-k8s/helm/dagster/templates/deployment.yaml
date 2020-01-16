@@ -35,8 +35,8 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          imagePullPolicy: {{ .Values.imagepullPolicy }}
-          image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          image: "{{ .Values.dagit.image }}"
           command: ["dagit"]
           args: ["-p", "80", "-h", "0.0.0.0"]
           env:

@@ -115,6 +115,10 @@ def wait_for_pod(name, wait_for_termination=False):
                 print('Waiting for pod to initialize...')
                 time.sleep(1)
                 continue
+            elif state.waiting.reason == 'ContainerCreating':
+                print('Waiting for container creation...')
+                time.sleep(1)
+                continue
             elif state.waiting.reason in [
                 'ErrImagePull',
                 'ImagePullBackOff',

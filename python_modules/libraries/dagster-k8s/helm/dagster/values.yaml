@@ -1,6 +1,6 @@
 replicaCount: 1
 
-imagepullPolicy: Always
+imagePullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
@@ -8,16 +8,11 @@ fullnameOverride: ""
 rbacEnabled: true
 
 dagit:
-  image:
-    repository: dagster-docker-buildkite
-    tag: latest
+  image: "dagster-docker-buildkite:latest"
   nameOverride: ""
 
 # Image to use for executing jobs; this is typically the same image as dagit
-job_image:
-  image:
-    repository: dagster-docker-buildkite
-    tag: latest
+job_image: "dagster-docker-buildkite:latest"
 
 # Configuration values for postgresql
 # https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
