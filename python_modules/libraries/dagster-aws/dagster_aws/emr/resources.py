@@ -39,7 +39,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         if self.running_on_emr:
             return fn
 
-        def new_compute_fn(context):
+        def new_compute_fn(context, *args, **kwargs):  # pylint: disable=unused-argument
             self._sync_code_to_s3(context, solid_name)
             step_defs = self._get_execute_steps(context, solid_name)
             step_ids = self.emr_job_runner.add_job_flow_steps(
