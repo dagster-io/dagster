@@ -1,6 +1,14 @@
 from dagster_pyspark import pyspark_resource, pyspark_solid
 
-from dagster import Field, ModeDefinition, RunConfig, execute_pipeline, pipeline
+from dagster import (
+    Field,
+    InputDefinition,
+    ModeDefinition,
+    RunConfig,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 
 def test_simple_pyspark_decorator():
@@ -13,6 +21,24 @@ def test_simple_pyspark_decorator():
     @pipeline(mode_defs=[ModeDefinition('default', resource_defs={'pyspark': pyspark_resource})])
     def pipe():
         pyspark_job()
+
+    assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
+
+
+def test_pyspark_decorator_with_arguments():
+    @solid
+    def produce_number(_):
+        return 10
+
+    @pyspark_solid(input_defs=[InputDefinition('count', int)])
+    def pyspark_job(context, count):
+        rdd = context.resources.pyspark.spark_context.parallelize(range(count))
+        for item in rdd.collect():
+            print(item)
+
+    @pipeline(mode_defs=[ModeDefinition('default', resource_defs={'pyspark': pyspark_resource})])
+    def pipe():
+        pyspark_job(produce_number())
 
     assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
 
