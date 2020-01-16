@@ -1,4 +1,7 @@
-from dagster import check, solid
+from functools import wraps
+
+from dagster import check
+from dagster.core.definitions.decorators import _Solid
 
 
 def pyspark_solid(
@@ -28,18 +31,38 @@ def pyspark_solid(
     # solid name)
     if callable(name):
 
-        @solid(name=name.__name__, required_resource_keys=required_resource_keys)
-        def new_compute_fn(context):
+        @wraps(name)
+        def new_compute_fn(context, *args, **kwargs):
             return context.resources.pyspark.get_compute_fn(fn=name, solid_name=name.__name__)(
-                context
+                context, *args, **kwargs
             )
 
-        return new_compute_fn
+        # py2 compat - fixed in functools on py3
+        # See: https://bugs.python.org/issue17482
+        new_compute_fn.__wrapped__ = name
+
+        return _Solid(name=name.__name__, required_resource_keys=required_resource_keys,)(
+            new_compute_fn
+        )
 
     def wrap(fn):
         name = non_local['name'] or fn.__name__
 
-        @solid(
+        @wraps(fn)
+        def new_compute_fn(context, *args, **kwargs):
+            from .resources import PySparkResourceDefinition
+
+            spark = check.inst(
+                getattr(context.resources, pyspark_resource_key), PySparkResourceDefinition
+            )
+
+            return spark.get_compute_fn(fn, name)(context, *args, **kwargs)
+
+        # py2 compat - fixed in functools on py3
+        # See: https://bugs.python.org/issue17482
+        new_compute_fn.__wrapped__ = fn
+
+        return _Solid(
             name=name,
             description=description,
             input_defs=input_defs,
@@ -48,16 +71,6 @@ def pyspark_solid(
             required_resource_keys=non_local['required_resource_keys'],
             metadata=metadata,
             step_metadata_fn=step_metadata_fn,
-        )
-        def new_compute_fn(context):
-            from .resources import PySparkResourceDefinition
-
-            spark = check.inst(
-                getattr(context.resources, pyspark_resource_key), PySparkResourceDefinition
-            )
-
-            return spark.get_compute_fn(fn, name)(context)
-
-        return new_compute_fn
+        )(new_compute_fn)
 
     return wrap
