@@ -10,4 +10,4 @@ def test_basic_dep_dsl():
     )
 
     assert result.success
-    assert result.result_for_solid('add').output_value() == 9
+    assert result.result_for_solid('subtract').output_value() == 9

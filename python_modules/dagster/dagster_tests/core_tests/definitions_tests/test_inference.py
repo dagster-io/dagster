@@ -17,16 +17,16 @@ def test_single_input():
 
 def test_double_input():
     @solid
-    def add(_context, num_one, num_two):
+    def subtract(_context, num_one, num_two):
         return num_one + num_two
 
-    assert add
-    assert len(add.input_defs) == 2
-    assert add.input_defs[0].name == 'num_one'
-    assert add.input_defs[0].runtime_type.name == 'Any'
+    assert subtract
+    assert len(subtract.input_defs) == 2
+    assert subtract.input_defs[0].name == 'num_one'
+    assert subtract.input_defs[0].runtime_type.name == 'Any'
 
-    assert add.input_defs[1].name == 'num_two'
-    assert add.input_defs[1].runtime_type.name == 'Any'
+    assert subtract.input_defs[1].name == 'num_two'
+    assert subtract.input_defs[1].runtime_type.name == 'Any'
 
 
 def test_solid_arg_fails():

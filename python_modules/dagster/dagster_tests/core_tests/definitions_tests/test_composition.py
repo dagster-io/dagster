@@ -161,8 +161,8 @@ def test_multiple():
 
 def test_two_inputs_with_dsl():
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-    def add(num_one, num_two):
-        return num_one + num_two
+    def subtract(num_one, num_two):
+        return num_one - num_two
 
     @lambda_solid
     def return_three():
@@ -170,13 +170,13 @@ def test_two_inputs_with_dsl():
 
     @composite_solid
     def test():
-        add(num_one=return_two(), num_two=return_three())
+        subtract(num_one=return_two(), num_two=return_three())
 
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
-        .result_for_handle('test.add')
+        .result_for_handle('test.subtract')
         .output_value()
-        == 5
+        == -1
     )
 
 
@@ -200,17 +200,17 @@ def test_diamond_graph():
         yield Output(2, 'value_two')
 
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-    def add(num_one, num_two):
-        return num_one + num_two
+    def subtract(num_one, num_two):
+        return num_one - num_two
 
     @composite_solid
     def diamond():
         value_one, value_two = emit_values()
-        add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
+        subtract(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[diamond]))
 
-    assert result.result_for_handle('diamond.add').output_value() == 5
+    assert result.result_for_handle('diamond.subtract').output_value() == -1
 
 
 def test_mapping():

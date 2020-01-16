@@ -51,8 +51,8 @@ def test_basic_use_case_with_dsl():
 
 def test_two_inputs_without_dsl():
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-    def add(num_one, num_two):
-        return num_one + num_two
+    def subtract(num_one, num_two):
+        return num_one - num_two
 
     @lambda_solid
     def return_two():
@@ -63,22 +63,22 @@ def test_two_inputs_without_dsl():
         return 3
 
     pipeline_def = PipelineDefinition(
-        solid_defs=[add, return_two, return_three],
+        solid_defs=[subtract, return_two, return_three],
         dependencies={
-            'add': {
+            'subtract': {
                 'num_one': DependencyDefinition('return_two'),
                 'num_two': DependencyDefinition('return_three'),
             }
         },
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid('add').output_value() == 5
+    assert execute_pipeline(pipeline_def).result_for_solid('subtract').output_value() == -1
 
 
 def test_two_inputs_with_dsl():
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-    def add(num_one, num_two):
-        return num_one + num_two
+    def subtract(num_one, num_two):
+        return num_one - num_two
 
     @lambda_solid
     def return_two():
@@ -90,9 +90,9 @@ def test_two_inputs_with_dsl():
 
     @pipeline
     def test():
-        return add(num_one=return_two(), num_two=return_three())
+        return subtract(num_one=return_two(), num_two=return_three())
 
-    assert execute_pipeline(test).result_for_solid('add').output_value() == 5
+    assert execute_pipeline(test).result_for_solid('subtract').output_value() == -1
 
 
 def test_basic_aliasing_with_dsl():
@@ -110,17 +110,19 @@ def test_diamond_graph():
         yield Output(2, 'value_two')
 
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-    def add(num_one, num_two):
-        return num_one + num_two
+    def subtract(num_one, num_two):
+        return num_one - num_two
 
     @pipeline
     def diamond_pipeline():
         value_one, value_two = emit_values()
-        return add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
+        return subtract(
+            num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two)
+        )
 
     result = execute_pipeline(diamond_pipeline)
 
-    assert result.result_for_solid('add').output_value() == 5
+    assert result.result_for_solid('subtract').output_value() == -1
 
 
 def test_two_cliques():
