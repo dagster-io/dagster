@@ -106,8 +106,7 @@ const toGraphQueryItems = weakmapMemoize(
 
 const boxWidthFor = (
   step: GraphQueryItem,
-  metadata: IRunMetadataDict,
-  options: GaantChartLayoutOptions
+  { metadata, options }: BuildLayoutParams
 ) => {
   const stepInfo = metadata.steps[step.name] || {};
   if (options.mode === GaantChartMode.WATERFALL_TIMED) {
@@ -173,83 +172,38 @@ const interestingQueriesFor = (
   ];
 };
 
-const buildLayout = (
-  solidGraph: IGaantNode[],
-  metadata: IRunMetadataDict,
-  options: GaantChartLayoutOptions
-) => {
+// Layout Logic
+
+interface BuildLayoutParams {
+  nodes: IGaantNode[];
+  metadata: IRunMetadataDict;
+  options: GaantChartLayoutOptions;
+}
+
+const buildLayout = (params: BuildLayoutParams) => {
+  const { nodes, metadata, options } = params;
+
   // Step 1: Place the nodes that have no dependencies into the layout.
 
   const hasNoDependencies = (g: IGaantNode) =>
     !g.inputs.some(i =>
-      i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
+      i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name))
     );
 
-  let boxes: GaantChartBox[] = solidGraph
-    .filter(hasNoDependencies)
-    .map(solid => ({
-      node: solid,
-      children: [],
-      x: 0,
-      y: -1,
-      width: boxWidthFor(solid, metadata, options)
-    }));
+  let boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
+    node: node,
+    children: [],
+    x: 0,
+    y: -1,
+    width: boxWidthFor(node, params)
+  }));
 
   // Step 2: Recursively iterate through the graph and insert child nodes
   // into the `boxes` array, ensuring that their positions in the array are
   // always greater than their parent(s) position (which requires correction
   // because boxes can have multiple dependencies.)
-
-  const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
-    if (parentIdx <= childIdx) {
-      return;
-    }
-    const [child] = boxes.splice(childIdx, 1);
-    boxes.push(child);
-    const newIdx = boxes.length - 1;
-    for (const subchild of child.children) {
-      ensureSubtreeBelow(boxes.indexOf(subchild), newIdx);
-    }
-  };
-
-  const addChildren = (box: GaantChartBox) => {
-    const idx = boxes.indexOf(box);
-    const seen: string[] = [];
-
-    for (const out of box.node.outputs) {
-      for (const dep of out.dependedBy) {
-        const depSolid = solidGraph.find(n => dep.solid.name === n.name);
-        if (!depSolid) continue;
-
-        if (seen.includes(depSolid.name)) continue;
-        seen.push(depSolid.name);
-
-        const depBoxIdx = boxes.findIndex(r => r.node === depSolid);
-        let depBox: GaantChartBox;
-
-        if (depBoxIdx === -1) {
-          depBox = {
-            children: [],
-            node: depSolid,
-            width: boxWidthFor(depSolid, metadata, options),
-            x: 0,
-            y: -1
-          };
-          boxes.push(depBox);
-          addChildren(depBox);
-        } else {
-          depBox = boxes[depBoxIdx];
-          ensureSubtreeBelow(depBoxIdx, idx);
-        }
-
-        box.children.push(depBox);
-      }
-    }
-  };
-
   const roots = [...boxes];
-
-  roots.forEach(addChildren);
+  roots.forEach(box => addChildren(boxes, box, params));
 
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
@@ -350,6 +304,63 @@ const buildLayout = (
   return { boxes } as GaantChartLayout;
 };
 
+const ensureSubtreeBelow = (
+  boxes: GaantChartBox[],
+  childIdx: number,
+  parentIdx: number
+) => {
+  if (parentIdx <= childIdx) {
+    return;
+  }
+  const [child] = boxes.splice(childIdx, 1);
+  boxes.push(child);
+  const newIdx = boxes.length - 1;
+  for (const subchild of child.children) {
+    ensureSubtreeBelow(boxes, boxes.indexOf(subchild), newIdx);
+  }
+};
+
+const addChildren = (
+  boxes: GaantChartBox[],
+  box: GaantChartBox,
+  params: BuildLayoutParams
+) => {
+  const idx = boxes.indexOf(box);
+  const seen: string[] = [];
+
+  for (const out of box.node.outputs) {
+    for (const dep of out.dependedBy) {
+      const depNode = params.nodes.find(n => dep.solid.name === n.name);
+      if (!depNode) continue;
+
+      if (seen.includes(depNode.name)) continue;
+      seen.push(depNode.name);
+
+      const depBoxIdx = boxes.findIndex(r => r.node === depNode);
+      let depBox: GaantChartBox;
+
+      if (depBoxIdx === -1) {
+        depBox = {
+          children: [],
+          node: depNode,
+          width: boxWidthFor(depNode, params),
+          x: 0,
+          y: -1
+        };
+        boxes.push(depBox);
+        addChildren(boxes, depBox, params);
+      } else {
+        depBox = boxes[depBoxIdx];
+        ensureSubtreeBelow(boxes, depBoxIdx, idx);
+      }
+
+      box.children.push(depBox);
+    }
+  }
+};
+
+// React Component
+
 interface GaantChartState {
   options: GaantChartLayoutOptions;
   query: string;
@@ -407,7 +418,11 @@ export class GaantChart extends React.Component<
 
     const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, query);
-    const layout = buildLayout(graphFiltered.all, metadata, options);
+    const layout = buildLayout({
+      nodes: graphFiltered.all,
+      metadata,
+      options
+    });
 
     // todo perf: We can break buildLayout into a function that does not need metadata
     // and then a post-processor that resizes/shifts things using `metadata`. Then we can
