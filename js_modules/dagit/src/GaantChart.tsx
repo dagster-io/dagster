@@ -40,12 +40,12 @@ interface GaantChartLayout {
 }
 
 interface GaantChartLayoutOptions {
-  mode: GaantChartLayoutMode;
+  mode: GaantChartMode;
   scale: number;
   hideWaiting: boolean;
 }
 
-export enum GaantChartLayoutMode {
+export enum GaantChartMode {
   FLAT = "flat",
   WATERFALL = "waterfall",
   WATERFALL_TIMED = "waterfall-timed"
@@ -110,7 +110,7 @@ const boxWidthFor = (
   options: GaantChartLayoutOptions
 ) => {
   const stepInfo = metadata.steps[step.name] || {};
-  if (options.mode === GaantChartLayoutMode.WATERFALL_TIMED) {
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     const width =
       stepInfo.finish && stepInfo.start
         ? stepInfo.finish - stepInfo.start
@@ -135,6 +135,9 @@ const boxColorFor = (step: GraphQueryItem, metadata: IRunMetadataDict) => {
   );
 };
 
+/**
+ * Returns a set of query presets that highlight interesting slices of the visualization.
+ */
 const interestingQueriesFor = (
   metadata: IRunMetadataDict,
   layout: GaantChartLayout
@@ -175,6 +178,8 @@ const buildLayout = (
   metadata: IRunMetadataDict,
   options: GaantChartLayoutOptions
 ) => {
+  // Step 1: Place the nodes that have no dependencies into the layout.
+
   const hasNoDependencies = (g: IGaantNode) =>
     !g.inputs.some(i =>
       i.dependsOn.some(s => solidGraph.find(o => o.name === s.solid.name))
@@ -189,6 +194,11 @@ const buildLayout = (
       y: -1,
       width: boxWidthFor(solid, metadata, options)
     }));
+
+  // Step 2: Recursively iterate through the graph and insert child nodes
+  // into the `boxes` array, ensuring that their positions in the array are
+  // always greater than their parent(s) position (which requires correction
+  // because boxes can have multiple dependencies.)
 
   const ensureSubtreeBelow = (childIdx: number, parentIdx: number) => {
     if (parentIdx <= childIdx) {
@@ -241,14 +251,16 @@ const buildLayout = (
 
   roots.forEach(addChildren);
 
+  // Step 3: Assign X values (pixels) to each box by traversing the graph from the
+  // roots onward and pushing things to the right as we go.
   const deepen = (box: GaantChartBox, x: number) => {
     box.x = Math.max(x, box.x);
     box.children.forEach(child => deepen(child, x + box.width));
   };
   roots.forEach(box => deepen(box, 0));
 
-  // now assign Y values
-  if (options.mode === GaantChartLayoutMode.FLAT) {
+  // Step 4: Assign Y values (row numbers not pixel values)
+  if (options.mode === GaantChartMode.FLAT) {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
@@ -258,6 +270,8 @@ const buildLayout = (
     const parents: { [name: string]: GaantChartBox[] } = {};
     const boxesByY: { [y: string]: GaantChartBox[] } = {};
 
+    // First put each box on it's own line. We know this will generate a fine gaant viz
+    // because we sorted the boxes array as we built it.
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.children.forEach(child => {
@@ -270,6 +284,12 @@ const buildLayout = (
       boxesByY[`${box.y}`] = boxesByY[`${box.y}`] || [];
       boxesByY[`${box.y}`].push(box);
     });
+
+    // Next, start at the bottom of the viz and "collapse" boxes up on to the previous line
+    // as long as that does not result in them being higher than their parents AND does
+    // not cause them to sit on top of an existing on-the-same-line A ---> B arrow.
+
+    // This makes basic box series (A -> B -> C -> D) one row instead of four rows.
 
     let changed = true;
     while (changed) {
@@ -302,7 +322,8 @@ const buildLayout = (
       }
     }
 
-    // reflow to fill empty rows
+    // The collapsing above can leave rows entirely empty - shift rows up and fill empty
+    // space until every Y value has a box.
     changed = true;
     while (changed) {
       changed = false;
@@ -318,11 +339,8 @@ const buildLayout = (
     }
   }
 
-  // apply display options
-  if (
-    options.mode === GaantChartLayoutMode.WATERFALL_TIMED &&
-    options.hideWaiting
-  ) {
+  // Apply display options / filtering
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
     boxes = boxes.filter(b => {
       const state = metadata.steps[b.node.name]?.state || "waiting";
       return state !== "waiting";
@@ -374,7 +392,7 @@ export class GaantChart extends React.Component<
       query: "*",
       options: Object.assign(
         {
-          mode: GaantChartLayoutMode.WATERFALL,
+          mode: GaantChartMode.WATERFALL,
           hideWaiting: true,
           scale: 0.8
         },
@@ -404,22 +422,20 @@ export class GaantChart extends React.Component<
         <OptionsContainer>
           <ButtonGroup style={{ flexShrink: 0 }}>
             {[
-              GaantChartLayoutMode.FLAT,
-              GaantChartLayoutMode.WATERFALL,
-              GaantChartLayoutMode.WATERFALL_TIMED
+              GaantChartMode.FLAT,
+              GaantChartMode.WATERFALL,
+              GaantChartMode.WATERFALL_TIMED
             ].map(mode => (
               <Button
                 key={mode}
                 text={mode.toLowerCase()}
                 small={true}
                 active={options.mode === mode}
-                onClick={() =>
-                  setOptions({ mode: mode as GaantChartLayoutMode })
-                }
+                onClick={() => setOptions({ mode: mode as GaantChartMode })}
               />
             ))}
           </ButtonGroup>
-          {options.mode === GaantChartLayoutMode.WATERFALL_TIMED && (
+          {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
               <div style={{ width: 15 }} />
               <Checkbox
@@ -489,7 +505,7 @@ const GaantChartContent = (
         {box.node.name}
       </div>
     );
-    if (options.mode !== GaantChartLayoutMode.FLAT) {
+    if (options.mode !== GaantChartMode.FLAT) {
       box.children.forEach((child, childIdx) => {
         const childIsRendered = layout.boxes.includes(child);
         items.push(
@@ -575,6 +591,9 @@ const GaantLine = React.memo(
   }
 );
 
+// Note: It is much faster to use standard CSS class selectors here than make
+// each box and line a styled-component because all styled components register
+// listeners for the "theme" React context.
 const GaantChartContainer = styled.div`
   height: 100%;
   position: relative;
@@ -612,7 +631,7 @@ const GaantChartContainer = styled.div`
 `;
 
 const OptionsContainer = styled.div`
-height: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   padding: 5px 15px;

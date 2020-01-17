@@ -11,7 +11,7 @@ import * as querystring from "query-string";
 import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
 import { PipelineGraphContainer } from "./graph/PipelineGraphContainer";
 import PipelineGraph from "./graph/PipelineGraph";
-import { SplitPanelChildren } from "./SplitPanelChildren";
+import { SplitPanelContainer } from "./SplitPanelContainer";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
@@ -185,111 +185,100 @@ export default class PipelineExplorer extends React.Component<
       .toString();
 
     return (
-      <PipelinesContainer>
-        <SplitPanelChildren
-          identifier="explorer"
-          leftInitialPercent={70}
-          left={
-            <>
-              <PathOverlay
-                style={{ background: backgroundTranslucent }}
-                ref={this.pathOverlayEl}
-              >
-                <PipelineJumpBar
-                  selectedPipelineName={pipeline.name}
-                  onChange={name => history.push(`/pipeline/${name}:/`)}
-                />
-                <Icon icon="chevron-right" />
-                {path.slice(0, path.length - 1).map((name, idx) => (
-                  <React.Fragment key={idx}>
-                    <Link
-                      style={{ padding: 3 }}
-                      to={`/pipeline/${
-                        pipeline.name
-                      }:${visibleSolidsQuery}/${path
-                        .slice(0, idx + 1)
-                        .join("/")}`}
-                    >
-                      {name}
-                    </Link>
-                    <Icon icon="chevron-right" />
-                  </React.Fragment>
-                ))}
-                <SolidJumpBar
-                  solids={queryResultSolids.all}
-                  selectedSolid={selectedHandle && selectedHandle.solid}
-                  onChange={solid =>
-                    this.handleClickSolid({ name: solid.name })
-                  }
-                />
-              </PathOverlay>
-              {solidsQueryEnabled && (
-                <GraphQueryInput
-                  items={solids}
-                  value={visibleSolidsQuery}
-                  onChange={this.handleQueryChange}
+      <SplitPanelContainer
+        identifier="explorer"
+        firstInitialPercent={70}
+        first={
+          <>
+            <PathOverlay
+              style={{ background: backgroundTranslucent }}
+              ref={this.pathOverlayEl}
+            >
+              <PipelineJumpBar
+                selectedPipelineName={pipeline.name}
+                onChange={name => history.push(`/pipeline/${name}:/`)}
+              />
+              <Icon icon="chevron-right" />
+              {path.slice(0, path.length - 1).map((name, idx) => (
+                <React.Fragment key={idx}>
+                  <Link
+                    style={{ padding: 3 }}
+                    to={`/pipeline/${
+                      pipeline.name
+                    }:${visibleSolidsQuery}/${path
+                      .slice(0, idx + 1)
+                      .join("/")}`}
+                  >
+                    {name}
+                  </Link>
+                  <Icon icon="chevron-right" />
+                </React.Fragment>
+              ))}
+              <SolidJumpBar
+                solids={queryResultSolids.all}
+                selectedSolid={selectedHandle && selectedHandle.solid}
+                onChange={solid => this.handleClickSolid({ name: solid.name })}
+              />
+            </PathOverlay>
+            {solidsQueryEnabled && (
+              <GraphQueryInput
+                items={solids}
+                value={visibleSolidsQuery}
+                onChange={this.handleQueryChange}
+              />
+            )}
+
+            <SearchOverlay style={{ background: backgroundTranslucent }}>
+              <SolidHighlightInput
+                type="text"
+                name="highlighted"
+                leftIcon="search"
+                value={highlighted}
+                placeholder="Highlight..."
+                onChange={(e: React.ChangeEvent<any>) =>
+                  this.setState({ highlighted: e.target.value })
+                }
+              />
+            </SearchOverlay>
+            {queryResultSolids.all.length === 0 &&
+              !visibleSolidsQuery.length && <LargeDAGNotice />}
+            <PipelineGraphContainer
+              pipelineName={pipeline.name}
+              backgroundColor={backgroundColor}
+              solids={queryResultSolids.all}
+              focusSolids={queryResultSolids.focus}
+              highlightedSolids={highlightedSolids}
+              selectedHandle={selectedHandle}
+              parentHandle={parentHandle}
+              onClickSolid={this.handleClickSolid}
+              onClickBackground={this.handleClickBackground}
+              onEnterCompositeSolid={this.handleEnterCompositeSolid}
+              onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
+            />
+          </>
+        }
+        second={
+          <RightInfoPanel>
+            <Route
+              // eslint-disable-next-line react/no-children-prop
+              children={({ location }: { location: any }) => (
+                <SidebarTabbedContainer
+                  pipeline={pipeline}
+                  solidHandleID={selectedHandle && selectedHandle.handleID}
+                  parentSolidHandleID={parentHandle && parentHandle.handleID}
+                  getInvocations={this.props.getInvocations}
+                  onEnterCompositeSolid={this.handleEnterCompositeSolid}
+                  onClickSolid={this.handleClickSolid}
+                  {...querystring.parse(location.search || "")}
                 />
               )}
-
-              <SearchOverlay style={{ background: backgroundTranslucent }}>
-                <SolidHighlightInput
-                  type="text"
-                  name="highlighted"
-                  leftIcon="search"
-                  value={highlighted}
-                  placeholder="Highlight..."
-                  onChange={(e: React.ChangeEvent<any>) =>
-                    this.setState({ highlighted: e.target.value })
-                  }
-                />
-              </SearchOverlay>
-              {queryResultSolids.all.length === 0 &&
-                !visibleSolidsQuery.length && <LargeDAGNotice />}
-              <PipelineGraphContainer
-                pipelineName={pipeline.name}
-                backgroundColor={backgroundColor}
-                solids={queryResultSolids.all}
-                focusSolids={queryResultSolids.focus}
-                highlightedSolids={highlightedSolids}
-                selectedHandle={selectedHandle}
-                parentHandle={parentHandle}
-                onClickSolid={this.handleClickSolid}
-                onClickBackground={this.handleClickBackground}
-                onEnterCompositeSolid={this.handleEnterCompositeSolid}
-                onLeaveCompositeSolid={this.handleLeaveCompositeSolid}
-              />
-            </>
-          }
-          right={
-            <RightInfoPanel>
-              <Route
-                // eslint-disable-next-line react/no-children-prop
-                children={({ location }: { location: any }) => (
-                  <SidebarTabbedContainer
-                    pipeline={pipeline}
-                    solidHandleID={selectedHandle && selectedHandle.handleID}
-                    parentSolidHandleID={parentHandle && parentHandle.handleID}
-                    getInvocations={this.props.getInvocations}
-                    onEnterCompositeSolid={this.handleEnterCompositeSolid}
-                    onClickSolid={this.handleClickSolid}
-                    {...querystring.parse(location.search || "")}
-                  />
-                )}
-              />
-            </RightInfoPanel>
-          }
-        />
-      </PipelinesContainer>
+            />
+          </RightInfoPanel>
+        }
+      />
     );
   }
 }
-
-const PipelinesContainer = styled.div`
-  flex: 1 1;
-  display: flex;
-  width: 100%;
-  min-width: 0;
-`;
 
 const RightInfoPanel = styled.div`
   // Fixes major perofmance hit. To reproduce, add enough content to
