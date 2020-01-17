@@ -231,20 +231,20 @@ exports[`renders execution 1`] = `
       />
     </div>
     <div
-      className="ExecutionSessionContainer__SplitPanelFlexbox-sc-13rxma3-0 imcNTe"
+      className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+      id="split-panel-container"
     >
       <div
-        className="SplitPanelChildren__Split-u7l43w-4 hXmEu"
+        className="SplitPanelContainer__Split-wb7tmo-4 SuLDq"
         style={
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
           }
         }
-        width={75}
       >
         <div
-          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-1 cQJTMR"
+          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 eBitZF"
         >
           <span
             className="bp3-popover-wrapper"
@@ -341,10 +341,10 @@ exports[`renders execution 1`] = `
           />
         </div>
         <div
-          className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-2 djNEkQ"
+          className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-1 gQbmPS"
         />
         <div
-          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-3 jezrRd"
+          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-2 bPAsrQ"
         >
           <button
             className="bp3-button bp3-active bp3-small"
@@ -383,26 +383,16 @@ exports[`renders execution 1`] = `
         <span />
       </div>
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+        className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
       >
         <div
-          className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+          className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
           onMouseDown={[Function]}
         />
       </div>
       <div
-        className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+        className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
       >
-        <div
-          style={
-            Object {
-              "position": "absolute",
-              "right": 10,
-              "top": -41,
-              "zIndex": 3,
-            }
-          }
-        />
         <div
           className="RunPreview__NonIdealWrap-sc-5v37v5-0 hRNQzE"
         >
@@ -650,20 +640,20 @@ exports[`renders pipeline page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
         }
       }
-      width={70}
     >
       <div
-        className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+        className="PipelineExplorer__PathOverlay-sc-188h86i-2 fSxwKk"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -800,7 +790,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
       >
         <span
           className="bp3-popover-wrapper"
@@ -810,7 +800,7 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -852,7 +842,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
+        className="PipelineExplorer__SearchOverlay-sc-188h86i-1 lbwtpM"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -860,7 +850,7 @@ exports[`renders pipeline page 1`] = `
         }
       >
         <div
-          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-4 gLfZSu"
+          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-3 kePQBd"
         >
           <span
             className="bp3-icon bp3-icon-search"
@@ -4518,18 +4508,18 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -4924,20 +4914,20 @@ exports[`renders pipeline solid page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
         }
       }
-      width={70}
     >
       <div
-        className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+        className="PipelineExplorer__PathOverlay-sc-188h86i-2 fSxwKk"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -5074,7 +5064,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
       >
         <span
           className="bp3-popover-wrapper"
@@ -5084,7 +5074,7 @@ exports[`renders pipeline solid page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -5126,7 +5116,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
+        className="PipelineExplorer__SearchOverlay-sc-188h86i-1 lbwtpM"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -5134,7 +5124,7 @@ exports[`renders pipeline solid page 1`] = `
         }
       >
         <div
-          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-4 gLfZSu"
+          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-3 kePQBd"
         >
           <span
             className="bp3-icon bp3-icon-search"
@@ -8792,18 +8782,18 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -9198,17 +9188,17 @@ exports[`renders solids explorer 1`] = `
     <span />
   </div>
   <div
-    className="SolidsRoot__Wrapper-ie1ggt-4 isKnyD"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 hwaSCk"
+      className="SplitPanelContainer__Split-wb7tmo-4 eOBhhE"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": 420,
         }
       }
-      width={40}
     >
       <div
         style={
@@ -12461,15 +12451,15 @@ exports[`renders solids explorer 1`] = `
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
         className="SolidsRoot__SolidDetailScrollContainer-ie1ggt-2 yIWFb"
@@ -13823,20 +13813,20 @@ exports[`renders type page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
         }
       }
-      width={70}
     >
       <div
-        className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+        className="PipelineExplorer__PathOverlay-sc-188h86i-2 fSxwKk"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -13973,7 +13963,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
       >
         <span
           className="bp3-popover-wrapper"
@@ -13983,7 +13973,7 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -14025,7 +14015,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
+        className="PipelineExplorer__SearchOverlay-sc-188h86i-1 lbwtpM"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -14033,7 +14023,7 @@ exports[`renders type page 1`] = `
         }
       >
         <div
-          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-4 gLfZSu"
+          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-3 kePQBd"
         >
           <span
             className="bp3-icon bp3-icon-search"
@@ -17691,18 +17681,18 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -18097,20 +18087,20 @@ exports[`renders type page 2`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
         }
       }
-      width={70}
     >
       <div
-        className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+        className="PipelineExplorer__PathOverlay-sc-188h86i-2 fSxwKk"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -18247,7 +18237,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
       >
         <span
           className="bp3-popover-wrapper"
@@ -18257,7 +18247,7 @@ exports[`renders type page 2`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -18299,7 +18289,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
+        className="PipelineExplorer__SearchOverlay-sc-188h86i-1 lbwtpM"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -18307,7 +18297,7 @@ exports[`renders type page 2`] = `
         }
       >
         <div
-          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-4 gLfZSu"
+          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-3 kePQBd"
         >
           <span
             className="bp3-icon bp3-icon-search"
@@ -21965,18 +21955,18 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -22371,20 +22361,20 @@ exports[`renders without error 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
         }
       }
-      width={70}
     >
       <div
-        className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
+        className="PipelineExplorer__PathOverlay-sc-188h86i-2 fSxwKk"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -22521,7 +22511,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
       >
         <span
           className="bp3-popover-wrapper"
@@ -22531,7 +22521,7 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -22573,7 +22563,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="PipelineExplorer__SearchOverlay-sc-188h86i-2 kSzAYY"
+        className="PipelineExplorer__SearchOverlay-sc-188h86i-1 lbwtpM"
         style={
           Object {
             "background": "rgba(245, 248, 250, 0.4)",
@@ -22581,7 +22571,7 @@ exports[`renders without error 1`] = `
         }
       >
         <div
-          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-4 gLfZSu"
+          className="bp3-input-group PipelineExplorer__SolidHighlightInput-sc-188h86i-3 kePQBd"
         >
           <span
             className="bp3-icon bp3-icon-search"
@@ -26239,18 +26229,18 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"

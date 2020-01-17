@@ -157,3 +157,18 @@ export function titleOfIO(i: {
 export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
+
+const DAGIT_FLAGS_KEY = "DAGIT_FLAGS";
+
+export enum FeatureFlag {
+  GaantExecutionPlan = "GAANT"
+}
+
+export function getFeatureFlags(): FeatureFlag[] {
+  return JSON.parse(localStorage.getItem(DAGIT_FLAGS_KEY) || "[]");
+}
+
+export function setFeatureFlags(flags: FeatureFlag[]) {
+  if (!(flags instanceof Array)) throw new Error("flags must be an array");
+  localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
+}

@@ -7,7 +7,9 @@ import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecuti
 import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
-import { GaantChart, GaantChartLayoutMode } from "../GaantChart";
+import { ExecutionPlan } from "../plan/ExecutionPlan";
+import { GaantChart, GaantChartMode } from "../GaantChart";
+import { getFeatureFlags, FeatureFlag } from "../Util";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
@@ -57,6 +59,10 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
 
   render() {
     const { plan, validation, toolbarActions } = this.props;
+    const gaantPreview = getFeatureFlags().includes(
+      FeatureFlag.GaantExecutionPlan
+    );
+
     let pythonError = null;
     let errors: IErrorMessage[] = [];
     if (validation?.__typename === "PipelineConfigValidationInvalid") {
@@ -84,11 +90,21 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
     }
 
     return plan?.__typename === "ExecutionPlan" ? (
-      <GaantChart
-        plan={plan}
-        options={{ mode: GaantChartLayoutMode.WATERFALL }}
-        toolbarActions={toolbarActions}
-      />
+      gaantPreview ? (
+        <GaantChart
+          plan={plan}
+          options={{ mode: GaantChartMode.WATERFALL }}
+          toolbarActions={toolbarActions}
+        />
+      ) : (
+        <>
+          <OptionsContainer>
+            <div style={{ flex: 1 }} />
+            {toolbarActions}
+          </OptionsContainer>
+          <ExecutionPlan executionPlan={plan} />
+        </>
+      )
     ) : (
       <NonIdealWrap>
         <NonIdealState
@@ -150,3 +166,12 @@ const ErrorRow = styled.div`
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
 `;
+
+const OptionsContainer = styled.div`
+  height: 47px;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 1px solid #A7B6C2;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}`;

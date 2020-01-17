@@ -40,12 +40,12 @@ interface GaantChartLayout {
 }
 
 interface GaantChartLayoutOptions {
-  mode: GaantChartLayoutMode;
+  mode: GaantChartMode;
   scale: number;
   hideWaiting: boolean;
 }
 
-export enum GaantChartLayoutMode {
+export enum GaantChartMode {
   FLAT = "flat",
   WATERFALL = "waterfall",
   WATERFALL_TIMED = "waterfall-timed"
@@ -110,7 +110,7 @@ const boxWidthFor = (
   options: GaantChartLayoutOptions
 ) => {
   const stepInfo = metadata.steps[step.name] || {};
-  if (options.mode === GaantChartLayoutMode.WATERFALL_TIMED) {
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     const width =
       stepInfo.finish && stepInfo.start
         ? stepInfo.finish - stepInfo.start
@@ -248,7 +248,7 @@ const buildLayout = (
   roots.forEach(box => deepen(box, 0));
 
   // now assign Y values
-  if (options.mode === GaantChartLayoutMode.FLAT) {
+  if (options.mode === GaantChartMode.FLAT) {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
@@ -319,10 +319,7 @@ const buildLayout = (
   }
 
   // apply display options
-  if (
-    options.mode === GaantChartLayoutMode.WATERFALL_TIMED &&
-    options.hideWaiting
-  ) {
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
     boxes = boxes.filter(b => {
       const state = metadata.steps[b.node.name]?.state || "waiting";
       return state !== "waiting";
@@ -374,7 +371,7 @@ export class GaantChart extends React.Component<
       query: "*",
       options: Object.assign(
         {
-          mode: GaantChartLayoutMode.WATERFALL,
+          mode: GaantChartMode.WATERFALL,
           hideWaiting: true,
           scale: 0.8
         },
@@ -404,22 +401,20 @@ export class GaantChart extends React.Component<
         <OptionsContainer>
           <ButtonGroup style={{ flexShrink: 0 }}>
             {[
-              GaantChartLayoutMode.FLAT,
-              GaantChartLayoutMode.WATERFALL,
-              GaantChartLayoutMode.WATERFALL_TIMED
+              GaantChartMode.FLAT,
+              GaantChartMode.WATERFALL,
+              GaantChartMode.WATERFALL_TIMED
             ].map(mode => (
               <Button
                 key={mode}
                 text={mode.toLowerCase()}
                 small={true}
                 active={options.mode === mode}
-                onClick={() =>
-                  setOptions({ mode: mode as GaantChartLayoutMode })
-                }
+                onClick={() => setOptions({ mode: mode as GaantChartMode })}
               />
             ))}
           </ButtonGroup>
-          {options.mode === GaantChartLayoutMode.WATERFALL_TIMED && (
+          {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
               <div style={{ width: 15 }} />
               <Checkbox
@@ -489,7 +484,7 @@ const GaantChartContent = (
         {box.node.name}
       </div>
     );
-    if (options.mode !== GaantChartLayoutMode.FLAT) {
+    if (options.mode !== GaantChartMode.FLAT) {
       box.children.forEach((child, childIdx) => {
         const childIsRendered = layout.boxes.includes(child);
         items.push(
@@ -612,7 +607,7 @@ const GaantChartContainer = styled.div`
 `;
 
 const OptionsContainer = styled.div`
-height: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   padding: 5px 15px;
