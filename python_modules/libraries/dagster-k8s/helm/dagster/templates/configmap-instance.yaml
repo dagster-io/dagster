@@ -13,14 +13,12 @@ data:
       module: dagster_k8s.launcher
       class: K8sRunLauncher
       config:
-        postgres_host: "{{ template "dagster.postgresql.fullname" . }}"
-        postgres_port: "{{ .Values.postgresql.service.port }}"
         {{- with .Values.imagePullSecrets }}
         image_pull_secrets:
             {{- toYaml . | nindent 10 }}
         {{- end }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
-        job_image: "{{ .Values.job_image.image.repository }}:{{ .Values.job_image.image.tag }}"
+        job_image: "{{ .Values.job_image }}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
 
     run_storage:

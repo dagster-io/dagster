@@ -30,7 +30,7 @@ class S3IntermediateStore(IntermediateStore):
             type_storage_plugin_registry=check.inst_param(
                 type_storage_plugin_registry
                 if type_storage_plugin_registry
-                else TypeStoragePluginRegistry(types_to_register={}),
+                else TypeStoragePluginRegistry(types_to_register=[]),
                 'type_storage_plugin_registry',
                 TypeStoragePluginRegistry,
             ),

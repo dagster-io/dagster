@@ -4,7 +4,6 @@
 import re
 
 import pytest
-from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     Any,
@@ -24,6 +23,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
+from dagster.utils.test import FilesytemTestScheduler
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument

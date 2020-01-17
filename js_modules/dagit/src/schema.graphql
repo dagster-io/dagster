@@ -105,6 +105,7 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
+  error: PythonError
 }
 
 type EnumConfigType implements ConfigType {

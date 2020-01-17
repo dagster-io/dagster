@@ -141,10 +141,17 @@ export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_step {
   key: string;
 }
 
+export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface RunPipelineRunEventFragment_PipelineInitFailureEvent_error {
   __typename: "PythonError";
-  stack: string[];
   message: string;
+  stack: string[];
+  cause: RunPipelineRunEventFragment_PipelineInitFailureEvent_error_cause | null;
 }
 
 export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
@@ -434,6 +441,19 @@ export interface RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventMa
 
 export type RunPipelineRunEventFragment_EngineEvent_metadataEntries = RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventPathMetadataEntry | RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry | RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry | RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventTextMetadataEntry | RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry;
 
+export interface RunPipelineRunEventFragment_EngineEvent_engineError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPipelineRunEventFragment_EngineEvent_engineError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPipelineRunEventFragment_EngineEvent_engineError_cause | null;
+}
+
 export interface RunPipelineRunEventFragment_EngineEvent {
   __typename: "EngineEvent";
   message: string;
@@ -441,6 +461,7 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   level: LogLevel;
   step: RunPipelineRunEventFragment_EngineEvent_step | null;
   metadataEntries: RunPipelineRunEventFragment_EngineEvent_metadataEntries[];
+  engineError: RunPipelineRunEventFragment_EngineEvent_engineError | null;
 }
 
 export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_PipelineProcessStartedEvent | RunPipelineRunEventFragment_PipelineProcessStartEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;

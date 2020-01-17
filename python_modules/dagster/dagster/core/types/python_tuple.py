@@ -75,6 +75,10 @@ class _TypedPythonTuple(RuntimeType):
             ','.join([inner_type.display_name for inner_type in self.runtime_types])
         )
 
+    @property
+    def inner_types(self):
+        return self.runtime_types
+
 
 def create_typed_tuple(*dagster_type_args):
     runtime_types = list(map(resolve_to_runtime_type, dagster_type_args))

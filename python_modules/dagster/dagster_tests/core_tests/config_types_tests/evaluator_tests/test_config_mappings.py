@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 from dagster import (
@@ -7,11 +5,9 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
-    Float,
     InputDefinition,
     Int,
     Output,
-    RunConfig,
     String,
     composite_solid,
     execute_pipeline,
@@ -692,37 +688,6 @@ def test_wrap_all_config_and_inputs():
         == 'Missing required field "config_field_b" at path root:solids:wrap_all:config '
         'Available Fields: "[\'config_field_a\', \'config_field_b\']".'
     )
-
-
-def test_timestamp_in_run_config():
-    now = time.time()
-    run_config = RunConfig(tags={'execution_epoch_time': now})
-    seen = {}
-
-    @solid(config={'ts': Field(Float)})
-    def basic(context):
-        seen['ts'] = context.solid_config['ts']
-
-    @composite_solid(
-        config_fn=lambda context, _: {
-            'basic': {'config': {'ts': context.run_config.tags['execution_epoch_time']}}
-        },
-        config={'config_field_a': Field(String)},
-    )
-    def wrap_with_context():
-        return basic()
-
-    @pipeline(name='config_mapping')
-    def config_mapping_pipeline():
-        return wrap_with_context()
-
-    result = execute_pipeline(
-        config_mapping_pipeline,
-        {'solids': {'wrap_with_context': {'config': {'config_field_a': 'foobar'}}}},
-        run_config=run_config,
-    )
-    assert result.success
-    assert seen['ts'] == now
 
 
 def test_empty_config():

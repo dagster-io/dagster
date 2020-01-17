@@ -10,10 +10,15 @@ from dagster_gcp import (
     dataproc_solid,
     import_gcs_paths_to_bq,
 )
+from dagster_pandas import DataFrame
 
 from dagster import (
+    InputDefinition,
     List,
     ModeDefinition,
+    Nothing,
+    OutputDefinition,
+    Path,
     PresetDefinition,
     String,
     composite_solid,
@@ -36,8 +41,8 @@ def output_paths(context, start) -> List[String]:  # pylint: disable=unused-argu
     return context.solid_config['paths']
 
 
-def events_dataproc_fn(context, cfg):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+def events_dataproc_fn(_, cfg):
+    dt = datetime.datetime.strptime(cfg.get('date'), "%Y-%m-%d")
 
     return {
         'dataproc_solid': {
@@ -82,14 +87,14 @@ def events_dataproc_fn(context, cfg):
 
 @composite_solid(
     config_fn=events_dataproc_fn,
-    config={'cluster_name': str, 'input_bucket': str, 'output_bucket': str,},
+    config={'cluster_name': str, 'input_bucket': str, 'output_bucket': str, 'date': str},
 )
 def events_dataproc() -> List[String]:
     return output_paths(dataproc_solid())
 
 
-def bq_load_events_fn(context, cfg):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+def bq_load_events_fn(_, cfg):
+    dt = datetime.datetime.strptime(cfg.get('date'), "%Y-%m-%d")
 
     table = cfg.get('table')
 
@@ -109,8 +114,12 @@ def bq_load_events_fn(context, cfg):
     }
 
 
-@composite_solid(config_fn=bq_load_events_fn, config={'table': str})
-def bq_load_events(source_uris: List[String]):
+@composite_solid(
+    config_fn=bq_load_events_fn,
+    config={'table': str, 'date': str},
+    output_defs=[OutputDefinition(Nothing)],
+)
+def bq_load_events(source_uris: List[Path]):
     return import_gcs_paths_to_bq(source_uris)
 
 
@@ -130,7 +139,12 @@ def explore_visits_by_hour_fn(_, cfg):
     }
 
 
-@composite_solid(config_fn=explore_visits_by_hour_fn, config={'table': str})
+@composite_solid(
+    config_fn=explore_visits_by_hour_fn,
+    config={'table': str},
+    input_defs=[InputDefinition("start", Nothing)],
+    output_defs=[OutputDefinition(List[DataFrame])],
+)
 def explore_visits_by_hour(start):
     with open(file_relative_path(__file__, 'sql/explore_visits_by_hour.sql'), 'r') as f:
         query = f.read()

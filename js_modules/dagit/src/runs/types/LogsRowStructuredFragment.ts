@@ -111,10 +111,17 @@ export interface LogsRowStructuredFragment_PipelineInitFailureEvent_step {
   key: string;
 }
 
+export interface LogsRowStructuredFragment_PipelineInitFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LogsRowStructuredFragment_PipelineInitFailureEvent_error {
   __typename: "PythonError";
-  stack: string[];
   message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_PipelineInitFailureEvent_error_cause | null;
 }
 
 export interface LogsRowStructuredFragment_PipelineInitFailureEvent {
@@ -131,10 +138,17 @@ export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_step {
   key: string;
 }
 
+export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
-  stack: string[];
   message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_ExecutionStepFailureEvent_error_cause | null;
 }
 
 export interface LogsRowStructuredFragment_ExecutionStepFailureEvent {
@@ -424,6 +438,19 @@ export interface LogsRowStructuredFragment_EngineEvent_metadataEntries_EventMark
 
 export type LogsRowStructuredFragment_EngineEvent_metadataEntries = LogsRowStructuredFragment_EngineEvent_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_EventTextMetadataEntry | LogsRowStructuredFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry;
 
+export interface LogsRowStructuredFragment_EngineEvent_engineError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsRowStructuredFragment_EngineEvent_engineError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsRowStructuredFragment_EngineEvent_engineError_cause | null;
+}
+
 export interface LogsRowStructuredFragment_EngineEvent {
   __typename: "EngineEvent";
   message: string;
@@ -431,6 +458,7 @@ export interface LogsRowStructuredFragment_EngineEvent {
   level: LogLevel;
   step: LogsRowStructuredFragment_EngineEvent_step | null;
   metadataEntries: LogsRowStructuredFragment_EngineEvent_metadataEntries[];
+  engineError: LogsRowStructuredFragment_EngineEvent_engineError | null;
 }
 
 export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_PipelineProcessStartedEvent | LogsRowStructuredFragment_PipelineProcessStartEvent | LogsRowStructuredFragment_StepMaterializationEvent | LogsRowStructuredFragment_PipelineInitFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_EngineEvent;

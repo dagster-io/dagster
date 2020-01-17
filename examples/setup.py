@@ -42,6 +42,7 @@ setup(
             'sqlalchemy-redshift>=0.7.2',
             'SQLAlchemy-Utils==0.33.8',
             'tensorflow',
+            'dagster-gcp',
         ],
         'dbt': [
             'dbt-postgres',

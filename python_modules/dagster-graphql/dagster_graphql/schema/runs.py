@@ -588,6 +588,8 @@ class DauphinEngineEvent(dauphin.ObjectType):
         name = 'EngineEvent'
         interfaces = (DauphinMessageEvent, DauphinDisplayableEvent, DauphinStepEvent)
 
+    error = dauphin.Field('PythonError')
+
 
 class DauphinStepExpectationResultEvent(dauphin.ObjectType):
     class Meta(object):
@@ -728,8 +730,13 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
         return graphene_info.schema.type_named('EngineEvent')(
             metadataEntries=_to_dauphin_metadata_entries(
-                dagster_event.event_specific_data.metadata_entries
+                dagster_event.engine_event_data.metadata_entries
             ),
+            error=graphene_info.schema.type_named('PythonError')(
+                dagster_event.engine_event_data.error
+            )
+            if dagster_event.engine_event_data.error
+            else None,
             **basic_params
         )
     else:

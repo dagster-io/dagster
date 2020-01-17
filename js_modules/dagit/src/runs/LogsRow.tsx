@@ -65,8 +65,7 @@ export class Structured extends React.Component<
         }
         ... on PipelineInitFailureEvent {
           error {
-            stack
-            message
+            ...PythonErrorFragment
           }
         }
         ... on ExecutionStepFailureEvent {
@@ -76,8 +75,7 @@ export class Structured extends React.Component<
             key
           }
           error {
-            stack
-            message
+            ...PythonErrorFragment
           }
         }
         ... on ExecutionStepInputEvent {
@@ -127,6 +125,9 @@ export class Structured extends React.Component<
           metadataEntries {
             ...MetadataEntryFragment
           }
+          engineError: error {
+            ...PythonErrorFragment
+          }
         }
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
@@ -160,6 +161,14 @@ export class Structured extends React.Component<
       return (
         <InfoModal title="Error" onRequestClose={this.onCollapse}>
           <PythonErrorInfo error={node.error} />
+        </InfoModal>
+      );
+    }
+
+    if (node.__typename === "EngineEvent" && node.engineError) {
+      return (
+        <InfoModal title="Error" onRequestClose={this.onCollapse}>
+          <PythonErrorInfo error={node.engineError} />
         </InfoModal>
       );
     }

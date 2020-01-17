@@ -1,9 +1,8 @@
 import datetime
 
-from dagster_tests.utils import FilesytemTestScheduler
-
 from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, daily_schedule, schedules
 from dagster.core.definitions.partition import last_empty_partition
+from dagster.utils.test import FilesytemTestScheduler
 
 integer_partition_set = PartitionSetDefinition(
     name='scheduled_integer_partitions',
