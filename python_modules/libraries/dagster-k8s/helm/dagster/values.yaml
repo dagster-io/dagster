@@ -26,7 +26,6 @@ postgresql:
 
 serviceAccount:
   create: true
-  name: "dagit-admin"
 
 podSecurityContext: {}
 
