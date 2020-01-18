@@ -57,8 +57,8 @@ You may bypass cluster creation and image loading in the following way.
 First, ensure you have a Docker image appropriate for your Python version. Run, from the root of
 the repo.
 
-    ./buildkite/images/docker/test_project/build.sh dagster/buildkite-integration:py37-latest
-    docker tag dagster-docker-buildkite dagster-docker-buildkite:py37-latest
+    ./buildkite/images/docker/test_project/build.sh 3.7.4
+    docker tag dagster-docker-buildkite dagster.io/dagster-docker-buildkite:py37-latest
 
 In the above invocation, the Python majmin version should be appropriate for your desired tests.
 

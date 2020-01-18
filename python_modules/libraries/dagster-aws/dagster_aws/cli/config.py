@@ -23,7 +23,7 @@ class ConfigMixin(object):
             return False
 
         with open(cfg_path, 'rb') as f:
-            record = yaml.load(f)
+            record = yaml.safe_load(f)
             if record and cls.KEY in record:
                 return True
 
@@ -41,7 +41,7 @@ class ConfigMixin(object):
 
         if os.path.exists(cfg_path):
             with open(cfg_path, 'rb') as f:
-                record = yaml.load(f) or {}
+                record = yaml.safe_load(f) or {}
 
         record[self.KEY] = dict(self._asdict())
 
@@ -59,7 +59,7 @@ class ConfigMixin(object):
             Term.fatal('No configuration found, run `dagster-aws init` to get started.')
 
         with open(filepath, 'rb') as f:
-            raw_cfg = yaml.load(f)
+            raw_cfg = yaml.safe_load(f)
         return cls.__new__(cls, **raw_cfg.get(cls.KEY, {}))
 
     def as_table(self):
@@ -81,7 +81,7 @@ class ConfigMixin(object):
 
         cfg_path = os.path.join(base_path, HOST_CONFIG_FILE)
         with open(cfg_path, 'rb') as f:
-            record = yaml.load(f) or {}
+            record = yaml.safe_load(f) or {}
 
         if self.KEY in record:
             del record[self.KEY]

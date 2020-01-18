@@ -57,5 +57,5 @@ def test_multiple_jobs():
         if fname.startswith('spark-examples'):
             jar_path = os.path.join(base_path, fname)
 
-    result = execute_pipeline(pipe, yaml.load(CONFIG.format(jar_path=jar_path)))
+    result = execute_pipeline(pipe, yaml.safe_load(CONFIG.format(jar_path=jar_path)))
     assert result.success

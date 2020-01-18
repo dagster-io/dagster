@@ -56,7 +56,8 @@ def parse_raw_res(raw_res):
             res = seven.json.loads(line)
             break
         # If we don't get a GraphQL response, check the next line
-        except seven.JSONDecodeError:
+        except seven.JSONDecodeError as e:
+            print('[parse_raw_res error]', e)
             continue
 
     return res
@@ -74,7 +75,18 @@ def wait_for_job_success(job_name):
         time.sleep(1)
 
     success, job_pod_name = wait_for_pod(job.metadata.name, wait_for_termination=True)
-    raw_logs = client.CoreV1Api().read_namespaced_pod_log(name=job_pod_name, namespace='default')
+
+    # We set _preload_content to False here to prevent the k8 python api from processing the response.
+    # If the logs happen to be JSON - it will parse in to a dict and then coerce back to a str
+    # leaving us with invalid JSON as the quotes have been switched to '
+    #
+    # https://github.com/kubernetes-client/python/issues/811
+    raw_logs = (
+        client.CoreV1Api()
+        .read_namespaced_pod_log(name=job_pod_name, namespace='default', _preload_content=False,)
+        .data
+    ).decode('utf-8')
+
     return success, raw_logs
 
 
