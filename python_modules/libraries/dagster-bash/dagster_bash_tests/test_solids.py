@@ -60,7 +60,7 @@ def test_bash_script_solid_no_config_composite():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     solid = bash_script_solid(os.path.join(script_dir, 'test.sh'), name='foobar')
 
-    @composite_solid(config={}, config_fn=lambda _ctx, cfg: {})
+    @composite_solid(config={}, config_fn=lambda cfg: {})
     def composite():
         return solid()
 

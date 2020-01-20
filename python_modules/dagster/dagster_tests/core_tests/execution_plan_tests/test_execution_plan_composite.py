@@ -27,7 +27,7 @@ def composite_pipeline():
 
 
 @composite_solid(
-    config_fn=lambda _, cfg: {
+    config_fn=lambda cfg: {
         'node_a': {'config': {'foo': cfg['foo']}},
         'node_b': {'config': {'bar': cfg['bar']}},
     },

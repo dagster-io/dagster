@@ -14,7 +14,7 @@ pipeline:
       deps:
         num:
           solid: A
-    - def: add
+    - def: subtract
       deps:
         left:
           solid: B

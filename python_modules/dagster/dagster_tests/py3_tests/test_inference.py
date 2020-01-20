@@ -43,16 +43,16 @@ def test_precedence():
 
 def test_double_typed_input():
     @solid
-    def add(_context, num_one: int, num_two: int):
+    def subtract(_context, num_one: int, num_two: int):
         return num_one + num_two
 
-    assert add
-    assert len(add.input_defs) == 2
-    assert add.input_defs[0].name == 'num_one'
-    assert add.input_defs[0].runtime_type.name == 'Int'
+    assert subtract
+    assert len(subtract.input_defs) == 2
+    assert subtract.input_defs[0].name == 'num_one'
+    assert subtract.input_defs[0].runtime_type.name == 'Int'
 
-    assert add.input_defs[1].name == 'num_two'
-    assert add.input_defs[1].runtime_type.name == 'Int'
+    assert subtract.input_defs[1].name == 'num_two'
+    assert subtract.input_defs[1].runtime_type.name == 'Int'
 
 
 def test_one_arg_typed_lambda_solid():
@@ -173,12 +173,12 @@ def test_composites():
         return 1
 
     @lambda_solid
-    def add(n1: int, n2: int) -> int:
-        return n1 + n2
+    def subtract(n1: int, n2: int) -> int:
+        return n1 - n2
 
     @composite_solid
     def add_one(a: int) -> int:
-        return add(a, emit_one())
+        return subtract(a, emit_one())
 
     assert add_one.input_mappings
 

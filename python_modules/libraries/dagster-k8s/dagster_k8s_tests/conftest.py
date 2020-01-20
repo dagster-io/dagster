@@ -239,6 +239,7 @@ def helm_chart(
         --set dagit.image="{docker_image}" \\
         --set job_image="{docker_image}" \\
         --set imagePullPolicy="{image_pull_policy}" \\
+        --set serviceAccount.name="dagit-admin" \\
         dagster \\
         helm/dagster/'''.format(
                 docker_image=docker_image, image_pull_policy=image_pull_policy,

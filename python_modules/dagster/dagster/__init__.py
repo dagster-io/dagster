@@ -4,7 +4,6 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
-    ConfigMappingContext,
     DependencyDefinition,
     EventMetadataEntry,
     ExecutionTargetHandle,
@@ -119,7 +118,6 @@ from .version import __version__
 __all__ = [
     # Definition
     'ConfigMapping',
-    'ConfigMappingContext',
     'CompositeSolidDefinition',
     'DependencyDefinition',
     'EventMetadataEntry',

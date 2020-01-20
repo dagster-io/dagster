@@ -64,14 +64,14 @@ def emit_values(_context):
 
 
 @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-def add(num_one, num_two):
-    return num_one + num_two
+def subtract(num_one, num_two):
+    return num_one - num_two
 
 
 @pipeline(mode_defs=celery_mode_defs)
 def test_diamond_pipeline():
     value_one, value_two = emit_values()
-    return add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
+    return subtract(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
 
 
 @pipeline(mode_defs=celery_mode_defs)
@@ -196,7 +196,7 @@ def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
         }
         assert result.result_for_solid('add_one').output_value() == 2
         assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('add').output_value() == 5
+        assert result.result_for_solid('subtract').output_value() == -1
 
 
 @skip_ci
@@ -283,7 +283,7 @@ def test_execute_eagerly_diamond_pipeline_on_celery():
         }
         assert result.result_for_solid('add_one').output_value() == 2
         assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('add').output_value() == 5
+        assert result.result_for_solid('subtract').output_value() == -1
 
 
 def test_execute_eagerly_parallel_pipeline_on_celery():

@@ -6,7 +6,7 @@ def basic(context):
     return context.solid_config
 
 
-def inner_wrap_fn(_ctx, cfg):
+def inner_wrap_fn(cfg):
     return {
         'basic': {
             'config': {'foo': 'override here' + cfg['inner_first'] + ' : ' + cfg['inner_second']}
@@ -21,7 +21,7 @@ def inner_wrap():
     return basic()
 
 
-def outer_wrap_fn(_ctx, cfg):
+def outer_wrap_fn(cfg):
     return {
         'inner_wrap': {
             'config': {'inner_first': cfg['outer_first'], 'inner_second': cfg['outer_second']}

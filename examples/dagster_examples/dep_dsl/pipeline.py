@@ -3,7 +3,7 @@ This demo example is to demonstrate that it is possible to construct
 the dependencies of a pipeline definition from a yaml file or similar.
 This is not the "blessed" file format nor is it our recommendation for
 doing things. However we've been asked a number of times if this is possible
-and this should serve as a reasonable template to build upon. 
+and this should serve as a reasonable template to build upon.
 '''
 from dagster import (
     DependencyDefinition,
@@ -27,7 +27,7 @@ def add_two(_, num: int) -> int:
 
 
 @solid
-def add(_, left: int, right: int) -> int:
+def subtract(_, left: int, right: int) -> int:
     return left + right
 
 
@@ -58,5 +58,5 @@ def construct_pipeline_with_yaml(yaml_file, solid_defs):
 
 def define_dep_dsl_pipeline():
     return construct_pipeline_with_yaml(
-        file_relative_path(__file__, 'example.yaml'), [add_one, add_two, add]
+        file_relative_path(__file__, 'example.yaml'), [add_one, add_two, subtract]
     )

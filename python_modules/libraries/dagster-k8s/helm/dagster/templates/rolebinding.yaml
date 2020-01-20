@@ -10,7 +10,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
 subjects:
 - kind: ServiceAccount
-  name: {{ .Values.serviceAccount.name }}
+  name: {{ template "dagster.serviceAccountName" . }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role

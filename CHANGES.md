@@ -8,7 +8,19 @@
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
 - Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
 - The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
+- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To upgrade, remove the first argument to `config_fn`.
 
+  So instead of
+
+  ```
+  @composite_solid(config={}, config_fn=lambda context, config: {})
+  ```
+
+  one must instead write:
+
+  ```
+  @composite_solid(config={}, config_fn=lambda config: {})
+  ```
 - In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
 
   Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
