@@ -4,7 +4,6 @@ import PipelineGraph from "./PipelineGraph";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { PipelineExplorerSolidHandleFragment } from "../types/PipelineExplorerSolidHandleFragment";
-import { PipelineExplorerParentSolidHandleFragment } from "../types/PipelineExplorerParentSolidHandleFragment";
 import {
   getDagrePipelineLayout,
   asyncDagrePipelineLayout
@@ -16,12 +15,11 @@ const ASYNC_LAYOUT_SOLID_COUNT = 50;
 interface IPipelineGraphContainerProps {
   pipelineName: string;
   backgroundColor: string;
-  flattenComposites: boolean;
   solids: PipelineGraphSolidFragment[];
   focusSolids: PipelineGraphSolidFragment[];
   highlightedSolids: PipelineGraphSolidFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerParentSolidHandleFragment;
+  parentHandle?: PipelineExplorerSolidHandleFragment;
   onClickSolid?: (arg: SolidNameOrPath) => void;
   onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
@@ -32,7 +30,6 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   const {
     pipelineName,
     backgroundColor,
-    flattenComposites,
     solids,
     focusSolids,
     highlightedSolids,
@@ -53,24 +50,23 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   React.useEffect(() => {
     async function delegateDagrePipelineLayout() {
       setLoading(true);
-      const _layout = (await asyncDagrePipelineLayout(solids, parentSolid, {
-        flattenComposites
-      })) as IFullPipelineLayout;
+      const _layout = (await asyncDagrePipelineLayout(
+        solids,
+        parentSolid
+      )) as IFullPipelineLayout;
       setLayout(_layout);
       setLoading(false);
       setLayoutSolidKey(solidKey);
     }
     if (solids.length < ASYNC_LAYOUT_SOLID_COUNT) {
-      setLayout(
-        getDagrePipelineLayout(solids, parentSolid, { flattenComposites })
-      );
+      setLayout(getDagrePipelineLayout(solids, parentSolid));
       setLayoutSolidKey(solidKey);
       setLoading(false);
     } else {
       delegateDagrePipelineLayout();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solidKey, parentSolidKey, flattenComposites]);
+  }, [solidKey, parentSolidKey]);
 
   if (loading || !layout || solidKey !== layoutSolidKey) {
     return <PipelineGraphLoading backgroundColor={backgroundColor} />;

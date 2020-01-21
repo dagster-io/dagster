@@ -1,110 +1,133 @@
 import * as React from "react";
 import { match } from "react-router";
 import gql from "graphql-tag";
-import { History } from "history";
+import { History, Location } from "history";
 import { useQuery } from "react-apollo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-
 import Loading from "./Loading";
-import PipelineExplorer from "./PipelineExplorer";
+import PipelineExplorer, { PipelineExplorerOptions } from "./PipelineExplorer";
+import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables
 } from "./types/PipelineExplorerRootQuery";
-import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 
-interface IPipelineExplorerRootProps {
-  location: { pathname: string };
+interface PipelineExplorerRootProps {
+  location: Location;
   match: match<{ 0: string }>;
   history: History<any>;
 }
 
-function flattenHandleGraph(
-  handles: PipelineExplorerParentSolidHandleFragment[]
+function flattenComposite(
+  handles: PipelineExplorerSolidHandleFragment[],
+  handle: PipelineExplorerSolidHandleFragment
 ) {
+  if (handle.solid.definition.__typename !== "CompositeSolidDefinition") {
+    throw new Error("flattenComposite takes a composite handle.");
+  }
+
+  // Replace all references to this composite's inputs in other solid defitions
+  // with the interior target of the input mappings
+  handle.solid.definition.inputMappings.forEach(inmap => {
+    const solidName = `${handle.solid.name}.${inmap.mappedInput.solid.name}`;
+    handles.forEach(h =>
+      h.solid.outputs.forEach(i => {
+        i.dependedBy.forEach(dep => {
+          if (
+            dep.definition.name === inmap.definition.name &&
+            dep.solid.name === handle.solid.name
+          ) {
+            dep.solid.name = solidName;
+            dep.definition.name = inmap.mappedInput.definition.name;
+          }
+        });
+      })
+    );
+  });
+  // Replace all references to this composite's outputs in other solid defitions
+  // with the interior target of the output mappings
+  handle.solid.definition.outputMappings.forEach(outmap => {
+    const solidName = `${handle.solid.name}.${outmap.mappedOutput.solid.name}`;
+    handles.forEach(h =>
+      h.solid.inputs.forEach(i => {
+        i.dependsOn.forEach(dep => {
+          if (
+            dep.definition.name === outmap.definition.name &&
+            dep.solid.name === handle.solid.name
+          ) {
+            dep.solid.name = solidName;
+            dep.definition.name = outmap.mappedOutput.definition.name;
+          }
+        });
+      })
+    );
+  });
+
+  // Find all the solid handles that are within this composite and prefix their
+  // names with the composite container's name.
+  const nested = handles.filter(
+    h => h.handleID === `${handle.handleID}.${h.solid.name}`
+  );
+  nested.forEach(n => {
+    n.solid.name = `${handle.handleID}.${n.solid.name}`;
+    n.solid.inputs.forEach(i => {
+      i.dependsOn.forEach(d => {
+        d.solid.name = `${handle.handleID}.${d.solid.name}`;
+      });
+    });
+    n.solid.outputs.forEach(i => {
+      i.dependedBy.forEach(d => {
+        d.solid.name = `${handle.handleID}.${d.solid.name}`;
+      });
+    });
+  });
+
+  // Return the interior solids that replace the composite in the graph
+  return nested;
+}
+
+/**
+ * Given a solid handle graph, returns a new solid handle graph with all of the
+ * composites recursively replaced with their interior solids. Interior solids
+ * are given handle-like names "composite.inner" to avoid name collisions.
+ *
+ * @param handles All the SolidHandles in the pipeline (NOT just current layer)
+ */
+function flattenCompositesInHandleGraph(
+  handles: PipelineExplorerSolidHandleFragment[]
+) {
+  // Clone the entire graph so we can modify solid names in-place
   handles = JSON.parse(JSON.stringify(handles));
+
+  // Reset the output to just the solids in the top layer of the graph
   const results = handles.filter(h => !h.handleID.includes("."));
 
-  let found = true;
-  while (found) {
-    found = false;
-    for (let ii = results.length - 1; ii--; ii >= 0) {
-      const handle = results[ii];
-      if (handle.solid.definition.__typename === "CompositeSolidDefinition") {
-        handle.solid.definition.inputMappings.forEach(inmap => {
-          const solidName = `${handle.solid.name}.${inmap.mappedInput.solid.name}`;
-          // find people consuming this output with name definition.name
-          handles.forEach(h =>
-            h.solid.outputs.forEach(i => {
-              i.dependedBy.forEach(dep => {
-                if (
-                  dep.definition.name === inmap.definition.name &&
-                  dep.solid.name === handle.solid.name
-                ) {
-                  dep.solid.name = solidName;
-                  dep.definition.name = inmap.mappedInput.definition.name;
-                }
-              });
-            })
-          );
-        });
-        handle.solid.definition.outputMappings.forEach(outmap => {
-          const solidName = `${handle.solid.name}.${outmap.mappedOutput.solid.name}`;
-          // find people consuming this output with name definition.name
-          handles.forEach(h =>
-            h.solid.inputs.forEach(i => {
-              i.dependsOn.forEach(dep => {
-                if (
-                  dep.definition.name === outmap.definition.name &&
-                  dep.solid.name === handle.solid.name
-                ) {
-                  dep.solid.name = solidName;
-                  dep.definition.name = outmap.mappedOutput.definition.name;
-                }
-              });
-            })
-          );
-        });
-
-        const nested = handles.filter(
-          h => h.handleID === `${handle.handleID}.${h.solid.name}`
-        );
-        console.log(
-          `Found ${handle.handleID} with children: ${nested.map(
-            n => n.solid.name
-          )}`
-        );
-        nested.forEach(n => {
-          n.solid.name = `${handle.handleID}.${n.solid.name}`;
-          n.solid.inputs.forEach(i => {
-            i.dependsOn.forEach(d => {
-              d.solid.name = `${handle.handleID}.${d.solid.name}`;
-            });
-          });
-          n.solid.outputs.forEach(i => {
-            i.dependedBy.forEach(d => {
-              d.solid.name = `${handle.handleID}.${d.solid.name}`;
-            });
-          });
-        });
-        results.splice(ii, 1, ...nested);
-        found = true;
-        break;
-      }
+  // Find composites in the output and replace the composite with it's content
+  // solids (renaming the content solids to include the composite's handle and
+  // linking them to the other solids via the composite's input/output mappings)
+  while (true) {
+    const idx = results.findIndex(
+      h => h.solid.definition.__typename === "CompositeSolidDefinition"
+    );
+    if (idx === -1) {
+      break;
     }
+    results.splice(idx, 1, ...flattenComposite(handles, results[idx]));
   }
+
   return results;
 }
 
-const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> = props => {
+const PipelineExplorerRoot: React.FunctionComponent<PipelineExplorerRootProps> = props => {
   const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
   const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
+  const [options, setOptions] = React.useState<PipelineExplorerOptions>({
+    flattenComposites: false
+  });
 
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
-
-  const flattenComposites = true;
 
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
@@ -112,17 +135,14 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
   >(PIPELINE_EXPLORER_ROOT_QUERY, {
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
-    variables: Object.assign(
-      {
-        pipeline: pipelineName,
-        rootHandleID: parentNames.join(".")
-      },
-      flattenComposites
-        ? {}
-        : {
-            requestScopeHandleID: parentNames.join(".")
-          }
-    )
+    returnPartialData: false,
+    variables: {
+      pipeline: pipelineName,
+      rootHandleID: parentNames.join("."),
+      requestScopeHandleID: options.flattenComposites
+        ? undefined
+        : parentNames.join(".")
+    }
   });
 
   return (
@@ -142,21 +162,20 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
             return <NonIdealState icon={IconNames.ERROR} title="Query Error" />;
           default:
             const pipeline = pipelineOrError;
-            let displayedHandles = pipeline.solidHandles;
             const parentSolidHandle = pipelineOrError.solidHandle;
-
-            if (flattenComposites) {
-              displayedHandles = flattenHandleGraph(pipeline.solidHandles);
-            }
+            const displayedHandles = options.flattenComposites
+              ? flattenCompositesInHandleGraph(pipeline.solidHandles)
+              : pipeline.solidHandles;
 
             return (
               <PipelineExplorer
+                options={options}
+                setOptions={setOptions}
                 history={props.history}
                 path={pathSolids}
                 visibleSolidsQuery={query}
                 pipeline={pipelineOrError}
                 handles={displayedHandles}
-                flattenComposites={true}
                 parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(
                   h => h.solid.name === selectedName
@@ -188,7 +207,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
         ...PipelineExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {
-          ...PipelineExplorerParentSolidHandleFragment
+          ...PipelineExplorerSolidHandleFragment
         }
         solidHandles(parentHandleID: $requestScopeHandleID) {
           handleID
@@ -196,7 +215,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
             name
           }
           ...PipelineExplorerSolidHandleFragment
-          ...PipelineExplorerParentSolidHandleFragment
         }
       }
       ... on PipelineNotFoundError {
@@ -206,7 +224,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   }
   ${PipelineExplorer.fragments.PipelineExplorerFragment}
   ${PipelineExplorer.fragments.PipelineExplorerSolidHandleFragment}
-  ${PipelineExplorer.fragments.PipelineExplorerParentSolidHandleFragment}
 `;
 
 export default PipelineExplorerRoot;
