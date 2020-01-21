@@ -23,8 +23,9 @@ interface PipelineExplorerProps {
   history: History;
   path: string[];
   visibleSolidsQuery: string;
+  flattenComposites: boolean;
   pipeline: PipelineExplorerFragment;
-  handles: PipelineExplorerSolidHandleFragment[];
+  handles: PipelineExplorerParentSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerParentSolidHandleFragment;
   getInvocations?: (definitionName: string) => { handleID: string }[];
@@ -153,11 +154,13 @@ export default class PipelineExplorer extends React.Component<
       history,
       pipeline,
       parentHandle,
+      flattenComposites,
       visibleSolidsQuery
     } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
+
     const solidsQueryEnabled = !parentHandle;
     const queryResultSolids = solidsQueryEnabled
       ? filterSolidsByQuery(solids, visibleSolidsQuery)
@@ -247,6 +250,7 @@ export default class PipelineExplorer extends React.Component<
               <PipelineGraphContainer
                 pipelineName={pipeline.name}
                 backgroundColor={backgroundColor}
+                flattenComposites={flattenComposites}
                 solids={queryResultSolids.all}
                 focusSolids={queryResultSolids.focus}
                 highlightedSolids={highlightedSolids}

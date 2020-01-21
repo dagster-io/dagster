@@ -12,11 +12,89 @@ import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables
 } from "./types/PipelineExplorerRootQuery";
+import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 
 interface IPipelineExplorerRootProps {
   location: { pathname: string };
   match: match<{ 0: string }>;
   history: History<any>;
+}
+
+function flattenHandleGraph(
+  handles: PipelineExplorerParentSolidHandleFragment[]
+) {
+  handles = JSON.parse(JSON.stringify(handles));
+  const results = handles.filter(h => !h.handleID.includes("."));
+
+  let found = true;
+  while (found) {
+    found = false;
+    for (let ii = results.length - 1; ii--; ii >= 0) {
+      const handle = results[ii];
+      if (handle.solid.definition.__typename === "CompositeSolidDefinition") {
+        handle.solid.definition.inputMappings.forEach(inmap => {
+          const solidName = `${handle.solid.name}.${inmap.mappedInput.solid.name}`;
+          // find people consuming this output with name definition.name
+          handles.forEach(h =>
+            h.solid.outputs.forEach(i => {
+              i.dependedBy.forEach(dep => {
+                if (
+                  dep.definition.name === inmap.definition.name &&
+                  dep.solid.name === handle.solid.name
+                ) {
+                  dep.solid.name = solidName;
+                  dep.definition.name = inmap.mappedInput.definition.name;
+                }
+              });
+            })
+          );
+        });
+        handle.solid.definition.outputMappings.forEach(outmap => {
+          const solidName = `${handle.solid.name}.${outmap.mappedOutput.solid.name}`;
+          // find people consuming this output with name definition.name
+          handles.forEach(h =>
+            h.solid.inputs.forEach(i => {
+              i.dependsOn.forEach(dep => {
+                if (
+                  dep.definition.name === outmap.definition.name &&
+                  dep.solid.name === handle.solid.name
+                ) {
+                  dep.solid.name = solidName;
+                  dep.definition.name = outmap.mappedOutput.definition.name;
+                }
+              });
+            })
+          );
+        });
+
+        const nested = handles.filter(
+          h => h.handleID === `${handle.handleID}.${h.solid.name}`
+        );
+        console.log(
+          `Found ${handle.handleID} with children: ${nested.map(
+            n => n.solid.name
+          )}`
+        );
+        nested.forEach(n => {
+          n.solid.name = `${handle.handleID}.${n.solid.name}`;
+          n.solid.inputs.forEach(i => {
+            i.dependsOn.forEach(d => {
+              d.solid.name = `${handle.handleID}.${d.solid.name}`;
+            });
+          });
+          n.solid.outputs.forEach(i => {
+            i.dependedBy.forEach(d => {
+              d.solid.name = `${handle.handleID}.${d.solid.name}`;
+            });
+          });
+        });
+        results.splice(ii, 1, ...nested);
+        found = true;
+        break;
+      }
+    }
+  }
+  return results;
 }
 
 const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> = props => {
@@ -26,16 +104,25 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
   const selectedName = pathSolids[pathSolids.length - 1];
 
+  const flattenComposites = true;
+
   const queryResult = useQuery<
     PipelineExplorerRootQuery,
     PipelineExplorerRootQueryVariables
   >(PIPELINE_EXPLORER_ROOT_QUERY, {
     fetchPolicy: "cache-and-network",
     partialRefetch: true,
-    variables: {
-      pipeline: pipelineName,
-      parentHandleID: parentNames.join(".")
-    }
+    variables: Object.assign(
+      {
+        pipeline: pipelineName,
+        rootHandleID: parentNames.join(".")
+      },
+      flattenComposites
+        ? {}
+        : {
+            requestScopeHandleID: parentNames.join(".")
+          }
+    )
   });
 
   return (
@@ -55,8 +142,13 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
             return <NonIdealState icon={IconNames.ERROR} title="Query Error" />;
           default:
             const pipeline = pipelineOrError;
-            const displayedHandles = pipeline.solidHandles;
+            let displayedHandles = pipeline.solidHandles;
             const parentSolidHandle = pipelineOrError.solidHandle;
+
+            if (flattenComposites) {
+              displayedHandles = flattenHandleGraph(pipeline.solidHandles);
+            }
+
             return (
               <PipelineExplorer
                 history={props.history}
@@ -64,6 +156,7 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
                 visibleSolidsQuery={query}
                 pipeline={pipelineOrError}
                 handles={displayedHandles}
+                flattenComposites={true}
                 parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
                 selectedHandle={displayedHandles.find(
                   h => h.solid.name === selectedName
@@ -84,7 +177,8 @@ const PipelineExplorerRoot: React.FunctionComponent<IPipelineExplorerRootProps> 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
     $pipeline: String!
-    $parentHandleID: String!
+    $rootHandleID: String!
+    $requestScopeHandleID: String
   ) {
     pipelineOrError(params: { name: $pipeline }) {
       ... on PipelineReference {
@@ -93,15 +187,16 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on Pipeline {
         ...PipelineExplorerFragment
 
-        solidHandle(handleID: $parentHandleID) {
+        solidHandle(handleID: $rootHandleID) {
           ...PipelineExplorerParentSolidHandleFragment
         }
-        solidHandles(parentHandleID: $parentHandleID) {
+        solidHandles(parentHandleID: $requestScopeHandleID) {
           handleID
           solid {
             name
           }
           ...PipelineExplorerSolidHandleFragment
+          ...PipelineExplorerParentSolidHandleFragment
         }
       }
       ... on PipelineNotFoundError {
