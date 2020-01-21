@@ -431,11 +431,6 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefini
   description: string | null;
 }
 
-export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_requiredResources {
-  __typename: "ResourceRequirement";
-  resourceKey: string;
-}
-
 export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_inputMappings_definition {
   __typename: "InputDefinition";
   name: string;
@@ -490,6 +485,11 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefini
   mappedOutput: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
 }
 
+export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_requiredResources {
+  __typename: "ResourceRequirement";
+  resourceKey: string;
+}
+
 export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition {
   __typename: "CompositeSolidDefinition";
   name: string;
@@ -497,9 +497,9 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefini
   inputDefinitions: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_outputDefinitions[];
   description: string | null;
-  requiredResources: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_requiredResources[];
   inputMappings: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_outputMappings[];
+  requiredResources: UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_requiredResources[];
 }
 
 export type UsedSolidDetailsQuery_usedSolid_definition = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition | UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition;

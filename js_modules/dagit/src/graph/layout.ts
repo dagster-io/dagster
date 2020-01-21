@@ -121,8 +121,7 @@ function flattenIO(arrays: SolidLinkInfo[][]) {
 
 export function layoutPipeline(
   pipelineSolids: ILayoutSolid[],
-  parentSolid?: ILayoutSolid,
-  options?: { flattenComposites: boolean }
+  parentSolid?: ILayoutSolid
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
 

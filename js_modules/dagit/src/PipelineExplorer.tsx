@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import Color from "color";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup, Checkbox } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -14,28 +14,32 @@ import PipelineGraph from "./graph/PipelineGraph";
 import { SplitPanelChildren } from "./SplitPanelChildren";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
-import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
+
+export interface PipelineExplorerOptions {
+  flattenComposites: boolean;
+}
+
+export type SolidNameOrPath = { name: string } | { path: string[] };
 
 interface PipelineExplorerProps {
   history: History;
   path: string[];
   visibleSolidsQuery: string;
-  flattenComposites: boolean;
+  options: PipelineExplorerOptions;
+  setOptions: (options: PipelineExplorerOptions) => void;
   pipeline: PipelineExplorerFragment;
-  handles: PipelineExplorerParentSolidHandleFragment[];
+  handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerParentSolidHandleFragment;
+  parentHandle?: PipelineExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 
 interface PipelineExplorerState {
   highlighted: string;
 }
-
-export type SolidNameOrPath = { name: string } | { path: string[] };
 
 export default class PipelineExplorer extends React.Component<
   PipelineExplorerProps,
@@ -59,18 +63,6 @@ export default class PipelineExplorer extends React.Component<
         }
       }
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-    `,
-    PipelineExplorerParentSolidHandleFragment: gql`
-      fragment PipelineExplorerParentSolidHandleFragment on SolidHandle {
-        handleID
-        solid {
-          name
-          ...PipelineGraphParentSolidFragment
-          ...SolidQueryInputSolidFragment
-        }
-      }
-      ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
-      ${SolidQueryInput.fragments.SolidQueryInputSolidFragment}
     `
   };
 
@@ -151,17 +143,17 @@ export default class PipelineExplorer extends React.Component<
   public render() {
     const {
       path,
+      options,
       history,
       pipeline,
       parentHandle,
-      flattenComposites,
       visibleSolidsQuery
     } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
-
     const solidsQueryEnabled = !parentHandle;
+
     const queryResultSolids = solidsQueryEnabled
       ? filterSolidsByQuery(solids, visibleSolidsQuery)
       : { all: solids, focus: [] };
@@ -232,7 +224,6 @@ export default class PipelineExplorer extends React.Component<
                   onChange={this.handleQueryChange}
                 />
               )}
-
               <SearchOverlay style={{ background: backgroundTranslucent }}>
                 <SolidHighlightInput
                   type="text"
@@ -245,12 +236,26 @@ export default class PipelineExplorer extends React.Component<
                   }
                 />
               </SearchOverlay>
+              {!parentHandle && (
+                <OptionsOverlay>
+                  <Checkbox
+                    label="Flatten composites"
+                    checked={options.flattenComposites}
+                    onChange={() => {
+                      this.handleQueryChange("");
+                      this.props.setOptions({
+                        ...options,
+                        flattenComposites: !options.flattenComposites
+                      });
+                    }}
+                  />
+                </OptionsOverlay>
+              )}
               {queryResultSolids.all.length === 0 &&
                 !visibleSolidsQuery.length && <LargeDAGNotice />}
               <PipelineGraphContainer
                 pipelineName={pipeline.name}
                 backgroundColor={backgroundColor}
-                flattenComposites={flattenComposites}
                 solids={queryResultSolids.all}
                 focusSolids={queryResultSolids.focus}
                 highlightedSolids={highlightedSolids}
@@ -303,6 +308,16 @@ const RightInfoPanel = styled.div`
   height: 100%;
   overflow-y: scroll;
   background: ${Colors.WHITE};
+`;
+
+const OptionsOverlay = styled.div`
+  z-index: 2;
+  padding: 3px 15px;
+  display: inline-flex;
+  align-items: stretch;
+  position: absolute;
+  bottom: 0;
+  left: 0;
 `;
 
 const SearchOverlay = styled.div`

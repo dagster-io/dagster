@@ -21,8 +21,7 @@ export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 
 const _asyncDagrePipelineLayout = (
   solids: ILayoutSolid[],
-  parentSolid?: ILayoutSolid,
-  options?: { flattenComposites: boolean }
+  parentSolid?: ILayoutSolid
 ) => {
   return new Promise(resolve => {
     const worker = new LayoutWorker();
@@ -30,7 +29,7 @@ const _asyncDagrePipelineLayout = (
       resolve(event.data);
       worker.terminate();
     });
-    worker.postMessage({ solids, parentSolid, options });
+    worker.postMessage({ solids, parentSolid });
   });
 };
 

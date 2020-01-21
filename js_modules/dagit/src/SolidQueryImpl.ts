@@ -72,7 +72,7 @@ export function filterSolidsByQuery(solids: Solid[], query: string) {
   const focus = new Set<Solid>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([\w\d_-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d_-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) continue;
     const [, parentsClause, solidName, descendentsClause] = parts;
     const solidsMatching = solids.filter(
