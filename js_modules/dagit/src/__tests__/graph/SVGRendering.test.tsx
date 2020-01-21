@@ -10,7 +10,6 @@ import { PipelineGraphContents } from "../../graph/PipelineGraph";
 import { getDagrePipelineLayout } from "../../graph/getFullSolidLayout";
 import { PipelineExplorerRootQuery_pipelineOrError_Pipeline } from "../../types/PipelineExplorerRootQuery";
 import { PipelineGraphSolidFragment } from "../../graph/types/PipelineGraphSolidFragment";
-import { PipelineGraphParentSolidFragment } from "../../graph/types/PipelineGraphParentSolidFragment";
 import { MOCKS } from "./SVGMocks";
 
 const snapshotsDir = path.join(__dirname, "__snapshots__");
@@ -23,7 +22,7 @@ function readMock(mock: { filepath: string }) {
 function svgForPipeline(
   name: string,
   solids: PipelineGraphSolidFragment[],
-  parent?: PipelineGraphParentSolidFragment
+  parent?: PipelineGraphSolidFragment
 ) {
   // render the pipeline explorer's viewport contents to SVG and capture
   // styled-component styles into a <div>

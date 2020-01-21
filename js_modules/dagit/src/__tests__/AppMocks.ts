@@ -27,7 +27,8 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: PIPELINE_EXPLORER_ROOT_QUERY,
     variables: {
       pipeline: "airline_demo_ingest_pipeline",
-      parentHandleID: ""
+      rootHandleID: "",
+      requestScopeHandleID: ""
     } as PipelineExplorerRootQueryVariables,
     filepath: path.join(
       __dirname,

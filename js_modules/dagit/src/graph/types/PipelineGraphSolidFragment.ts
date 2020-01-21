@@ -73,42 +73,6 @@ export interface PipelineGraphSolidFragment_outputs {
   dependedBy: PipelineGraphSolidFragment_outputs_dependedBy[];
 }
 
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions {
-  __typename: "InputDefinition";
-  name: string;
-  type: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type;
-}
-
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions {
-  __typename: "OutputDefinition";
-  name: string;
-  type: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type;
-}
-
-export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  name: string;
-  metadata: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata[];
-  inputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions[];
-  outputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions[];
-}
-
 export interface PipelineGraphSolidFragment_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -157,7 +121,99 @@ export interface PipelineGraphSolidFragment_definition_SolidDefinition {
   configField: PipelineGraphSolidFragment_definition_SolidDefinition_configField | null;
 }
 
-export type PipelineGraphSolidFragment_definition = PipelineGraphSolidFragment_definition_CompositeSolidDefinition | PipelineGraphSolidFragment_definition_SolidDefinition;
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions_type;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions_type;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface PipelineGraphSolidFragment_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  name: string;
+  metadata: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_metadata[];
+  inputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputDefinitions[];
+  outputDefinitions: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputDefinitions[];
+  inputMappings: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: PipelineGraphSolidFragment_definition_CompositeSolidDefinition_outputMappings[];
+}
+
+export type PipelineGraphSolidFragment_definition = PipelineGraphSolidFragment_definition_SolidDefinition | PipelineGraphSolidFragment_definition_CompositeSolidDefinition;
 
 export interface PipelineGraphSolidFragment {
   __typename: "Solid";
