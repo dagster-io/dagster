@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_context
+from .setup import define_test_context
 
 RUNTIME_TYPE_QUERY = '''
 query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
@@ -79,7 +79,7 @@ fragment runtimeTypeFragment on RuntimeType {
 
 def test_runtime_type_query_works():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         RUNTIME_TYPE_QUERY,
         {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'PoorMansDataFrame_'},
     )
@@ -92,7 +92,7 @@ def test_runtime_type_query_works():
 
 def test_runtime_type_builtin_query():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         RUNTIME_TYPE_QUERY,
         {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'Int'},
     )
@@ -106,7 +106,9 @@ def test_runtime_type_builtin_query():
 
 def test_runtime_type_or_error_pipeline_not_found():
     result = execute_dagster_graphql(
-        define_context(), RUNTIME_TYPE_QUERY, {'pipelineName': 'nope', 'runtimeTypeName': 'nope'}
+        define_test_context(),
+        RUNTIME_TYPE_QUERY,
+        {'pipelineName': 'nope', 'runtimeTypeName': 'nope'},
     )
 
     assert not result.errors
@@ -117,7 +119,7 @@ def test_runtime_type_or_error_pipeline_not_found():
 
 def test_runtime_type_or_error_type_not_found():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         RUNTIME_TYPE_QUERY,
         {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'nope'},
     )
@@ -130,7 +132,7 @@ def test_runtime_type_or_error_type_not_found():
 
 
 def test_smoke_test_runtime_type_system():
-    result = execute_dagster_graphql(define_context(), ALL_RUNTIME_TYPES_QUERY)
+    result = execute_dagster_graphql(define_test_context(), ALL_RUNTIME_TYPES_QUERY)
 
     assert not result.errors
     assert result.data

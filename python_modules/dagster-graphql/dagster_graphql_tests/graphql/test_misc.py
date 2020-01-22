@@ -7,7 +7,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import Synchronou
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_graphql_tests.graphql.setup import define_context, define_repository
+from dagster_graphql_tests.graphql.setup import define_repository, define_test_context
 
 from dagster import (
     DependencyDefinition,
@@ -75,7 +75,7 @@ def test_enum_query():
   }
   '''
 
-    result = execute_dagster_graphql(define_context(), ENUM_QUERY)
+    result = execute_dagster_graphql(define_test_context(), ENUM_QUERY)
 
     assert not result.errors
     assert result.data
@@ -140,7 +140,7 @@ fragment innerInfo on ConfigType {
 
 
 def test_type_rendering():
-    result = execute_dagster_graphql(define_context(), TYPE_RENDER_QUERY)
+    result = execute_dagster_graphql(define_test_context(), TYPE_RENDER_QUERY)
     assert not result.errors
     assert result.data
 
@@ -161,7 +161,7 @@ def define_circular_dependency_pipeline():
 
 
 def test_pipelines():
-    result = execute_dagster_graphql(define_context(), '{ pipelines { nodes { name } } }')
+    result = execute_dagster_graphql(define_test_context(), '{ pipelines { nodes { name } } }')
     assert not result.errors
     assert result.data
 
@@ -172,7 +172,8 @@ def test_pipelines():
 
 def test_pipelines_or_error():
     result = execute_dagster_graphql(
-        define_context(), '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } '
+        define_test_context(),
+        '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
     )
     assert not result.errors
     assert result.data
@@ -205,7 +206,7 @@ def test_pipelines_or_error_invalid():
 
 def test_pipeline_by_name():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         '''
     {
         pipeline(params: {name: "csv_hello_world_two"}) {
@@ -222,7 +223,7 @@ def test_pipeline_by_name():
 def test_pipeline_by_name_not_found():
     with pytest.raises(UserFacingGraphQLError) as exc:
         execute_dagster_graphql(
-            define_context(),
+            define_test_context(),
             '''
         {
             pipeline(params: {name: "gkjhds"}) {
@@ -236,7 +237,7 @@ def test_pipeline_by_name_not_found():
 
 def test_pipeline_or_error_by_name():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         '''
     {
         pipelineOrError(params: { name: "csv_hello_world_two" }) {
@@ -254,7 +255,7 @@ def test_pipeline_or_error_by_name():
 
 def test_pipeline_or_error_by_name_not_found():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         '''
     {
         pipelineOrError(params: { name: "foobar" }) {
@@ -272,7 +273,7 @@ def test_pipeline_or_error_by_name_not_found():
 
 
 def test_production_query(production_query):
-    result = execute_dagster_graphql(define_context(), production_query)
+    result = execute_dagster_graphql(define_test_context(), production_query)
 
     assert not result.errors
     assert result.data

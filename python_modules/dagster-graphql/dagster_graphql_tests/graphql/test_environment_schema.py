@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import csv_hello_world_solids_config, define_context
+from .setup import csv_hello_world_solids_config, define_test_context
 
 ENVIRONMENT_SCHEMA_QUERY = '''
 query($selector: ExecutionSelector! $mode: String!)
@@ -22,7 +22,7 @@ query($selector: ExecutionSelector! $mode: String!)
 
 def test_successful_enviroment_schema():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'add_mode'},
     )
@@ -31,7 +31,7 @@ def test_successful_enviroment_schema():
 
 def test_environment_schema_pipeline_not_found():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'jkdjfkdjfd'}, 'mode': 'add_mode'},
     )
@@ -40,7 +40,7 @@ def test_environment_schema_pipeline_not_found():
 
 def test_environment_schema_solid_not_found():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_QUERY,
         variables={
             'selector': {'name': 'multi_mode_with_resources', 'solidSubset': ['kdjfkdj']},
@@ -52,7 +52,7 @@ def test_environment_schema_solid_not_found():
 
 def test_environment_schema_mode_not_found():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'kdjfdk'},
     )
@@ -151,7 +151,7 @@ query PipelineQuery(
 
 def test_basic_valid_config_on_environment_schema(snapshot):
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY,
         variables={
             'selector': {'name': 'csv_hello_world'},
@@ -171,7 +171,7 @@ def test_basic_valid_config_on_environment_schema(snapshot):
 
 def test_basic_invalid_config_on_environment_schema(snapshot):
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY,
         variables={
             'selector': {'name': 'csv_hello_world'},

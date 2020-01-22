@@ -4,11 +4,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    SubprocessExecutionManager,
-    SynchronousExecutionManager,
-)
+from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
 from dagster import (
     Any,
@@ -16,7 +12,6 @@ from dagster import (
     Enum,
     EnumValue,
     EventMetadataEntry,
-    ExecutionTargetHandle,
     ExpectationResult,
     Field,
     InputDefinition,
@@ -41,7 +36,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import file_relative_path
 
@@ -75,28 +69,12 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_subprocess_context(instance):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        instance=instance,
-        execution_manager=SubprocessExecutionManager(instance),
-    )
+def define_test_subprocess_context(instance):
+    return define_subprocess_context_for_file(__file__, "define_repository", instance)
 
 
-def define_context(instance=None):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        instance=instance or DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-    )
-
-
-def define_context_for_repository_yaml(path, instance=None):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_yaml(path),
-        instance=instance or DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-    )
+def define_test_context(instance=None):
+    return define_context_for_file(__file__, "define_repository", instance)
 
 
 @lambda_solid(

@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
-from .setup import csv_hello_world_solids_config, define_context
+from .setup import csv_hello_world_solids_config, define_test_context
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
@@ -53,7 +53,7 @@ query PipelineQuery(
                             field {
                                 name
                                 configType {
-                                   key  
+                                   key
                                 }
                             }
                         }
@@ -100,7 +100,7 @@ def find_errors(result, field_stack_to_find, reason):
 
 def execute_config_graphql(pipeline_name, environment_dict, mode):
     return execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         CONFIG_VALIDATION_QUERY,
         {
             'environmentConfigData': environment_dict,
@@ -521,7 +521,7 @@ def has_config_type(config_types_data, name):
 
 def test_smoke_test_config_type_system():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ALL_CONFIG_TYPES_QUERY,
         {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
     )

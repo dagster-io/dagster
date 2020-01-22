@@ -5,7 +5,7 @@ import time
 
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
-from dagster_graphql_tests.graphql.setup import define_context_for_repository_yaml
+from dagster_graphql.test.utils import define_context_for_repository_yaml
 
 from dagster import (
     InputDefinition,

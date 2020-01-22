@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_context
+from .setup import define_test_context
 
 RESOURCE_QUERY = '''
 {
@@ -48,7 +48,7 @@ REQUIRED_RESOURCE_QUERY = '''{
 
 
 def test_mode_fetch_resources(snapshot):
-    result = execute_dagster_graphql(define_context(), RESOURCE_QUERY)
+    result = execute_dagster_graphql(define_test_context(), RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data
@@ -61,7 +61,7 @@ def test_mode_fetch_resources(snapshot):
 
 
 def test_required_resources(snapshot):
-    result = execute_dagster_graphql(define_context(), REQUIRED_RESOURCE_QUERY)
+    result = execute_dagster_graphql(define_test_context(), REQUIRED_RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data

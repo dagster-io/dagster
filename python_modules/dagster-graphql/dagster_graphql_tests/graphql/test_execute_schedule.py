@@ -1,14 +1,13 @@
 import sys
 import uuid
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
-from .setup import define_context_for_repository_yaml
 
 
 def test_basic_start_scheduled_execution():

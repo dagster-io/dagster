@@ -4,12 +4,14 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster.core.instance import DagsterInstance
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
-from .setup import define_context
+from .setup import define_test_context
 
 
 def sync_execute_get_payload(variables, context=None):
     context = (
-        context if context is not None else define_context(instance=DagsterInstance.local_temp())
+        context
+        if context is not None
+        else define_test_context(instance=DagsterInstance.local_temp())
     )
 
     result = execute_dagster_graphql(context, START_PIPELINE_EXECUTION_QUERY, variables=variables)
