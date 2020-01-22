@@ -1,5 +1,4 @@
 import abc
-import uuid
 from collections import namedtuple
 from enum import Enum
 
@@ -97,10 +96,8 @@ class SchedulerHandle(object):
             # metadata file
             existing_schedule = self._schedule_storage.get_schedule_by_name(schedule_def.name)
             if existing_schedule:
-                # Use the old schedule's ID and status, but replace schedule_def,
-                # python_path, and repository_path
+                # Keep the status, but replace schedule_def, python_path, and repository_path
                 schedule = Schedule(
-                    existing_schedule.schedule_id,
                     schedule_def.schedule_definition_data,
                     existing_schedule.status,
                     python_path,
@@ -110,9 +107,7 @@ class SchedulerHandle(object):
                 self._schedule_storage.update_schedule(schedule)
                 schedules_to_restart.append(schedule)
             else:
-                schedule_id = str(uuid.uuid4())
                 schedule = Schedule(
-                    schedule_id,
                     schedule_def.schedule_definition_data,
                     ScheduleStatus.STOPPED,
                     python_path,
@@ -210,17 +205,12 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
 @whitelist_for_serdes
 class Schedule(
-    namedtuple(
-        'Schedule', 'schedule_id schedule_definition_data status python_path repository_path'
-    )
+    namedtuple('Schedule', 'schedule_definition_data status python_path repository_path')
 ):
-    def __new__(
-        cls, schedule_id, schedule_definition_data, status, python_path=None, repository_path=None
-    ):
+    def __new__(cls, schedule_definition_data, status, python_path=None, repository_path=None):
 
         return super(Schedule, cls).__new__(
             cls,
-            check.str_param(schedule_id, 'schedule_id'),
             check.inst_param(
                 schedule_definition_data, 'schedule_definition_data', ScheduleDefinitionData
             ),
@@ -245,7 +235,6 @@ class Schedule(
         check.inst_param(status, 'status', ScheduleStatus)
 
         return Schedule(
-            self.schedule_id,
             self.schedule_definition_data,
             status=status,
             python_path=self.python_path,

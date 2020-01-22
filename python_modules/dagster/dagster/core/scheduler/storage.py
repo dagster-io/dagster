@@ -35,7 +35,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
 
     @abc.abstractmethod
     def update_schedule(self, schedule):
-        '''Update a schedule already in storage, using schedule_id to match schedules.
+        '''Update a schedule already in storage, using schedule name to match schedules.
 
         Args:
             schedule (Schedule): The schedule to add
@@ -103,17 +103,12 @@ class FilesystemScheduleStorage(ScheduleStorage):
     def get_log_path(self, schedule):
         check.inst_param(schedule, 'schedule', Schedule)
         return os.path.join(
-            self._base_dir,
-            self._repository_name,
-            'logs',
-            '{}_{}'.format(schedule.name, schedule.schedule_id),
+            self._base_dir, self._repository_name, 'logs', '{}'.format(schedule.name),
         )
 
     def _write_schedule_to_file(self, schedule):
         metadata_file = os.path.join(
-            self._base_dir,
-            self._repository_name,
-            '{}_{}.json'.format(schedule.name, schedule.schedule_id),
+            self._base_dir, self._repository_name, '{}.json'.format(schedule.name),
         )
         with io.open(metadata_file, 'w', encoding='utf-8') as f:
             f.write(six.text_type(serialize_dagster_namedtuple(schedule)))
@@ -122,9 +117,7 @@ class FilesystemScheduleStorage(ScheduleStorage):
 
     def _delete_schedule_file(self, schedule):
         metadata_file = os.path.join(
-            self._base_dir,
-            self._repository_name,
-            '{}_{}.json'.format(schedule.name, schedule.schedule_id),
+            self._base_dir, self._repository_name, '{}.json'.format(schedule.name),
         )
 
         os.remove(metadata_file)

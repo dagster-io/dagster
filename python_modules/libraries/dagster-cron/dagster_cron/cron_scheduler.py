@@ -15,7 +15,7 @@ class SystemCronScheduler(Scheduler):
 
     Pass this class as the ``scheduler`` argument to the :py:func:`@schedules <dagster.schedules>`
     API -- do not instantiate it directly.
-    
+
     '''
 
     def __init__(self, artifacts_dir, schedule_storage):
@@ -110,9 +110,7 @@ class SystemCronScheduler(Scheduler):
         cron.write()
 
     def _get_file_prefix(self, schedule):
-        return os.path.join(
-            self._artifacts_dir, '{}_{}'.format(schedule.name, schedule.schedule_id)
-        )
+        return os.path.join(self._artifacts_dir, '{}'.format(schedule.name))
 
     def _get_bash_script_file_path(self, schedule):
         file_prefix = self._get_file_prefix(schedule)
@@ -122,14 +120,13 @@ class SystemCronScheduler(Scheduler):
         script_file = self._write_bash_script_to_file(schedule)
 
         my_cron = CronTab(user=True)
-        job = my_cron.new(command=script_file, comment='dagster-schedule: ' + schedule.schedule_id)
+        job = my_cron.new(command=script_file, comment='dagster-schedule: ' + schedule.name)
         job.setall(schedule.cron_schedule)
         my_cron.write()
 
     def _end_cron_job(self, schedule):
         my_cron = CronTab(user=True)
-        my_cron.remove_all(comment='dagster-schedule: ' + schedule.schedule_id)
-        my_cron.remove_all(comment=schedule.schedule_id)  # For backwards-compatability
+        my_cron.remove_all(comment='dagster-schedule: ' + schedule.name)
         my_cron.write()
 
         script_file = self._get_bash_script_file_path(schedule)
@@ -141,9 +138,7 @@ class SystemCronScheduler(Scheduler):
 
         log_dir = self.log_path_for_schedule(schedule.name)
         utils.mkdir_p(log_dir)
-        result_file = os.path.join(
-            log_dir, "{}_{}_{}.result".format("${RUN_DATE}", schedule.name, schedule.schedule_id)
-        )
+        result_file = os.path.join(log_dir, "{}_{}.result".format("${RUN_DATE}", schedule.name))
 
         dagster_graphql_path = os.path.join(
             os.path.dirname(schedule.python_path), 'dagster-graphql'

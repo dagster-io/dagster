@@ -14,7 +14,6 @@ GET_SCHEDULES_QUERY = '''
     scheduler {
       ... on Scheduler {
         runningSchedules {
-          id
           scheduleDefinition {
             name
             executionParamsString
@@ -63,9 +62,8 @@ def test_get_all_schedules():
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
     assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 9
+    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 8
 
-    assert scheduler_result.data['scheduler']['runningSchedules'][0]['id'] == schedule.schedule_id
     for schedule in scheduler_result.data['scheduler']['runningSchedules']:
         assert (
             schedule['scheduleDefinition']['environmentConfigYaml']
@@ -85,10 +83,10 @@ def test_scheduler_change_set_adding_schedule():
     )
     renamed_schedule_3 = ScheduleDefinition('renamed_schedule_3', "*****", "pipeline_name", {})
 
-    running_1 = Schedule("1", schedule_1.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_2 = Schedule("2", schedule_2.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_3 = Schedule("3", schedule_3.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
-    running_4 = Schedule("4", schedule_4.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_1 = Schedule(schedule_1.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_2 = Schedule(schedule_2.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_3 = Schedule(schedule_3.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
+    running_4 = Schedule(schedule_4.schedule_definition_data, ScheduleStatus.RUNNING, "", "")
 
     # Add initial schedules
     change_set_1 = get_schedule_change_set([], [schedule_1, schedule_2])

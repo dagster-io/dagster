@@ -716,7 +716,7 @@ def test_schedules_start_and_stop():
             )
 
             assert result.exit_code == 0
-            assert 'Started schedule foo_schedule with ' in result.output
+            assert 'Started schedule foo_schedule\n' == result.output
 
             result = runner.invoke(
                 schedule_stop_command,
@@ -724,7 +724,7 @@ def test_schedules_start_and_stop():
             )
 
             assert result.exit_code == 0
-            assert 'Stopped schedule foo_schedule with ' in result.output
+            assert 'Stopped schedule foo_schedule\n' == result.output
 
 
 def test_schedules_start_all():

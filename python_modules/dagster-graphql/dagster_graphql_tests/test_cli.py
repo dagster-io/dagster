@@ -1,11 +1,9 @@
 import json
 import os
-import sys
 import time
 
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
-from dagster_graphql.test.utils import define_context_for_repository_yaml
 
 from dagster import (
     InputDefinition,
@@ -274,19 +272,9 @@ def test_start_execution_predefined():
 
 def test_start_scheduled_execution_predefined():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
         runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
 
         repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
-
-        # Initialize scheduler
-        context = define_context_for_repository_yaml(
-            path=file_relative_path(__file__, './cli_test_repository.yaml'), instance=instance
-        )
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, './')
-        )
 
         # Run command
         variables = seven.json.dumps({'scheduleName': 'math_hourly_schedule'})

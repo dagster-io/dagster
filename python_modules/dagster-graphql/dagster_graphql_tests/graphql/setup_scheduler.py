@@ -30,14 +30,6 @@ def define_scheduler():
         environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
     )
 
-    no_config_pipeline_hourly_schedule_with_schedule_id_tag = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule_with_schedule_id_tag",
-        cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
-        tags={"dagster/schedule_id": "1234"},
-    )
-
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
@@ -82,7 +74,6 @@ def define_scheduler():
 
     return [
         no_config_pipeline_hourly_schedule,
-        no_config_pipeline_hourly_schedule_with_schedule_id_tag,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
         dynamic_config,

@@ -883,7 +883,6 @@ type RunLauncherNotDefinedError implements Error {
 }
 
 type RunningSchedule {
-  id: String!
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String

@@ -78,7 +78,7 @@ def test_init():
         for schedule in schedules:
             assert "/bin/python" in schedule.python_path
 
-            assert "{}_{}.json".format(schedule.name, schedule.schedule_id) in os.listdir(
+            assert "{}.json".format(schedule.name) in os.listdir(
                 os.path.join(tempdir, 'schedules', 'test_repository')
             )
 
@@ -105,13 +105,11 @@ def test_start_and_stop_schedule():
 
         assert 'schedules' in os.listdir(tempdir)
 
-        assert "{}_{}.sh".format(schedule_def.name, schedule.schedule_id) in os.listdir(
-            os.path.join(tempdir, 'schedules')
-        )
+        assert "{}.sh".format(schedule_def.name) in os.listdir(os.path.join(tempdir, 'schedules'))
 
         # End schedule
         scheduler.stop_schedule("no_config_pipeline_every_min_schedule")
-        assert "{}_{}.sh".format(schedule_def.name, schedule.schedule_id) not in os.listdir(
+        assert "{}.sh".format(schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules')
         )
 

@@ -119,7 +119,10 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         </Legend>
       )}
       {props.schedules.map(schedule => (
-        <ScheduleRow schedule={schedule} key={schedule.id} />
+        <ScheduleRow
+          schedule={schedule}
+          key={schedule.scheduleDefinition.name}
+        />
       ))}
     </div>
   );

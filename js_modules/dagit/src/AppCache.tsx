@@ -44,6 +44,8 @@ const AppCache = new InMemoryCache({
         object.__typename === "CompositeType")
     ) {
       return `Type.${object.name}`;
+    } else if (object.__typename == "RunningSchedule") {
+      return object.scheduleDefinition.name;
     } else {
       return defaultDataIdFromObject(object);
     }

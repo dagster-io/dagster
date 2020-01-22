@@ -92,7 +92,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     class Meta(object):
         name = 'RunningSchedule'
 
-    id = dauphin.NonNull(dauphin.String)
     schedule_definition = dauphin.NonNull('ScheduleDefinition')
     python_path = dauphin.Field(dauphin.String)
     repository_path = dauphin.Field(dauphin.String)
@@ -107,7 +106,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
 
         super(DauphinRunningSchedule, self).__init__(
-            id=schedule.schedule_id,
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
                 graphene_info=graphene_info,
                 schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
@@ -181,16 +179,14 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(
-                    tags={'dagster/schedule_id': self._schedule.schedule_id}
-                ),
+                filters=PipelineRunsFilter(tags={'dagster/schedule_name': self._schedule.name}),
                 limit=kwargs.get('limit'),
             )
         ]
 
     def resolve_runs_count(self, graphene_info):
         return graphene_info.context.instance.get_runs_count(
-            filter=PipelineRunsFilter(tags=[("dagster/schedule_id", self._schedule.schedule_id)])
+            filter=PipelineRunsFilter(tags=[("dagster/schedule_name", self._schedule.name)])
         )
 
 

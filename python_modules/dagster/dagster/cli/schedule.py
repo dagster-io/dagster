@@ -291,11 +291,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
-        print_fn(
-            "Started schedule {schedule_name} with ID {schedule_id}".format(
-                schedule_name=schedule_name, schedule_id=schedule.schedule_id
-            )
-        )
+        print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name='stop', help="Stop an existing schedule")
@@ -323,15 +319,11 @@ def execute_stop_command(schedule_name, cli_args, print_fn):
     scheduler = schedule_handle.get_scheduler()
 
     try:
-        schedule = scheduler.stop_schedule(schedule_name)
+        scheduler.stop_schedule(schedule_name)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
-    print_fn(
-        "Stopped schedule {schedule_name} with ID {schedule_id}".format(
-            schedule_name=schedule_name, schedule_id=schedule.schedule_id
-        )
-    )
+    print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name='restart', help="Restart a running schedule")
@@ -392,11 +384,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
-        print_fn(
-            "Restarted schedule {schedule_name} with ID {schedule_id}".format(
-                schedule_name=schedule_name, schedule_id=schedule.schedule_id
-            )
-        )
+        print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name='wipe', help="Deletes all schedules and schedule cron jobs.")

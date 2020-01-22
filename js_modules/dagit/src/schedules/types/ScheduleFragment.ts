@@ -39,7 +39,6 @@ export interface ScheduleFragment_attempts {
 
 export interface ScheduleFragment {
   __typename: "RunningSchedule";
-  id: string;
   scheduleDefinition: ScheduleFragment_scheduleDefinition;
   logsPath: string;
   attempts: ScheduleFragment_attempts[];
