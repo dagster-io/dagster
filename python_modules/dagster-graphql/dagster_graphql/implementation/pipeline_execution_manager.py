@@ -266,6 +266,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         with self._processes_lock:
             for run_to_clear_id in runs_to_clear:
                 del self._living_process_by_run_id[run_to_clear_id]
+                del self._term_events[run_to_clear_id]
 
     def check(self):
         '''
