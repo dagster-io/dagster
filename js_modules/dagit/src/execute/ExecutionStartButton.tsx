@@ -1,6 +1,6 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { Icon, Intent, Spinner, Colors } from "@blueprintjs/core";
+import { Button, Icon, Intent, Spinner, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { WebsocketStatusContext } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
@@ -81,7 +81,7 @@ export default class ExecutionStartButton extends React.Component<
         {websocketStatus => {
           if (websocketStatus !== WebSocket.OPEN) {
             return (
-              <ExecutionButtonContainer
+              <ExecutionStartButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
@@ -93,29 +93,37 @@ export default class ExecutionStartButton extends React.Component<
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
                 {this.props.title}
-              </ExecutionButtonContainer>
+              </ExecutionStartButtonContainer>
             );
           }
 
           if (this.state.starting) {
             return (
-              <ExecutionButtonContainer
+              <ExecutionStartButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Starting}
                 title={"Pipeline execution is in progress..."}
               >
-                <div style={{ marginRight: 5 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center"
+                  }}
+                >
                   <Spinner intent={Intent.NONE} size={iconSize} />
+                  <div style={{ marginLeft: 5 }}>
+                    {this.props.activeText || "Starting..."}
+                  </div>
                 </div>
-                {this.props.activeText ? this.props.activeText : "Starting..."}
-              </ExecutionButtonContainer>
+              </ExecutionStartButtonContainer>
             );
           }
 
           if (this.props.disabled) {
             return (
-              <ExecutionButtonContainer
+              <ExecutionStartButtonContainer
                 role="button"
                 style={style}
                 state={ExecutionButtonStatus.Disabled}
@@ -127,7 +135,7 @@ export default class ExecutionStartButton extends React.Component<
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
                 {this.props.title}
-              </ExecutionButtonContainer>
+              </ExecutionStartButtonContainer>
             );
           }
 
@@ -137,7 +145,7 @@ export default class ExecutionStartButton extends React.Component<
               shortcutLabel={this.props.shortcutLabel}
               shortcutFilter={this.props.shortcutFilter}
             >
-              <ExecutionButtonContainer
+              <ExecutionStartButtonContainer
                 role="button"
                 ref={this._startButton}
                 style={style}
@@ -151,7 +159,7 @@ export default class ExecutionStartButton extends React.Component<
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
                 {this.props.title}
-              </ExecutionButtonContainer>
+              </ExecutionStartButtonContainer>
             </ShortcutHandler>
           );
         }}
@@ -160,51 +168,97 @@ export default class ExecutionStartButton extends React.Component<
   }
 }
 
-export const ExecutionButtonContainer = styled.div<{
+export const ExecutionButton = ({
+  children
+}: {
+  children: React.ReactNode | null;
+}) => (
+  <WebsocketStatusContext.Consumer>
+    {websocketStatus => {
+      const disconnected = websocketStatus !== WebSocket.OPEN;
+      const swallowEvent = (e: React.SyntheticEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      return (
+        <ButtonContainer
+          state={
+            disconnected
+              ? ExecutionButtonStatus.Disabled
+              : ExecutionButtonStatus.Ready
+          }
+          onClick={disconnected ? swallowEvent : undefined}
+        >
+          {children}
+        </ButtonContainer>
+      );
+    }}
+  </WebsocketStatusContext.Consumer>
+);
+
+const ButtonContainer = styled(Button)<{
   state: ExecutionButtonStatus;
 }>`
-  min-width: 150px;
-  height: 30px;
-  border-radius: 3px;
-  margin-left: 6px;
-  flex-shrink: 0;
-  background: ${({ state }) =>
-    ({
-      disabled:
-        "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-      ready:
-        "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
-      starting:
-        "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
-    }[state])};
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-  transition: background 200ms linear;
-  justify-content: center;
-  align-items: center;
-  display: inline-flex;
-  color: ${({ state }) =>
-    state === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
-  cursor: ${({ state }) => (state !== "ready" ? "normal" : "pointer")};
-  z-index: 2;
-
-  &:hover {
+  &&& {
+    height: 30px;
+    border-radius: 3px;
+    flex-shrink: 0;
     background: ${({ state }) =>
       ({
         disabled:
           "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
         ready:
-          "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
+          "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
         starting:
           "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
       }[state])};
-  }
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    transition: background 200ms linear;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    color: ${({ state }) =>
+      state === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
+    cursor: ${({ state }) => (state !== "ready" ? "normal" : "pointer")};
+    z-index: 2;
 
-  &:active {
-    background-color: ${Colors.GRAY3};
-  }
+    &:hover {
+      background: ${({ state }) =>
+        ({
+          disabled:
+            "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
+          ready:
+            "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
+          starting:
+            "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+        }[state])};
+    }
 
-  path.bp3-spinner-head {
-    stroke: white;
+    &:active {
+      background-color: ${Colors.GRAY3};
+    }
+
+    path.bp3-spinner-head {
+      stroke: white;
+    }
+
+    .bp3-icon {
+      color: ${({ state }) =>
+        state === "disabled" ? "rgba(255,255,255,0.5)" : "white"};
+    }
+    .bp3-button-text {
+      display: flex;
+      align-items: center;
+    }
+  }
+`;
+
+const ExecutionStartButtonContainer = styled(ButtonContainer)`
+  &&& {
+    min-width: 150px;
+    margin-left: 6px;
+    padding: 0 25px;
+    min-height: 0;
   }
 `;

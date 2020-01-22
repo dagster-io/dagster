@@ -4,7 +4,13 @@ import * as React from "react";
 
 export interface IStorageData {
   sessions: { [name: string]: IExecutionSession };
+  selectedExecutionType?: ExecutionType;
   current: string;
+}
+
+export enum ExecutionType {
+  START = "start",
+  LAUNCH = "launch"
 }
 
 export interface IExecutionSessionPlan {
@@ -64,7 +70,8 @@ export function applyChangesToSession(
 
   return {
     current: data.current,
-    sessions: { ...data.sessions, [key]: { ...saved, ...changes } }
+    sessions: { ...data.sessions, [key]: { ...saved, ...changes } },
+    selectedExecutionType: data.selectedExecutionType
   };
 }
 
@@ -90,7 +97,8 @@ export function applyCreateSession(
         configChangedSinceRun: false,
         key
       }
-    }
+    },
+    selectedExecutionType: data.selectedExecutionType
   };
 }
 
