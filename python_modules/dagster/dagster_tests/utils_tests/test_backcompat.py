@@ -14,6 +14,7 @@ def is_new(old_flag=None, new_flag=None):
         old_val=old_flag,
         old_arg='old_flag',
         coerce_old_to_new=lambda val: not val,
+        additional_warn_txt='Will remove at next release.',
     )
 
     return actual_new_flag
@@ -31,7 +32,8 @@ def test_backcompat_old_flag():
     with mock.patch('warnings.warn') as warn_mock:
         assert is_new(old_flag=False) is True
         warn_mock.assert_called_once_with(
-            '"old_flag" is deprecated, use "new_flag" instead.', stacklevel=3,
+            '"old_flag" is deprecated, use "new_flag" instead. Will remove at next release.',
+            stacklevel=3,
         )
 
 

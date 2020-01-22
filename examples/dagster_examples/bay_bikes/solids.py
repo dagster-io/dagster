@@ -101,7 +101,7 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
         'delimiter': Field(
             str,
             default_value=',',
-            is_optional=True,
+            is_required=False,
             description=('A one-character string used to separate fields.'),
         )
     },
@@ -156,19 +156,19 @@ def insert_row_into_table(context, row: DataFrame, table_name: str):
         'latitude': Field(
             float,
             default_value=37.8267,
-            is_optional=True,
+            is_required=False,
             description=('Latitude coordinate to get weather data about. Default is SF.'),
         ),
         'longitude': Field(
             float,
             default_value=-122.4233,
-            is_optional=True,
+            is_required=False,
             description=('Longitude coordinate to get weather data about. Default is SF.'),
         ),
         'times_to_exclude': Field(
             [str],
             default_value=['currently', 'minutely', 'hourly', 'alerts', 'flags'],
-            is_optional=True,
+            is_required=False,
             description='data granularities to exclude when making this api call',
         ),
     },

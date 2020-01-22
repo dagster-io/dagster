@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
@@ -134,9 +135,12 @@ class Field(object):
             A default value for this field, conformant to the schema set by the
             ``dagster_type`` argument. If a default value is provided, ``is_optional`` should be
             ``True``.
-        is_optional (bool):
+        is_required (bool):
+            Whether the presence of this field is required. Defaults to true. If ``is_required``
+            is ``True``, no default value should be provided.
+        is_optional (bool) (deprecated):
             Whether the presence of this field is optional. If ``is_optional`` is ``False``, no
-            default value should be provided.
+            default value should be provided. Deprecated. Use ``is_required`` instead.
         description (str):
             A human-readable description of this config field.
 
@@ -158,6 +162,7 @@ class Field(object):
         dagster_type,
         default_value=FIELD_NO_DEFAULT_PROVIDED,
         is_optional=None,
+        is_required=None,
         description=None,
     ):
         if not isinstance(dagster_type, ConfigType):
@@ -175,22 +180,37 @@ class Field(object):
         self.config_type = check.inst_param(config_type, 'config_type', ConfigType)
 
         self.description = check.opt_str_param(description, 'description')
-        if is_optional is None:
-            is_optional = all_optional_type(self.config_type)
-            if is_optional is True:
-                self._default_value = post_process_config(self.config_type, None)
-            else:
-                self._default_value = default_value
-        else:
-            is_optional = check.bool_param(is_optional, 'is_optional')
-            self._default_value = default_value
 
-        if is_optional is False:
+        check.opt_bool_param(is_optional, 'is_optional')
+        check.opt_bool_param(is_required, 'is_required')
+
+        canonical_is_required = canonicalize_backcompat_args(
+            new_val=is_required,
+            new_arg='is_required',
+            old_val=is_optional,
+            old_arg='is_optional',
+            coerce_old_to_new=lambda val: not val,
+            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0.',
+        )
+
+        if canonical_is_required is True:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
                 'default_value',
                 'required arguments should not specify default values',
             )
+
+        if canonical_is_required is None:
+            # neither is_required nor is_optional where specified
+            canonical_is_required = not all_optional_type(self.config_type)
+
+            self._default_value = (
+                default_value
+                if canonical_is_required
+                else post_process_config(self.config_type, None)
+            )
+        else:
+            self._default_value = default_value
 
         if (
             config_type.kind == ConfigTypeKind.SCALAR
@@ -199,14 +219,17 @@ class Field(object):
             check.param_invariant(
                 config_type.is_config_scalar_valid(self._default_value),
                 'default_value',
-                'default value not valid for config type {name}, got value {val} of type {type}'.format(
+                (
+                    'default value not valid for config type {name}, '
+                    'got value {val} of type {type}'
+                ).format(
                     name=config_type.given_name,
                     val=self._default_value,
                     type=type(self._default_value),
                 ),
             )
 
-        self.is_optional = is_optional
+        self.is_optional = not canonical_is_required
 
     @property
     def is_required(self):

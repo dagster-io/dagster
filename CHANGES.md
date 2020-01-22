@@ -50,6 +50,9 @@
   execution, especially in a multiprocessing or remote execution environment.
 - The `@system_storage` decorator now requires argument `required_resource_keys`, which was
   previously optional.
+- `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
+  with python's typing and dagster's definition of `Optional`, which indicates None-ability,
+  rather than existence. `is_optional` is deprecated and will be removed in a future version.
 
 **New**
 
