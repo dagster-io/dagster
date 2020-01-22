@@ -36,7 +36,6 @@ mutation($runId: String!) {
 def test_basic_cancellation():
     context = define_subprocess_context(DagsterInstance.local_temp())
     with safe_tempfile_path() as path:
-        context = define_subprocess_context(DagsterInstance.local_temp())
         result = execute_dagster_graphql(
             context,
             START_PIPELINE_EXECUTION_QUERY,
