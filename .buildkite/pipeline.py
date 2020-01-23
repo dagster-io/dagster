@@ -499,7 +499,8 @@ def lakehouse_tests():
 def pipenv_smoke_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/2079
+    for version in SupportedPython3s:
         is_release = check_for_release()
         smoke_test_steps = (
             [
