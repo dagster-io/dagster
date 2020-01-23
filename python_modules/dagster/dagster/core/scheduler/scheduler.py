@@ -152,7 +152,7 @@ class SchedulerHandle(object):
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def all_schedules(self, status):
+    def all_schedules(self):
         '''Return all the schedules present in the storage.
 
         Returns:

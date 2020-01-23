@@ -209,9 +209,9 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
     first = True
 
     if running_filter:
-        schedules = scheduler.all_schedules(status=ScheduleStatus.RUNNING)
+        schedules = [s for s in scheduler.all_schedules() if s.status == ScheduleStatus.RUNNING]
     elif stopped_filter:
-        schedules = scheduler.all_schedules(status=ScheduleStatus.STOPPED)
+        schedules = [s for s in scheduler.all_schedules() if s.status == ScheduleStatus.STOPPED]
     else:
         schedules = scheduler.all_schedules()
 

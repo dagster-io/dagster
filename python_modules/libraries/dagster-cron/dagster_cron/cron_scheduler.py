@@ -24,8 +24,8 @@ class SystemCronScheduler(Scheduler):
         self._storage = schedule_storage
         self._artifacts_dir = artifacts_dir
 
-    def all_schedules(self, status=None):
-        return self._storage.all_schedules(status)
+    def all_schedules(self):
+        return self._storage.all_schedules()
 
     def get_schedule_by_name(self, name):
         return self._storage.get_schedule_by_name(name)

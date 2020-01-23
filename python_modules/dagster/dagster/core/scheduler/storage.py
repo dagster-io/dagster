@@ -11,12 +11,12 @@ from dagster import check, utils
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
-from .scheduler import Schedule, ScheduleStatus
+from .scheduler import Schedule
 
 
 class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def all_schedules(self, status):
+    def all_schedules(self):
         '''Return all schedules present in the storage
         '''
 
@@ -67,12 +67,7 @@ class FilesystemScheduleStorage(ScheduleStorage):
         self._repository_name = repository_name
         self._load_schedules()
 
-    def all_schedules(self, status=None):
-        status = check.opt_inst_param(status, 'status', ScheduleStatus)
-
-        if status:
-            return [s for s in self._schedules.values() if s.status == status]
-
+    def all_schedules(self):
         return [s for s in self._schedules.values()]
 
     def get_schedule_by_name(self, schedule_name):
