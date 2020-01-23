@@ -10,15 +10,16 @@ function cleanup {
 # ensure cleanup happens on error or normal exit
 trap cleanup INT TERM EXIT ERR
 
+
 if [ "$#" -ne 1 ]; then
-    echo -e "Error: Must specify a base image.\n" 1>&2
-    echo -e "Usage: ./build.sh your/base_image:latest\n" 1>&2
+    echo "Error: Must specify a Python version.\n" 1>&2
+    echo "Usage: ./build.sh 3.7.4" 1>&2
     exit 1
 fi
-
 set -ux
 
-export BASE_IMAGE=$1
+# e.g. 3.7.4
+PYTHON_VERSION=$1
 
 pushd $ROOT/.buildkite/images/docker/test_project
 
@@ -44,5 +45,5 @@ find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 docker build . \
-    --build-arg BASE_IMAGE=$BASE_IMAGE \
+    --build-arg PYTHON_VERSION=$PYTHON_VERSION \
     -t dagster-docker-buildkite

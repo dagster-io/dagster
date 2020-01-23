@@ -1,6 +1,6 @@
-ARG BASE_IMAGE
+ARG PYTHON_VERSION
 
-FROM $BASE_IMAGE
+FROM python:"${PYTHON_VERSION}"
 
 ADD build_cache/ /
 ADD test_pipelines test_pipelines
@@ -8,17 +8,17 @@ ADD test_pipelines test_pipelines
 ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
 RUN pip install \
-        -e dagster \
-        -e dagster-graphql \
-        -e dagster-cron \
-        -e dagit \
-        -e dagster-postgres \
-        -e dagster-pandas \
-        -e dagster-aws \
-        -e dagster-gcp \
-        -e dagster-k8s \
-        -e dagster-airflow \
-        -e test_pipelines
+    -e dagster \
+    -e dagster-graphql \
+    -e dagster-cron \
+    -e dagit \
+    -e dagster-postgres \
+    -e dagster-pandas \
+    -e dagster-aws \
+    -e dagster-gcp \
+    -e dagster-k8s \
+    -e dagster-airflow \
+    -e test_pipelines
 
 WORKDIR /test_pipelines/
 
