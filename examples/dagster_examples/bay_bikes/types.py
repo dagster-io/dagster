@@ -174,10 +174,8 @@ def compute_weather_dataframe_event_metadata(dataframe):
     ]
 
 
-WeatherDataFrameSchema = [
-    PandasColumn.datetime_column(
-        'time', min_datetime=Timestamp(year=2018, month=1, day=1), unique=True
-    ),
+RawWeatherDataFrameSchema = [
+    PandasColumn.integer_column('time', unique=True),
     PandasColumn.categorical_column(
         'summary',
         categories={
@@ -248,15 +246,14 @@ WeatherDataFrameSchema = [
     PandasColumn.integer_column('uvIndexTime', min_value=0),
     PandasColumn.float_column('visibility', min_value=0.0, max_value=10.0),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
+]
+
+WeatherDataFrameSchema = RawWeatherDataFrameSchema + [
     PandasColumn.boolean_column('didRain', exists=True),
 ]
 
-
 RawWeatherDataFrame = create_dagster_pandas_dataframe_type(
-    name='RawWeatherDataFrame',
-    columns=[
-        PandasColumn(column.name) for column in WeatherDataFrameSchema if column.name != 'didRain'
-    ],
+    name='RawWeatherDataFrame', columns=RawWeatherDataFrameSchema,
 )
 
 WeatherDataFrame = create_dagster_pandas_dataframe_type(

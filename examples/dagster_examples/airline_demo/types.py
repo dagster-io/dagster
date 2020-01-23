@@ -20,4 +20,3 @@ SqlAlchemyEngineType = as_dagster_type(
 )
 
 SqlTableName = create_string_type('SqlTableName', description='The name of a database table')
-DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table host db_name')
