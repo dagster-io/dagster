@@ -227,7 +227,13 @@ export default class ExecutionSessionContainer extends React.Component<
               <SessionSettingsBar>
                 <PipelineJumpBar
                   selectedPipelineName={currentSession.pipeline}
-                  onChange={name => onSaveSession({ pipeline: name })}
+                  onChange={name =>
+                    onSaveSession({
+                      pipeline: name,
+                      mode: null,
+                      solidSubset: null
+                    })
+                  }
                 />
                 <div style={{ width: 5 }} />
                 <SolidSelector
