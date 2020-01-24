@@ -26,6 +26,16 @@ def return_one():
     return 1
 
 
+@lambda_solid
+def return_two():
+    return 2
+
+
+@lambda_solid
+def return_three():
+    return 3
+
+
 @lambda_solid(input_defs=[InputDefinition('num')])
 def add_one(num):
     return num + 1
@@ -54,14 +64,6 @@ def test_two_inputs_without_dsl():
     def subtract(num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid
-    def return_two():
-        return 2
-
-    @lambda_solid
-    def return_three():
-        return 3
-
     pipeline_def = PipelineDefinition(
         solid_defs=[subtract, return_two, return_three],
         dependencies={
@@ -79,14 +81,6 @@ def test_two_inputs_with_dsl():
     @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
     def subtract(num_one, num_two):
         return num_one - num_two
-
-    @lambda_solid
-    def return_two():
-        return 2
-
-    @lambda_solid
-    def return_three():
-        return 3
 
     @pipeline
     def test():
@@ -126,10 +120,6 @@ def test_diamond_graph():
 
 
 def test_two_cliques():
-    @lambda_solid
-    def return_two():
-        return 2
-
     @pipeline
     def diamond_pipeline():
         return (return_one(), return_two())
@@ -247,3 +237,73 @@ def test_composite_dupe_defs_fail():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         PipelineDefinition(name='dupes', solid_defs=[top])
+
+
+def test_two_inputs_with_reversed_input_defs_and_dsl():
+    @solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    def subtract_ctx(_context, num_one, num_two):
+        return num_one - num_two
+
+    @lambda_solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    def subtract(num_one, num_two):
+        return num_one - num_two
+
+    @pipeline
+    def test():
+        two = return_two()
+        three = return_three()
+        subtract(two, three)
+        subtract_ctx(two, three)
+
+    assert execute_pipeline(test).result_for_solid('subtract').output_value() == -1
+    assert execute_pipeline(test).result_for_solid('subtract_ctx').output_value() == -1
+
+
+def test_single_non_positional_input_use():
+    @lambda_solid(input_defs=[InputDefinition('num')])
+    def add_one_kw(**kwargs):
+        return kwargs['num'] + 1
+
+    @pipeline
+    def test():
+        # the decorated solid fn doesn't define args
+        # but since there is only one it is unambiguous
+        add_one_kw(return_two())
+
+    assert execute_pipeline(test).result_for_solid('add_one_kw').output_value() == 3
+
+
+def test_single_positional_single_kwarg_input_use():
+    @lambda_solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    def subtract_kw(num_one, **kwargs):
+        return num_one - kwargs['num_two']
+
+    @pipeline
+    def test():
+        # the decorated solid fn only defines one positional arg
+        # and one kwarg so passing two by position is unambiguous
+        # since the second argument must be the one kwarg
+        subtract_kw(return_two(), return_three())
+
+    assert execute_pipeline(test).result_for_solid('subtract_kw').output_value() == -1
+
+
+def test_bad_positional_input_use():
+    @lambda_solid(
+        input_defs=[
+            InputDefinition('num_two'),
+            InputDefinition('num_one'),
+            InputDefinition('num_three'),
+        ]
+    )
+    def add_kw(num_one, **kwargs):
+        return num_one + kwargs['num_two'] + kwargs['num_three']
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='Use keyword args instead'):
+
+        @pipeline
+        def _fail():
+            # the decorated solid fn only defines one positional arg
+            # so the two remaining have no positions and this is
+            # ambiguous
+            add_kw(return_two(), return_two(), return_two())
