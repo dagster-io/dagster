@@ -12,7 +12,7 @@ def dagster_celery_app():
 
 
 # pylint doesn't understand pytest fixtures
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def dagster_celery_worker(dagster_celery_app):  # pylint: disable=redefined-outer-name
-    with worker.start_worker(dagster_celery_app) as w:
+    with worker.start_worker(dagster_celery_app, perform_ping_check=False) as w:
         yield w

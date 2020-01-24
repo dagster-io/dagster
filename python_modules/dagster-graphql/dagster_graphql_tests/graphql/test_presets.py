@@ -3,18 +3,18 @@ from collections import OrderedDict
 
 from dagster_graphql.test.preset_query import execute_preset_query
 
-from .setup import define_context
+from .setup import define_test_context
 
 
 def test_basic_preset_query_no_presets():
-    result = execute_preset_query('csv_hello_world_two', define_context())
+    result = execute_preset_query('csv_hello_world_two', define_test_context())
     assert result.data == OrderedDict(
         [('pipeline', OrderedDict([('name', 'csv_hello_world_two'), ('presets', [])]))]
     )
 
 
 def test_basic_preset_query_with_presets(snapshot):
-    result = execute_preset_query('csv_hello_world', define_context())
+    result = execute_preset_query('csv_hello_world', define_test_context())
 
     assert [preset_data['name'] for preset_data in result.data['pipeline']['presets']] == [
         'prod',

@@ -22,14 +22,14 @@ from .setup import (
     PoorMansDataFrame,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
-    define_context,
+    define_test_context,
 )
 from .utils import sync_execute_get_run_log_data
 
 
 def test_basic_start_pipeline_execution():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -51,7 +51,7 @@ def test_basic_start_pipeline_execution():
 
 def test_basic_start_pipeline_execution_with_preset():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {'selector': {'name': 'csv_hello_world'}, 'preset': 'test_inline'}
@@ -70,7 +70,7 @@ def test_basic_start_pipeline_execution_with_preset():
 def test_basic_start_pipeline_execution_with_non_existent_preset():
     with pytest.raises(UserFacingGraphQLError) as exc_info:
         execute_dagster_graphql(
-            define_context(),
+            define_test_context(),
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -90,7 +90,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_context(),
+            define_test_context(),
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -102,7 +102,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_context(),
+            define_test_context(),
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -115,7 +115,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_context(),
+            define_test_context(),
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -129,7 +129,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
 def test_basic_start_pipeline_execution_config_failure():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -147,7 +147,7 @@ def test_basic_start_pipeline_execution_config_failure():
 
 def test_basis_start_pipeline_not_found_error():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -226,7 +226,7 @@ def test_subscription_query_error():
 
 
 def test_subscribe_bad_run_id():
-    context = define_context()
+    context = define_test_context()
     run_id = 'nope'
     subscription = execute_dagster_graphql(
         context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
@@ -253,7 +253,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
 
 
 def test_basic_sync_execution_no_config():
-    context = define_context()
+    context = define_test_context()
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
@@ -276,7 +276,7 @@ def test_basic_sync_execution_no_config():
 
 
 def test_basic_inmemory_sync_execution():
-    context = define_context()
+    context = define_test_context()
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
@@ -305,7 +305,7 @@ def test_basic_inmemory_sync_execution():
 
 
 def test_basic_filesystem_sync_execution():
-    context = define_context()
+    context = define_test_context()
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
@@ -375,7 +375,7 @@ def test_successful_pipeline_reexecution(snapshot):
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -410,7 +410,7 @@ def test_successful_pipeline_reexecution(snapshot):
     new_run_id = str(uuid.uuid4())
 
     result_two = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -449,7 +449,7 @@ def test_successful_pipeline_reexecution(snapshot):
 
 
 def test_pipeline_reexecution_info_query(snapshot):
-    context = define_context()
+    context = define_test_context()
 
     run_id = str(uuid.uuid4())
     execute_dagster_graphql(
@@ -502,7 +502,7 @@ def test_pipeline_reexecution_info_query(snapshot):
 def test_pipeline_reexecution_invalid_step_in_subset():
     run_id = str(uuid.uuid4())
     execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -517,7 +517,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
     new_run_id = str(uuid.uuid4())
 
     result_two = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -539,7 +539,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
 def test_basic_start_pipeline_execution_with_tags():
     instance = DagsterInstance.ephemeral()
     result = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {

@@ -20,6 +20,7 @@ data:
         service_account_name: {{ include "dagster.serviceAccountName" . }}
         job_image: "{{ .Values.job_image }}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
+        image_pull_policy: "{{ .Values.imagePullPolicy }}"
 
     run_storage:
       module: dagster_postgres.run_storage

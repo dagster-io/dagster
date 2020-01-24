@@ -1,13 +1,21 @@
 import os
+import socket
 import subprocess
 import sys
+import time
 import uuid
+from contextlib import closing
 
 import pytest
 import six
 from dagster_k8s.launcher import K8sRunLauncher
+from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 from kubernetes import client, config
 
+from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.instance.ref import compute_logs_directory
+from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.root import LocalArtifactStorage
 from dagster.utils import safe_tempfile_path
 
 from .utils import wait_for_pod
@@ -28,6 +36,13 @@ LOCAL_DOCKER_REPOSITORY = 'dagster.io'
 MAJMIN = str(sys.version_info.major) + str(sys.version_info.minor)
 
 
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
+
+
 def git_repository_root():
     return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
 
@@ -44,6 +59,13 @@ def environments_path():
 def kubeconfig_file():
     with safe_tempfile_path() as path:
         yield path
+
+
+@pytest.fixture(scope='session')
+def base_python():
+    return '.'.join(
+        [str(x) for x in [sys.version_info.major, sys.version_info.minor, sys.version_info.micro]]
+    )
 
 
 @pytest.fixture(scope='session')
@@ -108,15 +130,12 @@ def docker_full_image_name(docker_repository, docker_image_tag):
 
 
 @pytest.fixture(scope='session')
-def docker_image(docker_full_image_name, docker_image_tag, cluster_exists):
+def docker_image(docker_full_image_name, base_python, cluster_exists):
 
     if not IS_BUILDKITE and not cluster_exists:
         # We build the image because we aren't guaranteed to have it
-        base_image = 'dagster/buildkite-integration:{docker_image_tag}'.format(
-            docker_image_tag=docker_image_tag
-        )
         build_script = os.path.join(test_repo_path(), 'build.sh')
-        subprocess.check_call([build_script, base_image])
+        subprocess.check_call([build_script, base_python])
         subprocess.check_call(['docker', 'tag', DOCKER_IMAGE_NAME, docker_full_image_name])
 
     return docker_full_image_name
@@ -132,7 +151,7 @@ def cluster_exists(cluster_name):
 
 
 @pytest.fixture(scope='session')
-def setup_cluster(cluster_name, cluster_exists):  # pylint: disable=redefined-outer-name
+def setup_cluster(request, cluster_name, cluster_exists):  # pylint: disable=redefined-outer-name
 
     if not IS_BUILDKITE and cluster_exists:
         yield cluster_name
@@ -146,8 +165,9 @@ def setup_cluster(cluster_name, cluster_exists):  # pylint: disable=redefined-ou
             subprocess.check_call(['kind', 'create', 'cluster', '--name', cluster_name])
             yield cluster_name
         finally:
-            # ensure cleanup happens on error or normal exit
-            subprocess.check_call('kind delete cluster --name %s' % cluster_name, shell=True)
+            if not request.config.getoption("--keep-cluster"):
+                # ensure cleanup happens on error or normal exit
+                subprocess.check_call('kind delete cluster --name %s' % cluster_name, shell=True)
 
 
 @pytest.fixture(scope='session')
@@ -200,6 +220,19 @@ def cluster(
         subprocess.check_call(
             ['kind', 'load', 'docker-image', '--name', setup_cluster, docker_image]
         )
+
+        # rabbitmq
+        subprocess.check_call(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
+        subprocess.check_call(
+            ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/rabbitmq:latest']
+        )
+
+        # postgres
+        subprocess.check_call(['docker', 'pull', 'docker.io/bitnami/postgresql'])
+        subprocess.check_call(
+            ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/postgresql:latest']
+        )
+
     nodes = client.CoreV1Api().list_node().items
     for node in nodes:
         node_name = node.metadata.name
@@ -234,12 +267,15 @@ def helm_chart(
 
     # Install helm chart
     try:
-        subprocess.check_call(
-            '''helm install \
+        subprocess.check_output(
+            '''helm install \\
         --set dagit.image="{docker_image}" \\
         --set job_image="{docker_image}" \\
         --set imagePullPolicy="{image_pull_policy}" \\
         --set serviceAccount.name="dagit-admin" \\
+        --set postgresqlPassword="test", \\
+        --set postgresqlDatabase="test", \\
+        --set postgresqlUser="test" \\
         dagster \\
         helm/dagster/'''.format(
                 docker_image=docker_image, image_pull_policy=image_pull_policy,
@@ -271,3 +307,58 @@ def run_launcher(
         kubeconfig_file=kubeconfig_file,
         image_pull_policy=image_pull_policy,
     )
+
+
+@pytest.fixture(scope='session')
+def network_postgres(helm_chart):  # pylint:disable=unused-argument
+    postgres_pod_name = (
+        subprocess.check_output(
+            [
+                'kubectl',
+                'get',
+                'pods',
+                '-l',
+                'app=postgresql,release=dagster',
+                '-o',
+                'jsonpath="{.items[0].metadata.name}"',
+            ]
+        )
+        .decode('utf-8')
+        .strip('"')
+    )
+    forward_port = find_free_port()
+    success, _ = wait_for_pod(postgres_pod_name, wait_for_readiness=True)
+    assert success
+    try:
+        p = subprocess.Popen(
+            [
+                'kubectl',
+                'port-forward',
+                postgres_pod_name,
+                '{forward_port}:5432'.format(forward_port=forward_port),
+            ]
+        )
+        time.sleep(1)
+        yield forward_port
+
+    finally:
+        p.terminate()
+
+
+@pytest.fixture(scope='session')
+def dagster_instance(run_launcher, network_postgres):
+
+    tempdir = DagsterInstance.temp_storage()
+
+    postgres_url = 'postgresql://test:test@localhost:{network_postgres}/test'.format(
+        network_postgres=network_postgres
+    )
+    instance = DagsterInstance(
+        instance_type=InstanceType.EPHEMERAL,
+        local_artifact_storage=LocalArtifactStorage(tempdir),
+        run_storage=PostgresRunStorage(postgres_url),
+        event_storage=PostgresEventLogStorage(postgres_url),
+        compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+        run_launcher=run_launcher,
+    )
+    return instance

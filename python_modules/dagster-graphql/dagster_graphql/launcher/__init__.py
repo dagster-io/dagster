@@ -75,10 +75,11 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             )
 
-    def launch_run(self, run):
+    def launch_run(self, instance, run):
         self.validate()
         execution_params = execution_params_from_pipeline_run(run)
         variables = {'executionParams': execution_params.to_graphql_input()}
+        instance.create_run(run)
         response = requests.post(
             urljoin(self._address, '/graphql'),
             params={

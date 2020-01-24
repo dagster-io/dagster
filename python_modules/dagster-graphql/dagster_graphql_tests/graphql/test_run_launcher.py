@@ -1,5 +1,5 @@
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
 from dagster.core.execution.api import execute_run_iterator
@@ -11,7 +11,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import script_relative_path
 
-from .setup import define_context_for_repository_yaml, define_repository
+from .setup import define_repository
 
 RUN_QUERY = '''
 query RunQuery($runId: ID!) {
@@ -29,7 +29,7 @@ class InMemoryRunLauncher(RunLauncher):
     def __init__(self):
         self._queue = []
 
-    def launch_run(self, run):
+    def launch_run(self, _instance, run):
         self._queue.append(run)
         return run
 

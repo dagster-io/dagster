@@ -3,7 +3,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster.core.instance import DagsterInstance
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY
-from .setup import define_context, retry_config
+from .setup import define_test_context, retry_config
 
 NON_PERSISTENT_INTERMEDIATES_ERROR = (
     'Cannot perform reexecution with non persistent intermediates manager'
@@ -41,7 +41,7 @@ def step_did_fail(logs, step_key):
 
 
 def test_retry_requires_intermediates():
-    context = define_context()
+    context = define_test_context()
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,
@@ -82,7 +82,7 @@ def test_retry_requires_intermediates():
 
 
 def test_retry_pipeline_execution():
-    context = define_context(instance=DagsterInstance.local_temp())
+    context = define_test_context(instance=DagsterInstance.local_temp())
     result = execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_QUERY,

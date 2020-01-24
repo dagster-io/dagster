@@ -592,7 +592,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
                 ),
                 status=PipelineRunStatus.NOT_STARTED,
             )
-            instance.run_launcher.launch_run(run)
+            instance.launch_run(run)
             # Remove once we can handle synchronous execution... currently limited by sqlite
             time.sleep(0.1)
 

@@ -10,31 +10,36 @@ def define_scheduler():
             name="many_events_every_min",
             cron_schedule="* * * * *",
             pipeline_name='many_events',
-            environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
-        ),
-        ScheduleDefinition(
-            name="log_spew_hourly",
-            cron_schedule="0 * * * *",
-            pipeline_name="log_spew",
-            environment_dict_fn=lambda: {"storage": {"filesystem": {}}},
+            environment_dict_fn=lambda _: {"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
             name="pandas_hello_world_hourly",
             cron_schedule="0 * * * *",
             pipeline_name="pandas_hello_world_pipeline",
-            environment_dict_fn=lambda: {
-                "solids": {
-                    "sum_solid": {
-                        "inputs": {
-                            "num_df": {
-                                "csv": {
-                                    "path": file_relative_path(
+            environment_dict_fn=lambda _: {
+                'solids': {
+                    'mult_solid': {
+                        'inputs': {
+                            'num_df': {
+                                'csv': {
+                                    'path': file_relative_path(
                                         __file__, "pandas_hello_world/data/num.csv"
                                     )
                                 }
                             }
                         }
-                    }
+                    },
+                    'sum_solid': {
+                        'inputs': {
+                            'num_df': {
+                                'csv': {
+                                    'path': file_relative_path(
+                                        __file__, "pandas_hello_world/data/num.csv"
+                                    )
+                                }
+                            }
+                        }
+                    },
                 },
                 "storage": {"filesystem": {}},
             },

@@ -10,6 +10,7 @@ ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 RUN pip install \
     -e dagster \
     -e dagster-graphql \
+    -e dagster-celery \
     -e dagster-cron \
     -e dagit \
     -e dagster-postgres \

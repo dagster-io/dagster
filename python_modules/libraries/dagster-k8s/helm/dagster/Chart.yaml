@@ -9,3 +9,7 @@ dependencies:
     version: 8.1.0
     repository: https://kubernetes-charts.storage.googleapis.com/
     condition: postgresql.enabled
+  - name: rabbitmq
+    version: 6.16.3
+    repository: https://kubernetes-charts.storage.googleapis.com/
+    condition: celery.enabled

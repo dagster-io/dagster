@@ -22,7 +22,6 @@ def execute_execute_plan_mutation(handle, variables, instance_ref=None):
         handle, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
     )
     instance.dispose()
-
     handle_execution_errors(res, 'executePlan')
     return handle_execute_plan_result(res)
 

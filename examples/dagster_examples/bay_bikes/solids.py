@@ -1,5 +1,5 @@
-import json
 import os
+import uuid
 import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
@@ -34,7 +34,6 @@ from dagster import (
     Materialization,
     Output,
     OutputDefinition,
-    String,
     check,
     composite_solid,
     solid,
@@ -141,6 +140,17 @@ def download_csv_from_bucket_and_return_dataframe(
     return read_csv(target_csv_location)
 
 
+@solid(config={'index_label': Field(str),}, required_resource_keys={'postgres_db'})
+def insert_row_into_table(context, row: DataFrame, table_name: str):
+    row.to_sql(
+        table_name,
+        context.resources.postgres_db.engine,
+        if_exists='append',
+        index=False,
+        index_label=context.solid_config['index_label'],
+    )
+
+
 @solid(
     config={
         'latitude': Field(
@@ -161,30 +171,25 @@ def download_csv_from_bucket_and_return_dataframe(
             is_optional=True,
             description='data granularities to exclude when making this api call',
         ),
-        'csv_name': Field(String, description=('Path to store the csv at the end')),
     },
-    required_resource_keys={'credentials_vault', 'volume'},
+    required_resource_keys={'credentials_vault'},
 )
-def download_weather_report_from_weather_api(context, date_file_name: str) -> str:
-    weather_report = []
-    with open(date_file_name, 'r') as fp:
-        dates = json.load(fp)
+def download_weather_report_from_weather_api(context, epoch_date: int) -> DataFrame:
+    # Make API Call
     coordinates = '{0},{1}'.format(
         context.solid_config['latitude'], context.solid_config['longitude']
     )
     weather_api_key = context.resources.credentials_vault.credentials["DARK_SKY_API_KEY"]
     url_prefix = '/'.join([DARK_SKY_BASE_URL, weather_api_key, coordinates])
-    for date in dates:
-        url = url_prefix + ',{}?exclude={}'.format(
-            date, ','.join(context.solid_config['times_to_exclude'])
-        )
-        context.log.info("Download for date {}. URL is: {}".format(date, url))
-        response = requests.get(url)
-        response.raise_for_status()
-        weather_report.append(response.json()['daily']['data'][0])
-    csv_target = os.path.join(context.resources.volume, context.solid_config['csv_name'])
-    DataFrame(weather_report).to_csv(csv_target)
-    return csv_target
+    url = url_prefix + ',{}?exclude={}'.format(
+        epoch_date, ','.join(context.solid_config['times_to_exclude'])
+    )
+    context.log.info("Sending Request. URL is: {}".format(url))
+    response = requests.get(url)
+    response.raise_for_status()
+    raw_weather_data = response.json()['daily']['data'][0]
+    raw_weather_data['uuid'] = uuid.uuid4()
+    return DataFrame([raw_weather_data])
 
 
 @solid(

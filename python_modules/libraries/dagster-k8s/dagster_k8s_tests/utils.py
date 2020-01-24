@@ -90,7 +90,7 @@ def wait_for_job_success(job_name):
     return success, raw_logs
 
 
-def wait_for_pod(name, wait_for_termination=False):
+def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False):
     '''Wait for the dagit pod to launch and be running, or wait for termination
 
     NOTE: Adding this wait because helm --wait will just wait indefinitely in a crash loop scenario,
@@ -114,9 +114,15 @@ def wait_for_pod(name, wait_for_termination=False):
             continue
 
         state = pod.status.container_statuses[0].state
+        ready = pod.status.container_statuses[0].ready
 
         if state.running is not None:
-            print('Pod is running...')
+            if wait_for_readiness:
+                if not ready:
+                    time.sleep(1)
+                    continue
+                else:
+                    break
             if wait_for_termination:
                 time.sleep(1)
                 continue

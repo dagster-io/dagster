@@ -4,7 +4,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster.core.instance import DagsterInstance
 
-from .utils import define_context, sync_execute_get_run_log_data
+from .utils import define_test_context, sync_execute_get_run_log_data
 
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
@@ -91,7 +91,7 @@ def test_get_runs_over_graphql():
 
     run_id_two = payload_two['run']['runId']
 
-    read_context = define_context(instance=DagsterInstance.local_temp())
+    read_context = define_test_context(instance=DagsterInstance.local_temp())
 
     result = execute_dagster_graphql(
         read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}

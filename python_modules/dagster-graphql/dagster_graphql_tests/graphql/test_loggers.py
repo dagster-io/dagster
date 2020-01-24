@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_context
+from .setup import define_test_context
 
 LOGGER_QUERY = '''
 {
@@ -34,7 +34,7 @@ LOGGER_QUERY = '''
 
 
 def test_mode_fetch_loggers(snapshot):
-    result = execute_dagster_graphql(define_context(), LOGGER_QUERY)
+    result = execute_dagster_graphql(define_test_context(), LOGGER_QUERY)
 
     assert not result.errors
     assert result.data

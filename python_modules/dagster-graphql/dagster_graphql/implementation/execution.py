@@ -210,7 +210,7 @@ def launch_pipeline_execution(graphene_info, execution_params):
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = run_launcher.launch_run(_create_pipeline_run(instance, pipeline, execution_params))
+    run = instance.launch_run(_create_pipeline_run(instance, pipeline, execution_params))
 
     return graphene_info.schema.type_named('LaunchPipelineExecutionSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)

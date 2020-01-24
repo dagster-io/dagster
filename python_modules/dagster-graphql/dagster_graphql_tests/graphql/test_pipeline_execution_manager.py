@@ -1,5 +1,5 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_graphql_tests.graphql.setup import define_subprocess_context
+from dagster_graphql_tests.graphql.setup import define_test_subprocess_context
 from dagster_graphql_tests.test_cli import START_PIPELINE_EXECUTION_QUERY
 
 from dagster.core.instance import DagsterInstance
@@ -18,7 +18,7 @@ def is_clear_execution_manager(manager):
 
 
 def test_term_event_lifecycle():
-    context = define_subprocess_context(DagsterInstance.local_temp())
+    context = define_test_subprocess_context(DagsterInstance.local_temp())
     execution_manager = context.execution_manager
     is_clear_execution_manager(execution_manager)
     result = execute_dagster_graphql(

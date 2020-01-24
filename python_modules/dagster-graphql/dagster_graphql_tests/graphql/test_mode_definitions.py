@@ -2,7 +2,7 @@ import graphql
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_context
+from .setup import define_test_context
 from .utils import sync_execute_get_events
 
 
@@ -76,7 +76,7 @@ query ModesQuery($pipelineName: String!, $mode: String!)
 
 def execute_modes_query(pipeline_name, mode):
     return execute_dagster_graphql(
-        define_context(), MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
+        define_test_context(), MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
     )
 
 

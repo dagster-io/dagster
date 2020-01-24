@@ -1,8 +1,6 @@
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster.utils import file_relative_path
-
-from .setup import define_context_for_repository_yaml
 
 GET_PARTITION_SETS_QUERY = '''
 {
