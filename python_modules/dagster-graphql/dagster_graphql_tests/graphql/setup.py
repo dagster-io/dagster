@@ -424,7 +424,7 @@ def double_adder_resource(init_context):
     preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
 )
 def multi_mode_with_resources():
-    @solid
+    @solid(required_resource_keys={'op'})
     def apply_to_three(context):
         return context.resources.op(3)
 
@@ -562,7 +562,11 @@ def eventually_successful():
     def spawn(_):
         return 0
 
-    @solid(input_defs=[InputDefinition('depth', Int)], output_defs=[OutputDefinition(Int)])
+    @solid(
+        input_defs=[InputDefinition('depth', Int)],
+        output_defs=[OutputDefinition(Int)],
+        required_resource_keys={'retry_count'},
+    )
     def fail(context, depth):
         if context.resources.retry_count <= depth:
             raise Exception('fail')

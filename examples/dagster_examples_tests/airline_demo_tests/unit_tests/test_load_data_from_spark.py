@@ -24,7 +24,10 @@ def test_airline_demo_load_df():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={'db_info': ResourceDefinition.hardcoded_resource(db_info_mock)}
+                resource_defs={
+                    'db_info': ResourceDefinition.hardcoded_resource(db_info_mock),
+                    'spark': ResourceDefinition.hardcoded_resource(mock.MagicMock()),
+                }
             )
         ]
     )

@@ -89,7 +89,7 @@ class PipelineDefinition(IContainSolids, object):
                 return 1
 
 
-            @solid(input_defs=[InputDefinition('num')])
+            @solid(input_defs=[InputDefinition('num')], required_resource_keys={'op'})
             def apply_op(context, num):
                 return context.resources.op(num)
 

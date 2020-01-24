@@ -85,7 +85,7 @@ def test_single_solid_with_context_config():
 
     ran = {'count': 0}
 
-    @solid
+    @solid(required_resource_keys={'num'})
     def check_context_config_for_two(context):
         assert context.resources.num == 2
         ran['count'] += 1
