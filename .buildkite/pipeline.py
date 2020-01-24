@@ -247,7 +247,7 @@ def k8s_tests():
                 "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
                 "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-k8s/",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -e {ver} -- -s".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",

@@ -36,6 +36,14 @@ LOCAL_DOCKER_REPOSITORY = 'dagster.io'
 MAJMIN = str(sys.version_info.major) + str(sys.version_info.minor)
 
 
+def check_output(*args, **kwargs):
+    try:
+        return subprocess.check_output(*args, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        output = exc.output.decode()
+        six.raise_from(Exception(output), exc)
+
+
 def find_free_port():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(('', 0))
@@ -44,7 +52,7 @@ def find_free_port():
 
 
 def git_repository_root():
-    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+    return six.ensure_str(check_output(['git', 'rev-parse', '--show-toplevel']).strip())
 
 
 def test_repo_path():
@@ -135,17 +143,15 @@ def docker_image(docker_full_image_name, base_python, cluster_exists):
     if not IS_BUILDKITE and not cluster_exists:
         # We build the image because we aren't guaranteed to have it
         build_script = os.path.join(test_repo_path(), 'build.sh')
-        subprocess.check_call([build_script, base_python])
-        subprocess.check_call(['docker', 'tag', DOCKER_IMAGE_NAME, docker_full_image_name])
+        check_output([build_script, base_python])
+        check_output(['docker', 'tag', DOCKER_IMAGE_NAME, docker_full_image_name])
 
     return docker_full_image_name
 
 
 @pytest.fixture(scope='session')
 def cluster_exists(cluster_name):
-    running_clusters = (
-        subprocess.check_output(['kind', 'get', 'clusters']).decode('utf-8').split('\n')
-    )
+    running_clusters = check_output(['kind', 'get', 'clusters']).decode('utf-8').split('\n')
 
     return cluster_name in running_clusters
 
@@ -162,12 +168,13 @@ def setup_cluster(request, cluster_name, cluster_exists):  # pylint: disable=red
                 '--- \033[32m:k8s: Running kind cluster setup for cluster '
                 '{cluster_name}\033[0m'.format(cluster_name=cluster_name)
             )
-            subprocess.check_call(['kind', 'create', 'cluster', '--name', cluster_name])
+            check_output(['kind', 'create', 'cluster', '--name', cluster_name])
             yield cluster_name
         finally:
             if not request.config.getoption("--keep-cluster"):
                 # ensure cleanup happens on error or normal exit
-                subprocess.check_call('kind delete cluster --name %s' % cluster_name, shell=True)
+                print('Cleaning up kind cluster {cluster_name}'.format(cluster_name=cluster_name))
+                check_output('kind delete cluster --name %s' % cluster_name, shell=True)
 
 
 @pytest.fixture(scope='session')
@@ -194,6 +201,7 @@ def kubeconfig(setup_cluster, kubeconfig_file):  # pylint: disable=redefined-out
         yield kubeconfig_file
 
     finally:
+        print('Cleaning up kubeconfig')
         if 'KUBECONFIG' in os.environ:
             del os.environ['KUBECONFIG']
 
@@ -208,28 +216,24 @@ def cluster(
     # Need a unique cluster name for this job; can't have hyphens
     if IS_BUILDKITE:
         print('Installing ECR credentials...')
-        subprocess.check_call(
-            'aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True
-        )
+        check_output('aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True)
 
     # see https://kind.sigs.k8s.io/docs/user/private-registries/#use-an-access-token
     print('Syncing to nodes...')
     config.load_kube_config(config_file=kubeconfig)
 
     if not IS_BUILDKITE:
-        subprocess.check_call(
-            ['kind', 'load', 'docker-image', '--name', setup_cluster, docker_image]
-        )
+        check_output(['kind', 'load', 'docker-image', '--name', setup_cluster, docker_image])
 
         # rabbitmq
-        subprocess.check_call(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
-        subprocess.check_call(
+        check_output(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
+        check_output(
             ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/rabbitmq:latest']
         )
 
         # postgres
-        subprocess.check_call(['docker', 'pull', 'docker.io/bitnami/postgresql'])
-        subprocess.check_call(
+        check_output(['docker', 'pull', 'docker.io/bitnami/postgresql'])
+        check_output(
             ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/postgresql:latest']
         )
 
@@ -248,13 +252,11 @@ def cluster(
                 docker_exe=docker_exe, node_name=node_name
             )
         )
-        subprocess.check_call(cmd, shell=True)
+        check_output(cmd, shell=True)
 
         # restart kubelet to pick up the config
         print('Restarting node kubelets...')
-        subprocess.check_call(
-            'docker exec %s systemctl restart kubelet.service' % node_name, shell=True
-        )
+        check_output('docker exec %s systemctl restart kubelet.service' % node_name, shell=True)
 
     yield cluster
 
@@ -267,31 +269,42 @@ def helm_chart(
 
     # Install helm chart
     try:
-        subprocess.check_output(
-            '''helm install \\
-        --set dagit.image="{docker_image}" \\
-        --set job_image="{docker_image}" \\
-        --set imagePullPolicy="{image_pull_policy}" \\
-        --set serviceAccount.name="dagit-admin" \\
-        --set postgresqlPassword="test", \\
-        --set postgresqlDatabase="test", \\
-        --set postgresqlUser="test" \\
-        dagster \\
-        helm/dagster/'''.format(
-                docker_image=docker_image, image_pull_policy=image_pull_policy,
-            ),
-            shell=True,
-            cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
-        )
-        success, _ = wait_for_pod('dagit')
-        assert success
-        yield
+        check_output('''kubectl create namespace dagster-test''', shell=True)
+        try:
+            check_output(
+                '''helm install \\
+            --set dagit.image="{docker_image}" \\
+            --set job_image="{docker_image}" \\
+            --set imagePullPolicy="{image_pull_policy}" \\
+            --set serviceAccount.name="dagit-admin" \\
+            --set postgresqlPassword="test", \\
+            --set postgresqlDatabase="test", \\
+            --set postgresqlUser="test" \\
+            --namespace dagster-test \\
+            dagster \\
+            helm/dagster/'''.format(
+                    docker_image=docker_image, image_pull_policy=image_pull_policy,
+                ),
+                shell=True,
+                cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
+            )
+            success, _ = wait_for_pod('dagit')
+            assert success
+            yield
+        finally:
+            print('Uninstalling helm chart')
+            check_output(
+                ['helm uninstall dagster --namespace dagster-test'],
+                shell=True,
+                cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
+            )
     finally:
-        subprocess.check_call(
-            ['helm uninstall dagster'],
-            shell=True,
-            cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
-        )
+        if not IS_BUILDKITE:
+            print('Deleting namespace')
+            check_output(
+                ['kubectl delete namespace dagster-test'], shell=True,
+            )
+            print('Deleted namespace')
 
 
 @pytest.fixture(scope='session')
@@ -306,17 +319,21 @@ def run_launcher(
         load_kubeconfig=True,
         kubeconfig_file=kubeconfig_file,
         image_pull_policy=image_pull_policy,
+        job_namespace='dagster-test',
     )
 
 
 @pytest.fixture(scope='session')
 def network_postgres(helm_chart):  # pylint:disable=unused-argument
+    print('Port-forwarding postgres')
     postgres_pod_name = (
-        subprocess.check_output(
+        check_output(
             [
                 'kubectl',
                 'get',
                 'pods',
+                '--namespace',
+                'dagster-test',
                 '-l',
                 'app=postgresql,release=dagster',
                 '-o',
@@ -334,6 +351,8 @@ def network_postgres(helm_chart):  # pylint:disable=unused-argument
             [
                 'kubectl',
                 'port-forward',
+                '--namespace',
+                'dagster-test',
                 postgres_pod_name,
                 '{forward_port}:5432'.format(forward_port=forward_port),
             ]
@@ -342,6 +361,7 @@ def network_postgres(helm_chart):  # pylint:disable=unused-argument
         yield forward_port
 
     finally:
+        print('Terminating port-forwarding')
         p.terminate()
 
 

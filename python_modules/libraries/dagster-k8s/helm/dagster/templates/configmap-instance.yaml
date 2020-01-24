@@ -21,6 +21,7 @@ data:
         job_image: "{{ .Values.job_image }}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
         image_pull_policy: "{{ .Values.imagePullPolicy }}"
+        job_namespace: "{{ .Release.Namespace }}"
 
     run_storage:
       module: dagster_postgres.run_storage
