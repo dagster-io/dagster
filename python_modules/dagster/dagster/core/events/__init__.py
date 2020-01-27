@@ -631,7 +631,7 @@ class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries error')):
     @staticmethod
     def in_process(pid, step_keys_to_execute=None):
         check.int_param(pid, 'pid')
-        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
             + (
@@ -645,7 +645,7 @@ class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries error')):
     def multiprocess(pid, parent_pid=None, step_keys_to_execute=None):
         check.int_param(pid, 'pid')
         check.opt_int_param(parent_pid, 'parent_pid')
-        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
             + ([EventMetadataEntry.text(str(parent_pid), 'parent_pid')] if parent_pid else [])

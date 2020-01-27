@@ -1,5 +1,6 @@
 import pytest
 
+from dagster import pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 
@@ -23,3 +24,98 @@ def test_create_execution_plan_with_bad_inputs():
         create_execution_plan(
             define_diamond_pipeline(), {'solids': {'add_three': {'inputs': {'num': 3}}}}
         )
+
+
+def test_active_execution_plan():
+    plan = create_execution_plan(define_diamond_pipeline())
+
+    active_execution = plan.start()
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 1
+    step_1 = steps[0]
+    assert step_1.key == 'return_two.compute'
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_complete(step_1.key)
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 2
+    step_2 = steps[0]
+    step_3 = steps[1]
+    assert step_2.key == 'add_three.compute'
+    assert step_3.key == 'mult_three.compute'
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_complete(step_2.key)
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_complete(step_3.key)
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 1
+    step_4 = steps[0]
+
+    assert step_4.key == 'adder.compute'
+
+    steps = active_execution.get_available_steps()
+    assert len(steps) == 0  # cant progress
+
+    assert not active_execution.is_complete
+
+    active_execution.mark_complete(step_4.key)
+
+    assert active_execution.is_complete
+
+
+def test_priorities():
+    @solid(metadata={'priority': 5})
+    def pri_5(_):
+        pass
+
+    @solid(metadata={'priority': 4})
+    def pri_4(_):
+        pass
+
+    @solid(metadata={'priority': 3})
+    def pri_3(_):
+        pass
+
+    @solid(metadata={'priority': 2})
+    def pri_2(_):
+        pass
+
+    @solid(metadata={'priority': -1})
+    def pri_neg_1(_):
+        pass
+
+    @solid
+    def pri_none(_):
+        pass
+
+    @pipeline
+    def priorities():
+        pri_neg_1()
+        pri_3()
+        pri_2()
+        pri_none()
+        pri_5()
+        pri_4()
+
+    sort_key_fn = lambda step: step.metadata.get('priority', 0) * -1
+
+    plan = create_execution_plan(priorities)
+    active_execution = plan.start(sort_key_fn)
+    steps = active_execution.get_available_steps()
+    assert steps[0].key == 'pri_5.compute'
+    assert steps[1].key == 'pri_4.compute'
+    assert steps[2].key == 'pri_3.compute'
+    assert steps[3].key == 'pri_2.compute'
+    assert steps[4].key == 'pri_none.compute'
+    assert steps[5].key == 'pri_neg_1.compute'

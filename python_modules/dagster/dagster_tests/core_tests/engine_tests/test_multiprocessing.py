@@ -1,12 +1,16 @@
+import time
+
 from dagster import (
-    DependencyDefinition,
     ExecutionTargetHandle,
     InputDefinition,
+    Nothing,
+    OutputDefinition,
     PipelineDefinition,
     PresetDefinition,
     execute_pipeline,
     execute_pipeline_with_preset,
     lambda_solid,
+    pipeline,
 )
 from dagster.core.instance import DagsterInstance
 
@@ -22,11 +26,11 @@ def compute_event(result, solid_name):
 
 
 def test_diamond_multi_execution():
-    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+    pipe = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'define_diamond_pipeline'
     ).build_pipeline_definition()
     result = execute_pipeline(
-        pipeline,
+        pipe,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
@@ -60,17 +64,7 @@ def define_diamond_pipeline():
     def adder(left, right):
         return left + right
 
-    return PipelineDefinition(
-        name='diamond_execution',
-        solid_defs=[return_two, add_three, mult_three, adder],
-        dependencies={
-            'add_three': {'num': DependencyDefinition('return_two')},
-            'mult_three': {'num': DependencyDefinition('return_two')},
-            'adder': {
-                'left': DependencyDefinition('add_three'),
-                'right': DependencyDefinition('mult_three'),
-            },
-        },
+    @pipeline(
         preset_defs=[
             PresetDefinition(
                 'just_adder',
@@ -83,6 +77,11 @@ def define_diamond_pipeline():
             )
         ],
     )
+    def diamond_pipeline():
+        two = return_two()
+        adder(left=add_three(two), right=mult_three(two))
+
+    return diamond_pipeline
 
 
 def define_error_pipeline():
@@ -94,8 +93,8 @@ def define_error_pipeline():
 
 
 def test_error_pipeline():
-    pipeline = define_error_pipeline()
-    result = execute_pipeline(pipeline, raise_on_error=False)
+    pipe = define_error_pipeline()
+    result = execute_pipeline(pipe, raise_on_error=False)
     assert not result.success
 
 
@@ -155,14 +154,51 @@ def test_no_handle():
 
 
 def test_solid_subset():
-    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+    pipe = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'define_diamond_pipeline'
     ).build_pipeline_definition()
 
     result = execute_pipeline_with_preset(
-        pipeline, 'just_adder', instance=DagsterInstance.local_temp(),
+        pipe, 'just_adder', instance=DagsterInstance.local_temp(),
     )
 
     assert result.success
 
     assert result.result_for_solid('adder').output_value() == 2
+
+
+def define_sleep_pipeline():
+    @lambda_solid
+    def a_long_sleep():
+        time.sleep(3)
+
+    @lambda_solid(
+        input_defs=[InputDefinition('after', Nothing)], output_def=OutputDefinition(Nothing)
+    )
+    def no_sleep():
+        pass
+
+    @pipeline
+    def seperate():
+        a_long_sleep()
+        no_sleep(no_sleep(no_sleep()))
+
+    return seperate
+
+
+def test_seperate_sub_dags():
+    pipe = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'define_sleep_pipeline'
+    ).build_pipeline_definition()
+
+    result = execute_pipeline(
+        pipe,
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
+    )
+
+    assert result.success
+    # ensure that
+    assert [
+        str(event.solid_handle) for event in result.step_event_list if event.is_step_success
+    ] == ['no_sleep', 'no_sleep_2', 'no_sleep_3', 'a_long_sleep']

@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import OrderedDict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
@@ -39,7 +39,7 @@ class _PlanBuilder(object):
         )
         self.run_config = check.inst_param(run_config, 'run_config', IRunConfig)
         self.mode_definition = pipeline_def.get_mode_definition(run_config.mode)
-        self._steps = dict()
+        self._steps = OrderedDict()
         self.step_output_map = dict()
         self._seen_keys = set()
 
@@ -99,7 +99,9 @@ class _PlanBuilder(object):
         )
 
         previous_run_id = self.run_config.previous_run_id
-        step_keys_to_execute = self.run_config.step_keys_to_execute or list(step_dict.keys())
+        step_keys_to_execute = self.run_config.step_keys_to_execute or [
+            step.key for step in self._steps.values()
+        ]
 
         return ExecutionPlan(
             self.pipeline_def,
@@ -325,9 +327,13 @@ class ExecutionPlan(
         return [step_key for step_key in self.step_keys_to_execute if not self.has_step(step_key)]
 
     def execution_deps(self):
-        step_dict = {k: v for k, v in self.step_dict.items() if k in self.step_keys_to_execute}
-        deps = {step.key: set() for step in step_dict.values()}
-        for step in step_dict.values():
+        deps = OrderedDict()
+
+        for key in self.step_keys_to_execute:
+            deps[key] = set()
+
+        for key in self.step_keys_to_execute:
+            step = self.step_dict[key]
             for step_input in step.step_inputs:
                 deps[step.key].update(
                     step_input.dependency_keys.intersection(self.step_keys_to_execute)
@@ -344,6 +350,9 @@ class ExecutionPlan(
             self.previous_run_id,
             step_keys_to_execute,
         )
+
+    def start(self, sort_key_fn=None):
+        return ActiveExecution(self, sort_key_fn)
 
     @staticmethod
     def build(pipeline_def, environment_config, run_config):
@@ -363,3 +372,63 @@ class ExecutionPlan(
 
         # Finally, we build and return the execution plan
         return plan_builder.build()
+
+
+def _default_sort_key(step):
+    return step.metadata.get('dagster/priority', 0) * -1
+
+
+class ActiveExecution(object):
+    def __init__(self, execution_plan, sort_key_fn=None):
+        self._plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', _default_sort_key)
+
+        self._pending = self._plan.execution_deps()
+        self._completed = set()
+        self._in_flight = set()
+        self._available = []
+
+        self._update_available()
+
+    def _update_available(self):
+        now_available = []
+        for step_key, requirements in self._pending.items():
+            if requirements.issubset(self._completed):
+                now_available.append(step_key)
+
+        for key in now_available:
+            self._available.append(key)
+            del self._pending[key]
+
+    def get_available_steps(self, limit=None):
+        check.opt_int_param(limit, 'limit')
+
+        steps = sorted(
+            [self._plan.get_step_by_key(key) for key in self._available], key=self._sort_key_fn
+        )
+
+        if limit:
+            steps = steps[:limit]
+
+        for step in steps:
+            self._in_flight.add(step.key)
+            self._available.remove(step.key)
+
+        return steps
+
+    def mark_complete(self, step_key):
+        check.invariant(
+            step_key not in self._completed,
+            'Attempted to mark step as complete that was already completed',
+        )
+        check.invariant(
+            step_key in self._in_flight,
+            'Attempted to mark step as complete that was not known to be in flight',
+        )
+        self._in_flight.remove(step_key)
+        self._completed.add(step_key)
+        self._update_available()
+
+    @property
+    def is_complete(self):
+        return len(self._pending) == 0 and len(self._in_flight) == 0 and len(self._available) == 0

@@ -126,6 +126,9 @@ def in_process_executor(init_context):
         execution:
           in_process:
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.engine.init import InitExecutorContext
 
@@ -154,6 +157,9 @@ def multiprocess_executor(init_context):
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.definitions.handle import ExecutionTargetHandle
     from dagster.core.engine.init import InitExecutorContext
