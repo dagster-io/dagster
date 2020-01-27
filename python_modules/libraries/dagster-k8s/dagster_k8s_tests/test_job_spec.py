@@ -44,6 +44,9 @@ spec:
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
+        env_from:
+        - config_map_ref:
+            name: dagster-job-env
         image: {job_image}
         image_pull_policy: {image_pull_policy}
         name: dagster-job-{run_id}
