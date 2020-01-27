@@ -1,4 +1,3 @@
-import re
 import typing
 
 import pytest
@@ -122,29 +121,6 @@ def test_check_dagster_type():
 
     res = check_dagster_type(Optional[str], None)
     assert res.success
-
-    class Foo(object):
-        pass
-
-    class Bar(object):
-        pass
-
-    res = check_dagster_type(Foo, Foo())
-    assert res.success
-
-    res = check_dagster_type(Foo, Bar())
-    assert not res.success
-    assert re.match(
-        re.escape('Value of type <class \'dagster_tests.utils_tests.test_test_utils')
-        + '('
-        + re.escape('.test_check_dagster_type.<locals>')
-        + ')?'
-        + re.escape(
-            '.Bar\'> failed type check for Dagster type Implicit[Foo], expected value to be '
-            'of Python type Foo.'
-        ),
-        res.description,
-    )
 
     @dagster_type
     class Baz(object):
