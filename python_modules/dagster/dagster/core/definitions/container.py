@@ -225,12 +225,14 @@ def _build_pipeline_solid_dict(
                 if solid_instance
                 else SolidInvocation.default_resource_mapper_fn
             )
+            solid_instance_tags = solid_instance.tags if solid_instance else {}
             pipeline_solids.append(
                 Solid(
                     name=alias,
                     definition=solid_def,
                     resource_mapper_fn=resource_mapper_fn,
                     container_definition=container_definition,
+                    tags=solid_instance_tags,
                 )
             )
 

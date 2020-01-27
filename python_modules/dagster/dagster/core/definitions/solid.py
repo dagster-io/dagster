@@ -139,7 +139,14 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def alias(self, name):
         from .composition import CallableSolidNode
 
-        return CallableSolidNode(self, name)
+        check.str_param(name, 'name')
+
+        return CallableSolidNode(self, given_alias=name)
+
+    def tag(self, tags):
+        from .composition import CallableSolidNode
+
+        return CallableSolidNode(self, tags=validate_tags(tags))
 
 
 class SolidDefinition(ISolidDefinition):

@@ -6,14 +6,14 @@ import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.utils import camelcase
+from dagster.utils import camelcase, frozentags
 
 from .input import InputDefinition
 from .output import OutputDefinition
-from .utils import DEFAULT_OUTPUT, struct_to_string
+from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 
-class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
+class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn tags')):
     '''Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
@@ -26,6 +26,8 @@ class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
             the compatible resource available in this pipeline. Should take a dictionary whose
             keys are the resource keys provided by the pipeline and return a dictionary whose keys
             are the resource keys required by the solid definition, interchanging the values.
+        tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
+            set on the solid definition.
 
     Examples:
 
@@ -56,13 +58,15 @@ class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn')):
 
     '''
 
-    def __new__(cls, name, alias=None, resource_mapper_fn=None):
+    def __new__(cls, name, alias=None, resource_mapper_fn=None, tags=None):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
         resource_mapper_fn = check.opt_callable_param(
             resource_mapper_fn, 'resource_mapper_fn', SolidInvocation.default_resource_mapper_fn
         )
-        return super(cls, SolidInvocation).__new__(cls, name, alias, resource_mapper_fn)
+        tags = frozentags(check.opt_dict_param(tags, 'tags', value_type=str, key_type=str))
+
+        return super(cls, SolidInvocation).__new__(cls, name, alias, resource_mapper_fn, tags)
 
     @staticmethod
     def default_resource_mapper_fn(resources, resource_deps):
@@ -80,7 +84,9 @@ class Solid(object):
             Definition of the solid.
     '''
 
-    def __init__(self, name, definition, resource_mapper_fn, container_definition=None):
+    def __init__(
+        self, name, definition, resource_mapper_fn, container_definition=None, tags=None,
+    ):
         from .solid import ISolidDefinition, CompositeSolidDefinition
 
         self.name = check.str_param(name, 'name')
@@ -89,6 +95,7 @@ class Solid(object):
         self.container_definition = check.opt_inst_param(
             container_definition, 'container_definition', CompositeSolidDefinition
         )
+        self._additional_tags = validate_tags(tags)
 
         input_handles = {}
         for name, input_def in self.definition.input_dict.items():
@@ -144,7 +151,7 @@ class Solid(object):
 
     @property
     def tags(self):
-        return self.definition.tags
+        return self.definition.tags.updated_with(self._additional_tags)
 
     def container_maps_input(self, input_name):
         if self.container_definition is None:

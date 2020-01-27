@@ -57,7 +57,6 @@ def create_lakehouse_table_def(
     tags=None,
     description=None,
 ):
-    tags = check.opt_dict_param(tags, 'tags', str, str)
     input_tables = check.opt_list_param(
         input_tables, input_tables, of_type=LakehouseTableInputDefinition
     )

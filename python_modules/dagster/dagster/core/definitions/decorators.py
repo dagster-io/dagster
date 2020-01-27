@@ -313,6 +313,7 @@ def solid(
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
 
+
     Examples:
 
         .. code-block:: python

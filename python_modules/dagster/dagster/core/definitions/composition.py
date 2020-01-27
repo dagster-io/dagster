@@ -2,10 +2,12 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils import frozentags
 
 from .dependency import DependencyDefinition, MultiDependencyDefinition, SolidInvocation
 from .output import OutputDefinition
 from .solid import ISolidDefinition
+from .utils import validate_tags
 
 _composition_stack = []
 
@@ -42,7 +44,7 @@ class InProgressCompositionContext(object):
         self._invocations = {}
         self._collisions = {}
 
-    def observe_invocation(self, given_alias, solid_def, input_bindings, input_mappings):
+    def observe_invocation(self, given_alias, solid_def, input_bindings, input_mappings, metadata):
 
         if given_alias is None:
             solid_name = solid_def.name
@@ -64,7 +66,7 @@ class InProgressCompositionContext(object):
             )
 
         self._invocations[solid_name] = InvokedSolidNode(
-            solid_name, solid_def, input_bindings, input_mappings
+            solid_name, solid_def, input_bindings, input_mappings, metadata
         )
         return solid_name
 
@@ -111,7 +113,11 @@ class CompleteCompositionContext(
                 else:
                     check.failed('Unexpected input binding - got {node}'.format(node=node))
 
-            dep_dict[SolidInvocation(invocation.solid_def.name, invocation.solid_name)] = deps
+            dep_dict[
+                SolidInvocation(
+                    invocation.solid_def.name, invocation.solid_name, tags=invocation.tags
+                )
+            ] = deps
 
             for input_name, node in invocation.input_mappings.items():
                 input_mappings.append(node.input_def.mapping_to(invocation.solid_name, input_name))
@@ -126,9 +132,10 @@ class CallableSolidNode(object):
     an alias before invoking.
     '''
 
-    def __init__(self, solid_def, given_alias=None):
+    def __init__(self, solid_def, given_alias=None, tags=None):
         self.solid_def = solid_def
         self.given_alias = check.opt_str_param(given_alias, 'given_alias')
+        self.tags = check.opt_inst_param(tags, 'tags', frozentags)
 
     def __call__(self, *args, **kwargs):
         solid_name = self.given_alias if self.given_alias else self.solid_def.name
@@ -186,7 +193,7 @@ class CallableSolidNode(object):
             )
 
         solid_name = current_context().observe_invocation(
-            self.given_alias, self.solid_def, input_bindings, input_mappings
+            self.given_alias, self.solid_def, input_bindings, input_mappings, self.tags
         )
 
         if len(self.solid_def.output_defs) == 0:
@@ -257,14 +264,25 @@ class CallableSolidNode(object):
                 )
             )
 
+    def alias(self, name):
+        return CallableSolidNode(self.solid_def, name, self.tags)
+
+    def tag(self, tags):
+        tags = validate_tags(tags)
+        return CallableSolidNode(
+            self.solid_def,
+            self.given_alias,
+            frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
+        )
+
 
 class InvokedSolidNode(
-    namedtuple('_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings')
+    namedtuple('_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings tags')
 ):
     '''The metadata about a solid invocation saved by the current composition context.
     '''
 
-    def __new__(cls, solid_name, solid_def, input_bindings, input_mappings):
+    def __new__(cls, solid_name, solid_def, input_bindings, input_mappings, tags=None):
         return super(cls, InvokedSolidNode).__new__(
             cls,
             check.str_param(solid_name, 'solid_name'),
@@ -273,6 +291,7 @@ class InvokedSolidNode(
             check.dict_param(
                 input_mappings, 'input_mappings', key_type=str, value_type=InputMappingNode
             ),
+            check.opt_inst_param(tags, 'tags', frozentags),
         )
 
 

@@ -542,3 +542,59 @@ def test_output_node_error():
         def _bad_index():
             out = return_tuple()
             add_one(out[0])
+
+
+def test_pipeline_composition_metadata():
+    @solid
+    def metadata_solid(context):
+        return context.solid.tags['key']
+
+    @pipeline
+    def metadata_test_pipeline():
+        metadata_solid.tag({'key': 'foo'}).alias('aliased_one')()
+        metadata_solid.alias('aliased_two').tag({'key': 'foo'}).tag({'key': 'bar'})()
+        metadata_solid.alias('aliased_three').tag({'key': 'baz'})()
+        metadata_solid.tag({'key': 'quux'})()
+
+    res = execute_pipeline(metadata_test_pipeline)
+
+    assert res.result_for_solid('aliased_one').output_value() == 'foo'
+    assert res.result_for_solid('aliased_two').output_value() == 'bar'
+    assert res.result_for_solid('aliased_three').output_value() == 'baz'
+    assert res.result_for_solid('metadata_solid').output_value() == 'quux'
+
+
+def test_composite_solid_composition_metadata():
+    @solid
+    def metadata_solid(context):
+        return context.solid.tags['key']
+
+    @composite_solid
+    def metadata_composite():
+        metadata_solid.tag({'key': 'foo'}).alias('aliased_one')()
+        metadata_solid.alias('aliased_two').tag({'key': 'foo'}).tag({'key': 'bar'})()
+        metadata_solid.alias('aliased_three').tag({'key': 'baz'})()
+        metadata_solid.tag({'key': 'quux'})()
+
+    @pipeline
+    def metadata_test_pipeline():
+        metadata_composite()
+
+    res = execute_pipeline(metadata_test_pipeline)
+
+    assert (
+        res.result_for_solid('metadata_composite').result_for_solid('aliased_one').output_value()
+        == 'foo'
+    )
+    assert (
+        res.result_for_solid('metadata_composite').result_for_solid('aliased_two').output_value()
+        == 'bar'
+    )
+    assert (
+        res.result_for_solid('metadata_composite').result_for_solid('aliased_three').output_value()
+        == 'baz'
+    )
+    assert (
+        res.result_for_solid('metadata_composite').result_for_solid('metadata_solid').output_value()
+        == 'quux'
+    )

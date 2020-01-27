@@ -344,3 +344,11 @@ class frozentags(frozendict):
 
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
+
+    def updated_with(self, new_tags):
+        check.dict_param(new_tags, 'new_tags', key_type=str, value_type=str)
+        updated = dict(self)
+        for key, value in new_tags.items():
+            updated[key] = value
+
+        return frozentags(updated)
