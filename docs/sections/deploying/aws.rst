@@ -28,7 +28,7 @@ use this configuration to connect to your running EC2 instance.
 This script will optionally launch an RDS instance for you; if you choose to launch an RDS
 PostgreSQL instance, the remote EC2 instance will automatically be configured to talk to RDS via a
 ``dagster.yaml`` file in the remote ``$DAGSTER_HOME``. See the docs on the
-:ref:`Dagster Instance <instance>` for more information about this configuration.
+:ref:`Dagster Instance <deployment-reference>` for more information about this configuration.
 
 Once the EC2 instance is launched and ready, you can synchronize your Dagster code to it using:
 
@@ -47,6 +47,7 @@ The ``dagster-aws`` CLI saves its state to ``$DAGSTER_HOME/dagster-aws-config.ya
 that file to understand what's going on and/or debug any issues.
 
 .. rubric:: EC2 or ECS hosted Dagit
+
 To host dagit on a bare VM or in Docker on ECS, see the `Local or Standalone Dagit <local.html>`_
 guide.
 
@@ -56,6 +57,7 @@ Out of the box, Dagit runs single-process execution. To enable multi-process exe
 following to your pipeline configuration YAML:
 
 .. code-block:: yaml
+
     :caption: execution_config.yaml
 
     execution:
@@ -69,10 +71,12 @@ following to your pipeline configuration YAML:
 per-pipeline. Future versions of Dagster may add support for globally configuring execution.
 
 .. rubric:: RDS Run / Events Storage
+
 On AWS you can use a hosted RDS PostgreSQL database for your Dagster run/events data. As
 noted previously, this can be accomplished by adding the following to ``$DAGSTER_HOME/dagster.yaml``:
 
 .. code-block:: yaml
+
    :caption: dagster.yaml
 
     run_storage:
@@ -91,12 +95,14 @@ In this case, you'll want to ensure you provide the right connection strings for
 and ensure that the node or container hosting Dagit is able to connect to RDS.
 
 .. rubric:: S3 Intermediates Storage
+
 You'll probably also want to configure an S3 bucket to use for Dagster intermediates (see the
 `intermediates tutorial guide <../tutorial/intermediates.html>`_ for more info). Dagster supports
 serializing data passed between solids to S3; to enable this, you need to add S3 storage to your
 :py:class:`ModeDefinition`:
 
 .. code-block:: python
+
     from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
     from dagster import ModeDefinition
 
@@ -106,6 +112,7 @@ serializing data passed between solids to S3; to enable this, you need to add S3
 Then, just add the following YAML to your pipeline config:
 
 .. code-block:: yaml
+
     :caption: execution_config.yaml
 
     storage:

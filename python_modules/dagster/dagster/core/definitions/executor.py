@@ -15,12 +15,14 @@ class ExecutorDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -66,12 +68,14 @@ def executor(name=None, config=None, required_resource_keys=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''

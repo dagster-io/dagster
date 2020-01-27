@@ -31,12 +31,14 @@ class SystemStorageDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
             which consumes the init context and then emits the SystemStorageData.
@@ -85,12 +87,13 @@ def system_storage(name=None, is_persistent=True, config=None, required_resource
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
 
     '''
 

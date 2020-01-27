@@ -7,7 +7,7 @@ from dagster.core.definitions.config import is_callable_valid_config_arg
 
 class ResourceDefinition(object):
     '''Core class for defining resources.
-    
+
     Resources are scoped ways to make external resources (like database connections) available to
     solids during pipeline execution and to clean up after execution resolves.
 
@@ -26,12 +26,14 @@ class ResourceDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         description (Optional[str]): A human-readable description of the resource.
     '''
 
@@ -71,7 +73,7 @@ class ResourceDefinition(object):
 
 def resource(config=None, description=None):
     '''Define a resource.
-    
+
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
     the resource. This function will become the ``resource_fn`` of an underlying
     :py:class:`ResourceDefinition`.
@@ -85,12 +87,14 @@ def resource(config=None, description=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         description(Optional[str]): A human-readable description of the resource.
     '''
 

@@ -16,6 +16,7 @@ Out of the box, Dagster runs single-process execution. To enable multi-process e
 following to your pipeline configuration YAML:
 
 .. code-block:: yaml
+
     :caption: execution_config.yaml
 
     execution:
@@ -33,6 +34,7 @@ execution engines including `Airflow <other/airflow.html>`_ and `Dask <other/das
 the `reference guide <reference.html>`_ for more information.
 
 .. rubric:: Storage
+
 The best place to start is to set the environment variable ``$DAGSTER_HOME`` to a local folder in
 the environment where you run Dagster/Dagit. The system will then use that folder for run/events and
 logs storage.
@@ -44,6 +46,7 @@ PostgreSQL storage. To use PostgreSQL for runs and events storage, add the follo
 ``$DAGSTER_HOME/dagster.yaml``:
 
 .. code-block:: yaml
+
    :caption: dagster.yaml
 
     run_storage:
@@ -70,6 +73,7 @@ In general, intermediates can be stored on the filesystem by configuring storage
 configuration YAML:
 
 .. code-block:: yaml
+
     :caption: execution_config.yaml
 
     storage:
