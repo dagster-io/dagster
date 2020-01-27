@@ -105,7 +105,7 @@ from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
-from dagster.core.types.runtime_type import List, Optional, RuntimeType
+from dagster.core.types.runtime_type import DagsterType, List, Optional
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,

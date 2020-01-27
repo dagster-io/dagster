@@ -40,7 +40,7 @@ def resolve_to_config_type(dagster_type):
             )
         return Array(inner_type)
 
-    from dagster.core.types.runtime_type import RuntimeType, List, ListType
+    from dagster.core.types.runtime_type import DagsterType, List, ListType
     from dagster.core.types.python_set import Set, _TypedPythonSet
     from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
 
@@ -54,7 +54,7 @@ def resolve_to_config_type(dagster_type):
         )
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, RuntimeType)),
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
         'Cannot resolve a runtime type to a config type',
     )
 
@@ -84,7 +84,7 @@ def resolve_to_config_type(dagster_type):
         )
 
     check.invariant(
-        not (isinstance(dagster_type, RuntimeType)),
+        not (isinstance(dagster_type, DagsterType)),
         'Cannot resolve a runtime type to a config type',
     )
 

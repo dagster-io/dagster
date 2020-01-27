@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions import Materialization, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime_type import RuntimeType
+from dagster.core.types.runtime_type import DagsterType
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
@@ -121,7 +121,7 @@ class StepInput(
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
+            runtime_type=check.inst_param(runtime_type, 'runtime_type', DagsterType),
             source_type=check.inst_param(source_type, 'source_type', StepInputSourceType),
             source_handles=check.opt_list_param(
                 source_handles, 'source_handles', of_type=StepOutputHandle
@@ -154,7 +154,7 @@ class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            runtime_type=check.inst_param(runtime_type, 'runtime_type', RuntimeType),
+            runtime_type=check.inst_param(runtime_type, 'runtime_type', DagsterType),
             optional=check.bool_param(optional, 'optional'),
         )
 

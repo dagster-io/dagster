@@ -3,7 +3,7 @@ import collections
 import pytest
 
 from dagster import DagsterInvalidDefinitionError, as_dagster_type, dagster_type
-from dagster.core.types.runtime_type import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, resolve_to_runtime_type
 
 
 def test_dagster_type_decorator():
@@ -52,7 +52,7 @@ def test_make_dagster_type_from_builtin():
     OrderedDict = as_dagster_type(collections.OrderedDict)
     assert OrderedDict is collections.OrderedDict
     assert OrderedDict([('foo', 'bar')]) == collections.OrderedDict([('foo', 'bar')])
-    assert isinstance(resolve_to_runtime_type(OrderedDict), RuntimeType)
+    assert isinstance(resolve_to_runtime_type(OrderedDict), DagsterType)
     assert resolve_to_runtime_type(OrderedDict).python_type is collections.OrderedDict
 
 

@@ -1,5 +1,5 @@
 from dagster import check, seven
-from dagster.core.types.runtime_type import RuntimeType
+from dagster.core.types.runtime_type import DagsterType
 
 PICKLE_PROTOCOL = 2
 
@@ -13,7 +13,7 @@ def is_json_serializable(value):
 
 
 def read_value(runtime_type, value):
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    check.inst_param(runtime_type, 'runtime_type', DagsterType)
     if runtime_type.is_scalar:
         return value
     elif runtime_type.is_any and is_json_serializable(value):
@@ -23,7 +23,7 @@ def read_value(runtime_type, value):
 
 
 def write_value(runtime_type, value, target_file):
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    check.inst_param(runtime_type, 'runtime_type', DagsterType)
     if runtime_type.is_scalar:
         return value
     elif runtime_type.is_any and is_json_serializable(value):

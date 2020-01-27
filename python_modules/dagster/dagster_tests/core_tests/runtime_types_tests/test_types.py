@@ -16,7 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types.runtime_type import PythonObjectType, RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, PythonObjectType, resolve_to_runtime_type
 
 
 class BarObj(object):
@@ -251,7 +251,7 @@ def _always_fails(_value):
     raise Exception('kdjfkjd')
 
 
-ThrowsExceptionType = RuntimeType(
+ThrowsExceptionType = DagsterType(
     key='ThrowsExceptionType', name='ThrowsExceptionType', type_check_fn=_always_fails,
 )
 
@@ -260,7 +260,7 @@ def _return_bad_value(_value):
     return 'kdjfkjd'
 
 
-BadType = RuntimeType(key='BadType', name='BadType', type_check_fn=_return_bad_value)
+BadType = DagsterType(key='BadType', name='BadType', type_check_fn=_return_bad_value)
 
 
 def test_input_type_returns_wrong_thing():
@@ -435,7 +435,7 @@ def define_custom_dict(name, permitted_key_names):
             ],
         )
 
-    return RuntimeType(key=name, name=name, type_check_fn=type_check_method)
+    return DagsterType(key=name, name=name, type_check_fn=type_check_method)
 
 
 def test_fan_in_custom_types_with_storage():

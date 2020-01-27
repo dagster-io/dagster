@@ -8,11 +8,11 @@ from dagster_pandas.validation import PandasColumn, validate_collection_schema
 
 from dagster import (
     DagsterInvariantViolationError,
+    DagsterType,
     EventMetadataEntry,
     Field,
     Materialization,
     Path,
-    RuntimeType,
     String,
     TypeCheck,
     as_dagster_type,
@@ -183,7 +183,7 @@ def create_dagster_pandas_dataframe_type(
 
     # add input_hydration_confign and output_materialization_config
     # https://github.com/dagster-io/dagster/issues/2027
-    return RuntimeType(
+    return DagsterType(
         name=name, key=name, type_check_fn=_dagster_type_check, description=description
     )
 

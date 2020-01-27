@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.config_type import Array
 
 from .config_schema import InputHydrationConfig
-from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import DagsterType, define_python_dagster_type, resolve_to_runtime_type
 
 PythonSet = define_python_dagster_type(
     set, 'PythonSet', description='''Represents a python dictionary to pass between solids'''
@@ -12,7 +12,7 @@ PythonSet = define_python_dagster_type(
 class TypedSetInputHydrationConfig(InputHydrationConfig):
     def __init__(self, item_runtime_type):
         self._item_runtime_type = check.inst_param(
-            item_runtime_type, 'item_runtime_type', RuntimeType
+            item_runtime_type, 'item_runtime_type', DagsterType
         )
 
     @property
@@ -30,7 +30,7 @@ class TypedSetInputHydrationConfig(InputHydrationConfig):
         return runtime_value
 
 
-class _TypedPythonSet(RuntimeType):
+class _TypedPythonSet(DagsterType):
     def __init__(self, item_runtime_type):
         self.item_type = item_runtime_type
         super(_TypedPythonSet, self).__init__(

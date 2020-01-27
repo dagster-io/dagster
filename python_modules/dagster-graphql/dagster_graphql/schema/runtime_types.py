@@ -1,7 +1,7 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.runtime_type import RuntimeType
+from dagster.core.types.runtime_type import DagsterType
 
 from .config_types import DauphinConfigType, to_dauphin_config_type
 
@@ -11,7 +11,7 @@ def config_type_for_schema(schema):
 
 
 def to_dauphin_runtime_type(runtime_type):
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    check.inst_param(runtime_type, 'runtime_type', DagsterType)
 
     base_args = dict(
         key=runtime_type.key,

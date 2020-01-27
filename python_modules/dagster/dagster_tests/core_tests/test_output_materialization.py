@@ -332,11 +332,11 @@ def return_int(*_args, **_kwargs):
     return 1
 
 
-SomeRuntimeType = create_any_type(name='SomeType', output_materialization_config=return_int)
+SomeDagsterType = create_any_type(name='SomeType', output_materialization_config=return_int)
 
 
 def test_basic_bad_output_materialization():
-    @lambda_solid(output_def=OutputDefinition(SomeRuntimeType))
+    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
     def return_one():
         return 1
 

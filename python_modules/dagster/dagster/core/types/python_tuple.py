@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
-from .runtime_type import RuntimeType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import DagsterType, define_python_dagster_type, resolve_to_runtime_type
 
 PythonTuple = define_python_dagster_type(
     tuple, 'PythonTuple', description='Represents a python tuple'
@@ -11,7 +11,7 @@ PythonTuple = define_python_dagster_type(
 
 class TypedTupleInputHydrationConfig(InputHydrationConfig):
     def __init__(self, runtime_types):
-        self._runtime_types = check.list_param(runtime_types, 'runtime_types', of_type=RuntimeType)
+        self._runtime_types = check.list_param(runtime_types, 'runtime_types', of_type=DagsterType)
 
     @property
     def schema_type(self):
@@ -28,7 +28,7 @@ class TypedTupleInputHydrationConfig(InputHydrationConfig):
         )
 
 
-class _TypedPythonTuple(RuntimeType):
+class _TypedPythonTuple(DagsterType):
     def __init__(self, runtime_types):
         all_have_input_configs = all(
             (runtime_type.input_hydration_config for runtime_type in runtime_types)

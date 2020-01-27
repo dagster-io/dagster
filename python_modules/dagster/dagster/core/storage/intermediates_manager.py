@@ -5,7 +5,7 @@ import six
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.types.runtime_type import RuntimeType
+from dagster.core.types.runtime_type import DagsterType
 
 from .intermediate_store import IntermediateStore
 
@@ -60,13 +60,13 @@ class InMemoryIntermediatesManager(IntermediatesManager):
 
     def get_intermediate(self, context, runtime_type, step_output_handle):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.opt_inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.opt_inst_param(runtime_type, 'runtime_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return self.values[step_output_handle]
 
     def set_intermediate(self, context, runtime_type, step_output_handle, value):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.opt_inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.opt_inst_param(runtime_type, 'runtime_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         self.values[step_output_handle] = value
 
@@ -94,7 +94,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
 
     def get_intermediate(self, context, runtime_type, step_output_handle):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.inst_param(runtime_type, 'runtime_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
 
@@ -104,7 +104,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
 
     def set_intermediate(self, context, runtime_type, step_output_handle, value):
         check.inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.inst_param(runtime_type, 'runtime_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
         if self.has_intermediate(context, step_output_handle):

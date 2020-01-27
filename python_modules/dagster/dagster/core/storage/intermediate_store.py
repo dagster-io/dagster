@@ -4,7 +4,7 @@ import six
 
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.types.runtime_type import RuntimeType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, resolve_to_runtime_type
 
 from .object_store import FilesystemObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry
@@ -34,7 +34,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
     def set_object(self, obj, context, runtime_type, paths):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.inst_param(runtime_type, 'runtime_type', DagsterType)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         key = self.object_store.key_for_paths([self.root] + paths)
@@ -46,7 +46,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
-        check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+        check.inst_param(runtime_type, 'runtime_type', DagsterType)
         key = self.object_store.key_for_paths([self.root] + paths)
         return self.object_store.get_object(
             key, serialization_strategy=runtime_type.serialization_strategy

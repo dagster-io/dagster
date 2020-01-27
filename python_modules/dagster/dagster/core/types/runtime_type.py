@@ -15,7 +15,7 @@ from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
-class RuntimeType(object):
+class DagsterType(object):
     '''Dagster types resolve to objects of this type during execution.'''
 
     def __init__(
@@ -68,7 +68,7 @@ class RuntimeType(object):
         )
 
     def __eq__(self, other):
-        check.inst_param(other, 'other', RuntimeType)
+        check.inst_param(other, 'other', DagsterType)
 
         if isinstance(other, self.__class__):
             return len(self.inner_types) == len(other.inner_types) and all(
@@ -111,9 +111,9 @@ class RuntimeType(object):
         return False
 
 
-class BuiltinScalarRuntimeType(RuntimeType):
+class BuiltinScalarDagsterType(DagsterType):
     def __init__(self, name, type_check_fn, *args, **kwargs):
-        super(BuiltinScalarRuntimeType, self).__init__(
+        super(BuiltinScalarDagsterType, self).__init__(
             key=name, name=name, type_check_fn=type_check_fn, is_builtin=True, *args, **kwargs
         )
 
@@ -125,7 +125,7 @@ class BuiltinScalarRuntimeType(RuntimeType):
         raise NotImplementedError()
 
 
-class _Int(BuiltinScalarRuntimeType):
+class _Int(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Int, self).__init__(
             name='Int',
@@ -152,7 +152,7 @@ def _fail_if_not_of_type(value, value_type, value_type_desc):
     return TypeCheck(success=True)
 
 
-class _String(BuiltinScalarRuntimeType):
+class _String(BuiltinScalarDagsterType):
     def __init__(self):
         super(_String, self).__init__(
             name='String',
@@ -165,7 +165,7 @@ class _String(BuiltinScalarRuntimeType):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
-class _Path(BuiltinScalarRuntimeType):
+class _Path(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Path, self).__init__(
             name='Path',
@@ -178,7 +178,7 @@ class _Path(BuiltinScalarRuntimeType):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
-class _Float(BuiltinScalarRuntimeType):
+class _Float(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Float, self).__init__(
             name='Float',
@@ -191,7 +191,7 @@ class _Float(BuiltinScalarRuntimeType):
         return _fail_if_not_of_type(value, float, 'float')
 
 
-class _Bool(BuiltinScalarRuntimeType):
+class _Bool(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Bool, self).__init__(
             name='Bool',
@@ -204,7 +204,7 @@ class _Bool(BuiltinScalarRuntimeType):
         return _fail_if_not_of_type(value, bool, 'bool')
 
 
-class Anyish(RuntimeType):
+class Anyish(DagsterType):
     def __init__(
         self,
         key,
@@ -262,7 +262,7 @@ def create_any_type(
     )
 
 
-class _Nothing(RuntimeType):
+class _Nothing(DagsterType):
     def __init__(self):
         super(_Nothing, self).__init__(
             key='Nothing',
@@ -287,7 +287,7 @@ class _Nothing(RuntimeType):
         return TypeCheck(success=True)
 
 
-class PythonObjectType(RuntimeType):
+class PythonObjectType(DagsterType):
     def __init__(self, python_type=None, key=None, name=None, type_check=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
@@ -412,7 +412,7 @@ def define_python_dagster_type(
 class NoneableInputSchema(InputHydrationConfig):
     def __init__(self, inner_runtime_type):
         self._inner_runtime_type = check.inst_param(
-            inner_runtime_type, 'inner_runtime_type', RuntimeType
+            inner_runtime_type, 'inner_runtime_type', DagsterType
         )
         check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
         self._schema_type = ConfigNoneable(inner_runtime_type.input_hydration_config.schema_type)
@@ -436,7 +436,7 @@ def _create_nullable_input_schema(inner_type):
     return NoneableInputSchema(inner_type)
 
 
-class OptionalType(RuntimeType):
+class OptionalType(DagsterType):
     def __init__(self, inner_type):
         inner_type = resolve_to_runtime_type(inner_type)
 
@@ -473,7 +473,7 @@ class OptionalType(RuntimeType):
 class ListInputSchema(InputHydrationConfig):
     def __init__(self, inner_runtime_type):
         self._inner_runtime_type = check.inst_param(
-            inner_runtime_type, 'inner_runtime_type', RuntimeType
+            inner_runtime_type, 'inner_runtime_type', DagsterType
         )
         check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
         self._schema_type = Array(inner_runtime_type.input_hydration_config.schema_type)
@@ -496,7 +496,7 @@ def _create_list_input_schema(inner_type):
     return ListInputSchema(inner_type)
 
 
-class ListType(RuntimeType):
+class ListType(DagsterType):
     def __init__(self, inner_type):
         key = 'List.' + inner_type.key
         self.inner_type = inner_type
@@ -546,13 +546,13 @@ List = DagsterListApi()
 
 
 def _List(inner_type):
-    check.inst_param(inner_type, 'inner_type', RuntimeType)
+    check.inst_param(inner_type, 'inner_type', DagsterType)
     if inner_type is Nothing:
         raise DagsterInvalidDefinitionError('Type Nothing can not be wrapped in List or Optional')
     return ListType(inner_type)
 
 
-class Stringish(RuntimeType):
+class Stringish(DagsterType):
     def __init__(self, key=None, name=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
@@ -611,7 +611,7 @@ def _clear_runtime_type_registry():
 
 
 def register_python_type(python_type, runtime_type):
-    check.inst_param(runtime_type, 'runtime_type', RuntimeType)
+    check.inst_param(runtime_type, 'runtime_type', DagsterType)
     if python_type in __RUNTIME_TYPE_REGISTRY:
         # This would be just a great place to insert a short URL pointing to the type system
         # documentation into the error message
@@ -674,7 +674,7 @@ def resolve_to_runtime_type(dagster_type):
     )
 
     check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, RuntimeType)),
+        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
         'Do not pass runtime type classes. Got {}'.format(dagster_type),
     )
 
@@ -682,7 +682,7 @@ def resolve_to_runtime_type(dagster_type):
     if is_typing_type(dagster_type):
         dagster_type = transform_typing_type(dagster_type)
 
-    if isinstance(dagster_type, RuntimeType):
+    if isinstance(dagster_type, DagsterType):
         return dagster_type
 
     # Test for unhashable objects -- this is if, for instance, someone has passed us an instance of
@@ -718,7 +718,7 @@ def resolve_to_runtime_type(dagster_type):
     if isinstance(dagster_type, DagsterListApi):
         return List(Any)
     if BuiltinEnum.contains(dagster_type):
-        return RuntimeType.from_builtin_enum(dagster_type)
+        return DagsterType.from_builtin_enum(dagster_type)
     if not isinstance(dagster_type, type):
         raise DagsterInvalidDefinitionError(
             DAGSTER_INVALID_TYPE_ERROR_MESSAGE.format(
