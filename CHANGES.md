@@ -57,7 +57,8 @@
   - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
   - Core type check function of DagsterType can now return a naked `bool` in addition
     to a `TypeCheck` object.
-
+  - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
+    a custom type_check is needed, use `DagsterType`.
 **New**
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.

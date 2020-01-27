@@ -46,18 +46,13 @@ def test_python_object_type():
 
 def test_python_object_type_with_custom_type_check():
     def eq_3(value):
-        if value != 3:
-            return False
-        return True
+        return isinstance(value, int) and value == 3
 
-    class Int3(PythonObjectType):
-        def __init__(self):
-            super(Int3, self).__init__(int, type_check=eq_3)
+    Int3 = DagsterType(key='Int3', name='Int3', type_check_fn=eq_3)
 
-    type_int_3 = Int3()
-    assert type_int_3.name == 'Int3'
-    assert_success(type_int_3, 3)
-    assert_failure(type_int_3, 5)
+    assert Int3.name == 'Int3'
+    assert_success(Int3, 3)
+    assert_failure(Int3, 5)
 
 
 def test_nullable_python_object_type():

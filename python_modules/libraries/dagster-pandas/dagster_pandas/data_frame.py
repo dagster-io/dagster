@@ -15,11 +15,11 @@ from dagster import (
     Path,
     String,
     TypeCheck,
-    as_dagster_type,
     check,
 )
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
+from dagster.core.types.decorator import register_python_type
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
 
@@ -40,7 +40,7 @@ def dict_without_keys(ddict, *keys):
 def dataframe_output_schema(_context, file_type, file_options, pandas_df):
     check.str_param(file_type, 'file_type')
     check.dict_param(file_options, 'file_options')
-    check.inst_param(pandas_df, 'pandas_df', DataFrame)
+    check.inst_param(pandas_df, 'pandas_df', pd.DataFrame)
 
     if file_type == 'csv':
         path = file_options['path']
@@ -94,16 +94,18 @@ def df_type_check(value):
     )
 
 
-DataFrame = as_dagster_type(
-    pd.DataFrame,
+DataFrame = DagsterType(
     name='PandasDataFrame',
+    key='PandasDataFrame',
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
     input_hydration_config=dataframe_input_schema,
     output_materialization_config=dataframe_output_schema,
-    type_check=df_type_check,
+    type_check_fn=df_type_check,
 )
+
+register_python_type(pd.DataFrame, DataFrame)
 
 
 def _construct_constraint_list(constraints):
@@ -158,7 +160,7 @@ def create_dagster_pandas_dataframe_type(
     )
 
     def _dagster_type_check(value):
-        if not isinstance(value, DataFrame):
+        if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
                 description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(

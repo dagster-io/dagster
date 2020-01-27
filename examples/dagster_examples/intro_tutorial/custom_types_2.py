@@ -1,6 +1,7 @@
 import csv
+import typing
 
-from dagster import dagster_type, execute_pipeline, pipeline, solid
+from dagster import DagsterType, execute_pipeline, pipeline, solid
 
 
 def less_simple_data_frame_type_check(value):
@@ -20,13 +21,15 @@ def less_simple_data_frame_type_check(value):
     return True
 
 
-@dagster_type(
-    name='LessSimpleDataFrame',
-    description='A more sophisticated data frame that type checks its structure.',
-    type_check=less_simple_data_frame_type_check,
-)
-class LessSimpleDataFrame(list):
-    pass
+if typing.TYPE_CHECKING:
+    LessSimpleDataFrame = list
+else:
+    LessSimpleDataFrame = DagsterType(
+        name='LessSimpleDataFrame',
+        key='LessSimpleDataFrame',
+        description='A more sophisticated data frame that type checks its structure.',
+        type_check_fn=less_simple_data_frame_type_check,
+    )
 
 
 @solid
@@ -35,7 +38,7 @@ def bad_read_csv(context, csv_path: str) -> LessSimpleDataFrame:
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
-    return LessSimpleDataFrame(["not_a_dict"])
+    return ["not_a_dict"]
 
 
 @solid

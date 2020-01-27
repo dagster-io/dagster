@@ -3,7 +3,7 @@ from dagster_pandas.validation import PandasColumn
 from numpy import mean, median, ndarray
 from pandas import Timestamp
 
-from dagster import EventMetadataEntry, TypeCheck, dagster_type
+from dagster import DagsterType, EventMetadataEntry, TypeCheck
 
 
 class ValidationTypes(object):
@@ -264,6 +264,9 @@ WeatherDataFrame = create_dagster_pandas_dataframe_type(
 
 
 def validate_snapshot_timeseries(training_set_data):
+    if not isinstance(training_set_data, tuple):
+        return TypeCheck(False)
+
     if len(training_set_data) != 2:
         return TypeCheck(
             success=False,
@@ -307,10 +310,9 @@ def validate_snapshot_timeseries(training_set_data):
     )
 
 
-@dagster_type(
+TrainingSet = DagsterType(
     name='TrainingSet',
+    key='TrainingSet',
     description='Final training set ready for the ml pipeline',
-    type_check=validate_snapshot_timeseries,
+    type_check_fn=validate_snapshot_timeseries,
 )
-class TrainingSet(tuple):
-    pass

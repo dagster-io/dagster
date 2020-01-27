@@ -12,6 +12,7 @@ from dagster_spark import create_spark_solid, spark_resource
 
 from dagster import (
     Bool,
+    DagsterType,
     Field,
     InputDefinition,
     List,
@@ -22,7 +23,6 @@ from dagster import (
     PresetDefinition,
     String,
     TypeCheck,
-    dagster_type,
     file_relative_path,
     pipeline,
     solid,
@@ -50,13 +50,12 @@ def file_exists_at_path_type_check(value):
     return True
 
 
-@dagster_type(
+FileExistsAtPath = DagsterType(
     name='FileExistsAtPath',
+    key='FileExistsAtPath',
     description='A path at which a file actually exists',
-    type_check=file_exists_at_path_type_check,
+    type_check_fn=file_exists_at_path_type_check,
 )
-class FileExistsAtPath(str):
-    pass
 
 
 def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip_if_present):

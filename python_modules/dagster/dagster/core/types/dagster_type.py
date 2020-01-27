@@ -300,34 +300,16 @@ class _Nothing(DagsterType):
 
 
 class PythonObjectType(DagsterType):
-    def __init__(self, python_type=None, key=None, name=None, type_check=None, **kwargs):
+    def __init__(self, python_type=None, key=None, name=None, **kwargs):
         name = check.opt_str_param(name, 'name', type(self).__name__)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectType, self).__init__(
             key=key, name=name, type_check_fn=self.type_check_method, **kwargs
         )
         self.python_type = check.type_param(python_type, 'python_type')
-        self._user_type_check = check.opt_callable_param(type_check, 'type_check')
 
     def type_check_method(self, value):
-        if self._user_type_check is not None:
-            res = self._user_type_check(value)
-            check.invariant(
-                isinstance(res, bool) or isinstance(res, TypeCheck),
-                'Invalid return type from user-defined type check on Dagster type {dagster_type} '
-                'when evaluated on value of type {value_type}: expected bool or TypeCheck, got '
-                '{return_type}'.format(
-                    dagster_type=self.name, value_type=type(value), return_type=type(res)
-                ),
-            )
-            if res is False:
-                return TypeCheck(success=False)
-            elif res is True:
-                return TypeCheck(success=True)
-
-            return res
-
-        elif not isinstance(value, self.python_type):
+        if not isinstance(value, self.python_type):
             return TypeCheck(
                 success=False,
                 description=(
@@ -351,7 +333,6 @@ def define_python_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    type_check=None,
 ):
     '''Core machinery for defining a Dagster type corresponding to an existing python type.
 
@@ -380,11 +361,6 @@ def define_python_dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
-            will be called in place of the default isinstance type check. This function should
-            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
-            metadata should be emitted along with the type check success or failure, an instance of
-            :py:class:`TypeCheck` with the ``success`` field set appropriately.
     '''
 
     check.type_param(python_type, 'python_type')
@@ -407,8 +383,6 @@ def define_python_dagster_type(
         'auto_plugins',
     )
 
-    check.opt_callable_param(type_check, 'type_check')
-
     return PythonObjectType(
         python_type=python_type,
         name=name,
@@ -417,7 +391,6 @@ def define_python_dagster_type(
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
-        type_check=type_check,
     )
 
 

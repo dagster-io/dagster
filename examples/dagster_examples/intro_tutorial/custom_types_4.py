@@ -1,12 +1,13 @@
 import csv
+import typing
 
 from dagster import (
+    DagsterType,
     EventMetadataEntry,
     Field,
     Selector,
     String,
     TypeCheck,
-    dagster_type,
     execute_pipeline,
     input_hydration_config,
     pipeline,
@@ -75,17 +76,19 @@ def less_simple_data_frame_input_hydration_config(context, selector):
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
-    return LessSimpleDataFrame(lines)
+    return lines
 
 
-@dagster_type(
-    name='LessSimpleDataFrame',
-    description='A more sophisticated data frame that type checks its structure.',
-    type_check=less_simple_data_frame_type_check,
-    input_hydration_config=less_simple_data_frame_input_hydration_config,
-)
-class LessSimpleDataFrame(list):
-    pass
+if typing.TYPE_CHECKING:
+    LessSimpleDataFrame = list
+else:
+    LessSimpleDataFrame = DagsterType(
+        name='LessSimpleDataFrame',
+        key='LessSimpleDataFrame',
+        description='A more sophisticated data frame that type checks its structure.',
+        type_check_fn=less_simple_data_frame_type_check,
+        input_hydration_config=less_simple_data_frame_input_hydration_config,
+    )
 
 
 @solid
