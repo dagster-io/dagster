@@ -24,6 +24,7 @@ def test_event_callback_logging():
     )
     run_config = RunConfig()
     instance = DagsterInstance.local_temp()
+
     instance.watch_event_logs(run_config.run_id, -1, _event_callback)
 
     execute_pipeline(handle.build_pipeline_definition(), run_config=run_config, instance=instance)
