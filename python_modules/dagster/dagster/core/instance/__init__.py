@@ -15,6 +15,7 @@ from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
+    DagsterRunConflict,
 )
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -301,7 +302,14 @@ class DagsterInstance:
     def get_or_create_run(self, pipeline_run):
         # This eventually needs transactional/locking semantics
         if self.has_run(pipeline_run.run_id):
-            return self.get_run_by_id(pipeline_run.run_id)
+            candidate_run = self.get_run_by_id(pipeline_run.run_id)
+            if not candidate_run == pipeline_run:
+                raise DagsterRunConflict(
+                    'Found conflicting existing run with same id. Expected {pipeline_run}, found {candidate_run}.'.format(
+                        pipeline_run=pipeline_run, candidate_run=candidate_run
+                    )
+                )
+            return candidate_run
         else:
             # We will need a more principled way of doing this
             try:

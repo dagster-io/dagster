@@ -320,3 +320,7 @@ class DagsterInstanceMigrationRequired(DagsterError):
 
 class DagsterRunAlreadyExists(DagsterError):
     '''Indicates that a pipeline run already exists in a run storage.'''
+
+
+class DagsterRunConflict(DagsterError):
+    '''Indicates that a conflicting pipeline run exists in a run storage.'''

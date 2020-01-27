@@ -117,7 +117,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             name='dagster-job-%s' % run.run_id,
             image=self.job_image,
             command=['dagster-graphql'],
-            args=["-p", "executePlan", "-v", json.dumps(execution_params)],
+            args=["-p", "startPipelineExecution", "-v", json.dumps(execution_params)],
             image_pull_policy=self.image_pull_policy,
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
             volume_mounts=[
