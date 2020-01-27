@@ -40,7 +40,7 @@ def resolve_to_config_type(dagster_type):
             )
         return Array(inner_type)
 
-    from dagster.core.types.runtime_type import DagsterType, List, ListType
+    from dagster.core.types.dagster_type import DagsterType, List, ListType
     from dagster.core.types.python_set import Set, _TypedPythonSet
     from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
 

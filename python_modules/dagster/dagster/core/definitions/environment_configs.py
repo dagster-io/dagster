@@ -6,7 +6,7 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.runtime_type import construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle

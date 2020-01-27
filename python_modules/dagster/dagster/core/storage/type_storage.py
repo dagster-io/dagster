@@ -29,7 +29,7 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class TypeStoragePluginRegistry(object):
     def __init__(self, types_to_register):
-        from dagster.core.types.runtime_type import DagsterType
+        from dagster.core.types.dagster_type import DagsterType
 
         types_to_register = check.opt_list_param(types_to_register, 'types_to_register', tuple)
 
@@ -40,7 +40,7 @@ class TypeStoragePluginRegistry(object):
             self.register_type(type_to_register, type_storage_plugin)
 
     def register_type(self, type_to_register, type_storage_plugin):
-        from dagster.core.types.runtime_type import DagsterType
+        from dagster.core.types.dagster_type import DagsterType
 
         check.inst_param(type_to_register, 'type_to_register', DagsterType)
         check.subclass_param(type_storage_plugin, 'type_storage_plugin', TypeStoragePlugin)

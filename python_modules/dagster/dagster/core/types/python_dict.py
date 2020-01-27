@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
-from .runtime_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
 
 
 @input_hydration_config(Permissive())

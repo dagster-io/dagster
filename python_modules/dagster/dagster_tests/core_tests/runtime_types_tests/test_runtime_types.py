@@ -20,7 +20,7 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
-from dagster.core.types.runtime_type import ALL_RUNTIME_BUILTINS, DagsterType, resolve_dagster_type
+from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, DagsterType, resolve_dagster_type
 
 
 def inner_type_key_set(runtime_type):

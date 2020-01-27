@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types.runtime_type import resolve_dagster_type
+from dagster.core.types.dagster_type import resolve_dagster_type
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 

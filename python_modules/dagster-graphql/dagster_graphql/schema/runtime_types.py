@@ -1,7 +1,7 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.types.runtime_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType
 
 from .config_types import DauphinConfigType, to_dauphin_config_type
 

@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
-from .runtime_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
 
 PythonTuple = define_python_dagster_type(
     tuple, 'PythonTuple', description='Represents a python tuple'

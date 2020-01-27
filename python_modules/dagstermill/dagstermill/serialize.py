@@ -1,5 +1,5 @@
 from dagster import check, seven
-from dagster.core.types.runtime_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType
 
 PICKLE_PROTOCOL = 2
 
