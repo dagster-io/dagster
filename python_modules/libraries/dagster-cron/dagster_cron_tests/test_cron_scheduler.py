@@ -14,17 +14,13 @@ class MockSystemCronScheduler(SystemCronScheduler):
     the user's crontab during tests
     '''
 
-    def _start_cron_job(self, schedule):
-        self._write_bash_script_to_file(schedule)
+    def _start_cron_job(self, repository_name, schedule):
+        self._write_bash_script_to_file(repository_name, schedule)
 
-    def _end_cron_job(self, schedule):
-        script_file = self._get_bash_script_file_path(schedule)
+    def _end_cron_job(self, repository_name, schedule):
+        script_file = self._get_bash_script_file_path(repository_name, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
-
-    def wipe(self):
-        for schedule in self.all_schedules():
-            self.end_schedule(schedule.name)
 
 
 def define_scheduler(artifacts_dir, repository_name):
@@ -62,8 +58,9 @@ def define_scheduler(artifacts_dir, repository_name):
 
 def test_init():
     with TemporaryDirectory() as tempdir:
+        repository_name = 'test_repository'
         instance = DagsterInstance.local_temp(tempdir=tempdir)
-        scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
+        scheduler_handle = define_scheduler(instance.schedules_directory(), repository_name)
         assert scheduler_handle
 
         # Initialize scheduler
@@ -73,7 +70,7 @@ def test_init():
         # Check schedules are saved to disk
         assert 'schedules' in os.listdir(tempdir)
 
-        schedules = scheduler.all_schedules()
+        schedules = scheduler.all_schedules(repository_name)
 
         for schedule in schedules:
             assert "/bin/python" in schedule.python_path
@@ -85,9 +82,9 @@ def test_init():
 
 def test_start_and_stop_schedule():
     with TemporaryDirectory() as tempdir:
-
+        repository_name = 'test_repository'
         instance = DagsterInstance.local_temp(tempdir=tempdir)
-        scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
+        scheduler_handle = define_scheduler(instance.schedules_directory(), repository_name)
         assert scheduler_handle
 
         # Initialize scheduler
@@ -98,27 +95,31 @@ def test_start_and_stop_schedule():
         )
 
         # Start schedule
-        schedule = scheduler.start_schedule("no_config_pipeline_every_min_schedule")
+        schedule = scheduler.start_schedule(
+            repository_name, "no_config_pipeline_every_min_schedule"
+        )
 
         check.inst_param(schedule, 'schedule', Schedule)
         assert "/bin/python" in schedule.python_path
 
         assert 'schedules' in os.listdir(tempdir)
 
-        assert "{}.sh".format(schedule_def.name) in os.listdir(os.path.join(tempdir, 'schedules'))
+        assert "{}.{}.sh".format(repository_name, schedule_def.name) in os.listdir(
+            os.path.join(tempdir, 'schedules')
+        )
 
         # End schedule
-        scheduler.stop_schedule("no_config_pipeline_every_min_schedule")
-        assert "{}.sh".format(schedule_def.name) not in os.listdir(
+        scheduler.stop_schedule(repository_name, "no_config_pipeline_every_min_schedule")
+        assert "{}.{}.sh".format(repository_name, schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules')
         )
 
 
 def test_wipe():
     with TemporaryDirectory() as tempdir:
-
+        repository_name = "test_respository"
         instance = DagsterInstance.local_temp(tempdir=tempdir)
-        scheduler_handle = define_scheduler(instance.schedules_directory(), 'test_repository')
+        scheduler_handle = define_scheduler(instance.schedules_directory(), repository_name)
         assert scheduler_handle
 
         # Initialize scheduler
@@ -126,10 +127,10 @@ def test_wipe():
         scheduler = scheduler_handle.get_scheduler()
 
         # Start schedule
-        scheduler.start_schedule("no_config_pipeline_every_min_schedule")
+        scheduler.start_schedule(repository_name, "no_config_pipeline_every_min_schedule")
 
         # Wipe scheduler
         scheduler.wipe()
 
         # Check schedules are wiped
-        assert scheduler.all_schedules() == []
+        assert scheduler.all_schedules(repository_name) == []

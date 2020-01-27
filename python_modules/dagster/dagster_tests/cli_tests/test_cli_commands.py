@@ -662,6 +662,9 @@ def test_schedules_list():
                 schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
             )
 
+            if result.exception:
+                raise result.exception
+
             assert result.exit_code == 0
             assert result.output == ('Repository bar\n' '**************\n')
 

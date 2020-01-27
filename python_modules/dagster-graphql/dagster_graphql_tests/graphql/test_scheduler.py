@@ -52,12 +52,11 @@ def test_get_all_schedules():
     scheduler = scheduler_handle.get_scheduler()
 
     # Start schedule
-    schedule = scheduler.start_schedule("no_config_pipeline_hourly_schedule")
+    repository = context.get_repository()
+    schedule = scheduler.start_schedule(repository.name, "no_config_pipeline_hourly_schedule")
 
     # Query Scheduler + all Schedules
-    scheduler_result = execute_dagster_graphql(
-        context, GET_SCHEDULES_QUERY, variables={"pipelineName": "no_config_pipeline"}
-    )
+    scheduler_result = execute_dagster_graphql(context, GET_SCHEDULES_QUERY)
 
     assert scheduler_result.data
     assert scheduler_result.data['scheduler']
