@@ -126,7 +126,6 @@ def execute_query_against_remote(host, query, variables):
     )
     response.raise_for_status()
     str_res = response.json()
-    print(str_res)
     return str_res
 
 
@@ -202,7 +201,8 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
         )
 
     if remote:
-        execute_query_against_remote(remote, query, variables)
+        res = execute_query_against_remote(remote, query, variables)
+        print(res)
     else:
         handle = handle_for_repo_cli_args(kwargs)
         execute_query_from_cli(handle, query, variables, output)
