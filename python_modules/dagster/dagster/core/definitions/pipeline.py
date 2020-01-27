@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.runtime_type import construct_dagster_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -164,7 +164,7 @@ class PipelineDefinition(IContainSolids, object):
         self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
-        self._runtime_type_dict = construct_runtime_type_dictionary(self._current_level_solid_defs)
+        self._runtime_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}

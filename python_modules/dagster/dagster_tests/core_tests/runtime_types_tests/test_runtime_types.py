@@ -20,11 +20,7 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
-from dagster.core.types.runtime_type import (
-    ALL_RUNTIME_BUILTINS,
-    DagsterType,
-    resolve_to_runtime_type,
-)
+from dagster.core.types.runtime_type import ALL_RUNTIME_BUILTINS, DagsterType, resolve_dagster_type
 
 
 def inner_type_key_set(runtime_type):
@@ -32,33 +28,33 @@ def inner_type_key_set(runtime_type):
 
 
 def test_inner_types():
-    assert resolve_to_runtime_type(Int).inner_types == []
+    assert resolve_dagster_type(Int).inner_types == []
 
-    list_int_runtime = resolve_to_runtime_type(List[Int])
+    list_int_runtime = resolve_dagster_type(List[Int])
     assert inner_type_key_set(list_int_runtime) == set(['Int'])
 
-    list_list_int_runtime = resolve_to_runtime_type(List[List[Int]])
+    list_list_int_runtime = resolve_dagster_type(List[List[Int]])
     assert inner_type_key_set(list_list_int_runtime) == set(['Int', 'List.Int'])
 
-    list_nullable_int_runtime = resolve_to_runtime_type(List[Optional[Int]])
+    list_nullable_int_runtime = resolve_dagster_type(List[Optional[Int]])
     assert inner_type_key_set(list_nullable_int_runtime) == set(['Int', 'Optional.Int'])
     assert not list_nullable_int_runtime.is_scalar
 
 
 def test_is_any():
-    assert not resolve_to_runtime_type(Int).is_any
-    assert resolve_to_runtime_type(Int).is_scalar
+    assert not resolve_dagster_type(Int).is_any
+    assert resolve_dagster_type(Int).is_scalar
 
 
 def test_display_name():
 
-    int_runtime = resolve_to_runtime_type(Int)
+    int_runtime = resolve_dagster_type(Int)
     assert int_runtime.display_name == 'Int'
-    list_int_runtime = resolve_to_runtime_type(List[Int])
+    list_int_runtime = resolve_dagster_type(List[Int])
     assert list_int_runtime.display_name == '[Int]'
-    list_list_int_runtime = resolve_to_runtime_type(List[List[Int]])
+    list_list_int_runtime = resolve_dagster_type(List[List[Int]])
     assert list_list_int_runtime.display_name == '[[Int]]'
-    list_nullable_int_runtime = resolve_to_runtime_type(List[Optional[Int]])
+    list_nullable_int_runtime = resolve_dagster_type(List[Optional[Int]])
     assert list_nullable_int_runtime.display_name == '[Int?]'
 
 
@@ -70,13 +66,13 @@ def test_builtins_available():
 
 
 def test_python_mapping():
-    runtime = resolve_to_runtime_type(int)
+    runtime = resolve_dagster_type(int)
     assert runtime.name == 'Int'
-    runtime = resolve_to_runtime_type(str)
+    runtime = resolve_dagster_type(str)
     assert runtime.name == 'String'
-    runtime = resolve_to_runtime_type(bool)
+    runtime = resolve_dagster_type(bool)
     assert runtime.name == 'Bool'
-    runtime = resolve_to_runtime_type(float)
+    runtime = resolve_dagster_type(float)
     assert runtime.name == 'Float'
 
     @lambda_solid(input_defs=[InputDefinition('num', int)])
@@ -85,12 +81,12 @@ def test_python_mapping():
 
     assert add_one.input_defs[0].runtime_type.name == 'Int'
 
-    runtime = resolve_to_runtime_type(float)
+    runtime = resolve_dagster_type(float)
     runtime.type_check(1.0)
     res = runtime.type_check(1)
     assert not res.success
 
-    runtime = resolve_to_runtime_type(bool)
+    runtime = resolve_dagster_type(bool)
     runtime.type_check(True)
     res = runtime.type_check(1)
     assert not res.success
@@ -126,76 +122,70 @@ def test_double_runtime_type():
 
 def test_comparison():
     # Base types
-    assert resolve_to_runtime_type(Any) == resolve_to_runtime_type(Any)
-    assert resolve_to_runtime_type(String) == resolve_to_runtime_type(String)
-    assert resolve_to_runtime_type(Bool) == resolve_to_runtime_type(Bool)
-    assert resolve_to_runtime_type(Float) == resolve_to_runtime_type(Float)
-    assert resolve_to_runtime_type(Int) == resolve_to_runtime_type(Int)
-    assert resolve_to_runtime_type(Path) == resolve_to_runtime_type(Path)
-    assert resolve_to_runtime_type(String) == resolve_to_runtime_type(String)
-    assert resolve_to_runtime_type(Nothing) == resolve_to_runtime_type(Nothing)
-    assert resolve_to_runtime_type(Optional[String]) == resolve_to_runtime_type(Optional[String])
+    assert resolve_dagster_type(Any) == resolve_dagster_type(Any)
+    assert resolve_dagster_type(String) == resolve_dagster_type(String)
+    assert resolve_dagster_type(Bool) == resolve_dagster_type(Bool)
+    assert resolve_dagster_type(Float) == resolve_dagster_type(Float)
+    assert resolve_dagster_type(Int) == resolve_dagster_type(Int)
+    assert resolve_dagster_type(Path) == resolve_dagster_type(Path)
+    assert resolve_dagster_type(String) == resolve_dagster_type(String)
+    assert resolve_dagster_type(Nothing) == resolve_dagster_type(Nothing)
+    assert resolve_dagster_type(Optional[String]) == resolve_dagster_type(Optional[String])
 
     types = [Any, Bool, Float, Int, Path, String, Nothing]
     non_equal_pairs = [(t1, t2) for t1 in types for t2 in types if t1 != t2]
     for t1, t2 in non_equal_pairs:
-        assert resolve_to_runtime_type(t1) != resolve_to_runtime_type(t2)
-    assert resolve_to_runtime_type(Optional[String]) != resolve_to_runtime_type(Optional[Int])
+        assert resolve_dagster_type(t1) != resolve_dagster_type(t2)
+    assert resolve_dagster_type(Optional[String]) != resolve_dagster_type(Optional[Int])
 
     # List type
-    assert resolve_to_runtime_type(List) == resolve_to_runtime_type(List)
-    assert resolve_to_runtime_type(List[String]) == resolve_to_runtime_type(List[String])
-    assert resolve_to_runtime_type(List[List[Int]]) == resolve_to_runtime_type(List[List[Int]])
-    assert resolve_to_runtime_type(List[Optional[String]]) == resolve_to_runtime_type(
+    assert resolve_dagster_type(List) == resolve_dagster_type(List)
+    assert resolve_dagster_type(List[String]) == resolve_dagster_type(List[String])
+    assert resolve_dagster_type(List[List[Int]]) == resolve_dagster_type(List[List[Int]])
+    assert resolve_dagster_type(List[Optional[String]]) == resolve_dagster_type(
         List[Optional[String]]
     )
 
-    assert resolve_to_runtime_type(List[String]) != resolve_to_runtime_type(List[Int])
-    assert resolve_to_runtime_type(List[List[String]]) != resolve_to_runtime_type(List[List[Int]])
-    assert resolve_to_runtime_type(List[String]) != resolve_to_runtime_type(List[Optional[String]])
+    assert resolve_dagster_type(List[String]) != resolve_dagster_type(List[Int])
+    assert resolve_dagster_type(List[List[String]]) != resolve_dagster_type(List[List[Int]])
+    assert resolve_dagster_type(List[String]) != resolve_dagster_type(List[Optional[String]])
 
     # Tuple type
-    assert resolve_to_runtime_type(Tuple) == resolve_to_runtime_type(Tuple)
-    assert resolve_to_runtime_type(Tuple[String, Int]) == resolve_to_runtime_type(
-        Tuple[String, Int]
-    )
-    assert resolve_to_runtime_type(Tuple[Tuple[String, Int]]) == resolve_to_runtime_type(
+    assert resolve_dagster_type(Tuple) == resolve_dagster_type(Tuple)
+    assert resolve_dagster_type(Tuple[String, Int]) == resolve_dagster_type(Tuple[String, Int])
+    assert resolve_dagster_type(Tuple[Tuple[String, Int]]) == resolve_dagster_type(
         Tuple[Tuple[String, Int]]
     )
-    assert resolve_to_runtime_type(Tuple[Optional[String], Int]) == resolve_to_runtime_type(
+    assert resolve_dagster_type(Tuple[Optional[String], Int]) == resolve_dagster_type(
         Tuple[Optional[String], Int]
     )
 
-    assert resolve_to_runtime_type(Tuple[String, Int]) != resolve_to_runtime_type(
-        Tuple[Int, String]
-    )
-    assert resolve_to_runtime_type(Tuple[Tuple[String, Int]]) != resolve_to_runtime_type(
+    assert resolve_dagster_type(Tuple[String, Int]) != resolve_dagster_type(Tuple[Int, String])
+    assert resolve_dagster_type(Tuple[Tuple[String, Int]]) != resolve_dagster_type(
         Tuple[Tuple[Int, String]]
     )
-    assert resolve_to_runtime_type(Tuple[String]) != resolve_to_runtime_type(
-        Tuple[Optional[String]]
-    )
+    assert resolve_dagster_type(Tuple[String]) != resolve_dagster_type(Tuple[Optional[String]])
 
     # Set type
-    assert resolve_to_runtime_type(Set) == resolve_to_runtime_type(Set)
-    assert resolve_to_runtime_type(Set[String]) == resolve_to_runtime_type(Set[String])
-    assert resolve_to_runtime_type(Set[Set[Int]]) == resolve_to_runtime_type(Set[Set[Int]])
-    assert resolve_to_runtime_type(Set[Optional[String]]) == resolve_to_runtime_type(
+    assert resolve_dagster_type(Set) == resolve_dagster_type(Set)
+    assert resolve_dagster_type(Set[String]) == resolve_dagster_type(Set[String])
+    assert resolve_dagster_type(Set[Set[Int]]) == resolve_dagster_type(Set[Set[Int]])
+    assert resolve_dagster_type(Set[Optional[String]]) == resolve_dagster_type(
         Set[Optional[String]]
     )
 
-    assert resolve_to_runtime_type(Set[String]) != resolve_to_runtime_type(Set[Int])
-    assert resolve_to_runtime_type(Set[Set[String]]) != resolve_to_runtime_type(Set[Set[Int]])
-    assert resolve_to_runtime_type(Set[String]) != resolve_to_runtime_type(Set[Optional[String]])
+    assert resolve_dagster_type(Set[String]) != resolve_dagster_type(Set[Int])
+    assert resolve_dagster_type(Set[Set[String]]) != resolve_dagster_type(Set[Set[Int]])
+    assert resolve_dagster_type(Set[String]) != resolve_dagster_type(Set[Optional[String]])
 
     # Dict type
-    assert resolve_to_runtime_type(Dict) == resolve_to_runtime_type(Dict)
-    assert resolve_to_runtime_type(Dict[String, Int]) == resolve_to_runtime_type(Dict[String, Int])
-    assert resolve_to_runtime_type(Dict[String, Dict[String, Int]]) == resolve_to_runtime_type(
+    assert resolve_dagster_type(Dict) == resolve_dagster_type(Dict)
+    assert resolve_dagster_type(Dict[String, Int]) == resolve_dagster_type(Dict[String, Int])
+    assert resolve_dagster_type(Dict[String, Dict[String, Int]]) == resolve_dagster_type(
         Dict[String, Dict[String, Int]]
     )
 
-    assert resolve_to_runtime_type(Dict[String, Int]) != resolve_to_runtime_type(Dict[Int, String])
-    assert resolve_to_runtime_type(Dict[Int, Dict[String, Int]]) != resolve_to_runtime_type(
+    assert resolve_dagster_type(Dict[String, Int]) != resolve_dagster_type(Dict[Int, String])
+    assert resolve_dagster_type(Dict[Int, Dict[String, Int]]) != resolve_dagster_type(
         Dict[String, Dict[String, Int]]
     )

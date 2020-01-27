@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.types.runtime_type import DagsterType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, resolve_dagster_type
 
 from .utils import check_valid_name
 
@@ -25,7 +25,7 @@ class InputDefinition(object):
         ''
         self._name = check_valid_name(name)
 
-        self._runtime_type = check.inst(resolve_to_runtime_type(dagster_type), DagsterType)
+        self._runtime_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
 
         self._description = check.opt_str_param(description, 'description')
 

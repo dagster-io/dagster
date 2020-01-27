@@ -438,7 +438,7 @@ def _create_nullable_input_schema(inner_type):
 
 class OptionalType(DagsterType):
     def __init__(self, inner_type):
-        inner_type = resolve_to_runtime_type(inner_type)
+        inner_type = resolve_dagster_type(inner_type)
 
         if inner_type is Nothing:
             raise DagsterInvalidDefinitionError(
@@ -535,7 +535,7 @@ class ListType(DagsterType):
 class DagsterListApi:
     def __getitem__(self, inner_type):
         check.not_none_param(inner_type, 'inner_type')
-        return _List(resolve_to_runtime_type(inner_type))
+        return _List(resolve_dagster_type(inner_type))
 
     def __call__(self, inner_type):
         check.not_none_param(inner_type, 'inner_type')
@@ -655,7 +655,7 @@ DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
 )
 
 
-def resolve_to_runtime_type(dagster_type):
+def resolve_dagster_type(dagster_type):
     # circular dep
     from .python_dict import PythonDict, Dict
     from .python_set import PythonSet, DagsterSetApi
@@ -737,7 +737,7 @@ def resolve_to_runtime_type(dagster_type):
 ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
-def construct_runtime_type_dictionary(solid_defs):
+def construct_dagster_type_dictionary(solid_defs):
     type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for runtime_type in solid_def.all_runtime_types():

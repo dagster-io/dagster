@@ -6,7 +6,7 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.runtime_type import construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -273,7 +273,7 @@ def iterate_solid_def_types(solid_def):
 
 
 def _gather_all_schemas(solid_defs):
-    runtime_types = construct_runtime_type_dictionary(solid_defs)
+    runtime_types = construct_dagster_type_dictionary(solid_defs)
     for rtt in runtime_types.values():
         if rtt.input_hydration_config:
             for ct in iterate_config_types(rtt.input_hydration_config.schema_type):

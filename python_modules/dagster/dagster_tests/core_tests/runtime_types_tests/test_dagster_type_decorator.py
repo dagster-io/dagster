@@ -3,7 +3,7 @@ import collections
 import pytest
 
 from dagster import DagsterInvalidDefinitionError, as_dagster_type, dagster_type
-from dagster.core.types.runtime_type import DagsterType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, resolve_dagster_type
 
 
 def test_dagster_type_decorator():
@@ -19,9 +19,9 @@ def test_dagster_type_decorator():
     class Baaz(object):
         pass
 
-    assert resolve_to_runtime_type(Foo).name == 'Foo'
-    assert resolve_to_runtime_type(Bar).name == 'Bar'
-    assert resolve_to_runtime_type(Baaz).name == 'Baaz'
+    assert resolve_dagster_type(Foo).name == 'Foo'
+    assert resolve_dagster_type(Bar).name == 'Bar'
+    assert resolve_dagster_type(Baaz).name == 'Baaz'
 
 
 def test_dagster_type_decorator_name_desc():
@@ -29,21 +29,21 @@ def test_dagster_type_decorator_name_desc():
     class Something(object):
         pass
 
-    runtime_type = resolve_to_runtime_type(Something)
+    runtime_type = resolve_dagster_type(Something)
     assert runtime_type.name == 'DifferentName'
     assert runtime_type.description == 'desc'
 
 
 def test_make_dagster_type():
     OverwriteNameTuple = as_dagster_type(collections.namedtuple('SomeNamedTuple', 'prop'))
-    runtime_type = resolve_to_runtime_type(OverwriteNameTuple)
+    runtime_type = resolve_dagster_type(OverwriteNameTuple)
     assert runtime_type.name == 'SomeNamedTuple'
     assert OverwriteNameTuple(prop='foo').prop == 'foo'
 
     OverwriteNameTuple = as_dagster_type(
         collections.namedtuple('SomeNamedTuple', 'prop'), name='OverwriteName'
     )
-    runtime_type = resolve_to_runtime_type(OverwriteNameTuple)
+    runtime_type = resolve_dagster_type(OverwriteNameTuple)
     assert runtime_type.name == 'OverwriteName'
     assert OverwriteNameTuple(prop='foo').prop == 'foo'
 
@@ -52,8 +52,8 @@ def test_make_dagster_type_from_builtin():
     OrderedDict = as_dagster_type(collections.OrderedDict)
     assert OrderedDict is collections.OrderedDict
     assert OrderedDict([('foo', 'bar')]) == collections.OrderedDict([('foo', 'bar')])
-    assert isinstance(resolve_to_runtime_type(OrderedDict), DagsterType)
-    assert resolve_to_runtime_type(OrderedDict).python_type is collections.OrderedDict
+    assert isinstance(resolve_dagster_type(OrderedDict), DagsterType)
+    assert resolve_dagster_type(OrderedDict).python_type is collections.OrderedDict
 
 
 def test_dagster_type_collision():

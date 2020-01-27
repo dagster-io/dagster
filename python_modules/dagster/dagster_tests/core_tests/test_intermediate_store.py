@@ -10,7 +10,7 @@ from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePlug
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.runtime_type import Bool as RuntimeBool
 from dagster.core.types.runtime_type import String as RuntimeString
-from dagster.core.types.runtime_type import create_any_type, resolve_to_runtime_type
+from dagster.core.types.runtime_type import create_any_type, resolve_dagster_type
 from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 
@@ -71,11 +71,11 @@ def test_file_system_intermediate_store_composite_types():
 
     with yield_empty_pipeline_context(instance=instance, run_id=run_id) as context:
         intermediate_store.set_object(
-            [True, False], context, resolve_to_runtime_type(List[Bool]), ['bool']
+            [True, False], context, resolve_dagster_type(List[Bool]), ['bool']
         )
         assert intermediate_store.has_object(context, ['bool'])
         assert intermediate_store.get_object(
-            context, resolve_to_runtime_type(List[Bool]), ['bool']
+            context, resolve_dagster_type(List[Bool]), ['bool']
         ).obj == [True, False]
 
 
@@ -107,11 +107,11 @@ def test_file_system_intermediate_store_composite_types_with_custom_serializer_f
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
         intermediate_store.set_object(
-            ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]), ['list']
+            ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), ['list']
         )
         assert intermediate_store.has_object(context, ['list'])
         assert intermediate_store.get_object(
-            context, resolve_to_runtime_type(List[Bool]), ['list']
+            context, resolve_dagster_type(List[Bool]), ['list']
         ).obj == ['foo', 'bar']
 
 
@@ -152,23 +152,23 @@ def test_file_system_intermediate_store_with_composite_type_storage_plugin():
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List[String]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(List[String]), ['obj_name']
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(Optional[String]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(Optional[String]), ['obj_name']
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List[Optional[String]]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(List[Optional[String]]), ['obj_name']
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(Optional[List[String]]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(Optional[List[String]]), ['obj_name']
             )

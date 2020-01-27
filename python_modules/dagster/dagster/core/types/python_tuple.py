@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.config_type import Array, ConfigAnyInstance
 
 from .config_schema import InputHydrationConfig
-from .runtime_type import DagsterType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import DagsterType, define_python_dagster_type, resolve_dagster_type
 
 PythonTuple = define_python_dagster_type(
     tuple, 'PythonTuple', description='Represents a python tuple'
@@ -81,7 +81,7 @@ class _TypedPythonTuple(DagsterType):
 
 
 def create_typed_tuple(*dagster_type_args):
-    runtime_types = list(map(resolve_to_runtime_type, dagster_type_args))
+    runtime_types = list(map(resolve_dagster_type, dagster_type_args))
 
     check.invariant(
         not any((runtime_type.is_nothing for runtime_type in runtime_types)),

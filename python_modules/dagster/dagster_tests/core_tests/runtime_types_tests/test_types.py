@@ -16,7 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types.runtime_type import DagsterType, PythonObjectType, resolve_to_runtime_type
+from dagster.core.types.runtime_type import DagsterType, PythonObjectType, resolve_dagster_type
 
 
 class BarObj(object):
@@ -60,7 +60,7 @@ def test_python_object_type_with_custom_type_check():
 
 
 def test_nullable_python_object_type():
-    nullable_type_bar = resolve_to_runtime_type(Optional[Bar])
+    nullable_type_bar = resolve_dagster_type(Optional[Bar])
 
     assert_type_check(nullable_type_bar.type_check(BarObj()))
     assert_type_check(nullable_type_bar.type_check(None))
@@ -70,13 +70,13 @@ def test_nullable_python_object_type():
 
 
 def test_nullable_int_coercion():
-    int_type = resolve_to_runtime_type(Int)
+    int_type = resolve_dagster_type(Int)
     assert_type_check(int_type.type_check(1))
 
     res = int_type.type_check(None)
     assert not res.success
 
-    nullable_int_type = resolve_to_runtime_type(Optional[Int])
+    nullable_int_type = resolve_dagster_type(Optional[Int])
     assert_type_check(nullable_int_type.type_check(1))
     assert_type_check(nullable_int_type.type_check(None))
 
@@ -97,27 +97,27 @@ def assert_failure(runtime_type, value):
 
 def test_nullable_list_combos_coerciion():
 
-    list_of_int = resolve_to_runtime_type(List[Int])
+    list_of_int = resolve_dagster_type(List[Int])
 
     assert_failure(list_of_int, None)
     assert_success(list_of_int, [])
     assert_success(list_of_int, [1])
     assert_failure(list_of_int, [None])
 
-    nullable_int_of_list = resolve_to_runtime_type(Optional[List[Int]])
+    nullable_int_of_list = resolve_dagster_type(Optional[List[Int]])
 
     assert_success(nullable_int_of_list, None)
     assert_success(nullable_int_of_list, [])
     assert_success(nullable_int_of_list, [1])
     assert_failure(nullable_int_of_list, [None])
 
-    list_of_nullable_int = resolve_to_runtime_type(List[Optional[Int]])
+    list_of_nullable_int = resolve_dagster_type(List[Optional[Int]])
     assert_failure(list_of_nullable_int, None)
     assert_success(list_of_nullable_int, [])
     assert_success(list_of_nullable_int, [1])
     assert_success(list_of_nullable_int, [None])
 
-    nullable_list_of_nullable_int = resolve_to_runtime_type(Optional[List[Optional[Int]]])
+    nullable_list_of_nullable_int = resolve_dagster_type(Optional[List[Optional[Int]]])
     assert_success(nullable_list_of_nullable_int, None)
     assert_success(nullable_list_of_nullable_int, [])
     assert_success(nullable_list_of_nullable_int, [1])

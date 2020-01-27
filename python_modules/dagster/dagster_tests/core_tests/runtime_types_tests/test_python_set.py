@@ -11,7 +11,7 @@ from dagster import (
     lambda_solid,
 )
 from dagster.core.types.python_set import create_typed_runtime_set
-from dagster.core.types.runtime_type import resolve_to_runtime_type
+from dagster.core.types.runtime_type import resolve_dagster_type
 
 
 def test_vanilla_set_output():
@@ -99,7 +99,7 @@ def test_runtime_set_of_int():
 
 
 def test_runtime_optional_set():
-    set_runtime_type = resolve_to_runtime_type(Optional[create_typed_runtime_set(int)])
+    set_runtime_type = resolve_dagster_type(Optional[create_typed_runtime_set(int)])
 
     set_runtime_type.type_check({1})
     set_runtime_type.type_check(set())

@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
-from .runtime_type import DagsterType, define_python_dagster_type, resolve_to_runtime_type
+from .runtime_type import DagsterType, define_python_dagster_type, resolve_dagster_type
 
 
 @input_hydration_config(Permissive())
@@ -61,8 +61,8 @@ class _TypedPythonDict(DagsterType):
 
 
 def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
-    key_type = resolve_to_runtime_type(key_dagster_type)
-    value_type = resolve_to_runtime_type(value_dagster_type)
+    key_type = resolve_dagster_type(key_dagster_type)
+    value_type = resolve_dagster_type(value_dagster_type)
 
     return _TypedPythonDict(key_type, value_type)
 

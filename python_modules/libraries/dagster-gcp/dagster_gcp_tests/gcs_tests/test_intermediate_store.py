@@ -28,7 +28,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.runtime_type import Bool as RuntimeBool
 from dagster.core.types.runtime_type import String as RuntimeString
-from dagster.core.types.runtime_type import create_any_type, resolve_to_runtime_type
+from dagster.core.types.runtime_type import create_any_type, resolve_dagster_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -202,7 +202,7 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List[String]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(List[String]), ['obj_name']
             )
 
 
@@ -214,11 +214,11 @@ def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
-                ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]), ['list'],
+                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), ['list'],
             )
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]), ['list']
+                context, resolve_dagster_type(List[Bool]), ['list']
             ).obj == ['foo', 'bar']
 
         finally:

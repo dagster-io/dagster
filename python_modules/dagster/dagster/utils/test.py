@@ -34,7 +34,7 @@ from dagster.core.scheduler.storage import ScheduleStorage
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.runtime_type import resolve_to_runtime_type
+from dagster.core.types.runtime_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -299,7 +299,7 @@ def check_dagster_type(dagster_type, value):
             ).format(dagster_type=dagster_type)
         )
 
-    runtime_type = resolve_to_runtime_type(dagster_type)
+    runtime_type = resolve_dagster_type(dagster_type)
     type_check = runtime_type.type_check(value)
     if not isinstance(type_check, TypeCheck):
         raise DagsterInvariantViolationError(
