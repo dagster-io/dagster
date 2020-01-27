@@ -10,7 +10,12 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.core.definitions.environment_configs import SystemNamedDict
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
+from dagster.core.definitions.pipeline import PipelineRunsFilter
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+    DagsterRunAlreadyExists,
+)
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types import Field, PermissiveDict, String
@@ -267,10 +272,13 @@ class DagsterInstance:
 
     def create_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.invariant(
-            not self._run_storage.has_run(pipeline_run.run_id),
-            'Attempting to create a different pipeline run for an existing run id',
-        )
+
+        if self.has_run(pipeline_run.run_id):
+            raise DagsterRunAlreadyExists(
+                'Attempting to create a pipeline run for an existing run id, {run_id}'.format(
+                    run_id=pipeline_run.run_id
+                )
+            )
 
         run = self._run_storage.add_run(pipeline_run)
         return run
@@ -280,7 +288,18 @@ class DagsterInstance:
         if self.has_run(pipeline_run.run_id):
             return self.get_run_by_id(pipeline_run.run_id)
         else:
-            return self.create_run(pipeline_run)
+            # We will need a more principled way of doing this
+            try:
+                return self.create_run(pipeline_run)
+            except DagsterRunAlreadyExists:
+                if not self.has_run(pipeline_run.run_id):
+                    check.failed(
+                        'Inconsistent run storage: could not get or create pipeline run with run_id {run_id}'.format(
+                            run_id=pipeline_run.run_id
+                        )
+                    )
+
+                return self.get_run_by_id(pipeline_run.run_id)
 
     def add_run(self, pipeline_run):
         return self._run_storage.add_run(pipeline_run)
