@@ -7,7 +7,7 @@ from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.events import TypeCheck
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 
 from .builtin_config_schemas import BuiltinSchemas
@@ -16,8 +16,6 @@ from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
 class DagsterType(object):
-    '''Dagster types resolve to objects of this type during execution.'''
-
     def __init__(
         self,
         key,
@@ -48,7 +46,7 @@ class DagsterType(object):
             PickleSerializationStrategy(),
         )
 
-        self.type_check = check.callable_param(type_check_fn, 'type_check_fn')
+        self._type_check_fn = check.callable_param(type_check_fn, 'type_check_fn')
 
         auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
 
@@ -66,6 +64,20 @@ class DagsterType(object):
             self.display_name is not None,
             'All types must have a valid display name, got None for key {}'.format(key),
         )
+
+    def type_check(self, value):
+        retval = self._type_check_fn(value)
+
+        if not isinstance(retval, (bool, TypeCheck)):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have returned {retval} of type {retval_type} from the type '
+                    'check function of type "{type_key}". Return value must be instance '
+                    'of TypeCheck or a bool.'
+                ).format(retval=repr(retval), retval_type=type(retval), type_key=self.key)
+            )
+
+        return TypeCheck(success=retval) if isinstance(retval, bool) else retval
 
     def __eq__(self, other):
         check.inst_param(other, 'other', DagsterType)

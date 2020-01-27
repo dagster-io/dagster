@@ -53,6 +53,10 @@
 - `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
+- Dagster Type System Changes
+  - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
+  - Core type check function of DagsterType can now return a naked `bool` in addition
+    to a `TypeCheck` object.
 
 **New**
 

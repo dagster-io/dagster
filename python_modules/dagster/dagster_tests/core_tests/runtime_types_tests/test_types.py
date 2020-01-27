@@ -1,4 +1,5 @@
 import re
+import sys
 
 import pytest
 
@@ -276,6 +277,8 @@ def test_input_type_returns_wrong_thing():
     def pipe():
         return take_bad_thing(return_one())
 
+    # when https://github.com/dagster-io/dagster/issues/2018 is resolve
+    # the two error messages in the test should be the same
     with pytest.raises(
         DagsterTypeCheckError,
         match=re.escape(
@@ -295,17 +298,18 @@ def test_input_type_returns_wrong_thing():
     solid_result = pipeline_result.result_for_solid('take_bad_thing')
     type_check_data = _type_check_data_for_input(solid_result, 'value')
     assert not type_check_data.success
-    assert re.match(
-        re.escape(
-            'Type checks must return TypeCheck. Type check for type BadType returned value of '
-            'type <'
+    if sys.version_info.major == 3:
+        assert type_check_data.description == (
+            "You have returned 'kdjfkjd' of type <class 'str'> from the "
+            "type check function of type \"BadType\". Return value must be instance of "
+            "TypeCheck or a bool."
         )
-        + '(class|type)'
-        + re.escape(' \'str\'> when checking runtime value of type <')
-        + '(class|type)'
-        + re.escape(' \'int\'>.'),
-        type_check_data.description,
-    )
+    else:
+        assert type_check_data.description == (
+            "You have returned 'kdjfkjd' of type <type 'str'> from the "
+            "type check function of type \"BadType\". Return value must be instance of "
+            "TypeCheck or a bool."
+        )
     assert not type_check_data.metadata_entries
 
     step_failure_event = solid_result.compute_step_failure_event
@@ -321,6 +325,8 @@ def test_output_type_returns_wrong_thing():
     def pipe():
         return return_one_bad_thing()
 
+    # when https://github.com/dagster-io/dagster/issues/2018 is resolve
+    # the two error messages in the test should be the same
     with pytest.raises(
         DagsterTypeCheckError,
         match=re.escape(
@@ -342,17 +348,18 @@ def test_output_type_returns_wrong_thing():
     type_check_data = output_event.event_specific_data.type_check_data
     assert not type_check_data.success
 
-    assert re.match(
-        re.escape(
-            'Type checks must return TypeCheck. Type check for type BadType returned value of '
-            'type <'
+    if sys.version_info.major == 3:
+        assert type_check_data.description == (
+            "You have returned 'kdjfkjd' of type <class 'str'> from the "
+            "type check function of type \"BadType\". Return value must be instance of "
+            "TypeCheck or a bool."
         )
-        + '(class|type)'
-        + re.escape(' \'str\'> when checking runtime value of type <')
-        + '(class|type)'
-        + re.escape(' \'int\'>.'),
-        type_check_data.description,
-    )
+    else:
+        assert type_check_data.description == (
+            "You have returned 'kdjfkjd' of type <type 'str'> from the "
+            "type check function of type \"BadType\". Return value must be instance of "
+            "TypeCheck or a bool."
+        )
 
     step_failure_event = solid_result.compute_step_failure_event
     assert step_failure_event.event_specific_data.error.cls_name == 'Failure'
@@ -462,3 +469,20 @@ def test_fan_in_custom_types_with_storage():
         dict_pipeline, environment_dict={'storage': {'filesystem': {}}}
     )
     assert pipeline_result.success
+
+
+ReturnBoolType = DagsterType(
+    key='ReturnBoolType', name='ReturnBoolType', type_check_fn=lambda _: True
+)
+
+
+def test_return_bool_type():
+    @solid(output_defs=[OutputDefinition(ReturnBoolType)])
+    def return_always_pass_bool_type(_):
+        return 1
+
+    @pipeline
+    def bool_type_pipeline():
+        return_always_pass_bool_type()
+
+    assert execute_pipeline(bool_type_pipeline).success
