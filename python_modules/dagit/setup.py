@@ -51,7 +51,7 @@ def _do_setup(name='dagit'):
         include_package_data=True,
         install_requires=[
             # standard python 2/3 compatability things
-            'enum-compat>=0.0.1',
+            'enum34; python_version < "3.4"',
             'future',
             'PyYAML',
             # cli
