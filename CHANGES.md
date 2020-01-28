@@ -14,7 +14,6 @@
 
 **Bugfix**
 
-- Dagit now handles engine event errors.
 - Fixes a file descriptor leak when running many concurrent dagster-graphql queries (e.g., for
   backfill).
 - The `@pyspark_solid` decorator now handles inputs correctly.
