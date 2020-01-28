@@ -1,10 +1,8 @@
-import collections
 from typing import Any, Dict, List, Optional, Tuple
 
 from dagster import (
     InputDefinition,
     Int,
-    as_dagster_type,
     composite_solid,
     dagster_type,
     execute_solid,
@@ -212,23 +210,6 @@ def test_python_tuple_output():
         return (4, 5)
 
     assert execute_solid(emit_tuple).output_value() == (4, 5)
-
-
-def test_python_built_in_output():
-    class MyOrderedDict(collections.OrderedDict):
-        pass
-
-    OrderedDict = as_dagster_type(MyOrderedDict)
-
-    @lambda_solid
-    def emit_ordered_dict() -> OrderedDict:
-        return OrderedDict([('foo', 'bar')])
-
-    output_value = execute_solid(emit_ordered_dict).output_value()
-    assert output_value == OrderedDict([('foo', 'bar')])
-    assert isinstance(output_value, OrderedDict)
-    assert isinstance(output_value, MyOrderedDict)
-    assert isinstance(output_value, collections.OrderedDict)
 
 
 def test_nested_kitchen_sink():

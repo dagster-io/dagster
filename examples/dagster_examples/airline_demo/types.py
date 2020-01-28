@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import sqlalchemy
 
-from dagster import as_dagster_type
+from dagster import define_python_dagster_type
 from dagster.core.types.dagster_type import create_string_type
 
 AirlineDemoResources = namedtuple(
@@ -13,7 +13,7 @@ AirlineDemoResources = namedtuple(
 )
 
 
-SqlAlchemyEngineType = as_dagster_type(
+SqlAlchemyEngineType = define_python_dagster_type(
     sqlalchemy.engine.Connectable,
     name='SqlAlchemyEngineType',
     description='A SqlAlchemy Connectable',

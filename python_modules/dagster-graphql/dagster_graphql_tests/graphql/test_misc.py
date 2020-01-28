@@ -19,23 +19,17 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     SolidDefinition,
-    as_dagster_type,
+    define_python_dagster_type,
     input_hydration_config,
     output_materialization_config,
 )
 from dagster.core.instance import DagsterInstance
 
 
-class PoorMansDataFrame_(list):
-    pass
-
-
 @input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
-        return PoorMansDataFrame_(
-            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
-        )
+        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @output_materialization_config(Path)
@@ -48,8 +42,9 @@ def df_output_schema(_context, path, value):
     return Materialization.file(path)
 
 
-PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_,
+PoorMansDataFrame = define_python_dagster_type(
+    python_type=list,
+    name='PoorMansDataFrame',
     input_hydration_config=df_input_schema,
     output_materialization_config=df_output_schema,
 )

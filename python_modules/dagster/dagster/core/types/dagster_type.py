@@ -366,13 +366,13 @@ class _Nothing(DagsterType):
 
 
 class PythonObjectType(DagsterType):
-    def __init__(self, python_type=None, key=None, name=None, **kwargs):
-        name = check.opt_str_param(name, 'name', type(self).__name__)
+    def __init__(self, python_type, key=None, name=None, **kwargs):
+        self.python_type = check.type_param(python_type, 'python_type')
+        name = check.opt_str_param(name, 'name', python_type.__name__)
         key = check.opt_str_param(key, 'key', name)
         super(PythonObjectType, self).__init__(
             key=key, name=name, type_check_fn=self.type_check_method, **kwargs
         )
-        self.python_type = check.type_param(python_type, 'python_type')
 
     def type_check_method(self, value):
         if not isinstance(value, self.python_type):
@@ -646,19 +646,14 @@ _RUNTIME_MAP = {
     BuiltinEnum.NOTHING: Nothing,
 }
 
-__RUNTIME_TYPE_REGISTRY = {}
+_PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY = {}
 '''Python types corresponding to user-defined RunTime types created using @dagster_type or
 as_dagster_type are registered here so that we can remap the Python types to runtime types.'''
 
 
-def _clear_runtime_type_registry():
-    '''Intended to support tests.'''
-    __RUNTIME_TYPE_REGISTRY = {}
-
-
-def register_python_type(python_type, runtime_type):
-    check.inst_param(runtime_type, 'runtime_type', DagsterType)
-    if python_type in __RUNTIME_TYPE_REGISTRY:
+def map_python_type_to_dagster_type(python_type, dagster_type):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    if python_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
         # This would be just a great place to insert a short URL pointing to the type system
         # documentation into the error message
         # https://github.com/dagster-io/dagster/issues/1831
@@ -669,7 +664,7 @@ def register_python_type(python_type, runtime_type):
             'as_dagster_type directly.'.format(python_type=python_type)
         )
 
-    __RUNTIME_TYPE_REGISTRY[python_type] = runtime_type
+    _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type] = dagster_type
 
 
 DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
@@ -730,8 +725,8 @@ def resolve_dagster_type(dagster_type):
     if dagster_type is None:
         return Any
 
-    if dagster_type in __RUNTIME_TYPE_REGISTRY:
-        return __RUNTIME_TYPE_REGISTRY[dagster_type]
+    if dagster_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
+        return _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[dagster_type]
 
     if dagster_type is Dict:
         return PythonDict

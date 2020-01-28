@@ -1,9 +1,7 @@
 import collections
 
-import pytest
-
-from dagster import DagsterInvalidDefinitionError, as_dagster_type, dagster_type
-from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster import dagster_type, define_python_dagster_type
+from dagster.core.types.dagster_type import resolve_dagster_type
 
 
 def test_dagster_type_decorator():
@@ -35,34 +33,12 @@ def test_dagster_type_decorator_name_desc():
 
 
 def test_make_dagster_type():
-    OverwriteNameTuple = as_dagster_type(collections.namedtuple('SomeNamedTuple', 'prop'))
-    runtime_type = resolve_dagster_type(OverwriteNameTuple)
+    SomeNamedTuple = collections.namedtuple('SomeNamedTuple', 'prop')
+    DagsterSomeNamedTuple = define_python_dagster_type(SomeNamedTuple)
+    runtime_type = resolve_dagster_type(DagsterSomeNamedTuple)
     assert runtime_type.name == 'SomeNamedTuple'
-    assert OverwriteNameTuple(prop='foo').prop == 'foo'
+    assert SomeNamedTuple(prop='foo').prop == 'foo'
 
-    OverwriteNameTuple = as_dagster_type(
-        collections.namedtuple('SomeNamedTuple', 'prop'), name='OverwriteName'
-    )
-    runtime_type = resolve_dagster_type(OverwriteNameTuple)
+    DagsterNewNameNamedTuple = define_python_dagster_type(SomeNamedTuple, name='OverwriteName')
+    runtime_type = resolve_dagster_type(DagsterNewNameNamedTuple)
     assert runtime_type.name == 'OverwriteName'
-    assert OverwriteNameTuple(prop='foo').prop == 'foo'
-
-
-def test_make_dagster_type_from_builtin():
-    OrderedDict = as_dagster_type(collections.OrderedDict)
-    assert OrderedDict is collections.OrderedDict
-    assert OrderedDict([('foo', 'bar')]) == collections.OrderedDict([('foo', 'bar')])
-    assert isinstance(resolve_dagster_type(OrderedDict), DagsterType)
-    assert resolve_dagster_type(OrderedDict).python_type is collections.OrderedDict
-
-
-def test_dagster_type_collision():
-    class Foo(object):
-        pass
-
-    _Foo_1 = as_dagster_type(Foo)
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match='A Dagster runtime type has already been registered for the Python type',
-    ):
-        _Foo_2 = as_dagster_type(Foo)

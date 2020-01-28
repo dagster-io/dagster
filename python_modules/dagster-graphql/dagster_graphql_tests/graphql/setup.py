@@ -25,8 +25,8 @@ from dagster import (
     PresetDefinition,
     RepositoryDefinition,
     String,
-    as_dagster_type,
     composite_solid,
+    define_python_dagster_type,
     input_hydration_config,
     lambda_solid,
     logger,
@@ -39,16 +39,10 @@ from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import file_relative_path
 
 
-class PoorMansDataFrame_(list):
-    pass
-
-
 @input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
-        return PoorMansDataFrame_(
-            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
-        )
+        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @output_materialization_config(Path)
@@ -61,8 +55,9 @@ def df_output_schema(_context, path, value):
     return Materialization.file(path)
 
 
-PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_,
+PoorMansDataFrame = define_python_dagster_type(
+    python_type=list,
+    name='PoorMansDataFrame',
     input_hydration_config=df_input_schema,
     output_materialization_config=df_output_schema,
 )
@@ -84,7 +79,7 @@ def sum_solid(num):
     sum_df = deepcopy(num)
     for x in sum_df:
         x['sum'] = int(x['num1']) + int(x['num2'])
-    return PoorMansDataFrame(sum_df)
+    return sum_df
 
 
 @lambda_solid(
@@ -95,7 +90,7 @@ def sum_sq_solid(sum_df):
     sum_sq_df = deepcopy(sum_df)
     for x in sum_sq_df:
         x['sum_sq'] = int(x['sum']) ** 2
-    return PoorMansDataFrame(sum_sq_df)
+    return sum_sq_df
 
 
 @solid(

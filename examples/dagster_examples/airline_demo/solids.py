@@ -4,7 +4,7 @@ import os
 import re
 
 from dagster_aws.s3.solids import S3Coordinate
-from dagster_pyspark import DataFrame
+from dagster_pyspark import NativeSparkDataFrame as DataFrame
 from dagstermill import define_dagstermill_solid
 from sqlalchemy import text
 

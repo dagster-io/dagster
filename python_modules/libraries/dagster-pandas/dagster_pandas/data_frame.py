@@ -19,7 +19,7 @@ from dagster import (
 )
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
-from dagster.core.types.decorator import register_python_type
+from dagster.core.types.decorator import map_python_type_to_dagster_type
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
 
@@ -104,7 +104,7 @@ DataFrame = DagsterType(
     type_check_fn=df_type_check,
 )
 
-register_python_type(pd.DataFrame, DataFrame)
+map_python_type_to_dagster_type(pd.DataFrame, DataFrame)
 
 
 def _construct_constraint_list(constraints):
