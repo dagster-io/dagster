@@ -79,14 +79,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             SqlEventLogStorageMetadata.create_all(engine)
             engine.execute('PRAGMA journal_mode=WAL;')
         except (db.exc.DatabaseError, sqlite3.DatabaseError) as exc:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
+            # This is to deal with concurrent execution -- if this table already exists thanks to a
+            # race with another process, we are fine and can continue.
+            if not 'table event_logs already exists' in str(exc):
+                six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
 
         alembic_config = get_alembic_config(__file__)
-        conn = engine.connect()
-        try:
-            stamp_alembic_rev(alembic_config, conn)
-        finally:
-            conn.close()
+        stamp_alembic_rev(alembic_config, engine)
 
     @contextmanager
     def connect(self, run_id=None):
