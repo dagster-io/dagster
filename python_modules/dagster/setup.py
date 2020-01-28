@@ -60,7 +60,7 @@ def _do_setup(name='dagster'):
         include_package_data=True,
         install_requires=[
             # standard python 2/3 compatability things
-            'enum-compat>=0.0.1',
+            'enum34; python_version < "3.4"',
             'future',
             'funcsigs',
             'functools32; python_version<"3"',
