@@ -114,9 +114,9 @@
     <rect x="433.5999999999999" y="798" width="51.4" height="20" rx="0" ry="0" fill="hsl(25, 10%, 95%)" stroke="hsl(25, 75%, 50%)" stroke-width="1"></rect><text fill="hsl(25, 75%, 50%)" x="437.5999999999999" y="801" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="43.4" height="14" dominant-baseline="hanging">ipynb</text>
   </g>
   <g>
-    <rect x="944" y="94" width="382" height="99" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
-    <rect x="947" y="97" width="376" height="93" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect>
-    <rect x="950" y="100" width="370" height="87" fill="rgb(230, 219, 238)" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="962" y="135.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" height="16" dominant-baseline="hanging">process_delays_by_geo</text>
+    <rect x="944" y="94" width="382" height="99" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
+    <rect x="947" y="97" width="376" height="93" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect>
+    <rect x="950" y="100" width="370" height="87" fill="#E6DBEE" stroke="#979797" stroke-width="1"></rect><text fill="#222" x="962" y="135.5" style="font:16px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="208.32" height="16" dominant-baseline="hanging">process_delays_by_geo</text>
     <g>
       <title>result: S3FileHandle</title>
       <rect x="950" y="175" width="149.16" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
