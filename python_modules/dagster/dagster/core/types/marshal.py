@@ -1,4 +1,5 @@
 import pickle
+import sys
 from abc import ABCMeta, abstractmethod
 
 import six
@@ -13,10 +14,13 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     supported.
     '''
 
-    def __init__(self, name, write_mode='wb', read_mode='rb'):
+    def __init__(self, name, write_mode='wb', read_mode='rb', encoding=None):
+        # It's conceivable that we might want to enforce write_mode == read_mode, and that
+        # encoding be None when write_mode/read_mode are 'wb'/'rb'.
         self._name = name
         self._write_mode = write_mode
         self._read_mode = read_mode
+        self._encoding = encoding
 
     @property
     def name(self):
@@ -29,6 +33,13 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     @property
     def write_mode(self):
         return self._write_mode
+
+    @property
+    def encoding(self):
+        # Default to utf-8/ascii only if we are expecting to read and write strings
+        if self._write_mode == 'w' or self._read_mode == 'w':
+            return self._encoding or ('utf-8' if sys.version_info >= (3, 0) else 'ascii')
+        return self._encoding
 
     @abstractmethod
     def serialize(self, value, write_file_obj):

@@ -1,5 +1,7 @@
+import csv
 import os
 import uuid
+from collections import OrderedDict
 
 import pytest
 from dagster_aws.s3.intermediate_store import S3IntermediateStore
@@ -17,6 +19,7 @@ from dagster import (
     SerializationStrategy,
     String,
     check,
+    dagster_type,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -333,3 +336,52 @@ def test_s3_intermediate_store(s3_bucket):
     finally:
         intermediate_store.rm_object(context, ['true'])
         intermediate_store_2.rm_object(context, ['true'])
+
+
+class CsvSerializationStrategy(SerializationStrategy):
+    def __init__(self):
+        super(CsvSerializationStrategy, self).__init__(
+            "csv_strategy", read_mode="r", write_mode="w"
+        )
+
+    def serialize(self, value, write_file_obj):
+        fieldnames = value[0]
+        writer = csv.DictWriter(write_file_obj, fieldnames)
+        writer.writeheader()
+        writer.writerows(value)
+
+    def deserialize(self, read_file_obj):
+        reader = csv.DictReader(read_file_obj)
+        return LessSimpleDataFrame([row for row in reader])
+
+
+@dagster_type(
+    name="LessSimpleDataFrame",
+    description=("A naive representation of a data frame, e.g., as returned by " "csv.DictReader."),
+    serialization_strategy=CsvSerializationStrategy(),
+)
+class LessSimpleDataFrame(list):
+    pass
+
+
+def test_custom_read_write_mode(s3_bucket):
+    run_id = str(uuid.uuid4())
+    intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
+    data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
+    try:
+        with yield_empty_pipeline_context(run_id=run_id) as context:
+            intermediate_store.set_object(
+                data_frame, context, resolve_to_runtime_type(LessSimpleDataFrame), ['data_frame']
+            )
+
+            assert intermediate_store.has_object(context, ['data_frame'])
+            assert (
+                intermediate_store.get_object(
+                    context, resolve_to_runtime_type(LessSimpleDataFrame), ['data_frame']
+                ).obj
+                == data_frame
+            )
+            assert intermediate_store.uri_for_paths(['data_frame']).startswith('s3://')
+
+    finally:
+        intermediate_store.rm_object(context, ['data_frame'])
