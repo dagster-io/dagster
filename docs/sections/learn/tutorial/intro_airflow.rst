@@ -3,7 +3,7 @@ Deploying to Airflow
 
 Although Dagster includes stand-alone functionality for
 :ref:`executing <executing-our-first-pipeline>`, :ref:`scheduling <scheduler>`, and
-:ref:`deploying pipelines on AWS <standalone-dagit>`, we also support an incremental adoption
+:ref:`deploying pipelines on AWS <deployment-aws>`, we also support an incremental adoption
 path on top of existing `Apache Airflow <https://airflow.apache.org/>`_ installs.
 
 We've seen how Dagster compiles a logical pipeline definition, appropriately parameterized by config,

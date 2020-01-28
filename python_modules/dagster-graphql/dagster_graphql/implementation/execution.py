@@ -149,7 +149,8 @@ def start_pipeline_execution(graphene_info, execution_params):
     )
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
-    run = instance.create_run(_create_pipeline_run(instance, pipeline, execution_params))
+
+    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline, execution_params))
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(),

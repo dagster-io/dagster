@@ -21,15 +21,26 @@ data:
         job_image: "{{ .Values.job_image }}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
         image_pull_policy: "{{ .Values.imagePullPolicy }}"
+        job_namespace: "{{ .Release.Namespace }}"
 
     run_storage:
       module: dagster_postgres.run_storage
       class: PostgresRunStorage
       config:
-        postgres_url: "postgresql://{{ .Values.postgresql.postgresqlUsername}}:{{ .Values.postgresql.postgresqlPassword	}}@{{ template "dagster.postgresql.fullname" . }}:{{ .Values.postgresql.service.port }}/postgres"
+        postgres_db:
+          username: {{ .Values.postgresql.postgresqlUsername}}
+          password: {{ .Values.postgresql.postgresqlPassword	}}
+          hostname: {{ template "dagster.postgresql.fullname" . }}
+          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
+          port: {{ .Values.postgresql.service.port }}
 
     event_log_storage:
       module: dagster_postgres.event_log
       class: PostgresEventLogStorage
       config:
-        postgres_url: "postgresql://{{ .Values.postgresql.postgresqlUsername}}:{{ .Values.postgresql.postgresqlPassword	}}@{{ template "dagster.postgresql.fullname" . }}:{{ .Values.postgresql.service.port }}/postgres"
+        postgres_db:
+          username: {{ .Values.postgresql.postgresqlUsername}}
+          password: {{ .Values.postgresql.postgresqlPassword	}}
+          hostname: {{ template "dagster.postgresql.fullname" . }}
+          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
+          port: {{ .Values.postgresql.service.port }}

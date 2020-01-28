@@ -4,15 +4,17 @@
 This library provides an integration with Datadog, to support publishing metrics to Datadog from within Dagster solids.
 
 ## Getting Started
+
 This library uses the Python [datadogpy](https://github.com/DataDog/datadogpy) library. To use it, you'll first need to create a DataDog account and get both [API and Application keys](https://docs.datadoghq.com/account_management/api-app-keys/).
 
 This integration uses [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/), so you'll need to ensure the datadog agent is running on the host you're sending metrics from.
 
 ## Posting to DataDog
+
 You can easily publish metrics from Dagster with the `datadog` resource:
 
 ```python
-@solid(resource_defs={'datadog'})
+@solid(required_resource_keys={'datadog'})
 def datadog_solid(context):
     context.resources.datadog.event('Man down!', 'This server needs assistance.')
     context.resources.datadog.gauge('users.online', 1001, tags=["protocol:http"])

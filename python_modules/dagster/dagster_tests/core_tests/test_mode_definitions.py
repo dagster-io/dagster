@@ -40,7 +40,7 @@ def test_mode_takes_a_name():
 
 
 def test_mode_from_resources():
-    @solid
+    @solid(required_resource_keys={'three'})
     def ret_three(context):
         return context.resources.three
 
@@ -186,7 +186,7 @@ def test_mode_with_resource_deps():
         == 'Resource "a" is required by solid requires_a, but is not provided by mode "default".'
     )
 
-    @solid
+    @solid(required_resource_keys={'a'})
     def no_deps(context):
         called['count'] += 1
         assert context.resources.a == 1

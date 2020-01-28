@@ -43,22 +43,23 @@ This value can be a:
     - Python primitive types that resolve to dagster config types
         - int, float, bool, str, list.
     - A dagster config type: Int, Float, Bool, List, Optional, Selector, Dict
-    - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-    in the dictionary get resolved by the same rules, recursively.
+    - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+      in the dictionary get resolved by the same rules, recursively.
     - A python list with a single entry that can resolve to a type, e.g. [int]
 '''
 
 
 class DagsterInvalidConfigDefinitionError(DagsterError):
     '''Indicates that you have attempted to construct a config with an invalid value
-    
+
     This value can be a:
+
         - :py:class:`Field`
         - Python primitive types that resolve to dagster config types
             - int, float, bool, str, list.
         - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-        - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-        in the dictionary get resolved by the same rules, recursively.
+        - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+          in the dictionary get resolved by the same rules, recursively.
         - A python list with a single entry that can resolve to a type, e.g. [int]
     '''
 
@@ -316,3 +317,11 @@ class DagsterInstanceMigrationRequired(DagsterError):
                 ),
             )
         )
+
+
+class DagsterRunAlreadyExists(DagsterError):
+    '''Indicates that a pipeline run already exists in a run storage.'''
+
+
+class DagsterRunConflict(DagsterError):
+    '''Indicates that a conflicting pipeline run exists in a run storage.'''

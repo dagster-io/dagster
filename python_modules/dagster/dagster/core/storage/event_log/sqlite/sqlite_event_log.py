@@ -151,10 +151,6 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
             if status == PipelineRunStatus.SUCCESS or status == PipelineRunStatus.FAILURE:
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 
-    def on_created(self, event):
-        check.invariant(event.src_path == self._log_path)
-        self._process_log()
-
     def on_modified(self, event):
         check.invariant(event.src_path == self._log_path)
         self._process_log()

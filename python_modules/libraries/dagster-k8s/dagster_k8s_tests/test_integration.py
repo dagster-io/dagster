@@ -24,7 +24,7 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     assert success
     assert not result.get('errors')
     assert result['data']
-    assert result['data']['executePlan']['__typename'] == 'ExecutePlanSuccess'
+    assert result['data']['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
 
 
 @pytest.mark.integration
@@ -41,10 +41,12 @@ def test_failing_k8s_run_launcher(dagster_instance):
     assert success
     assert not result.get('errors')
     assert result['data']
-    assert result['data']['executePlan']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert len(result['data']['executePlan']['errors']) == 2
+    assert (
+        result['data']['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+    )
+    assert len(result['data']['startPipelineExecution']['errors']) == 2
 
-    assert set(error['reason'] for error in result['data']['executePlan']['errors']) == {
+    assert set(error['reason'] for error in result['data']['startPipelineExecution']['errors']) == {
         'FIELD_NOT_DEFINED',
         'MISSING_REQUIRED_FIELD',
     }

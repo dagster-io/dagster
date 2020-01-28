@@ -3,6 +3,7 @@ import threading
 from collections import namedtuple
 from contextlib import contextmanager
 
+import psycopg2
 import sqlalchemy as db
 
 from dagster import check
@@ -151,41 +152,44 @@ TERMINATE_EVENT_LOOP = 'TERMINATE_EVENT_LOOP'
 
 def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_thread_exit):
 
-    for notif in await_pg_notifications(
-        conn_string,
-        channels=[CHANNEL_NAME],
-        timeout=POLLING_CADENCE,
-        yield_on_timeout=True,
-        exit_event=watcher_thread_exit,
-    ):
-        if notif is None:
-            if watcher_thread_exit.is_set():
-                break
-        else:
-            run_id, index_str = notif.payload.split('_')
-            if run_id not in run_id_dict:
-                continue
+    try:
+        for notif in await_pg_notifications(
+            conn_string,
+            channels=[CHANNEL_NAME],
+            timeout=POLLING_CADENCE,
+            yield_on_timeout=True,
+            exit_event=watcher_thread_exit,
+        ):
+            if notif is None:
+                if watcher_thread_exit.is_set():
+                    break
+            else:
+                run_id, index_str = notif.payload.split('_')
+                if run_id not in run_id_dict:
+                    continue
 
-            index = int(index_str)
-            with dict_lock:
-                handlers = handlers_dict.get(run_id, [])
+                index = int(index_str)
+                with dict_lock:
+                    handlers = handlers_dict.get(run_id, [])
 
-            engine = create_engine(
-                conn_string, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
-            )
-            try:
-                res = engine.execute(
-                    db.select([SqlEventLogStorageTable.c.event]).where(
-                        SqlEventLogStorageTable.c.id == index
-                    ),
+                engine = create_engine(
+                    conn_string, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
                 )
-                dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
-            finally:
-                engine.dispose()
+                try:
+                    res = engine.execute(
+                        db.select([SqlEventLogStorageTable.c.event]).where(
+                            SqlEventLogStorageTable.c.id == index
+                        ),
+                    )
+                    dagster_event = deserialize_json_to_dagster_namedtuple(res.fetchone()[0])
+                finally:
+                    engine.dispose()
 
-            for (cursor, callback) in handlers:
-                if index >= cursor:
-                    callback(dagster_event)
+                for (cursor, callback) in handlers:
+                    if index >= cursor:
+                        callback(dagster_event)
+    except psycopg2.OperationalError:
+        pass
 
 
 class PostgresEventWatcher(object):

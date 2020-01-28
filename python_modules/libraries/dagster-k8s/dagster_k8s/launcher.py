@@ -39,6 +39,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
             enable local testing with kind. Default: ``'Always'``.
+        job_namespace (Optional[str]): The namespace into which to launch jobs. Default: "default"
     '''
 
     def __init__(
@@ -51,6 +52,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         load_kubeconfig=False,
         kubeconfig_file=None,
         inst_data=None,
+        job_namespace="default",
     ):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
         self.job_image = check.str_param(job_image, 'job_image')
@@ -58,6 +60,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self.image_pull_secrets = check.opt_list_param(image_pull_secrets, 'image_pull_secrets')
         self.image_pull_policy = check.str_param(image_pull_policy, 'image_pull_policy')
         self.service_account_name = check.str_param(service_account_name, 'service_account_name')
+        self.job_namespace = check.str_param(job_namespace, 'job_namespace')
         check.bool_param(load_kubeconfig, 'load_kubeconfig')
         if load_kubeconfig:
             check.str_param(kubeconfig_file, 'kubeconfig_file')
@@ -81,6 +84,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'instance_config_map': str,
             'image_pull_secrets': Field(list, is_optional=True),
             'image_pull_policy': Field(str, is_optional=True, default_value='Always'),
+            'job_namespace': str,
         }
 
     @classmethod
@@ -113,7 +117,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             name='dagster-job-%s' % run.run_id,
             image=self.job_image,
             command=['dagster-graphql'],
-            args=["-p", "executePlan", "-v", json.dumps(execution_params)],
+            args=["-p", "startPipelineExecution", "-v", json.dumps(execution_params)],
             image_pull_policy=self.image_pull_policy,
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
             volume_mounts=[
@@ -132,7 +136,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         template = client.V1PodTemplateSpec(
             metadata=client.V1ObjectMeta(
-                name='dagster-job-pod-%s' % run.run_id, labels=dagster_labels
+                name='dagster-job-pod-%s' % run.run_id, labels=dagster_labels,
             ),
             spec=client.V1PodSpec(
                 image_pull_secrets=self.image_pull_secrets,
@@ -161,7 +165,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         instance.create_run(run)
         job = self.construct_job(run)
-        api_response = self._kube_api.create_namespaced_job(body=job, namespace="default")
+        api_response = self._kube_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         # FIXME add an event here
         print("Job created. status='%s'" % str(api_response.status))
         return run

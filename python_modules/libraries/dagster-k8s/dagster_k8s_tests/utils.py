@@ -69,7 +69,7 @@ def wait_for_job_success(job_name):
     job = None
     while not job:
         # Ensure we found the job that we launched
-        jobs = client.BatchV1Api().list_namespaced_job(namespace='default', watch=False)
+        jobs = client.BatchV1Api().list_namespaced_job(namespace='dagster-test', watch=False)
         job = next((j for j in jobs.items if j.metadata.name == job_name), None)
         print('Job not yet launched, waiting')
         time.sleep(1)
@@ -83,7 +83,9 @@ def wait_for_job_success(job_name):
     # https://github.com/kubernetes-client/python/issues/811
     raw_logs = (
         client.CoreV1Api()
-        .read_namespaced_pod_log(name=job_pod_name, namespace='default', _preload_content=False,)
+        .read_namespaced_pod_log(
+            name=job_pod_name, namespace='dagster-test', _preload_content=False,
+        )
         .data
     ).decode('utf-8')
 
@@ -101,7 +103,7 @@ def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False):
 
     success = True
     while True:
-        pods = client.CoreV1Api().list_namespaced_pod(namespace='default')
+        pods = client.CoreV1Api().list_namespaced_pod(namespace='dagster-test')
         pod = next((p for p in pods.items if name in p.metadata.name), None)
         if pod is None:
             print('Waiting for pod "%s" to launch...' % name)

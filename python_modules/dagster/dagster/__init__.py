@@ -90,6 +90,7 @@ from dagster.core.execution.results import (
     PipelineExecutionResult,
     SolidExecutionResult,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
@@ -216,4 +217,6 @@ __all__ = [
     # file things
     'FileHandle',
     'LocalFileHandle',
+    # instance
+    'DagsterInstance',
 ]

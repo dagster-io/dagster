@@ -7,6 +7,7 @@ The simplest way to deploy Dagster / Dagit is in standalone mode. You can deploy
 in your environment; some options for configuring this are described below.
 
 .. rubric:: Run on a VM
+
 To launch Dagit on a bare VM, ensure that you've got a recent Python version (preferably 3.7, but
 2.7, 3.5, 3.6, and 3.7 are supported), and preferably a virtualenv configured. Then, you can install
 Dagster and any libraries you need:
@@ -56,6 +57,7 @@ Note that this assumes you've got a virtualenv for Dagster at ``/opt/dagster/ven
 code and ``repository.yaml`` are located at ``/opt/dagster/app``.
 
 .. rubric:: Docker
+
 If you are running on AWS ECS, Kubernetes, or some other container-based orchestration system,
 you'll likely want to containerize Dagit using Docker.
 
@@ -63,6 +65,7 @@ A minimal skeleton ``Dockerfile`` and entrypoint shell script that will run Dagi
 scheduler are shown below:
 
 .. code-block:: Dockerfile
+
     :caption: Dockerfile
 
     FROM dagster:dagster-py37:latest
@@ -85,6 +88,7 @@ You can do something like the following ``entrypoint.sh`` to ensure cron is runn
 container alongside Dagit:
 
 .. code-block:: shell
+
     :caption: entrypoint.sh
 
     #!/bin/sh

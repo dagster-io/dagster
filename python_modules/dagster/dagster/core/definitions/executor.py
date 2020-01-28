@@ -15,12 +15,14 @@ class ExecutorDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -66,12 +68,14 @@ def executor(name=None, config=None, required_resource_keys=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''
@@ -122,6 +126,9 @@ def in_process_executor(init_context):
         execution:
           in_process:
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.engine.init import InitExecutorContext
 
@@ -150,6 +157,9 @@ def multiprocess_executor(init_context):
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.definitions.handle import ExecutionTargetHandle
     from dagster.core.engine.init import InitExecutorContext
