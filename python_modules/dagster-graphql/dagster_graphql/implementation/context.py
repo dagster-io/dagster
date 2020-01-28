@@ -29,7 +29,11 @@ class DagsterGraphQLContext(object):
         return self._instance
 
     def get_scheduler(self):
-        return self.scheduler_handle.get_scheduler() if self.scheduler_handle else None
+        return (
+            self.scheduler_handle.get_scheduler(self.instance.schedule_storage)
+            if self.scheduler_handle
+            else None
+        )
 
     def get_handle(self):
         return self._handle

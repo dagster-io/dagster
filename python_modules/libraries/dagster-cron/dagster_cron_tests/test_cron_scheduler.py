@@ -64,8 +64,12 @@ def test_init():
         assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(python_path=sys.executable, repository_path="")
-        scheduler = scheduler_handle.get_scheduler()
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            schedule_storage=instance.schedule_storage,
+        )
+        scheduler = scheduler_handle.get_scheduler(schedule_storage=instance.schedule_storage)
 
         # Check schedules are saved to disk
         assert 'schedules' in os.listdir(tempdir)
@@ -88,8 +92,12 @@ def test_start_and_stop_schedule():
         assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(python_path=sys.executable, repository_path="")
-        scheduler = scheduler_handle.get_scheduler()
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            schedule_storage=instance.schedule_storage,
+        )
+        scheduler = scheduler_handle.get_scheduler(schedule_storage=instance.schedule_storage)
         schedule_def = scheduler_handle.get_schedule_def_by_name(
             "no_config_pipeline_every_min_schedule"
         )
@@ -123,8 +131,12 @@ def test_wipe():
         assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(python_path=sys.executable, repository_path="")
-        scheduler = scheduler_handle.get_scheduler()
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            schedule_storage=instance.schedule_storage,
+        )
+        scheduler = scheduler_handle.get_scheduler(schedule_storage=instance.schedule_storage)
 
         # Start schedule
         scheduler.start_schedule(repository_name, "no_config_pipeline_every_min_schedule")

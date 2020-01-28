@@ -48,7 +48,9 @@ def test_schedules():
         # Note: This dependency will be removed soon.
         scheduler_handle = context.scheduler_handle
         scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+            python_path=sys.executable,
+            repository_path=file_relative_path(__file__, '../'),
+            schedule_storage=instance.schedule_storage,
         )
 
         for schedule_name in [

@@ -62,8 +62,8 @@ def repository_target_argument(f):
     )
 
 
-def print_changes(scheduler_handle, print_fn=print, preview=False):
-    changeset = scheduler_handle.get_change_set()
+def print_changes(scheduler_handle, instance, print_fn=print, preview=False):
+    changeset = scheduler_handle.get_change_set(instance.schedule_storage)
     if len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
@@ -126,7 +126,7 @@ def execute_preview_command(cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, print_fn, preview=True)
+    print_changes(scheduler_handle, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -160,12 +160,14 @@ def execute_up_command(preview, cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, print_fn, preview=preview)
+    print_changes(scheduler_handle, instance, print_fn, preview=preview)
     if preview:
         return
 
     try:
-        scheduler_handle.up(python_path, repository_path)
+        scheduler_handle.up(
+            python_path, repository_path, schedule_storage=instance.schedule_storage
+        )
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -199,7 +201,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler()
+    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository.name)
@@ -284,7 +286,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler()
+    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
     if all_flag:
         for schedule in scheduler.all_schedules(repository.name):
             try:
@@ -324,7 +326,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler()
+    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
 
     try:
         scheduler.stop_schedule(repository.name, schedule_name)
@@ -364,7 +366,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler()
+    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
     if all_running_flag:
         for schedule in scheduler.all_schedules(repository.name):
             if schedule.status == ScheduleStatus.RUNNING:
@@ -418,7 +420,7 @@ def execute_wipe_command(cli_args, print_fn):
         'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
     )
     if confirmation == 'DELETE':
-        scheduler = schedule_handle.get_scheduler()
+        scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
         scheduler.wipe()
         print_fn("Wiped all schedules and schedule cron jobs")
     else:

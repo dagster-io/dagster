@@ -181,7 +181,9 @@ def create_app(handle, instance, reloader=None):
 
         python_path = sys.executable
         repository_path = handle.data.repository_yaml
-        scheduler_handle.up(python_path, repository_path)
+        scheduler_handle.up(
+            python_path, repository_path, schedule_storage=instance.schedule_storage
+        )
 
     app.add_url_rule(
         '/graphql',

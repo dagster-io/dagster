@@ -9,7 +9,11 @@ import six
 
 from dagster import check, utils
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.core.serdes import (
+    ConfigurableClass,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 
 from .scheduler import Schedule
 
@@ -60,11 +64,28 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
 
-class FilesystemScheduleStorage(ScheduleStorage):
-    def __init__(self, base_dir):
+class FilesystemScheduleStorage(ScheduleStorage, ConfigurableClass):
+    def __init__(self, base_dir, inst_data=None):
         self._base_dir = check.str_param(base_dir, 'base_dir')
+        self._inst_data = inst_data
         self._schedules = OrderedDict()
         self._load_schedules()
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {'base_dir': str}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return FilesystemScheduleStorage.from_local(inst_data=inst_data, **config_value)
+
+    @staticmethod
+    def from_local(base_dir, inst_data=None):
+        return FilesystemScheduleStorage(base_dir, inst_data)
 
     def all_schedules(self, repository_name):
         if repository_name not in self._schedules:

@@ -46,10 +46,12 @@ def test_get_all_schedules():
 
     # Initialize scheduler
     scheduler_handle = context.scheduler_handle
-    scheduler_handle.up(python_path=sys.executable, repository_path="")
+    scheduler_handle.up(
+        python_path=sys.executable, repository_path="", schedule_storage=instance.schedule_storage
+    )
 
     # Get scheduler
-    scheduler = scheduler_handle.get_scheduler()
+    scheduler = scheduler_handle.get_scheduler(instance.schedule_storage)
 
     # Start schedule
     repository = context.get_repository()

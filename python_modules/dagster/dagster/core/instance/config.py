@@ -37,6 +37,7 @@ def define_dagster_config_cls():
         'compute_logs': config_field_for_configurable_class(),
         'run_storage': config_field_for_configurable_class(),
         'event_log_storage': config_field_for_configurable_class(),
+        'schedule_storage': config_field_for_configurable_class(),
         'run_launcher': config_field_for_configurable_class(),
         'dagit': Field(
             {'execution_manager': Field({'max_concurrent_runs': int}, is_required=False)},

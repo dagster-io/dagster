@@ -56,8 +56,9 @@ def get_schedule_change_set(old_schedules, new_schedule_defs):
 
 
 class SchedulerHandle(object):
-    def __init__(self, scheduler_type, schedule_defs, artifacts_dir, repository_name):
-        from .storage import FilesystemScheduleStorage
+    def __init__(
+        self, scheduler_type, schedule_defs, artifacts_dir, repository_name,
+    ):
 
         check.subclass_param(scheduler_type, 'scheduler_type', Scheduler)
         check.list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
@@ -69,9 +70,7 @@ class SchedulerHandle(object):
         self._schedule_defs = schedule_defs
         self._repository_name = repository_name
 
-        self._schedule_storage = FilesystemScheduleStorage(base_dir=artifacts_dir)
-
-    def up(self, python_path, repository_path):
+    def up(self, python_path, repository_path, schedule_storage):
         '''SchedulerHandle stores a list of up-to-date ScheduleDefinitions and a reference to a
         ScheduleStorage. When `up` is called, it reconciles the ScheduleDefinitions list and
         ScheduleStorage to ensure there is a 1-1 correlation between ScheduleDefinitions and
@@ -93,7 +92,7 @@ class SchedulerHandle(object):
         for schedule_def in self._schedule_defs:
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
-            existing_schedule = self._schedule_storage.get_schedule_by_name(
+            existing_schedule = schedule_storage.get_schedule_by_name(
                 self._repository_name, schedule_def.name
             )
             if existing_schedule:
@@ -105,7 +104,7 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                self._schedule_storage.update_schedule(self._repository_name, schedule)
+                schedule_storage.update_schedule(self._repository_name, schedule)
                 schedules_to_restart.append(schedule)
             else:
                 schedule = Schedule(
@@ -115,17 +114,17 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                self._schedule_storage.add_schedule(self._repository_name, schedule)
+                schedule_storage.add_schedule(self._repository_name, schedule)
 
         # Delete all existing schedules that are not in schedule_defs
         schedule_def_names = {s.name for s in self._schedule_defs}
         existing_schedule_names = set(
-            [s.name for s in self._schedule_storage.all_schedules(self._repository_name)]
+            [s.name for s in schedule_storage.all_schedules(self._repository_name)]
         )
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
         # End and restart schedules as appropriate
-        TempScheduler = self._Scheduler(self._artifacts_dir, self._schedule_storage)
+        TempScheduler = self._Scheduler(self._artifacts_dir, schedule_storage)
 
         for schedule in schedules_to_restart:
             # Restart is only needed if the schedule was previously running
@@ -136,9 +135,9 @@ class SchedulerHandle(object):
         for schedule_name in schedule_names_to_delete:
             TempScheduler.end_schedule(self._repository_name, schedule_name)
 
-    def get_change_set(self):
+    def get_change_set(self, schedule_storage):
         schedule_defs = self.all_schedule_defs()
-        schedules = self._schedule_storage.all_schedules(self._repository_name)
+        schedules = schedule_storage.all_schedules(self._repository_name)
         return get_schedule_change_set(schedules, schedule_defs)
 
     def all_schedule_defs(self):
@@ -149,8 +148,8 @@ class SchedulerHandle(object):
             schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
         )
 
-    def get_scheduler(self):
-        return self._Scheduler(self._artifacts_dir, self._schedule_storage)
+    def get_scheduler(self, schedule_storage):
+        return self._Scheduler(self._artifacts_dir, schedule_storage)
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
