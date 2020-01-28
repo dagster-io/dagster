@@ -8,21 +8,22 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
-from .utils import check_valid_name
+from .utils import check_valid_name, validate_tags
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def __init__(
-        self, name, input_defs, output_defs, description=None, metadata=None, positional_inputs=None
+        self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, 'description')
-        self._metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
+        self._tags = validate_tags(tags)
         self._input_defs = frozenlist(input_defs)
         self._input_dict = frozendict({input_def.name: input_def for input_def in input_defs})
         check.invariant(len(self._input_defs) == len(self._input_dict), 'Duplicate input def names')
@@ -47,8 +48,8 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         return self._description
 
     @property
-    def metadata(self):
-        return self._metadata
+    def tags(self):
+        return self._tags
 
     @property
     def input_defs(self):
@@ -176,8 +177,10 @@ class SolidDefinition(ISolidDefinition):
                   in the dictionary get resolved by the same rules, recursively.
 
         description (Optional[str]): Human-readable description of the solid.
-        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
-            expect and require certain metadata to be attached to a solid.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
+            expect and require certain metadata to be attached to a solid. Users should generally
+            not set metadata directly. Values that are not strings will be json encoded and must meet
+            the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this
             solid.
         positional_inputs (Optional[List[str]]): The positional order of the input names if it
@@ -206,9 +209,10 @@ class SolidDefinition(ISolidDefinition):
         output_defs,
         config=None,
         description=None,
-        metadata=None,
+        tags=None,
         required_resource_keys=None,
         positional_inputs=None,
+        metadata=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_field = check_user_facing_opt_config_param(config, 'config',)
@@ -221,7 +225,7 @@ class SolidDefinition(ISolidDefinition):
             input_defs=check.list_param(input_defs, 'input_defs', InputDefinition),
             output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
-            metadata=metadata,
+            tags=canonicalize_backcompat_args(tags, 'tags', metadata, 'metadata'),
             positional_inputs=positional_inputs,
         )
 
@@ -279,7 +283,10 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             level dict are either string names of solids or SolidInvocations. The values
             are dicts that map input names to DependencyDefinitions.
         description (Optional[str]): Human readable description of this composite solid.
-        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the composite solid. Frameworks
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
+            expect and require certain metadata to be attached to a solid. Users should generally
+            not set metadata directly. Values that are not strings will be json encoded and must meet
+            the criteria that `json.loads(json.dumps(value)) == value`.
             may expect and require certain metadata to be attached to a solid.
         positional_inputs (Optional[List[str]]): The positional order of the inputs if it
             differs from the order of the input mappings
@@ -313,7 +320,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         config_mapping=None,
         dependencies=None,
         description=None,
-        metadata=None,
+        tags=None,
         positional_inputs=None,
     ):
         check.str_param(name, 'name')
@@ -344,7 +351,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             input_defs=input_def_list,
             output_defs=output_defs,
             description=description,
-            metadata=metadata,
+            tags=tags,
             positional_inputs=positional_inputs,
         )
 

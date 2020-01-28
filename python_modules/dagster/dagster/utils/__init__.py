@@ -12,6 +12,7 @@ import tempfile
 import threading
 from collections import namedtuple
 from enum import Enum
+from warnings import warn
 
 import yaml
 from six.moves import configparser
@@ -333,3 +334,13 @@ def start_termination_thread(termination_event):
 def datetime_as_float(dt):
     check.inst_param(dt, 'dt', datetime.datetime)
     return float((dt - EPOCH).total_seconds())
+
+
+# hashable frozen string to string dict
+class frozentags(frozendict):
+    def __init__(self, *args, **kwargs):
+        super(frozentags, self).__init__(*args, **kwargs)
+        check.dict_param(self, 'self', key_type=str, value_type=str)
+
+    def __hash__(self):
+        return hash(tuple(sorted(self.items())))

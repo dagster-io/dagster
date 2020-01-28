@@ -6,7 +6,7 @@ from dagster.core.definitions import Materialization, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils import merge_dicts
+from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -165,7 +165,7 @@ class ExecutionStep(
         '_ExecutionStep',
         (
             'pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict '
-            'compute_fn kind solid_handle logging_tags metadata'
+            'compute_fn kind solid_handle logging_tags tags'
         ),
     )
 ):
@@ -179,7 +179,7 @@ class ExecutionStep(
         kind,
         solid_handle,
         logging_tags=None,
-        metadata=None,
+        tags=None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -201,7 +201,7 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
-            metadata=check.opt_dict_param(metadata, 'metadata', key_type=str),
+            tags=check.opt_inst_param(tags, 'tags', frozentags),
         )
 
     @property

@@ -143,8 +143,8 @@ class Solid(object):
         return self.definition.output_dict
 
     @property
-    def metadata(self):
-        return self.definition.metadata
+    def tags(self):
+        return self.definition.tags
 
     def container_maps_input(self, input_name):
         if self.container_definition is None:
@@ -393,7 +393,7 @@ class DependencyStructure(object):
         '''
         Returns a Dict[SolidOutputHandle, List[SolidInputHandle]] that
         represents all the downstream inputs for each output in the
-        dictionary 
+        dictionary
         '''
         check.str_param(solid_name, 'solid_name')
         return self._solid_output_index[solid_name]

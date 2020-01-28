@@ -375,7 +375,7 @@ class ExecutionPlan(
 
 
 def _default_sort_key(step):
-    return step.metadata.get('dagster/priority', 0) * -1
+    return int(step.tags.get('dagster/priority', 0)) * -1
 
 
 class ActiveExecution(object):

@@ -19,13 +19,13 @@ def snowflake_table(
     name=None,
     input_tables=None,
     other_input_defs=None,
-    metadata=None,
+    tags=None,
     required_resource_keys=None,
     description=None,
 ):
-    metadata = check.opt_dict_param(metadata, 'metadata')
-    metadata['lakehouse_type'] = 'snowflake_table'
-    metadata['kind'] = 'snowflake'
+    tags = check.opt_dict_param(tags, 'tags')
+    tags['lakehouse_type'] = 'snowflake_table'
+    tags['kind'] = 'snowflake'
 
     required_resource_keys = check.opt_set_param(required_resource_keys, 'required_resource_keys')
     required_resource_keys.add('snowflake')
@@ -45,7 +45,7 @@ def snowflake_table(
             lakehouse_fn=fn,
             input_tables=input_tables,
             other_input_defs=other_input_defs,
-            metadata=metadata,
+            tags=tags,
             description=description,
             required_resource_keys=required_resource_keys,
         )

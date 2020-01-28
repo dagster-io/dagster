@@ -111,7 +111,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_metadata(self, graphene_info):
         return [
             graphene_info.schema.type_named('MetadataItemDefinition')(key=key, value=value)
-            for key, value in self._execution_step.metadata.items()
+            for key, value in self._execution_step.tags.items()
         ]
 
     def resolve_inputs(self, graphene_info):

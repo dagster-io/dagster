@@ -54,10 +54,10 @@ def create_lakehouse_table_def(
     input_tables=None,
     other_input_defs=None,
     required_resource_keys=None,
-    metadata=None,
+    tags=None,
     description=None,
 ):
-    metadata = check.opt_dict_param(metadata, 'metadata')
+    tags = check.opt_dict_param(tags, 'tags', str, str)
     input_tables = check.opt_list_param(
         input_tables, input_tables, of_type=LakehouseTableInputDefinition
     )
@@ -109,9 +109,9 @@ def create_lakehouse_table_def(
                 hydrated_tables[input_name] = context.resources.lakehouse.hydrate(
                     context,
                     input_type,
-                    table_def_of_type(context.pipeline_def, input_type.name).metadata,
+                    table_def_of_type(context.pipeline_def, input_type.name).tags,
                     table_handle,
-                    metadata,
+                    tags,
                 )
             else:
                 other_inputs[input_name] = value
@@ -121,7 +121,7 @@ def create_lakehouse_table_def(
         computed_output = lakehouse_fn(context, **hydrated_tables, **other_inputs)
 
         materialization, output_table_handle = context.resources.lakehouse.materialize(
-            context, table_type, metadata, computed_output
+            context, table_type, tags, computed_output
         )
 
         if materialization:
@@ -141,7 +141,7 @@ def create_lakehouse_table_def(
         output_defs=[OutputDefinition(table_type)],
         compute_fn=_compute,
         required_resource_keys=required_resource_keys,
-        metadata=metadata,
+        tags=tags,
         description=description,
     )
 

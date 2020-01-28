@@ -15,7 +15,7 @@ FEATURE_AREA = 'feature_area'
 def this_pyspark_table(feature_area, name=None, input_tables=None):
     def _wrap(fn):
         return pyspark_table(
-            name=name, metadata={FEATURE_AREA: feature_area}, input_tables=input_tables
+            name=name, tags={FEATURE_AREA: feature_area}, input_tables=input_tables
         )(fn)
 
     return _wrap
@@ -75,7 +75,7 @@ def test_execute_byfeature_parquet_lakehouse():
         def get_table(table_def):
             spark = spark_session_from_config()
             return spark.read.parquet(
-                os.path.join(temp_dir, table_def.metadata[FEATURE_AREA], table_def.name)
+                os.path.join(temp_dir, table_def.tags[FEATURE_AREA], table_def.name)
             ).collect()
 
         assert get_table(TableOne) == [Row(num=1)]

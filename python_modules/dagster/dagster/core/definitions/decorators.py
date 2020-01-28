@@ -9,6 +9,7 @@ from dagster import check
 from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.partition.utils import date_partition_range
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from ..decorator_utils import (
     InvalidDecoratedFunctionInfo,
@@ -91,7 +92,7 @@ class _Solid(object):
         description=None,
         required_resource_keys=None,
         config=None,
-        metadata=None,
+        tags=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
@@ -107,8 +108,8 @@ class _Solid(object):
         # config will be checked within SolidDefinition
         self.config = config
 
-        # metadata will be checked within ISolidDefinition
-        self.metadata = metadata
+        # tags will be checked within ISolidDefinition
+        self.tags = tags
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -138,7 +139,7 @@ class _Solid(object):
             config=self.config,
             description=self.description,
             required_resource_keys=self.required_resource_keys,
-            metadata=self.metadata,
+            tags=self.tags,
             positional_inputs=positional_inputs,
         )
 
@@ -264,6 +265,7 @@ def solid(
     output_defs=None,
     config=None,
     required_resource_keys=None,
+    tags=None,
     metadata=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
@@ -306,9 +308,10 @@ def solid(
                   in the dictionary get resolved by the same rules, recursively.
 
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
-        metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
-            not set metadata directly.
+            not set metadata directly. Values that are not strings will be json encoded and must meet
+            the criteria that `json.loads(json.dumps(value)) == value`.
 
     Examples:
 
@@ -368,6 +371,8 @@ def solid(
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         check.invariant(metadata is None)
+        check.invariant(tags is None)
+
         return _Solid()(name)
 
     return _Solid(
@@ -377,7 +382,7 @@ def solid(
         config=config,
         description=description,
         required_resource_keys=required_resource_keys,
-        metadata=metadata,
+        tags=canonicalize_backcompat_args(tags, 'tags', metadata, 'metadata'),
     )
 
 

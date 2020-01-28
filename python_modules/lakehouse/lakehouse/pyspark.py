@@ -31,15 +31,15 @@ def pyspark_table(
     name=None,
     input_tables=None,
     other_input_defs=None,
-    metadata=None,
+    tags=None,
     required_resource_keys=None,
     description=None,
 ):
     required_resource_keys = check.opt_set_param(required_resource_keys, 'required_resource_keys')
     required_resource_keys.add('spark')
-    metadata = check.opt_dict_param(metadata, 'metadata')
-    metadata['lakehouse_type'] = 'pyspark_table'
-    metadata['kind'] = 'pyspark'
+    tags = check.opt_dict_param(tags, 'tags')
+    tags['lakehouse_type'] = 'pyspark_table'
+    tags['kind'] = 'pyspark'
 
     if callable(name):
         fn = name
@@ -48,7 +48,7 @@ def pyspark_table(
             lakehouse_fn=fn,
             input_tables=[],
             required_resource_keys=required_resource_keys,
-            metadata=metadata,
+            tags=tags,
         )
 
     def _wrap(fn):
@@ -57,7 +57,7 @@ def pyspark_table(
             lakehouse_fn=fn,
             input_tables=input_tables,
             other_input_defs=other_input_defs,
-            metadata=metadata,
+            tags=tags,
             description=description,
             required_resource_keys=required_resource_keys,
         )

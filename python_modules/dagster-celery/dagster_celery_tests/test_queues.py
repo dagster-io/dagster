@@ -60,9 +60,9 @@ def start_celery_worker(queue=None):
         assert result.exit_code == 0, str(result.exception)
 
 
-@solid(metadata={'dagster-celery/queue': 'fooqueue'})
+@solid(tags={'dagster-celery/queue': 'fooqueue'})
 def fooqueue(context):
-    assert context.solid.metadata['dagster-celery/queue'] == 'fooqueue'
+    assert context.solid.tags['dagster-celery/queue'] == 'fooqueue'
     context.log.info('Executing on queue fooqueue')
     return True
 

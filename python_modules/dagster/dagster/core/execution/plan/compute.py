@@ -40,7 +40,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
         ),
         kind=StepKind.COMPUTE,
         solid_handle=handle,
-        metadata=solid.metadata,
+        tags=solid.tags,
     )
 
 

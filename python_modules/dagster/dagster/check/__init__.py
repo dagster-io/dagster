@@ -103,14 +103,14 @@ def _param_invariant_exception(param_name, desc):
 
 
 def failed(desc):
-    if not _is_str(desc):
+    if not is_str(desc):
         raise_with_traceback(CheckError('desc argument must be a string'))
 
     raise_with_traceback(CheckError('Failure condition: {desc}'.format(desc=desc)))
 
 
 def not_implemented(desc):
-    if not _is_str(desc):
+    if not is_str(desc):
         raise_with_traceback(CheckError('desc argument must be a string'))
 
     raise_with_traceback(NotImplementedCheckError('Not implemented: {desc}'.format(desc=desc)))
@@ -250,12 +250,12 @@ def opt_float_param(obj, param_name):
     return obj
 
 
-def _is_str(obj):
+def is_str(obj):
     return isinstance(obj, string_types)
 
 
 def str_param(obj, param_name):
-    if not _is_str(obj):
+    if not is_str(obj):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return obj
 
@@ -714,7 +714,7 @@ def opt_str_elem(ddict, key):
     value = ddict.get(key)
     if value is None:
         return None
-    if not _is_str(value):
+    if not is_str(value):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value
 
@@ -724,6 +724,6 @@ def str_elem(ddict, key):
     str_param(key, 'key')
 
     value = ddict[key]
-    if not _is_str(value):
+    if not is_str(value):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value

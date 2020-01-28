@@ -216,3 +216,29 @@ def test_bad_output_definition():
         + re.escape('.Exotic object'),
     ):
         _output = OutputDefinition(Exotic())
+
+
+def test_solid_tags():
+    @solid(tags={'good': {'ok': 'fine'}})
+    def _fine_tags(_):
+        pass
+
+    class X:
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Could not JSON encode value',
+    ):
+
+        @solid(tags={'bad': X()})
+        def _bad_tags(_):
+            pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r'JSON encoding "\[1, 2\]" of value "\(1, 2\)" is not equivalent to original value',
+    ):
+
+        @solid(tags={'set_comes_back_as_dict': (1, 2)})
+        def _also_bad_tags(_):
+            pass

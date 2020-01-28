@@ -1,7 +1,7 @@
 from dagster import DagsterInstance, ExecutionTargetHandle, execute_pipeline, pipeline, solid
 
 
-@solid(metadata={'dagster/priority': -1})
+@solid(metadata={'dagster/priority': '-1'})
 def low(_):
     pass
 
@@ -11,7 +11,7 @@ def none(_):
     pass
 
 
-@solid(metadata={'dagster/priority': 1})
+@solid(metadata={'dagster/priority': '1'})
 def high(_):
     pass
 
