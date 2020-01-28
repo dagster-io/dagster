@@ -1,12 +1,10 @@
 import os
 import uuid
 
-import pytest
 import yaml
-from dagster_spark import SparkSolidDefinition, SparkSolidError
+from dagster_spark import SparkSolidDefinition
 
-from dagster import PipelineDefinition, execute_pipeline
-from dagster.core.execution.api import create_execution_plan
+from dagster import execute_solid
 from dagster.utils import script_relative_path
 
 CONFIG_FILE = '''
@@ -27,38 +25,19 @@ solids:
 '''
 
 
-def test_step_metadata():
-    spark_solid = SparkSolidDefinition(
-        'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
-    )
-    pipeline = PipelineDefinition(solid_defs=[spark_solid])
-    environment_dict = yaml.safe_load(CONFIG_FILE.format(path=script_relative_path('fake.jar')))
-    execution_plan = create_execution_plan(pipeline, environment_dict)
-
-    step = execution_plan.get_step_by_key('spark_solid.compute')
-    assert step.metadata == {
-        'spark_submit_command': (
-            '/your/spark_home/bin/spark-submit --class something '
-            '--master local[*] --deploy-mode client --conf spark.app.name=test_app '
-            + script_relative_path('fake.jar')
-            + ' --local-path /tmp/dagster/events/data '
-            '--date 2019-01-01'
-        )
-    }
-
-
 def test_jar_not_found():
     spark_solid = SparkSolidDefinition(
         'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
     )
-    pipeline = PipelineDefinition(solid_defs=[spark_solid])
     # guid guaranteed to not exist
     environment_dict = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
-    with pytest.raises(
-        SparkSolidError,
-        match='does not exist. A valid jar must be built before running this solid.',
-    ):
-        execute_pipeline(pipeline, environment_dict)
+
+    result = execute_solid(spark_solid, environment_dict=environment_dict, raise_on_error=False)
+    assert result.failure_data
+    assert (
+        'does not exist. A valid jar must be built before running this solid.'
+        in result.failure_data.error.message
+    )
 
 
 NO_SPARK_HOME_CONFIG_FILE = '''
@@ -85,15 +64,13 @@ def test_no_spark_home():
     spark_solid = SparkSolidDefinition(
         'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
     )
-    pipeline = PipelineDefinition(solid_defs=[spark_solid])
     environment_dict = yaml.safe_load(
         NO_SPARK_HOME_CONFIG_FILE.format(path=script_relative_path('.'))
     )
 
-    with pytest.raises(SparkSolidError) as exc_info:
-        execute_pipeline(pipeline, environment_dict)
-
-    assert str(exc_info.value) == (
+    result = execute_solid(spark_solid, environment_dict=environment_dict, raise_on_error=False)
+    assert result.failure_data
+    assert (
         'No spark home set. You must either pass spark_home in config or set '
-        '$SPARK_HOME in your environment (got None).'
+        '$SPARK_HOME in your environment (got None).' in result.failure_data.error.message
     )

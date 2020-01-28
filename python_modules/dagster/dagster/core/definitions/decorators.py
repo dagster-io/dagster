@@ -92,7 +92,6 @@ class _Solid(object):
         required_resource_keys=None,
         config=None,
         metadata=None,
-        step_metadata_fn=None,
     ):
         self.name = check.opt_str_param(name, 'name')
         self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
@@ -110,8 +109,6 @@ class _Solid(object):
 
         # metadata will be checked within ISolidDefinition
         self.metadata = metadata
-
-        self.step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -142,7 +139,6 @@ class _Solid(object):
             description=self.description,
             required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
-            step_metadata_fn=self.step_metadata_fn,
             positional_inputs=positional_inputs,
         )
 
@@ -269,7 +265,6 @@ def solid(
     config=None,
     required_resource_keys=None,
     metadata=None,
-    step_metadata_fn=None,
 ):
     '''Create a solid with the specified parameters from the decorated function.
 
@@ -373,7 +368,6 @@ def solid(
         check.invariant(config is None)
         check.invariant(required_resource_keys is None)
         check.invariant(metadata is None)
-        check.invariant(step_metadata_fn is None)
         return _Solid()(name)
 
     return _Solid(
@@ -384,7 +378,6 @@ def solid(
         description=description,
         required_resource_keys=required_resource_keys,
         metadata=metadata,
-        step_metadata_fn=step_metadata_fn,
     )
 
 

@@ -146,10 +146,6 @@ class Solid(object):
     def metadata(self):
         return self.definition.metadata
 
-    @property
-    def step_metadata_fn(self):
-        return self.definition.step_metadata_fn
-
     def container_maps_input(self, input_name):
         if self.container_definition is None:
             return False

@@ -208,7 +208,6 @@ class SolidDefinition(ISolidDefinition):
         description=None,
         metadata=None,
         required_resource_keys=None,
-        step_metadata_fn=None,
         positional_inputs=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
@@ -216,7 +215,6 @@ class SolidDefinition(ISolidDefinition):
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
-        self._step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -238,10 +236,6 @@ class SolidDefinition(ISolidDefinition):
     @property
     def required_resource_keys(self):
         return self._required_resource_keys
-
-    @property
-    def step_metadata_fn(self):
-        return self._step_metadata_fn
 
     @property
     def has_config_entry(self):

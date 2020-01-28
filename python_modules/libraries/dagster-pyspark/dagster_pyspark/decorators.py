@@ -12,7 +12,6 @@ def pyspark_solid(
     config=None,
     required_resource_keys=None,
     metadata=None,
-    step_metadata_fn=None,
     pyspark_resource_key=None,
 ):
     # Permit the user to provide a named pyspark resource
@@ -70,7 +69,6 @@ def pyspark_solid(
             config=config,
             required_resource_keys=non_local['required_resource_keys'],
             metadata=metadata,
-            step_metadata_fn=step_metadata_fn,
         )(new_compute_fn)
 
     return wrap

@@ -537,29 +537,3 @@ snapshots['test_pipeline_not_found_error_execute_plan 1'] = {
         'pipelineName': 'nope'
     }
 }
-
-snapshots['test_pipeline_with_execution_metadata 1'] = {
-    'executionPlan': {
-        '__typename': 'ExecutionPlan',
-        'pipeline': {
-            'name': 'pipeline_with_step_metadata'
-        },
-        'steps': [
-            {
-                'inputs': [
-                ],
-                'key': 'solid_metadata_creation.compute',
-                'kind': 'COMPUTE',
-                'metadata': [
-                    {
-                        'key': 'computed',
-                        'value': 'foobar1'
-                    }
-                ],
-                'outputs': [
-                ],
-                'solidHandleID': 'solid_metadata_creation'
-            }
-        ]
-    }
-}

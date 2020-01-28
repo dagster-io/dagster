@@ -24,7 +24,6 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
-    SolidDefinition,
     String,
     as_dagster_type,
     composite_solid,
@@ -171,7 +170,6 @@ def define_repository():
             pipeline_with_enum_config,
             pipeline_with_expectations,
             pipeline_with_list,
-            pipeline_with_step_metadata,
             required_resource_pipeline,
             scalar_output_pipeline,
             spew_pipeline,
@@ -367,21 +365,6 @@ def naughty_programmer_pipeline():
         raise Exception('bad programmer, bad')
 
     return throw_a_thing()
-
-
-@pipeline
-def pipeline_with_step_metadata():
-    solid_metadata = SolidDefinition(
-        name='solid_metadata_creation',
-        input_defs=[],
-        output_defs=[],
-        compute_fn=lambda *args, **kwargs: None,
-        config={'str_value': String},
-        step_metadata_fn=lambda env_config: {
-            'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
-        },
-    )
-    return solid_metadata()
 
 
 @resource(config=Field(Int))
