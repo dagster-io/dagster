@@ -8,7 +8,7 @@ from dagster_gcp import dataproc_resource, dataproc_solid
 from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, seven
 from dagster.seven import mock
 
-PROJECT_ID = os.getenv('GCP_PROJECT_ID')
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'default_project')
 CLUSTER_NAME = 'test-%s' % uuid.uuid4().hex
 REGION = 'us-west1'
 
