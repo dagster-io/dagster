@@ -1035,7 +1035,7 @@ type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 interface StepEvent {
   step: ExecutionStep

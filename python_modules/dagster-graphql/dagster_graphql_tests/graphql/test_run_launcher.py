@@ -2,16 +2,14 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
-from dagster.core.execution.api import execute_run_iterator
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher import RunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import script_relative_path
 
-from .setup import define_repository
+from .utils import InMemoryRunLauncher
 
 RUN_QUERY = '''
 query RunQuery($runId: ID!) {
@@ -23,22 +21,6 @@ query RunQuery($runId: ID!) {
     }
   }
 '''
-
-
-class InMemoryRunLauncher(RunLauncher):
-    def __init__(self):
-        self._queue = []
-
-    def launch_run(self, _instance, run):
-        self._queue.append(run)
-        return run
-
-    def run_one(self, instance):
-        assert len(self._queue) > 0
-        run = self._queue.pop(0)
-        pipeline = define_repository().get_pipeline(run.pipeline_name)
-        instance.create_run(run)
-        return [ev for ev in execute_run_iterator(pipeline, run, instance)]
 
 
 def test_missing():

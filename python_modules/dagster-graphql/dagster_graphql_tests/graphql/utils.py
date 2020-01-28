@@ -1,10 +1,28 @@
 from dagster_graphql.client.query import SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql
 
+from dagster.core.execution.api import execute_run_iterator
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import RunLauncher
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
-from .setup import define_test_context
+from .setup import define_repository, define_test_context
+
+
+class InMemoryRunLauncher(RunLauncher):
+    def __init__(self):
+        self._queue = []
+
+    def launch_run(self, _instance, run):
+        self._queue.append(run)
+        return run
+
+    def run_one(self, instance):
+        assert len(self._queue) > 0
+        run = self._queue.pop(0)
+        pipeline = define_repository().get_pipeline(run.pipeline_name)
+        instance.create_run(run)
+        return [ev for ev in execute_run_iterator(pipeline, run, instance)]
 
 
 def sync_execute_get_payload(variables, context=None):
