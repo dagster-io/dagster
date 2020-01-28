@@ -19,12 +19,12 @@ interface PipelineExplorerRootProps {
   history: History<any>;
 }
 
-function flattenComposite(
+function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
   handle: PipelineExplorerSolidHandleFragment
 ) {
   if (handle.solid.definition.__typename !== "CompositeSolidDefinition") {
-    throw new Error("flattenComposite takes a composite handle.");
+    throw new Error("explodeComposite takes a composite handle.");
   }
 
   // Replace all references to this composite's inputs in other solid defitions
@@ -45,6 +45,7 @@ function flattenComposite(
       })
     );
   });
+
   // Replace all references to this composite's outputs in other solid defitions
   // with the interior target of the output mappings
   handle.solid.definition.outputMappings.forEach(outmap => {
@@ -65,12 +66,16 @@ function flattenComposite(
   });
 
   // Find all the solid handles that are within this composite and prefix their
-  // names with the composite container's name.
+  // names with the composite container's name, giving them names that should
+  // match their handleID. (Note: We can't assign them their real handleIDs
+  // because we'd have to dig through `handles` to find each solid based on it's
+  // name + parentHandleID and then get it's handleID - dependsOn, etc. provide
+  // Solid references not SolidHandle references.)
   const nested = handles.filter(
     h => h.handleID === `${handle.handleID}.${h.solid.name}`
   );
   nested.forEach(n => {
-    n.solid.name = `${handle.handleID}.${n.solid.name}`;
+    n.solid.name = n.handleID;
     n.solid.inputs.forEach(i => {
       i.dependsOn.forEach(d => {
         d.solid.name = `${handle.handleID}.${d.solid.name}`;
@@ -90,11 +95,11 @@ function flattenComposite(
 /**
  * Given a solid handle graph, returns a new solid handle graph with all of the
  * composites recursively replaced with their interior solids. Interior solids
- * are given handle-like names "composite.inner" to avoid name collisions.
+ * are given their handle names ("composite.inner") to avoid name collisions.
  *
  * @param handles All the SolidHandles in the pipeline (NOT just current layer)
  */
-function flattenCompositesInHandleGraph(
+function explodeCompositesInHandleGraph(
   handles: PipelineExplorerSolidHandleFragment[]
 ) {
   // Clone the entire graph so we can modify solid names in-place
@@ -113,7 +118,7 @@ function flattenCompositesInHandleGraph(
     if (idx === -1) {
       break;
     }
-    results.splice(idx, 1, ...flattenComposite(handles, results[idx]));
+    results.splice(idx, 1, ...explodeComposite(handles, results[idx]));
   }
 
   return results;
@@ -123,7 +128,7 @@ const PipelineExplorerRoot: React.FunctionComponent<PipelineExplorerRootProps> =
   const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
   const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
-    flattenComposites: false
+    explodeComposites: false
   });
 
   const parentNames = pathSolids.slice(0, pathSolids.length - 1);
@@ -138,7 +143,7 @@ const PipelineExplorerRoot: React.FunctionComponent<PipelineExplorerRootProps> =
     variables: {
       pipeline: pipelineName,
       rootHandleID: parentNames.join("."),
-      requestScopeHandleID: options.flattenComposites
+      requestScopeHandleID: options.explodeComposites
         ? undefined
         : parentNames.join(".")
     }
@@ -162,8 +167,8 @@ const PipelineExplorerRoot: React.FunctionComponent<PipelineExplorerRootProps> =
           default:
             const pipeline = pipelineOrError;
             const parentSolidHandle = pipelineOrError.solidHandle;
-            const displayedHandles = options.flattenComposites
-              ? flattenCompositesInHandleGraph(pipeline.solidHandles)
+            const displayedHandles = options.explodeComposites
+              ? explodeCompositesInHandleGraph(pipeline.solidHandles)
               : pipeline.solidHandles;
 
             return (
