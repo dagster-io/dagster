@@ -19,7 +19,7 @@ import { SolidQueryInput } from "./SolidQueryInput";
 import { filterSolidsByQuery } from "./SolidQueryImpl";
 
 export interface PipelineExplorerOptions {
-  flattenComposites: boolean;
+  explodeComposites: boolean;
 }
 
 export type SolidNameOrPath = { name: string } | { path: string[] };
@@ -153,6 +153,12 @@ export default class PipelineExplorer extends React.Component<
 
     const solids = this.props.handles.map(h => h.solid);
     const solidsQueryEnabled = !parentHandle;
+    const explodeCompositesEnabled =
+      !parentHandle &&
+      (options.explodeComposites ||
+        solids.some(
+          f => f.definition.__typename === "CompositeSolidDefinition"
+        ));
 
     const queryResultSolids = solidsQueryEnabled
       ? filterSolidsByQuery(solids, visibleSolidsQuery)
@@ -236,16 +242,16 @@ export default class PipelineExplorer extends React.Component<
                   }
                 />
               </SearchOverlay>
-              {!parentHandle && (
+              {explodeCompositesEnabled && (
                 <OptionsOverlay>
                   <Checkbox
-                    label="Flatten composites"
-                    checked={options.flattenComposites}
+                    label="Explode composites"
+                    checked={options.explodeComposites}
                     onChange={() => {
                       this.handleQueryChange("");
                       this.props.setOptions({
                         ...options,
-                        flattenComposites: !options.flattenComposites
+                        explodeComposites: !options.explodeComposites
                       });
                     }}
                   />
