@@ -49,6 +49,32 @@
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
 
+## 0.6.8
+
+**New**
+
+- Added the dagster-github library, a community contribution from @Ramshackle-Jamathon and
+  @k-mahoney!
+
+**dagster-celery**
+
+- Simplified and improved config handling.
+- An engine event is now emitted when the engine fails to connect to a broker.
+
+**Bugfix**
+
+- Fixes a file descriptor leak when running many concurrent dagster-graphql queries (e.g., for
+  backfill).
+- The `@pyspark_solid` decorator now handles inputs correctly.
+- The handling of solid compute functions that accept kwargs but which are decorated with explicit
+  input definitions has been rationalized.
+- Fixed race conditions in concurrent execution using SQLite event log storage with concurrent
+  execution, uncovered by upstream improvements in the Python inotify library we use.
+
+**Documentation**
+
+- Improved error messages when using system storages that don't fulfill executor requirements.
+
 ## 0.6.7
 
 **New**
