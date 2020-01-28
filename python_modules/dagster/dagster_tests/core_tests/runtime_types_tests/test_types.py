@@ -48,7 +48,7 @@ def test_python_object_type_with_custom_type_check():
     def eq_3(value):
         return isinstance(value, int) and value == 3
 
-    Int3 = DagsterType(key='Int3', name='Int3', type_check_fn=eq_3)
+    Int3 = DagsterType(name='Int3', type_check_fn=eq_3)
 
     assert Int3.name == 'Int3'
     assert_success(Int3, 3)
@@ -247,16 +247,14 @@ def _always_fails(_value):
     raise Exception('kdjfkjd')
 
 
-ThrowsExceptionType = DagsterType(
-    key='ThrowsExceptionType', name='ThrowsExceptionType', type_check_fn=_always_fails,
-)
+ThrowsExceptionType = DagsterType(name='ThrowsExceptionType', type_check_fn=_always_fails,)
 
 
 def _return_bad_value(_value):
     return 'kdjfkjd'
 
 
-BadType = DagsterType(key='BadType', name='BadType', type_check_fn=_return_bad_value)
+BadType = DagsterType(name='BadType', type_check_fn=_return_bad_value)
 
 
 def test_input_type_returns_wrong_thing():
@@ -466,9 +464,7 @@ def test_fan_in_custom_types_with_storage():
     assert pipeline_result.success
 
 
-ReturnBoolType = DagsterType(
-    key='ReturnBoolType', name='ReturnBoolType', type_check_fn=lambda _: True
-)
+ReturnBoolType = DagsterType(name='ReturnBoolType', type_check_fn=lambda _: True)
 
 
 def test_return_bool_type():

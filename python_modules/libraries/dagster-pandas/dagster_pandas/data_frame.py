@@ -96,7 +96,6 @@ def df_type_check(value):
 
 DataFrame = DagsterType(
     name='PandasDataFrame',
-    key='PandasDataFrame',
     description='''Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
     See http://pandas.pydata.org/''',
@@ -185,9 +184,7 @@ def create_dagster_pandas_dataframe_type(
 
     # add input_hydration_confign and output_materialization_config
     # https://github.com/dagster-io/dagster/issues/2027
-    return DagsterType(
-        name=name, key=name, type_check_fn=_dagster_type_check, description=description
-    )
+    return DagsterType(name=name, type_check_fn=_dagster_type_check, description=description)
 
 
 def _execute_summary_stats(type_name, value, event_metadata_fn):

@@ -16,11 +16,56 @@ from .marshal import PickleSerializationStrategy, SerializationStrategy
 
 
 class DagsterType(object):
+    '''Define a type in dagster. These can be used in the inputs and outputs of solids.
+
+    Args:
+        type_check (Callable[[Any], [Union[bool, TypeCheck]]]):
+            The function that defines the type check. It takes the value flowing
+            through the input or output of the solid. If it passes, return either
+            `True` or a `TypeCheck` with `success` set to `True`. If it fails,
+            return either `False` or a `TypeCheck` with `success` set to `False`.
+        key (Optional[str]): The unique key to identify types programatically.
+            The key property always has a value. If you omit key to the argument
+            to the init function, it instead receives the value of `name`. If
+            neither `key` nor `name` is provided, a `CheckError` is thrown.
+
+            In the case of a generic type such as `List` or `Optional`, this is
+            generated programatically based on the type parameters.
+        name (Optional[str]): A unique name given by a user. If key is None, key
+            becomes this value. Name is not given in a case where the user does
+            not specify a unique name for this type, such as a generic class.
+        is_builtin (bool): Defaults to False. This is used by tools to display or
+            filter built-in types (such as String, Int) to visually distinguish
+            them from user-defined types.
+        description (Optional[str]): A markdown-formatted string, displayed in tooling.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            this type. Specify this argument if you will need to shim values of this type using the
+            config machinery. As a rule, you should use the
+            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            these arguments.
+        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            this type. As a rule, you should use the
+            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            decorator to construct these arguments.
+        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
+            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
+            this value when automatically persisting it between execution steps. You should set
+            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
+            for this type.
+        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+            depending on the storage being used for intermediates, they should specify this
+            argument. In these cases the serialization_strategy argument is not sufficient because
+            serialization requires specialized API calls, e.g. to call an S3 API directly instead
+            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
+    '''
+
     def __init__(
         self,
-        key,
-        name,
         type_check_fn,
+        key=None,
+        name=None,
         is_builtin=False,
         description=None,
         input_hydration_config=None,
@@ -28,8 +73,25 @@ class DagsterType(object):
         serialization_strategy=None,
         auto_plugins=None,
     ):
-        self.key = check.str_param(key, 'key')
-        self.name = check.opt_str_param(name, 'name')
+        check.opt_str_param(key, 'key')
+        check.opt_str_param(name, 'name')
+
+        check.invariant(not (name is None and key is None), 'Must set key or name')
+
+        if name is None:
+            check.param_invariant(
+                bool(key), 'key', 'If name is not provided, must provide key.',
+            )
+            self.key, self.name = key, name
+        elif key is None:
+            check.param_invariant(
+                bool(name), 'name', 'If key is not provided, must provide name.',
+            )
+            self.key, self.name = name, name
+        else:
+            check.invariant(key and name)
+            self.key, self.name = key, name
+
         self.description = check.opt_str_param(description, 'description')
         self.input_hydration_config = check.opt_inst_param(
             input_hydration_config, 'input_hydration_config', InputHydrationConfig

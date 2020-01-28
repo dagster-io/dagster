@@ -52,7 +52,6 @@ def file_exists_at_path_type_check(value):
 
 FileExistsAtPath = DagsterType(
     name='FileExistsAtPath',
-    key='FileExistsAtPath',
     description='A path at which a file actually exists',
     type_check_fn=file_exists_at_path_type_check,
 )

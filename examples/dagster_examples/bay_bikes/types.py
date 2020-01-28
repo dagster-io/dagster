@@ -312,7 +312,6 @@ def validate_snapshot_timeseries(training_set_data):
 
 TrainingSet = DagsterType(
     name='TrainingSet',
-    key='TrainingSet',
     description='Final training set ready for the ml pipeline',
     type_check_fn=validate_snapshot_timeseries,
 )
