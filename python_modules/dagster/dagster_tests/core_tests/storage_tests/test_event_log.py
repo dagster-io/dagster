@@ -1,5 +1,8 @@
+import multiprocessing
 import os
+import sys
 import time
+import traceback
 from contextlib import contextmanager
 
 import pytest
@@ -232,3 +235,37 @@ def test_filesystem_event_log_storage_run_corrupted_bad_data():
             conn.execute(event_insert)
         with pytest.raises(DagsterEventLogInvalidForRun):
             storage.get_logs_for_run('bar')
+
+
+def test_concurrent_sqlite_event_log_connections():
+    exceptions = multiprocessing.Queue()
+
+    with seven.TemporaryDirectory() as tmpdir_path:
+
+        def cmd(exceptions):
+            storage = SqliteEventLogStorage(tmpdir_path)
+            try:
+                with storage.connect('foo'):
+                    pass
+            except Exception as exc:  # pylint: disable=broad-except
+                exceptions.put(exc)
+                exc_info = sys.exc_info()
+                traceback.print_tb(exc_info[2])
+
+        ps = []
+        for _ in range(5):
+            ps.append(multiprocessing.Process(target=cmd, args=(exceptions,)))
+        for p in ps:
+            p.start()
+
+        j = 0
+        for p in ps:
+            p.join()
+            j += 1
+
+        assert j == 5
+
+        excs = []
+        while not exceptions.empty():
+            excs.append(exceptions.get())
+        assert not excs, excs

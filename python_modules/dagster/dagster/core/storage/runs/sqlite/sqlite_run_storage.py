@@ -10,7 +10,7 @@ from dagster.core.types import Field, String
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
-from ...sql import create_engine, get_alembic_config, stamp_alembic_rev
+from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev
 from ..schema import RunStorageSqlMetadata
 from ..sql_run_storage import SqlRunStorage
 
@@ -43,11 +43,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine.execute('PRAGMA journal_mode=WAL;')
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
-        conn = engine.connect()
-        try:
-            stamp_alembic_rev(alembic_config, conn)
-        finally:
-            conn.close()
+        db_revision, head_revision = check_alembic_revision(alembic_config, engine)
+        if not (db_revision and head_revision and db_revision == head_revision):
+            stamp_alembic_rev(alembic_config, engine)
 
         return SqliteRunStorage(conn_string, inst_data)
 
