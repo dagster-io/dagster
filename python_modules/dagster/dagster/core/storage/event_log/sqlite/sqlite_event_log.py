@@ -1,10 +1,10 @@
 import glob
+import logging
 import os
 import sqlite3
 from collections import defaultdict
 from contextlib import contextmanager
 
-import six
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
@@ -22,7 +22,6 @@ from ...sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from ..base import DagsterEventLogInvalidForRun
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlEventLogStorage
 
@@ -75,17 +74,29 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return 'sqlite:///{}'.format('/'.join(self.path_for_run_id(run_id).split(os.sep)))
 
     def _initdb(self, engine, run_id):
+
+        alembic_config = get_alembic_config(__file__)
+
         try:
             SqlEventLogStorageMetadata.create_all(engine)
             engine.execute('PRAGMA journal_mode=WAL;')
-        except (db.exc.DatabaseError, sqlite3.DatabaseError) as exc:
-            # This is to deal with concurrent execution -- if this table already exists thanks to a
-            # race with another process, we are fine and can continue.
-            if not 'table event_logs already exists' in str(exc):
-                six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), exc)
-
-        alembic_config = get_alembic_config(__file__)
-        stamp_alembic_rev(alembic_config, engine)
+            stamp_alembic_rev(alembic_config, engine)
+        except (db.exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
+            # This is SQLite-specific handling for concurrency issues that can arise when, e.g.,
+            # the root nodes of a pipeline execute simultaneously on Airflow with SQLite storage
+            # configured and contend with each other to init the db. When we hit the following
+            # errors, we know that another process is on the case and it's safe to continue:
+            if not (
+                'table event_logs already exists' in str(exc)
+                or 'database is locked' in str(exc)
+                or 'table alembic_version already exists' in str(exc)
+            ):
+                raise
+            else:
+                logging.info(
+                    'SqliteEventLogStorage._initdb: Encountered apparent concurrent init, '
+                    'swallowing {str_exc}'.format(str_exc=str(exc))
+                )
 
     @contextmanager
     def connect(self, run_id=None):
@@ -107,6 +118,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 yield conn
         finally:
             conn.close()
+        engine.dispose()
 
     def wipe(self):
         for filename in (
