@@ -91,7 +91,7 @@ export function filterByQuery<T extends GraphQueryItem>(
   const focus = new Set<T>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([\w\d_.-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d_-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) continue;
     const [, parentsClause, itemName, descendentsClause] = parts;
     const itemsMatching = items.filter(

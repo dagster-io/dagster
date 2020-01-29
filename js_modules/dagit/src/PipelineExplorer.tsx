@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import Color from "color";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup, Checkbox } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -14,27 +14,32 @@ import PipelineGraph from "./graph/PipelineGraph";
 import { SplitPanelContainer } from "./SplitPanelContainer";
 import SidebarTabbedContainer from "./SidebarTabbedContainer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
-import { PipelineExplorerParentSolidHandleFragment } from "./types/PipelineExplorerParentSolidHandleFragment";
 import { filterByQuery } from "./GraphQueryImpl";
 import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { GraphQueryInput } from "./GraphQueryInput";
+
+export interface PipelineExplorerOptions {
+  explodeComposites: boolean;
+}
+
+export type SolidNameOrPath = { name: string } | { path: string[] };
 
 interface PipelineExplorerProps {
   history: History;
   path: string[];
   visibleSolidsQuery: string;
+  options: PipelineExplorerOptions;
+  setOptions: (options: PipelineExplorerOptions) => void;
   pipeline: PipelineExplorerFragment;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerParentSolidHandleFragment;
+  parentHandle?: PipelineExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => { handleID: string }[];
 }
 
 interface PipelineExplorerState {
   highlighted: string;
 }
-
-export type SolidNameOrPath = { name: string } | { path: string[] };
 
 export default class PipelineExplorer extends React.Component<
   PipelineExplorerProps,
@@ -58,18 +63,6 @@ export default class PipelineExplorer extends React.Component<
         }
       }
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-    `,
-    PipelineExplorerParentSolidHandleFragment: gql`
-      fragment PipelineExplorerParentSolidHandleFragment on SolidHandle {
-        handleID
-        solid {
-          name
-          ...PipelineGraphParentSolidFragment
-          ...SolidQueryInputSolidFragment
-        }
-      }
-      ${PipelineGraph.fragments.PipelineGraphParentSolidFragment}
-      ${GraphQueryInput.fragments.SolidQueryInputSolidFragment}
     `
   };
 
@@ -150,6 +143,7 @@ export default class PipelineExplorer extends React.Component<
   public render() {
     const {
       path,
+      options,
       history,
       pipeline,
       parentHandle,
@@ -159,6 +153,12 @@ export default class PipelineExplorer extends React.Component<
 
     const solids = this.props.handles.map(h => h.solid);
     const solidsQueryEnabled = !parentHandle;
+    const explodeCompositesEnabled =
+      !parentHandle &&
+      (options.explodeComposites ||
+        solids.some(
+          f => f.definition.__typename === "CompositeSolidDefinition"
+        ));
 
     const queryResultSolids = solidsQueryEnabled
       ? filterByQuery(solids, visibleSolidsQuery)
@@ -240,6 +240,21 @@ export default class PipelineExplorer extends React.Component<
                 }
               />
             </SearchOverlay>
+            {explodeCompositesEnabled && (
+              <OptionsOverlay>
+                <Checkbox
+                  label="Explode composites"
+                  checked={options.explodeComposites}
+                  onChange={() => {
+                    this.handleQueryChange("");
+                    this.props.setOptions({
+                      ...options,
+                      explodeComposites: !options.explodeComposites
+                    });
+                  }}
+                />
+              </OptionsOverlay>
+            )}
             {queryResultSolids.all.length === 0 &&
               !visibleSolidsQuery.length && <LargeDAGNotice />}
             <PipelineGraphContainer
@@ -289,6 +304,16 @@ const RightInfoPanel = styled.div`
   height: 100%;
   overflow-y: scroll;
   background: ${Colors.WHITE};
+`;
+
+const OptionsOverlay = styled.div`
+  z-index: 2;
+  padding: 3px 15px;
+  display: inline-flex;
+  align-items: stretch;
+  position: absolute;
+  bottom: 0;
+  left: 0;
 `;
 
 const SearchOverlay = styled.div`

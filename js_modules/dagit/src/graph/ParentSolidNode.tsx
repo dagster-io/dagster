@@ -2,12 +2,12 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 import { IFullPipelineLayout } from "./getFullSolidLayout";
-import { PipelineGraphParentSolidFragment } from "./types/PipelineGraphParentSolidFragment";
 import { SVGLabeledRect } from "./SVGComponents";
 import { Edge } from "./highlighting";
 import { ExternalConnectionNode } from "./ExternalConnectionNode";
 import { MappingLine } from "./MappingLine";
 import { titleOfIO } from "../Util";
+import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import {
   SolidIOBox,
@@ -18,7 +18,7 @@ import {
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;
-  solid: PipelineGraphParentSolidFragment;
+  solid: PipelineGraphSolidFragment;
   minified: boolean;
 
   highlightedEdges: Edge[];
