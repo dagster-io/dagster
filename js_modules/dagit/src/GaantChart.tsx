@@ -56,6 +56,7 @@ const BOX_HEIGHT = 30;
 const BOX_MARGIN_Y = 5;
 const BOX_MARGIN_X = 10;
 const BOX_WIDTH = 100;
+const BOX_MIN_WIDTH = 6;
 const LINE_SIZE = 2;
 
 /**
@@ -117,7 +118,7 @@ const boxWidthFor = (
         : stepInfo.start
         ? Date.now() - stepInfo.start
         : BOX_WIDTH;
-    return Math.max(BOX_MARGIN_X * 2, width * options.scale);
+    return Math.max(BOX_MARGIN_X * 2 + BOX_MIN_WIDTH, width * options.scale);
   }
   return BOX_WIDTH;
 };
@@ -519,6 +520,7 @@ const GaantChartContent = (
 
   layout.boxes.forEach((box, idx) => {
     const highlighted = hovered === box || hovered?.children.includes(box);
+    const color = boxColorFor(box.node, metadata);
 
     items.push(
       <div
@@ -527,7 +529,7 @@ const GaantChartContent = (
           left: box.x + BOX_MARGIN_X,
           top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
           width: Math.max(1, box.width - BOX_MARGIN_X * 2),
-          background: boxColorFor(box.node, metadata)
+          background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
         }}
         className={`box ${highlighted && "highlighted"}`}
         onClick={() => props.onApplyStepFilter?.(box.node.name)}
@@ -573,6 +575,7 @@ const GaantLine = React.memo(
   }) => {
     const startIdx = start.y;
     const endIdx = end.y;
+
     const minIdx = Math.min(startIdx, endIdx);
     const maxIdx = Math.max(startIdx, endIdx);
 
@@ -580,10 +583,10 @@ const GaantLine = React.memo(
     const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
 
     const minX =
-      Math.min(start.x + start.width, end.x + start.width) - BOX_MARGIN_X + 1;
+      Math.min(start.x + start.width, end.x + end.width) - BOX_MARGIN_X + 1;
     const maxX =
       maxIdx === minIdx
-        ? Math.max(start.x, end.x) + BOX_MARGIN_X
+        ? Math.max(start.x, end.x + BOX_MARGIN_X)
         : Math.max(start.x + start.width / 2, end.x + end.width / 2);
 
     const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
@@ -652,6 +655,8 @@ const GaantChartContainer = styled.div`
     border: 1px solid transparent;
     overflow: hidden;
     z-index: 2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    border-radius: 2px;
 
     transition: top 200ms linear, left 200ms linear, width 200ms linear,
       height 200ms linear;

@@ -63,7 +63,9 @@ export class SplitPanelContainer extends React.Component<
           onSetResizing={resizing => this.setState({ resizing })}
           onMove={this.onChangeSize}
         />
-        <div className="split-panel">{second}</div>
+        <div className="split-panel" style={{ flex: 1 }}>
+          {second}
+        </div>
       </Container>
     );
   }
