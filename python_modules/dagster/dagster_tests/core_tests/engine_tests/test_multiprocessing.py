@@ -196,7 +196,7 @@ def test_seperate_sub_dags():
 
     result = execute_pipeline(
         pipe,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {'max_concurrent': 4}}},
         instance=DagsterInstance.local_temp(),
     )
 
