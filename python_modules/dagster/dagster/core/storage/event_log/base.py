@@ -11,7 +11,7 @@ from dagster.core.execution.stats import build_stats_from_events
 
 class DagsterEventLogInvalidForRun(DagsterError):
     def __init__(self, *args, **kwargs):
-        self.run_id = check.str_param(kwargs.pop('run_id'), 'run_id')
+        self.run_id = check.str_param(kwargs.pop('run_id', None), 'run_id')
         super(DagsterEventLogInvalidForRun, self).__init__(*args, **kwargs)
 
 
