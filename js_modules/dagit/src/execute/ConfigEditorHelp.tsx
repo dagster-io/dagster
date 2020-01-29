@@ -48,13 +48,16 @@ const AutocompletionsNote = styled.div`
   text-align: center;
   padding: 4px;
   border-top: 1px solid ${Colors.LIGHT_GRAY1};
-  background: rgba(0, 0, 0, 0.07);
+  background: rgba(238, 238, 238, 0.9);
   color: rgba(0, 0, 0, 0.7);
 `;
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  max-height: 20vh;
+  color: black;
+  pointer-events: initial;
+  background-color: #e1e8edd1;
+  max-height: 100%;
   overflow-y: auto;
 `;
 
@@ -62,9 +65,9 @@ const Container = styled.div`
   width: 300px;
   top: 54px;
   right: 10px;
-  color: black;
-  background-color: #e1e8edd1;
+  bottom: 68px;
   position: absolute;
   align-items: center;
+  pointer-events: none;
   z-index: 3;
 `;
