@@ -4,10 +4,15 @@ import uuid
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.storage.event_log import InMemoryEventLogStorage
+from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.root import LocalArtifactStorage
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import file_relative_path
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
+from .utils import InMemoryRunLauncher
 
 
 def test_basic_start_scheduled_execution():
@@ -34,6 +39,55 @@ def test_basic_start_scheduled_execution():
         # just test existence
         assert (
             result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+
+        assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
+        assert (
+            result.data['startScheduledExecution']['run']['pipeline']['name']
+            == 'no_config_pipeline'
+        )
+
+        assert any(
+            tag['key'] == 'dagster/schedule_name'
+            and tag['value'] == 'no_config_pipeline_hourly_schedule'
+            for tag in result.data['startScheduledExecution']['run']['tags']
+        )
+
+
+def test_basic_start_scheduled_execution_with_run_launcher():
+    test_queue = InMemoryRunLauncher()
+
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=test_queue,
+        )
+
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(
+            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
         )
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])

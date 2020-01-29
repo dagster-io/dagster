@@ -118,6 +118,11 @@ def start_scheduled_execution(graphene_info, schedule_name):
         previous_run_id=None,
     )
 
+    # Launch run if run launcher is defined
+    run_launcher = graphene_info.context.instance.run_launcher
+    if run_launcher:
+        return launch_pipeline_execution(graphene_info, execution_params)
+
     return start_pipeline_execution(graphene_info, execution_params)
 
 

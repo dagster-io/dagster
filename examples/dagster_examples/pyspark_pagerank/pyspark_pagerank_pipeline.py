@@ -17,14 +17,20 @@ from .original import computeContribs, parseNeighbors
 
 
 @solid(
-    input_defs=[InputDefinition('pagerank_data', Path)], output_defs=[OutputDefinition(SparkRDD)]
+    input_defs=[InputDefinition('pagerank_data', Path)],
+    output_defs=[OutputDefinition(SparkRDD)],
+    required_resource_keys={'spark'},
 )
 def parse_pagerank_data(context, pagerank_data):
     lines = context.resources.spark.spark_session.read.text(pagerank_data).rdd.map(lambda r: r[0])
     return lines.map(parseNeighbors)
 
 
-@solid(input_defs=[InputDefinition('urls', SparkRDD)], output_defs=[OutputDefinition(SparkRDD)])
+@solid(
+    input_defs=[InputDefinition('urls', SparkRDD)],
+    output_defs=[OutputDefinition(SparkRDD)],
+    required_resource_keys={'spark'},  # required for dagster_pyspark.SparkRDD
+)
 def compute_links(_context, urls):
     return urls.distinct().groupByKey().cache()
 
@@ -33,6 +39,7 @@ def compute_links(_context, urls):
     input_defs=[InputDefinition(name='links', dagster_type=SparkRDD)],
     output_defs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
     config={'iterations': Field(Int, is_optional=True, default_value=1)},
+    required_resource_keys={'spark'},  # required for dagster_pyspark.SparkRDD
 )
 def calculate_ranks(context, links):
     ranks = links.map(lambda url_neighbors: (url_neighbors[0], 1.0))

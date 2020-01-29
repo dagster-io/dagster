@@ -40,6 +40,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
             enable local testing with kind. Default: ``'Always'``.
         job_namespace (Optional[str]): The namespace into which to launch jobs. Default: "default"
+        env_froms (Optional[List[str]]): Additional custom ConfigMapEnvSource names from which to
+            draw environment variables (using `env_from`) for the Job. Default: ``[]``.
     '''
 
     def __init__(
@@ -53,6 +55,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         kubeconfig_file=None,
         inst_data=None,
         job_namespace="default",
+        env_froms=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
         self.job_image = check.str_param(job_image, 'job_image')
@@ -61,6 +64,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self.image_pull_policy = check.str_param(image_pull_policy, 'image_pull_policy')
         self.service_account_name = check.str_param(service_account_name, 'service_account_name')
         self.job_namespace = check.str_param(job_namespace, 'job_namespace')
+        self._env_froms = check.opt_list_param(env_froms, 'env_froms', of_type=str)
         check.bool_param(load_kubeconfig, 'load_kubeconfig')
         if load_kubeconfig:
             check.str_param(kubeconfig_file, 'kubeconfig_file')
@@ -95,6 +99,13 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
+    @property
+    def env_froms(self):
+        return [
+            client.V1EnvFromSource(config_map_ref=client.V1ConfigMapEnvSource(name=env_from))
+            for env_from in self._env_froms
+        ]
+
     def construct_job(self, run):
         check.inst_param(run, 'run', PipelineRun)
 
@@ -120,6 +131,12 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             args=["-p", "startPipelineExecution", "-v", json.dumps(execution_params)],
             image_pull_policy=self.image_pull_policy,
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
+            env_from=[
+                client.V1EnvFromSource(
+                    config_map_ref=client.V1ConfigMapEnvSource(name='dagster-job-env')
+                )
+            ]
+            + self.env_froms,
             volume_mounts=[
                 client.V1VolumeMount(
                     name='dagster-instance',

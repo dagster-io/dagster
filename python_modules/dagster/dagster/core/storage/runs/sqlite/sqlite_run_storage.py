@@ -41,13 +41,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine.execute('PRAGMA journal_mode=WAL;')
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
-        conn = engine.connect()
-        try:
-            db_revision, head_revision = check_alembic_revision(alembic_config, conn)
-            if not (db_revision and head_revision and db_revision == head_revision):
-                stamp_alembic_rev(alembic_config, conn)
-        finally:
-            conn.close()
+        db_revision, head_revision = check_alembic_revision(alembic_config, engine)
+        if not (db_revision and head_revision and db_revision == head_revision):
+            stamp_alembic_rev(alembic_config, engine)
 
         return SqliteRunStorage(conn_string, inst_data)
 

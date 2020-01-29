@@ -440,24 +440,24 @@ pipeline_execution_error_types = (
     DauphinPythonError,
 )
 
-start_pipeline_execution_result_types = (
-    DauphinStartPipelineExecutionSuccess,
-) + pipeline_execution_error_types
+start_pipeline_execution_result_types = (DauphinStartPipelineExecutionSuccess,)
+
+launch_pipeline_execution_result_types = (
+    DauphinLaunchPipelineExecutionSuccess,
+    DauphinRunLauncherNotDefinedError,
+)
 
 
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'StartPipelineExecutionResult'
-        types = start_pipeline_execution_result_types
+        types = start_pipeline_execution_result_types + pipeline_execution_error_types
 
 
 class DauphinLaunchPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'LaunchPipelineExecutionResult'
-        types = (
-            DauphinLaunchPipelineExecutionSuccess,
-            DauphinRunLauncherNotDefinedError,
-        ) + pipeline_execution_error_types
+        types = launch_pipeline_execution_result_types + pipeline_execution_error_types
 
 
 class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
@@ -471,10 +471,15 @@ class DauphinStartScheduledExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'StartScheduledExecutionResult'
         types = (
-            DauphinScheduleNotFoundError,
-            DauphinSchedulerNotDefinedError,
-            DauphinScheduledExecutionBlocked,
-        ) + start_pipeline_execution_result_types
+            (
+                DauphinScheduleNotFoundError,
+                DauphinSchedulerNotDefinedError,
+                DauphinScheduledExecutionBlocked,
+            )
+            + start_pipeline_execution_result_types
+            + launch_pipeline_execution_result_types
+            + pipeline_execution_error_types
+        )
 
 
 class DauphinExecutePlanSuccess(dauphin.ObjectType):

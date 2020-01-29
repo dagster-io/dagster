@@ -1,5 +1,6 @@
 import logging
-from io import BytesIO
+import sys
+from io import BytesIO, StringIO
 
 import boto3
 
@@ -31,7 +32,14 @@ class S3ObjectStore(ObjectStore):
             self.rm_object(key)
 
         with BytesIO() as bytes_io:
-            serialization_strategy.serialize(obj, bytes_io)
+            if serialization_strategy.write_mode == 'w' and sys.version_info >= (3, 0):
+                with StringIO() as string_io:
+                    string_io = StringIO()
+                    serialization_strategy.serialize(obj, string_io)
+                    string_io.seek(0)
+                    bytes_io.write(string_io.read().encode('utf-8'))
+            else:
+                serialization_strategy.serialize(obj, bytes_io)
             bytes_io.seek(0)
             self.s3.put_object(Bucket=self.bucket, Key=key, Body=bytes_io)
 
@@ -51,6 +59,12 @@ class S3ObjectStore(ObjectStore):
         # FIXME we need better error handling for object store
         obj = serialization_strategy.deserialize(
             BytesIO(self.s3.get_object(Bucket=self.bucket, Key=key)['Body'].read())
+            if serialization_strategy.read_mode == 'rb'
+            else StringIO(
+                self.s3.get_object(Bucket=self.bucket, Key=key)['Body']
+                .read()
+                .decode(serialization_strategy.encoding)
+            )
         )
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,

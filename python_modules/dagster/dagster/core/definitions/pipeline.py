@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.dagster_type import construct_dagster_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -79,6 +79,7 @@ class PipelineDefinition(IContainSolids, object):
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
+
 
     Examples:
 
@@ -164,7 +165,7 @@ class PipelineDefinition(IContainSolids, object):
         self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
-        self._runtime_type_dict = construct_runtime_type_dictionary(self._current_level_solid_defs)
+        self._runtime_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}
@@ -381,6 +382,7 @@ class PipelineDefinition(IContainSolids, object):
         return name in self._all_solid_defs
 
     def build_sub_pipeline(self, solid_subset):
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
 
     def get_presets(self):
@@ -476,16 +478,16 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
-        for solid in solid_defs:
-            for required_resource in solid.required_resource_keys:
+        for solid_def in solid_defs:
+            for required_resource in solid_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by solid {solid_name}, but is not '
+                            'Resource "{resource}" is required by solid def {solid_def_name}, but is not '
                             'provided by mode "{mode_name}".'
                         ).format(
                             resource=required_resource,
-                            solid_name=solid.name,
+                            solid_def_name=solid_def.name,
                             mode_name=mode_def.name,
                         )
                     )

@@ -36,8 +36,8 @@ class ExecutorDefinition(object):
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )
-        self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+        self._required_resource_keys = frozenset(
+            check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
 
     @property

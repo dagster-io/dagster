@@ -5,7 +5,7 @@ from collections import namedtuple
 import sqlalchemy
 
 from dagster import as_dagster_type
-from dagster.core.types.runtime_type import create_string_type
+from dagster.core.types.dagster_type import create_string_type
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',

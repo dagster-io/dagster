@@ -19,7 +19,7 @@ from dagster import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.types.runtime_type import create_any_type
+from dagster.core.types.dagster_type import create_any_type
 from dagster.utils.test import get_temp_file_name, get_temp_file_names
 
 
@@ -332,11 +332,11 @@ def return_int(*_args, **_kwargs):
     return 1
 
 
-SomeRuntimeType = create_any_type(name='SomeType', output_materialization_config=return_int)
+SomeDagsterType = create_any_type(name='SomeType', output_materialization_config=return_int)
 
 
 def test_basic_bad_output_materialization():
-    @lambda_solid(output_def=OutputDefinition(SomeRuntimeType))
+    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
     def return_one():
         return 1
 

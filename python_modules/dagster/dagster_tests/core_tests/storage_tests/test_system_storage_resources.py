@@ -14,7 +14,7 @@ from dagster.core.storage.system_storage import create_mem_system_storage_data
 def test_naked_system_storage():
     called = {}
 
-    @system_storage
+    @system_storage(required_resource_keys=set())
     def no_config_storage(init_context):
         called['called'] = True
         return create_mem_system_storage_data(init_context)
