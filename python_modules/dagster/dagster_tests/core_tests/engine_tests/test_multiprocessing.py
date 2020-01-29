@@ -1,18 +1,21 @@
+import os
 import time
-
-import pytest
 
 from dagster import (
     ExecutionTargetHandle,
+    Field,
     InputDefinition,
     Nothing,
     OutputDefinition,
     PipelineDefinition,
     PresetDefinition,
+    String,
     execute_pipeline,
     execute_pipeline_with_preset,
     lambda_solid,
     pipeline,
+    seven,
+    solid,
 )
 from dagster.core.instance import DagsterInstance
 
@@ -169,39 +172,59 @@ def test_solid_subset():
     assert result.result_for_solid('adder').output_value() == 2
 
 
-def define_sleep_pipeline():
-    @lambda_solid
-    def a_long_sleep():
-        time.sleep(3)
+def define_subdag_pipeline():
+    @solid(config=Field(String))
+    def waiter(context):
+        done = False
+        while not done:
+            time.sleep(0.25)
+            with open(context.solid_config, 'r') as fd:
+                if fd.read() == '111':
+                    done = True
+                    time.sleep(1)
 
-    @lambda_solid(
-        input_defs=[InputDefinition('after', Nothing)], output_def=OutputDefinition(Nothing)
+    @solid(
+        input_defs=[InputDefinition('after', Nothing)],
+        output_defs=[OutputDefinition(Nothing)],
+        config=Field(String),
     )
-    def no_sleep():
-        pass
+    def counter(context):
+        with open(context.solid_config, 'a') as fd:
+            fd.write('1')
+        return
 
     @pipeline
     def seperate():
-        a_long_sleep()
-        no_sleep(no_sleep(no_sleep()))
+        waiter()
+        counter.alias('counter_3')(counter.alias('counter_2')(counter.alias('counter_1')()))
 
     return seperate
 
 
-@pytest.mark.skip  # https://github.com/dagster-io/dagster/issues/2097
 def test_seperate_sub_dags():
     pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_sleep_pipeline'
+        __file__, 'define_subdag_pipeline'
     ).build_pipeline_definition()
 
-    result = execute_pipeline(
-        pipe,
-        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
-        instance=DagsterInstance.local_temp(),
-    )
+    with seven.TemporaryDirectory() as tempdir:
+        filename = os.path.join(tempdir, 'foo')
+        result = execute_pipeline(
+            pipe,
+            environment_dict={
+                'storage': {'filesystem': {}},
+                'execution': {'multiprocess': {'config': {'max_concurrent': 4}}},
+                'solids': {
+                    'waiter': {'config': filename},
+                    'counter_1': {'config': filename},
+                    'counter_2': {'config': filename},
+                    'counter_3': {'config': filename},
+                },
+            },
+            instance=DagsterInstance.local_temp(),
+        )
 
     assert result.success
     # ensure that
     assert [
         str(event.solid_handle) for event in result.step_event_list if event.is_step_success
-    ] == ['no_sleep', 'no_sleep_2', 'no_sleep_3', 'a_long_sleep']
+    ] == ['counter_1', 'counter_2', 'counter_3', 'waiter']
