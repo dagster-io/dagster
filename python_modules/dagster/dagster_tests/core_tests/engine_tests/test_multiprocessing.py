@@ -182,6 +182,7 @@ def define_subdag_pipeline():
                 if fd.read() == '111':
                     done = True
                     time.sleep(1)
+
     @solid(
         input_defs=[InputDefinition('after', Nothing)],
         output_defs=[OutputDefinition(Nothing)],
