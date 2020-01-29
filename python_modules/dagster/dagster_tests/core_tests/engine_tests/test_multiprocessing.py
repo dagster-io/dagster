@@ -1,8 +1,6 @@
 import os
 import time
 
-import pytest
-
 from dagster import (
     ExecutionTargetHandle,
     Field,
@@ -16,10 +14,11 @@ from dagster import (
     execute_pipeline_with_preset,
     lambda_solid,
     pipeline,
+    seven,
     solid,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.seven import tempfile
+
 
 def test_diamond_simple_execution():
     result = execute_pipeline(define_diamond_pipeline())
@@ -206,7 +205,7 @@ def test_seperate_sub_dags():
         __file__, 'define_subdag_pipeline'
     ).build_pipeline_definition()
 
-    with tempfile.TemporaryDirectory() as tempdir:
+    with seven.TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'foo')
         result = execute_pipeline(
             pipe,
@@ -217,8 +216,8 @@ def test_seperate_sub_dags():
                     'waiter': {'config': filename},
                     'counter_1': {'config': filename},
                     'counter_2': {'config': filename},
-                    'counter_3': {'config': filename}
-                }
+                    'counter_3': {'config': filename},
+                },
             },
             instance=DagsterInstance.local_temp(),
         )
