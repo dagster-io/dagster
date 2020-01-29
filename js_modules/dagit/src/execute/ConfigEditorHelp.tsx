@@ -64,7 +64,7 @@ const ConfigScrollWrap = styled.div`
 const Container = styled.div`
   width: 300px;
   top: 54px;
-  right: 10px;
+  right: 14px;
   bottom: 68px;
   position: absolute;
   align-items: center;

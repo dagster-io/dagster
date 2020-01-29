@@ -436,19 +436,33 @@ export class GaantChart extends React.Component<
       <GaantChartContainer>
         <OptionsContainer>
           <ButtonGroup style={{ flexShrink: 0 }}>
-            {[
-              GaantChartMode.FLAT,
-              GaantChartMode.WATERFALL,
-              GaantChartMode.WATERFALL_TIMED
-            ].map(mode => (
-              <Button
-                key={mode}
-                text={mode.toLowerCase()}
-                small={true}
-                active={options.mode === mode}
-                onClick={() => setOptions({ mode: mode as GaantChartMode })}
-              />
-            ))}
+            <Button
+              key={GaantChartMode.FLAT}
+              small={true}
+              icon="column-layout"
+              title={"Flat"}
+              active={options.mode === GaantChartMode.FLAT}
+              onClick={() => setOptions({ mode: GaantChartMode.FLAT })}
+            />
+            <Button
+              key={GaantChartMode.WATERFALL}
+              small={true}
+              icon="gantt-chart"
+              title={"Waterfall"}
+              active={options.mode === GaantChartMode.WATERFALL}
+              onClick={() => setOptions({ mode: GaantChartMode.WATERFALL })}
+            />
+            <Button
+              key={GaantChartMode.WATERFALL_TIMED}
+              small={true}
+              icon="time"
+              rightIcon="gantt-chart"
+              title={"Waterfall with Execution Timing"}
+              active={options.mode === GaantChartMode.WATERFALL_TIMED}
+              onClick={() =>
+                setOptions({ mode: GaantChartMode.WATERFALL_TIMED })
+              }
+            />
           </ButtonGroup>
           {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
@@ -652,4 +666,7 @@ const OptionsContainer = styled.div`
   padding: 5px 15px;
   border-bottom: 1px solid #A7B6C2;
   box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  background: ${Colors.WHITE};
+  flex-shrink: 0;
+  z-index: 3;
 }`;

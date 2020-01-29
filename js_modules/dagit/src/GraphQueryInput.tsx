@@ -248,7 +248,7 @@ GraphQueryInput.fragments = {
 const GraphQueryInputContainer = styled.div`
   z-index: 2;
   position: absolute;
-  bottom: 10px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
 `;

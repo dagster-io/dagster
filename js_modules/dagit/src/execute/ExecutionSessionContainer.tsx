@@ -425,7 +425,7 @@ const ConfigEditorPresetInsertionContainer = styled.div`
 const ConfigEditorDisplayOptionsContainer = styled.div`
   display: inline-block;
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  bottom: 14px;
+  right: 14px;
   z-index: 10;
 `;
