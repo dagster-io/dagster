@@ -9,7 +9,7 @@ import ApolloClient from "apollo-client";
 import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
 import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
-import { SplitPanelContainer } from "../SplitPanelContainer";
+import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunMetadataProvider } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
@@ -244,6 +244,8 @@ const RunWithData = ({
   onSetLogsFilter,
   onShowStateDetails
 }: RunWithDataProps) => {
+  const splitPanelContainer = React.createRef<SplitPanelContainer>();
+
   const gaantPreview = getFeatureFlags().includes(
     FeatureFlag.GaantExecutionPlan
   );
@@ -269,6 +271,7 @@ const RunWithData = ({
 
   return gaantPreview ? (
     <SplitPanelContainer
+      ref={splitPanelContainer}
       axis={"vertical"}
       identifier="run-gaant"
       firstInitialPercent={35}
@@ -280,6 +283,12 @@ const RunWithData = ({
               options={{
                 mode: GaantChartMode.WATERFALL_TIMED
               }}
+              toolbarLeftActions={
+                <SplitPanelToggles
+                  axis={"vertical"}
+                  container={splitPanelContainer}
+                />
+              }
               toolbarActions={
                 <RunActionButtons run={run} onReexecute={onReexecute} />
               }

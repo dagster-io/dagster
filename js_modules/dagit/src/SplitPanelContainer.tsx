@@ -1,14 +1,6 @@
 import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-
-interface IDividerProps {
-  axis: "horizontal" | "vertical";
-  onMove: (vw: number) => void;
-}
-interface IDividerState {
-  down: boolean;
-}
+import styled, { CSSProperties } from "styled-components/macro";
+import { Colors, ButtonGroup, Button } from "@blueprintjs/core";
 
 interface SplitPanelContainerProps {
   axis?: "horizontal" | "vertical";
@@ -21,6 +13,7 @@ interface SplitPanelContainerProps {
 interface SplitPanelContainerState {
   size: number;
   key: string;
+  resizing: boolean;
 }
 
 export class SplitPanelContainer extends React.Component<
@@ -31,12 +24,13 @@ export class SplitPanelContainer extends React.Component<
     super(props);
 
     const key = `dagit.panel-width.${this.props.identifier}`;
-    let size = Number(window.localStorage.getItem(key));
-    if (size === 0 || isNaN(size)) {
+    const value = window.localStorage.getItem(key);
+    let size = Number(value);
+    if (value === null || isNaN(size)) {
       size = this.props.firstInitialPercent;
     }
 
-    this.state = { size, key };
+    this.state = { size, key, resizing: false };
   }
 
   onChangeSize = (size: number) => {
@@ -46,40 +40,47 @@ export class SplitPanelContainer extends React.Component<
 
   render() {
     const { firstMinSize, first, second } = this.props;
-    const { size } = this.state;
+    const { size, resizing } = this.state;
     const axis = this.props.axis || "horizontal";
 
+    const firstPaneStyles: CSSProperties = { flexShrink: 0 };
+    if (axis === "horizontal") {
+      firstPaneStyles.minWidth = firstMinSize;
+      firstPaneStyles.width = `${size}vw`;
+    } else {
+      firstPaneStyles.minHeight = firstMinSize;
+      firstPaneStyles.height = `${size}vh`;
+    }
+
     return (
-      <Container axis={axis} id="split-panel-container">
-        <Split
-          axis={axis}
-          axisSize={size}
-          style={{
-            flexShrink: 0,
-            [axis === "horizontal" ? "minWidth" : "minHeight"]: firstMinSize
-          }}
-        >
+      <Container axis={axis} id="split-panel-container" resizing={resizing}>
+        <div className="split-panel" style={firstPaneStyles}>
           {first}
-        </Split>
-        <PanelDivider axis={axis} onMove={this.onChangeSize} />
-        <Split axis={axis}>{second}</Split>
+        </div>
+        <PanelDivider
+          axis={axis}
+          resizing={resizing}
+          onSetResizing={resizing => this.setState({ resizing })}
+          onMove={this.onChangeSize}
+        />
+        <div className="split-panel">{second}</div>
       </Container>
     );
   }
 }
 
-export class PanelDivider extends React.Component<
-  IDividerProps,
-  IDividerState
-> {
-  state = {
-    down: false
-  };
+interface IDividerProps {
+  axis: "horizontal" | "vertical";
+  resizing: boolean;
+  onSetResizing: (resizing: boolean) => void;
+  onMove: (vw: number) => void;
+}
 
+export class PanelDivider extends React.Component<IDividerProps> {
   ref = React.createRef<any>();
 
   onMouseDown = () => {
-    this.setState({ down: true });
+    this.props.onSetResizing(true);
 
     const onMouseMove = (event: MouseEvent) => {
       const parent = this.ref.current?.closest("#split-panel-container");
@@ -91,11 +92,11 @@ export class PanelDivider extends React.Component<
           ? ((event.clientX - parentRect.left) * 100) / window.innerWidth
           : ((event.clientY - parentRect.top) * 100) / window.innerHeight;
 
-      this.props.onMove(Math.min(100, Math.max(0.001, vx)));
+      this.props.onMove(Math.min(100, Math.max(0, vx)));
     };
 
     const onMouseUp = () => {
-      this.setState({ down: false });
+      this.props.onSetResizing(false);
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
     };
@@ -107,27 +108,56 @@ export class PanelDivider extends React.Component<
     const Wrapper = DividerWrapper[this.props.axis];
     const HitArea = DividerHitArea[this.props.axis];
     return (
-      <Wrapper down={this.state.down} ref={this.ref}>
+      <Wrapper resizing={this.props.resizing} ref={this.ref}>
         <HitArea onMouseDown={this.onMouseDown} />
       </Wrapper>
     );
   }
 }
 
+interface SplitPanelTogglesProps {
+  axis: "horizontal" | "vertical";
+  container: React.RefObject<SplitPanelContainer>;
+}
+
+export const SplitPanelToggles = ({
+  container,
+  axis
+}: SplitPanelTogglesProps) => {
+  return (
+    <ButtonGroup style={{ flexShrink: 0 }}>
+      <Button
+        small={true}
+        title={"Focus First Pane"}
+        icon={axis === "vertical" ? "add-row-top" : "add-column-left"}
+        onClick={() => container.current?.onChangeSize(100)}
+      />
+      <Button
+        small={true}
+        title={"Focus Second Pane"}
+        icon={axis === "vertical" ? "add-row-bottom" : "add-column-right"}
+        onClick={() => container.current?.onChangeSize(0)}
+      />
+    </ButtonGroup>
+  );
+};
+
 const DividerWrapper = {
-  horizontal: styled.div<{ down: boolean }>`
+  horizontal: styled.div<{ resizing: boolean }>`
     width: 4px;
     background: ${Colors.WHITE};
-    border-left: 1px solid ${p => (p.down ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-right: 1px solid ${p => (p.down ? Colors.GRAY3 : Colors.GRAY5)};
+    border-left: 1px solid
+      ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-right: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;
   `,
-  vertical: styled.div<{ down: boolean }>`
+  vertical: styled.div<{ resizing: boolean }>`
     height: 4px;
     background: ${Colors.WHITE};
-    border-top: 1px solid ${p => (p.down ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-bottom: 1px solid ${p => (p.down ? Colors.GRAY3 : Colors.GRAY5)};
+    border-top: 1px solid
+      ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-bottom: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;
   `
@@ -152,30 +182,22 @@ const DividerHitArea = {
   `
 };
 
-const Split = styled.div<{
-  axisSize?: number;
-  axis: "vertical" | "horizontal";
-}>`
-  ${props =>
-    props.axis === "horizontal"
-      ? props.axisSize
-        ? `width: ${props.axisSize}vw`
-        : `flex: 1`
-      : props.axisSize
-      ? `height: ${props.axisSize}vh`
-      : `flex: 1`};
-  position: relative;
-  flex-direction: column;
-  display: flex;
-  ${props => (props.axis === "horizontal" ? "min-width: 0" : "min-height: 0")};
-`;
-
 const Container = styled.div<{
   axis?: "horizontal" | "vertical";
+  resizing: boolean;
 }>`
   display: flex;
   flex-direction: ${({ axis }) => (axis === "vertical" ? "column" : "row")};
   flex: 1 1;
   width: 100%;
   min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
+
+  .split-panel {
+    position: relative;
+    transition: ${({ axis, resizing }) =>
+      resizing ? "none" : axis === "horizontal" ? "width" : "height"}
+      200ms ease-out;
+    flex-direction: column;
+    display: flex;
+  }
 `;

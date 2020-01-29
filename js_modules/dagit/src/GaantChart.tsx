@@ -22,6 +22,7 @@ interface GaantChartProps {
   plan: GaantChartExecutionPlanFragment;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
+  toolbarLeftActions?: React.ReactChild;
   run?: RunFragment;
 
   onApplyStepFilter?: (step: string) => void;
@@ -435,6 +436,8 @@ export class GaantChart extends React.Component<
     return (
       <GaantChartContainer>
         <OptionsContainer>
+          {this.props.toolbarLeftActions}
+          {this.props.toolbarLeftActions && <OptionsDivider />}
           <ButtonGroup style={{ flexShrink: 0 }}>
             <Button
               key={GaantChartMode.FLAT}
@@ -670,3 +673,11 @@ const OptionsContainer = styled.div`
   flex-shrink: 0;
   z-index: 3;
 }`;
+
+const OptionsDivider = styled.div`
+  width: 1px;
+  height: 25px;
+  padding-left: 7px;
+  margin-left: 7px;
+  border-left: 1px solid ${Colors.LIGHT_GRAY3};
+`;
