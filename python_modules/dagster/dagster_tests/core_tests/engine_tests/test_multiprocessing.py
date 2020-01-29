@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 from dagster import (
     ExecutionTargetHandle,
     InputDefinition,
@@ -186,6 +188,7 @@ def define_sleep_pipeline():
     return seperate
 
 
+@pytest.mark.skip  # https://github.com/dagster-io/dagster/issues/2097
 def test_seperate_sub_dags():
     pipe = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'define_sleep_pipeline'

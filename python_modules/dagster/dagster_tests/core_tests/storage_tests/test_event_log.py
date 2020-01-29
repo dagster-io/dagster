@@ -237,6 +237,7 @@ def test_filesystem_event_log_storage_run_corrupted_bad_data():
             storage.get_logs_for_run('bar')
 
 
+@pytest.mark.skip  # https://github.com/dagster-io/dagster/issues/2098
 def test_concurrent_sqlite_event_log_connections():
     exceptions = multiprocessing.Queue()
 
