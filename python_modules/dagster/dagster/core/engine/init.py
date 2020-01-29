@@ -1,7 +1,13 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
+from dagster.core.definitions import (
+    ExecutorDefinition,
+    ModeDefinition,
+    PipelineDefinition,
+    SystemStorageDefinition,
+)
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -9,7 +15,8 @@ from dagster.core.system_config.objects import EnvironmentConfig
 class InitExecutorContext(
     namedtuple(
         'InitExecutorContext',
-        'pipeline_def mode_def executor_def pipeline_run environment_config executor_config',
+        'pipeline_def mode_def executor_def pipeline_run environment_config '
+        'executor_config system_storage_def instance',
     )
 ):
     '''Executor-specific initialization context.
@@ -26,7 +33,15 @@ class InitExecutorContext(
     '''
 
     def __new__(
-        cls, pipeline_def, mode_def, executor_def, pipeline_run, environment_config, executor_config
+        cls,
+        pipeline_def,
+        mode_def,
+        executor_def,
+        pipeline_run,
+        environment_config,
+        executor_config,
+        system_storage_def,
+        instance,
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,
@@ -38,4 +53,8 @@ class InitExecutorContext(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
             executor_config=check.dict_param(executor_config, executor_config, key_type=str),
+            system_storage_def=check.inst_param(
+                system_storage_def, 'system_storage_def', SystemStorageDefinition
+            ),
+            instance=check.inst_param(instance, 'instance', DagsterInstance),
         )

@@ -4,6 +4,7 @@ from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 
 
@@ -14,12 +15,14 @@ class ExecutorDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         executor_creation_fn(Optional[Callable]): Should accept an :py:class:`InitExecutorContext`
             and return an instance of :py:class:`ExecutorConfig`.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
@@ -33,8 +36,8 @@ class ExecutorDefinition(object):
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, 'executor_creation_fn'
         )
-        self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+        self._required_resource_keys = frozenset(
+            check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
 
     @property
@@ -56,7 +59,7 @@ class ExecutorDefinition(object):
 
 def executor(name=None, config=None, required_resource_keys=None):
     '''Define an executor.
-    
+
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
     of :py:class:`ExecutorConfig`.
 
@@ -65,12 +68,14 @@ def executor(name=None, config=None, required_resource_keys=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
     '''
@@ -121,6 +126,9 @@ def in_process_executor(init_context):
         execution:
           in_process:
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.engine.init import InitExecutorContext
 
@@ -130,7 +138,7 @@ def in_process_executor(init_context):
 
 
 @executor(
-    name='multiprocess', config={'max_concurrent': Field(Int, is_optional=True, default_value=0)}
+    name='multiprocess', config={'max_concurrent': Field(Int, is_required=False, default_value=0)}
 )
 def multiprocess_executor(init_context):
     '''The default multiprocess executor.
@@ -144,16 +152,21 @@ def multiprocess_executor(init_context):
         execution:
           multiprocess:
             max_concurrent: 4
-    
+
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of
     :py:func:`python:multiprocessing.cpu_count`.
 
+    Execution priority can be configured using the ``dagster/priority`` tag via solid metadata,
+    where the higher the number the higher the priority. 0 is the default and both positive
+    and negative numbers can be used.
     '''
     from dagster.core.definitions.handle import ExecutionTargetHandle
     from dagster.core.engine.init import InitExecutorContext
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
+
+    check_cross_process_constraints(init_context)
 
     handle, _ = ExecutionTargetHandle.get_handle(init_context.pipeline_def)
     return MultiprocessExecutorConfig(
@@ -162,3 +175,50 @@ def multiprocess_executor(init_context):
 
 
 default_executors = [in_process_executor, multiprocess_executor]
+
+
+def check_cross_process_constraints(init_context):
+    from dagster.core.engine.init import InitExecutorContext
+
+    check.inst_param(init_context, 'init_context', InitExecutorContext)
+
+    _check_pipeline_has_target_handle(init_context.pipeline_def)
+    _check_non_ephemeral_instance(init_context.instance)
+    _check_persistent_storage_requirement(init_context.system_storage_def)
+
+
+def _check_pipeline_has_target_handle(pipeline_def):
+    from dagster.core.definitions.handle import ExecutionTargetHandle
+
+    handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
+    if not handle:
+        raise DagsterUnmetExecutorRequirementsError(
+            'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
+            'that can not be re-hyrated. Pipelines must be loaded in a way that allows dagster to reconstruct '
+            'them in a new process. This means: \n'
+            '  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n'
+            '  * constructing an ExecutionTargetHandle directly\n'.format(name=pipeline_def.name)
+        )
+
+
+def _check_persistent_storage_requirement(system_storage_def):
+    if not system_storage_def.is_persistent:
+        raise DagsterUnmetExecutorRequirementsError(
+            (
+                'You have attempted to use an executor that uses multiple processes while using system '
+                'storage {storage_name} which does not persist intermediates. '
+                'This means there would be no way to move data between different '
+                'processes. Please configure your pipeline in the storage config '
+                'section to use persistent system storage such as the filesystem.'
+            ).format(storage_name=system_storage_def.name)
+        )
+
+
+def _check_non_ephemeral_instance(instance):
+    if instance.is_ephemeral:
+        raise DagsterUnmetExecutorRequirementsError(
+            'You have attempted to use an executor that uses multiple processes with an '
+            'ephemeral DagsterInstance. A non-ephemeral instance is needed to coordinate '
+            'execution between multiple processes. You can configure your default instance '
+            'via $DAGSTER_HOME or ensure a valid one is passed when invoking the python APIs.'
+        )

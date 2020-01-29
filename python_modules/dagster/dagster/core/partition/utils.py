@@ -1,5 +1,7 @@
 import datetime
 
+from dateutil.relativedelta import relativedelta
+
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -9,7 +11,7 @@ def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=
 
     check.inst_param(start, 'start', datetime.datetime)
     check.opt_inst_param(end, 'end', datetime.datetime)
-    check.inst_param(delta, 'timedelta', datetime.timedelta)
+    check.inst_param(delta, 'timedelta', (datetime.timedelta, relativedelta))
     check.str_param(fmt, 'fmt')
 
     if end and start > end:

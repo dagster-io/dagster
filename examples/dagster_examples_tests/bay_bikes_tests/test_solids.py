@@ -1,9 +1,40 @@
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name, W0613
+import os
+
 import pytest
-from dagster_examples.bay_bikes.solids import MultivariateTimeseries, Timeseries
+from dagster_examples.bay_bikes.resources import credentials_vault
+from dagster_examples.bay_bikes.solids import (
+    MultivariateTimeseries,
+    Timeseries,
+    download_weather_report_from_weather_api,
+)
 from numpy import array
 from numpy.testing import assert_array_equal
 from pandas import DataFrame
+from requests import HTTPError
+
+from dagster import ModeDefinition, execute_solid
+
+START_TIME = 1514793600
+
+
+class MockResponse:
+    def __init__(self, return_status_code, json_data):
+        self.status_code = return_status_code
+        self.json_data = json_data
+
+    def raise_for_status(self):
+        if self.status_code != 200:
+            raise HTTPError("BAD")
+        return self.status_code
+
+    def json(self):
+        return self.json_data
+
+
+@pytest.fixture
+def mock_response_ok():
+    return MockResponse(200, {'daily': {'data': [{'time': START_TIME}]}})
 
 
 @pytest.fixture
@@ -54,3 +85,42 @@ def test_mutlivariate_timeseries_transformation_from_dataframe_ok():
     assert mv_timeseries.input_timeseries_collection[0].sequence == [1, 2, 3]
     assert mv_timeseries.input_timeseries_collection[1].sequence == [4, 5, 6]
     assert mv_timeseries.output_timeseries.sequence == [0, 0, 0]
+
+
+@pytest.fixture
+def setup_dark_sky():
+    old_api_key = os.environ.get('DARK_SKY_API_KEY', '')
+    yield
+    # pytest swallows errors and throws them in the request.node object. This is akin to a finally.
+    # https://docs.pytest.org/en/latest/example/simple.html#making-test-result-information-available-in-fixtures
+    os.environ['DAKR_SKY_API_KEY'] = old_api_key
+
+
+def test_download_weather_report_from_weather_api_200(mocker, setup_dark_sky, mock_response_ok):
+    mock_get = mocker.patch(
+        'dagster_examples.bay_bikes.solids.requests.get', return_value=mock_response_ok
+    )
+    # Clobber api key for test so we don't expose creds
+    os.environ['DARK_SKY_API_KEY'] = 'uuids-will-never-collide'
+    solid_result = execute_solid(
+        download_weather_report_from_weather_api,
+        ModeDefinition(resource_defs={'credentials_vault': credentials_vault,}),
+        environment_dict={
+            'resources': {
+                'credentials_vault': {
+                    'config': {'environment_variable_names': ['DARK_SKY_API_KEY']}
+                },
+            },
+            'solids': {
+                'download_weather_report_from_weather_api': {
+                    'inputs': {'epoch_date': {'value': START_TIME}}
+                }
+            },
+        },
+    ).output_value()
+    mock_get.assert_called_with(
+        'https://api.darksky.net/forecast/uuids-will-never-collide/37.8267,-122.4233,1514793600?exclude=currently,minutely,hourly,alerts,flags'
+    )
+    assert isinstance(solid_result, DataFrame)
+    assert solid_result['time'][0] == START_TIME
+    assert 'uuid' in solid_result.columns

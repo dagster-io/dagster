@@ -42,12 +42,29 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_outp
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -61,23 +78,161 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_conf
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
-  name: string | null;
-  description: string | null;
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
+  description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   recursiveConfigTypes: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes[];
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields {
@@ -89,12 +244,29 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_conf
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
@@ -108,27 +280,101 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_conf
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
 }
 
-export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType;
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType {
   __typename: "CompositeConfigType";
-  name: string | null;
-  description: string | null;
   key: string;
+  description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_fields[];
   recursiveConfigTypes: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes[];
 }
 
-export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType;
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isOptional: boolean;
+  configTypeKey: string;
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType;
+
+export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export type UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType = UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ArrayConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_EnumConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_RegularConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_CompositeConfigType | UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType;
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_configField {
   __typename: "ConfigTypeField";

@@ -1,10 +1,6 @@
-import time
 import uuid
 
-import pytest
-
 from dagster import PipelineDefinition, RunConfig, execute_pipeline, solid
-from dagster.core.execution.api import EXECUTION_TIME_KEY
 
 EPS = 0.001
 
@@ -54,16 +50,3 @@ def test_injected_tags():
 
     assert result.success
     assert called['yup']
-
-
-def test_execution_time():
-    # Should be cast back to string
-    now = time.time()
-    now_str = '%f' % now
-    rc = RunConfig(tags={EXECUTION_TIME_KEY: now_str})
-    assert abs(rc.tags[EXECUTION_TIME_KEY] - now) < EPS
-
-    # Must be castable to float
-    with pytest.raises(ValueError) as exc_info:
-        rc = RunConfig(tags={EXECUTION_TIME_KEY: 'nope'})
-    assert 'could not convert string to float' in str(exc_info.value)

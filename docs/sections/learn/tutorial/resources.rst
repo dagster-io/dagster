@@ -188,7 +188,7 @@ From the CLI, use ``-p`` or ``--preset``:
 From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute_pipeline_with_preset>`:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/presets.py
-   :lines: 170
+   :lines: 171
    :dedent: 4
 
 And in Dagit, we can use the "Presets" selector.

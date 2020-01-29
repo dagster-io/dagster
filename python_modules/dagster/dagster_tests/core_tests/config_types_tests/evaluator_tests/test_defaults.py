@@ -41,8 +41,8 @@ def test_post_process_config():
         {
             'foo': String,
             'bar': {'baz': [str]},
-            'quux': Field(str, is_optional=True, default_value='zip'),
-            'quiggle': Field(str, is_optional=True),
+            'quux': Field(str, is_required=False, default_value='zip'),
+            'quiggle': Field(str, is_required=False),
         }
     )
 
@@ -71,8 +71,8 @@ def test_post_process_config():
         {
             'fruts': {
                 'apple': Field(String),
-                'banana': Field(String, is_optional=True),
-                'potato': Field(String, is_optional=True, default_value='pie'),
+                'banana': Field(String, is_required=False),
+                'potato': Field(String, is_required=False, default_value='pie'),
             }
         }
     )
@@ -105,8 +105,8 @@ def test_post_process_config():
         Selector(
             {
                 'one': Field(String),
-                'another': {'foo': Field(String, default_value='bar', is_optional=True)},
-                'yet_another': Field(String, default_value='quux', is_optional=True),
+                'another': {'foo': Field(String, default_value='bar', is_required=False)},
+                'yet_another': Field(String, default_value='quux', is_required=False),
             }
         )
     )
@@ -132,14 +132,14 @@ def test_post_process_config():
     assert post_process_config(selector_config_type, {'another': {}}) == {'another': {'foo': 'bar'}}
 
     singleton_selector_config_type = resolve_to_config_type(
-        Selector({'foo': Field(String, default_value='bar', is_optional=True)})
+        Selector({'foo': Field(String, default_value='bar', is_required=False)})
     )
 
     assert post_process_config(singleton_selector_config_type, None) == {'foo': 'bar'}
 
     permissive_dict_config_type = resolve_to_config_type(
         Permissive(
-            {'foo': Field(String), 'bar': Field(String, default_value='baz', is_optional=True)}
+            {'foo': Field(String), 'bar': Field(String, default_value='baz', is_required=False)}
         )
     )
 

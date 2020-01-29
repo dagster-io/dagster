@@ -6,7 +6,7 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.dagster_type import construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -81,7 +81,7 @@ def define_logger_dictionary_cls(creation_data):
     for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
             Shape(remove_none_entries({'config': logger_definition.config_field}),),
-            is_optional=True,
+            is_required=False,
         )
 
     return Shape(fields)
@@ -99,10 +99,10 @@ def define_environment_cls(creation_data):
                     )
                 ),
                 'storage': Field(
-                    define_storage_config_cls(creation_data.mode_definition), is_optional=True,
+                    define_storage_config_cls(creation_data.mode_definition), is_required=False,
                 ),
                 'execution': Field(
-                    define_executor_config_cls(creation_data.mode_definition), is_optional=True,
+                    define_executor_config_cls(creation_data.mode_definition), is_required=False,
                 ),
                 'loggers': Field(define_logger_dictionary_cls(creation_data)),
                 'resources': Field(
@@ -181,12 +181,12 @@ def get_outputs_field(solid, handle):
     for name, out in solid_def.output_dict.items():
         if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                out.runtime_type.output_materialization_config.schema_type, is_optional=True
+                out.runtime_type.output_materialization_config.schema_type, is_required=False
             )
 
     output_entry_dict = Shape(output_dict_fields)
 
-    return Field(Array(output_entry_dict), is_optional=True)
+    return Field(Array(output_entry_dict), is_required=False)
 
 
 def filtered_system_dict(fields):
@@ -273,7 +273,7 @@ def iterate_solid_def_types(solid_def):
 
 
 def _gather_all_schemas(solid_defs):
-    runtime_types = construct_runtime_type_dictionary(solid_defs)
+    runtime_types = construct_dagster_type_dictionary(solid_defs)
     for rtt in runtime_types.values():
         if rtt.input_hydration_config:
             for ct in iterate_config_types(rtt.input_hydration_config.schema_type):

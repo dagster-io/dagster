@@ -43,6 +43,6 @@ dag, tasks = make_airflow_dag(
     # installed or available on sys.path, otherwise, this import will fail.
     module_name='dagster_examples.intro_tutorial.airflow',
     pipeline_name='hello_cereal_pipeline',
-    environment_dict=yaml.load(ENVIRONMENT),
+    environment_dict=yaml.safe_load(ENVIRONMENT),
     dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1},
 )

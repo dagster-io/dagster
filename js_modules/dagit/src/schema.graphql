@@ -1,6 +1,5 @@
 type ArrayConfigType implements ConfigType & WrappingConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
@@ -21,7 +20,6 @@ type CancelPipelineExecutionSuccess {
 
 type CompositeConfigType implements ConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
@@ -63,7 +61,6 @@ type ComputeLogs {
 
 interface ConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
@@ -108,16 +105,17 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
+  error: PythonError
 }
 
 type EnumConfigType implements ConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isSelector: Boolean!
   values: [EnumConfigValue!]!
+  givenName: String!
 }
 
 type EnumConfigValue {
@@ -505,7 +503,6 @@ type Mutation {
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
@@ -846,11 +843,11 @@ type Query {
 
 type RegularConfigType implements ConfigType {
   key: String!
-  name: String
   description: String
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isSelector: Boolean!
+  givenName: String!
 }
 
 type RegularRuntimeType implements RuntimeType {
@@ -932,6 +929,18 @@ type RuntimeTypeNotFoundError implements Error {
 }
 
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError
+
+type ScalarUnionConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  scalarType: ConfigType!
+  nonScalarType: ConfigType!
+  scalarTypeKey: String!
+  nonScalarTypeKey: String!
+}
 
 type ScheduleAttempt {
   time: Float!
@@ -1026,7 +1035,7 @@ type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 interface StepEvent {
   step: ExecutionStep

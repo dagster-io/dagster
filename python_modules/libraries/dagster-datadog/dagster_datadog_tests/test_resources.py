@@ -26,7 +26,7 @@ def test_datadog_resource(
     timed,
     timing,
 ):
-    @solid
+    @solid(required_resource_keys={'datadog'})
     def datadog_solid(context):
         assert context.resources.datadog
 

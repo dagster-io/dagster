@@ -11,13 +11,18 @@ from rx import Observable
 from dagster import check, seven
 from dagster.config import Field, Permissive
 from dagster.core.definitions.pipeline import PipelineRunsFilter
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
+    DagsterRunAlreadyExists,
+    DagsterRunConflict,
+)
 from dagster.core.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
-from .ref import InstanceRef, _compute_logs_directory
+from .ref import InstanceRef, compute_logs_directory
 
 
 def _is_dagster_home_set():
@@ -136,7 +141,7 @@ class DagsterInstance:
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(_compute_logs_directory(tempdir)),
+            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
         )
 
     @staticmethod
@@ -170,7 +175,6 @@ class DagsterInstance:
     @staticmethod
     def from_ref(instance_ref):
         check.inst_param(instance_ref, 'instance_ref', InstanceRef)
-
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
@@ -284,10 +288,13 @@ class DagsterInstance:
 
     def create_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.invariant(
-            not self._run_storage.has_run(pipeline_run.run_id),
-            'Attempting to create a different pipeline run for an existing run id',
-        )
+
+        if self.has_run(pipeline_run.run_id):
+            raise DagsterRunAlreadyExists(
+                'Attempting to create a pipeline run for an existing run id, {run_id}'.format(
+                    run_id=pipeline_run.run_id
+                )
+            )
 
         run = self._run_storage.add_run(pipeline_run)
         return run
@@ -295,9 +302,27 @@ class DagsterInstance:
     def get_or_create_run(self, pipeline_run):
         # This eventually needs transactional/locking semantics
         if self.has_run(pipeline_run.run_id):
-            return self.get_run_by_id(pipeline_run.run_id)
+            candidate_run = self.get_run_by_id(pipeline_run.run_id)
+            if not candidate_run == pipeline_run:
+                raise DagsterRunConflict(
+                    'Found conflicting existing run with same id. Expected {pipeline_run}, found {candidate_run}.'.format(
+                        pipeline_run=pipeline_run, candidate_run=candidate_run
+                    )
+                )
+            return candidate_run
         else:
-            return self.create_run(pipeline_run)
+            # We will need a more principled way of doing this
+            try:
+                return self.create_run(pipeline_run)
+            except DagsterRunAlreadyExists:
+                if not self.has_run(pipeline_run.run_id):
+                    check.failed(
+                        'Inconsistent run storage: could not get or create pipeline run with run_id {run_id}'.format(
+                            run_id=pipeline_run.run_id
+                        )
+                    )
+
+                return self.get_run_by_id(pipeline_run.run_id)
 
     def add_run(self, pipeline_run):
         return self._run_storage.add_run(pipeline_run)
@@ -365,3 +390,8 @@ class DagsterInstance:
 
     def schedules_directory(self):
         return self._local_artifact_storage.schedules_dir
+
+    # Run launcher
+
+    def launch_run(self, run):
+        return self._run_launcher.launch_run(self, run)

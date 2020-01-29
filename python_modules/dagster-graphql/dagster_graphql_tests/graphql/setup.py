@@ -4,11 +4,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import (
-    SubprocessExecutionManager,
-    SynchronousExecutionManager,
-)
+from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
 from dagster import (
     Any,
@@ -16,7 +12,6 @@ from dagster import (
     Enum,
     EnumValue,
     EventMetadataEntry,
-    ExecutionTargetHandle,
     ExpectationResult,
     Field,
     InputDefinition,
@@ -41,7 +36,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import file_relative_path
 
@@ -75,28 +69,12 @@ PoorMansDataFrame = as_dagster_type(
 )
 
 
-def define_subprocess_context(instance):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        instance=instance,
-        execution_manager=SubprocessExecutionManager(instance),
-    )
+def define_test_subprocess_context(instance):
+    return define_subprocess_context_for_file(__file__, "define_repository", instance)
 
 
-def define_context(instance=None):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_fn(define_repository),
-        instance=instance or DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-    )
-
-
-def define_context_for_repository_yaml(path, instance=None):
-    return DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_yaml(path),
-        instance=instance or DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-    )
+def define_test_context(instance=None):
+    return define_context_for_file(__file__, "define_repository", instance)
 
 
 @lambda_solid(
@@ -240,8 +218,8 @@ def more_complicated_config():
     @solid(
         config={
             'field_one': Field(String),
-            'field_two': Field(String, is_optional=True),
-            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'field_two': Field(String, is_required=False),
+            'field_three': Field(String, is_required=False, default_value='some_value'),
         }
     )
     def a_solid_with_three_field_config(_context):
@@ -259,12 +237,12 @@ def more_complicated_nested_config():
         config={
             'field_any': Any,
             'field_one': String,
-            'field_two': Field(String, is_optional=True),
-            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'field_two': Field(String, is_required=False),
+            'field_three': Field(String, is_required=False, default_value='some_value'),
             'nested_field': {
                 'field_four_str': String,
                 'field_five_int': Int,
-                'field_six_nullable_int_list': Field([Noneable(int)], is_optional=True),
+                'field_six_nullable_int_list': Field([Noneable(int)], is_required=False),
             },
         },
     )
@@ -446,14 +424,14 @@ def double_adder_resource(init_context):
     preset_defs=[PresetDefinition.from_files("add", mode="add_mode")],
 )
 def multi_mode_with_resources():
-    @solid
+    @solid(required_resource_keys={'op'})
     def apply_to_three(context):
         return context.resources.op(3)
 
     return apply_to_three()
 
 
-@resource(config=Field(Int, is_optional=True))
+@resource(config=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
@@ -573,7 +551,7 @@ def retry_config(count):
     }
 
 
-@resource(config={'count': Field(Int, is_optional=True, default_value=0)})
+@resource(config={'count': Field(Int, is_required=False, default_value=0)})
 def retry_config_resource(context):
     return context.resource_config['count']
 
@@ -584,7 +562,11 @@ def eventually_successful():
     def spawn(_):
         return 0
 
-    @solid(input_defs=[InputDefinition('depth', Int)], output_defs=[OutputDefinition(Int)])
+    @solid(
+        input_defs=[InputDefinition('depth', Int)],
+        output_defs=[OutputDefinition(Int)],
+        required_resource_keys={'retry_count'},
+    )
     def fail(context, depth):
         if context.resources.retry_count <= depth:
             raise Exception('fail')

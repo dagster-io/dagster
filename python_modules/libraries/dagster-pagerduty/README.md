@@ -7,6 +7,7 @@ code.
 Presently, it provides a thin wrapper on the [Events V2 API](https://v2.developer.pagerduty.com/docs/events-api-v2).
 
 ## Getting Started
+
 You can install this library with:
 
 ```
@@ -20,7 +21,7 @@ As noted in the PagerDuty documentation, you'll find an integration key (also re
 Once your service/integration is created, you can provision a PagerDuty resource and issue PagerDuty alerts from within your solids. A simple example is shown below:
 
 ```python
-@solid
+@solid(required_resource_keys={'pagerduty'})
 def pagerduty_solid(context):
     context.resources.pagerduty.EventV2_create(
         summary='alert from dagster'

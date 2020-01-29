@@ -36,8 +36,8 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def config_type(cls):
         return {
             'bucket': str,
-            'local_dir': Field(str, is_optional=True),
-            'prefix': Field(str, is_optional=True, default_value='dagster'),
+            'local_dir': Field(str, is_required=False),
+            'prefix': Field(str, is_required=False, default_value='dagster'),
         }
 
     @staticmethod

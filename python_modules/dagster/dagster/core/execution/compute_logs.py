@@ -2,13 +2,13 @@ from __future__ import print_function
 
 import io
 import os
-import signal
 import subprocess
 import sys
 import time
 from contextlib import contextmanager
 
 from dagster import check
+from dagster.core.execution import watch_orphans
 from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.seven import IS_WINDOWS
@@ -129,47 +129,32 @@ def execute_windows_tail(path, io_type):
 
 @contextmanager
 def execute_posix_tail(path, io_type):
-    cmd = 'tail -F -c +0 {}'.format(path).split(' ')
-
     # open a subprocess to tail the file and print to stdout
+    tail_cmd = 'tail -F -c +0 {}'.format(path).split(' ')
     stream = sys.stdout if io_type == ComputeIOType.STDOUT else sys.stderr
     stream = stream if _fileno(stream) else None
-    tail_process = subprocess.Popen(cmd, stdout=stream)
+    tail_process = subprocess.Popen(tail_cmd, stdout=stream)
 
-    # fork a child watcher process to sleep/wait for the parent process (which yields to the
-    # compute function) to either A) complete and clean-up OR B) segfault / die silently.  In
-    # the case of B, the spawned tail process will not automatically get terminated, so we need
-    # to make sure that we terminate it explicitly and then exit.
-    watcher_pid = os.fork()
+    # open a watcher process to check for the orphaning of the tail process (e.g. when the
+    # current process is suddenly killed)
+    watcher_file = os.path.abspath(watch_orphans.__file__)
+    watcher_process = subprocess.Popen(
+        [sys.executable, watcher_file, str(os.getpid()), str(tail_process.pid),]
+    )
 
-    def clean(*_args):
-        try:
-            if tail_process:
-                tail_process.terminate()
-        except OSError:
-            pass
-        try:
-            if watcher_pid:
-                os.kill(watcher_pid, signal.SIGTERM)
-        except OSError:
-            pass
+    try:
+        yield
+    finally:
+        _clean_up_subprocess(tail_process)
+        _clean_up_subprocess(watcher_process)
 
-    if watcher_pid == 0:
-        # this is the child watcher process, sleep until orphaned, then kill the tail process
-        # and exit
-        while True:
-            if os.getppid() == 1:  # orphaned process
-                clean()
-                os._exit(0)  # pylint: disable=W0212
-            else:
-                time.sleep(1)
-    else:
-        # this is the parent process, yield to the compute function and then terminate both the
-        # tail and watcher processes.
-        try:
-            yield
-        finally:
-            clean()
+
+def _clean_up_subprocess(subprocess_obj):
+    try:
+        if subprocess_obj:
+            subprocess_obj.terminate()
+    except OSError:
+        pass
 
 
 def tail_polling(filepath, stream=sys.stdout, parent_pid=None):

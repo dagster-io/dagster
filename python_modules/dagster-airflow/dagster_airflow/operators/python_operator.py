@@ -65,7 +65,6 @@ class DagsterPythonOperator(PythonOperator):
                         environment_dict=environment_dict,
                         mode=mode,
                         selector=ExecutionSelector(pipeline_name),
-                        reexecution_config=None,
                         step_keys_to_execute=None,
                         tags=None,
                         status=PipelineRunStatus.MANAGED,

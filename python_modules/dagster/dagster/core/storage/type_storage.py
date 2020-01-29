@@ -29,23 +29,20 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 class TypeStoragePluginRegistry(object):
     def __init__(self, types_to_register):
-        from dagster.core.types.runtime_type import RuntimeType
+        from dagster.core.types.dagster_type import DagsterType
 
-        types_to_register = check.opt_dict_param(
-            types_to_register,
-            'types_to_register',
-            key_type=RuntimeType,
-            value_class=TypeStoragePlugin,
-        )
+        types_to_register = check.opt_list_param(types_to_register, 'types_to_register', tuple)
 
         self._registry = {}
-        for type_to_register, type_storage_plugin in types_to_register.items():
+        for type_to_register, type_storage_plugin in types_to_register:
+            check.inst(type_to_register, DagsterType)
+            check.subclass(type_storage_plugin, TypeStoragePlugin)
             self.register_type(type_to_register, type_storage_plugin)
 
     def register_type(self, type_to_register, type_storage_plugin):
-        from dagster.core.types.runtime_type import RuntimeType
+        from dagster.core.types.dagster_type import DagsterType
 
-        check.inst_param(type_to_register, 'type_to_register', RuntimeType)
+        check.inst_param(type_to_register, 'type_to_register', DagsterType)
         check.subclass_param(type_storage_plugin, 'type_storage_plugin', TypeStoragePlugin)
         check.invariant(
             type_to_register.name is not None,
@@ -105,10 +102,10 @@ def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
 
-    type_plugins = {}
+    type_plugins = []
     for type_obj in pipeline_def.all_runtime_types():
         for auto_plugin in type_obj.auto_plugins:
             if auto_plugin.compatible_with_storage_def(system_storage_def):
-                type_plugins[type_obj] = auto_plugin
+                type_plugins.append((type_obj, auto_plugin))
 
     return TypeStoragePluginRegistry(type_plugins)

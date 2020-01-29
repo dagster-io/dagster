@@ -21,7 +21,7 @@ def pg_config():
                 'password': str,
                 'hostname': str,
                 'db_name': str,
-                'port': Field(int, is_optional=True, default_value=5432),
+                'port': Field(int, is_required=False, default_value=5432),
             },
         }
     )

@@ -264,8 +264,8 @@ a proxy server, or using a different authentication schema.
 
 Finally, we bring it all together in the ``postgres_db_info_resource``:
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/resources.py
-   :lines: 53-92
+.. literalinclude:: ../../../examples/dagster_examples/common/resources.py
+   :lines: 89-128
 
 By providing strongly typed configuration fields to the ``@resource`` decorator, we now have typeahead
 support in dagit and rich error messages for the configuration of our external resources. This can
@@ -311,7 +311,7 @@ The terminal nodes of this pipeline are all aliased instances of
 ``load_data_to_database_from_spark``:
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 199-217
+   :lines: 198-216
 
 which abstracts the operation of loading a Spark data frame to a database—either our production
 Redshift cluster or our local Postgres in test.
@@ -361,7 +361,7 @@ metadata along with their SQL query:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 341-379
+   :lines: 403-429
 
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but for
@@ -398,7 +398,7 @@ Let's start with the definition of our ``notebook_solid`` helper:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 40-41
+   :lines: 38-39
 
 
 This is just a wrapper around Dagstermill's ``define_dagstermill_solid`` which tells Dagstermill
@@ -407,7 +407,7 @@ a notebook file:
 
 
 .. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
-   :lines: 437-459
+   :lines: 431-453
 
 
 As usual, we define the inputs and outputs of the new solid. Within the notebook itself, we only

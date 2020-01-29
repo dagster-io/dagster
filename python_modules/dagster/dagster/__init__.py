@@ -4,7 +4,6 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     ConfigMapping,
-    ConfigMappingContext,
     DependencyDefinition,
     EventMetadataEntry,
     ExecutionTargetHandle,
@@ -71,6 +70,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterSubprocessError,
     DagsterTypeCheckError,
+    DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
 )
@@ -91,6 +91,7 @@ from dagster.core.execution.results import (
     PipelineExecutionResult,
     SolidExecutionResult,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
@@ -100,12 +101,12 @@ from dagster.core.storage.system_storage import (
     mem_system_storage,
 )
 from dagster.core.types.config_schema import input_hydration_config, output_materialization_config
+from dagster.core.types.dagster_type import DagsterType, List, Optional
 from dagster.core.types.decorator import as_dagster_type, dagster_type, define_python_dagster_type
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
-from dagster.core.types.runtime_type import List, Optional, RuntimeType
 from dagster.utils import file_relative_path
 from dagster.utils.test import (
     check_dagster_type,
@@ -119,7 +120,6 @@ from .version import __version__
 __all__ = [
     # Definition
     'ConfigMapping',
-    'ConfigMappingContext',
     'CompositeSolidDefinition',
     'DependencyDefinition',
     'EventMetadataEntry',
@@ -178,6 +178,7 @@ __all__ = [
     'DagsterInvariantViolationError',
     'DagsterResourceFunctionError',
     'DagsterTypeCheckError',
+    'DagsterUnknownResourceError',
     'DagsterUserCodeExecutionError',
     'DagsterStepOutputNotFoundError',
     'DagsterSubprocessError',
@@ -218,4 +219,6 @@ __all__ = [
     # file things
     'FileHandle',
     'LocalFileHandle',
+    # instance
+    'DagsterInstance',
 ]

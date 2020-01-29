@@ -151,7 +151,19 @@ class CallableSolidNode(object):
                     )
                 )
 
-            input_name = self.solid_def.input_defs[idx].name
+            input_name = self.solid_def.resolve_input_name_at_position(idx)
+            if input_name is None:
+                raise DagsterInvalidDefinitionError(
+                    'In {source} {name} could not resolve input based on position at '
+                    'index {idx} for solid invocation {solid_name}. Use keyword args instead, '
+                    'available inputs are: {inputs}'.format(
+                        idx=idx,
+                        source=current_context().source,
+                        name=current_context().name,
+                        solid_name=solid_name,
+                        inputs=list(map(lambda inp: inp.name, self.solid_def.input_defs)),
+                    )
+                )
 
             self._process_argument_node(
                 solid_name,

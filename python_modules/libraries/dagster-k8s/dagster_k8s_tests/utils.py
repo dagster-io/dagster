@@ -56,7 +56,8 @@ def parse_raw_res(raw_res):
             res = seven.json.loads(line)
             break
         # If we don't get a GraphQL response, check the next line
-        except seven.JSONDecodeError:
+        except seven.JSONDecodeError as e:
+            print('[parse_raw_res error]', e)
             continue
 
     return res
@@ -68,17 +69,30 @@ def wait_for_job_success(job_name):
     job = None
     while not job:
         # Ensure we found the job that we launched
-        jobs = client.BatchV1Api().list_namespaced_job(namespace='default', watch=False)
+        jobs = client.BatchV1Api().list_namespaced_job(namespace='dagster-test', watch=False)
         job = next((j for j in jobs.items if j.metadata.name == job_name), None)
         print('Job not yet launched, waiting')
         time.sleep(1)
 
     success, job_pod_name = wait_for_pod(job.metadata.name, wait_for_termination=True)
-    raw_logs = client.CoreV1Api().read_namespaced_pod_log(name=job_pod_name, namespace='default')
+
+    # We set _preload_content to False here to prevent the k8 python api from processing the response.
+    # If the logs happen to be JSON - it will parse in to a dict and then coerce back to a str
+    # leaving us with invalid JSON as the quotes have been switched to '
+    #
+    # https://github.com/kubernetes-client/python/issues/811
+    raw_logs = (
+        client.CoreV1Api()
+        .read_namespaced_pod_log(
+            name=job_pod_name, namespace='dagster-test', _preload_content=False,
+        )
+        .data
+    ).decode('utf-8')
+
     return success, raw_logs
 
 
-def wait_for_pod(name, wait_for_termination=False):
+def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False):
     '''Wait for the dagit pod to launch and be running, or wait for termination
 
     NOTE: Adding this wait because helm --wait will just wait indefinitely in a crash loop scenario,
@@ -89,7 +103,7 @@ def wait_for_pod(name, wait_for_termination=False):
 
     success = True
     while True:
-        pods = client.CoreV1Api().list_namespaced_pod(namespace='default')
+        pods = client.CoreV1Api().list_namespaced_pod(namespace='dagster-test')
         pod = next((p for p in pods.items if name in p.metadata.name), None)
         if pod is None:
             print('Waiting for pod "%s" to launch...' % name)
@@ -102,9 +116,15 @@ def wait_for_pod(name, wait_for_termination=False):
             continue
 
         state = pod.status.container_statuses[0].state
+        ready = pod.status.container_statuses[0].ready
 
         if state.running is not None:
-            print('Pod is running...')
+            if wait_for_readiness:
+                if not ready:
+                    time.sleep(1)
+                    continue
+                else:
+                    break
             if wait_for_termination:
                 time.sleep(1)
                 continue
@@ -113,6 +133,10 @@ def wait_for_pod(name, wait_for_termination=False):
         elif state.waiting is not None:
             if state.waiting.reason == 'PodInitializing':
                 print('Waiting for pod to initialize...')
+                time.sleep(1)
+                continue
+            elif state.waiting.reason == 'ContainerCreating':
+                print('Waiting for container creation...')
                 time.sleep(1)
                 continue
             elif state.waiting.reason in [

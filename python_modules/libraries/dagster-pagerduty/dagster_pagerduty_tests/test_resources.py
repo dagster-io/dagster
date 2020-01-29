@@ -6,7 +6,7 @@ from dagster import ModeDefinition, execute_solid, solid
 
 @responses.activate
 def test_pagerduty_resource():
-    @solid
+    @solid(required_resource_keys={'pagerduty'})
     def pagerduty_solid(context):
         assert context.resources.pagerduty
         with responses.RequestsMock() as rsps:

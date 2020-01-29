@@ -31,8 +31,8 @@ def read_csv(context, csv_path):
 
 @solid(
     config={
-        'process_hot': Field(Bool, is_optional=True, default_value=True),
-        'process_cold': Field(Bool, is_optional=True, default_value=True),
+        'process_hot': Field(Bool, is_required=False, default_value=True),
+        'process_cold': Field(Bool, is_required=False, default_value=True),
     },
     output_defs=[
         OutputDefinition(

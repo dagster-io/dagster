@@ -19,6 +19,7 @@ from dagster import (
     SolidExecutionResult,
     default_executors,
     execute_pipeline,
+    execute_pipeline_iterator,
     lambda_solid,
     pipeline,
     seven,
@@ -63,14 +64,14 @@ def emit_values(_context):
 
 
 @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
-def add(num_one, num_two):
-    return num_one + num_two
+def subtract(num_one, num_two):
+    return num_one - num_two
 
 
 @pipeline(mode_defs=celery_mode_defs)
 def test_diamond_pipeline():
     value_one, value_two = emit_values()
-    return add(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
+    return subtract(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
 
 
 @pipeline(mode_defs=celery_mode_defs)
@@ -195,7 +196,7 @@ def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
         }
         assert result.result_for_solid('add_one').output_value() == 2
         assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('add').output_value() == 5
+        assert result.result_for_solid('subtract').output_value() == -1
 
 
 @skip_ci
@@ -282,7 +283,7 @@ def test_execute_eagerly_diamond_pipeline_on_celery():
         }
         assert result.result_for_solid('add_one').output_value() == 2
         assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('add').output_value() == 5
+        assert result.result_for_solid('subtract').output_value() == -1
 
 
 def test_execute_eagerly_parallel_pipeline_on_celery():
@@ -332,3 +333,27 @@ def test_execute_eagerly_fails_pipeline_on_celery():
         assert len(result.solid_result_list) == 1
         assert not result.solid_result_list[0].success
         assert result.solid_result_list[0].failure_data.error.message == 'Exception: argjhgjh\n'
+
+
+def test_bad_broker():
+    event_stream = execute_pipeline_iterator(
+        ExecutionTargetHandle.for_pipeline_python_file(
+            __file__, 'test_diamond_pipeline'
+        ).build_pipeline_definition(),
+        environment_dict={
+            'storage': {'filesystem': {}},
+            'execution': {'celery': {'config': {'broker': 'bad@bad.bad'}}},
+        },
+        instance=DagsterInstance.local_temp(),
+    )
+
+    # ensure an engine event with an error is yielded if we cant connect to the broker
+    saw_engine_error = False
+    try:
+        for event in event_stream:
+            if event.is_engine_event:
+                saw_engine_error = bool(event.engine_event_data.error)
+    except Exception:  # pylint: disable=broad-except
+        pass
+
+    assert saw_engine_error

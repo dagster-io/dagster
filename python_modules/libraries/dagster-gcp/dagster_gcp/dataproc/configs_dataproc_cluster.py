@@ -28,7 +28,7 @@ def define_dataproc_cluster_config():
                                                 Int,
                                                 description='''The number of the accelerator cards of
                                             this type exposed to this instance.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                             'acceleratorTypeUri': Field(
                                                 String,
@@ -41,7 +41,7 @@ def define_dataproc_cluster_config():
                                             the Cloud Dataproc Auto Zone Placement feature, you must
                                             use the short name of the accelerator type resource, for
                                             example, nvidia-tesla-k80.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                         }
                                     )
@@ -49,13 +49,13 @@ def define_dataproc_cluster_config():
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'numInstances': Field(
                                 Int,
                                 description='''Optional. The number of VM instances in the instance
                                 group. For master instance groups, must be set to 1.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'diskConfig': Field(
                                 Shape(
@@ -69,13 +69,13 @@ def define_dataproc_cluster_config():
                                             data. If one or more SSDs are attached, this runtime
                                             bulk data is spread across them, and the boot disk
                                             contains only basic config and installed binaries.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskSizeGb': Field(
                                             Int,
                                             description='''Optional. Size in GB of the boot disk
                                             (default is 500GB).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskType': Field(
                                             String,
@@ -83,32 +83,32 @@ def define_dataproc_cluster_config():
                                             is "pd-standard"). Valid values: "pd-ssd" (Persistent
                                             Disk Solid State Drive) or "pd-standard" (Persistent
                                             Disk Hard Disk Drive).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'managedGroupConfig': Field(
                                 Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'isPreemptible': Field(
                                 Bool,
                                 description='''Optional. Specifies that this instance group contains
                                 preemptible instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'imageUri': Field(
                                 String,
                                 description='''Optional. The Compute Engine image resource used for
                                 cluster instances. It can be specified or may be inferred from
                                 SoftwareConfig.image_version.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'machineTypeUri': Field(
                                 String,
@@ -120,13 +120,13 @@ def define_dataproc_cluster_config():
                                 n1-standard-2Auto Zone Exception: If you are using the Cloud
                                 Dataproc Auto Zone Placement feature, you must use the short name of
                                 the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='''Optional. The config settings for Compute Engine resources in an
                     instance group, such as a master or worker group.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'secondaryWorkerConfig': Field(
                     Shape(
@@ -139,7 +139,7 @@ def define_dataproc_cluster_config():
                                                 Int,
                                                 description='''The number of the accelerator cards of
                                             this type exposed to this instance.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                             'acceleratorTypeUri': Field(
                                                 String,
@@ -152,7 +152,7 @@ def define_dataproc_cluster_config():
                                             the Cloud Dataproc Auto Zone Placement feature, you must
                                             use the short name of the accelerator type resource, for
                                             example, nvidia-tesla-k80.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                         }
                                     )
@@ -160,13 +160,13 @@ def define_dataproc_cluster_config():
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'numInstances': Field(
                                 Int,
                                 description='''Optional. The number of VM instances in the instance
                                 group. For master instance groups, must be set to 1.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'diskConfig': Field(
                                 Shape(
@@ -180,13 +180,13 @@ def define_dataproc_cluster_config():
                                             data. If one or more SSDs are attached, this runtime
                                             bulk data is spread across them, and the boot disk
                                             contains only basic config and installed binaries.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskSizeGb': Field(
                                             Int,
                                             description='''Optional. Size in GB of the boot disk
                                             (default is 500GB).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskType': Field(
                                             String,
@@ -194,32 +194,32 @@ def define_dataproc_cluster_config():
                                             is "pd-standard"). Valid values: "pd-ssd" (Persistent
                                             Disk Solid State Drive) or "pd-standard" (Persistent
                                             Disk Hard Disk Drive).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'managedGroupConfig': Field(
                                 Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'isPreemptible': Field(
                                 Bool,
                                 description='''Optional. Specifies that this instance group contains
                                 preemptible instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'imageUri': Field(
                                 String,
                                 description='''Optional. The Compute Engine image resource used for
                                 cluster instances. It can be specified or may be inferred from
                                 SoftwareConfig.image_version.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'machineTypeUri': Field(
                                 String,
@@ -231,13 +231,13 @@ def define_dataproc_cluster_config():
                                 n1-standard-2Auto Zone Exception: If you are using the Cloud
                                 Dataproc Auto Zone Placement feature, you must use the short name of
                                 the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='''Optional. The config settings for Compute Engine resources in an
                     instance group, such as a master or worker group.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'encryptionConfig': Field(
                     Shape(
@@ -246,12 +246,12 @@ def define_dataproc_cluster_config():
                                 String,
                                 description='''Optional. The Cloud KMS key name to use for PD disk
                                 encryption for all instances in the cluster.''',
-                                is_optional=True,
+                                is_required=False,
                             )
                         }
                     ),
                     description='''Encryption settings for the cluster.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'securityConfig': Field(
                     Shape(
@@ -265,13 +265,13 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided truststore. For the self-signed certificate,
                                             this password is generated by Dataproc.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'enableKerberos': Field(
                                             Bool,
                                             description='''Optional. Flag to indicate whether to
                                             Kerberize the cluster.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'truststoreUri': Field(
                                             String,
@@ -279,34 +279,34 @@ def define_dataproc_cluster_config():
                                             truststore file used for SSL encryption. If not
                                             provided, Dataproc will provide a self-signed
                                             certificate.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'crossRealmTrustRealm': Field(
                                             String,
                                             description='''Optional. The remote realm the Dataproc
                                             on-cluster KDC will trust, should the user enable cross
                                             realm trust.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'rootPrincipalPasswordUri': Field(
                                             String,
                                             description='''Required. The Cloud Storage URI of a KMS
                                             encrypted file containing the root principal
                                             password.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'kmsKeyUri': Field(
                                             String,
                                             description='''Required. The uri of the KMS key used to
                                             encrypt various sensitive files.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'crossRealmTrustKdc': Field(
                                             String,
                                             description='''Optional. The KDC (IP or hostname) for
                                             the remote trusted realm in a cross realm trust
                                             relationship.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'crossRealmTrustSharedPasswordUri': Field(
                                             String,
@@ -314,21 +314,21 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the shared password between
                                             the on-cluster Kerberos realm and the remote trusted
                                             realm, in a cross realm trust relationship.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'tgtLifetimeHours': Field(
                                             Int,
                                             description='''Optional. The lifetime of the ticket
                                             granting ticket, in hours. If not specified, or user
                                             specifies 0, then default value 10 will be used.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'keystoreUri': Field(
                                             String,
                                             description='''Optional. The Cloud Storage URI of the
                                             keystore file used for SSL encryption. If not provided,
                                             Dataproc will provide a self-signed certificate.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'keyPasswordUri': Field(
                                             String,
@@ -336,7 +336,7 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided key. For the self-signed certificate, this
                                             password is generated by Dataproc.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'keystorePasswordUri': Field(
                                             String,
@@ -344,31 +344,31 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided keystore. For the self-signed certificate, this
                                             password is generated by Dataproc.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'crossRealmTrustAdminServer': Field(
                                             String,
                                             description='''Optional. The admin server (IP or
                                             hostname) for the remote trusted realm in a cross realm
                                             trust relationship.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'kdcDbKeyUri': Field(
                                             String,
                                             description='''Optional. The Cloud Storage URI of a KMS
                                             encrypted file containing the master key of the KDC
                                             database.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                     }
                                 ),
                                 description='''Specifies Kerberos related configuration.''',
-                                is_optional=True,
+                                is_required=False,
                             )
                         }
                     ),
                     description='''Security related configuration, including Kerberos.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'initializationActions': Field(
                     [
@@ -381,12 +381,12 @@ def define_dataproc_cluster_config():
                                 error message (the name of the executable that caused the error and
                                 the exceeded timeout period) if the executable is not completed at
                                 end of the timeout period.''',
-                                    is_optional=True,
+                                    is_required=False,
                                 ),
                                 'executableFile': Field(
                                     String,
                                     description='''Required. Cloud Storage URI of executable file.''',
-                                    is_optional=True,
+                                    is_required=False,
                                 ),
                             }
                         )
@@ -399,7 +399,7 @@ def define_dataproc_cluster_config():
                     http://metadata/computeMetadata/v1/instance/attributes/dataproc-role) if [[
                     "${ROLE}" == \'Master\' ]]; then   ... master specific actions ... else   ...
                     worker specific actions ... fi ''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'configBucket': Field(
                     String,
@@ -409,7 +409,7 @@ def define_dataproc_cluster_config():
                     ASIA, or EU) for your cluster\'s staging bucket according to the Google Compute
                     Engine zone where your cluster is deployed, and then create and manage this
                     project-level, per-location bucket (see Cloud Dataproc staging bucket).''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'workerConfig': Field(
                     Shape(
@@ -422,7 +422,7 @@ def define_dataproc_cluster_config():
                                                 Int,
                                                 description='''The number of the accelerator cards of
                                             this type exposed to this instance.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                             'acceleratorTypeUri': Field(
                                                 String,
@@ -435,7 +435,7 @@ def define_dataproc_cluster_config():
                                             the Cloud Dataproc Auto Zone Placement feature, you must
                                             use the short name of the accelerator type resource, for
                                             example, nvidia-tesla-k80.''',
-                                                is_optional=True,
+                                                is_required=False,
                                             ),
                                         }
                                     )
@@ -443,13 +443,13 @@ def define_dataproc_cluster_config():
                                 description='''Optional. The Compute Engine accelerator
                                 configuration for these instances.Beta Feature: This feature is
                                 still under development. It may be changed before final release.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'numInstances': Field(
                                 Int,
                                 description='''Optional. The number of VM instances in the instance
                                 group. For master instance groups, must be set to 1.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'diskConfig': Field(
                                 Shape(
@@ -463,13 +463,13 @@ def define_dataproc_cluster_config():
                                             data. If one or more SSDs are attached, this runtime
                                             bulk data is spread across them, and the boot disk
                                             contains only basic config and installed binaries.''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskSizeGb': Field(
                                             Int,
                                             description='''Optional. Size in GB of the boot disk
                                             (default is 500GB).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                         'bootDiskType': Field(
                                             String,
@@ -477,32 +477,32 @@ def define_dataproc_cluster_config():
                                             is "pd-standard"). Valid values: "pd-ssd" (Persistent
                                             Disk Solid State Drive) or "pd-standard" (Persistent
                                             Disk Hard Disk Drive).''',
-                                            is_optional=True,
+                                            is_required=False,
                                         ),
                                     }
                                 ),
                                 description='''Specifies the config of disk options for a group of
                                 VM instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'managedGroupConfig': Field(
                                 Shape(fields={}),
                                 description='''Specifies the resources used to actively manage an
                                 instance group.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'isPreemptible': Field(
                                 Bool,
                                 description='''Optional. Specifies that this instance group contains
                                 preemptible instances.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'imageUri': Field(
                                 String,
                                 description='''Optional. The Compute Engine image resource used for
                                 cluster instances. It can be specified or may be inferred from
                                 SoftwareConfig.image_version.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'machineTypeUri': Field(
                                 String,
@@ -514,13 +514,13 @@ def define_dataproc_cluster_config():
                                 n1-standard-2Auto Zone Exception: If you are using the Cloud
                                 Dataproc Auto Zone Placement feature, you must use the short name of
                                 the machine type resource, for example, n1-standard-2.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='''Optional. The config settings for Compute Engine resources in an
                     instance group, such as a master or worker group.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'gceClusterConfig': Field(
                     Shape(
@@ -535,7 +535,7 @@ def define_dataproc_cluster_config():
                                 URL, partial URI, or short name are valid. Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/regions/global/default
                                 projects/[project_id]/regions/global/default default''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'zoneUri': Field(
                                 String,
@@ -547,14 +547,14 @@ def define_dataproc_cluster_config():
                                 URI, or short name are valid. Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/zones/[zone]
                                 projects/[project_id]/zones/[zone] us-central1-f''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'metadata': Field(
                                 Permissive(),
                                 description='''The Compute Engine metadata entries to add to all
                                 instances (see Project and instance metadata
                                 (https://cloud.google.com/compute/docs/storing-retrieving-metadata#project_and_instance_metadata)).''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'internalIpOnly': Field(
                                 Bool,
@@ -565,7 +565,7 @@ def define_dataproc_cluster_config():
                                 internal_ip_only restriction can only be enabled for subnetwork
                                 enabled networks, and all off-cluster dependencies must be
                                 configured to be accessible without external IP addresses.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'serviceAccountScopes': Field(
                                 [String],
@@ -580,13 +580,13 @@ def define_dataproc_cluster_config():
                                 https://www.googleapis.com/auth/bigtable.admin.table
                                 https://www.googleapis.com/auth/bigtable.data
                                 https://www.googleapis.com/auth/devstorage.full_control''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'tags': Field(
                                 [String],
                                 description='''The Compute Engine tags to add to all instances (see
                                 Tagging instances).''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'serviceAccount': Field(
                                 String,
@@ -597,7 +597,7 @@ def define_dataproc_cluster_config():
                                 https://cloud.google.com/compute/docs/access/service-accounts#custom_service_accounts
                                 for more information). Example:
                                 [account_id]@[project_id].iam.gserviceaccount.com''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'subnetworkUri': Field(
                                 String,
@@ -606,13 +606,13 @@ def define_dataproc_cluster_config():
                                 full URL, partial URI, or short name are valid. Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/regions/us-east1/subnetworks/sub0
                                 projects/[project_id]/regions/us-east1/subnetworks/sub0 sub0''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='''Common config settings for resources of Compute Engine cluster
                     instances, applicable to all instances in the cluster.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'softwareConfig': Field(
                     Shape(
@@ -627,13 +627,13 @@ def define_dataproc_cluster_config():
                                 hive-site.xml mapred: mapred-site.xml pig: pig.properties spark:
                                 spark-defaults.conf yarn: yarn-site.xmlFor more information, see
                                 Cluster properties.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'optionalComponents': Field(
                                 [Component],
                                 description='''The set of optional components to activate on the
                                 cluster.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'imageVersion': Field(
                                 String,
@@ -642,16 +642,16 @@ def define_dataproc_cluster_config():
                                 "1.2" (including a subminor version, such as "1.2.29"), or the
                                 "preview" version. If unspecified, it defaults to the latest Debian
                                 version.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='''Specifies the selection and config of software inside the
                     cluster.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
         description='''The cluster config.''',
-        is_optional=True,
+        is_required=False,
     )

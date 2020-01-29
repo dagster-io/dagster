@@ -4,19 +4,21 @@ import inspect
 import os
 import signal
 import sys
+import tempfile
 import time
 
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
-try:
+# pylint: disable=no-name-in-module,import-error,no-member
+if sys.version_info < (3, 0):
     # Python 2 tempfile doesn't have tempfile.TemporaryDirectory
-    import backports.tempfile as tempfile
-except ImportError:
-    import tempfile
+    import backports.tempfile
 
+    TemporaryDirectory = backports.tempfile.TemporaryDirectory
 
-TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+    TemporaryDirectory = tempfile.TemporaryDirectory
 
 try:
     # pylint:disable=redefined-builtin,self-assigning-variable
@@ -120,13 +122,27 @@ def get_args(callble):
             if parameter.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD
         ]
     else:
-        try:
-            if inspect.isclass(callble):
-                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+        if inspect.isclass(callble):
+            if issubclass(callble, tuple):
+                arg_spec = inspect.getargspec(callble.__new__)  # pylint: disable=deprecated-method
             else:
-                arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
-            return arg_spec.args
-        except TypeError:
-            # This will happen when we try to get the argspec for a slot wrapper, e.g.:
-            # TypeError: <slot wrapper '__init__' of 'object' objects> is not a Python function
-            return None
+                arg_spec = inspect.getargspec(callble.__init__)  # pylint: disable=deprecated-method
+        else:
+            arg_spec = inspect.getargspec(callble)  # pylint: disable=deprecated-method
+        return arg_spec.args
+
+
+# https://stackoverflow.com/a/58437485/324449
+def is_module_available(module_name):
+    if sys.version_info <= (3, 3):
+        # python 3.3 and below
+        import pkgutil
+
+        loader = pkgutil.find_loader(module_name)
+    elif sys.version_info >= (3, 4):
+        # python 3.4 and above
+        import importlib
+
+        loader = importlib.util.find_spec(module_name)
+
+    return loader is not None

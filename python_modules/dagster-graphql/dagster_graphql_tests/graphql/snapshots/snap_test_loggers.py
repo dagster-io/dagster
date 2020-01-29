@@ -18,18 +18,18 @@ snapshots['test_mode_fetch_loggers 1'] = {
                                 'fields': [
                                     {
                                         'configType': {
-                                            'name': 'String'
+                                            'key': 'String'
                                         },
                                         'name': 'log_level'
                                     },
                                     {
                                         'configType': {
-                                            'name': 'String'
+                                            'key': 'String'
                                         },
                                         'name': 'prefix'
                                     }
                                 ],
-                                'name': None
+                                'key': 'Shape.830132920aced99409ce9e96e39a9ec019f9c803'
                             }
                         },
                         'description': None,
@@ -43,7 +43,7 @@ snapshots['test_mode_fetch_loggers 1'] = {
                     {
                         'configField': {
                             'configType': {
-                                'name': 'String'
+                                'key': 'String'
                             }
                         },
                         'description': None,
@@ -60,18 +60,18 @@ snapshots['test_mode_fetch_loggers 1'] = {
                                 'fields': [
                                     {
                                         'configType': {
-                                            'name': 'String'
+                                            'key': 'String'
                                         },
                                         'name': 'log_level'
                                     },
                                     {
                                         'configType': {
-                                            'name': 'String'
+                                            'key': 'String'
                                         },
                                         'name': 'prefix'
                                     }
                                 ],
-                                'name': None
+                                'key': 'Shape.830132920aced99409ce9e96e39a9ec019f9c803'
                             }
                         },
                         'description': None,
@@ -80,7 +80,7 @@ snapshots['test_mode_fetch_loggers 1'] = {
                     {
                         'configField': {
                             'configType': {
-                                'name': 'String'
+                                'key': 'String'
                             }
                         },
                         'description': None,

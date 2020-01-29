@@ -23,14 +23,18 @@ REGION = 'us-west1'
 LATEST_JAR_HASH = '214f4bff2eccb4e9c08578d96bd329409b7111c8'
 
 
-@solid
+@solid(required_resource_keys={'dataproc'})
 def create_dataproc_cluster(context):
     context.resources.dataproc.create_cluster()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(
+    config={'date': str},
+    input_defs=[InputDefinition('start', Nothing)],
+    required_resource_keys={'dataproc'},
+)
 def data_proc_spark_operator(context):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+    dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
 
     job_config = {
         'job': {
@@ -59,14 +63,18 @@ def data_proc_spark_operator(context):
     context.resources.dataproc.wait_for_job(job_id)
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(input_defs=[InputDefinition('start', Nothing)], required_resource_keys={'dataproc'})
 def delete_dataproc_cluster(context):
     context.resources.dataproc.delete_cluster()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(
+    config={'date': str},
+    input_defs=[InputDefinition('start', Nothing)],
+    required_resource_keys={'bigquery'},
+)
 def gcs_to_bigquery(context):
-    dt = datetime.datetime.fromtimestamp(context.pipeline_run.tags['execution_epoch_time'])
+    dt = datetime.datetime.strptime(context.solid_config['date'], "%Y-%m-%d")
 
     destination = '{project_id}.events.events${date}'.format(
         project_id=PROJECT_ID, date=dt.strftime('%Y%m%d')
@@ -87,7 +95,7 @@ def gcs_to_bigquery(context):
     ).result()
 
 
-@solid(input_defs=[InputDefinition('start', Nothing)])
+@solid(input_defs=[InputDefinition('start', Nothing)], required_resource_keys={'bigquery'})
 def explore_visits_by_hour(context):
     query_job_config = QueryJobConfig(
         destination='%s.aggregations.explore_visits_per_hour' % PROJECT_ID,

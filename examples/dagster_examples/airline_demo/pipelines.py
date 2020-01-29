@@ -10,8 +10,8 @@ from dagster import ModeDefinition, PresetDefinition, composite_solid, file_rela
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
+from ..common.resources import postgres_db_info_resource, redshift_db_info_resource
 from .cache_file_from_s3 import cache_file_from_s3
-from .resources import postgres_db_info_resource, redshift_db_info_resource
 from .solids import (
     average_sfo_outbound_avg_delays_by_destination,
     delays_by_geography,

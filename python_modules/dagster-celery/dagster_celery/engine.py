@@ -1,13 +1,17 @@
+import sys
 import time
 from collections import defaultdict
 
 from dagster import check
 from dagster.core.engine.engine_base import Engine
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .config import DEFAULT_PRIORITY, DEFAULT_QUEUE, CeleryConfig
+from .config import CeleryConfig
+from .defaults import task_default_priority, task_default_queue
 from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
@@ -43,17 +47,19 @@ class CeleryEngine(Engine):
 
         app = make_app(celery_config)
 
-        pending_steps = execution_plan.execution_deps()
-
         task_signatures = {}  # Dict[step_key, celery.Signature]
         apply_kwargs = defaultdict(dict)  # Dict[step_key, Dict[str, Any]]
 
-        sort_by_priority = lambda step_key: (-1 * apply_kwargs[step_key]['priority'])
+        priority_for_step = lambda step: (
+            -1 * step.metadata.get('dagster-celery/priority', task_default_priority)
+        )
+        priority_for_key = lambda step_key: (-1 * apply_kwargs[step_key]['priority'])
+        _warn_on_priority_misuse(pipeline_context, execution_plan)
 
         for step_key in execution_plan.step_keys_to_execute:
             step = execution_plan.get_step_by_key(step_key)
-            priority = step.metadata.get('dagster-celery/priority', DEFAULT_PRIORITY)
-            queue = step.metadata.get('dagster-celery/queue', DEFAULT_QUEUE)
+            priority = step.metadata.get('dagster-celery/priority', task_default_priority)
+            queue = step.metadata.get('dagster-celery/queue', task_default_queue)
             task = create_task(app)
 
             variables = {
@@ -74,12 +80,12 @@ class CeleryEngine(Engine):
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
         completed_steps = set({})  # Set[step_key]
+        active_execution = execution_plan.start(sort_key_fn=priority_for_step)
 
-        while pending_steps or step_results:
-
+        while not active_execution.is_complete or step_results:
             results_to_pop = []
             for step_key, result in sorted(
-                step_results.items(), key=lambda x: sort_by_priority(x[0])
+                step_results.items(), key=lambda x: priority_for_key(x[0])
             ):
                 if result.ready():
                     try:
@@ -95,25 +101,44 @@ class CeleryEngine(Engine):
             for step_key in results_to_pop:
                 if step_key in step_results:
                     del step_results[step_key]
-
-            pending_to_pop = []
-            for step_key, requirements in pending_steps.items():
-                if requirements.issubset(completed_steps):
-                    pending_to_pop.append(step_key)
+                    active_execution.mark_complete(step_key)
 
             # This is a slight refinement. If we have n workers idle and schedule m > n steps for
             # execution, the first n steps will be picked up by the idle workers in the order in
             # which they are scheduled (and the following m-n steps will be executed in priority
             # order, provided that it takes longer to execute a step than to schedule it). The test
             # case has m >> n to exhibit this behavior in the absence of this sort step.
-            to_execute = sorted(pending_to_pop, key=sort_by_priority)
-            for step_key in to_execute:
-                step_results[step_key] = task_signatures[step_key].apply_async(
-                    **apply_kwargs[step_key]
-                )
-
-            for step_key in pending_to_pop:
-                if step_key in pending_steps:
-                    del pending_steps[step_key]
+            for step in active_execution.get_available_steps():
+                try:
+                    step_results[step.key] = task_signatures[step.key].apply_async(
+                        **apply_kwargs[step.key]
+                    )
+                except Exception:
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        'Encountered error during celery task submission.'.format(),
+                        event_specific_data=EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info()),
+                        ),
+                    )
+                    raise
 
             time.sleep(TICK_SECONDS)
+
+
+def _warn_on_priority_misuse(context, execution_plan):
+    bad_keys = []
+    for key in execution_plan.step_keys_to_execute:
+        step = execution_plan.get_step_by_key(key)
+        if (
+            step.metadata.get('dagster/priority') is not None
+            and step.metadata.get('dagster-celery/priority') is None
+        ):
+            bad_keys.append(key)
+
+    if bad_keys:
+        context.log.warn(
+            'The following steps do not have "dagster-celery/priority" set but do '
+            'have "dagster/priority" set which is not applicable for the celery engine: [{}]. '
+            'Consider using a function to set both keys.'.format(', '.join(bad_keys))
+        )

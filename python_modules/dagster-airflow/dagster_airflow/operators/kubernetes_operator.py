@@ -216,7 +216,6 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                             environment_dict=self.environment_dict,
                             mode=self.mode,
                             selector=ExecutionSelector(self.pipeline_name),
-                            reexecution_config=None,
                             step_keys_to_execute=None,
                             tags=None,
                             status=PipelineRunStatus.MANAGED,

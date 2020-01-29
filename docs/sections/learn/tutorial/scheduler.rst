@@ -6,6 +6,16 @@ Scheduling pipeline runs
 Dagster includes a simple built-in scheduler that works with Dagit for control and monitoring.
 Suppose that we need to run our simple cereal pipeline every morning before breakfast, at 6:45 AM.
 
+Requirements
+^^^^^^^^^^^^
+You'll need to install the ``dagster-cron`` library.
+
+.. code-block:: shell
+
+    $ pip install dagster-cron
+
+You must also ensure that ``cron`` is installed on the machine you're running the scheduler on.
+
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
    :lines: 1-36
@@ -61,6 +71,18 @@ After confirming schedule changes are as expected, run:
     $ dagster schedule up -y scheduler.yaml
     Changes:
       + good_morning (add)
+
+Verify that the ``good_morning`` scheduled job has been added to ``cron``:
+
+.. code-block:: console
+
+    $ crontab -l
+
+If the ``good_morning`` job is not listed, you may have to start it with:
+
+.. code-block:: console
+
+    $ dagster schedule start good_morning
 
 Now, we can load dagit to view the schedule and monitor runs:
 

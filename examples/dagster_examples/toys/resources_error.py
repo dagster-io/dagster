@@ -1,7 +1,7 @@
 from dagster import Field, Int, ModeDefinition, execute_pipeline, pipeline, resource, solid
 
 
-@resource(config=Field(Int, is_optional=True))
+@resource(config=Field(Int, is_required=False))
 def a_resource(context):
     raise Exception("Bad Resource")
 

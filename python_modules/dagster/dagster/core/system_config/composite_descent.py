@@ -3,7 +3,6 @@ from collections import namedtuple
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
-from dagster.core.definitions.config import ConfigMappingContext
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.environment_configs import define_solid_dictionary_cls
 from dagster.core.definitions.pipeline import PipelineDefinition
@@ -26,15 +25,12 @@ class SolidConfigEntry(namedtuple('_SolidConfigEntry', 'handle solid_config')):
         )
 
 
-class DescentStack(namedtuple('_DescentStack', 'pipeline_def handle config_mapping_context')):
-    def __new__(cls, pipeline_def, handle, config_mapping_context):
+class DescentStack(namedtuple('_DescentStack', 'pipeline_def handle')):
+    def __new__(cls, pipeline_def, handle):
         return super(DescentStack, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
             handle=check.opt_inst_param(handle, 'handle', SolidHandle),
-            config_mapping_context=check.inst_param(
-                config_mapping_context, 'config_mapping_context', ConfigMappingContext
-            ),
         )
 
     @property
@@ -81,8 +77,7 @@ def composite_descent(pipeline_def, solids_config, run_config=None):
     return {
         handle.to_string(): solid_config
         for handle, solid_config in _composite_descent(
-            parent_stack=DescentStack(pipeline_def, None, ConfigMappingContext(run_config)),
-            solids_config_dict=solids_config,
+            parent_stack=DescentStack(pipeline_def, None), solids_config_dict=solids_config,
         )
     }
 
@@ -153,7 +148,7 @@ def _get_mapped_solids_dict(composite_def, current_stack, current_solid_config):
         DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
     ):
         mapped_solids_config = composite_def.config_mapping.config_fn(
-            current_stack.config_mapping_context, current_solid_config.get('config', {})
+            current_solid_config.get('config', {})
         )
 
     # Dynamically construct the type that the output of the config mapping function will

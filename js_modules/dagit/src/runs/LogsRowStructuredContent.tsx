@@ -1,14 +1,11 @@
 import * as React from "react";
 import { Tag, Colors } from "@blueprintjs/core";
-import {
-  LogsRowStructuredFragment,
-  LogsRowStructuredFragment_ExecutionStepFailureEvent,
-  LogsRowStructuredFragment_PipelineInitFailureEvent
-} from "./types/LogsRowStructuredFragment";
+import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
 import { EventTypeColumn } from "./LogsRowComponents";
 import { MetadataEntries } from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
+import { PythonErrorFragment } from "../types/PythonErrorFragment";
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
@@ -21,7 +18,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
     // Errors
     case "ExecutionStepFailureEvent":
     case "PipelineInitFailureEvent":
-      return <FailureContent node={node} />;
+      return <FailureContent error={node.error} />;
 
     // Default Behavior
     case "PipelineProcessStartEvent":
@@ -95,6 +92,9 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
     case "PipelineStartEvent":
       return <DefaultContent message={node.message} />;
     case "EngineEvent":
+      if (node.engineError) {
+        return <FailureContent error={node.engineError} />;
+      }
       return (
         <DefaultContent message={node.message}>
           <MetadataEntries entries={node.metadataEntries} />
@@ -139,10 +139,8 @@ const DefaultContent: React.FunctionComponent<{
 };
 
 const FailureContent: React.FunctionComponent<{
-  node:
-    | LogsRowStructuredFragment_ExecutionStepFailureEvent
-    | LogsRowStructuredFragment_PipelineInitFailureEvent;
-}> = ({ node }) => (
+  error: PythonErrorFragment;
+}> = ({ error }) => (
   <>
     <EventTypeColumn>
       <Tag minimal={true} intent="danger" style={{ fontSize: "0.9em" }}>
@@ -150,7 +148,7 @@ const FailureContent: React.FunctionComponent<{
       </Tag>
     </EventTypeColumn>
     <span style={{ flex: 1, color: Colors.RED3 }}>
-      {`${node.error.message}\n${node.error.stack}`}
+      {`${error.message}\n${error.stack}`}
     </span>
   </>
 );

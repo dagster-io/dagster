@@ -4,7 +4,6 @@ import { useMutation } from "@apollo/react-hooks";
 
 import {
   Button,
-  Classes,
   Colors,
   Switch,
   Icon,
@@ -30,6 +29,14 @@ import { unixTimestampToString } from "../Util";
 import { copyValue } from "../DomUtils";
 
 const NUM_RUNS_TO_DISPLAY = 10;
+
+const getNaturalLanguageCronString = (cronSchedule: string) => {
+  try {
+    return cronstrue.toString(cronSchedule);
+  } catch {
+    return "Invalid cron string";
+  }
+};
 
 export const ScheduleRow: React.FunctionComponent<{
   schedule: ScheduleFragment;
@@ -60,14 +67,6 @@ export const ScheduleRow: React.FunctionComponent<{
   const mostRecentAttemptLogError = mostRecentAttempt
     ? JSON.parse(mostRecentAttempt.jsonResult)
     : null;
-
-  const getNaturalLanguageCronString = (cronSchedule: string) => {
-    try {
-      return cronstrue.toString(cronSchedule);
-    } catch {
-      return "Invalid cron string";
-    }
-  };
 
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
@@ -129,17 +128,22 @@ export const ScheduleRow: React.FunctionComponent<{
           maxWidth: 150
         }}
       >
-        {cronSchedule ? (
-          <Tooltip
-            className={Classes.TOOLTIP_INDICATOR}
-            position={"top"}
-            content={cronSchedule}
-          >
-            {getNaturalLanguageCronString(cronSchedule)}
-          </Tooltip>
-        ) : (
-          "-"
-        )}
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            whiteSpace: "pre-wrap",
+            display: "block"
+          }}
+        >
+          {cronSchedule ? (
+            <Tooltip position={"bottom"} content={cronSchedule}>
+              {getNaturalLanguageCronString(cronSchedule)}
+            </Tooltip>
+          ) : (
+            <div>-</div>
+          )}
+        </div>
       </RowColumn>
       <RowColumn style={{ flex: 1 }}>
         {attempts && attempts.length > 0

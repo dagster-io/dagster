@@ -2,7 +2,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster.core.instance import DagsterInstance
 
-from .utils import define_context, sync_execute_get_run_log_data
+from .utils import define_test_context, sync_execute_get_run_log_data
 
 COMPUTE_LOGS_QUERY = '''
   query ComputeLogsQuery($runId: ID!, $stepKey: String!) {
@@ -34,7 +34,7 @@ def test_get_compute_logs_over_graphql(snapshot):
     run_id = payload['run']['runId']
 
     result = execute_dagster_graphql(
-        define_context(instance=DagsterInstance.local_temp()),
+        define_test_context(instance=DagsterInstance.local_temp()),
         COMPUTE_LOGS_QUERY,
         variables={'runId': run_id, 'stepKey': 'spew.compute'},
     )
@@ -49,7 +49,7 @@ def test_compute_logs_subscription_graphql(snapshot):
     run_id = payload['run']['runId']
 
     subscription = execute_dagster_graphql(
-        define_context(instance=DagsterInstance.local_temp()),
+        define_test_context(instance=DagsterInstance.local_temp()),
         COMPUTE_LOGS_SUBSCRIPTION,
         variables={'runId': run_id, 'stepKey': 'spew.compute', 'ioType': 'STDOUT', 'cursor': '0'},
     )

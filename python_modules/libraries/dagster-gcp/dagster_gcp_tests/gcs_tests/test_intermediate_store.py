@@ -1,4 +1,6 @@
+import csv
 import uuid
+from collections import OrderedDict
 from io import BytesIO
 
 import pytest
@@ -15,8 +17,10 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     SerializationStrategy,
+    SolidInvocation,
     String,
     check,
+    dagster_type,
     execute_pipeline,
     lambda_solid,
     pipeline,
@@ -26,9 +30,9 @@ from dagster.core.execution.api import create_execution_plan, execute_plan, scop
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
-from dagster.core.types.runtime_type import Bool as RuntimeBool
-from dagster.core.types.runtime_type import String as RuntimeString
-from dagster.core.types.runtime_type import create_any_type, resolve_to_runtime_type
+from dagster.core.types.dagster_type import Bool as RuntimeBool
+from dagster.core.types.dagster_type import String as RuntimeString
+from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -118,9 +122,20 @@ def test_using_gcs_for_subplan(gcs_bucket):
     )
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
+    with scoped_pipeline_context(
+        pipeline_def,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan.build_subset_plan(['return_one.compute']),
+    ) as context:
         store = GCSIntermediateStore(
-            gcs_bucket, run_id, client=context.scoped_resources_builder.build().gcs.client
+            gcs_bucket,
+            run_id,
+            client=context.scoped_resources_builder.build(
+                mapper_fn=SolidInvocation.default_resource_mapper_fn,
+                required_resource_keys={'gcs'},
+            ).gcs.client,
         )
         assert store.has_intermediate(context, 'return_one.compute')
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
@@ -135,7 +150,13 @@ def test_using_gcs_for_subplan(gcs_bucket):
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
+    with scoped_pipeline_context(
+        pipeline_def,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan.build_subset_plan(['return_one.compute']),
+    ) as context:
         assert store.has_intermediate(context, 'add_one.compute')
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 
@@ -172,7 +193,7 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringGCSTypeStoragePlugin}
+            [(RuntimeString, FancyStringGCSTypeStoragePlugin)]
         ),
     )
 
@@ -195,14 +216,14 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
         run_id=run_id,
         gcs_bucket=gcs_bucket,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
-            {RuntimeString: FancyStringGCSTypeStoragePlugin}
+            [(RuntimeString, FancyStringGCSTypeStoragePlugin)]
         ),
     )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_to_runtime_type(List[String]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(List[String]), ['obj_name']
             )
 
 
@@ -214,11 +235,11 @@ def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
-                ['foo', 'bar'], context, resolve_to_runtime_type(List[LowercaseString]), ['list'],
+                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), ['list'],
             )
             assert intermediate_store.has_object(context, ['list'])
             assert intermediate_store.get_object(
-                context, resolve_to_runtime_type(List[Bool]), ['list']
+                context, resolve_dagster_type(List[Bool]), ['list']
             ).obj == ['foo', 'bar']
 
         finally:
@@ -271,12 +292,18 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     )
     assert result.success
 
-    with scoped_pipeline_context(pipe, environment_dict, pipeline_run, instance) as context:
+    execution_plan = create_execution_plan(pipe, environment_dict, run_config=pipeline_run)
+    with scoped_pipeline_context(
+        pipe, environment_dict, pipeline_run, instance, execution_plan
+    ) as context:
         store = GCSIntermediateStore(
             run_id=run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build().gcs.client,
+            client=context.scoped_resources_builder.build(
+                mapper_fn=SolidInvocation.default_resource_mapper_fn,
+                required_resource_keys={'gcs'},
+            ).gcs.client,
         )
         assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
@@ -332,3 +359,52 @@ def test_gcs_intermediate_store(gcs_bucket):
     finally:
         intermediate_store.rm_object(context, ['true'])
         intermediate_store_2.rm_object(context, ['true'])
+
+
+class CsvSerializationStrategy(SerializationStrategy):
+    def __init__(self):
+        super(CsvSerializationStrategy, self).__init__(
+            "csv_strategy", read_mode="r", write_mode="w"
+        )
+
+    def serialize(self, value, write_file_obj):
+        fieldnames = value[0]
+        writer = csv.DictWriter(write_file_obj, fieldnames)
+        writer.writeheader()
+        writer.writerows(value)
+
+    def deserialize(self, read_file_obj):
+        reader = csv.DictReader(read_file_obj)
+        return LessSimpleDataFrame([row for row in reader])
+
+
+@dagster_type(
+    name="LessSimpleDataFrame",
+    description=("A naive representation of a data frame, e.g., as returned by " "csv.DictReader."),
+    serialization_strategy=CsvSerializationStrategy(),
+)
+class LessSimpleDataFrame(list):
+    pass
+
+
+def test_custom_read_write_mode(gcs_bucket):
+    run_id = str(uuid.uuid4())
+    intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
+    data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
+    try:
+        with yield_empty_pipeline_context(run_id=run_id) as context:
+            intermediate_store.set_object(
+                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+            )
+
+            assert intermediate_store.has_object(context, ['data_frame'])
+            assert (
+                intermediate_store.get_object(
+                    context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+                ).obj
+                == data_frame
+            )
+            assert intermediate_store.uri_for_paths(['data_frame']).startswith('gs://')
+
+    finally:
+        intermediate_store.rm_object(context, ['data_frame'])

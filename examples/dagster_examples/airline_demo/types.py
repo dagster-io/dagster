@@ -5,7 +5,7 @@ from collections import namedtuple
 import sqlalchemy
 
 from dagster import as_dagster_type
-from dagster.core.types.runtime_type import create_string_type
+from dagster.core.types.dagster_type import create_string_type
 
 AirlineDemoResources = namedtuple(
     'AirlineDemoResources',
@@ -20,4 +20,3 @@ SqlAlchemyEngineType = as_dagster_type(
 )
 
 SqlTableName = create_string_type('SqlTableName', description='The name of a database table')
-DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table host db_name')

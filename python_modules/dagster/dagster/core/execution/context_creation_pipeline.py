@@ -18,6 +18,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.init import InitSystemStorageContext
@@ -34,13 +35,18 @@ from .context.system import SystemPipelineExecutionContext, SystemPipelineExecut
 
 
 @contextmanager
-def create_resource_builder(pipeline_def, environment_config, pipeline_run, log_manager):
+def create_resource_builder(
+    pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
+):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
+    check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
 
-    resources_stack = ResourcesStack(pipeline_def, environment_config, pipeline_run, log_manager)
+    resources_stack = ResourcesStack(
+        pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
+    )
     yield resources_stack.create()
     resources_stack.teardown()
 
@@ -86,11 +92,23 @@ def executor_def_from_config(mode_definition, environment_config):
 ContextCreationData = namedtuple(
     'ContextCreationData',
     'pipeline_def environment_config pipeline_run mode_def system_storage_def '
-    'execution_target_handle executor_def instance',
+    'execution_target_handle executor_def instance resource_keys_to_init',
 )
 
 
-def create_context_creation_data(pipeline_def, environment_dict, pipeline_run, instance):
+def get_required_resource_keys_to_init(solid_defs, system_storage_def):
+    resource_keys = set()
+    resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
+
+    for solid_def in solid_defs:
+        resource_keys = resource_keys.union(solid_def.required_resource_keys)
+
+    return frozenset(resource_keys)
+
+
+def create_context_creation_data(
+    pipeline_def, environment_dict, pipeline_run, instance, solid_def_names_in_execution
+):
     environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, pipeline_run)
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
@@ -98,6 +116,7 @@ def create_context_creation_data(pipeline_def, environment_dict, pipeline_run, i
     executor_def = executor_def_from_config(mode_def, environment_config)
 
     execution_target_handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
+
     return ContextCreationData(
         pipeline_def=pipeline_def,
         environment_config=environment_config,
@@ -107,6 +126,14 @@ def create_context_creation_data(pipeline_def, environment_dict, pipeline_run, i
         execution_target_handle=execution_target_handle,
         executor_def=executor_def,
         instance=instance,
+        resource_keys_to_init=get_required_resource_keys_to_init(
+            [
+                solid_def
+                for solid_def in pipeline_def.all_solid_defs
+                if solid_def.name in solid_def_names_in_execution
+            ],
+            system_storage_def,
+        ),
     )
 
 
@@ -116,6 +143,7 @@ def scoped_pipeline_context(
     environment_dict,
     pipeline_run,
     instance,
+    execution_plan,
     system_storage_data=None,
     scoped_resources_builder_cm=create_resource_builder,
     raise_on_error=False,
@@ -124,18 +152,21 @@ def scoped_pipeline_context(
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
 
     context_creation_data = create_context_creation_data(
-        pipeline_def, environment_dict, pipeline_run, instance
+        pipeline_def,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan.get_solid_def_name_set(),
     )
-
-    executor_config = create_executor_config(context_creation_data)
 
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.
     pipeline_context = None
     try:
-        executor_config.check_requirements(instance, context_creation_data.system_storage_def)
+        executor_config = create_executor_config(context_creation_data)
 
         log_manager = create_log_manager(context_creation_data)
 
@@ -144,6 +175,7 @@ def scoped_pipeline_context(
             context_creation_data.environment_config,
             context_creation_data.pipeline_run,
             log_manager,
+            context_creation_data.resource_keys_to_init,
         ) as scoped_resources_builder:
 
             system_storage_data = create_system_storage_data(
@@ -227,21 +259,16 @@ def create_system_storage_data(
 def create_executor_config(context_creation_data):
     check.inst_param(context_creation_data, 'context_creation_data', ContextCreationData)
 
-    environment_config, pipeline_def, executor_def, pipeline_run = (
-        context_creation_data.environment_config,
-        context_creation_data.pipeline_def,
-        context_creation_data.executor_def,
-        context_creation_data.pipeline_run,
-    )
-
     return construct_executor_config(
         InitExecutorContext(
-            pipeline_def=pipeline_def,
+            pipeline_def=context_creation_data.pipeline_def,
             mode_def=context_creation_data.mode_def,
-            executor_def=executor_def,
-            pipeline_run=pipeline_run,
-            environment_config=environment_config,
-            executor_config=environment_config.execution.execution_engine_config,
+            executor_def=context_creation_data.executor_def,
+            pipeline_run=context_creation_data.pipeline_run,
+            environment_config=context_creation_data.environment_config,
+            executor_config=context_creation_data.environment_config.execution.execution_engine_config,
+            system_storage_def=context_creation_data.system_storage_def,
+            instance=context_creation_data.instance,
         )
     )
 
@@ -289,11 +316,14 @@ class ResourcesStack(object):
     # manager (because notebook execution is cell-by-cell in the Jupyter kernel, a subprocess we
     # don't directly control). In these environments we need to manually create and teardown
     # resources.
-    def __init__(self, pipeline_def, environment_config, pipeline_run, log_manager):
+    def __init__(
+        self, pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
+    ):
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         check.inst_param(log_manager, 'log_manager', DagsterLogManager)
+        check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
 
         self.resource_instances = {}
         self.mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
@@ -302,9 +332,13 @@ class ResourcesStack(object):
         self.pipeline_run = pipeline_run
         self.log_manager = log_manager
         self.stack = ExitStack()
+        self.resource_keys_to_init = resource_keys_to_init
 
     def create(self):
         for resource_name, resource_def in sorted(self.mode_definition.resource_defs.items()):
+            if not resource_name in self.resource_keys_to_init:
+                continue
+
             user_fn = create_resource_fn_lambda(
                 self.pipeline_def,
                 resource_def,

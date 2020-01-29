@@ -138,8 +138,8 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefin
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
-  name: string | null;
+  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  key: string;
   description: string | null;
 }
 

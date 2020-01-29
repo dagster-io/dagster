@@ -359,12 +359,12 @@ def hello_world(context) -> str:
     config=Field(
         Selector(
             {
-                'haw': {'whom': Field(String, default_value='honua', is_optional=True)},
-                'cn': {'whom': Field(String, default_value='世界', is_optional=True)},
-                'en': {'whom': Field(String, default_value='world', is_optional=True)},
+                'haw': {'whom': Field(String, default_value='honua', is_required=False)},
+                'cn': {'whom': Field(String, default_value='世界', is_required=False)},
+                'en': {'whom': Field(String, default_value='world', is_required=False)},
             }
         ),
-        is_optional=True,
+        is_required=False,
         default_value={'en': {'whom': 'world'}},
     )
 )

@@ -7,7 +7,6 @@ import mock
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-from dagster_tests.utils import FilesytemTestScheduler
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -52,6 +51,7 @@ from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import script_relative_path
+from dagster.utils.test import FilesytemTestScheduler
 
 
 def no_print(_):
@@ -892,7 +892,7 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         self._inst_data = inst_data
         self._queue = []
 
-    def launch_run(self, run):
+    def launch_run(self, _instance, run):
         self._queue.append(run)
         return run
 

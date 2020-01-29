@@ -178,7 +178,7 @@ class SparkConfig(namedtuple('_SparkConfig', 'path default meaning')):
             printer.append(self.meaning)
             printer.line("''',")
             # printer.line("default_value='{}',".format(self.default))
-            printer.line('is_optional=True,')
+            printer.line('is_required=False,')
 
         printer.append(')')
 

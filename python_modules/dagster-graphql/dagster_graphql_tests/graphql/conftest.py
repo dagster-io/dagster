@@ -132,7 +132,7 @@ fragment SolidTypeSignatureFragment on Solid {
 fragment ConfigFieldFragment on ConfigTypeField {
   configType {
     __typename
-    name
+    key 
     description
     ... on CompositeConfigType {
       fields {
@@ -141,7 +141,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
         isOptional
         defaultValue
         configType {
-          name
+          key 
           description
           ... on CompositeConfigType {
             fields {
@@ -150,7 +150,7 @@ fragment ConfigFieldFragment on ConfigTypeField {
               isOptional
               defaultValue
               configType {
-                name
+                key 
                 description
                 __typename
               }

@@ -79,13 +79,13 @@ def test_single_solid_with_config():
 
 
 def test_single_solid_with_context_config():
-    @resource(config=Field(Int, is_optional=True, default_value=2))
+    @resource(config=Field(Int, is_required=False, default_value=2))
     def num_resource(init_context):
         return init_context.resource_config
 
     ran = {'count': 0}
 
-    @solid
+    @solid(required_resource_keys={'num'})
     def check_context_config_for_two(context):
         assert context.resources.num == 2
         ran['count'] += 1

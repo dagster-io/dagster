@@ -54,7 +54,7 @@ def read_csv(context, csv_path):
     return lines
 
 
-@solid
+@solid(required_resource_keys={'warehouse'})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
         'calories',

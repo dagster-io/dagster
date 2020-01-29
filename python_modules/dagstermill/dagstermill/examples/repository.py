@@ -43,7 +43,7 @@ def define_hello_world_config_solid():
     return dagstermill.define_dagstermill_solid(
         'hello_world_config',
         nb_test_path('hello_world_config'),
-        config={'greeting': Field(String, is_optional=True, default_value='hello')},
+        config={'greeting': Field(String, is_required=False, default_value='hello')},
     )
 
 

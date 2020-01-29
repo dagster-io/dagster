@@ -13,10 +13,10 @@ from dagster.utils.typing_api import (
     is_closed_python_tuple_type,
 )
 
+from .dagster_type import List, Optional
 from .python_dict import Dict, create_typed_runtime_dict
 from .python_set import Set
 from .python_tuple import Tuple, create_typed_tuple
-from .runtime_type import List, Optional
 
 
 def transform_typing_type(type_annotation):

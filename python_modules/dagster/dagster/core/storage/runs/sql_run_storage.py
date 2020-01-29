@@ -2,10 +2,12 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 
+import six
 import sqlalchemy as db
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineRunsFilter
+from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
@@ -31,13 +33,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
         with self.connect() as conn:
-            runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=pipeline_run.run_id,
-                pipeline_name=pipeline_run.pipeline_name,
-                status=pipeline_run.status.value,
-                run_body=serialize_dagster_namedtuple(pipeline_run),
-            )
-            conn.execute(runs_insert)
+            try:
+                runs_insert = RunsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    run_id=pipeline_run.run_id,
+                    pipeline_name=pipeline_run.pipeline_name,
+                    status=pipeline_run.status.value,
+                    run_body=serialize_dagster_namedtuple(pipeline_run),
+                )
+                conn.execute(runs_insert)
+            except db.exc.IntegrityError as exc:
+                six.raise_from(DagsterRunAlreadyExists, exc)
+
             if pipeline_run.tags and len(pipeline_run.tags) > 0:
                 conn.execute(
                     RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter

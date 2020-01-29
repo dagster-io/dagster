@@ -1,5 +1,6 @@
 import logging
-from io import BytesIO
+import sys
+from io import BytesIO, StringIO
 
 from google.cloud import storage
 
@@ -31,10 +32,14 @@ class GCSObjectStore(ObjectStore):
             logging.warning('Removing existing GCS key: {key}'.format(key=key))
             self.rm_object(key)
 
-        with BytesIO() as bytes_io:
-            serialization_strategy.serialize(obj, bytes_io)
-            bytes_io.seek(0)
-            self.bucket_obj.blob(key).upload_from_file(bytes_io)
+        with (
+            BytesIO()
+            if serialization_strategy.write_mode == 'wb' or sys.version_info < (3, 0)
+            else StringIO()
+        ) as file_like:
+            serialization_strategy.serialize(obj, file_like)
+            file_like.seek(0)
+            self.bucket_obj.blob(key).upload_from_file(file_like)
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,
@@ -49,8 +54,16 @@ class GCSObjectStore(ObjectStore):
         check.str_param(key, 'key')
         check.param_invariant(len(key) > 0, 'key')
 
-        file_obj = BytesIO()
-        self.bucket_obj.blob(key).download_to_file(file_obj)
+        if serialization_strategy.read_mode == 'rb':
+            file_obj = BytesIO()
+            self.bucket_obj.blob(key).download_to_file(file_obj)
+        else:
+            file_obj = StringIO(
+                self.bucket_obj.blob(key)
+                .download_as_string()
+                .decode(serialization_strategy.encoding)
+            )
+
         file_obj.seek(0)
 
         obj = serialization_strategy.deserialize(file_obj)

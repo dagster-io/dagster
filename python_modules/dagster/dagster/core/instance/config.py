@@ -28,7 +28,7 @@ def dagster_instance_config(base_dir, config_filename=DAGSTER_CONFIG_YAML_FILENA
 
 
 def config_field_for_configurable_class():
-    return Field({'module': str, 'class': str, 'config': Field(Permissive())}, is_optional=True)
+    return Field({'module': str, 'class': str, 'config': Field(Permissive())}, is_required=False)
 
 
 def define_dagster_config_cls():
@@ -39,7 +39,7 @@ def define_dagster_config_cls():
         'event_log_storage': config_field_for_configurable_class(),
         'run_launcher': config_field_for_configurable_class(),
         'dagit': Field(
-            {'execution_manager': Field({'max_concurrent_runs': int}, is_optional=True)},
-            is_optional=True,
+            {'execution_manager': Field({'max_concurrent_runs': int}, is_required=False)},
+            is_required=False,
         ),
     }

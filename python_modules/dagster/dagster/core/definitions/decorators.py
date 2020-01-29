@@ -3,14 +3,18 @@ import inspect
 import warnings
 from functools import wraps
 
+from dateutil.relativedelta import relativedelta
+
 from dagster import check
+from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.partition.utils import date_partition_range
 
 from ..decorator_utils import (
     InvalidDecoratedFunctionInfo,
+    positional_arg_name_list,
     split_function_parameters,
-    validate_decorated_fn_non_positionals,
+    validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
 from ..scheduler import Scheduler, SchedulerHandle
@@ -65,7 +69,7 @@ class _LambdaSolid(object):
             else infer_output_definitions('@lambda_solid', self.name, fn)[0]
         )
 
-        validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
+        positional_inputs = validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
         compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
 
         return SolidDefinition(
@@ -74,6 +78,7 @@ class _LambdaSolid(object):
             output_defs=[output_def],
             compute_fn=compute_fn,
             description=self.description,
+            positional_inputs=positional_inputs,
         )
 
 
@@ -125,7 +130,7 @@ class _Solid(object):
             else infer_output_definitions('@solid', self.name, fn)
         )
 
-        validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
+        positional_inputs = validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
         compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
         return SolidDefinition(
@@ -138,6 +143,7 @@ class _Solid(object):
             required_resource_keys=self.required_resource_keys,
             metadata=self.metadata,
             step_metadata_fn=self.step_metadata_fn,
+            positional_inputs=positional_inputs,
         )
 
 
@@ -296,12 +302,14 @@ def solid(
         config (Optional[Any]): The schema for the config. Configuration data available
             as context.solid_config.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -491,7 +499,7 @@ def validate_solid_fn(
         nothing_names = set()
 
     # Currently being super strict about naming. Might be a good idea to relax. Starting strict.
-    fn_positionals, fn_non_positionals = split_function_parameters(compute_fn, expected_positionals)
+    fn_positionals, input_args = split_function_parameters(compute_fn, expected_positionals)
 
     # Validate Positional Parameters
     missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
@@ -505,7 +513,7 @@ def validate_solid_fn(
         )
 
     # Validate non positional parameters
-    invalid_function_info = validate_decorated_fn_non_positionals(names, fn_non_positionals)
+    invalid_function_info = validate_decorated_fn_input_args(names, input_args)
     if invalid_function_info:
         if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['vararg']:
             raise DagsterInvalidDefinitionError(
@@ -551,6 +559,8 @@ def validate_solid_fn(
                 )
             )
 
+    return positional_arg_name_list(input_args)
+
 
 class _CompositeSolid(object):
     def __init__(
@@ -591,7 +601,9 @@ class _CompositeSolid(object):
             explicit_outputs = has_explicit_return_type(fn)
             output_defs = infer_output_definitions('@composite_solid', self.name, fn)
 
-        validate_solid_fn('@composite_solid', self.name, fn, input_defs, exclude_nothing=False)
+        positional_inputs = validate_solid_fn(
+            '@composite_solid', self.name, fn, input_defs, exclude_nothing=False
+        )
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
@@ -655,6 +667,7 @@ class _CompositeSolid(object):
             solid_defs=context.solid_defs,
             description=self.description,
             config_mapping=config_mapping,
+            positional_inputs=positional_inputs,
         )
 
 
@@ -714,13 +727,15 @@ def composite_solid(
             To map multiple outputs, return a dictionary from the composition function.
         config (Optional[Any]): The schema for the config.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
-        config_fn (Callable[[ConfigMappingContext, dict], dict]): By specifying a config mapping
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
+        config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.
 
@@ -764,7 +779,9 @@ def composite_solid(
 
 
 class _Pipeline(object):
-    def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None):
+    def __init__(
+        self, name=None, mode_defs=None, preset_defs=None, description=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)
         self.preset_definitions = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
@@ -838,7 +855,7 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
         return _Pipeline()(name)
 
     return _Pipeline(
-        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description
+        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description,
     )
 
 
@@ -874,50 +891,114 @@ def schedule(
     return inner
 
 
-def daily_schedule(
+def monthly_schedule(
     pipeline_name,
     start_date,
     name=None,
+    execution_day_of_month=1,
     execution_time=datetime.time(0, 0),
-    tags=None,
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
 ):
-
-    from dagster.core.definitions.partition import PartitionSetDefinition
-
     check.opt_str_param(name, 'name')
-    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.inst_param(execution_time, 'execution_time', datetime.time)
-    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.int_param(execution_day_of_month, 'execution_day')
+    check.inst_param(execution_time, 'execution_time', datetime.time)
 
-    cron_schedule = '{minute} {hour} * * *'.format(
-        minute=execution_time.minute, hour=execution_time.hour
+    if execution_day_of_month <= 0 or execution_day_of_month > 31:
+        raise DagsterInvalidDefinitionError(
+            "`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be between 1 and 31".format(
+                execution_day_of_month
+            )
+        )
+
+    cron_schedule = '{minute} {hour} {day} * *'.format(
+        minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
+
+    partition_fn = date_partition_range(start_date, delta=relativedelta(months=1), fmt="%Y-%m")
 
     def inner(fn):
         check.callable_param(fn, 'fn')
 
         schedule_name = name or fn.__name__
 
-        def _environment_dict_fn_for_partition(partition):
-            return fn(partition.value)
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
-        partition_set_name = '{}_daily'.format(pipeline_name)
         partition_set = PartitionSetDefinition(
-            name=partition_set_name,
+            name='{}_monthly'.format(pipeline_name),
             pipeline_name=pipeline_name,
-            partition_fn=date_partition_range(start_date),
-            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
+            mode=mode,
+        )
+
+        return partition_set.create_schedule_definition(
+            schedule_name,
+            cron_schedule,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner
+
+
+def daily_schedule(
+    pipeline_name,
+    start_date,
+    name=None,
+    execution_time=datetime.time(0, 0),
+    tags_fn_for_date=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=None,
+    environment_vars=None,
+):
+    check.opt_str_param(name, 'name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
+    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, 'should_execute')
+    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
+
+    cron_schedule = '{minute} {hour} * * *'.format(
+        minute=execution_time.minute, hour=execution_time.hour
+    )
+
+    partition_fn = date_partition_range(start_date)
+
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+
+        partition_set = PartitionSetDefinition(
+            name='{}_daily'.format(pipeline_name),
+            pipeline_name=pipeline_name,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
 
@@ -936,26 +1017,22 @@ def hourly_schedule(
     start_date,
     name=None,
     execution_time=datetime.time(0, 0),
-    tags=None,
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
 ):
-
-    from dagster.core.definitions.partition import PartitionSetDefinition
-
     check.opt_str_param(name, 'name')
-    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.inst_param(execution_time, 'execution_time', datetime.time)
-    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
 
     if execution_time.hour != 0:
         warnings.warn(
@@ -969,22 +1046,25 @@ def hourly_schedule(
 
     cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)
 
+    partition_fn = date_partition_range(
+        start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
+    )
+
     def inner(fn):
         check.callable_param(fn, 'fn')
 
         schedule_name = name or fn.__name__
 
-        def _environment_dict_fn_for_partition(partition):
-            return fn(partition.value)
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
-        partition_set_name = '{}_hourly'.format(pipeline_name)
         partition_set = PartitionSetDefinition(
-            name=partition_set_name,
+            name='{}_hourly'.format(pipeline_name),
             pipeline_name=pipeline_name,
-            partition_fn=date_partition_range(
-                start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
-            ),
-            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
 

@@ -11,7 +11,7 @@ from .intermediate_store import S3IntermediateStore
     is_persistent=True,
     config={
         's3_bucket': Field(String),
-        's3_prefix': Field(String, is_optional=True, default_value='dagster'),
+        's3_prefix': Field(String, is_required=False, default_value='dagster'),
     },
     required_resource_keys={'s3'},
 )

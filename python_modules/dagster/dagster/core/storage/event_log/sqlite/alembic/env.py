@@ -1,16 +1,12 @@
 # pylint: disable=no-member
 # alembic dynamically populates the alembic.context module
 
-from logging.config import fileConfig
-
 from alembic import context
 
 from dagster.core.storage.event_log import SqlEventLogStorageMetadata
-from dagster.core.storage.sql import run_migrations_offline, run_migrations_online
+from dagster.core.storage.sqlite import run_migrations_offline, run_migrations_online
 
 config = context.config
-
-fileConfig(config.config_file_name)
 
 target_metadata = SqlEventLogStorageMetadata
 

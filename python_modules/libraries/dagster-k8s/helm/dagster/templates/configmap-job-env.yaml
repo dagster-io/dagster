@@ -1,0 +1,12 @@
+# Use this config map to populate the environment of dagster-k8s jobs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "dagster.fullname" . }}-job-env
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  GREETINGS_FROM_DAGSTER: "hello!"

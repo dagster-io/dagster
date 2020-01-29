@@ -52,28 +52,16 @@ class PipelineRun(
     namedtuple(
         '_PipelineRun',
         (
-            'pipeline_name run_id environment_dict mode selector reexecution_config '
+            'pipeline_name run_id environment_dict mode selector '
             'step_keys_to_execute status tags previous_run_id'
         ),
     ),
     IRunConfig,
 ):
-    @staticmethod
-    def create_empty_run(pipeline_name, run_id, environment_dict=None, tags=None):
-        from dagster.core.definitions.pipeline import ExecutionSelector
 
-        return PipelineRun(
-            pipeline_name=pipeline_name,
-            run_id=run_id,
-            environment_dict=environment_dict,
-            mode='default',
-            selector=ExecutionSelector(pipeline_name),
-            reexecution_config=None,
-            step_keys_to_execute=None,
-            tags=tags,
-            status=PipelineRunStatus.NOT_STARTED,
-        )
-
+    # serdes log
+    # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
+    #
     def __new__(
         cls,
         pipeline_name,
@@ -81,7 +69,6 @@ class PipelineRun(
         environment_dict,
         mode,
         selector=None,
-        reexecution_config=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -106,13 +93,27 @@ class PipelineRun(
             ),
             mode=check.str_param(mode, 'mode'),
             selector=selector,
-            reexecution_config=reexecution_config,  # deprecated
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
             status=status,
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
             previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
+        )
+
+    @staticmethod
+    def create_empty_run(pipeline_name, run_id, environment_dict=None, tags=None):
+        from dagster.core.definitions.pipeline import ExecutionSelector
+
+        return PipelineRun(
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode='default',
+            selector=ExecutionSelector(pipeline_name),
+            step_keys_to_execute=None,
+            tags=tags,
+            status=PipelineRunStatus.NOT_STARTED,
         )
 
     def run_with_status(self, status):
@@ -122,7 +123,6 @@ class PipelineRun(
             environment_dict=self.environment_dict,
             mode=self.mode,
             selector=self.selector,
-            reexecution_config=self.reexecution_config,
             step_keys_to_execute=self.step_keys_to_execute,
             tags=self.tags,
             status=status,

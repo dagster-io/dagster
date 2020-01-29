@@ -111,10 +111,17 @@ export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_step
   key: string;
 }
 
+export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error {
   __typename: "PythonError";
-  stack: string[];
   message: string;
+  stack: string[];
+  cause: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error_cause | null;
 }
 
 export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
@@ -131,10 +138,17 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ste
   key: string;
 }
 
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error {
   __typename: "PythonError";
-  stack: string[];
   message: string;
+  stack: string[];
+  cause: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_cause | null;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
@@ -424,6 +438,19 @@ export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_E
 
 export type LogsScrollingTableMessageFragment_EngineEvent_metadataEntries = LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry;
 
+export interface LogsScrollingTableMessageFragment_EngineEvent_engineError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsScrollingTableMessageFragment_EngineEvent_engineError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsScrollingTableMessageFragment_EngineEvent_engineError_cause | null;
+}
+
 export interface LogsScrollingTableMessageFragment_EngineEvent {
   __typename: "EngineEvent";
   message: string;
@@ -431,6 +458,7 @@ export interface LogsScrollingTableMessageFragment_EngineEvent {
   level: LogLevel;
   step: LogsScrollingTableMessageFragment_EngineEvent_step | null;
   metadataEntries: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries[];
+  engineError: LogsScrollingTableMessageFragment_EngineEvent_engineError | null;
 }
 
 export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartedEvent | LogsScrollingTableMessageFragment_PipelineProcessStartEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_EngineEvent;

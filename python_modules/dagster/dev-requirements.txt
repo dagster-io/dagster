@@ -3,6 +3,7 @@ coverage==4.5.4 # 5.0 release on 12/19 broke everything
 flake8>=3.7.8
 isort>=4.3.21
 mock==3.0.5
+pytest-mock==2.0.0
 nbsphinx==0.4.2
 pylint>=2.4.1; python_version >= '3.6'
 pytest-cov==2.8.1

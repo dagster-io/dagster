@@ -98,7 +98,7 @@ def construct_scaffolded_file_contents(module_name, pipeline_name, environment_d
         printer.comment('installed or available on sys.path, otherwise, this import will fail.')
         printer.line('module_name=\'{module_name}\','.format(module_name=module_name))
         printer.line('pipeline_name=\'{pipeline_name}\','.format(pipeline_name=pipeline_name))
-        printer.line("environment_dict=yaml.load(ENVIRONMENT),")
+        printer.line("environment_dict=yaml.safe_load(ENVIRONMENT),")
         printer.line("dag_kwargs={'default_args': DEFAULT_ARGS, 'max_active_runs': 1}")
     printer.line(')')
 

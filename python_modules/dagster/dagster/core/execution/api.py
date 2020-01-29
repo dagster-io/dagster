@@ -14,7 +14,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 from dagster.utils import ensure_gen, merge_dicts
 
-from .config import EXECUTION_TIME_KEY, IRunConfig, RunConfig
+from .config import IRunConfig, RunConfig
 from .context_creation_pipeline import scoped_pipeline_context
 from .results import PipelineExecutionResult
 
@@ -105,7 +105,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     )
 
     with scoped_pipeline_context(
-        pipeline, pipeline_run.environment_dict, pipeline_run, instance
+        pipeline, pipeline_run.environment_dict, pipeline_run, instance, execution_plan,
     ) as pipeline_context:
         for event in _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run):
             yield event
@@ -185,7 +185,12 @@ def execute_pipeline(
     pipeline_run = _create_run(instance, pipeline, run_config, environment_dict)
 
     with scoped_pipeline_context(
-        pipeline, environment_dict, pipeline_run, instance, raise_on_error=raise_on_error
+        pipeline,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan,
+        raise_on_error=raise_on_error,
     ) as pipeline_context:
         event_list = list(
             _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run)
@@ -200,6 +205,7 @@ def execute_pipeline(
                 environment_dict,
                 pipeline_run,
                 instance,
+                execution_plan,
                 system_storage_data=SystemStorageData(
                     intermediates_manager=pipeline_context.intermediates_manager,
                     file_manager=pipeline_context.file_manager,
@@ -278,7 +284,7 @@ def execute_plan_iterator(execution_plan, pipeline_run, environment_dict=None, i
     instance = check.inst_param(instance, 'instance', DagsterInstance)
 
     with scoped_pipeline_context(
-        execution_plan.pipeline_def, environment_dict, pipeline_run, instance
+        execution_plan.pipeline_def, environment_dict, pipeline_run, instance, execution_plan
     ) as pipeline_context:
         return _steps_execution_iterator(
             pipeline_context, execution_plan=execution_plan, pipeline_run=pipeline_run
@@ -313,7 +319,6 @@ def step_output_event_filter(pipe_iterator):
 
 
 def _create_run(instance, pipeline_def, run_config, environment_dict):
-    tags = _add_execution_time_tag(run_config.tags)
     return instance.create_run(
         PipelineRun(
             pipeline_name=pipeline_def.name,
@@ -321,27 +326,12 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             environment_dict=environment_dict,
             mode=run_config.mode,
             selector=pipeline_def.selector,
-            reexecution_config=run_config.reexecution_config,
             step_keys_to_execute=run_config.step_keys_to_execute,
-            tags=tags,
+            tags=run_config.tags,
             status=PipelineRunStatus.NOT_STARTED,
             previous_run_id=run_config.previous_run_id,
         )
     )
-
-
-def _add_execution_time_tag(tags):
-    if not tags:
-        return {EXECUTION_TIME_KEY: time.time()}
-
-    if EXECUTION_TIME_KEY in tags:
-        # execution_epoch_time expected to be able to be cast to float
-        # can be passed in as a string from airflow integration
-        execution_time = float(tags[EXECUTION_TIME_KEY])
-    else:
-        execution_time = time.time()
-
-    return merge_dicts(tags, {EXECUTION_TIME_KEY: execution_time})
 
 
 def execute_partition_set(partition_set, partition_filter, instance=None):
@@ -370,4 +360,4 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
         # Remove once we can handle synchronous execution... currently limited by sqlite
         time.sleep(0.1)
 
-        instance.run_launcher.launch_run(run)
+        instance.launch_run(run)

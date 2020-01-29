@@ -11,7 +11,7 @@ from dagster import (
 
 
 def define_resource(num):
-    @resource(config=Field(Int, is_optional=True))
+    @resource(config=Field(Int, is_required=False))
     def a_resource(context):
         return num if context.resource_config is None else context.resource_config
 

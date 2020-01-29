@@ -1,19 +1,21 @@
 resources:
   dataproc:
     config:
-      clusterName: 'gcp-data-platform'
+      clusterName: "gcp-data-platform"
       projectId: <<PROJECT ID HERE>>
-      region: 'us-west1'
+      region: "us-west1"
 
 solids:
   events_dataproc:
     config:
-      cluster_name: 'gcp-data-platform'
+      date: <<DATE HERE>>
+      cluster_name: "gcp-data-platform"
 
   bq_load_events:
     config:
-      table: 'events.events'
+      date: <<DATE HERE>>
+      table: "events.events"
 
   explore_visits_by_hour:
     config:
-      table: 'aggregations.explore_visits_per_hour'
+      table: "aggregations.explore_visits_per_hour"

@@ -140,7 +140,7 @@ class LocalComputeLogSubscriptionManager(object):
             LocalComputeLogFilesystemEventHandler(
                 self, run_id, step_key, update_paths, complete_paths
             ),
-            directory,
+            str(directory),
         )
 
     def notify_subscriptions(self, run_id, step_key):

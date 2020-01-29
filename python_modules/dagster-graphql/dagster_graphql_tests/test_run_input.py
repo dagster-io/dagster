@@ -14,7 +14,6 @@ def test_roundtrip_run():
         environment_dict={'good': True},
         mode='default',
         selector=ExecutionSelector('pipey_mcpipeface'),
-        reexecution_config=None,
         step_keys_to_execute=['step_1', 'step_2', 'step_3'],
         tags={'tag_it': 'bag_it'},
         status=PipelineRunStatus.NOT_STARTED,

@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
-from .setup import csv_hello_world_solids_config, define_context
+from .setup import csv_hello_world_solids_config, define_test_context
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
@@ -26,7 +26,7 @@ query PipelineQuery(
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {
-                    type { name }
+                    type { key }
                     valueRep
                 }
                 ... on MissingFieldConfigError {
@@ -53,7 +53,7 @@ query PipelineQuery(
                             field {
                                 name
                                 configType {
-                                    name
+                                   key
                                 }
                             }
                         }
@@ -100,7 +100,7 @@ def find_errors(result, field_stack_to_find, reason):
 
 def execute_config_graphql(pipeline_name, environment_dict, mode):
     return execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         CONFIG_VALIDATION_QUERY,
         {
             'environmentConfigData': environment_dict,
@@ -230,7 +230,7 @@ def test_basic_invalid_config_type_mismatch():
     assert error_data['stack']['entries']
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert error_data['valueRep'] == '123'
-    assert error_data['type']['name'] == 'Path'
+    assert error_data['type']['key'] == 'Path'
 
     assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
 
@@ -427,7 +427,7 @@ def test_more_complicated_multiple_errors():
     ] == field_stack(runtime_type_error)
     assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert runtime_type_error['valueRep'] == '23434'
-    assert runtime_type_error['type']['name'] == 'String'
+    assert runtime_type_error['type']['key'] == 'String'
 
     not_defined_two = find_error(
         result,
@@ -513,7 +513,7 @@ def has_config_type_with_key_prefix(config_types_data, prefix):
 
 def has_config_type(config_types_data, name):
     for config_type_data in config_types_data:
-        if config_type_data['name'] == name:
+        if config_type_data.get('givenName') == name:
             return True
 
     return False
@@ -521,7 +521,7 @@ def has_config_type(config_types_data, name):
 
 def test_smoke_test_config_type_system():
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         ALL_CONFIG_TYPES_QUERY,
         {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
     )
@@ -538,13 +538,11 @@ ALL_CONFIG_TYPES_QUERY = '''
 fragment configTypeFragment on ConfigType {
   __typename
   key
-  name
   description
   isSelector
   typeParamKeys
   recursiveConfigTypes {
     key
-    name
     description
     ... on CompositeConfigType {
         fields {
@@ -558,10 +556,14 @@ fragment configTypeFragment on ConfigType {
     }
   }
   ... on EnumConfigType {
+    givenName
     values {
       value
       description
     }
+  }
+  ... on RegularConfigType {
+    givenName
   }
   ... on CompositeConfigType {
     fields {
@@ -572,6 +574,10 @@ fragment configTypeFragment on ConfigType {
   }
   ... on WrappingConfigType {
     ofType { key }
+  }
+  ... on ScalarUnionConfigType {
+    scalarType { key }
+    nonScalarType { key }
   }
 }
 

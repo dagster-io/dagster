@@ -17,7 +17,6 @@ def build_run(
         environment_dict=None,
         mode=mode,
         selector=ExecutionSelector(pipeline_name),
-        reexecution_config=None,
         step_keys_to_execute=None,
         tags=tags,
         status=status,

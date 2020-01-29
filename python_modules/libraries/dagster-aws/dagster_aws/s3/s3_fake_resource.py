@@ -4,8 +4,6 @@ from collections import defaultdict
 from botocore.exceptions import ClientError
 from dagster_aws.s3.resources import S3Resource
 
-from dagster.seven import mock
-
 
 def create_s3_fake_resource(buckets=None):
     return S3Resource(S3FakeSession(buckets=buckets))
@@ -13,6 +11,8 @@ def create_s3_fake_resource(buckets=None):
 
 class S3FakeSession(object):
     def __init__(self, buckets=None):
+        from dagster.seven import mock
+
         self.buckets = defaultdict(dict, buckets) if buckets else defaultdict(dict)
         self.mock_extras = mock.MagicMock()
 

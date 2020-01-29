@@ -13,7 +13,7 @@ def _runs_directory(base):
     return os.path.join(base, 'history', '')
 
 
-def _compute_logs_directory(base):
+def compute_logs_directory(base):
     return os.path.join(base, 'storage')
 
 
@@ -111,9 +111,7 @@ class InstanceRef(
             ConfigurableClassData(
                 'dagster.core.storage.local_compute_log_manager',
                 'LocalComputeLogManager',
-                yaml.dump(
-                    {'base_dir': _compute_logs_directory(base_dir)}, default_flow_style=False
-                ),
+                yaml.dump({'base_dir': compute_logs_directory(base_dir)}, default_flow_style=False),
             ),
         )
 

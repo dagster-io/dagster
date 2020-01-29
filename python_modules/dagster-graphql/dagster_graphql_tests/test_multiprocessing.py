@@ -87,7 +87,6 @@ def test_running():
             selector=selector,
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -126,7 +125,6 @@ def test_failing():
             selector=selector,
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -155,7 +153,6 @@ def test_execution_crash():
             selector=selector,
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -237,7 +234,7 @@ def composite_pipeline():
 
 
 @composite_solid(
-    config_fn=lambda _, cfg: {
+    config_fn=lambda cfg: {
         'node_a': {'config': {'foo': cfg['foo']}},
         'node_b': {'config': {'bar': cfg['bar']}},
     },
@@ -272,7 +269,6 @@ def test_multiprocessing_execution_for_composite_solid():
             selector=ExecutionSelector('nonce'),
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -302,7 +298,6 @@ def test_multiprocessing_execution_for_composite_solid():
             selector=ExecutionSelector('nonce'),
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -335,7 +330,6 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             selector=ExecutionSelector('nonce'),
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,
@@ -367,7 +361,6 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
             selector=ExecutionSelector('nonce'),
             environment_dict=environment_dict,
             mode='default',
-            reexecution_config=None,
             step_keys_to_execute=None,
             tags=None,
             status=PipelineRunStatus.NOT_STARTED,

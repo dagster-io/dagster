@@ -3,11 +3,12 @@ from collections import namedtuple
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
+from dagster.core.errors import DagsterUnknownResourceError
 
 
 class ResourceDefinition(object):
     '''Core class for defining resources.
-    
+
     Resources are scoped ways to make external resources (like database connections) available to
     solids during pipeline execution and to clean up after execution resolves.
 
@@ -26,12 +27,14 @@ class ResourceDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         description (Optional[str]): A human-readable description of the resource.
     '''
 
@@ -71,7 +74,7 @@ class ResourceDefinition(object):
 
 def resource(config=None, description=None):
     '''Define a resource.
-    
+
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
     the resource. This function will become the ``resource_fn`` of an underlying
     :py:class:`ResourceDefinition`.
@@ -85,12 +88,14 @@ def resource(config=None, description=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         description(Optional[str]): A human-readable description of the resource.
     '''
 
@@ -119,7 +124,8 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
             ),
         )
 
-    def build(self, mapper_fn=None, required_resource_keys=None):
+    def build(self, mapper_fn, required_resource_keys):
+
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -132,11 +138,14 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         and then binds the specified resources into an instance of this object, which can be consumed
         as, e.g., context.resources.foo.
         '''
-        resource_instance_dict = (
-            mapper_fn(self.resource_instance_dict, required_resource_keys)
-            if (mapper_fn and required_resource_keys)
-            else self.resource_instance_dict
+        check.callable_param(mapper_fn, 'mapper_fn')
+        required_resource_keys = check.opt_set_param(
+            required_resource_keys, 'required_resource_keys', of_type=str
         )
+        resource_instance_dict = mapper_fn(self.resource_instance_dict, required_resource_keys)
 
-        resource_type = namedtuple('Resources', list(resource_instance_dict.keys()))
-        return resource_type(**resource_instance_dict)
+        class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):
+            def __getattr__(self, attr):
+                raise DagsterUnknownResourceError(attr)
+
+        return ScopedResources(**resource_instance_dict)

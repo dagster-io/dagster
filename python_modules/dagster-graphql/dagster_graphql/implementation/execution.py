@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import time
-
 from dagster_graphql.client.util import pipeline_run_from_execution_params
 from dagster_graphql.schema.runs import (
     from_compute_log_file,
@@ -16,7 +14,6 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.config import EXECUTION_TIME_KEY
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -121,6 +118,11 @@ def start_scheduled_execution(graphene_info, schedule_name):
         previous_run_id=None,
     )
 
+    # Launch run if run launcher is defined
+    run_launcher = graphene_info.context.instance.run_launcher
+    if run_launcher:
+        return launch_pipeline_execution(graphene_info, execution_params)
+
     return start_pipeline_execution(graphene_info, execution_params)
 
 
@@ -152,7 +154,8 @@ def start_pipeline_execution(graphene_info, execution_params):
     )
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
-    run = instance.create_run(_create_pipeline_run(instance, pipeline, execution_params))
+
+    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline, execution_params))
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(),
@@ -213,7 +216,7 @@ def launch_pipeline_execution(graphene_info, execution_params):
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = run_launcher.launch_run(_create_pipeline_run(instance, pipeline, execution_params))
+    run = instance.launch_run(_create_pipeline_run(instance, pipeline, execution_params))
 
     return graphene_info.schema.type_named('LaunchPipelineExecutionSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
@@ -316,13 +319,12 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
     if not pipeline_run:
         # TODO switch to raising a UserFacingError if the run_id cannot be found
         # https://github.com/dagster-io/dagster/issues/1876
-        tags = {EXECUTION_TIME_KEY: time.time()}
         pipeline_run = PipelineRun(
             pipeline_name=pipeline.name,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=execution_params.mode or pipeline.get_default_mode_name(),
-            tags=tags.update(execution_params.execution_metadata.tags or {}),
+            tags=execution_params.execution_metadata.tags or {},
         )
 
     execution_plan = create_execution_plan(

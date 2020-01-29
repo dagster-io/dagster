@@ -1,3 +1,4 @@
+from collections import namedtuple
 from functools import update_wrapper
 
 from dagster import check
@@ -6,7 +7,12 @@ from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediates_manager import IntermediatesManager
 
 
-class SystemStorageDefinition(object):
+class SystemStorageDefinition(
+    namedtuple(
+        '_SystemStorageDefinition',
+        'name is_persistent config_field system_storage_creation_fn required_resource_keys',
+    )
+):
     '''
     Dagster stores run metadata and intermediate data on the user's behalf.
     The SystemStorageDefinition exists in order to configure and customize
@@ -31,12 +37,14 @@ class SystemStorageDefinition(object):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called by the system. The author of the StorageSystemDefinition must provide this function,
             which consumes the init context and then emits the SystemStorageData.
@@ -44,22 +52,25 @@ class SystemStorageDefinition(object):
             The resources that this storage needs at runtime to function.
     '''
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         name,
         is_persistent,
+        required_resource_keys,
         config=None,
         system_storage_creation_fn=None,
-        required_resource_keys=None,
     ):
-        self.name = check.str_param(name, 'name')
-        self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self.config_field = check_user_facing_opt_config_param(config, 'config',)
-        self.system_storage_creation_fn = check.opt_callable_param(
-            system_storage_creation_fn, 'system_storage_creation_fn'
-        )
-        self.required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+        return super(SystemStorageDefinition, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            is_persistent=check.bool_param(is_persistent, 'is_persistent'),
+            config_field=check_user_facing_opt_config_param(config, 'config',),
+            system_storage_creation_fn=check.opt_callable_param(
+                system_storage_creation_fn, 'system_storage_creation_fn'
+            ),
+            required_resource_keys=frozenset(
+                check.set_param(required_resource_keys, 'required_resource_keys', of_type=str)
+            ),
         )
 
 
@@ -71,7 +82,7 @@ class SystemStorageData(object):
         self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
 
 
-def system_storage(name=None, is_persistent=True, config=None, required_resource_keys=None):
+def system_storage(required_resource_keys, name=None, is_persistent=True, config=None):
     '''A decorator for creating a SystemStorageDefinition. The decorated function will be used as the
     system_storage_creation_fn in a SystemStorageDefinition.
 
@@ -85,12 +96,13 @@ def system_storage(name=None, is_persistent=True, config=None, required_resource
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
 
     '''
 

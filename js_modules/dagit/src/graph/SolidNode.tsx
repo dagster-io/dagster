@@ -99,7 +99,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         ... on SolidDefinition {
           configField {
             configType {
-              name
+              key
               description
             }
           }
@@ -129,7 +129,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
         ... on SolidDefinition {
           configField {
             configType {
-              name
+              key
               description
             }
           }

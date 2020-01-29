@@ -8,12 +8,29 @@
 // ====================================================
 
 export interface ConfigEditorHelpConfigTypeFragment_ArrayConfigType {
-  __typename: "ArrayConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
+}
+
+export interface ConfigEditorHelpConfigTypeFragment_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface ConfigEditorHelpConfigTypeFragment_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
 }
 
 export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields {
@@ -27,11 +44,20 @@ export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields {
 export interface ConfigEditorHelpConfigTypeFragment_CompositeConfigType {
   __typename: "CompositeConfigType";
   key: string;
-  name: string | null;
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
   fields: ConfigEditorHelpConfigTypeFragment_CompositeConfigType_fields[];
 }
 
-export type ConfigEditorHelpConfigTypeFragment = ConfigEditorHelpConfigTypeFragment_ArrayConfigType | ConfigEditorHelpConfigTypeFragment_CompositeConfigType;
+export interface ConfigEditorHelpConfigTypeFragment_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export type ConfigEditorHelpConfigTypeFragment = ConfigEditorHelpConfigTypeFragment_ArrayConfigType | ConfigEditorHelpConfigTypeFragment_EnumConfigType | ConfigEditorHelpConfigTypeFragment_RegularConfigType | ConfigEditorHelpConfigTypeFragment_CompositeConfigType | ConfigEditorHelpConfigTypeFragment_ScalarUnionConfigType;

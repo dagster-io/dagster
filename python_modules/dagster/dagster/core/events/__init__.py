@@ -258,6 +258,10 @@ class DagsterEvent(
         return self.event_type in PIPELINE_EVENTS
 
     @property
+    def is_engine_event(self):
+        return self.event_type == DagsterEventType.ENGINE_EVENT
+
+    @property
     def step_output_data(self):
         _assert_type('step_output_data', DagsterEventType.STEP_OUTPUT, self.event_type)
         return self.event_specific_data
@@ -611,11 +615,23 @@ class ObjectStoreOperationResultData(
 
 
 @whitelist_for_serdes
-class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries')):
+class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries error')):
+    # serdes log
+    # * added optional error
+    #
+    def __new__(cls, metadata_entries, error=None):
+        return super(EngineEventData, cls).__new__(
+            cls,
+            metadata_entries=check.list_param(
+                metadata_entries, 'metadata_entries', EventMetadataEntry
+            ),
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+        )
+
     @staticmethod
     def in_process(pid, step_keys_to_execute=None):
         check.int_param(pid, 'pid')
-        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
             + (
@@ -629,7 +645,7 @@ class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries')):
     def multiprocess(pid, parent_pid=None, step_keys_to_execute=None):
         check.int_param(pid, 'pid')
         check.opt_int_param(parent_pid, 'parent_pid')
-        check.opt_set_param(step_keys_to_execute, 'step_keys_to_execute')
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
             + ([EventMetadataEntry.text(str(parent_pid), 'parent_pid')] if parent_pid else [])
@@ -646,6 +662,11 @@ class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries')):
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(steps_interrupted), 'steps_interrupted')]
         )
+
+    @staticmethod
+    def engine_error(error):
+        check.inst_param(error, 'error', SerializableErrorInfo)
+        return EngineEventData(metadata_entries=[], error=error)
 
 
 @whitelist_for_serdes

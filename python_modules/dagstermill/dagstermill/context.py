@@ -9,13 +9,17 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     Do not initialize directly: use :func:`dagstermill.get_context`.
     '''
 
-    def __init__(self, pipeline_context, solid_config=None):
+    def __init__(self, pipeline_context, resource_keys_to_init, solid_config=None):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         self._pipeline_context = pipeline_context
         if solid_config:
             self._solid_config = solid_config
         else:
             self._solid_config = None
+
+        self._resource_keys_to_init = check.set_param(
+            resource_keys_to_init, 'resource_keys_to_init', of_type=str
+        )
 
     def has_tag(self, key):
         '''Check if a logging tag is defined on the context.
@@ -71,7 +75,12 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     def resources(self):
         '''collections.namedtuple: A dynamically-created type whose properties allow access to
         resources.'''
-        return self._pipeline_context.scoped_resources_builder.build()
+        from dagster.core.definitions import SolidInvocation
+
+        return self._pipeline_context.scoped_resources_builder.build(
+            mapper_fn=SolidInvocation.default_resource_mapper_fn,
+            required_resource_keys=self._resource_keys_to_init,
+        )
 
     @property
     def pipeline_run(self):

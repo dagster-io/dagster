@@ -1,5 +1,5 @@
 from dagster_examples.airline_demo.solids import load_data_to_database_from_spark
-from dagster_examples.airline_demo.types import DbInfo
+from dagster_examples.common.resources import DbInfo
 from pyspark.sql import DataFrame
 
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
@@ -24,7 +24,10 @@ def test_airline_demo_load_df():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={'db_info': ResourceDefinition.hardcoded_resource(db_info_mock)}
+                resource_defs={
+                    'db_info': ResourceDefinition.hardcoded_resource(db_info_mock),
+                    'spark': ResourceDefinition.hardcoded_resource(mock.MagicMock()),
+                }
             )
         ]
     )

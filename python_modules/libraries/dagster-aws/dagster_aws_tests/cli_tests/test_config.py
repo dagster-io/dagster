@@ -29,7 +29,7 @@ def test_write_configs():
     rds_config.save(tmp_dir)
 
     with open(outfile) as f:
-        record = yaml.load(f)
+        record = yaml.safe_load(f)
 
     ec2_config_dict = record['ec2']
     rds_config_dict = record['rds']

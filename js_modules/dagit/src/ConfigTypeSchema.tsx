@@ -21,7 +21,6 @@ interface FieldData {
 
 interface CommonTypeData {
   key: string;
-  name: string | null;
   description: string | null;
 }
 
@@ -43,11 +42,18 @@ interface NullableTypeData extends CommonTypeData {
 
 interface EnumTypeData extends CommonTypeData {
   __typename: "EnumConfigType";
+  givenName: string;
 }
 
 interface RegularTypeData extends CommonTypeData {
   __typename: "RegularConfigType";
-  name: string | null;
+  givenName: string;
+}
+
+interface ScalarUnionTypeData extends CommonTypeData {
+  __typename: "ScalarUnionConfigType";
+  nonScalarTypeKey: string;
+  scalarTypeKey: string;
 }
 
 export type TypeData =
@@ -55,7 +61,8 @@ export type TypeData =
   | ListTypeData
   | NullableTypeData
   | RegularTypeData
-  | EnumTypeData;
+  | EnumTypeData
+  | ScalarUnionTypeData;
 
 function renderTypeRecursive(
   type: TypeData,
@@ -121,7 +128,28 @@ function renderTypeRecursive(
     );
   }
 
-  return <span>{type.name || "Anonymous Type"}</span>;
+  if (type.__typename === "ScalarUnionConfigType") {
+    const nonScalarTypeMarkup = renderTypeRecursive(
+      typeLookup[type.nonScalarTypeKey],
+      typeLookup,
+      depth,
+      props
+    );
+    const scalarTypeMarkup = renderTypeRecursive(
+      typeLookup[type.scalarTypeKey],
+      typeLookup,
+      depth,
+      props
+    );
+
+    return (
+      <span>
+        {scalarTypeMarkup} | {nonScalarTypeMarkup}
+      </span>
+    );
+  }
+
+  return <span>{type.givenName}</span>;
 }
 
 export class ConfigTypeSchema extends React.PureComponent<
@@ -130,8 +158,13 @@ export class ConfigTypeSchema extends React.PureComponent<
   static fragments = {
     ConfigTypeSchemaFragment: gql`
       fragment ConfigTypeSchemaFragment on ConfigType {
+        ... on EnumConfigType {
+          givenName
+        }
+        ... on RegularConfigType {
+          givenName
+        }
         key
-        name
         description
         isSelector
         typeParamKeys
@@ -142,6 +175,10 @@ export class ConfigTypeSchema extends React.PureComponent<
             isOptional
             configTypeKey
           }
+        }
+        ... on ScalarUnionConfigType {
+          scalarTypeKey
+          nonScalarTypeKey
         }
       }
     `

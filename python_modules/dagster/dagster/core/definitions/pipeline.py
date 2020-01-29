@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.runtime_type import construct_runtime_type_dictionary
+from dagster.core.types.dagster_type import construct_dagster_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -80,6 +80,7 @@ class PipelineDefinition(IContainSolids, object):
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
 
+
     Examples:
 
         .. code-block:: python
@@ -89,7 +90,7 @@ class PipelineDefinition(IContainSolids, object):
                 return 1
 
 
-            @solid(input_defs=[InputDefinition('num')])
+            @solid(input_defs=[InputDefinition('num')], required_resource_keys={'op'})
             def apply_op(context, num):
                 return context.resources.op(num)
 
@@ -164,7 +165,7 @@ class PipelineDefinition(IContainSolids, object):
         self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
-        self._runtime_type_dict = construct_runtime_type_dictionary(self._current_level_solid_defs)
+        self._runtime_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}
@@ -381,6 +382,7 @@ class PipelineDefinition(IContainSolids, object):
         return name in self._all_solid_defs
 
     def build_sub_pipeline(self, solid_subset):
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
 
     def get_presets(self):
@@ -476,16 +478,16 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
-        for solid in solid_defs:
-            for required_resource in solid.required_resource_keys:
+        for solid_def in solid_defs:
+            for required_resource in solid_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by solid {solid_name}, but is not '
+                            'Resource "{resource}" is required by solid def {solid_def_name}, but is not '
                             'provided by mode "{mode_name}".'
                         ).format(
                             resource=required_resource,
-                            solid_name=solid.name,
+                            solid_def_name=solid_def.name,
                             mode_name=mode_def.name,
                         )
                     )
@@ -516,7 +518,7 @@ def _validate_inputs(dependency_structure, solid_dict):
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
                         'the output of a previous solid and can not be hydrated from configuration, '
                         'creating an impossible to execute pipeline. '
-                        'Posible solutions are:\n'
+                        'Possible solutions are:\n'
                         '  * add a input_hydration_config for the type "{runtime_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,

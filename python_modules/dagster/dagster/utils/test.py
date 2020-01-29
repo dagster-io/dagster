@@ -21,7 +21,7 @@ from dagster import (
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import ISolidDefinition
-from dagster.core.execution.api import RunConfig, scoped_pipeline_context
+from dagster.core.execution.api import RunConfig, create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     construct_pipeline_execution_context,
     create_context_creation_data,
@@ -29,10 +29,12 @@ from dagster.core.execution.context_creation_pipeline import (
     create_log_manager,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler.storage import ScheduleStorage
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.runtime_type import resolve_to_runtime_type
+from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
@@ -60,7 +62,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     pipeline_run = PipelineRun.create_empty_run('test_legacy_context', run_id, environment_dict)
     instance = DagsterInstance.ephemeral()
     creation_data = create_context_creation_data(
-        pipeline_def, environment_dict, pipeline_run, instance
+        pipeline_def, environment_dict, pipeline_run, instance, solid_def_names_in_execution=set()
     )
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
@@ -195,11 +197,13 @@ def execute_solid_within_pipeline(
 
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
+    pipeline = PipelineDefinition([])
     with scoped_pipeline_context(
-        PipelineDefinition([]),
+        pipeline,
         {},
         PipelineRun.create_empty_run('empty', run_id=run_id),
         instance or DagsterInstance.ephemeral(),
+        create_execution_plan(pipeline),
     ) as context:
         yield context
 
@@ -280,7 +284,7 @@ def check_dagster_type(dagster_type, value):
 
     Returns:
         TypeCheck: The result of the type check.
-    
+
 
     Examples:
 
@@ -297,7 +301,7 @@ def check_dagster_type(dagster_type, value):
             ).format(dagster_type=dagster_type)
         )
 
-    runtime_type = resolve_to_runtime_type(dagster_type)
+    runtime_type = resolve_dagster_type(dagster_type)
     type_check = runtime_type.type_check(value)
     if not isinstance(type_check, TypeCheck):
         raise DagsterInvariantViolationError(
@@ -318,3 +322,74 @@ def restore_directory(src):
         finally:
             shutil.rmtree(src)
             shutil.copytree(dst, src)
+
+
+class FilesytemTestScheduler(Scheduler):
+    def __init__(self, artifacts_dir, schedule_storage):
+        check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
+        check.str_param(artifacts_dir, 'artifacts_dir')
+        self._storage = schedule_storage
+        self._artifacts_dir = artifacts_dir
+
+    def all_schedules(self, status=None):
+        return self._storage.all_schedules(status)
+
+    def get_schedule_by_name(self, name):
+        return self._storage.get_schedule_by_name(name)
+
+    def start_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to start schedule {name}, but it does not exist.'.format(
+                    name=schedule_name
+                )
+            )
+
+        if schedule.status == ScheduleStatus.RUNNING:
+            raise DagsterInvariantViolationError(
+                'You have attempted to start schedule {name}, but it is already running'.format(
+                    name=schedule_name
+                )
+            )
+
+        started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
+        self._storage.update_schedule(started_schedule)
+        return schedule
+
+    def stop_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to stop schedule {name}, but was never initialized.'
+                'Use `schedule up` to initialize schedules'.format(name=schedule_name)
+            )
+
+        if schedule.status == ScheduleStatus.STOPPED:
+            raise DagsterInvariantViolationError(
+                'You have attempted to stop schedule {name}, but it is already stopped'.format(
+                    name=schedule_name
+                )
+            )
+
+        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
+        self._storage.update_schedule(stopped_schedule)
+        return stopped_schedule
+
+    def end_schedule(self, schedule_name):
+        schedule = self.get_schedule_by_name(schedule_name)
+        if not schedule:
+            raise DagsterInvariantViolationError(
+                'You have attempted to end schedule {name}, but it is not running.'.format(
+                    name=schedule_name
+                )
+            )
+
+        self._storage.delete_schedule(schedule)
+        return schedule
+
+    def wipe(self):
+        self._storage.wipe()
+
+    def log_path_for_schedule(self, schedule_name):
+        return ""

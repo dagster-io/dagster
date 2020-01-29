@@ -10,10 +10,10 @@ from pandas import DataFrame
 
 from dagster import (
     DagsterInvariantViolationError,
+    DagsterType,
     EventMetadataEntry,
     Output,
     OutputDefinition,
-    RuntimeType,
     check_dagster_type,
     execute_pipeline,
     pipeline,
@@ -26,7 +26,7 @@ def test_create_pandas_dataframe_dagster_type():
         name='TestDataFrame',
         columns=[PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
     )
-    assert isinstance(TestDataFrame, RuntimeType)
+    assert isinstance(TestDataFrame, DagsterType)
 
 
 def test_basic_pipeline_with_pandas_dataframe_dagster_type():

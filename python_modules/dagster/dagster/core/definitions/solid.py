@@ -17,7 +17,9 @@ from .utils import check_valid_name
 
 
 class ISolidDefinition(six.with_metaclass(ABCMeta)):
-    def __init__(self, name, input_defs, output_defs, description=None, metadata=None):
+    def __init__(
+        self, name, input_defs, output_defs, description=None, metadata=None, positional_inputs=None
+    ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, 'description')
         self._metadata = check.opt_dict_param(metadata, 'metadata', key_type=str)
@@ -28,6 +30,12 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         self._output_dict = frozendict({output_def.name: output_def for output_def in output_defs})
         check.invariant(
             len(self._output_defs) == len(self._output_dict), 'Duplicate output def names'
+        )
+        check.opt_list_param(positional_inputs, 'positional_inputs', str)
+        self._positional_inputs = (
+            positional_inputs
+            if positional_inputs is not None
+            else list(map(lambda inp: inp.name, input_defs))
         )
 
     @property
@@ -49,6 +57,23 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     @property
     def input_dict(self):
         return self._input_dict
+
+    def resolve_input_name_at_position(self, idx):
+        if idx >= len(self._positional_inputs):
+            if not (
+                len(self._input_defs) - len(self._positional_inputs) == 1
+                and idx == len(self._input_defs) - 1
+            ):
+                return None
+
+            # handle special case where there is only 1 non-positional arg that we could resolve to
+            names = [
+                inp.name for inp in self._input_defs if inp.name not in self._positional_inputs
+            ]
+            check.invariant(len(names) == 1, 'if check above should prevent this')
+            return names[0]
+
+        return self._positional_inputs[idx]
 
     @property
     def output_defs(self):
@@ -142,17 +167,22 @@ class SolidDefinition(ISolidDefinition):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.solid_config`.
             This value can be a:
+
                 - :py:class:`Field`
                 - Python primitive types that resolve to dagster config types
                     - int, float, bool, str, list.
                 - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values of
-                in the dictionary get resolved by the same rules, recursively.
+                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
+                  in the dictionary get resolved by the same rules, recursively.
+
         description (Optional[str]): Human-readable description of the solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this
             solid.
+        positional_inputs (Optional[List[str]]): The positional order of the input names if it
+            differs from the order of the input definitions.
+
 
     Examples:
         .. code-block:: python
@@ -179,11 +209,12 @@ class SolidDefinition(ISolidDefinition):
         metadata=None,
         required_resource_keys=None,
         step_metadata_fn=None,
+        positional_inputs=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_field = check_user_facing_opt_config_param(config, 'config',)
-        self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+        self._required_resource_keys = frozenset(
+            check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
         self._step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
@@ -193,6 +224,7 @@ class SolidDefinition(ISolidDefinition):
             output_defs=check.list_param(output_defs, 'output_defs', OutputDefinition),
             description=description,
             metadata=metadata,
+            positional_inputs=positional_inputs,
         )
 
     @property
@@ -255,6 +287,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         description (Optional[str]): Human readable description of this composite solid.
         metadata (Optional[Dict[Any, Any]]): Arbitrary metadata for the composite solid. Frameworks
             may expect and require certain metadata to be attached to a solid.
+        positional_inputs (Optional[List[str]]): The positional order of the inputs if it
+            differs from the order of the input mappings
 
     Examples:
 
@@ -286,6 +320,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         dependencies=None,
         description=None,
         metadata=None,
+        positional_inputs=None,
     ):
         check.str_param(name, 'name')
         self._solid_defs = check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
@@ -316,6 +351,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             output_defs=output_defs,
             description=description,
             metadata=metadata,
+            positional_inputs=positional_inputs,
         )
 
     @property
@@ -376,8 +412,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         required_resource_keys = set()
         for solid in self.solids:
             required_resource_keys.update(solid.definition.required_resource_keys)
-
-        return required_resource_keys
+        return frozenset(required_resource_keys)
 
     @property
     def has_config_mapping(self):

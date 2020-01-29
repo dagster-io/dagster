@@ -8,7 +8,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY
-from .setup import define_subprocess_context
+from .setup import define_test_subprocess_context
 
 RUN_CANCELLATION_QUERY = '''
 mutation($runId: String!) {
@@ -34,9 +34,8 @@ mutation($runId: String!) {
 
 
 def test_basic_cancellation():
-    context = define_subprocess_context(DagsterInstance.local_temp())
+    context = define_test_subprocess_context(DagsterInstance.local_temp())
     with safe_tempfile_path() as path:
-        context = define_subprocess_context(DagsterInstance.local_temp())
         result = execute_dagster_graphql(
             context,
             START_PIPELINE_EXECUTION_QUERY,
@@ -74,14 +73,14 @@ def test_basic_cancellation():
 
 
 def test_run_not_found():
-    context = define_subprocess_context(DagsterInstance.local_temp())
+    context = define_test_subprocess_context(DagsterInstance.local_temp())
     result = execute_dagster_graphql(context, RUN_CANCELLATION_QUERY, variables={'runId': 'nope'})
     assert result.data['cancelPipelineExecution']['__typename'] == 'PipelineRunNotFoundError'
 
 
 def test_terminate_failed():
     with safe_tempfile_path() as path:
-        context = define_subprocess_context(DagsterInstance.local_temp())
+        context = define_test_subprocess_context(DagsterInstance.local_temp())
         old_terminate = context.execution_manager.terminate
         context.execution_manager.terminate = lambda _run_id: False
         result = execute_dagster_graphql(
@@ -132,7 +131,7 @@ def test_terminate_failed():
 def test_run_finished():
 
     instance = DagsterInstance.local_temp()
-    context = define_subprocess_context(instance)
+    context = define_test_subprocess_context(instance)
     pipeline_result = execute_pipeline(
         context.repository_definition.get_pipeline('noop_pipeline'), instance=instance
     )

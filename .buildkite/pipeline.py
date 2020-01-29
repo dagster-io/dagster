@@ -4,7 +4,7 @@ import sys
 
 import yaml
 from defines import SupportedPython, SupportedPython3s, SupportedPythons
-from step_builder import INTEGRATION_IMAGE_VERSION, StepBuilder, wait_step
+from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -82,14 +82,6 @@ def publish_test_images():
     # See: https://github.com/dagster-io/dagster/issues/1960
     for version in SupportedPythons + [SupportedPython.V3_8]:
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
-
-        aws_account_id = os.environ.get('AWS_ACCOUNT_ID')
-        base_image = "%s.dkr.ecr.us-west-1.amazonaws.com/buildkite-integration:py%s-%s" % (
-            aws_account_id,
-            version,
-            INTEGRATION_IMAGE_VERSION,
-        )
-
         tests.append(
             StepBuilder("test images {version}".format(version=version), key=key)
             .run(
@@ -99,7 +91,7 @@ def publish_test_images():
                 "aws s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
                 #
                 # build test image
-                "./.buildkite/images/docker/test_project/build.sh " + base_image,
+                "./.buildkite/images/docker/test_project/build.sh " + version,
                 #
                 # tag and push the built image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
@@ -255,7 +247,7 @@ def k8s_tests():
                 "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
                 "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-k8s/",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -e {ver} -- -s".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",
@@ -507,7 +499,8 @@ def lakehouse_tests():
 def pipenv_smoke_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
-    for version in SupportedPythons:
+    # See: https://github.com/dagster-io/dagster/issues/2079
+    for version in SupportedPython3s:
         is_release = check_for_release()
         smoke_test_steps = (
             [

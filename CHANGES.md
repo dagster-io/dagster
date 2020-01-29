@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0
+## 0.7.0 (Upcoming)
 
 **Breaking**
 
@@ -8,6 +8,19 @@
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
 - Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
 - The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
+- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To upgrade, remove the first argument to `config_fn`.
+
+  So instead of
+
+  ```
+  @composite_solid(config={}, config_fn=lambda context, config: {})
+  ```
+
+  one must instead write:
+
+  ```
+  @composite_solid(config={}, config_fn=lambda config: {})
+  ```
 
 - In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
 
@@ -15,24 +28,61 @@
 
   So instead of
 
-  ````
-  g
-  e
-  e
-      'some_int' : Field(Int),
-      'some_list: Field(Array[String]) # List prior to change
-  })
-
-  `
+  ```
+  from dagster import Shape, Field, Int, Array, String
+  # ... code
+  config=Shape({ # Dict prior to change
+        'some_int' : Field(Int),
+        'some_list: Field(Array[String]) # List prior to change
+    })
+  ```
 
   one can instead write:
 
-  `
-  }
-
+  ```
+  config={'some_int': int, 'some_list': [str]}
+  ```
 
   No imports and much simpler, cleaner syntax.
-  ````
+
+- All solids that use a resource must explicitly list that resource using the argument
+  `required_resource_keys`. This is to enable efficient resource management during pipeline
+  execution, especially in a multiprocessing or remote execution environment.
+- The `@system_storage` decorator now requires argument `required_resource_keys`, which was
+  previously optional.
+- `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
+  with python's typing and dagster's definition of `Optional`, which indicates None-ability,
+  rather than existence. `is_optional` is deprecated and will be removed in a future version.
+
+**New**
+
+- `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
+
+## 0.6.8
+
+**New**
+
+- Added the dagster-github library, a community contribution from @Ramshackle-Jamathon and
+  @k-mahoney!
+
+**dagster-celery**
+
+- Simplified and improved config handling.
+- An engine event is now emitted when the engine fails to connect to a broker.
+
+**Bugfix**
+
+- Fixes a file descriptor leak when running many concurrent dagster-graphql queries (e.g., for
+  backfill).
+- The `@pyspark_solid` decorator now handles inputs correctly.
+- The handling of solid compute functions that accept kwargs but which are decorated with explicit
+  input definitions has been rationalized.
+- Fixed race conditions in concurrent execution using SQLite event log storage with concurrent
+  execution, uncovered by upstream improvements in the Python inotify library we use.
+
+**Documentation**
+
+- Improved error messages when using system storages that don't fulfill executor requirements.
 
 ## 0.6.7
 

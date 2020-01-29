@@ -1,5 +1,5 @@
-import json
 import os
+import uuid
 import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
@@ -34,7 +34,6 @@ from dagster import (
     Materialization,
     Output,
     OutputDefinition,
-    String,
     check,
     composite_solid,
     solid,
@@ -58,7 +57,7 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
 
 
 @solid(
-    config={'chunk_size': Field(int, is_optional=True, default_value=8192)},
+    config={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
 def download_zipfiles_from_urls(
@@ -102,7 +101,7 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
         'delimiter': Field(
             str,
             default_value=',',
-            is_optional=True,
+            is_required=False,
             description=('A one-character string used to separate fields.'),
         )
     },
@@ -141,50 +140,56 @@ def download_csv_from_bucket_and_return_dataframe(
     return read_csv(target_csv_location)
 
 
+@solid(config={'index_label': Field(str),}, required_resource_keys={'postgres_db'})
+def insert_row_into_table(context, row: DataFrame, table_name: str):
+    row.to_sql(
+        table_name,
+        context.resources.postgres_db.engine,
+        if_exists='append',
+        index=False,
+        index_label=context.solid_config['index_label'],
+    )
+
+
 @solid(
     config={
         'latitude': Field(
             float,
             default_value=37.8267,
-            is_optional=True,
+            is_required=False,
             description=('Latitude coordinate to get weather data about. Default is SF.'),
         ),
         'longitude': Field(
             float,
             default_value=-122.4233,
-            is_optional=True,
+            is_required=False,
             description=('Longitude coordinate to get weather data about. Default is SF.'),
         ),
         'times_to_exclude': Field(
             [str],
             default_value=['currently', 'minutely', 'hourly', 'alerts', 'flags'],
-            is_optional=True,
+            is_required=False,
             description='data granularities to exclude when making this api call',
         ),
-        'csv_name': Field(String, description=('Path to store the csv at the end')),
     },
-    required_resource_keys={'credentials_vault', 'volume'},
+    required_resource_keys={'credentials_vault'},
 )
-def download_weather_report_from_weather_api(context, date_file_name: str) -> str:
-    weather_report = []
-    with open(date_file_name, 'r') as fp:
-        dates = json.load(fp)
+def download_weather_report_from_weather_api(context, epoch_date: int) -> DataFrame:
+    # Make API Call
     coordinates = '{0},{1}'.format(
         context.solid_config['latitude'], context.solid_config['longitude']
     )
     weather_api_key = context.resources.credentials_vault.credentials["DARK_SKY_API_KEY"]
     url_prefix = '/'.join([DARK_SKY_BASE_URL, weather_api_key, coordinates])
-    for date in dates:
-        url = url_prefix + ',{}?exclude={}'.format(
-            date, ','.join(context.solid_config['times_to_exclude'])
-        )
-        context.log.info("Download for date {}. URL is: {}".format(date, url))
-        response = requests.get(url)
-        response.raise_for_status()
-        weather_report.append(response.json()['daily']['data'][0])
-    csv_target = os.path.join(context.resources.volume, context.solid_config['csv_name'])
-    DataFrame(weather_report).to_csv(csv_target)
-    return csv_target
+    url = url_prefix + ',{}?exclude={}'.format(
+        epoch_date, ','.join(context.solid_config['times_to_exclude'])
+    )
+    context.log.info("Sending Request. URL is: {}".format(url))
+    response = requests.get(url)
+    response.raise_for_status()
+    raw_weather_data = response.json()['daily']['data'][0]
+    raw_weather_data['uuid'] = uuid.uuid4()
+    return DataFrame([raw_weather_data])
 
 
 @solid(
@@ -415,15 +420,18 @@ def produce_training_set(
             int, description='The breakpoint between training and test set'
         ),
         'lstm_layer_config': {
-            'activation': Field(str, is_optional=True, default_value='relu'),
-            'num_recurrant_units': Field(int, is_optional=True, default_value=50),
+            'activation': Field(str, is_required=False, default_value='relu'),
+            'num_recurrant_units': Field(int, is_required=False, default_value=50),
         },
-        'num_dense_layers': Field(int, is_optional=True, default_value=1),
+        'num_dense_layers': Field(int, is_required=False, default_value=1),
         'model_trainig_config': {
             'optimizer': Field(
-                str, description='Type of optimizer to use', is_optional=True, default_value='adam',
+                str,
+                description='Type of optimizer to use',
+                is_required=False,
+                default_value='adam',
             ),
-            'loss': Field(str, is_optional=True, default_value='mse'),
+            'loss': Field(str, is_required=False, default_value='mse'),
             'num_epochs': Field(int, description='Number of epochs to optimize over'),
         },
     },

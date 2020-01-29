@@ -2,7 +2,7 @@ import graphql
 import pytest
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_context
+from .setup import define_test_context
 from .utils import sync_execute_get_events
 
 
@@ -53,19 +53,20 @@ MODE_QUERY = '''
 query ModesQuery($pipelineName: String!, $mode: String!)
 {
   environmentSchemaOrError(selector: {name: $pipelineName}, mode: $mode ) {
+    __typename
     ... on EnvironmentSchema {
       rootEnvironmentType {
-        name
+        key
         ... on CompositeConfigType {
           fields {
             configType {
-              name
+              key
             }
           }
         }
       }
       allConfigTypes {
-        name
+        key
       }
     }
   }
@@ -75,7 +76,7 @@ query ModesQuery($pipelineName: String!, $mode: String!)
 
 def execute_modes_query(pipeline_name, mode):
     return execute_dagster_graphql(
-        define_context(), MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
+        define_test_context(), MODE_QUERY, variables={'pipelineName': pipeline_name, 'mode': mode}
     )
 
 
@@ -87,9 +88,9 @@ def get_pipeline(result, name):
     raise Exception('not found')
 
 
-def test_query_multi_mode(snapshot):
+def test_query_multi_mode():
     with pytest.raises(graphql.error.base.GraphQLError):
         execute_modes_query('multi_mode_with_resources', mode=None)
 
     modeful_result = execute_modes_query('multi_mode_with_resources', mode='add_mode')
-    snapshot.assert_match(modeful_result.data)
+    assert modeful_result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'

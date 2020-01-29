@@ -5,7 +5,7 @@ from dagster.utils.temp_file import get_temp_file_name
 from dagster.utils.test import execute_solid
 
 
-@solid
+@solid(required_resource_keys={'file_cache', 's3'})
 def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
     # we default the target_key to the last component of the s3 key.
     target_key = s3_coord['key'].split('/')[-1]

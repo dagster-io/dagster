@@ -39,7 +39,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         if self.running_on_emr:
             return fn
 
-        def new_compute_fn(context):
+        def new_compute_fn(context, *args, **kwargs):  # pylint: disable=unused-argument
             self._sync_code_to_s3(context, solid_name)
             step_defs = self._get_execute_steps(context, solid_name)
             step_ids = self.emr_job_runner.add_job_flow_steps(
@@ -188,7 +188,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         'spark_config': spark_config(),
         'cluster_id': Field(str, description='Name of the job flow (cluster) on which to execute'),
         'region_name': Field(str),
-        'action_on_failure': Field(str, is_optional=True, default_value='CANCEL_AND_WAIT'),
+        'action_on_failure': Field(str, is_required=False, default_value='CANCEL_AND_WAIT'),
         'staging_bucket': Field(
             str,
             is_optional=False,
@@ -197,7 +197,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         ),
         'requirements_file_path': Field(
             str,
-            is_optional=True,
+            is_required=False,
             description='Path to a requirements.txt file; the current directory is searched if none'
             ' is specified.',
         ),

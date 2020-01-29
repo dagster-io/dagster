@@ -25,13 +25,13 @@ def bq_resource_config():
         description='''Project ID for the project which the client acts on behalf of. Will be passed
         when creating a dataset / job. If not passed, falls back to the default inferred from the
         environment.''',
-        is_optional=True,
+        is_required=False,
     )
 
     location = Field(
         String,
         description='(Optional) Default location for jobs / datasets / tables.',
-        is_optional=True,
+        is_required=False,
     )
 
     return {'project': project, 'location': location}
@@ -49,7 +49,7 @@ def _define_shared_fields():
 
         Clustering fields are immutable after table creation.
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     create_disposition = Field(
@@ -57,7 +57,7 @@ def _define_shared_fields():
         description='''Specifies behavior for creating tables.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.createDisposition
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     destination_encryption_configuration = Field(
@@ -66,14 +66,14 @@ def _define_shared_fields():
         Custom encryption configuration (e.g., Cloud KMS keys) or None if using default encryption.
         See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationEncryptionConfiguration
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     schema_update_options = Field(
         [BQSchemaUpdateOption],
         description='''Specifies updates to the destination table schema to allow as a side effect
         of the query job.''',
-        is_optional=True,
+        is_required=False,
     )
 
     time_partitioning = Field(
@@ -82,24 +82,24 @@ def _define_shared_fields():
                 Int,
                 description='''Number of milliseconds for which to keep the storage for a
                     partition.''',
-                is_optional=True,
+                is_required=False,
             ),
             'field': Field(
                 String,
                 description='''If set, the table is partitioned by this field. If not set, the
                     table is partitioned by pseudo column _PARTITIONTIME. The field must be a
                     top-level TIMESTAMP or DATE field. Its mode must be NONEABLE or REQUIRED.''',
-                is_optional=True,
+                is_required=False,
             ),
             'require_partition_filter': Field(
                 Bool,
                 description='''If set to true, queries over the partitioned table require a
                     partition filter that can be used for partition elimination to be specified.''',
-                is_optional=True,
+                is_required=False,
             ),
         },
         description='Specifies time-based partitioning for the destination table.',
-        is_optional=True,
+        is_required=False,
     )
 
     write_disposition = Field(
@@ -108,7 +108,7 @@ def _define_shared_fields():
         Action that occurs if the destination table already exists.
         See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.writeDisposition
         ''',
-        is_optional=True,
+        is_required=False,
     )
     return {
         'clustering_fields': clustering_fields,
@@ -131,7 +131,7 @@ def define_bigquery_query_config():
         description='''Allow large query results tables (legacy SQL, only)
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.allowLargeResults
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     default_dataset = Field(
@@ -142,7 +142,7 @@ def define_bigquery_query_config():
         For example: your-project.your_dataset.
         See https://g.co/cloud/bigquery/docs/reference/v2/jobs#configuration.query.defaultDataset
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     destination = Field(
@@ -153,7 +153,7 @@ def define_bigquery_query_config():
         your-project.your_dataset.your_table.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     dry_run = Field(
@@ -161,7 +161,7 @@ def define_bigquery_query_config():
         description='''True if this query should be a dry run to estimate costs.
         See https://g.co/cloud/bigquery/docs/reference/v2/jobs#configuration.dryRun
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     flatten_results = Field(
@@ -169,7 +169,7 @@ def define_bigquery_query_config():
         description='''Flatten nested/repeated fields in results. (Legacy SQL only)
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.flattenResults
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     maximum_billing_tier = Field(
@@ -177,7 +177,7 @@ def define_bigquery_query_config():
         description='''Deprecated. Changes the billing tier to allow high-compute queries.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.maximumBillingTier
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     maximum_bytes_billed = Field(
@@ -186,7 +186,7 @@ def define_bigquery_query_config():
 
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.maximumBytesBilled
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     priority = Field(
@@ -194,7 +194,7 @@ def define_bigquery_query_config():
         description='''Priority of the query.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.priority
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     query_parameters = Field(
@@ -202,7 +202,7 @@ def define_bigquery_query_config():
         description='''list of parameters for parameterized query (empty by default)
         See: https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.queryParameters
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     # TODO:
@@ -212,7 +212,7 @@ def define_bigquery_query_config():
     #     description='''Definitions for external tables or None if not set.
     #     See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.tableDefinitions
     #     ''',
-    #     is_optional=True,
+    #     is_required=False,
     # )
 
     # TODO: Need to add this
@@ -222,7 +222,7 @@ def define_bigquery_query_config():
     #     description='''user defined function resources (empty by default)
     #     See: https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.userDefinedFunctionResources
     #     ''',
-    #     is_optional=True
+    #     is_required=False
     # )
 
     use_legacy_sql = Field(
@@ -230,7 +230,7 @@ def define_bigquery_query_config():
         description='''Use legacy SQL syntax.
         See https://g.co/cloud/bigquery/docs/reference/v2/jobs#configuration.query.useLegacySql
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     use_query_cache = Field(
@@ -238,7 +238,7 @@ def define_bigquery_query_config():
         description='''Look for the query result in the cache.
         See https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.useQueryCache
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     return {
@@ -271,19 +271,19 @@ def define_bigquery_load_config():
     sf = _define_shared_fields()
 
     allow_jagged_rows = Field(
-        Bool, description='Allow missing trailing optional columns (CSV only).', is_optional=True
+        Bool, description='Allow missing trailing optional columns (CSV only).', is_required=False
     )
 
     allow_quoted_newlines = Field(
         Bool,
         description='Allow quoted data containing newline characters (CSV only).',
-        is_optional=True,
+        is_required=False,
     )
 
     autodetect = Field(
         Bool,
         description='Automatically infer the schema from a sample of the data.',
-        is_optional=True,
+        is_required=False,
     )
 
     # Destination is a required field for BQ loads
@@ -299,46 +299,48 @@ def define_bigquery_load_config():
     )
 
     destination_table_description = Field(
-        String, description='description given to destination table.', is_optional=True
+        String, description='description given to destination table.', is_required=False
     )
 
     destination_table_friendly_name = Field(
-        String, description='name given to destination table.', is_optional=True
+        String, description='name given to destination table.', is_required=False
     )
 
     encoding = Field(
-        BQEncoding, description='The character encoding of the data.', is_optional=True
+        BQEncoding, description='The character encoding of the data.', is_required=False
     )
 
     field_delimiter = Field(
-        String, description='The separator for fields in a CSV file.', is_optional=True
+        String, description='The separator for fields in a CSV file.', is_required=False
     )
 
     ignore_unknown_values = Field(
         Bool,
         description='Ignore extra values not represented in the table schema.',
-        is_optional=True,
+        is_required=False,
     )
 
-    max_bad_records = Field(Int, description='Number of invalid rows to ignore.', is_optional=True)
+    max_bad_records = Field(Int, description='Number of invalid rows to ignore.', is_required=False)
 
-    null_marker = Field(String, description='Represents a null value (CSV only).', is_optional=True)
+    null_marker = Field(
+        String, description='Represents a null value (CSV only).', is_required=False
+    )
 
     quote_character = Field(
-        String, description='Character used to quote data sections (CSV only).', is_optional=True
+        String, description='Character used to quote data sections (CSV only).', is_required=False
     )
 
     skip_leading_rows = Field(
-        Int, description='Number of rows to skip when reading data (CSV only).', is_optional=True
+        Int, description='Number of rows to skip when reading data (CSV only).', is_required=False
     )
 
-    source_format = Field(BQSourceFormat, description='File format of the data.', is_optional=True)
+    source_format = Field(BQSourceFormat, description='File format of the data.', is_required=False)
 
     use_avro_logical_types = Field(
         Bool,
         description='''For loads of Avro data, governs whether Avro logical types are converted to
         their corresponding BigQuery types(e.g. TIMESTAMP) rather than raw types (e.g. INTEGER).''',
-        is_optional=True,
+        is_required=False,
     )
 
     return {
@@ -376,7 +378,7 @@ def define_bigquery_create_dataset_config():
         Bool,
         description='''Defaults to False. If True, ignore "already exists" errors when creating the
         dataset.''',
-        is_optional=True,
+        is_required=False,
     )
 
     return {'dataset': dataset, 'exists_ok': exists_ok}
@@ -389,14 +391,14 @@ def define_bigquery_delete_dataset_config():
         Bool,
         description='''If True, delete all the tables in the dataset. If False and the dataset
         contains tables, the request will fail. Default is False.''',
-        is_optional=True,
+        is_required=False,
     )
 
     not_found_ok = Field(
         Bool,
         description='''Defaults to False. If True, ignore "not found" errors when deleting the
         dataset.''',
-        is_optional=True,
+        is_required=False,
     )
 
     return {

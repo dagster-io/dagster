@@ -29,7 +29,7 @@ Then you can use config like the following to execute the pipeline:
 
 We advise using [Flower](https://celery.readthedocs.io/en/latest/userguide/monitoring.html#flower-real-time-celery-web-monitor):
 
-    celery -A dagster_celeery.tasks flower
+    celery -A dagster_celery.tasks flower
 
 #### Customizing the Celery broker, backend, and other app configuration
 

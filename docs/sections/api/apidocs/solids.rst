@@ -41,7 +41,6 @@ Composing solids
 
 .. autoclass:: ConfigMapping
 
-.. autoclass:: ConfigMappingContext
 
 
 .. currentmodule:: dagster

@@ -83,6 +83,65 @@ fragment stepEventFragment on StepEvent {
 }
 '''
 
+LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
+    fragment launchPipelineExecutionResultFragment on LaunchPipelineExecutionResult {
+        __typename
+        ... on RunLauncherNotDefinedError {
+            message
+        }
+        ... on InvalidStepError {
+            invalidStepKey
+        }
+        ... on InvalidOutputError {
+            stepKey
+            invalidOutputName
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline {
+                name
+            }
+            errors {
+                __typename
+                message
+                path
+                reason
+            }
+        }
+        ... on PipelineNotFoundError {
+            message
+            pipelineName
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on LaunchPipelineExecutionSuccess {
+            run {
+                runId
+                pipeline {
+                    ... on PipelineReference {
+                        name
+                    }
+                }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            message
+                            level
+                        }
+                        ...stepEventFragment
+                    }
+                }
+                tags {
+                    key
+                    value
+                }
+            }
+        }
+    }
+'''
+
 START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
     fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
         __typename
@@ -139,6 +198,7 @@ mutation (
 START_SCHEDULED_EXECUTION_QUERY = (
     FRAGMENTS
     + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+    + LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
@@ -159,6 +219,7 @@ mutation (
             message
         }
         ...startPipelineExecutionResultFragment
+        ...launchPipelineExecutionResultFragment
     }
 }
 '''

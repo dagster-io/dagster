@@ -262,7 +262,7 @@ In our last stage, we will make this solid executable in multiple environments. 
 The first step is that we have to make a minor modification to have the solid return a `FileHandle` instead of a `str`.
 
 ```python
-@solid
+@solid(required_resource_keys={'s3'})
 def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
     # we default the target_key to the last component of the s3 key.
     target_key = s3_coord['key'].split('/')[-1]

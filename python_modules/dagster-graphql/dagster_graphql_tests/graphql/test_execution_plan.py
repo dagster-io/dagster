@@ -12,7 +12,7 @@ from .setup import (
     PoorMansDataFrame,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
-    define_context,
+    define_test_context,
 )
 
 EXECUTION_PLAN_QUERY = '''
@@ -125,7 +125,7 @@ def test_success_whole_execution_plan(snapshot):
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -162,7 +162,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     instance = DagsterInstance.ephemeral()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -201,7 +201,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     instance = DagsterInstance.ephemeral()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -241,7 +241,7 @@ def test_successful_one_part_execute_plan(snapshot):
     instance.create_empty_run(run_id, 'csv_hello_world')
 
     result = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -298,7 +298,7 @@ def test_successful_two_part_execute_plan(snapshot):
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result_one = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -316,7 +316,7 @@ def test_successful_two_part_execute_plan(snapshot):
     snapshot.assert_match(result_one.data)
 
     result_two = execute_dagster_graphql(
-        define_context(instance=instance),
+        define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -368,7 +368,7 @@ def test_successful_two_part_execute_plan(snapshot):
 
 def test_invalid_config_fetch_execute_plan(snapshot):
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         EXECUTION_PLAN_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
@@ -392,7 +392,7 @@ def test_invalid_config_fetch_execute_plan(snapshot):
 
 def test_invalid_config_execute_plan(snapshot):
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -425,7 +425,7 @@ def test_invalid_config_execute_plan(snapshot):
 def test_pipeline_not_found_error_execute_plan(snapshot):
 
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -452,7 +452,7 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
 def test_pipeline_with_execution_metadata(snapshot):
     environment_dict = {'solids': {'solid_metadata_creation': {'config': {'str_value': 'foobar'}}}}
     result = execute_dagster_graphql(
-        define_context(),
+        define_test_context(),
         EXECUTION_PLAN_QUERY,
         variables={
             'pipeline': {'name': 'pipeline_with_step_metadata'},
@@ -486,7 +486,7 @@ def test_basic_execute_plan_with_materialization():
         instance = DagsterInstance.ephemeral()
 
         result = execute_dagster_graphql(
-            define_context(instance=instance),
+            define_test_context(instance=instance),
             EXECUTION_PLAN_QUERY,
             variables={
                 'pipeline': {'name': 'csv_hello_world'},
@@ -506,7 +506,7 @@ def test_basic_execute_plan_with_materialization():
         instance.create_empty_run(run_id, 'csv_hello_world')
 
         result = execute_dagster_graphql(
-            define_context(instance=instance),
+            define_test_context(instance=instance),
             EXECUTE_PLAN_QUERY,
             variables={
                 'executionParams': {
