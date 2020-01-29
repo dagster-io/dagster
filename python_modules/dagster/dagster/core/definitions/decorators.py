@@ -3,7 +3,10 @@ import inspect
 import warnings
 from functools import wraps
 
+from dateutil.relativedelta import relativedelta
+
 from dagster import check
+from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.partition.utils import date_partition_range
 
@@ -888,50 +891,114 @@ def schedule(
     return inner
 
 
-def daily_schedule(
+def monthly_schedule(
     pipeline_name,
     start_date,
     name=None,
+    execution_day_of_month=1,
     execution_time=datetime.time(0, 0),
-    tags=None,
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
 ):
-
-    from dagster.core.definitions.partition import PartitionSetDefinition
-
     check.opt_str_param(name, 'name')
-    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.inst_param(execution_time, 'execution_time', datetime.time)
-    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.int_param(execution_day_of_month, 'execution_day')
+    check.inst_param(execution_time, 'execution_time', datetime.time)
 
-    cron_schedule = '{minute} {hour} * * *'.format(
-        minute=execution_time.minute, hour=execution_time.hour
+    if execution_day_of_month <= 0 or execution_day_of_month > 31:
+        raise DagsterInvalidDefinitionError(
+            "`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be between 1 and 31".format(
+                execution_day_of_month
+            )
+        )
+
+    cron_schedule = '{minute} {hour} {day} * *'.format(
+        minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
+
+    partition_fn = date_partition_range(start_date, delta=relativedelta(months=1), fmt="%Y-%m")
 
     def inner(fn):
         check.callable_param(fn, 'fn')
 
         schedule_name = name or fn.__name__
 
-        def _environment_dict_fn_for_partition(partition):
-            return fn(partition.value)
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
-        partition_set_name = '{}_daily'.format(pipeline_name)
         partition_set = PartitionSetDefinition(
-            name=partition_set_name,
+            name='{}_monthly'.format(pipeline_name),
             pipeline_name=pipeline_name,
-            partition_fn=date_partition_range(start_date),
-            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
+            mode=mode,
+        )
+
+        return partition_set.create_schedule_definition(
+            schedule_name,
+            cron_schedule,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner
+
+
+def daily_schedule(
+    pipeline_name,
+    start_date,
+    name=None,
+    execution_time=datetime.time(0, 0),
+    tags_fn_for_date=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=None,
+    environment_vars=None,
+):
+    check.opt_str_param(name, 'name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
+    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, 'should_execute')
+    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
+
+    cron_schedule = '{minute} {hour} * * *'.format(
+        minute=execution_time.minute, hour=execution_time.hour
+    )
+
+    partition_fn = date_partition_range(start_date)
+
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+
+        partition_set = PartitionSetDefinition(
+            name='{}_daily'.format(pipeline_name),
+            pipeline_name=pipeline_name,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
 
@@ -950,26 +1017,22 @@ def hourly_schedule(
     start_date,
     name=None,
     execution_time=datetime.time(0, 0),
-    tags=None,
     tags_fn_for_date=None,
     solid_subset=None,
     mode="default",
     should_execute=None,
     environment_vars=None,
 ):
-
-    from dagster.core.definitions.partition import PartitionSetDefinition
-
     check.opt_str_param(name, 'name')
-    check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.inst_param(execution_time, 'execution_time', datetime.time)
-    check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
     check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
     check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
     mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.inst_param(execution_time, 'execution_time', datetime.time)
 
     if execution_time.hour != 0:
         warnings.warn(
@@ -983,22 +1046,25 @@ def hourly_schedule(
 
     cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)
 
+    partition_fn = date_partition_range(
+        start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
+    )
+
     def inner(fn):
         check.callable_param(fn, 'fn')
 
         schedule_name = name or fn.__name__
 
-        def _environment_dict_fn_for_partition(partition):
-            return fn(partition.value)
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
-        partition_set_name = '{}_hourly'.format(pipeline_name)
         partition_set = PartitionSetDefinition(
-            name=partition_set_name,
+            name='{}_hourly'.format(pipeline_name),
             pipeline_name=pipeline_name,
-            partition_fn=date_partition_range(
-                start_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
-            ),
-            environment_dict_fn_for_partition=_environment_dict_fn_for_partition,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
 

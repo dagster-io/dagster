@@ -2,6 +2,7 @@
 # py27 compat
 
 import re
+from datetime import datetime
 
 import pytest
 
@@ -18,15 +19,17 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     lambda_solid,
+    pipeline,
     schedules,
     solid,
 )
+from dagster.core.definitions.decorators import daily_schedule, hourly_schedule, monthly_schedule
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
 from dagster.utils.test import FilesytemTestScheduler
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
-# pylint: disable=unused-variable, unused-argument
+# pylint: disable=unused-variable, unused-argument, redefined-outer-name
 
 
 def test_no_parens_solid():
@@ -315,3 +318,63 @@ def test_solid_bad_output_type():
         ),
     ):
         execute_solid(bad_output_solid)
+
+
+def test_schedule_decorators_sanity():
+    @solid
+    def do_nothing(_):
+        pass
+
+    @pipeline
+    def foo_pipeline():
+        do_nothing()
+
+    @monthly_schedule(
+        pipeline_name='foo_pipeline',
+        execution_day_of_month=3,
+        start_date=datetime(year=2019, month=1, day=1),
+    )
+    def monthly_foo_schedule():
+        return {}
+
+    @daily_schedule(
+        pipeline_name='foo_pipeline', start_date=datetime(year=2019, month=1, day=1),
+    )
+    def daily_foo_schedule():
+        return {}
+
+    @hourly_schedule(
+        pipeline_name='foo_pipeline', start_date=datetime(year=2019, month=1, day=1),
+    )
+    def hourly_foo_schedule():
+        return {}
+
+
+def test_schedule_decorators_bad():
+    @solid
+    def do_nothing(_):
+        pass
+
+    @pipeline
+    def foo_pipeline():
+        do_nothing()
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @monthly_schedule(
+            pipeline_name='foo_pipeline',
+            execution_day_of_month=32,
+            start_date=datetime(year=2019, month=1, day=1),
+        )
+        def monthly_foo_schedule_over():
+            return {}
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @monthly_schedule(
+            pipeline_name='foo_pipeline',
+            execution_day_of_month=0,
+            start_date=datetime(year=2019, month=1, day=1),
+        )
+        def monthly_foo_schedule_under():
+            return {}
