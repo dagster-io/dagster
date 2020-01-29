@@ -231,15 +231,16 @@ exports[`renders execution 1`] = `
       />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+      className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
       id="split-panel-container"
     >
       <div
-        className="SplitPanelContainer__Split-wb7tmo-4 SuLDq"
+        className="split-panel"
         style={
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
+            "width": "75vw",
           }
         }
       >
@@ -344,7 +345,7 @@ exports[`renders execution 1`] = `
           className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-1 gQbmPS"
         />
         <div
-          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-2 bPAsrQ"
+          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-2 hWTxaW"
         >
           <button
             className="bp3-button bp3-active bp3-small"
@@ -391,7 +392,12 @@ exports[`renders execution 1`] = `
         />
       </div>
       <div
-        className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+        className="split-panel"
+        style={
+          Object {
+            "flex": 1,
+          }
+        }
       >
         <div
           className="RunPreview__NonIdealWrap-sc-5v37v5-0 hRNQzE"
@@ -640,15 +646,16 @@ exports[`renders pipeline page 1`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
     >
@@ -790,7 +797,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -4420,7 +4427,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -4516,7 +4523,12 @@ load_q2_sfo_weather:data_frame
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
@@ -4914,15 +4926,16 @@ exports[`renders pipeline solid page 1`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
     >
@@ -5064,7 +5077,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -8694,7 +8707,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -8790,7 +8803,12 @@ load_q2_sfo_weather:data_frame
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
@@ -9188,15 +9206,16 @@ exports[`renders solids explorer 1`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 eOBhhE"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": 420,
+          "width": "40vw",
         }
       }
     >
@@ -12459,7 +12478,12 @@ exports[`renders solids explorer 1`] = `
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="SolidsRoot__SolidDetailScrollContainer-ie1ggt-2 yIWFb"
@@ -13813,15 +13837,16 @@ exports[`renders type page 1`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
     >
@@ -13963,7 +13988,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -17593,7 +17618,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -17689,7 +17714,12 @@ load_q2_sfo_weather:data_frame
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
@@ -18087,15 +18117,16 @@ exports[`renders type page 2`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
     >
@@ -18237,7 +18268,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -21867,7 +21898,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -21963,7 +21994,12 @@ load_q2_sfo_weather:data_frame
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
@@ -22361,15 +22397,16 @@ exports[`renders without error 1`] = `
     <span />
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-5 ertluA"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
     id="split-panel-container"
   >
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hbmUdX"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
     >
@@ -22511,7 +22548,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 jOWwtj"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -26141,7 +26178,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -26237,7 +26274,12 @@ load_q2_sfo_weather:data_frame
       />
     </div>
     <div
-      className="SplitPanelContainer__Split-wb7tmo-4 hQLatd"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"

@@ -52,9 +52,10 @@ export enum GaantChartMode {
   WATERFALL_TIMED = "waterfall-timed"
 }
 
+const LEFT_INSET = 5;
 const BOX_HEIGHT = 30;
 const BOX_MARGIN_Y = 5;
-const BOX_MARGIN_X = 10;
+const BOX_SPACING_X = 20;
 const BOX_WIDTH = 100;
 const BOX_MIN_WIDTH = 6;
 const LINE_SIZE = 2;
@@ -118,7 +119,7 @@ const boxWidthFor = (
         : stepInfo.start
         ? Date.now() - stepInfo.start
         : BOX_WIDTH;
-    return Math.max(BOX_MARGIN_X * 2 + BOX_MIN_WIDTH, width * options.scale);
+    return Math.max(BOX_MIN_WIDTH, width * options.scale);
   }
   return BOX_WIDTH;
 };
@@ -195,7 +196,7 @@ const buildLayout = (params: BuildLayoutParams) => {
   let boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
     node: node,
     children: [],
-    x: 0,
+    x: -1,
     y: -1,
     width: boxWidthFor(node, params)
   }));
@@ -211,16 +212,38 @@ const buildLayout = (params: BuildLayoutParams) => {
   // roots onward and pushing things to the right as we go.
   const deepen = (box: GaantChartBox, x: number) => {
     box.x = Math.max(x, box.x);
-    box.children.forEach(child => deepen(child, x + box.width));
+    box.children.forEach(child =>
+      deepen(child, box.x + box.width + BOX_SPACING_X)
+    );
   };
-  roots.forEach(box => deepen(box, 0));
+  roots.forEach(box => deepen(box, LEFT_INSET));
+
+  // Step 3.5: Assign X values based on the actual computation start times if we have them
+
+  if (
+    options.mode === GaantChartMode.WATERFALL_TIMED &&
+    metadata.minStepStart
+  ) {
+    const deepenOrUseMetadata = (box: GaantChartBox, x: number) => {
+      const start = metadata.steps[box.node.name]?.start;
+      if (!start) {
+        box.x = Math.max(x, box.x);
+      } else {
+        box.x = LEFT_INSET + (start - metadata.minStepStart!) * options.scale;
+      }
+      box.children.forEach(child =>
+        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
+      );
+    };
+    roots.forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+  }
 
   // Step 4: Assign Y values (row numbers not pixel values)
   if (options.mode === GaantChartMode.FLAT) {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
-      box.x *= 0.1;
+      box.x = LEFT_INSET + box.x * 0.1;
     });
   } else {
     const parents: { [name: string]: GaantChartBox[] } = {};
@@ -495,9 +518,7 @@ export class GaantChart extends React.Component<
           <div style={{ flex: 1 }} />
           {this.props.toolbarActions}
         </OptionsContainer>
-        <div style={{ overflow: "scroll", flex: 1 }}>
-          <GaantChartContent {...this.props} {...this.state} layout={layout} />
-        </div>
+        <GaantChartContent {...this.props} {...this.state} layout={layout} />
         <GraphQueryInput
           items={graph}
           value={query}
@@ -509,9 +530,91 @@ export class GaantChart extends React.Component<
   }
 }
 
+interface GaantChartTimescaleProps {
+  scale: number;
+  scrollLeft: number;
+  startMs: number;
+  highlightedMs: number[];
+}
+
+const GaantChartTimescale = ({
+  scale,
+  scrollLeft,
+  startMs,
+  highlightedMs
+}: GaantChartTimescaleProps) => {
+  const viewportWidth = 1000;
+
+  const pxPerMs = scale;
+  const msPerTick = 1000 * (scale < 0.1 ? 5 : scale < 0.2 ? 1 : 0.5);
+  const pxPerTick = msPerTick * pxPerMs;
+  const transform = `translate(${LEFT_INSET - scrollLeft}px)`;
+
+  const ticks: React.ReactChild[] = [];
+  const lines: React.ReactChild[] = [];
+
+  const labelPrecision = scale < 0.2 ? 0 : 1;
+  const labelForTime = (ms: number, precision: number = labelPrecision) =>
+    `${Number(ms / 1000).toFixed(precision)}s`;
+
+  const firstTickX = Math.floor(scrollLeft / pxPerTick) * pxPerTick;
+
+  for (let x = firstTickX; x < firstTickX + viewportWidth; x += pxPerTick) {
+    if (x - scrollLeft < 10) continue;
+    const label = labelForTime(x / pxPerMs);
+    lines.push(
+      <div className="line" key={label} style={{ left: x, transform }} />
+    );
+    ticks.push(
+      <div className="tick" key={label} style={{ left: x - 20, transform }}>
+        {label}
+      </div>
+    );
+  }
+
+  return (
+    <TimescaleContainer>
+      <div style={{ height: 20 }}>
+        {ticks}
+        {highlightedMs.map((ms, idx) => (
+          <div
+            key={`highlight-${idx}`}
+            className="tick highlight"
+            style={{
+              left: (ms - startMs) * pxPerMs + (idx === 0 ? -39 : 0),
+              transform
+            }}
+          >
+            {labelForTime(ms - startMs, 3)}
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          zIndex: 0,
+          height: "100%",
+          width: "100%",
+          position: "absolute",
+          pointerEvents: "none"
+        }}
+      >
+        {lines}
+        {highlightedMs.map((ms, idx) => (
+          <div
+            className="line highlight"
+            key={`highlight-${idx}`}
+            style={{ left: (ms - startMs) * pxPerMs, transform }}
+          />
+        ))}
+      </div>
+    </TimescaleContainer>
+  );
+};
+
 const GaantChartContent = (
   props: GaantChartProps & GaantChartState & { layout: GaantChartLayout }
 ) => {
+  const [scrollLeft, setScrollLeft] = React.useState<number>(0);
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const { options, layout, metadata = { steps: {} } } = props;
 
@@ -526,9 +629,9 @@ const GaantChartContent = (
       <div
         key={box.node.name}
         style={{
-          left: box.x + BOX_MARGIN_X,
+          left: box.x,
           top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
-          width: Math.max(1, box.width - BOX_MARGIN_X * 2),
+          width: box.width,
           background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
         }}
         className={`box ${highlighted && "highlighted"}`}
@@ -556,7 +659,31 @@ const GaantChartContent = (
     }
   });
 
-  return <div style={{ position: "relative" }}>{items}</div>;
+  return (
+    <>
+      {options.mode === GaantChartMode.WATERFALL_TIMED && (
+        <GaantChartTimescale
+          scale={options.scale}
+          scrollLeft={scrollLeft}
+          startMs={metadata.minStepStart || 0}
+          highlightedMs={
+            hovered
+              ? ([
+                  metadata.steps[hovered.node.name]?.start,
+                  metadata.steps[hovered.node.name]?.finish
+                ].filter(Number) as number[])
+              : []
+          }
+        />
+      )}
+      <div
+        style={{ overflow: "scroll", flex: 1 }}
+        onScroll={e => setScrollLeft(e.currentTarget.scrollLeft)}
+      >
+        <div style={{ position: "relative" }}>{items}</div>
+      </div>
+    </>
+  );
 };
 
 const GaantLine = React.memo(
@@ -582,11 +709,10 @@ const GaantLine = React.memo(
     const maxY = maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
     const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
 
-    const minX =
-      Math.min(start.x + start.width, end.x + end.width) - BOX_MARGIN_X + 1;
+    const minX = Math.min(start.x + start.width, end.x + end.width);
     const maxX =
       maxIdx === minIdx
-        ? Math.max(start.x, end.x + BOX_MARGIN_X)
+        ? Math.max(start.x, end.x)
         : Math.max(start.x + start.width / 2, end.x + end.width / 2);
 
     const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
@@ -685,4 +811,33 @@ const OptionsDivider = styled.div`
   padding-left: 7px;
   margin-left: 7px;
   border-left: 1px solid ${Colors.LIGHT_GRAY3};
+`;
+
+const TimescaleContainer = styled.div`
+  width: 100%;
+
+  & .tick {
+    position: absolute;
+    padding-top: 3px;
+    width: 40px;
+    height: 20px;
+    box-sizing: border-box;
+    transition: left 200ms linear;
+    text-align: center;
+    font-size: 11px;
+  }
+  & .tick.highlight {
+    color: white;
+    background: red;
+  }
+  & .line {
+    position: absolute;
+    border-left: 1px solid #eee;
+    transition: left 200ms linear;
+    top: 0px;
+    bottom: 0px;
+  }
+  & .line.highlight {
+    border-left: 1px solid red;
+  }
 `;
