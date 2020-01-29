@@ -2,15 +2,14 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { IconNames } from "@blueprintjs/icons";
-import { Colors, Button, Intent, Tooltip, Position } from "@blueprintjs/core";
-import { MutationFunction, Mutation, useMutation } from "react-apollo";
+import { Colors } from "@blueprintjs/core";
+import { MutationFunction, Mutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
 import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
 import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
-import { SplitPanelChildren } from "../SplitPanelChildren";
+import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunMetadataProvider } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
@@ -23,28 +22,17 @@ import {
   StartPipelineExecutionVariables
 } from "./types/StartPipelineExecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
-import ExecutionStartButton from "../execute/ExecutionStartButton";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { RunContext } from "./RunContext";
-import { PipelineRunStatus } from "../types/globalTypes";
 
 import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
   RunPipelineRunEventFragment
 } from "./types/RunPipelineRunEventFragment";
-import { CANCEL_MUTATION } from "./RunUtils";
-import { SharedToaster } from "../DomUtils";
-
-const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
-const REEXECUTE_PIPELINE_UNKNOWN =
-  "Re-execute is unavailable because the pipeline is not present in the current repository.";
-const RETRY_DESCRIPTION =
-  "Retries the pipeline run, skipping steps that completed successfully";
-const RETRY_DISABLED =
-  "Retries are only enabled on persistent storage. Try rerunning with a different storage configuration.";
-const RETRY_PIPELINE_UNKNOWN =
-  "Retry is unavailable because the pipeline is not present in the current repository.";
+import { GaantChart, GaantChartMode } from "../GaantChart";
+import { getFeatureFlags, FeatureFlag } from "../Util";
+import { RunActionButtons } from "./RunActionButtons";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -55,36 +43,6 @@ interface IRunState {
   logsFilter: ILogFilter;
   highlightedError?: { message: string; stack: string[] };
 }
-
-const CancelRunButton: React.FunctionComponent<{ run: RunFragment }> = ({
-  run
-}) => {
-  const [cancel] = useMutation(CANCEL_MUTATION);
-  const [inFlight, setInFlight] = React.useState(false);
-  return (
-    <Button
-      icon={IconNames.STOP}
-      small={true}
-      text="Terminate"
-      intent="warning"
-      disabled={inFlight}
-      onClick={async () => {
-        setInFlight(true);
-        const res = await cancel({
-          variables: { runId: run.runId }
-        });
-        setInFlight(false);
-        if (res.data?.cancelPipelineExecution?.message) {
-          SharedToaster.show({
-            message: res.data.cancelPipelineExecution.message,
-            icon: "error",
-            intent: Intent.DANGER
-          });
-        }
-      }}
-    />
-  );
-};
 
 export class Run extends React.Component<IRunProps, IRunState> {
   static fragments = {
@@ -187,6 +145,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
     resumeRetry?: boolean
   ) => {
     const { run } = this.props;
+
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
 
     const variables: StartPipelineExecutionVariables = {
@@ -216,188 +175,163 @@ export class Run extends React.Component<IRunProps, IRunState> {
     });
   };
 
-  renderRetry(
-    reexecuteMutation: MutationFunction<
-      StartPipelineExecution,
-      StartPipelineExecutionVariables
-    >
-  ) {
-    const { run } = this.props;
-    if (!run || !run.executionPlan) {
-      return null;
-    }
-
-    const isUnknown = run.pipeline.__typename === "UnknownPipeline";
-
-    if (run.status !== PipelineRunStatus.FAILURE) {
-      return null;
-    }
-
-    if (!run.executionPlan.artifactsPersisted) {
-      return (
-        <Tooltip
-          hoverOpenDelay={300}
-          content={RETRY_DISABLED}
-          position={Position.BOTTOM}
-        >
-          <ExecutionStartButton
-            title="Resume / Retry"
-            icon={IconNames.DISABLE}
-            small={true}
-            disabled
-            onClick={() => null}
-          />
-        </Tooltip>
-      );
-    }
-
-    return (
-      <Tooltip
-        hoverOpenDelay={300}
-        content={isUnknown ? RETRY_PIPELINE_UNKNOWN : RETRY_DESCRIPTION}
-        position={Position.BOTTOM}
-      >
-        <ExecutionStartButton
-          title="Resume / Retry"
-          icon={IconNames.REPEAT}
-          small={true}
-          disabled={isUnknown}
-          onClick={() => this.onReexecute(reexecuteMutation, undefined, true)}
-        />
-      </Tooltip>
-    );
-  }
-
   render() {
     const { client, run } = this.props;
     const { logsFilter, highlightedError } = this.state;
 
-    const stepKeysToExecute: (string | null)[] | null = run
-      ? run.stepKeysToExecute
-      : null;
-
-    const isUnknown = run?.pipeline.__typename === "UnknownPipeline";
-    const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
-      __typename: "ExecutionPlan",
-      steps: [],
-      artifactsPersisted: false
-    };
-
     return (
-      <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
-        mutation={START_PIPELINE_EXECUTION_MUTATION}
-      >
-        {reexecuteMutation => (
-          <RunWrapper>
-            <RunContext.Provider value={run}>
-              {run && <RunStatusToPageAttributes run={run} />}
-              <LogsProvider
-                client={client}
-                runId={run ? run.runId : ""}
-                filter={logsFilter}
-              >
-                {({ filteredNodes, allNodes }) => (
-                  <SplitPanelChildren
-                    identifier="run"
-                    leftInitialPercent={75}
-                    leftMinWidth={680}
-                    left={
-                      <LogsContainer>
-                        <LogsToolbar
-                          showSpinner={false}
-                          filter={logsFilter}
-                          onSetFilter={filter =>
-                            this.setState({ logsFilter: filter })
-                          }
-                        >
-                          <Tooltip
-                            hoverOpenDelay={300}
-                            position={Position.BOTTOM}
-                            content={
-                              isUnknown
-                                ? REEXECUTE_PIPELINE_UNKNOWN
-                                : REEXECUTE_DESCRIPTION
-                            }
-                          >
-                            <ExecutionStartButton
-                              title="Re-execute"
-                              icon={IconNames.REPEAT}
-                              small={true}
-                              disabled={isUnknown}
-                              onClick={() =>
-                                this.onReexecute(reexecuteMutation)
-                              }
-                            />
-                          </Tooltip>
-                          {run && run.canCancel ? (
-                            <>
-                              <div style={{ minWidth: 6 }} />
-                              <CancelRunButton run={run} />
-                            </>
-                          ) : null}
-                          {this.renderRetry(reexecuteMutation)}
-                        </LogsToolbar>
-                        <LogsScrollingTable
-                          nodes={filteredNodes}
-                          filterKey={JSON.stringify(logsFilter)}
-                        />
-                      </LogsContainer>
-                    }
-                    right={
-                      <>
-                        <RunMetadataProvider logs={allNodes}>
-                          {metadata => (
-                            <ExecutionPlan
-                              run={run}
-                              runMetadata={metadata}
-                              executionPlan={executionPlan}
-                              stepKeysToExecute={stepKeysToExecute}
-                              onShowStateDetails={stepKey => {
-                                this.onShowStateDetails(stepKey, allNodes);
-                              }}
-                              onReexecuteStep={stepKey =>
-                                this.onReexecute(reexecuteMutation, stepKey)
-                              }
-                              onApplyStepFilter={stepKey =>
-                                this.setState({
-                                  logsFilter: {
-                                    ...this.state.logsFilter,
-                                    text: `step:${stepKey}`
-                                  }
-                                })
-                              }
-                            />
-                          )}
-                        </RunMetadataProvider>
-                        {highlightedError && (
-                          <InfoModal
-                            onRequestClose={() =>
-                              this.setState({ highlightedError: undefined })
-                            }
-                          >
-                            <PythonErrorInfo error={highlightedError} />
-                          </InfoModal>
-                        )}
-                      </>
-                    }
-                  />
-                )}
-              </LogsProvider>
-            </RunContext.Provider>
-          </RunWrapper>
+      <RunContext.Provider value={run}>
+        {run && <RunStatusToPageAttributes run={run} />}
+        {highlightedError && (
+          <InfoModal
+            onRequestClose={() =>
+              this.setState({ highlightedError: undefined })
+            }
+          >
+            <PythonErrorInfo error={highlightedError} />
+          </InfoModal>
         )}
-      </Mutation>
+
+        <Mutation<StartPipelineExecution, StartPipelineExecutionVariables>
+          mutation={START_PIPELINE_EXECUTION_MUTATION}
+        >
+          {reexecuteMutation => (
+            <LogsProvider
+              client={client}
+              runId={run ? run.runId : ""}
+              filter={logsFilter}
+            >
+              {({ filteredNodes, allNodes }) => (
+                <RunWithData
+                  run={run}
+                  filteredNodes={filteredNodes}
+                  allNodes={allNodes}
+                  logsFilter={logsFilter}
+                  onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
+                  onShowStateDetails={this.onShowStateDetails}
+                  onReexecute={(...args) =>
+                    this.onReexecute(reexecuteMutation, ...args)
+                  }
+                />
+              )}
+            </LogsProvider>
+          )}
+        </Mutation>
+      </RunContext.Provider>
     );
   }
 }
 
-const RunWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex: 1 1;
-  min-height: 0;
-`;
+interface RunWithDataProps {
+  run?: RunFragment;
+  allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
+  filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
+  logsFilter: ILogFilter;
+  onSetLogsFilter: (v: ILogFilter) => void;
+  onShowStateDetails: (
+    stepKey: string,
+    logs: RunPipelineRunEventFragment[]
+  ) => void;
+  onReexecute: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
+}
 
+const RunWithData = ({
+  run,
+  allNodes,
+  filteredNodes,
+  logsFilter,
+  onReexecute,
+  onSetLogsFilter,
+  onShowStateDetails
+}: RunWithDataProps) => {
+  const splitPanelContainer = React.createRef<SplitPanelContainer>();
+
+  const gaantPreview = getFeatureFlags().includes(
+    FeatureFlag.GaantExecutionPlan
+  );
+  const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
+    __typename: "ExecutionPlan",
+    steps: [],
+    artifactsPersisted: false
+  };
+
+  const logs = (
+    <LogsContainer>
+      <LogsToolbar
+        showSpinner={false}
+        filter={logsFilter}
+        onSetFilter={onSetLogsFilter}
+      />
+      <LogsScrollingTable
+        nodes={filteredNodes}
+        filterKey={JSON.stringify(logsFilter)}
+      />
+    </LogsContainer>
+  );
+
+  return gaantPreview ? (
+    <SplitPanelContainer
+      ref={splitPanelContainer}
+      axis={"vertical"}
+      identifier="run-gaant"
+      firstInitialPercent={35}
+      firstMinSize={40}
+      first={
+        <RunMetadataProvider logs={allNodes}>
+          {metadata => (
+            <GaantChart
+              options={{
+                mode: GaantChartMode.WATERFALL_TIMED
+              }}
+              toolbarLeftActions={
+                <SplitPanelToggles
+                  axis={"vertical"}
+                  container={splitPanelContainer}
+                />
+              }
+              toolbarActions={
+                <RunActionButtons run={run} onReexecute={onReexecute} />
+              }
+              plan={executionPlan}
+              metadata={metadata}
+              onApplyStepFilter={stepKey =>
+                onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
+              }
+            />
+          )}
+        </RunMetadataProvider>
+      }
+      second={logs}
+    />
+  ) : (
+    <SplitPanelContainer
+      axis={"horizontal"}
+      identifier="run"
+      firstInitialPercent={75}
+      firstMinSize={680}
+      first={logs}
+      second={
+        <RunMetadataProvider logs={allNodes}>
+          {metadata => (
+            <ExecutionPlan
+              run={run}
+              runMetadata={metadata}
+              executionPlan={executionPlan}
+              stepKeysToExecute={run?.stepKeysToExecute}
+              onShowStateDetails={stepKey => {
+                onShowStateDetails(stepKey, allNodes);
+              }}
+              onReexecuteStep={stepKey => onReexecute(stepKey)}
+              onApplyStepFilter={stepKey =>
+                onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
+              }
+            />
+          )}
+        </RunMetadataProvider>
+      }
+    />
+  );
+};
 const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;

@@ -1,14 +1,16 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { MenuItem, Menu, Popover, InputGroup } from "@blueprintjs/core";
-import { SolidQueryInputSolidFragment } from "./types/SolidQueryInputSolidFragment";
+import { MenuItem, Menu, Popover, InputGroup, Button } from "@blueprintjs/core";
+import { GraphQueryItem } from "./GraphQueryImpl";
+import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
 
-interface SolidQueryInputProps {
-  solids: SolidQueryInputSolidFragment[];
+interface GraphQueryInputProps {
+  items: GraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
   autoFocus?: boolean;
+  presets?: { name: string; value: string }[];
 }
 
 interface ActiveSuggestionInfo {
@@ -21,13 +23,13 @@ interface ActiveSuggestionInfo {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForSolids = (solids: SolidQueryInputSolidFragment[]) => {
-  const seed = solids.length % 3;
+const placeholderTextForItems = (items: GraphQueryItem[]) => {
+  const seed = items.length % 3;
 
   let placeholder = "Type a Solid Subset";
-  if (solids.length === 0) return placeholder;
+  if (items.length === 0) return placeholder;
 
-  const ranked = solids.map<{
+  const ranked = items.map<{
     incount: number;
     outcount: number;
     name: string;
@@ -50,7 +52,7 @@ const placeholderTextForSolids = (solids: SolidQueryInputSolidFragment[]) => {
   return placeholder;
 };
 
-export const SolidQueryInput = (props: SolidQueryInputProps) => {
+export const GraphQueryInput = (props: GraphQueryInputProps) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [focused, setFocused] = React.useState<boolean>(false);
   const [pendingValue, setPendingValue] = React.useState<string>(props.value);
@@ -65,12 +67,12 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
   const lastClause = /(\*?\+*)([\w\d_-]+)(\+*\*?)$/.exec(pendingValue);
   let menu: JSX.Element | undefined = undefined;
 
-  const [, prefix, lastSolidName, suffix] = lastClause || [];
+  const [, prefix, lastElementName, suffix] = lastClause || [];
   const suggestions =
-    lastSolidName && !suffix
-      ? props.solids
+    lastElementName && !suffix
+      ? props.items
           .map(s => s.name)
-          .filter(n => n.startsWith(lastSolidName) && n !== lastSolidName)
+          .filter(n => n.startsWith(lastElementName) && n !== lastElementName)
       : [];
 
   const onConfirmSuggestion = (suggestion: string) => {
@@ -156,19 +158,19 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
   };
 
   return (
-    <SolidQueryInputContainer>
+    <GraphQueryInputContainer>
       <Popover
         minimal={true}
         isOpen={menu !== undefined}
         position={"bottom"}
         content={menu}
       >
-        <SolidQueryInputField
+        <GraphQueryInputField
           type="text"
           value={pendingValue}
           leftIcon={"send-to-graph"}
           autoFocus={props.autoFocus}
-          placeholder={placeholderTextForSolids(props.solids)}
+          placeholder={placeholderTextForItems(props.items)}
           onChange={(e: React.ChangeEvent<any>) =>
             setPendingValue(e.target.value)
           }
@@ -181,11 +183,47 @@ export const SolidQueryInput = (props: SolidQueryInputProps) => {
           onKeyUp={onKeyUp}
         />
       </Popover>
-    </SolidQueryInputContainer>
+      {props.presets &&
+        (props.presets.find(p => p.value === pendingValue) ? (
+          <Button
+            style={{ marginLeft: 5 }}
+            icon={IconNames.LAYERS}
+            rightIcon={IconNames.CROSS}
+            onClick={() => {
+              props.onChange("");
+            }}
+          />
+        ) : (
+          <Popover
+            content={
+              <Menu>
+                <Menu.Divider title="Presets" />
+                {props.presets.map(preset => (
+                  <MenuItem
+                    key={preset.name}
+                    text={preset.name}
+                    onMouseDown={(e: React.MouseEvent<any>) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      props.onChange(preset.value);
+                    }}
+                  />
+                ))}
+              </Menu>
+            }
+          >
+            <Button
+              style={{ marginLeft: 5 }}
+              icon={IconNames.LAYERS}
+              rightIcon={IconNames.CARET_UP}
+            />
+          </Popover>
+        ))}
+    </GraphQueryInputContainer>
   );
 };
 
-SolidQueryInput.fragments = {
+GraphQueryInput.fragments = {
   SolidQueryInputSolidFragment: gql`
     fragment SolidQueryInputSolidFragment on Solid {
       name
@@ -207,15 +245,16 @@ SolidQueryInput.fragments = {
   `
 };
 
-const SolidQueryInputContainer = styled.div`
+const GraphQueryInputContainer = styled.div`
   z-index: 2;
   position: absolute;
-  bottom: 10px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
 `;
 
-const SolidQueryInputField = styled(InputGroup)`
+const GraphQueryInputField = styled(InputGroup)`
+  font-size: 14px;
   width: 30vw;
   font-size: 14px;
 `;
