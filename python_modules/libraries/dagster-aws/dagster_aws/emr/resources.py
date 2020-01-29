@@ -191,7 +191,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         'action_on_failure': Field(str, is_required=False, default_value='CANCEL_AND_WAIT'),
         'staging_bucket': Field(
             str,
-            is_optional=False,
+            is_required=True,
             description='S3 staging bucket to use for staging the produced main.py and zip file of'
             ' Python code',
         ),

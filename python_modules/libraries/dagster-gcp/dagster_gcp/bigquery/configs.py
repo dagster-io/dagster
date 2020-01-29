@@ -295,7 +295,7 @@ def define_bigquery_load_config():
         your-project.your_dataset.your_table.
         See https://g.co/cloud/bigquery/docs/reference/rest/v2/jobs#configuration.query.destinationTable
         ''',
-        is_optional=False,
+        is_required=True,
     )
 
     destination_table_description = Field(
@@ -372,7 +372,7 @@ def define_bigquery_load_config():
 
 
 def define_bigquery_create_dataset_config():
-    dataset = Field(Dataset, description='A dataset to create.', is_optional=False)
+    dataset = Field(Dataset, description='A dataset to create.', is_required=True)
 
     exists_ok = Field(
         Bool,
@@ -385,7 +385,7 @@ def define_bigquery_create_dataset_config():
 
 
 def define_bigquery_delete_dataset_config():
-    dataset = Field(Dataset, description='A dataset to delete.', is_optional=False)
+    dataset = Field(Dataset, description='A dataset to delete.', is_required=True)
 
     delete_contents = Field(
         Bool,

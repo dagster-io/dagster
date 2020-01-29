@@ -335,7 +335,7 @@ def scalar_config_solid(context):
     yield Output(context.solid_config)
 
 
-@solid(config=Field(String, is_optional=False))
+@solid(config=Field(String, is_required=True))
 def required_scalar_config_solid(context):
     yield Output(context.solid_config)
 

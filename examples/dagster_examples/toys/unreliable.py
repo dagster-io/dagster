@@ -10,7 +10,7 @@ def unreliable_start(_):
     return 1
 
 
-@solid(config={'rate': Field(float, is_optional=True, default_value=DEFAULT_EXCEPTION_RATE)})
+@solid(config={'rate': Field(float, is_required=False, default_value=DEFAULT_EXCEPTION_RATE)})
 def unreliable(context, num):
     if random() < context.solid_config['rate']:
         raise Exception('blah')

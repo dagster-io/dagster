@@ -16,8 +16,8 @@ class ContextFilter(logging.Filter):
     {
         'log_level': Field(str, is_required=False, default_value='INFO'),
         'name': Field(str, is_required=False, default_value='dagster_papertrail'),
-        'papertrail_address': Field(str, description='Papertrail URL', is_optional=False),
-        'papertrail_port': Field(int, description='Papertrail port', is_optional=False),
+        'papertrail_address': Field(str, description='Papertrail URL', is_required=True),
+        'papertrail_port': Field(int, description='Papertrail port', is_required=True),
     },
     description='A JSON-formatted console logger',
 )

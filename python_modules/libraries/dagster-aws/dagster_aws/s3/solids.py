@@ -55,9 +55,9 @@ def last_key(key):
 @solid(
     config={
         'Bucket': Field(
-            String, description='The name of the bucket to upload to.', is_optional=False
+            String, description='The name of the bucket to upload to.', is_required=True
         ),
-        'Key': Field(String, description='The name of the key to upload to.', is_optional=False),
+        'Key': Field(String, description='The name of the key to upload to.', is_required=True),
     },
     input_defs=[InputDefinition('file_handle', FileHandle, description='The file to upload.')],
     output_defs=[OutputDefinition(name='s3_file_handle', dagster_type=S3FileHandle)],

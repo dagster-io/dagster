@@ -174,7 +174,7 @@ class SSHResource(object):
 
 @resource(
     {
-        'remote_host': Field(str, description='remote host to connect', is_optional=False),
+        'remote_host': Field(str, description='remote host to connect', is_required=True),
         'remote_port': Field(
             int,
             description='port of remote host to connect (Default is paramiko SSH_PORT)',

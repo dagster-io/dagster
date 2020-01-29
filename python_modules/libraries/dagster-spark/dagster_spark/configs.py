@@ -21,7 +21,7 @@ def define_spark_config():
     master_url = Field(
         str,
         description='The master URL for the cluster (e.g. spark://23.195.26.187:7077)',
-        is_optional=False,
+        is_required=True,
     )
 
     deploy_mode = Field(
@@ -43,7 +43,7 @@ def define_spark_config():
                         dependencies. The URL must be globally visible inside of your cluster, for
                         instance, an hdfs:// path or a file:// path that is present on all nodes.
                         ''',
-        is_optional=False,
+        is_required=True,
     )
 
     application_arguments = Field(

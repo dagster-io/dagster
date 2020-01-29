@@ -55,7 +55,7 @@ def _define_configurations():
 
 
 def _define_steps():
-    name = Field(String, description='The name of the step.', is_optional=False)
+    name = Field(String, description='The name of the step.', is_required=True)
 
     actionOnFailure = Field(
         EmrActionOnFailure,
@@ -77,7 +77,7 @@ def _define_steps():
                 'Jar': Field(
                     String,
                     description='A path to a JAR file run during the step.',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'MainClass': Field(
                     String,
@@ -111,13 +111,13 @@ def _define_steps():
 
 
 def _define_bootstrap_actions():
-    name = Field(String, description='The name of the bootstrap action.', is_optional=False)
+    name = Field(String, description='The name of the bootstrap action.', is_required=True)
 
     path = Field(
         String,
         description='''Location of the script to run during a bootstrap action. Can be either a
         location in Amazon S3 or on a local file system.''',
-        is_optional=False,
+        is_required=True,
     )
 
     args = Field(
@@ -132,7 +132,7 @@ def _define_bootstrap_actions():
             'ScriptBootstrapAction': Field(
                 Shape(fields={'Path': path, 'Args': args}),
                 description='The script run by the bootstrap action.',
-                is_optional=False,
+                is_required=True,
             ),
         }
     )
@@ -153,7 +153,7 @@ def _define_ebs_configuration():
                     EbsVolumeType,
                     description='''The volume type. Volume types supported are gp2, io1,
                     standard.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'Iops': Field(
                     Int,
@@ -165,13 +165,13 @@ def _define_ebs_configuration():
                     Int,
                     description='''The volume size, in gibibytes (GiB). This can be a number from
                     1 - 1024. If the volume type is EBS-optimized, the minimum value is 10.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
             }
         ),
         description='''EBS volume specifications such as volume type, IOPS, and size (GiB) that will
         be requested for the EBS volume attached to an EC2 instance in the cluster.''',
-        is_optional=False,
+        is_required=True,
     )
 
     volumes_per_instance = Field(
@@ -238,7 +238,7 @@ def _define_auto_scaling_policy():
                     AdjustmentType is set to PERCENT_CHANGE_IN_CAPACITY , the value should express
                     the percentage as an integer. For example, -20 indicates a decrease in 20%
                     increments of cluster capacity.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'CoolDown': Field(
                     Int,
@@ -251,7 +251,7 @@ def _define_auto_scaling_policy():
         ),
         description='''The type of adjustment the automatic scaling activity makes when
                     triggered, and the periodicity of the adjustment.''',
-        is_optional=False,
+        is_required=True,
     )
 
     action = Field(
@@ -267,14 +267,14 @@ def _define_auto_scaling_policy():
             }
         ),
         description='The conditions that trigger an automatic scaling activity.',
-        is_optional=False,
+        is_required=True,
     )
 
     dimensions = Field(
         [
             Shape(
                 fields={
-                    'Key': Field(String, description='The dimension name.', is_optional=False),
+                    'Key': Field(String, description='The dimension name.', is_required=True),
                     'Value': Field(String, description='The dimension value.', is_required=False),
                 }
             )
@@ -293,7 +293,7 @@ def _define_auto_scaling_policy():
                                 EmrComparisonOperator,
                                 description='''Determines how the metric specified by MetricName is
                                 compared to the value specified by Threshold.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'EvaluationPeriods': Field(
                                 Int,
@@ -320,7 +320,7 @@ def _define_auto_scaling_policy():
                                 applied. EMR CloudWatch metrics are emitted every five minutes (300
                                 seconds), so if an EMR CloudWatch metric is specified, specify
                                 300.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'Statistic': Field(
                                 EmrStatistic,
@@ -332,7 +332,7 @@ def _define_auto_scaling_policy():
                                 Float,
                                 description='''The value against which the specified statistic is
                                 compared.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'Unit': Field(
                                 EmrUnit,
@@ -347,13 +347,13 @@ def _define_auto_scaling_policy():
                     description='''The definition of a CloudWatch metric alarm. When the defined
                     alarm conditions are met along with other trigger parameters, scaling activity
                     begins.''',
-                    is_optional=False,
+                    is_required=True,
                 )
             }
         ),
         description='''The CloudWatch alarm definition that determines when automatic scaling
         activity is triggered.''',
-        is_optional=False,
+        is_required=True,
     )
 
     return Field(
@@ -368,7 +368,7 @@ def _define_auto_scaling_policy():
                                 group below which scaling activities are not allowed to shrink.
                                 Scale-in activities will not terminate instances below this
                                 boundary.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'MaxCapacity': Field(
                                 Int,
@@ -376,14 +376,14 @@ def _define_auto_scaling_policy():
                                 group beyond which scaling activities are not allowed to grow.
                                 Scale-out activities will not add instances beyond this
                                 boundary.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                         }
                     ),
                     description='''The upper and lower EC2 instance limits for an automatic scaling
                     policy. Automatic scaling activity will not cause an instance group to grow
                     above or below these limits.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'Rules': Field(
                     [
@@ -410,7 +410,7 @@ def _define_auto_scaling_policy():
                     are added or removed, and the periodicity of adjustments. The automatic scaling
                     policy for an instance group can comprise one or more automatic scaling
                     rules.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
             }
         ),
@@ -442,7 +442,7 @@ def _define_instance_groups():
                     'InstanceRole': Field(
                         EmrInstanceRole,
                         description='The role of the instance group in the cluster.',
-                        is_optional=False,
+                        is_required=True,
                     ),
                     'BidPrice': Field(
                         String,
@@ -459,12 +459,12 @@ def _define_instance_groups():
                         String,
                         description='''The EC2 instance type for all instances in the instance
                             group.''',
-                        is_optional=False,
+                        is_required=True,
                     ),
                     'InstanceCount': Field(
                         Int,
                         description='Target number of instances for the instance group.',
-                        is_optional=False,
+                        is_required=True,
                     ),
                     'Configurations': _define_configurations(),
                     'EbsConfiguration': _define_ebs_configuration(),
@@ -495,7 +495,7 @@ def _define_instance_fleets():
         TargetOnDemandCapacity should be greater than 0. For a master instance fleet, only one of
         TargetSpotCapacity and TargetOnDemandCapacity can be specified, and its value must be 1.
         ''',
-        is_optional=False,
+        is_required=True,
     )
 
     target_spot_capacity = Field(
@@ -525,7 +525,7 @@ def _define_instance_fleets():
                     'InstanceType': Field(
                         String,
                         description='An EC2 instance type, such as m3.xlarge.',
-                        is_optional=False,
+                        is_required=True,
                     ),
                     'WeightedCapacity': Field(
                         Int,
@@ -577,7 +577,7 @@ def _define_instance_fleets():
                                 TimeOutAction is taken. Minimum value is 5 and maximum value is
                                 1440. The timeout applies only during initial provisioning, when the
                                 cluster is first created.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'TimeoutAction': Field(
                                 EmrTimeoutAction,
@@ -588,7 +588,7 @@ def _define_instance_fleets():
                                 SWITCH_TO_ON_DEMAND. SWITCH_TO_ON_DEMAND specifies that if no Spot
                                 instances are available, On-Demand Instances should be provisioned
                                 to fulfill any remaining Spot capacity.''',
-                                is_optional=False,
+                                is_required=True,
                             ),
                             'BlockDurationMinutes': Field(
                                 Int,
@@ -607,7 +607,7 @@ def _define_instance_fleets():
                     ),
                     description='''The launch specification for Spot instances in the fleet, which
                     determines the defined duration and provisioning timeout behavior.''',
-                    is_optional=False,
+                    is_required=True,
                 )
             }
         ),
@@ -643,7 +643,7 @@ def _define_instance_fleets():
 
 
 def define_emr_run_job_flow_config():
-    name = Field(String, description='The name of the job flow.', is_optional=False)
+    name = Field(String, description='The name of the job flow.', is_required=True)
 
     log_uri = Field(
         String,
@@ -801,7 +801,7 @@ def define_emr_run_job_flow_config():
             }
         ),
         description='A specification of the number and type of Amazon EC2 instances.',
-        is_optional=False,
+        is_required=True,
     )
 
     supported_products = Field(
@@ -819,7 +819,7 @@ def define_emr_run_job_flow_config():
         [
             Shape(
                 fields={
-                    'Name': Field(String, is_optional=False),
+                    'Name': Field(String, is_required=True),
                     'Args': Field([String], description='The list of user-supplied arguments.'),
                 }
             )
@@ -852,7 +852,7 @@ def define_emr_run_job_flow_config():
             Shape(
                 fields={
                     'Name': Field(
-                        String, description='The name of the application.', is_optional=False
+                        String, description='The name of the application.', is_required=True
                     ),
                     'Version': Field(
                         String, description='The version of the application.', is_required=False
@@ -924,7 +924,7 @@ def define_emr_run_job_flow_config():
                         String,
                         description='''A user-defined key, which is the minimum required information
                         for a valid tag. For more information, see the EMR Tag guide.''',
-                        is_optional=False,
+                        is_required=True,
                     ),
                     'Value': Field(
                         String,
@@ -1006,14 +1006,14 @@ def define_emr_run_job_flow_config():
                     String,
                     description='''The name of the Kerberos realm to which all nodes in a cluster
                     belong. For example, EC2.INTERNAL.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'KdcAdminPassword': Field(
                     String,
                     description='''The password used within the cluster for the kadmin service on
                     the cluster-dedicated KDC, which maintains Kerberos principals, password
                     policies, and keytabs for the cluster.''',
-                    is_optional=False,
+                    is_required=True,
                 ),
                 'CrossRealmTrustPrincipalPassword': Field(
                     String,

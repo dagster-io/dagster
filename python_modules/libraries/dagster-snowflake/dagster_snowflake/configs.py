@@ -14,9 +14,9 @@ def define_snowflake_config():
         is_required=False,
     )
 
-    user = Field(String, description='User login name.', is_optional=False)
+    user = Field(String, description='User login name.', is_required=True)
 
-    password = Field(String, description='User password.', is_optional=False)
+    password = Field(String, description='User password.', is_required=True)
 
     database = Field(
         String,
