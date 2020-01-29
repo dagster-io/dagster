@@ -177,11 +177,11 @@ def define_subdag_pipeline():
     def waiter(context):
         done = False
         while not done:
+            time.sleep(0.25)
             with open(context.solid_config, 'r') as fd:
                 if fd.read() == '111':
                     done = True
-            time.sleep(0.25)
-
+                    time.sleep(1)
     @solid(
         input_defs=[InputDefinition('after', Nothing)],
         output_defs=[OutputDefinition(Nothing)],
