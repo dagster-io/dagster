@@ -19,7 +19,6 @@ from dagster import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import file_relative_path
-from dagster.utils.test import FilesytemTestScheduler
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -41,7 +40,7 @@ def define_repository():
     return RepositoryDefinition(name='test', pipeline_defs=[math])
 
 
-@schedules(scheduler=FilesytemTestScheduler)
+@schedules
 def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",

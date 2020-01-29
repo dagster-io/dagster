@@ -4,10 +4,16 @@ import sys
 import mock
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
-from dagster import ScheduleDefinition
-from dagster.core.instance import DagsterInstance
+from dagster import ScheduleDefinition, seven
+from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.scheduler import Schedule, ScheduleStatus, get_schedule_change_set
+from dagster.core.scheduler.storage import FilesystemScheduleStorage
+from dagster.core.storage.event_log import InMemoryEventLogStorage
+from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
+from dagster.core.storage.root import LocalArtifactStorage
+from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.utils import file_relative_path
+from dagster.utils.test import FilesytemTestScheduler
 
 GET_SCHEDULES_QUERY = '''
 {
@@ -39,37 +45,48 @@ def default_execution_params():
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
 def test_get_all_schedules():
-    instance = DagsterInstance.local_temp()
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-    )
 
-    # Initialize scheduler
-    scheduler_handle = context.scheduler_handle
-    scheduler_handle.up(
-        python_path=sys.executable, repository_path="", schedule_storage=instance.schedule_storage
-    )
-
-    # Get scheduler
-    scheduler = scheduler_handle.get_scheduler(instance.schedule_storage)
-
-    # Start schedule
-    repository = context.get_repository()
-    schedule = scheduler.start_schedule(repository.name, "no_config_pipeline_hourly_schedule")
-
-    # Query Scheduler + all Schedules
-    scheduler_result = execute_dagster_graphql(context, GET_SCHEDULES_QUERY)
-
-    assert scheduler_result.data
-    assert scheduler_result.data['scheduler']
-    assert scheduler_result.data['scheduler']['runningSchedules']
-    assert len(scheduler_result.data['scheduler']['runningSchedules']) == 8
-
-    for schedule in scheduler_result.data['scheduler']['runningSchedules']:
-        assert (
-            schedule['scheduleDefinition']['environmentConfigYaml']
-            == 'storage:\n  filesystem: {}\n'
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            schedule_storage=FilesystemScheduleStorage(temp_dir),
+            scheduler=FilesytemTestScheduler(temp_dir),
         )
+
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        # Initialize scheduler
+        scheduler_handle = context.scheduler_handle
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            repository_name="test",
+            instance=instance,
+        )
+
+        # Start schedule
+        repository = context.get_repository()
+        schedule = instance.start_schedule(repository.name, "no_config_pipeline_hourly_schedule")
+
+        # Query Scheduler + all Schedules
+        scheduler_result = execute_dagster_graphql(context, GET_SCHEDULES_QUERY)
+
+        assert scheduler_result.data
+        assert scheduler_result.data['scheduler']
+        assert scheduler_result.data['scheduler']['runningSchedules']
+        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 8
+
+        for schedule in scheduler_result.data['scheduler']['runningSchedules']:
+            assert (
+                schedule['scheduleDefinition']['environmentConfigYaml']
+                == 'storage:\n  filesystem: {}\n'
+            )
 
 
 def test_scheduler_change_set_adding_schedule():

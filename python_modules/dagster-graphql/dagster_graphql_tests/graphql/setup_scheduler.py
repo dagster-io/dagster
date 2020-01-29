@@ -2,7 +2,6 @@ import datetime
 
 from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, daily_schedule, schedules
 from dagster.core.definitions.partition import last_empty_partition
-from dagster.utils.test import FilesytemTestScheduler
 
 integer_partition_set = PartitionSetDefinition(
     name='scheduled_integer_partitions',
@@ -13,7 +12,7 @@ integer_partition_set = PartitionSetDefinition(
 )
 
 
-@schedules(scheduler=FilesytemTestScheduler)
+@schedules
 def define_scheduler():
 
     no_config_pipeline_hourly_schedule = ScheduleDefinition(

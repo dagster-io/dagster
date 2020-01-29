@@ -17,23 +17,13 @@ class DagsterGraphQLContext(object):
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
 
-        self.scheduler_handle = self.get_handle().build_scheduler_handle(
-            artifacts_dir=self.instance.schedules_directory()
-        )
         self._cached_pipelines = {}
-
+        self.scheduler_handle = self.get_handle().build_scheduler_handle()
         self.partitions_handle = self.get_handle().build_partitions_handle()
 
     @property
     def instance(self):
         return self._instance
-
-    def get_scheduler(self):
-        return (
-            self.scheduler_handle.get_scheduler(self.instance.schedule_storage)
-            if self.scheduler_handle
-            else None
-        )
 
     def get_handle(self):
         return self._handle

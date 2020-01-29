@@ -441,10 +441,10 @@ def validate_partition_slice(partitions, name, value):
     return index if is_start else index + 1
 
 
-def get_partition_sets_for_handle(handle, artifacts_dir):
+def get_partition_sets_for_handle(handle):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
     partitions_handle = handle.build_partitions_handle()
-    scheduler_handle = handle.build_scheduler_handle(artifacts_dir)
+    scheduler_handle = handle.build_scheduler_handle()
     partition_sets = []
     if partitions_handle:
         partition_sets.extend(partitions_handle.get_partition_sets())
@@ -542,7 +542,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     pipeline = repository.get_pipeline(pipeline_name)
 
     # Resolve partition set
-    all_partition_sets = get_partition_sets_for_handle(handle, instance.schedules_directory())
+    all_partition_sets = get_partition_sets_for_handle(handle)
     pipeline_partition_sets = [x for x in all_partition_sets if x.pipeline_name == pipeline.name]
     if not pipeline_partition_sets:
         raise click.UsageError('No partition sets found for pipeline `{}`'.format(pipeline.name))

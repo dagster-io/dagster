@@ -4,6 +4,34 @@
 
 **Breaking**
 
+- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules that have been running are no longer compatible with current storage. Run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.
+
+  To use the `SystemCronScheduler`, instead of:
+
+  ```
+  @schedules(scheduler=SystemCronScheduler)
+  def define_schedules():
+    ...
+  ```
+
+  Remove the `scheduler` argument:
+
+  ```
+  @schedules
+  def define_schedules():
+    ...
+  ```
+
+  And in `dagster.yaml`:
+
+  ```
+  scheduler:
+    module: dagster_cron.cron_scheduler
+    class: SystemCronScheduler
+    config:
+      artifacts_dir: /path/to/dagster_home/schedules
+  ```
+
 - `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
 - Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.

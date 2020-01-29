@@ -18,7 +18,7 @@ from ..decorator_utils import (
     validate_decorated_fn_input_args,
     validate_decorated_fn_positionals,
 )
-from ..scheduler import Scheduler, SchedulerHandle
+from ..scheduler import SchedulerHandle
 from .composition import (
     InputMappingNode,
     composite_mapping_from_output,
@@ -144,40 +144,11 @@ class _Solid(object):
         )
 
 
-class _SchedulerHandle(object):
-    def __init__(self, scheduler_type):
-        self.scheduler_type = check.subclass_param(scheduler_type, 'scheduler_type', Scheduler)
-
-    def __call__(self, fn):
-        check.callable_param(fn, 'fn')
-
-        schedule_defs = fn()
-        for schedule_def in schedule_defs:
-            if not isinstance(schedule_def, ScheduleDefinition):
-                raise DagsterInvariantViolationError(
-                    '{fn_name} must return a list of ScheduleDefinitions'.format(
-                        fn_name=fn.__name__
-                    )
-                )
-
-        def handle_fn(artifacts_dir, repository_name):
-            return SchedulerHandle(
-                scheduler_type=self.scheduler_type,
-                schedule_defs=schedule_defs,
-                artifacts_dir=artifacts_dir,
-                repository_name=repository_name,
-            )
-
-        return handle_fn
-
-
-def schedules(scheduler):
+def schedules(name=None):
     '''Create a scheduler with a :py:class:`~dagster.core.scheduler.Scheduler` implementation and
     set of :py:class:`ScheduleDefinition` instances.
 
-    Decorate a function that returns a list of :py:class:`ScheduleDefinition`. The decorator has
-    an argument that takes a :py:class:`~dagster.core.scheduler.Scheduler` implementation, such as
-    :py:func:`~dagster_cron.SystemCronScheduler`.
+    Decorate a function that returns a list of :py:class:`ScheduleDefinition`.
 
     Args:
         scheduler (Scheduler): The scheduler implementation to use.
@@ -186,9 +157,7 @@ def schedules(scheduler):
 
     .. code-block:: python
 
-        from dagster_cron import SystemCronScheduler
-
-        @schedules(scheduler=SystemCronScheduler)
+        @schedules
         def define_scheduler():
             hello_world_schedule = ScheduleDefinition(
                 name='hello_world_schedule',
@@ -197,7 +166,12 @@ def schedules(scheduler):
 
             return [hello_world_schedule]
     '''
-    return _SchedulerHandle(scheduler)
+
+    if callable(name):
+        return SchedulerHandle(schedule_defs=name())
+
+    def _wrap(fn):
+        return SchedulerHandle(schedule_defs=fn())
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):

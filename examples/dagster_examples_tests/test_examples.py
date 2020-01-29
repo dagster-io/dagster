@@ -50,7 +50,8 @@ def test_schedules():
         scheduler_handle.up(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '../'),
-            schedule_storage=instance.schedule_storage,
+            repository_name="hello_cereal_repository",
+            instance=instance,
         )
 
         for schedule_name in [

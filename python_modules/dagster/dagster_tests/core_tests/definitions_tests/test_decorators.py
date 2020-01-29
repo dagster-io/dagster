@@ -26,7 +26,6 @@ from dagster import (
 from dagster.core.definitions.decorators import daily_schedule, hourly_schedule, monthly_schedule
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
-from dagster.utils.test import FilesytemTestScheduler
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
@@ -293,7 +292,7 @@ def test_solid_no_arg():
 
 
 def test_scheduler():
-    @schedules(scheduler=FilesytemTestScheduler)
+    @schedules
     def define_scheduler():
         return [
             ScheduleDefinition(

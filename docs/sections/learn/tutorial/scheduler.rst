@@ -16,12 +16,34 @@ You'll need to install the ``dagster-cron`` library.
 
 You must also ensure that ``cron`` is installed on the machine you're running the scheduler on.
 
+Pipeline
+^^^^^^^^
+
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 1-36
+   :lines: 1-34
    :caption: scheduler.py
 
 As before, we've defined some solids, a pipeline, and a repository.
+
+Defining the scheduler
+^^^^^^^^^^^^^^^^^^^^^^
+
+We first need to define the Scheduler on our :py:class:`~dagster.core.instance.DagsterInstance`. For
+now, the only implemented scheduler is ``dagster_cron.SystemCronScheduler``, but this is pluggable
+(and you can write your own). To use the scheduler, add the following lines
+to your ``$DAGSTER_HOME/dagster.yaml``:
+
+
+.. code-block:: yaml
+   :caption: dagster.yaml
+
+    scheduler:
+        module: dagster_cron.cron_scheduler
+        class: SystemCronScheduler
+        config:
+            artifacts_dir: /path/to/dagster_home/schedule
+
 
 Defining schedules
 ^^^^^^^^^^^^^^^^^^
@@ -32,13 +54,11 @@ using the standard cron syntax; the other parameters determine other familiar as
 pipeline will run, such as its config.
 
 We wrap the schedule definition in a function decorated with
-:py:class:`@schedules <dagster.schedules>`, which takes a single parameter, the scheduler to use.
-This is pluggable (and you can write your own), but for now the only implemented scheduler is
-``dagster_cron.SystemCronScheduler``.
+:py:class:`@schedules <dagster.schedules>`:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
-   :lines: 38-47
+   :lines: 36-45
    :lineno-start: 38
    :caption: scheduler.py
 
@@ -48,6 +68,7 @@ with a new key, ``scheduler``.
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.yaml
    :linenos:
    :caption: scheduler.yaml
+
 
 Starting schedules
 ^^^^^^^^^^^^^^^^^^

@@ -57,20 +57,12 @@ def get_schedule_change_set(old_schedules, new_schedule_defs):
 
 class SchedulerHandle(object):
     def __init__(
-        self, scheduler_type, schedule_defs, artifacts_dir, repository_name,
+        self, schedule_defs,
     ):
-
-        check.subclass_param(scheduler_type, 'scheduler_type', Scheduler)
         check.list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
-        check.str_param(artifacts_dir, 'artifacts_dir')
-        check.str_param(repository_name, 'repository_name')
-
-        self._Scheduler = scheduler_type
-        self._artifacts_dir = artifacts_dir
         self._schedule_defs = schedule_defs
-        self._repository_name = repository_name
 
-    def up(self, python_path, repository_path, schedule_storage):
+    def up(self, python_path, repository_path, repository_name, instance):
         '''SchedulerHandle stores a list of up-to-date ScheduleDefinitions and a reference to a
         ScheduleStorage. When `up` is called, it reconciles the ScheduleDefinitions list and
         ScheduleStorage to ensure there is a 1-1 correlation between ScheduleDefinitions and
@@ -92,9 +84,7 @@ class SchedulerHandle(object):
         for schedule_def in self._schedule_defs:
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
-            existing_schedule = schedule_storage.get_schedule_by_name(
-                self._repository_name, schedule_def.name
-            )
+            existing_schedule = instance.get_schedule_by_name(repository_name, schedule_def.name)
             if existing_schedule:
                 # Keep the status, but replace schedule_def, python_path, and repository_path
                 schedule = Schedule(
@@ -104,7 +94,7 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                schedule_storage.update_schedule(self._repository_name, schedule)
+                instance.update_schedule(repository_name, schedule)
                 schedules_to_restart.append(schedule)
             else:
                 schedule = Schedule(
@@ -114,30 +104,25 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                schedule_storage.add_schedule(self._repository_name, schedule)
+                instance.add_schedule(repository_name, schedule)
 
         # Delete all existing schedules that are not in schedule_defs
         schedule_def_names = {s.name for s in self._schedule_defs}
-        existing_schedule_names = set(
-            [s.name for s in schedule_storage.all_schedules(self._repository_name)]
-        )
+        existing_schedule_names = set([s.name for s in instance.all_schedules(repository_name)])
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
-
-        # End and restart schedules as appropriate
-        TempScheduler = self._Scheduler(self._artifacts_dir, schedule_storage)
 
         for schedule in schedules_to_restart:
             # Restart is only needed if the schedule was previously running
             if schedule.status == ScheduleStatus.RUNNING:
-                TempScheduler.stop_schedule(self._repository_name, schedule.name)
-                TempScheduler.start_schedule(self._repository_name, schedule.name)
+                instance.stop_schedule(repository_name, schedule.name)
+                instance.start_schedule(repository_name, schedule.name)
 
         for schedule_name in schedule_names_to_delete:
-            TempScheduler.end_schedule(self._repository_name, schedule_name)
+            instance.end_schedule(repository_name, schedule_name)
 
-    def get_change_set(self, schedule_storage):
+    def get_change_set(self, repository_name, instance):
         schedule_defs = self.all_schedule_defs()
-        schedules = schedule_storage.all_schedules(self._repository_name)
+        schedules = instance.all_schedules(repository_name)
         return get_schedule_change_set(schedules, schedule_defs)
 
     def all_schedule_defs(self):
@@ -148,32 +133,10 @@ class SchedulerHandle(object):
             schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
         )
 
-    def get_scheduler(self, schedule_storage):
-        return self._Scheduler(self._artifacts_dir, schedule_storage)
-
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def all_schedules(self, repository_name):
-        '''Return all the schedules present in the storage for a given repository.
-
-        Returns:
-            Iterable[RunningSchedule]: List of running scheudles.
-        '''
-
-    @abc.abstractmethod
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        '''Get a schedule by its name.
-
-        Args:
-            name (str): The name of the schedule
-
-        Returns:
-            Optional[RunningSchedule]
-        '''
-
-    @abc.abstractmethod
-    def start_schedule(self, repository_name, schedule_name):
+    def start_schedule(self, instance, repository_name, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:
@@ -181,7 +144,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def stop_schedule(self, repository_name, schedule_name):
+    def stop_schedule(self, instance, repository_name, schedule_name):
         '''Stops an existing pipeline schedule
 
         Args:
@@ -189,19 +152,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def end_schedule(self, repository_name, schedule_name):
+    def end_schedule(self, instance, repository_name, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:
             schedule_name (string): The schedule to end and delete
-        '''
-
-    @abc.abstractmethod
-    def log_path_for_schedule(self, repository_name, schedule_name):
-        '''Get the path to the log file for the given schedule
-
-        Args:
-            schedule_name (string): The schedule to get the log file for
         '''
 
 

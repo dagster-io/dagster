@@ -1,11 +1,9 @@
-import sys
 import uuid
 
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.scheduler.storage import FilesystemScheduleStorage
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -59,20 +57,12 @@ def test_basic_start_scheduled_execution_with_run_launcher():
             local_artifact_storage=LocalArtifactStorage(temp_dir),
             run_storage=InMemoryRunStorage(),
             event_storage=InMemoryEventLogStorage(),
-            schedule_storage=FilesystemScheduleStorage(temp_dir),
             compute_log_manager=NoOpComputeLogManager(temp_dir),
             run_launcher=test_queue,
         )
 
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable,
-            repository_path=file_relative_path(__file__, '../'),
-            schedule_storage=instance.schedule_storage,
         )
 
         result = execute_dagster_graphql(

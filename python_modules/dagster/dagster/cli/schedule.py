@@ -7,7 +7,7 @@ import six
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
-from dagster.core.instance import DagsterInstance, _is_dagster_home_set
+from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleStatus
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
@@ -62,8 +62,8 @@ def repository_target_argument(f):
     )
 
 
-def print_changes(scheduler_handle, instance, print_fn=print, preview=False):
-    changeset = scheduler_handle.get_change_set(instance.schedule_storage)
+def print_changes(scheduler_handle, repository_name, instance, print_fn=print, preview=False):
+    changeset = scheduler_handle.get_change_set(repository_name, instance.schedule_storage)
     if len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
@@ -121,12 +121,12 @@ def execute_preview_command(cli_args, print_fn):
     repository = handle.build_repository_definition()
 
     instance = DagsterInstance.get()
-    scheduler_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    scheduler_handle = handle.build_scheduler_handle()
     if not scheduler_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, instance, print_fn, preview=True)
+    print_changes(scheduler_handle, repository.name, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -145,9 +145,6 @@ def schedule_up_command(preview, **kwargs):
 
 
 def execute_up_command(preview, cli_args, print_fn):
-    if not _is_dagster_home_set():
-        raise click.UsageError(dagster_home_error_message_for_command('dagster schedule up'))
-
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
@@ -155,19 +152,17 @@ def execute_up_command(preview, cli_args, print_fn):
     repository_path = handle.data.repository_yaml
 
     instance = DagsterInstance.get()
-    scheduler_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    scheduler_handle = handle.build_scheduler_handle()
     if not scheduler_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, instance, print_fn, preview=preview)
+    print_changes(scheduler_handle, repository.name, instance, print_fn, preview=preview)
     if preview:
         return
 
     try:
-        scheduler_handle.up(
-            python_path, repository_path, schedule_storage=instance.schedule_storage
-        )
+        scheduler_handle.up(python_path, repository_path, repository.name, instance=instance)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -188,20 +183,15 @@ def schedule_list_command(running, stopped, name, verbose, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, verbose, cli_args, print_fn):
-    if not _is_dagster_home_set():
-        raise click.UsageError(dagster_home_error_message_for_command('dagster schedule list ...'))
-
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    schedule_handle = handle.build_scheduler_handle()
 
     if not schedule_handle and not name_filter:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
-
-    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository.name)
@@ -212,18 +202,14 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
 
     if running_filter:
         schedules = [
-            s
-            for s in scheduler.all_schedules(repository.name)
-            if s.status == ScheduleStatus.RUNNING
+            s for s in instance.all_schedules(repository.name) if s.status == ScheduleStatus.RUNNING
         ]
     elif stopped_filter:
         schedules = [
-            s
-            for s in scheduler.all_schedules(repository.name)
-            if s.status == ScheduleStatus.STOPPED
+            s for s in instance.all_schedules(repository.name) if s.status == ScheduleStatus.STOPPED
         ]
     else:
-        schedules = scheduler.all_schedules(repository.name)
+        schedules = instance.all_schedules(repository.name)
 
     for schedule in schedules:
         schedule_def = schedule_handle.get_schedule_def_by_name(schedule.name)
@@ -273,31 +259,27 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    if not _is_dagster_home_set():
-        raise click.UsageError(dagster_home_error_message_for_command('dagster schedule start ...'))
-
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    schedule_handle = handle.build_scheduler_handle()
 
     if not schedule_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
     if all_flag:
-        for schedule in scheduler.all_schedules(repository.name):
+        for schedule in instance.all_schedules(repository.name):
             try:
-                schedule = scheduler.start_schedule(repository.name, schedule.name)
+                schedule = instance.start_schedule(repository.name, schedule.name)
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
         print_fn("Started all schedules for repository {name}".format(name=repository.name))
     else:
         try:
-            schedule = scheduler.start_schedule(repository.name, schedule_name)
+            schedule = instance.start_schedule(repository.name, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -312,24 +294,20 @@ def schedule_stop_command(schedule_name, **kwargs):
     return execute_stop_command(schedule_name, kwargs, click.echo)
 
 
-def execute_stop_command(schedule_name, cli_args, print_fn):
-    if not _is_dagster_home_set():
-        raise click.UsageError(dagster_home_error_message_for_command('dagster schedule stop ...'))
+def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
+    instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
-    instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    schedule_handle = handle.build_scheduler_handle()
 
     if not schedule_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
-
     try:
-        scheduler.stop_schedule(repository.name, schedule_name)
+        instance.stop_schedule(repository.name, schedule_name)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -351,28 +329,22 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    if not _is_dagster_home_set():
-        raise click.UsageError(
-            dagster_home_error_message_for_command('dagster schedule restart ...')
-        )
-
     handle = handle_for_repo_cli_args(cli_args)
     repository = handle.build_repository_definition()
 
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    schedule_handle = handle.build_scheduler_handle()
 
     if not schedule_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
     if all_running_flag:
-        for schedule in scheduler.all_schedules(repository.name):
+        for schedule in instance.all_schedules(repository.name):
             if schedule.status == ScheduleStatus.RUNNING:
                 try:
-                    scheduler.stop_schedule(repository.name, schedule.name)
-                    scheduler.start_schedule(repository.name, schedule.name)
+                    instance.stop_schedule(repository.name, schedule.name)
+                    instance.start_schedule(repository.name, schedule.name)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -380,7 +352,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             "Restarted all running schedules for repository {name}".format(name=repository.name)
         )
     else:
-        schedule = scheduler.get_schedule_by_name(repository.name, schedule_name)
+        schedule = instance.get_schedule_by_name(repository.name, schedule_name)
         if schedule.status != ScheduleStatus.RUNNING:
             click.UsageError(
                 "Cannot restart a schedule {name} because is not currently running".format(
@@ -389,8 +361,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             )
 
         try:
-            scheduler.stop_schedule(repository.name, schedule_name)
-            scheduler.start_schedule(repository.name, schedule_name)
+            instance.stop_schedule(repository.name, schedule_name)
+            instance.start_schedule(repository.name, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -410,7 +382,7 @@ def execute_wipe_command(cli_args, print_fn):
 
     instance = DagsterInstance.get()
 
-    schedule_handle = handle.build_scheduler_handle(artifacts_dir=instance.schedules_directory())
+    schedule_handle = handle.build_scheduler_handle()
 
     if not schedule_handle:
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
@@ -420,8 +392,7 @@ def execute_wipe_command(cli_args, print_fn):
         'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
     )
     if confirmation == 'DELETE':
-        scheduler = schedule_handle.get_scheduler(instance.schedule_storage)
-        scheduler.wipe()
+        instance.wipe_all_schedules()
         print_fn("Wiped all schedules and schedule cron jobs")
     else:
         click.echo('Exiting without deleting all schedules and schedule cron jobs')

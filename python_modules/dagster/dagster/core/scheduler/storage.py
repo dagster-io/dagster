@@ -59,7 +59,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def get_log_path(self, repository_name, schedule):
+    def get_log_path(self, repository_name, schedule_name):
         '''Get path to store logs for schedule
         '''
 
@@ -147,11 +147,12 @@ class FilesystemScheduleStorage(ScheduleStorage, ConfigurableClass):
 
     def wipe(self):
         self._schedules = OrderedDict()
-        shutil.rmtree(self._base_dir)
+        for repository_name in self._schedules.keys():
+            shutil.rmtree(os.path.join(self._base_dir, repository_name))
 
-    def get_log_path(self, repository_name, schedule):
-        check.inst_param(schedule, 'schedule', Schedule)
-        return os.path.join(self._base_dir, repository_name, 'logs', '{}'.format(schedule.name),)
+    def get_log_path(self, repository_name, schedule_name):
+        check.str_param(schedule_name, 'schedule_name')
+        return os.path.join(self._base_dir, repository_name, 'logs', '{}'.format(schedule_name),)
 
     def _write_schedule_to_file(self, repository_name, schedule):
         repository_folder = os.path.join(self._base_dir, repository_name)

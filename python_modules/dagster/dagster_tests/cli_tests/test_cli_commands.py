@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import os
 import string
 
 import mock
@@ -45,6 +44,7 @@ from dagster.cli.schedule import (
 from dagster.config.field_utils import Shape
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import RunLauncher
+from dagster.core.scheduler.storage import FilesystemScheduleStorage
 from dagster.core.serdes import ConfigurableClass
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
@@ -630,7 +630,7 @@ def test_run_wipe_incorrect_delete_message():
     assert result.exit_code == 0
 
 
-@schedules(scheduler=FilesytemTestScheduler)
+@schedules
 def define_bar_scheduler():
     return [
         ScheduleDefinition(
@@ -642,219 +642,208 @@ def define_bar_scheduler():
     ]
 
 
-def test_schedules_list_without_dagster_home():
+@pytest.fixture(name="scheduler_instance")
+def define_scheduler_instance():
+    with seven.TemporaryDirectory() as temp_dir:
+        yield DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            schedule_storage=FilesystemScheduleStorage(temp_dir),
+            scheduler=FilesytemTestScheduler(temp_dir),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+        )
+
+
+@pytest.fixture(name="_patch_scheduler_instance")
+def mock_scheduler_instance(mocker, scheduler_instance):
+    mocker.patch(
+        'dagster.core.instance.DagsterInstance.get', return_value=scheduler_instance,
+    )
+
+
+def test_schedules_list(_patch_scheduler_instance):
     runner = CliRunner()
 
     result = runner.invoke(
         schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
     )
 
-    assert result.exit_code == 2
-    assert 'Error: $DAGSTER_HOME is not set' in result.output
+    if result.exception:
+        raise result.exception
+
+    assert result.exit_code == 0
+    assert result.output == ('Repository bar\n' '**************\n')
 
 
-def test_schedules_list():
+def test_schedules_up(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            if result.exception:
-                raise result.exception
-
-            assert result.exit_code == 0
-            assert result.output == ('Repository bar\n' '**************\n')
+    assert result.exit_code == 0
+    assert result.output == 'Changes:\n  + foo_schedule (add)\n'
 
 
-def test_schedules_up():
+def test_schedules_up_and_list(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            assert result.exit_code == 0
-            assert result.output == 'Changes:\n  + foo_schedule (add)\n'
+    result = runner.invoke(
+        schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
+
+    assert result.exit_code == 0
+    assert (
+        result.output == 'Repository bar\n'
+        '**************\n'
+        'Schedule: foo_schedule [STOPPED]\n'
+        'Cron Schedule: * * * * *\n'
+    )
 
 
-def test_schedules_up_and_list():
+def test_schedules_start_and_stop(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')],
+    )
 
-            result = runner.invoke(
-                schedule_list_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_start_command,
+        ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
 
-            assert result.exit_code == 0
-            assert (
-                result.output == 'Repository bar\n'
-                '**************\n'
-                'Schedule: foo_schedule [STOPPED]\n'
-                'Cron Schedule: * * * * *\n'
-            )
+    assert result.exit_code == 0
+    assert 'Started schedule foo_schedule\n' == result.output
+
+    result = runner.invoke(
+        schedule_stop_command, ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
+
+    assert result.exit_code == 0
+    assert 'Stopped schedule foo_schedule\n' == result.output
 
 
-def test_schedules_start_and_stop():
+def test_schedules_start_all(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            result = runner.invoke(
-                schedule_start_command,
-                ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
-            )
+    result = runner.invoke(
+        schedule_start_command, ['-y', script_relative_path('repository_file.yaml'), '--start-all'],
+    )
 
-            assert result.exit_code == 0
-            assert 'Started schedule foo_schedule\n' == result.output
-
-            result = runner.invoke(
-                schedule_stop_command,
-                ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
-            )
-
-            assert result.exit_code == 0
-            assert 'Stopped schedule foo_schedule\n' == result.output
+    assert result.exit_code == 0
+    assert result.output == 'Started all schedules for repository bar\n'
 
 
-def test_schedules_start_all():
-    runner = CliRunner()
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
-
-            result = runner.invoke(
-                schedule_start_command,
-                ['-y', script_relative_path('repository_file.yaml'), '--start-all'],
-            )
-
-            assert result.exit_code == 0
-            assert result.output == 'Started all schedules for repository bar\n'
-
-
-def test_schedules_wipe_correct_delete_message():
+def test_schedules_wipe_correct_delete_message(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            result = runner.invoke(
-                schedule_wipe_command,
-                ['-y', script_relative_path('repository_file.yaml')],
-                input="DELETE\n",
-            )
+    result = runner.invoke(
+        schedule_wipe_command,
+        ['-y', script_relative_path('repository_file.yaml')],
+        input="DELETE\n",
+    )
 
-            assert result.exit_code == 0
-            assert 'Wiped all schedules and schedule cron jobs' in result.output
+    if result.exception:
+        raise result.exception
 
-            result = runner.invoke(
-                schedule_up_command,
-                ['-y', script_relative_path('repository_file.yaml'), '--preview'],
-            )
+    assert result.exit_code == 0
+    assert 'Wiped all schedules and schedule cron jobs' in result.output
 
-            # Verify schedules were wiped
-            assert result.exit_code == 0
-            assert result.output == 'Planned Changes:\n  + foo_schedule (add)\n'
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml'), '--preview'],
+    )
+
+    # Verify schedules were wiped
+    assert result.exit_code == 0
+    assert result.output == 'Planned Changes:\n  + foo_schedule (add)\n'
 
 
-def test_schedules_wipe_incorrect_delete_message():
+def test_schedules_wipe_incorrect_delete_message(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            result = runner.invoke(
-                schedule_wipe_command,
-                ['-y', script_relative_path('repository_file.yaml')],
-                input="WRONG\n",
-            )
+    result = runner.invoke(
+        schedule_wipe_command,
+        ['-y', script_relative_path('repository_file.yaml')],
+        input="WRONG\n",
+    )
 
-            assert result.exit_code == 0
-            assert 'Exiting without deleting all schedules and schedule cron jobs' in result.output
+    assert result.exit_code == 0
+    assert 'Exiting without deleting all schedules and schedule cron jobs' in result.output
 
-            result = runner.invoke(
-                schedule_up_command,
-                ['-y', script_relative_path('repository_file.yaml'), '--preview'],
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml'), '--preview'],
+    )
 
-            # Verify schedules were not wiped
-            assert result.exit_code == 0
-            assert (
-                result.output
-                == 'No planned changes to schedules.\n1 schedules will remain unchanged\n'
-            )
+    # Verify schedules were not wiped
+    assert result.exit_code == 0
+    assert result.output == 'No planned changes to schedules.\n1 schedules will remain unchanged\n'
 
 
-def test_schedules_restart():
+def test_schedules_restart(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            result = runner.invoke(
-                schedule_start_command,
-                ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
-            )
+    result = runner.invoke(
+        schedule_start_command,
+        ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
 
-            result = runner.invoke(
-                schedule_restart_command,
-                ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
-            )
+    result = runner.invoke(
+        schedule_restart_command,
+        ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
 
-            assert result.exit_code == 0
-            assert 'Restarted schedule foo_schedule' in result.output
+    assert result.exit_code == 0
+    assert 'Restarted schedule foo_schedule' in result.output
 
 
-def test_schedules_restart_all():
+def test_schedules_restart_all(_patch_scheduler_instance):
     runner = CliRunner()
 
-    with seven.TemporaryDirectory() as temp_dir:
-        with mock.patch.dict(os.environ, {"DAGSTER_HOME": temp_dir}):
-            result = runner.invoke(
-                schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
-            )
+    result = runner.invoke(
+        schedule_up_command, ['-y', script_relative_path('repository_file.yaml')]
+    )
 
-            result = runner.invoke(
-                schedule_start_command,
-                ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
-            )
+    result = runner.invoke(
+        schedule_start_command,
+        ['-y', script_relative_path('repository_file.yaml'), 'foo_schedule'],
+    )
 
-            result = runner.invoke(
-                schedule_restart_command,
-                [
-                    '-y',
-                    script_relative_path('repository_file.yaml'),
-                    'foo_schedule',
-                    '--restart-all-running',
-                ],
-            )
+    result = runner.invoke(
+        schedule_restart_command,
+        [
+            '-y',
+            script_relative_path('repository_file.yaml'),
+            'foo_schedule',
+            '--restart-all-running',
+        ],
+    )
 
-            assert result.exit_code == 0
-            assert result.output == 'Restarted all running schedules for repository bar\n'
+    assert result.exit_code == 0
+    assert result.output == 'Restarted all running schedules for repository bar\n'
 
 
 def test_multiproc():

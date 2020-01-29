@@ -1,7 +1,5 @@
 import datetime
 
-from dagster_cron import SystemCronScheduler
-
 from dagster import daily_schedule, hourly_schedule, schedule, schedules
 
 
@@ -50,6 +48,6 @@ def test_schedule(_):
     }
 
 
-@schedules(scheduler=SystemCronScheduler)
+@schedules
 def define_scheduler():
     return [daily_ingest_schedule, daily_rollup_schedule, test_schedule]
