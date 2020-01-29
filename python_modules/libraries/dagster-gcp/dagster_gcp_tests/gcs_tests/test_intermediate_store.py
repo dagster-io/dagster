@@ -370,13 +370,13 @@ def test_custom_read_write_mode(gcs_bucket):
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
             intermediate_store.set_object(
-                data_frame, context, resolve_to_runtime_type(LessSimpleDataFrame), ['data_frame']
+                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
             )
 
             assert intermediate_store.has_object(context, ['data_frame'])
             assert (
                 intermediate_store.get_object(
-                    context, resolve_to_runtime_type(LessSimpleDataFrame), ['data_frame']
+                    context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
                 ).obj
                 == data_frame
             )
