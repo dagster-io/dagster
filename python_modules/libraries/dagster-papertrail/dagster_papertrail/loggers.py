@@ -14,8 +14,8 @@ class ContextFilter(logging.Filter):
 
 @logger(
     {
-        'log_level': Field(str, is_optional=True, default_value='INFO'),
-        'name': Field(str, is_optional=True, default_value='dagster_papertrail'),
+        'log_level': Field(str, is_required=False, default_value='INFO'),
+        'name': Field(str, is_required=False, default_value='dagster_papertrail'),
         'papertrail_address': Field(str, description='Papertrail URL', is_optional=False),
         'papertrail_port': Field(int, description='Papertrail port', is_optional=False),
     },

@@ -34,7 +34,7 @@ def define_spark_config():
         as a client to the cluster. The input and output of the application is attached to the
         console. Thus, this mode is especially suitable for applications that involve the REPL (e.g.
         Spark shell).''',
-        is_optional=True,
+        is_required=False,
     )
 
     application_jar = Field(
@@ -49,13 +49,13 @@ def define_spark_config():
     application_arguments = Field(
         str,
         description='Arguments passed to the main method of your main class, if any',
-        is_optional=True,
+        is_required=False,
     )
 
     spark_home = Field(
         str,
         description='The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.',
-        is_optional=True,
+        is_required=False,
     )
 
     return {

@@ -148,7 +148,7 @@ class GithubResource:
         ),
         "github_installation_id": Field(
             int,
-            is_optional=True,
+            is_required=False,
             description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
         ),
     },

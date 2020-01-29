@@ -11,8 +11,8 @@ from dagster.utils.log import default_format_string
 
 @logger(
     {
-        'log_level': Field(str, is_optional=True, default_value='INFO'),
-        'name': Field(str, is_optional=True, default_value='dagster'),
+        'log_level': Field(str, is_required=False, default_value='INFO'),
+        'name': Field(str, is_required=False, default_value='dagster'),
     },
     description='The default colored console logger.',
 )
@@ -34,8 +34,8 @@ def colored_console_logger(init_context):
 
 @logger(
     {
-        'log_level': Field(str, is_optional=True, default_value='INFO'),
-        'name': Field(str, is_optional=True, default_value='dagster'),
+        'log_level': Field(str, is_required=False, default_value='INFO'),
+        'name': Field(str, is_required=False, default_value='dagster'),
     },
     description='A JSON-formatted console logger',
 )

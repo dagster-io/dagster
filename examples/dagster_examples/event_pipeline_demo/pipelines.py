@@ -99,7 +99,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
         'target_folder': Field(
             Path, description=('Specifies the path at which to download the object.')
         ),
-        'skip_if_present': Field(Bool, is_optional=True, default_value=False),
+        'skip_if_present': Field(Bool, is_required=False, default_value=False),
     },
     description='Downloads an object from S3 to a file.',
     output_defs=[

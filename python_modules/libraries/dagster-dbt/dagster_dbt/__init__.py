@@ -97,7 +97,7 @@ def create_dbt_run_solid(project_dir, name=None, profiles_dir=None, dbt_executab
             'dbt_executable': Field(
                 Path,
                 default_value=dbt_executable,
-                is_optional=True,
+                is_required=False,
                 description=(
                     'Path to the dbt executable to invoke, e.g., \'/path/to/your/venv/bin/dbt\'. '
                     'Default: \'{dbt_executable}\''.format(dbt_executable=dbt_executable)
@@ -208,7 +208,7 @@ def create_dbt_test_solid(project_dir, name=None, profiles_dir=None, dbt_executa
             'dbt_executable': Field(
                 Path,
                 default_value=dbt_executable,
-                is_optional=True,
+                is_required=False,
                 description=(
                     'Path to the dbt executable to invoke, e.g., \'/path/to/your/venv/bin/dbt\'. '
                     'Default: \'{dbt_executable}\''.format(dbt_executable=dbt_executable)

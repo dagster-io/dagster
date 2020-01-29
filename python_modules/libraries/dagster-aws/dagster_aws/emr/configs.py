@@ -24,19 +24,19 @@ def _define_configurations():
                     'Classification': Field(
                         String,
                         description='The classification within a configuration.',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'Configurations': Field(
                         [Permissive()],
                         description='''A list of additional configurations to apply within a
                                 configuration object.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'Properties': Field(
                         Permissive(),
                         description='''A set of properties specified within a configuration
                                 classification.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                 }
             )
@@ -50,7 +50,7 @@ def _define_configurations():
         A classification refers to an application-specific configuration file. Properties are the
         settings you want to change in that file. For more information, see the EMR Configuring
         Applications guide.''',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -62,7 +62,7 @@ def _define_steps():
         description='''The action to take when the cluster step fails. Possible values are
         TERMINATE_CLUSTER, CANCEL_AND_WAIT, and CONTINUE. TERMINATE_JOB_FLOW is provided for
         backward compatibility. We recommend using TERMINATE_CLUSTER instead.''',
-        is_optional=True,
+        is_required=False,
     )
 
     hadoopJarStep = Field(
@@ -72,7 +72,7 @@ def _define_steps():
                     [Shape(fields={'Key': Field(String), 'Value': Field(String)})],
                     description='''A list of Java properties that are set when the step runs. You
                     can use these properties to pass key value pairs to your main function.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'Jar': Field(
                     String,
@@ -83,13 +83,13 @@ def _define_steps():
                     String,
                     description='''The name of the main class in the specified Java file. If not
                     specified, the JAR file should specify a Main-Class in its manifest file.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'Args': Field(
                     [String],
                     description='''A list of command line arguments passed to the JAR file's main
                     function when executed.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
@@ -123,7 +123,7 @@ def _define_bootstrap_actions():
     args = Field(
         [String],
         description='A list of command line arguments to pass to the bootstrap action script.',
-        is_optional=True,
+        is_required=False,
     )
 
     bootstrap_action = Shape(
@@ -141,7 +141,7 @@ def _define_bootstrap_actions():
         [bootstrap_action],
         description='''A list of bootstrap actions to run before Hadoop starts on the cluster
         nodes.''',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -159,7 +159,7 @@ def _define_ebs_configuration():
                     Int,
                     description='''The number of I/O operations per second (IOPS) that the volume
                     supports.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'SizeInGB': Field(
                     Int,
@@ -178,7 +178,7 @@ def _define_ebs_configuration():
         Int,
         description='''Number of EBS volumes with a specific volume configuration that will be
         associated with every instance in the instance group''',
-        is_optional=True,
+        is_required=False,
     )
 
     return Field(
@@ -195,18 +195,18 @@ def _define_ebs_configuration():
                     ],
                     description='''An array of Amazon EBS volume specifications attached to a
                     cluster instance.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'EbsOptimized': Field(
                     Bool,
                     description='Indicates whether an Amazon EBS volume is EBS-optimized.',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
         description='''EBS configurations that will be attached to each EC2 instance in the
         instance group.''',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -227,7 +227,7 @@ def _define_auto_scaling_policy():
                     capacity. EXACT_CAPACITY indicates the scaling activity results in an instance
                     group with the number of EC2 instances specified by ScalingAdjustment , which
                     should be expressed as a positive integer.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'ScalingAdjustment': Field(
                     Int,
@@ -245,7 +245,7 @@ def _define_auto_scaling_policy():
                     description='''The amount of time, in seconds, after a scaling activity
                     completes before any further trigger-related scaling activities can start. The
                     default value is 0.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
@@ -261,7 +261,7 @@ def _define_auto_scaling_policy():
                     EmrMarket,
                     description='''Not available for instance groups. Instance groups use the market
                     type specified for the group.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'SimpleScalingPolicyConfiguration': simple_scaling_policy_configuration,
             }
@@ -275,12 +275,12 @@ def _define_auto_scaling_policy():
             Shape(
                 fields={
                     'Key': Field(String, description='The dimension name.', is_optional=False),
-                    'Value': Field(String, description='The dimension value.', is_optional=True),
+                    'Value': Field(String, description='The dimension value.', is_required=False),
                 }
             )
         ],
         description='''A CloudWatch metric dimension.''',
-        is_optional=True,
+        is_required=False,
     )
 
     trigger = Field(
@@ -300,19 +300,19 @@ def _define_auto_scaling_policy():
                                 description='''The number of periods, expressed in seconds using
                                 Period, during which the alarm condition must exist before the alarm
                                 triggers automatic scaling activity. The default value is 1.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'MetricName': Field(
                                 String,
                                 description='''The name of the CloudWatch metric that is watched to
                                 determine an alarm condition.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'Namespace': Field(
                                 String,
                                 description='''The namespace for the CloudWatch metric. The default
                                 is AWS/ElasticMapReduce.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'Period': Field(
                                 Int,
@@ -326,7 +326,7 @@ def _define_auto_scaling_policy():
                                 EmrStatistic,
                                 description='''The statistic to apply to the metric associated with
                                 the alarm. The default is AVERAGE.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'Threshold': Field(
                                 Float,
@@ -339,7 +339,7 @@ def _define_auto_scaling_policy():
                                 description='''The unit of measure associated with the CloudWatch
                                 metric being watched. The value specified for Unit must correspond
                                 to the units specified in the CloudWatch metric.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'Dimensions': dimensions,
                         }
@@ -419,7 +419,7 @@ def _define_auto_scaling_policy():
         dynamically adds and terminates EC2 instances in response to the value of a CloudWatch
         metric. See the EMR PutAutoScalingPolicy docs.
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -431,13 +431,13 @@ def _define_instance_groups():
                     'Name': Field(
                         String,
                         description='Friendly name given to the instance group.',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'Market': Field(
                         EmrMarket,
                         description='''Market type of the EC2 instances used to create a cluster
                             node.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'InstanceRole': Field(
                         EmrInstanceRole,
@@ -453,7 +453,7 @@ def _define_instance_groups():
                             instance group is specified as SPOT . Specify the maximum spot price in
                             USD. If the value is NULL and SPOT is specified, the maximum Spot price
                             is set equal to the On-Demand price.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'InstanceType': Field(
                         String,
@@ -473,7 +473,7 @@ def _define_instance_groups():
             )
         ],
         description='Configuration for the instance groups in a cluster.',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -515,7 +515,7 @@ def _define_instance_fleets():
         greater than 0. For a master instance fleet, only one of TargetSpotCapacity and
         TargetOnDemandCapacity can be specified, and its value must be 1.
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     instance_type_configs = Field(
@@ -534,7 +534,7 @@ def _define_instance_fleets():
                             InstanceFleetConfig. This value is 1 for a master instance fleet, and
                             must be 1 or greater for core and task instance fleets. Defaults to 1
                             if not specified.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'BidPrice': Field(
                         String,
@@ -550,7 +550,7 @@ def _define_instance_fleets():
                             number (for example, 20 specifies 20%). If neither BidPrice nor
                             BidPriceAsPercentageOfOnDemandPrice is provided,
                             BidPriceAsPercentageOfOnDemandPrice defaults to 100%.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'EbsConfiguration': _define_ebs_configuration(),
                     'Configurations': _define_configurations(),
@@ -561,7 +561,7 @@ def _define_instance_fleets():
         which determines the EC2 instances Amazon EMR attempts to provision to fulfill On-Demand and
         Spot target capacities. There can be a maximum of 5 instance type configurations in a
         fleet.''',
-        is_optional=True,
+        is_required=False,
     )
 
     launch_specifications = Field(
@@ -601,7 +601,7 @@ def _define_instance_fleets():
                                 Amazon EC2 marks the Spot instance for termination and provides a
                                 Spot instance termination notice, which gives the instance a
                                 two-minute warning before it terminates.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
@@ -612,7 +612,7 @@ def _define_instance_fleets():
             }
         ),
         description='The launch specification for the instance fleet.',
-        is_optional=True,
+        is_required=False,
     )
 
     return Field(
@@ -622,7 +622,7 @@ def _define_instance_fleets():
                     'Name': Field(
                         String,
                         description='The friendly name of the instance fleet.',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'InstanceFleetType': Field(
                         EmrInstanceRole,
@@ -638,7 +638,7 @@ def _define_instance_fleets():
         ],
         description='''Describes the EC2 instances and instance configurations for clusters that use
         the instance fleet configuration.''',
-        is_optional=True,
+        is_required=False,
     )
 
 
@@ -649,18 +649,18 @@ def define_emr_run_job_flow_config():
         String,
         description='''The location in Amazon S3 to write the log files of the job flow. If a value
         is not provided, logs are not created.''',
-        is_optional=True,
+        is_required=False,
     )
 
     additional_info = Field(
-        String, description='A JSON string for selecting additional features.', is_optional=True
+        String, description='A JSON string for selecting additional features.', is_required=False
     )
 
     ami_version = Field(
         String,
         description='''Applies only to Amazon EMR AMI versions 3.x and 2.x. For Amazon EMR releases
         4.0 and later, ReleaseLabel is used. To specify a custom AMI, use CustomAmiID.''',
-        is_optional=True,
+        is_required=False,
     )
 
     release_label = Field(
@@ -671,7 +671,7 @@ def define_emr_run_job_flow_config():
         about Amazon EMR release versions and included application versions and features, see
         https://docs.aws.amazon.com/emr/latest/ReleaseGuide/. The release label applies only to
         Amazon EMR releases versions 4.x and later. Earlier versions use AmiVersion.''',
-        is_optional=True,
+        is_required=False,
     )
 
     instances = Field(
@@ -680,15 +680,17 @@ def define_emr_run_job_flow_config():
                 'MasterInstanceType': Field(
                     String,
                     description='The EC2 instance type of the master node.',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'SlaveInstanceType': Field(
                     String,
                     description='The EC2 instance type of the core and task nodes.',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'InstanceCount': Field(
-                    Int, description='The number of EC2 instances in the cluster.', is_optional=True
+                    Int,
+                    description='The number of EC2 instances in the cluster.',
+                    is_required=False,
                 ),
                 'InstanceGroups': _define_instance_groups(),
                 'InstanceFleets': _define_instance_fleets(),
@@ -696,7 +698,7 @@ def define_emr_run_job_flow_config():
                     String,
                     description='''The name of the EC2 key pair that can be used to ssh to the
                     master node as the user called "hadoop."''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'Placement': Field(
                     Shape(
@@ -706,7 +708,7 @@ def define_emr_run_job_flow_config():
                                 description='''The Amazon EC2 Availability Zone for the cluster.
                                 AvailabilityZone is used for uniform instance groups, while
                                 AvailabilityZones (plural) is used for instance fleets.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                             'AvailabilityZones': Field(
                                 [String],
@@ -715,25 +717,25 @@ def define_emr_run_job_flow_config():
                                 Availability Zone. AvailabilityZones is used for instance fleets,
                                 while AvailabilityZone (singular) is used for uniform instance
                                 groups.''',
-                                is_optional=True,
+                                is_required=False,
                             ),
                         }
                     ),
                     description='The Availability Zone in which the cluster runs.',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'KeepJobFlowAliveWhenNoSteps': Field(
                     Bool,
                     description='''Specifies whether the cluster should remain available after
                     completing all steps.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'TerminationProtected': Field(
                     Bool,
                     description='''Specifies whether to lock the cluster to prevent the Amazon EC2
                     instances from being terminated by API call, user intervention, or in the event
                     of a job-flow error.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'HadoopVersion': Field(
                     String,
@@ -743,7 +745,7 @@ def define_emr_run_job_flow_config():
                     not set this value, the default of 0.18 is used, unless the AmiVersion parameter
                     is set in the RunJobFlow call, in which case the default version of Hadoop for
                     that AMI version is used.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'Ec2SubnetId': Field(
                     String,
@@ -757,44 +759,44 @@ def define_emr_run_job_flow_config():
                     Amazon VPC currently does not support cluster compute quadruple extra large
                     (cc1.4xlarge) instances. Thus you cannot specify the cc1.4xlarge instance type
                     for clusters launched in an Amazon VPC.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'Ec2SubnetIds': Field(
                     [String],
                     description='''Applies to clusters that use the instance fleet configuration.
                     When multiple EC2 subnet IDs are specified, Amazon EMR evaluates them and
                     launches instances in the optimal subnet.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'EmrManagedMasterSecurityGroup': Field(
                     String,
                     description='''The identifier of the Amazon EC2 security group for the master
                     node.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'EmrManagedSlaveSecurityGroup': Field(
                     String,
                     description='''The identifier of the Amazon EC2 security group for the core and
                     task nodes.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'ServiceAccessSecurityGroup': Field(
                     String,
                     description='''The identifier of the Amazon EC2 security group for the Amazon
                     EMR service to access clusters in VPC private subnets.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'AdditionalMasterSecurityGroups': Field(
                     [String],
                     description='''A list of additional Amazon EC2 security group IDs for the master
                     node.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'AdditionalSlaveSecurityGroups': Field(
                     [String],
                     description='''A list of additional Amazon EC2 security group IDs for the core
                     and task nodes.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
@@ -810,7 +812,7 @@ def define_emr_run_job_flow_config():
                         - "mapr-m3" - launch the job flow using MapR M3 Edition.
                         - "mapr-m5" - launch the job flow using MapR M5 Edition.
                     ''',
-        is_optional=True,
+        is_required=False,
     )
 
     new_supported_products = Field(
@@ -842,7 +844,7 @@ def define_emr_run_job_flow_config():
         - "hue"- launch the cluster with Hue installed.
         - "spark" - launch the cluster with Apache Spark installed.
         - "ganglia" - launch the cluster with the Ganglia Monitoring System installed.''',
-        is_optional=True,
+        is_required=False,
     )
 
     applications = Field(
@@ -853,19 +855,19 @@ def define_emr_run_job_flow_config():
                         String, description='The name of the application.', is_optional=False
                     ),
                     'Version': Field(
-                        String, description='The version of the application.', is_optional=True
+                        String, description='The version of the application.', is_required=False
                     ),
                     'Args': Field(
                         [String],
                         description='Arguments for Amazon EMR to pass to the application.',
-                        is_optional=True,
+                        is_required=False,
                     ),
                     'AdditionalInfo': Field(
                         Permissive(),
                         description='''This option is for advanced users only. This is meta
                             information about third-party applications that third-party vendors use
                             for testing purposes.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                 }
             )
@@ -885,7 +887,7 @@ def define_emr_run_job_flow_config():
         software to use with the cluster and accepts a user argument list. Amazon EMR accepts and
         forwards the argument list to the corresponding installation script as bootstrap action
         argument.''',
-        is_optional=True,
+        is_required=False,
     )
 
     visible_to_all_users = Field(
@@ -894,7 +896,7 @@ def define_emr_run_job_flow_config():
         with the cluster. If this value is set to True, all IAM users of that AWS account can view
         and (if they have the proper policy permissions set) manage the cluster. If it is set to
         False, only the IAM user that created the cluster can view and manage it.''',
-        is_optional=True,
+        is_required=False,
         default_value=True,
     )
 
@@ -904,14 +906,14 @@ def define_emr_run_job_flow_config():
         The EC2 instances of the cluster assume this role. The default role is EMR_EC2_DefaultRole.
         In order to use the default role, you must have already created it using the CLI or console.
         ''',
-        is_optional=True,
+        is_required=False,
     )
 
     service_role = Field(
         String,
         description='''The IAM role that will be assumed by the Amazon EMR service to access AWS
         resources on your behalf.''',
-        is_optional=True,
+        is_required=False,
     )
 
     tags = Field(
@@ -928,7 +930,7 @@ def define_emr_run_job_flow_config():
                         String,
                         description='''A user-defined value, which is optional in a tag. For more
                         information, see the EMR Tag Clusters guide.''',
-                        is_optional=True,
+                        is_required=False,
                     ),
                 }
             )
@@ -940,13 +942,13 @@ def define_emr_run_job_flow_config():
         resource. Tags make it easier to associate clusters in various ways, such as grouping
         clusters to track your Amazon EMR resource allocation costs. For more information, see the
         EMR Tag Clusters guide.''',
-        is_optional=True,
+        is_required=False,
     )
 
     security_configuration = Field(
         String,
         description='The name of a security configuration to apply to the cluster.',
-        is_optional=True,
+        is_required=False,
     )
 
     auto_scaling_role = Field(
@@ -954,7 +956,7 @@ def define_emr_run_job_flow_config():
         description='''An IAM role for automatic scaling policies. The default role is
         EMR_AutoScaling_DefaultRole. The IAM role provides permissions that the automatic scaling
         feature requires to launch and terminate EC2 instances in an instance group.''',
-        is_optional=True,
+        is_required=False,
     )
 
     scale_down_behavior = Field(
@@ -970,7 +972,7 @@ def define_emr_run_job_flow_config():
         active nodes first and blocks instance termination if it could lead to HDFS corruption.
         TERMINATE_AT_TASK_COMPLETION available only in Amazon EMR version 4.1.0 and later, and is
         the default for versions of Amazon EMR earlier than 5.1.0.''',
-        is_optional=True,
+        is_required=False,
     )
 
     custom_ami_id = Field(
@@ -984,7 +986,7 @@ def define_emr_run_job_flow_config():
         For information about creating a custom AMI, see Creating an Amazon EBS-Backed Linux AMI in
         the Amazon Elastic Compute Cloud User Guide for Linux Instances. For information about
         finding an AMI ID, see Finding a Linux AMI.''',
-        is_optional=True,
+        is_required=False,
     )
 
     repo_upgrade_on_boot = Field(
@@ -994,7 +996,7 @@ def define_emr_run_job_flow_config():
         the AMI. If omitted, the default is SECURITY , which indicates that only security updates
         are applied. If NONE is specified, no updates are applied, and all updates must be applied
         manually.''',
-        is_optional=True,
+        is_required=False,
     )
 
     kerberos_attributes = Field(
@@ -1018,26 +1020,26 @@ def define_emr_run_job_flow_config():
                     description='''Required only when establishing a cross-realm trust with a KDC in
                     a different realm. The cross-realm principal password, which must be identical
                     across realms.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'ADDomainJoinUser': Field(
                     String,
                     description='''Required only when establishing a cross-realm trust with an
                     Active Directory domain. A user with sufficient privileges to join resources to
                     the domain.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'ADDomainJoinPassword': Field(
                     String,
                     description='''The Active Directory password for ADDomainJoinUser.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
             }
         ),
         description='''Attributes for Kerberos configuration when Kerberos authentication is enabled
         using a security configuration. For more information see Use Kerberos Authentication in the
         EMR Management Guide .''',
-        is_optional=True,
+        is_required=False,
     )
 
     return Field(
@@ -1068,7 +1070,7 @@ def define_emr_run_job_flow_config():
                     description='''The size, in GiB, of the EBS root device volume of the Linux AMI
                     that is used for each EC2 instance. Available in Amazon EMR version 4.x and
                     later.''',
-                    is_optional=True,
+                    is_required=False,
                 ),
                 'RepoUpgradeOnBoot': repo_upgrade_on_boot,
                 'KerberosAttributes': kerberos_attributes,

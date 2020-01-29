@@ -117,9 +117,10 @@ class Field(object):
                     self.description.replace("'", "\\'") + "''',", initial_indent="description='''"
                 )
 
-            # Print is_optional=True/False if defined; if not defined, default to True
+            # Print is_required=True/False if defined; if not defined, default to True
             printer.line(
-                'is_optional=%s,' % str(self.is_optional if self.is_optional is not None else True)
+                'is_required=%s,'
+                % str(not (self.is_optional if self.is_optional is not None else True))
             )
         printer.line(')')
         return printer.read()

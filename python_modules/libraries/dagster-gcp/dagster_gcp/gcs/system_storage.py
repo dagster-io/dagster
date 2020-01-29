@@ -11,7 +11,7 @@ from .intermediate_store import GCSIntermediateStore
     is_persistent=True,
     config={
         'gcs_bucket': Field(String),
-        'gcs_prefix': Field(String, is_optional=True, default_value='dagster'),
+        'gcs_prefix': Field(String, is_required=False, default_value='dagster'),
     },
     required_resource_keys={'gcs'},
 )

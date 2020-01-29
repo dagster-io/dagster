@@ -48,7 +48,7 @@ class SystemPySparkResource(PySparkResourceDefinition):
         'spark_conf': spark_config(),
         'stop_session': Field(
             bool,
-            is_optional=True,
+            is_required=False,
             default_value=True,
             description='Whether to stop the Spark session on pipeline completion. '
             'Defaults to True.',

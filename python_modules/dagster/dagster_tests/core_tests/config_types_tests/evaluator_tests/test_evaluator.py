@@ -85,7 +85,7 @@ DoubleLevelShape = Shape(
             Shape(
                 {
                     'string_field': Field(String),
-                    'int_field': Field(Int, is_optional=True, default_value=989),
+                    'int_field': Field(Int, is_required=False, default_value=989),
                     'bool_field': Field(Bool),
                 }
             )
@@ -353,7 +353,7 @@ def test_selector_within_dict_no_subfields():
     )
 
 
-SelectorWithDefaults = Selector({'default': Field(String, is_optional=True, default_value='foo')})
+SelectorWithDefaults = Selector({'default': Field(String, is_required=False, default_value='foo')})
 
 
 def test_selector_with_defaults():
@@ -519,7 +519,7 @@ def test_nullable_dict():
 
 
 def test_any_with_default_value():
-    dict_with_any = Shape({'any_field': Field(Any, default_value='foo', is_optional=True)})
+    dict_with_any = Shape({'any_field': Field(Any, default_value='foo', is_required=False)})
     result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {'any_field': 'foo'}

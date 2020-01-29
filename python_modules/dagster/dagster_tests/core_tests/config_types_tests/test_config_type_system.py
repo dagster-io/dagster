@@ -60,7 +60,7 @@ def test_int_fails():
 
 def test_default_arg():
     config_field = convert_potential_field(
-        {'int_field': Field(Int, default_value=2, is_optional=True)}
+        {'int_field': Field(Int, default_value=2, is_required=False)}
     )
 
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
@@ -75,20 +75,20 @@ def _multiple_required_fields_config_dict():
 
 
 def _single_optional_string_config_dict():
-    return convert_potential_field({'optional_field': Field(String, is_optional=True)})
+    return convert_potential_field({'optional_field': Field(String, is_required=False)})
 
 
 def _single_optional_string_field_config_dict_with_default():
-    optional_field_def = Field(String, is_optional=True, default_value='some_default')
+    optional_field_def = Field(String, is_required=False, default_value='some_default')
     return convert_potential_field({'optional_field': optional_field_def})
 
 
 def _mixed_required_optional_string_config_dict_with_default():
     return convert_potential_field(
         {
-            'optional_arg': Field(String, is_optional=True, default_value='some_default'),
+            'optional_arg': Field(String, is_required=False, default_value='some_default'),
             'required_arg': Field(String, is_optional=False),
-            'optional_arg_no_default': Field(String, is_optional=True),
+            'optional_arg_no_default': Field(String, is_required=False),
         }
     )
 
@@ -267,12 +267,12 @@ def _single_nested_config():
 
 def _nested_optional_config_with_default():
     return convert_potential_field(
-        {'nested': {'int_field': Field(Int, is_optional=True, default_value=3)}}
+        {'nested': {'int_field': Field(Int, is_required=False, default_value=3)}}
     )
 
 
 def _nested_optional_config_with_no_default():
-    return convert_potential_field({'nested': {'int_field': Field(Int, is_optional=True)}})
+    return convert_potential_field({'nested': {'int_field': Field(Int, is_required=False)}})
 
 
 def test_single_nested_config():
@@ -347,8 +347,8 @@ def test_config_defaults():
     @composite_solid(
         config_fn=addition_composite_solid_config_fn,
         config={
-            "a": Field(Int, is_optional=True, default_value=1),
-            "b": Field(Int, is_optional=True, default_value=2),
+            "a": Field(Int, is_required=False, default_value=1),
+            "b": Field(Int, is_required=False, default_value=2),
             "c": Int,
         },
     )
@@ -367,13 +367,13 @@ def test_config_defaults():
 
 
 def test_config_with_and_without_config():
-    @solid(config={'prefix': Field(str, is_optional=True, default_value='_')})
+    @solid(config={'prefix': Field(str, is_required=False, default_value='_')})
     def prefix_value(context, v):
         return '{prefix}{v}'.format(prefix=context.solid_config["prefix"], v=v)
 
     @composite_solid(
         config_fn=lambda cfg: {'prefix_value': {'config': {'prefix': cfg['prefix']}}},
-        config={'prefix': Field(str, is_optional=True, default_value='_id_')},
+        config={'prefix': Field(str, is_required=False, default_value='_id_')},
     )
     def prefix_id(val):
         return prefix_value(val)
@@ -413,7 +413,7 @@ def test_config_with_and_without_config():
 
 def test_build_optionality():
     optional_test_type = convert_potential_field(
-        {'required': {'value': String}, 'optional': {'value': Field(String, is_optional=True)},}
+        {'required': {'value': String}, 'optional': {'value': Field(String, is_required=False)},}
     ).config_type
 
     assert optional_test_type.fields['required'].is_optional is False
@@ -533,7 +533,7 @@ def test_two_list_types():
 
 
 def test_multilevel_default_handling():
-    @solid(config=Field(Int, is_optional=True, default_value=234))
+    @solid(config=Field(Int, is_required=False, default_value=234))
     def has_default_value(context):
         assert context.solid_config == 234
 

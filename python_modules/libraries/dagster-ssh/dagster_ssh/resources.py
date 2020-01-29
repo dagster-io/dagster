@@ -178,38 +178,38 @@ class SSHResource(object):
         'remote_port': Field(
             int,
             description='port of remote host to connect (Default is paramiko SSH_PORT)',
-            is_optional=True,
+            is_required=False,
             default_value=SSH_PORT,
         ),
         'username': Field(
-            str, description='username to connect to the remote_host', is_optional=True
+            str, description='username to connect to the remote_host', is_required=False
         ),
         'password': Field(
             str,
             description='password of the username to connect to the remote_host',
-            is_optional=True,
+            is_required=False,
         ),
         'key_file': Field(
-            str, description='key file to use to connect to the remote_host.', is_optional=True
+            str, description='key file to use to connect to the remote_host.', is_required=False
         ),
         'key_string': Field(
-            str, description='key string to use to connect to remote_host', is_optional=True
+            str, description='key string to use to connect to remote_host', is_required=False
         ),
         'timeout': Field(
             int,
             description='timeout for the attempt to connect to the remote_host.',
-            is_optional=True,
+            is_required=False,
             default_value=10,
         ),
         'keepalive_interval': Field(
             int,
             description='send a keepalive packet to remote host every keepalive_interval seconds',
-            is_optional=True,
+            is_required=False,
             default_value=30,
         ),
-        'compress': Field(bool, is_optional=True, default_value=True),
-        'no_host_key_check': Field(bool, is_optional=True, default_value=True),
-        'allow_host_key_change': Field(bool, is_optional=True, default_value=False),
+        'compress': Field(bool, is_required=False, default_value=True),
+        'no_host_key_check': Field(bool, is_required=False, default_value=True),
+        'allow_host_key_change': Field(bool, is_required=False, default_value=False),
     }
 )
 def ssh_resource(init_context):

@@ -31,9 +31,11 @@ def less_simple_data_frame_input_hydration_config(context, selector):
             'csv': Field(
                 {
                     'path': String,
-                    'sep': Field(String, is_optional=True, default_value=','),
+                    'sep': Field(
+                        String, is_required=False, default_value=','
+                    ),
                 },
-                is_optional=True,
+                is_required=False,
             )
         }
     )

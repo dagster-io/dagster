@@ -28,14 +28,14 @@ def bash_command_solid(bash_command, name=None, output_encoding=None):
                         EnumValue('NONE', description='No logging'),
                     ],
                 ),
-                is_optional=True,
+                is_required=False,
                 default_value='STREAM',
             ),
             'env': Field(
                 Permissive(),
                 description='Environment variables to pass to the child process; if not provided, '
                 'the current process environment will be passed.',
-                is_optional=True,
+                is_required=False,
                 default_value=None,
             ),
         },

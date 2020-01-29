@@ -31,7 +31,7 @@ def dict_without_keys(ddict, *keys):
 @output_selector_schema(
     Selector(
         {
-            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'csv': {'path': Path, 'sep': Field(String, is_required=False, default_value=','),},
             'parquet': {'path': Path},
             'table': {'path': Path},
         },
@@ -58,7 +58,7 @@ def dataframe_output_schema(_context, file_type, file_options, pandas_df):
 @input_selector_schema(
     Selector(
         {
-            'csv': {'path': Path, 'sep': Field(String, is_optional=True, default_value=','),},
+            'csv': {'path': Path, 'sep': Field(String, is_required=False, default_value=','),},
             'parquet': {'path': Path},
             'table': {'path': Path},
         },

@@ -14,13 +14,13 @@ from dagster.utils import mkdir_p
         ),
         'operation': Field(
             Enum('SFTPOperation', [EnumValue('GET'), EnumValue('PUT')]),
-            is_optional=True,
+            is_required=False,
             default_value='PUT',
             description='specify operation \'GET\' or \'PUT\', defaults to PUT',
         ),
         'confirm': Field(
             bool,
-            is_optional=True,
+            is_required=False,
             default_value=True,
             description='specify if the SFTP operation should be confirmed, defaults to True',
         ),

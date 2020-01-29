@@ -8,7 +8,7 @@ from dagster.utils.temp_file import get_temp_file_name
     config={
         'file_key': Field(
             str,
-            is_optional=True,
+            is_required=False,
             description=(
                 'Optionally specify the key for the file to be ingested '
                 'into the keyed store. Defaults to the last path component '

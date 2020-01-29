@@ -11,7 +11,7 @@ from .configs import define_dataproc_submit_job_config
         'job_scoped_cluster': Field(
             Bool,
             description='whether to create a cluster or use an existing cluster',
-            is_optional=True,
+            is_required=False,
             default_value=True,
         ),
     },

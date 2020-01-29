@@ -57,7 +57,7 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
 
 
 @solid(
-    config={'chunk_size': Field(int, is_optional=True, default_value=8192)},
+    config={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
 def download_zipfiles_from_urls(
@@ -420,15 +420,18 @@ def produce_training_set(
             int, description='The breakpoint between training and test set'
         ),
         'lstm_layer_config': {
-            'activation': Field(str, is_optional=True, default_value='relu'),
-            'num_recurrant_units': Field(int, is_optional=True, default_value=50),
+            'activation': Field(str, is_required=False, default_value='relu'),
+            'num_recurrant_units': Field(int, is_required=False, default_value=50),
         },
-        'num_dense_layers': Field(int, is_optional=True, default_value=1),
+        'num_dense_layers': Field(int, is_required=False, default_value=1),
         'model_trainig_config': {
             'optimizer': Field(
-                str, description='Type of optimizer to use', is_optional=True, default_value='adam',
+                str,
+                description='Type of optimizer to use',
+                is_required=False,
+                default_value='adam',
             ),
-            'loss': Field(str, is_optional=True, default_value='mse'),
+            'loss': Field(str, is_required=False, default_value='mse'),
             'num_epochs': Field(int, description='Number of epochs to optimize over'),
         },
     },

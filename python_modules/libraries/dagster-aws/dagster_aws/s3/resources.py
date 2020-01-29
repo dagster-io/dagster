@@ -28,14 +28,14 @@ class S3Resource(object):
         'use_unsigned_session': Field(
             bool,
             description='Specifies whether to use an unsigned S3 session',
-            is_optional=True,
+            is_required=False,
             default_value=True,
         ),
         'region_name': Field(
-            str, description='Specifies a custom region for the S3 session', is_optional=True
+            str, description='Specifies a custom region for the S3 session', is_required=False
         ),
         'endpoint_url': Field(
-            str, description='Specifies a custom endpoint for the S3 session', is_optional=True
+            str, description='Specifies a custom endpoint for the S3 session', is_required=False
         ),
     }
 )
