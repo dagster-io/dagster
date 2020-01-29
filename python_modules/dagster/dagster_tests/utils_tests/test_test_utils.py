@@ -3,18 +3,7 @@ import typing
 
 import pytest
 
-from dagster import (
-    Any,
-    Dict,
-    List,
-    Optional,
-    PipelineDefinition,
-    Set,
-    String,
-    Tuple,
-    TypeCheck,
-    dagster_type,
-)
+from dagster import Any, Dict, List, Optional, PipelineDefinition, Set, String, Tuple, dagster_type
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.temp_file import _unlink_swallow_errors
 from dagster.utils.test import check_dagster_type, execute_solids_within_pipeline
@@ -163,42 +152,3 @@ def test_check_dagster_type():
 
     res = check_dagster_type(Baz, Baz())
     assert res.success
-
-    @dagster_type(type_check=lambda _: TypeCheck(success=True))
-    class Quux(object):
-        pass
-
-    res = check_dagster_type(Quux, Quux())
-    assert res.success
-
-    @dagster_type(type_check=lambda _: TypeCheck(success=False))
-    class Corge(object):
-        pass
-
-    res = check_dagster_type(Corge, Corge())
-    assert not res.success
-
-    @dagster_type(type_check=lambda _: TypeCheck(True, 'a_check', []))
-    class Garble(object):
-        pass
-
-    res = check_dagster_type(Garble, Garble())
-    assert isinstance(res, TypeCheck)
-    assert res.success
-    assert res.description == 'a_check'
-
-    @dagster_type(type_check=lambda _: True)
-    class Bboo(object):
-        pass
-
-    res = check_dagster_type(Bboo, Bboo())
-    assert isinstance(res, TypeCheck)
-    assert res.success
-
-    @dagster_type(type_check=lambda _: False)
-    class Bboott(object):
-        pass
-
-    res = check_dagster_type(Bboott, Bboott())
-    assert isinstance(res, TypeCheck)
-    assert not res.success

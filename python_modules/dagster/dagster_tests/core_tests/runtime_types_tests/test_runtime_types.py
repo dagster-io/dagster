@@ -94,8 +94,8 @@ def test_python_mapping():
 
 def test_double_runtime_type():
 
-    AlwaysSucceedsFoo = DagsterType('Foo', 'Foo', type_check_fn=lambda _: True)
-    AlwaysFailsFoo = DagsterType('Foo', 'Foo', type_check_fn=lambda _: False)
+    AlwaysSucceedsFoo = DagsterType(name='Foo', type_check_fn=lambda _: True)
+    AlwaysFailsFoo = DagsterType(name='Foo', type_check_fn=lambda _: False)
 
     @lambda_solid
     def return_a_thing():
