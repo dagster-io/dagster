@@ -17,6 +17,7 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     SerializationStrategy,
+    SolidInvocation,
     String,
     check,
     dagster_type,
@@ -121,9 +122,20 @@ def test_using_gcs_for_subplan(gcs_bucket):
     )
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
-    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
+    with scoped_pipeline_context(
+        pipeline_def,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan.build_subset_plan(['return_one.compute']),
+    ) as context:
         store = GCSIntermediateStore(
-            gcs_bucket, run_id, client=context.scoped_resources_builder.build().gcs.client
+            gcs_bucket,
+            run_id,
+            client=context.scoped_resources_builder.build(
+                mapper_fn=SolidInvocation.default_resource_mapper_fn,
+                required_resource_keys={'gcs'},
+            ).gcs.client,
         )
         assert store.has_intermediate(context, 'return_one.compute')
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
@@ -138,7 +150,13 @@ def test_using_gcs_for_subplan(gcs_bucket):
     )
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
-    with scoped_pipeline_context(pipeline_def, environment_dict, pipeline_run, instance) as context:
+    with scoped_pipeline_context(
+        pipeline_def,
+        environment_dict,
+        pipeline_run,
+        instance,
+        execution_plan.build_subset_plan(['return_one.compute']),
+    ) as context:
         assert store.has_intermediate(context, 'add_one.compute')
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 
@@ -274,12 +292,18 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     )
     assert result.success
 
-    with scoped_pipeline_context(pipe, environment_dict, pipeline_run, instance) as context:
+    execution_plan = create_execution_plan(pipe, environment_dict, run_config=pipeline_run)
+    with scoped_pipeline_context(
+        pipe, environment_dict, pipeline_run, instance, execution_plan
+    ) as context:
         store = GCSIntermediateStore(
             run_id=run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build().gcs.client,
+            client=context.scoped_resources_builder.build(
+                mapper_fn=SolidInvocation.default_resource_mapper_fn,
+                required_resource_keys={'gcs'},
+            ).gcs.client,
         )
         assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1

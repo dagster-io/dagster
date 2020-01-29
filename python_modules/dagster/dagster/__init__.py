@@ -70,6 +70,7 @@ from dagster.core.errors import (
     DagsterStepOutputNotFoundError,
     DagsterSubprocessError,
     DagsterTypeCheckError,
+    DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
 )
@@ -177,6 +178,7 @@ __all__ = [
     'DagsterInvariantViolationError',
     'DagsterResourceFunctionError',
     'DagsterTypeCheckError',
+    'DagsterUnknownResourceError',
     'DagsterUserCodeExecutionError',
     'DagsterStepOutputNotFoundError',
     'DagsterSubprocessError',

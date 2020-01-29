@@ -45,6 +45,12 @@
 
   No imports and much simpler, cleaner syntax.
 
+- All solids that use a resource must explicitly list that resource using the argument
+  `required_resource_keys`. This is to enable efficient resource management during pipeline
+  execution, especially in a multiprocessing or remote execution environment.
+- The `@system_storage` decorator now requires argument `required_resource_keys`, which was
+  previously optional.
+
 **New**
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.

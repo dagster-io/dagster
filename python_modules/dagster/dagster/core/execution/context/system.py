@@ -198,7 +198,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
-            self.solid.resource_mapper_fn, self.solid_def.required_resource_keys
+            self.solid.resource_mapper_fn, self.solid_def.required_resource_keys,
         )
         self._log_manager = log_manager
 

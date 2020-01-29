@@ -17,8 +17,11 @@ from dagster import (
 )
 from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.execution.api import scoped_pipeline_context
-from dagster.core.execution.context_creation_pipeline import ResourcesStack
+from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
+from dagster.core.execution.context_creation_pipeline import (
+    ResourcesStack,
+    get_required_resource_keys_to_init,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import unpack_value
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -40,7 +43,9 @@ class Manager(object):
         self.resources_stack = None
 
     @contextmanager
-    def _setup_resources(self, pipeline_def, environment_config, pipeline_run, log_manager):
+    def _setup_resources(
+        self, pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
+    ):
         '''This context manager is a drop-in replacement for
         dagster.core.execution.context_creation_pipeline.create_resources. It uses the Manager's
         instance of ResourceStack to create resources, but does not tear them down when the
@@ -49,7 +54,7 @@ class Manager(object):
 
         # pylint: disable=protected-access
         self.resources_stack = ResourcesStack(
-            pipeline_def, environment_config, pipeline_run, log_manager
+            pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
         )
         yield self.resources_stack.create()
 
@@ -117,7 +122,7 @@ class Manager(object):
         ).build_sub_pipeline(solid_subset)
 
         solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
-        solid_def = pipeline_def.get_solid(solid_handle)
+        solid_def = pipeline_def.get_solid(solid_handle).definition
 
         pipeline_run = unpack_value(pipeline_run_dict)
 
@@ -126,14 +131,23 @@ class Manager(object):
         self.solid_def = solid_def
         self.pipeline_def = pipeline_def
 
+        execution_plan = create_execution_plan(self.pipeline_def, environment_dict, pipeline_run)
+
         with scoped_pipeline_context(
             self.pipeline_def,
             environment_dict,
             pipeline_run,
-            instance=instance,
+            instance,
+            execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-            self.context = DagstermillExecutionContext(pipeline_context)
+            self.context = DagstermillExecutionContext(
+                pipeline_context=pipeline_context,
+                solid_config=None,
+                resource_keys_to_init=get_required_resource_keys_to_init(
+                    [self.solid_def], pipeline_context.system_storage_def,
+                ),
+            )
 
         return self.context
 
@@ -156,17 +170,18 @@ class Manager(object):
         check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
 
+        if not mode_def:
+            mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
+            environment_dict['loggers'] = {'dagstermill': {}}
+
         solid_def = SolidDefinition(
             name='this_solid',
             input_defs=[],
             compute_fn=lambda *args, **kwargs: None,
             output_defs=[],
             description='Ephemeral solid constructed by dagstermill.get_context()',
+            required_resource_keys=mode_def.resource_key_set,
         )
-
-        if not mode_def:
-            mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
-            environment_dict['loggers'] = {'dagstermill': {}}
 
         pipeline_def = PipelineDefinition(
             [solid_def], mode_defs=[mode_def], name='ephemeral_dagstermill_pipeline'
@@ -192,14 +207,24 @@ class Manager(object):
         self.solid_def = solid_def
         self.pipeline_def = pipeline_def
 
+        execution_plan = create_execution_plan(self.pipeline_def, environment_dict, pipeline_run)
         with scoped_pipeline_context(
             self.pipeline_def,
             environment_dict,
             pipeline_run,
-            instance=DagsterInstance.ephemeral(),
+            DagsterInstance.ephemeral(),
+            execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-            self.context = DagstermillExecutionContext(pipeline_context, solid_config)
+
+            resource_keys_to_init = get_required_resource_keys_to_init(
+                [self.solid_def], pipeline_context.system_storage_def,
+            )
+            self.context = DagstermillExecutionContext(
+                pipeline_context=pipeline_context,
+                solid_config=solid_config,
+                resource_keys_to_init=resource_keys_to_init,
+            )
 
         return self.context
 

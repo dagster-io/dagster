@@ -18,7 +18,7 @@ def create_mem_system_storage_data(init_context):
     )
 
 
-@system_storage(name='in_memory', is_persistent=False)
+@system_storage(name='in_memory', is_persistent=False, required_resource_keys=set())
 def mem_system_storage(init_context):
     '''The default in-memory system storage.
 
@@ -35,7 +35,10 @@ def mem_system_storage(init_context):
 
 
 @system_storage(
-    name='filesystem', is_persistent=True, config={'base_dir': Field(str, is_optional=True)}
+    name='filesystem',
+    is_persistent=True,
+    config={'base_dir': Field(str, is_optional=True)},
+    required_resource_keys=set(),
 )
 def fs_system_storage(init_context):
     '''The default filesystem system storage.

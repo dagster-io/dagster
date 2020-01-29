@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from dagster import check
 from dagster.core.definitions.executor import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
@@ -8,7 +10,12 @@ from .resource import ResourceDefinition
 DEFAULT_MODE_NAME = 'default'
 
 
-class ModeDefinition(object):
+class ModeDefinition(
+    namedtuple(
+        '_ModeDefinition',
+        'name resource_defs loggers system_storage_defs executor_defs description',
+    )
+):
     '''Define a mode in which a pipeline can operate.
 
     A mode provides pipelines with a set of resource implementations, loggers, system storages,
@@ -31,8 +38,8 @@ class ModeDefinition(object):
         description (Optional[str]): A human-readable description of the mode.
     '''
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         name=None,
         resource_defs=None,
         logger_defs=None,
@@ -44,27 +51,34 @@ class ModeDefinition(object):
 
         from .system_storage import SystemStorageDefinition
 
-        self.name = check.opt_str_param(name, 'name', DEFAULT_MODE_NAME)
-        self.resource_defs = check.opt_dict_param(
-            resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition
+        return super(ModeDefinition, cls).__new__(
+            cls,
+            name=check.opt_str_param(name, 'name', DEFAULT_MODE_NAME),
+            resource_defs=check.opt_dict_param(
+                resource_defs, 'resource_defs', key_type=str, value_type=ResourceDefinition
+            ),
+            loggers=(
+                check.opt_dict_param(
+                    logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+                )
+                or default_loggers()
+            ),
+            system_storage_defs=check.list_param(
+                system_storage_defs if system_storage_defs else default_system_storage_defs,
+                'system_storage_defs',
+                of_type=SystemStorageDefinition,
+            ),
+            executor_defs=check.list_param(
+                executor_defs if executor_defs else default_executors,
+                'executor_defs',
+                of_type=ExecutorDefinition,
+            ),
+            description=check.opt_str_param(description, 'description'),
         )
-        self.loggers = (
-            check.opt_dict_param(
-                logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
-            )
-            or default_loggers()
-        )
-        self.system_storage_defs = check.list_param(
-            system_storage_defs if system_storage_defs else default_system_storage_defs,
-            'system_storage_defs',
-            of_type=SystemStorageDefinition,
-        )
-        self.executor_defs = check.list_param(
-            executor_defs if executor_defs else default_executors,
-            'executor_defs',
-            of_type=ExecutorDefinition,
-        )
-        self.description = check.opt_str_param(description, 'description')
+
+    @property
+    def resource_key_set(self):
+        return frozenset(self.resource_defs.keys())
 
     def get_system_storage_def(self, name):
         check.str_param(name, 'name')

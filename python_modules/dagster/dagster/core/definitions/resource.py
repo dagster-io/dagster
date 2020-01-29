@@ -3,6 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
+from dagster.core.errors import DagsterUnknownResourceError
 
 
 class ResourceDefinition(object):
@@ -123,7 +124,8 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
             ),
         )
 
-    def build(self, mapper_fn=None, required_resource_keys=None):
+    def build(self, mapper_fn, required_resource_keys):
+
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
@@ -136,11 +138,14 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         and then binds the specified resources into an instance of this object, which can be consumed
         as, e.g., context.resources.foo.
         '''
-        resource_instance_dict = (
-            mapper_fn(self.resource_instance_dict, required_resource_keys)
-            if (mapper_fn and required_resource_keys)
-            else self.resource_instance_dict
+        check.callable_param(mapper_fn, 'mapper_fn')
+        required_resource_keys = check.opt_set_param(
+            required_resource_keys, 'required_resource_keys', of_type=str
         )
+        resource_instance_dict = mapper_fn(self.resource_instance_dict, required_resource_keys)
 
-        resource_type = namedtuple('Resources', list(resource_instance_dict.keys()))
-        return resource_type(**resource_instance_dict)
+        class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):
+            def __getattr__(self, attr):
+                raise DagsterUnknownResourceError(attr)
+
+        return ScopedResources(**resource_instance_dict)

@@ -528,7 +528,10 @@ def test_pipeline_streaming_multiple_outputs():
 
 
 def test_pipeline_init_failure():
-    stub_solid = define_stub_solid('stub', None)
+    @solid(required_resource_keys={'failing'})
+    def stub_solid(_):
+        return None
+
     env_config = {}
 
     def failing_resource_fn(*args, **kwargs):

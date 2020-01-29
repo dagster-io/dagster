@@ -213,8 +213,8 @@ class SolidDefinition(ISolidDefinition):
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
         self._config_field = check_user_facing_opt_config_param(config, 'config',)
-        self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+        self._required_resource_keys = frozenset(
+            check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
         self._step_metadata_fn = check.opt_callable_param(step_metadata_fn, 'step_metadata_fn')
 
@@ -412,8 +412,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         required_resource_keys = set()
         for solid in self.solids:
             required_resource_keys.update(solid.definition.required_resource_keys)
-
-        return required_resource_keys
+        return frozenset(required_resource_keys)
 
     @property
     def has_config_mapping(self):

@@ -80,6 +80,7 @@ class PipelineDefinition(IContainSolids, object):
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
 
+
     Examples:
 
         .. code-block:: python
@@ -381,6 +382,7 @@ class PipelineDefinition(IContainSolids, object):
         return name in self._all_solid_defs
 
     def build_sub_pipeline(self, solid_subset):
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
 
     def get_presets(self):
@@ -476,16 +478,16 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
-        for solid in solid_defs:
-            for required_resource in solid.required_resource_keys:
+        for solid_def in solid_defs:
+            for required_resource in solid_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by solid {solid_name}, but is not '
+                            'Resource "{resource}" is required by solid def {solid_def_name}, but is not '
                             'provided by mode "{mode_name}".'
                         ).format(
                             resource=required_resource,
-                            solid_name=solid.name,
+                            solid_def_name=solid_def.name,
                             mode_name=mode_def.name,
                         )
                     )

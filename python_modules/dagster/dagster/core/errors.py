@@ -246,6 +246,21 @@ class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
+class DagsterUnknownResourceError(DagsterError, AttributeError):
+    # inherits from AttributeError as it is raised within a __getattr__ call... used to support
+    # object hasattr method
+    ''' Indicates that an unknown resource was accessed in the body of an execution step. May often
+    happen by accessing a resource in the compute function of a solid without first supplying the
+    solid with the correct `required_resource_keys` argument.
+    '''
+
+    def __init__(self, resource_name, *args, **kwargs):
+        msg = 'Unknown resource `{resource_name}`.  Make sure `{resource_name}` is a valid resource on the pipeline and that it has been specified in the `required_resource_keys` argument for the solid.'.format(
+            resource_name=resource_name
+        )
+        super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
+
+
 class DagsterInvalidConfigError(DagsterError):
     '''Thrown when provided config is invalid (does not type check against the relevant config
     schema).'''

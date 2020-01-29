@@ -776,7 +776,9 @@ def composite_solid(
 
 
 class _Pipeline(object):
-    def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None):
+    def __init__(
+        self, name=None, mode_defs=None, preset_defs=None, description=None,
+    ):
         self.name = check.opt_str_param(name, 'name')
         self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)
         self.preset_definitions = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
@@ -850,7 +852,7 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
         return _Pipeline()(name)
 
     return _Pipeline(
-        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description
+        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description,
     )
 
 

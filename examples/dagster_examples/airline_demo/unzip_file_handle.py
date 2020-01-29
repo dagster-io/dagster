@@ -10,7 +10,7 @@ from dagster import FileHandle, String, solid
     be on local disk, or it could be in s3. If on s3, this solid will download
     that file to local disk, perform the unzip, upload that file back to s3, and
     then return that file handle for downstream use in the computations.
-    '''
+    ''',
 )
 def unzip_file_handle(
     context, archive_file_handle: FileHandle, archive_member: String

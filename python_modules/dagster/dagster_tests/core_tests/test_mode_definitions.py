@@ -183,7 +183,7 @@ def test_mode_with_resource_deps():
 
     assert (
         str(ide.value)
-        == 'Resource "a" is required by solid requires_a, but is not provided by mode "default".'
+        == 'Resource "a" is required by solid def requires_a, but is not provided by mode "default".'
     )
 
     @solid(required_resource_keys={'a'})

@@ -21,7 +21,7 @@ from dagster import (
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import ISolidDefinition
-from dagster.core.execution.api import RunConfig, scoped_pipeline_context
+from dagster.core.execution.api import RunConfig, create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     construct_pipeline_execution_context,
     create_context_creation_data,
@@ -62,7 +62,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
     pipeline_run = PipelineRun.create_empty_run('test_legacy_context', run_id, environment_dict)
     instance = DagsterInstance.ephemeral()
     creation_data = create_context_creation_data(
-        pipeline_def, environment_dict, pipeline_run, instance
+        pipeline_def, environment_dict, pipeline_run, instance, solid_def_names_in_execution=set()
     )
     log_manager = create_log_manager(creation_data)
     scoped_resources_builder = ScopedResourcesBuilder()
@@ -197,11 +197,13 @@ def execute_solid_within_pipeline(
 
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
+    pipeline = PipelineDefinition([])
     with scoped_pipeline_context(
-        PipelineDefinition([]),
+        pipeline,
         {},
         PipelineRun.create_empty_run('empty', run_id=run_id),
         instance or DagsterInstance.ephemeral(),
+        create_execution_plan(pipeline),
     ) as context:
         yield context
 
