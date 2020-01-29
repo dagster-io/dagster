@@ -1,6 +1,0 @@
-repository:
-  file: repository.py
-  fn: gbfs_repository
-scheduler:
-  file: scheduler.py
-  fn: gbfs_schedules
