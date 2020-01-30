@@ -226,6 +226,7 @@ export default class ExecutionSessionContainer extends React.Component<
       <SplitPanelContainer
         axis={gaantPreview ? "vertical" : "horizontal"}
         identifier={"execution"}
+        firstMinSize={gaantPreview ? 100 : 500}
         firstInitialPercent={75}
         first={
           <>
@@ -376,6 +377,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
       axis={gaantPreview ? "vertical" : "horizontal"}
       identifier={"execution"}
       firstInitialPercent={75}
+      firstMinSize={gaantPreview ? 100 : 500}
       first={
         <>
           <SessionSettingsBar>

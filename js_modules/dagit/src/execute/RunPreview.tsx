@@ -8,7 +8,7 @@ import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigVali
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
-import { GaantChart, GaantChartMode } from "../GaantChart";
+import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
 import { getFeatureFlags, FeatureFlag } from "../Util";
 
 interface IRunPreviewProps {
@@ -111,7 +111,7 @@ export class RunPreview extends React.Component<
       gaantPreview ? (
         <GaantChart
           plan={plan}
-          options={{ mode: GaantChartMode.WATERFALL }}
+          options={{ mode: GaantChartMode.WATERFALL, hideTimedMode: true }}
           toolbarActions={toolbarActions}
         />
       ) : (

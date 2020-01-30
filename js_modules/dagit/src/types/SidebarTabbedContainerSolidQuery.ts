@@ -591,6 +591,7 @@ export interface SidebarTabbedContainerSolidQuery_pipeline_solidHandle {
 
 export interface SidebarTabbedContainerSolidQuery_pipeline {
   __typename: "Pipeline";
+  name: string;
   solidHandle: SidebarTabbedContainerSolidQuery_pipeline_solidHandle | null;
 }
 

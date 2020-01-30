@@ -241,10 +241,10 @@ const SolidList: React.FunctionComponent<{
 
   return (
     <List
-      rowCount={props.items.length}
-      rowHeight={cache.current.rowHeight}
       width={props.width}
       height={props.height}
+      rowCount={props.items.length}
+      rowHeight={cache.current.rowHeight}
       rowRenderer={({ parent, index, key, style }) => {
         const solid = props.items[index];
         return (

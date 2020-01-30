@@ -149,6 +149,7 @@ export const SplitPanelToggles = ({
 const DividerWrapper = {
   horizontal: styled.div<{ resizing: boolean }>`
     width: 4px;
+    z-index: 2;
     background: ${Colors.WHITE};
     border-left: 1px solid
       ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
@@ -158,6 +159,7 @@ const DividerWrapper = {
   `,
   vertical: styled.div<{ resizing: boolean }>`
     height: 4px;
+    z-index: 2;
     background: ${Colors.WHITE};
     border-top: 1px solid
       ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
