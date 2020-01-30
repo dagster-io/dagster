@@ -76,7 +76,6 @@ export class RunPreview extends React.Component<
   }
 
   render() {
-    console.log("run preview re-render");
     const { plan, validation, toolbarActions } = this.props;
     const gaantPreview = getFeatureFlags().includes(
       FeatureFlag.GaantExecutionPlan
