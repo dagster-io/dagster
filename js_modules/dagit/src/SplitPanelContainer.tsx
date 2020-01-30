@@ -81,7 +81,9 @@ interface IDividerProps {
 export class PanelDivider extends React.Component<IDividerProps> {
   ref = React.createRef<any>();
 
-  onMouseDown = () => {
+  onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+
     this.props.onSetResizing(true);
 
     const onMouseMove = (event: MouseEvent) => {
