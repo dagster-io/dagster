@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.9
+
+**Bugfix**
+
+- Improved SQLite concurrency issues, uncovered while using concurrent nodes in Airflow
+- Fixed sqlalchemy warnings (thanks @zzztimbo!)
+- Fixed Airflow integration issue where a Dagster child process triggered a signal handler of a
+  parent Airflow process via a process fork
+- Fixed GCS and AWS intermediate store implementations to be compatible with read/write mode
+  serialization strategies
+- Improve test stability
+
+**Documentation**
+
+- Improved descriptions for setting up the cron scheduler (thanks @zzztimbo!)
+
 ## 0.6.8
 
 **New**
