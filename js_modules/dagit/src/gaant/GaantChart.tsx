@@ -10,7 +10,7 @@ import {
 } from "@blueprintjs/core";
 
 import { weakmapMemoize } from "../Util";
-import { IRunMetadataDict } from "../RunMetadataProvider";
+import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
 import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { GaantChartTimescale } from "./GaantChartTimescale";
 import { RunFragment } from "../runs/types/RunFragment";
@@ -18,7 +18,7 @@ import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery } from "../GraphQueryImpl";
 import {
   buildLayout,
-  boxColorFor,
+  boxStyleFor,
   interestingQueriesFor
 } from "./GaantChartLayout";
 import {
@@ -32,7 +32,8 @@ import {
   MAX_SCALE,
   BOX_HEIGHT,
   BOX_MARGIN_Y,
-  LINE_SIZE
+  LINE_SIZE,
+  CSS_DURATION
 } from "./Constants";
 
 export { GaantChartMode } from "./Constants";
@@ -154,7 +155,7 @@ export class GaantChart extends React.Component<
   };
 
   render() {
-    const { metadata = { steps: {} }, plan } = this.props;
+    const { metadata = EMPTY_RUN_METADATA, plan } = this.props;
     const { query, options } = this.state;
 
     const graph = toGraphQueryItems(plan);
@@ -222,7 +223,7 @@ export class GaantChart extends React.Component<
                 <Slider
                   min={MIN_SCALE}
                   max={MAX_SCALE}
-                  stepSize={0.05}
+                  stepSize={0.01}
                   labelRenderer={false}
                   value={options.scale}
                   onChange={v => this.updateOptions({ scale: v })}
@@ -250,14 +251,14 @@ const GaantChartContent = (
 ) => {
   const [scrollLeft, setScrollLeft] = React.useState<number>(0);
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
-  const { options, layout, metadata = { steps: {} } } = props;
+  const { options, layout, metadata = EMPTY_RUN_METADATA } = props;
 
   const items: React.ReactChild[] = [];
   const hovered = layout.boxes[hoveredIdx];
 
   layout.boxes.forEach((box, idx) => {
     const highlighted = hovered === box || hovered?.children.includes(box);
-    const color = boxColorFor(box.node, metadata);
+    const style = boxStyleFor(box.node, { metadata, options });
 
     items.push(
       <div
@@ -266,7 +267,7 @@ const GaantChartContent = (
           left: box.x,
           top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
           width: box.width,
-          background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
+          ...style
         }}
         className={`box ${highlighted && "highlighted"}`}
         onClick={() => props.onApplyStepFilter?.(box.node.name)}
@@ -300,6 +301,7 @@ const GaantChartContent = (
           scale={options.scale}
           scrollLeft={scrollLeft}
           startMs={metadata.minStepStart || 0}
+          nowMs={metadata.mostRecentLogAt}
           highlightedMs={
             hovered
               ? ([
@@ -402,8 +404,8 @@ const GaantChartContainer = styled.div`
     position: absolute;
     user-select: none;
     pointer-events: none;
-    transition: top 200ms linear, left 200ms linear, width 200ms linear,
-      height 200ms linear;
+    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
+      width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
   }
 
   .box {
@@ -420,8 +422,8 @@ const GaantChartContainer = styled.div`
     border-radius: 2px;
     user-select: text;
 
-    transition: top 200ms linear, left 200ms linear, width 200ms linear,
-      height 200ms linear;
+    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
+      width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
 
     &.highlighted {
       border: 1px solid ${Colors.DARK_GRAY1};

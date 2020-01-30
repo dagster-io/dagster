@@ -62,6 +62,7 @@ export interface IStepMetadata {
 }
 
 export interface IRunMetadataDict {
+  mostRecentLogAt: number;
   startingProcessAt?: number;
   startedProcessAt?: number;
   startedPipelineAt?: number;
@@ -73,6 +74,11 @@ export interface IRunMetadataDict {
     [stepKey: string]: IStepMetadata;
   };
 }
+
+export const EMPTY_RUN_METADATA: IRunMetadataDict = {
+  mostRecentLogAt: 0,
+  steps: {}
+};
 
 function itemsForMetadataEntries(
   metadataEntries: TempMetadataEntryFragment[]
@@ -139,29 +145,34 @@ export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
+    mostRecentLogAt: 0,
     steps: {}
   };
 
   logs.forEach(log => {
+    const timestamp = Number.parseInt(log.timestamp);
+
+    metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
+
     if (log.__typename === "PipelineProcessStartEvent") {
-      metadata.startingProcessAt = Number.parseInt(log.timestamp);
+      metadata.startingProcessAt = timestamp;
     }
     if (log.__typename === "PipelineProcessStartedEvent") {
-      metadata.startedProcessAt = Number.parseInt(log.timestamp);
+      metadata.startedProcessAt = timestamp;
       metadata.processId = log.processId;
     }
     if (log.__typename === "PipelineStartEvent") {
-      metadata.startedPipelineAt = Number.parseInt(log.timestamp);
+      metadata.startedPipelineAt = timestamp;
     }
     if (log.__typename === "PipelineInitFailureEvent") {
       metadata.initFailed = true;
-      metadata.exitedAt = Number.parseInt(log.timestamp);
+      metadata.exitedAt = timestamp;
     }
     if (
       log.__typename === "PipelineFailureEvent" ||
       log.__typename === "PipelineSuccessEvent"
     ) {
-      metadata.exitedAt = Number.parseInt(log.timestamp);
+      metadata.exitedAt = timestamp;
     }
 
     if (log.step) {

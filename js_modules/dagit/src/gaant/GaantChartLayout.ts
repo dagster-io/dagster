@@ -222,35 +222,51 @@ const addChildren = (
 
 const boxWidthFor = (
   step: GraphQueryItem,
-  { metadata, options }: BuildLayoutParams
+  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
 ) => {
-  const stepInfo = metadata.steps[step.name] || {};
-  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
-    const width =
-      stepInfo.finish && stepInfo.start
-        ? stepInfo.finish - stepInfo.start
-        : stepInfo.start
-        ? Date.now() - stepInfo.start
-        : BOX_WIDTH;
-    return Math.max(BOX_MIN_WIDTH, width * options.scale);
+  const stepInfo = context.metadata.steps[step.name] || {};
+  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
+    if (stepInfo.start) {
+      return Math.max(
+        BOX_MIN_WIDTH,
+        ((stepInfo.finish || context.metadata.mostRecentLogAt) -
+          stepInfo.start) *
+          context.options.scale
+      );
+    }
   }
   return BOX_WIDTH;
 };
 
-export const boxColorFor = (
+const ColorsForStates = {
+  running: Colors.GRAY3,
+  succeeded: Colors.GREEN2,
+  skipped: Colors.GOLD3,
+  failed: Colors.RED3
+};
+
+export const boxStyleFor = (
   step: GraphQueryItem,
-  metadata: IRunMetadataDict
+  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
 ) => {
-  const stepInfo = metadata.steps[step.name] || {};
-  return (
-    {
-      waiting: Colors.GRAY1,
-      running: Colors.GRAY3,
-      succeeded: Colors.GREEN2,
-      skipped: Colors.GOLD3,
-      failed: Colors.RED3
-    }[stepInfo.state] || "#2491eb"
-  );
+  let color = "#2491eb";
+
+  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
+    const info = context.metadata.steps[step.name];
+    if (!info || info.state === "waiting") {
+      return {
+        color: Colors.DARK_GRAY4,
+        background: Colors.WHITE,
+        border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
+        boxShadow: `none`
+      };
+    }
+    color = ColorsForStates[info.state] || Colors.GRAY3;
+  }
+
+  return {
+    background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
+  };
 };
 
 /**

@@ -1,11 +1,12 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
-import { LEFT_INSET } from "./Constants";
+import { LEFT_INSET, CSS_DURATION } from "./Constants";
 
 interface GaantChartTimescaleProps {
   scale: number;
   scrollLeft: number;
+  nowMs: number;
   startMs: number;
   highlightedMs: number[];
 }
@@ -15,6 +16,7 @@ const TICK_LABEL_WIDTH = 40;
 export const GaantChartTimescale = ({
   scale,
   scrollLeft,
+  nowMs,
   startMs,
   highlightedMs
 }: GaantChartTimescaleProps) => {
@@ -91,7 +93,13 @@ export const GaantChartTimescale = ({
             style={{ left: (ms - startMs) * pxPerMs, transform }}
           />
         ))}
-      </TimescaleLinesContainer>{" "}
+        {nowMs > startMs && (
+          <div
+            className="fog-of-war"
+            style={{ left: (nowMs - startMs) * pxPerMs, transform }}
+          ></div>
+        )}
+      </TimescaleLinesContainer>
     </TimescaleContainer>
   );
 };
@@ -105,7 +113,7 @@ const TimescaleContainer = styled.div`
     width: ${TICK_LABEL_WIDTH}px;
     height: 20px;
     box-sizing: border-box;
-    transition: left 200ms linear, width 200ms linear;
+    transition: left ${CSS_DURATION} linear, width ${CSS_DURATION} linear;
     text-align: center;
     font-size: 11px;
   }
@@ -129,7 +137,7 @@ const TimescaleContainer = styled.div`
   & .line {
     position: absolute;
     border-left: 1px solid #eee;
-    transition: left 200ms linear;
+    transition: left ${CSS_DURATION} linear;
     top: 0px;
     bottom: 0px;
   }
@@ -137,6 +145,15 @@ const TimescaleContainer = styled.div`
     border-left: 1px solid ${Colors.GOLD2};
     z-index: 3;
     top: -1px;
+  }
+
+  & .fog-of-war {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.08);
+    transition: left ${CSS_DURATION} linear;
+    top: 0px;
+    bottom: 0px;
+    width: 100%;
   }
 `;
 

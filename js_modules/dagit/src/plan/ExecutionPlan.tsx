@@ -9,7 +9,8 @@ import { ExecutionPlanHiddenStepsBox } from "./ExecutionPlanHiddenStepsBox";
 import {
   IRunMetadataDict,
   IStepState,
-  IStepMetadata
+  IStepMetadata,
+  EMPTY_RUN_METADATA
 } from "../RunMetadataProvider";
 import { RunFragment } from "../runs/types/RunFragment";
 import { formatElapsedTime } from "../Util";
@@ -23,10 +24,6 @@ export interface IExecutionPlanProps {
   onShowStateDetails?: (step: string) => void;
   onReexecuteStep?: (step: string) => void;
 }
-
-const EMPTY_RUN_METADATA: IRunMetadataDict = {
-  steps: {}
-};
 
 const EMPTY_STEP_METADATA: IStepMetadata = {
   state: IStepState.WAITING,

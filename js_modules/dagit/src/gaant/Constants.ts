@@ -27,8 +27,8 @@ export enum GaantChartMode {
   WATERFALL_TIMED = "waterfall-timed"
 }
 
-export const MIN_SCALE = 0.01;
-export const MAX_SCALE = 1.0;
+export const MIN_SCALE = 0.005;
+export const MAX_SCALE = 0.5;
 export const LEFT_INSET = 5;
 export const BOX_HEIGHT = 30;
 export const BOX_MARGIN_Y = 5;
@@ -36,9 +36,11 @@ export const BOX_SPACING_X = 20;
 export const BOX_WIDTH = 100;
 export const BOX_MIN_WIDTH = 6;
 export const LINE_SIZE = 2;
+export const CSS_DURATION = `100ms`;
+
 export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
   mode: GaantChartMode.WATERFALL,
-  hideWaiting: true,
+  hideWaiting: false,
   hideTimedMode: false,
-  scale: 0.8
+  scale: 0.15
 };
