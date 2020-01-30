@@ -201,5 +201,6 @@ const Container = styled.div<{
       200ms ease-out;
     flex-direction: column;
     display: flex;
+    min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
   }
 `;
