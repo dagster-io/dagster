@@ -64,7 +64,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
             output_defs=[OutputDefinition(String)],
             compute_fn=_compute_fn,
             config={
-                'aws_region': Field(String, is_optional=True),
+                'aws_region': Field(String, is_required=False),
                 'job_config': define_emr_run_job_flow_config(),
             },
         )

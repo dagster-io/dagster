@@ -3,7 +3,9 @@ import warnings
 from dagster import check
 
 
-def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, coerce_old_to_new=None):
+def canonicalize_backcompat_args(
+    new_val, new_arg, old_val, old_arg, coerce_old_to_new=None, additional_warn_txt=None
+):
     '''
     Utility for managing backwards compatibility of two related arguments.
 
@@ -39,6 +41,7 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, coerce_old_
     check.str_param(new_arg, 'new_arg')
     check.str_param(old_arg, 'old_arg')
     check.opt_callable_param(coerce_old_to_new, 'coerce_old_to_new')
+    check.opt_str_param(additional_warn_txt, 'additional_warn_txt')
     if new_val is not None:
         if old_val is not None:
             check.failed(
@@ -51,7 +54,10 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, coerce_old_
         warnings.warn(
             '"{old_arg}" is deprecated, use "{new_arg}" instead.'.format(
                 old_arg=old_arg, new_arg=new_arg
-            ),
+            )
+            + (' ' + additional_warn_txt)
+            if additional_warn_txt
+            else '',
             # This punches up to the caller of canonicalize_backcompat_args
             stacklevel=3,
         )

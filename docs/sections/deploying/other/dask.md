@@ -107,12 +107,12 @@ client.submit(task, resources={'GPU': 1})
 ```
 
 Dagster has simple support for Dask resource specification at the solid level for solids that will
-be executed on Dask clusters. In your solid definition, just add a `step_metadata_fn` as follows:
+be executed on Dask clusters. In your solid definition, just add `metadata` as follows:
 
 ```python
 @solid(
     ...
-    step_metadata_fn=lambda _: {'dagster-dask/resource_requirements': {'GPU': 1}},
+    metadata={'dagster-dask/resource_requirements': {'GPU': 1}},
 )
 def my_task(context):
     pass

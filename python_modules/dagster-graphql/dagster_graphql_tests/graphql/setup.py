@@ -24,7 +24,6 @@ from dagster import (
     Path,
     PresetDefinition,
     RepositoryDefinition,
-    SolidDefinition,
     String,
     as_dagster_type,
     composite_solid,
@@ -171,7 +170,6 @@ def define_repository():
             pipeline_with_enum_config,
             pipeline_with_expectations,
             pipeline_with_list,
-            pipeline_with_step_metadata,
             required_resource_pipeline,
             scalar_output_pipeline,
             spew_pipeline,
@@ -218,8 +216,8 @@ def more_complicated_config():
     @solid(
         config={
             'field_one': Field(String),
-            'field_two': Field(String, is_optional=True),
-            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'field_two': Field(String, is_required=False),
+            'field_three': Field(String, is_required=False, default_value='some_value'),
         }
     )
     def a_solid_with_three_field_config(_context):
@@ -237,12 +235,12 @@ def more_complicated_nested_config():
         config={
             'field_any': Any,
             'field_one': String,
-            'field_two': Field(String, is_optional=True),
-            'field_three': Field(String, is_optional=True, default_value='some_value'),
+            'field_two': Field(String, is_required=False),
+            'field_three': Field(String, is_required=False, default_value='some_value'),
             'nested_field': {
                 'field_four_str': String,
                 'field_five_int': Int,
-                'field_six_nullable_int_list': Field([Noneable(int)], is_optional=True),
+                'field_six_nullable_int_list': Field([Noneable(int)], is_required=False),
             },
         },
     )
@@ -369,21 +367,6 @@ def naughty_programmer_pipeline():
     return throw_a_thing()
 
 
-@pipeline
-def pipeline_with_step_metadata():
-    solid_metadata = SolidDefinition(
-        name='solid_metadata_creation',
-        input_defs=[],
-        output_defs=[],
-        compute_fn=lambda *args, **kwargs: None,
-        config={'str_value': String},
-        step_metadata_fn=lambda env_config: {
-            'computed': env_config.solids['solid_metadata_creation'].config['str_value'] + '1'
-        },
-    )
-    return solid_metadata()
-
-
 @resource(config=Field(Int))
 def adder_resource(init_context):
     return lambda x: x + init_context.resource_config
@@ -431,7 +414,7 @@ def multi_mode_with_resources():
     return apply_to_three()
 
 
-@resource(config=Field(Int, is_optional=True))
+@resource(config=Field(Int, is_required=False))
 def req_resource(_):
     return 1
 
@@ -551,7 +534,7 @@ def retry_config(count):
     }
 
 
-@resource(config={'count': Field(Int, is_optional=True, default_value=0)})
+@resource(config={'count': Field(Int, is_required=False, default_value=0)})
 def retry_config_resource(context):
     return context.resource_config['count']
 

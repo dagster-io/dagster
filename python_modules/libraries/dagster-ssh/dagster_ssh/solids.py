@@ -7,20 +7,20 @@ from dagster.utils import mkdir_p
 @solid(
     config={
         'local_filepath': Field(
-            str, is_optional=False, description='local file path to get or put.'
+            str, is_required=True, description='local file path to get or put.'
         ),
         'remote_filepath': Field(
-            str, is_optional=False, description='remote file path to get or put.'
+            str, is_required=True, description='remote file path to get or put.'
         ),
         'operation': Field(
             Enum('SFTPOperation', [EnumValue('GET'), EnumValue('PUT')]),
-            is_optional=True,
+            is_required=False,
             default_value='PUT',
             description='specify operation \'GET\' or \'PUT\', defaults to PUT',
         ),
         'confirm': Field(
             bool,
-            is_optional=True,
+            is_required=False,
             default_value=True,
             description='specify if the SFTP operation should be confirmed, defaults to True',
         ),

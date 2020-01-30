@@ -173,13 +173,13 @@ class CloudwatchLogsHandler(logging.Handler):
 
 @logger(
     {
-        'log_level': Field(str, is_optional=True, default_value='INFO'),
-        'name': Field(str, is_optional=True, default_value='dagster'),
+        'log_level': Field(str, is_required=False, default_value='INFO'),
+        'name': Field(str, is_required=False, default_value='dagster'),
         'log_group_name': Field(str),
         'log_stream_name': Field(str),
-        'aws_region': Field(str, is_optional=True),
-        'aws_secret_access_key': Field(str, is_optional=True),
-        'aws_access_key_id': Field(str, is_optional=True),
+        'aws_region': Field(str, is_required=False),
+        'aws_secret_access_key': Field(str, is_required=False),
+        'aws_access_key_id': Field(str, is_required=False),
     },
     description='The default colored console logger.',
 )

@@ -144,7 +144,7 @@ class _PlanBuilder(object):
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
                 solid_compute_step = create_compute_step(
-                    self.pipeline_name, self.environment_config, solid, step_inputs, handle
+                    self.pipeline_name, solid, step_inputs, handle
                 )
                 self.add_step(solid_compute_step)
 

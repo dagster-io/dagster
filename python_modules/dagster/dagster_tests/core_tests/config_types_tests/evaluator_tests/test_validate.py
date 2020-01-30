@@ -65,7 +65,7 @@ DoubleLevelShape = Shape(
             Shape(
                 {
                     'string_field': Field(str),
-                    'int_field': Field(int, is_optional=True, default_value=989),
+                    'int_field': Field(int, is_required=False, default_value=989),
                     'bool_field': Field(bool),
                 }
             )

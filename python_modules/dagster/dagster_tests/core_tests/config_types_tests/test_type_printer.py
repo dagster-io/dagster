@@ -78,7 +78,7 @@ def test_two_field_dicts_same_type():
 
 
 def test_optional_field():
-    output = print_type_to_string({'int_field': Field(int, is_optional=True)})
+    output = print_type_to_string({'int_field': Field(int, is_required=False)})
 
     expected = '''{
   int_field?: Int
@@ -91,7 +91,7 @@ def test_single_level_dict_lists_and_nullable():
     output = print_type_to_string(
         {
             'nullable_int_field': Noneable(int),
-            'optional_int_field': Field(int, is_optional=True),
+            'optional_int_field': Field(int, is_required=False),
             'string_list_field': [str],
         }
     )
@@ -151,7 +151,7 @@ def define_test_type_pipeline():
                 'dict_with_optional_field',
                 {
                     'nullable_int_field': Noneable(int),
-                    'optional_int_field': Field(int, is_optional=True),
+                    'optional_int_field': Field(int, is_required=False),
                     'string_list_field': [str],
                 },
             ),

@@ -188,16 +188,16 @@ class EmrPySparkResource(PySparkResourceDefinition):
         'spark_config': spark_config(),
         'cluster_id': Field(str, description='Name of the job flow (cluster) on which to execute'),
         'region_name': Field(str),
-        'action_on_failure': Field(str, is_optional=True, default_value='CANCEL_AND_WAIT'),
+        'action_on_failure': Field(str, is_required=False, default_value='CANCEL_AND_WAIT'),
         'staging_bucket': Field(
             str,
-            is_optional=False,
+            is_required=True,
             description='S3 staging bucket to use for staging the produced main.py and zip file of'
             ' Python code',
         ),
         'requirements_file_path': Field(
             str,
-            is_optional=True,
+            is_required=False,
             description='Path to a requirements.txt file; the current directory is searched if none'
             ' is specified.',
         ),

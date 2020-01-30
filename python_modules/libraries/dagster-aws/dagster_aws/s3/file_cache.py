@@ -42,7 +42,7 @@ class S3FileCache(FileCache):
     {
         'bucket': Field(str),
         'key': Field(str),
-        'overwrite': Field(bool, is_optional=True, default_value=False),
+        'overwrite': Field(bool, is_required=False, default_value=False),
     }
 )
 def s3_file_cache(init_context):

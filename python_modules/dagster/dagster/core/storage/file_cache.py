@@ -62,7 +62,7 @@ class FSFileCache(FileCache):
 
 
 @resource(
-    {'overwrite': Field(bool, is_optional=True, default_value=False), 'target_folder': Field(str)}
+    {'overwrite': Field(bool, is_required=False, default_value=False), 'target_folder': Field(str)}
 )
 def fs_file_cache(init_context):
     target_folder = init_context.resource_config['target_folder']

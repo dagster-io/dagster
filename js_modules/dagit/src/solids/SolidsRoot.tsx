@@ -13,7 +13,7 @@ import {
   SolidsRootQuery_usedSolids
 } from "./types/SolidsRootQuery";
 import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
-import { SplitPanelChildren } from "../SplitPanelChildren";
+import { SplitPanelContainer } from "../SplitPanelContainer";
 import { Colors, NonIdealState } from "@blueprintjs/core";
 import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
 import SolidTypeSignature from "../SolidTypeSignature";
@@ -155,71 +155,69 @@ const SolidsRootWithData: React.FunctionComponent<{
   });
 
   return (
-    <Wrapper>
-      <SplitPanelChildren
-        identifier={"solids"}
-        leftInitialPercent={40}
-        leftMinWidth={420}
-        left={
+    <SplitPanelContainer
+      identifier={"solids"}
+      firstInitialPercent={40}
+      firstMinSize={420}
+      first={
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%"
+          }}
+        >
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              height: "100%"
+              padding: "15px 10px",
+              borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`
             }}
           >
-            <div
-              style={{
-                padding: "15px 10px",
-                borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`
-              }}
-            >
-              <TokenizingField
-                values={search}
-                onChange={search => onSearch(search)}
-                suggestionProviders={suggestions}
-                placeholder={"Filter by name or input/output type..."}
-              />
-            </div>
-            <SolidListScrollContainer>
-              {filtered
-                .sort((a, b) =>
-                  a.definition.name.localeCompare(b.definition.name)
-                )
-                .map(s => (
-                  <SolidListItem
-                    key={s.definition.name}
-                    selected={s === selected}
-                    onClick={() => onClickSolid(s.definition.name)}
-                  >
-                    <SolidName>{s.definition.name}</SolidName>
-                    <SolidTypeSignature definition={s.definition} />
-                  </SolidListItem>
-                ))}
-            </SolidListScrollContainer>
-          </div>
-        }
-        right={
-          selected ? (
-            <SolidDetailScrollContainer>
-              <UsedSolidDetails
-                name={selected.definition.name}
-                onClickInvocation={({ pipelineName, handleID }) =>
-                  history.push(
-                    `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
-                  )
-                }
-              />
-            </SolidDetailScrollContainer>
-          ) : (
-            <NonIdealState
-              title="No solid selected"
-              description="Select a solid to see its definition and invocations."
+            <TokenizingField
+              values={search}
+              onChange={search => onSearch(search)}
+              suggestionProviders={suggestions}
+              placeholder={"Filter by name or input/output type..."}
             />
-          )
-        }
-      />
-    </Wrapper>
+          </div>
+          <SolidListScrollContainer>
+            {filtered
+              .sort((a, b) =>
+                a.definition.name.localeCompare(b.definition.name)
+              )
+              .map(s => (
+                <SolidListItem
+                  key={s.definition.name}
+                  selected={s === selected}
+                  onClick={() => onClickSolid(s.definition.name)}
+                >
+                  <SolidName>{s.definition.name}</SolidName>
+                  <SolidTypeSignature definition={s.definition} />
+                </SolidListItem>
+              ))}
+          </SolidListScrollContainer>
+        </div>
+      }
+      second={
+        selected ? (
+          <SolidDetailScrollContainer>
+            <UsedSolidDetails
+              name={selected.definition.name}
+              onClickInvocation={({ pipelineName, handleID }) =>
+                history.push(
+                  `/pipeline/${pipelineName}/${handleID.split(".").join("/")}`
+                )
+              }
+            />
+          </SolidDetailScrollContainer>
+        ) : (
+          <NonIdealState
+            title="No solid selected"
+            description="Select a solid to see its definition and invocations."
+          />
+        )
+      }
+    />
   );
 };
 
@@ -335,11 +333,4 @@ const SolidDetailScrollContainer = styled.div`
 const SolidName = styled.div`
   flex: 1;
   font-weight: 600;
-`;
-
-const Wrapper = styled.div`
-  flex: 1 1;
-  display: flex;
-  flex-direction: row;
-  top: 0;
 `;

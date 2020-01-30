@@ -6,7 +6,7 @@ import { Colors, Button } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { RunPreview } from "./RunPreview";
-import { SplitPanelChildren } from "../SplitPanelChildren";
+import { SplitPanelContainer } from "../SplitPanelContainer";
 import SolidSelector from "./SolidSelector";
 import {
   ConfigEditor,
@@ -39,6 +39,7 @@ import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
+import { getFeatureFlags, FeatureFlag } from "../Util";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -217,153 +218,143 @@ export default class ExecutionSessionContainer extends React.Component<
     const modeError = this.getModeError();
     const pipeline = this.getPipeline();
 
+    const gaantPreview = getFeatureFlags().includes(
+      FeatureFlag.GaantExecutionPlan
+    );
+
     return (
-      <SplitPanelFlexbox>
-        <SplitPanelChildren
-          identifier={"execution"}
-          leftInitialPercent={75}
-          left={
-            <>
-              <SessionSettingsBar>
-                <PipelineJumpBar
-                  selectedPipelineName={currentSession.pipeline}
-                  onChange={name =>
-                    onSaveSession({
-                      pipeline: name,
-                      mode: null,
-                      solidSubset: null
-                    })
-                  }
-                />
-                <div style={{ width: 5 }} />
-                <SolidSelector
-                  subsetError={subsetError}
-                  pipelineName={currentSession.pipeline}
-                  value={currentSession.solidSubset || null}
-                  query={currentSession.solidSubsetQuery || null}
-                  onChange={this.onSolidSubsetChange}
-                />
-                <div style={{ width: 5 }} />
-                {pipeline && (
-                  <ConfigEditorModePicker
-                    modes={pipeline.modes}
-                    modeError={modeError}
-                    onModeChange={this.onModeChange}
-                    modeName={currentSession.mode}
-                  />
-                )}
-              </SessionSettingsBar>
-              <ConfigEditorPresetInsertionContainer>
-                {pipeline && (
-                  <ConfigEditorConfigPicker
-                    pipelineName={currentSession.pipeline}
-                    solidSubset={currentSession.solidSubset}
-                    onCreateSession={onCreateSession}
-                  />
-                )}
-              </ConfigEditorPresetInsertionContainer>
-              <ConfigEditorDisplayOptionsContainer>
-                <Button
-                  icon="paragraph"
-                  small={true}
-                  active={showWhitespace}
-                  style={{ marginLeft: "auto" }}
-                  onClick={() =>
-                    this.setState({ showWhitespace: !showWhitespace })
-                  }
-                />
-              </ConfigEditorDisplayOptionsContainer>
-              <ConfigEditorHelp
-                context={editorHelpContext}
-                allInnerTypes={environmentSchema?.allConfigTypes || []}
+      <SplitPanelContainer
+        axis={gaantPreview ? "vertical" : "horizontal"}
+        identifier={"execution"}
+        firstInitialPercent={75}
+        first={
+          <>
+            <SessionSettingsBar>
+              <PipelineJumpBar
+                selectedPipelineName={currentSession.pipeline}
+                onChange={name =>
+                  onSaveSession({
+                    pipeline: name,
+                    mode: null,
+                    solidSubset: null
+                  })
+                }
               />
-              <ApolloConsumer>
-                {client => (
-                  <ConfigEditor
-                    readOnly={false}
-                    environmentSchema={environmentSchema}
-                    configCode={currentSession.environmentConfigYaml}
-                    onConfigChange={this.onConfigChange}
-                    onHelpContextChange={next => {
-                      if (!isHelpContextEqual(editorHelpContext, next)) {
-                        this.setState({ editorHelpContext: next });
-                      }
-                    }}
-                    showWhitespace={showWhitespace}
-                    checkConfig={async environmentConfigData => {
-                      if (!currentSession.mode || modeError) {
-                        return {
-                          isValid: false,
-                          errors: [
-                            // FIXME this should be specific -- we should have an enumerated
-                            // validation error when there is no mode provided
-                            {
-                              message: "Must specify a mode",
-                              path: ["root"],
-                              reason: "MISSING_REQUIRED_FIELD"
-                            }
-                          ]
-                        };
-                      }
-                      const { data } = await client.query<
-                        PreviewConfigQuery,
-                        PreviewConfigQueryVariables
-                      >({
-                        fetchPolicy: "no-cache",
-                        query: PREVIEW_CONFIG_QUERY,
-                        variables: {
-                          environmentConfigData,
-                          pipeline: {
-                            name: currentSession.pipeline,
-                            solidSubset: currentSession.solidSubset
-                          },
-                          mode: currentSession.mode || "default"
-                        }
-                      });
-
-                      if (this.mounted) {
-                        this.setState({ preview: data });
-                      }
-
-                      return responseToValidationResult(
-                        environmentConfigData,
-                        data.isPipelineConfigValid
-                      );
-                    }}
-                  />
-                )}
-              </ApolloConsumer>
-            </>
-          }
-          right={
-            <>
-              <div
-                style={{
-                  position: "absolute",
-                  top: -41,
-                  zIndex: 3,
-                  right: 10
-                }}
-              >
-                {pipeline && (
-                  <PipelineExecutionButtonGroup
-                    pipelineName={pipeline.name}
-                    getVariables={this.buildExecutionVariables}
-                  />
-                )}
-              </div>
-              {preview ? (
-                <RunPreview
-                  plan={preview.executionPlan}
-                  validation={preview.isPipelineConfigValid}
+              <div style={{ width: 5 }} />
+              <SolidSelector
+                subsetError={subsetError}
+                pipelineName={currentSession.pipeline}
+                value={currentSession.solidSubset || null}
+                query={currentSession.solidSubsetQuery || null}
+                onChange={this.onSolidSubsetChange}
+              />
+              <div style={{ width: 5 }} />
+              {pipeline && (
+                <ConfigEditorModePicker
+                  modes={pipeline.modes}
+                  modeError={modeError}
+                  onModeChange={this.onModeChange}
+                  modeName={currentSession.mode}
                 />
-              ) : (
-                <RunPreview />
               )}
-            </>
-          }
-        />
-      </SplitPanelFlexbox>
+            </SessionSettingsBar>
+            <ConfigEditorPresetInsertionContainer>
+              {pipeline && (
+                <ConfigEditorConfigPicker
+                  pipelineName={currentSession.pipeline}
+                  solidSubset={currentSession.solidSubset}
+                  onCreateSession={onCreateSession}
+                />
+              )}
+            </ConfigEditorPresetInsertionContainer>
+            <ConfigEditorDisplayOptionsContainer>
+              <Button
+                icon="paragraph"
+                small={true}
+                active={showWhitespace}
+                style={{ marginLeft: "auto" }}
+                onClick={() =>
+                  this.setState({ showWhitespace: !showWhitespace })
+                }
+              />
+            </ConfigEditorDisplayOptionsContainer>
+            <ConfigEditorHelp
+              context={editorHelpContext}
+              allInnerTypes={environmentSchema?.allConfigTypes || []}
+            />
+            <ApolloConsumer>
+              {client => (
+                <ConfigEditor
+                  readOnly={false}
+                  environmentSchema={environmentSchema}
+                  configCode={currentSession.environmentConfigYaml}
+                  onConfigChange={this.onConfigChange}
+                  onHelpContextChange={next => {
+                    if (!isHelpContextEqual(editorHelpContext, next)) {
+                      this.setState({ editorHelpContext: next });
+                    }
+                  }}
+                  showWhitespace={showWhitespace}
+                  checkConfig={async environmentConfigData => {
+                    if (!currentSession.mode || modeError) {
+                      return {
+                        isValid: false,
+                        errors: [
+                          // FIXME this should be specific -- we should have an enumerated
+                          // validation error when there is no mode provided
+                          {
+                            message: "Must specify a mode",
+                            path: ["root"],
+                            reason: "MISSING_REQUIRED_FIELD"
+                          }
+                        ]
+                      };
+                    }
+                    const { data } = await client.query<
+                      PreviewConfigQuery,
+                      PreviewConfigQueryVariables
+                    >({
+                      fetchPolicy: "no-cache",
+                      query: PREVIEW_CONFIG_QUERY,
+                      variables: {
+                        environmentConfigData,
+                        pipeline: {
+                          name: currentSession.pipeline,
+                          solidSubset: currentSession.solidSubset
+                        },
+                        mode: currentSession.mode || "default"
+                      }
+                    });
+
+                    if (this.mounted) {
+                      this.setState({ preview: data });
+                    }
+
+                    return responseToValidationResult(
+                      environmentConfigData,
+                      data.isPipelineConfigValid
+                    );
+                  }}
+                />
+              )}
+            </ApolloConsumer>
+          </>
+        }
+        second={
+          <RunPreview
+            plan={preview?.executionPlan}
+            validation={preview?.isPipelineConfigValid}
+            toolbarActions={
+              pipeline && (
+                <PipelineExecutionButtonGroup
+                  pipelineName={pipeline.name}
+                  getVariables={this.buildExecutionVariables}
+                />
+              )
+            }
+          />
+        }
+      />
     );
   }
 }
@@ -374,24 +365,22 @@ interface ExecutionSessionContainerErrorProps {
 }
 
 export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => (
-  <SplitPanelFlexbox>
-    <SplitPanelChildren
-      identifier={"execution"}
-      leftInitialPercent={75}
-      left={
-        <>
-          <SessionSettingsBar>
-            <PipelineJumpBar
-              selectedPipelineName={props.currentSession.pipeline}
-              onChange={name => props.onSaveSession({ pipeline: name })}
-            />
-          </SessionSettingsBar>
-          {props.children}
-        </>
-      }
-      right={<RunPreview />}
-    />
-  </SplitPanelFlexbox>
+  <SplitPanelContainer
+    identifier={"execution"}
+    firstInitialPercent={75}
+    first={
+      <>
+        <SessionSettingsBar>
+          <PipelineJumpBar
+            selectedPipelineName={props.currentSession.pipeline}
+            onChange={name => props.onSaveSession({ pipeline: name })}
+          />
+        </SessionSettingsBar>
+        {props.children}
+      </>
+    }
+    second={<RunPreview />}
+  />
 );
 
 const PREVIEW_CONFIG_QUERY = gql`
@@ -421,12 +410,6 @@ const PREVIEW_CONFIG_QUERY = gql`
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
 
-const SplitPanelFlexbox = styled.div`
-  display: flex;
-  flex-direction: row;
-  flex: 1 1;
-`;
-
 const SessionSettingsBar = styled.div`
   color: white;
   display: flex;
@@ -448,7 +431,7 @@ const ConfigEditorPresetInsertionContainer = styled.div`
 const ConfigEditorDisplayOptionsContainer = styled.div`
   display: inline-block;
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  bottom: 14px;
+  right: 14px;
   z-index: 10;
 `;

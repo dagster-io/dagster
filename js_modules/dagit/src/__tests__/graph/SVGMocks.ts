@@ -14,7 +14,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
 ].map(name => ({
   name: name,
   query: PIPELINE_EXPLORER_ROOT_QUERY,
-  variables: { pipeline: name, parentHandleID: "" },
+  variables: { pipeline: name, rootHandleID: "", requestScopeHandleID: "" },
   filepath: path.join(dataDir, `${name}.json`)
 }));
 
@@ -24,7 +24,8 @@ MOCKS.push({
   query: PIPELINE_EXPLORER_ROOT_QUERY,
   variables: {
     pipeline: "airline_demo_ingest_pipeline",
-    parentHandleID: "master_cord_s3_to_df"
+    rootHandleID: "master_cord_s3_to_df",
+    requestScopeHandleID: "master_cord_s3_to_df"
   },
   filepath: path.join(dataDir, `airline_demo_ingest_pipeline_composite.json`)
 });
@@ -33,7 +34,11 @@ MOCKS.push({
 MOCKS.push({
   name: "fan_in_fan_out_pipeline",
   query: PIPELINE_EXPLORER_ROOT_QUERY,
-  variables: { pipeline: "fan_in_fan_out_pipeline", parentHandleID: "" },
+  variables: {
+    pipeline: "fan_in_fan_out_pipeline",
+    rootHandleID: "",
+    requestScopeHandleID: ""
+  },
   filepath: path.join(dataDir, `fan_in_fan_out_pipeline.json`),
   repo: "examples/dagster_examples/toys"
 });

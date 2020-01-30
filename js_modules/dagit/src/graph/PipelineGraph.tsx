@@ -5,9 +5,12 @@ import { Colors } from "@blueprintjs/core";
 import SVGViewport, { DETAIL_ZOOM, SVGViewportInteractor } from "./SVGViewport";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import SolidNode from "./SolidNode";
-import { IFullPipelineLayout, IFullSolidLayout } from "./getFullSolidLayout";
+import {
+  IFullPipelineLayout,
+  IFullSolidLayout,
+  ILayout
+} from "./getFullSolidLayout";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
-import { PipelineGraphParentSolidFragment } from "./types/PipelineGraphParentSolidFragment";
 import { SolidLinks } from "./SolidLinks";
 import { Edge, isHighlighted, isSolidHighlighted } from "./highlighting";
 import { ParentSolidNode, SVGLabeledParentRect } from "./ParentSolidNode";
@@ -21,7 +24,7 @@ interface IPipelineGraphProps {
   solids: PipelineGraphSolidFragment[];
   focusSolids: PipelineGraphSolidFragment[];
   parentHandleID?: string;
-  parentSolid?: PipelineGraphParentSolidFragment;
+  parentSolid?: PipelineGraphSolidFragment;
   selectedHandleID?: string;
   selectedSolid?: PipelineGraphSolidFragment;
   highlightedSolids: Array<PipelineGraphSolidFragment>;
@@ -40,6 +43,43 @@ interface IPipelineContentsProps extends IPipelineGraphProps {
 
 interface IPipelineContentsState {
   highlighted: Edge[];
+}
+
+/**
+ * Identifies groups of solids that share a similar `prefix.` and returns
+ * an array of bounding boxes and common prefixes. Used to render lightweight
+ * outlines around flattened composites.
+ */
+function computeSolidPrefixBoundingBoxes(layout: IFullPipelineLayout) {
+  const groups: { [base: string]: ILayout[] } = {};
+  let maxDepth = 0;
+
+  for (const key of Object.keys(layout.solids)) {
+    const parts = key.split(".");
+    if (parts.length === 1) continue;
+    for (let ii = 1; ii < parts.length; ii++) {
+      const base = parts.slice(0, ii).join(".");
+      groups[base] = groups[base] || [];
+      groups[base].push(layout.solids[key].boundingBox);
+      maxDepth = Math.max(maxDepth, ii);
+    }
+  }
+
+  const boxes: (ILayout & { name: string })[] = [];
+  for (const base of Object.keys(groups)) {
+    const group = groups[base];
+    const depth = base.split(".").length;
+    const margin = 5 + (maxDepth - depth) * 5;
+
+    if (group.length === 1) continue;
+    const x1 = Math.min(...group.map(l => l.x)) - margin;
+    const x2 = Math.max(...group.map(l => l.x + l.width)) + margin;
+    const y1 = Math.min(...group.map(l => l.y)) - margin;
+    const y2 = Math.max(...group.map(l => l.y + l.height)) + margin;
+    boxes.push({ name: base, x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
+  }
+
+  return boxes;
 }
 
 export class PipelineGraphContents extends React.PureComponent<
@@ -126,6 +166,15 @@ export class PipelineGraphContents extends React.PureComponent<
             })
           )}
         />
+        {computeSolidPrefixBoundingBoxes(layout).map((box, idx) => (
+          <rect
+            key={idx}
+            {...box}
+            stroke="rgb(230, 219, 238)"
+            fill="rgba(230, 219, 238, 0.2)"
+            strokeWidth={2}
+          />
+        ))}
         {solids.map(solid => (
           <SolidNode
             key={solid.name}
@@ -174,18 +223,6 @@ export default class PipelineGraph extends React.Component<
       }
       ${SolidNode.fragments.SolidNodeInvocationFragment}
       ${SolidNode.fragments.SolidNodeDefinitionFragment}
-    `,
-    PipelineGraphParentSolidFragment: gql`
-      fragment PipelineGraphParentSolidFragment on Solid {
-        name
-        ...SolidNodeInvocationFragment
-        definition {
-          name
-          ...ParentSolidNodeDefinitionFragment
-        }
-      }
-      ${SolidNode.fragments.SolidNodeInvocationFragment}
-      ${SolidNode.fragments.ParentSolidNodeDefinitionFragment}
     `
   };
 

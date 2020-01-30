@@ -42,8 +42,8 @@ def test_field_things():
     dict_meta = meta_from_dagster_type(
         {
             'req': int,
-            'opt': Field(int, is_optional=True),
-            'opt_with_default': Field(int, is_optional=True, default_value=2),
+            'opt': Field(int, is_required=False),
+            'opt_with_default': Field(int, is_required=False, default_value=2),
             'req_with_desc': Field(int, description='A desc'),
         }
     )
@@ -137,7 +137,7 @@ def test_kitchen_sink():
     kitchen_sink = resolve_to_config_type(
         [
             {
-                'opt_list_of_int': Field(int, is_optional=True),
+                'opt_list_of_int': Field(int, is_required=False),
                 'nested_dict': {
                     'list_list': [[int]],
                     'nested_selector': Field(
@@ -164,7 +164,7 @@ def test_kitchen_sink_break_out():
         }
     )
     dict_within_list_cls = resolve_to_config_type(
-        {'opt_list_of_int': Field([int], is_optional=True), 'nested_dict': Field(nested_dict_cls)}
+        {'opt_list_of_int': Field([int], is_required=False), 'nested_dict': Field(nested_dict_cls)}
     )
     kitchen_sink = Array(dict_within_list_cls)
 

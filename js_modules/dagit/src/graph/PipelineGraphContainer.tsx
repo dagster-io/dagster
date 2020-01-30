@@ -4,7 +4,6 @@ import PipelineGraph from "./PipelineGraph";
 import { SolidNameOrPath } from "../PipelineExplorer";
 import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
 import { PipelineExplorerSolidHandleFragment } from "../types/PipelineExplorerSolidHandleFragment";
-import { PipelineExplorerParentSolidHandleFragment } from "../types/PipelineExplorerParentSolidHandleFragment";
 import {
   getDagrePipelineLayout,
   asyncDagrePipelineLayout
@@ -20,7 +19,7 @@ interface IPipelineGraphContainerProps {
   focusSolids: PipelineGraphSolidFragment[];
   highlightedSolids: PipelineGraphSolidFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
-  parentHandle?: PipelineExplorerParentSolidHandleFragment;
+  parentHandle?: PipelineExplorerSolidHandleFragment;
   onClickSolid?: (arg: SolidNameOrPath) => void;
   onEnterCompositeSolid?: (arg: SolidNameOrPath) => void;
   onLeaveCompositeSolid?: () => void;
@@ -47,6 +46,7 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   const [layout, setLayout] = React.useState<IFullPipelineLayout | undefined>();
   const solidKey = solids.map(x => x.name).join("|");
   const parentSolidKey = parentSolid && parentSolid.name;
+
   React.useEffect(() => {
     async function delegateDagrePipelineLayout() {
       setLoading(true);

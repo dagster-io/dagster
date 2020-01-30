@@ -36,7 +36,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {
             'address': str,
-            'timeout': Field(float, is_optional=True, default_value=30.0),
+            'timeout': Field(float, is_required=False, default_value=30.0),
         }
 
     @classmethod

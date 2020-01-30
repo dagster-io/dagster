@@ -18,8 +18,8 @@ from .resources import PySparkResourceDefinition, pyspark_resource, spark_sessio
         {
             'csv': {
                 'path': Field(Path),
-                'sep': Field(String, is_optional=True),
-                'header': Field(Bool, is_optional=True),
+                'sep': Field(String, is_required=False),
+                'header': Field(Bool, is_required=False),
             }
         }
     )
@@ -39,8 +39,8 @@ def load_rdd(context, file_type, file_options):
             'csv': Field(
                 {
                     'path': Field(Path),
-                    'sep': Field(String, is_optional=True),
-                    'header': Field(Bool, is_optional=True),
+                    'sep': Field(String, is_required=False),
+                    'header': Field(Bool, is_required=False),
                 }
             )
         }
@@ -67,8 +67,8 @@ SparkRDD = as_dagster_type(
         {
             'csv': {
                 'path': Field(Path),
-                'sep': Field(String, is_optional=True),
-                'header': Field(Bool, is_optional=True),
+                'sep': Field(String, is_required=False),
+                'header': Field(Bool, is_required=False),
             },
         }
     )

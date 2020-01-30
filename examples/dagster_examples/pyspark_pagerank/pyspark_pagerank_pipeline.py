@@ -38,7 +38,7 @@ def compute_links(_context, urls):
 @solid(
     input_defs=[InputDefinition(name='links', dagster_type=SparkRDD)],
     output_defs=[OutputDefinition(name='ranks', dagster_type=SparkRDD)],
-    config={'iterations': Field(Int, is_optional=True, default_value=1)},
+    config={'iterations': Field(Int, is_required=False, default_value=1)},
     required_resource_keys={'spark'},  # required for dagster_pyspark.SparkRDD
 )
 def calculate_ranks(context, links):

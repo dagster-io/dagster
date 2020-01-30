@@ -81,7 +81,7 @@ def define_logger_dictionary_cls(creation_data):
     for logger_name, logger_definition in creation_data.logger_defs.items():
         fields[logger_name] = Field(
             Shape(remove_none_entries({'config': logger_definition.config_field}),),
-            is_optional=True,
+            is_required=False,
         )
 
     return Shape(fields)
@@ -99,10 +99,10 @@ def define_environment_cls(creation_data):
                     )
                 ),
                 'storage': Field(
-                    define_storage_config_cls(creation_data.mode_definition), is_optional=True,
+                    define_storage_config_cls(creation_data.mode_definition), is_required=False,
                 ),
                 'execution': Field(
-                    define_executor_config_cls(creation_data.mode_definition), is_optional=True,
+                    define_executor_config_cls(creation_data.mode_definition), is_required=False,
                 ),
                 'loggers': Field(define_logger_dictionary_cls(creation_data)),
                 'resources': Field(
@@ -181,12 +181,12 @@ def get_outputs_field(solid, handle):
     for name, out in solid_def.output_dict.items():
         if out.runtime_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                out.runtime_type.output_materialization_config.schema_type, is_optional=True
+                out.runtime_type.output_materialization_config.schema_type, is_required=False
             )
 
     output_entry_dict = Shape(output_dict_fields)
 
-    return Field(Array(output_entry_dict), is_optional=True)
+    return Field(Array(output_entry_dict), is_required=False)
 
 
 def filtered_system_dict(fields):

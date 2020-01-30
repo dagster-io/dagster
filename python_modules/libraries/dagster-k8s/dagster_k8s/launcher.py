@@ -86,8 +86,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'service_account_name': str,
             'job_image': str,
             'instance_config_map': str,
-            'image_pull_secrets': Field(list, is_optional=True),
-            'image_pull_policy': Field(str, is_optional=True, default_value='Always'),
+            'image_pull_secrets': Field(list, is_required=False),
+            'image_pull_policy': Field(str, is_required=False, default_value='Always'),
             'job_namespace': str,
         }
 

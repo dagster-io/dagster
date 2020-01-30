@@ -138,7 +138,7 @@ def in_process_executor(init_context):
 
 
 @executor(
-    name='multiprocess', config={'max_concurrent': Field(Int, is_optional=True, default_value=0)}
+    name='multiprocess', config={'max_concurrent': Field(Int, is_required=False, default_value=0)}
 )
 def multiprocess_executor(init_context):
     '''The default multiprocess executor.

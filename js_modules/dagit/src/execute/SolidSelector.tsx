@@ -18,8 +18,8 @@ import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
 import { IconNames } from "@blueprintjs/icons";
 import { SubsetError } from "./ExecutionSessionContainer";
 import { ShortcutHandler } from "../ShortcutHandler";
-import { SolidQueryInput } from "../SolidQueryInput";
-import { filterSolidsByQuery } from "../SolidQueryImpl";
+import { GraphQueryInput } from "../GraphQueryInput";
+import { filterByQuery } from "../GraphQueryImpl";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -90,7 +90,7 @@ class SolidSelectorModal extends React.PureComponent<
     const { pipeline, onChange } = this.props;
     let { query } = this.state;
 
-    const queryResultSolids = filterSolidsByQuery(pipeline.solids, query);
+    const queryResultSolids = filterByQuery(pipeline.solids, query);
     let solidSubset: string[] | null = queryResultSolids.all.map(s => s.name);
     if (queryResultSolids.all.length === 0) {
       alert(
@@ -115,7 +115,7 @@ class SolidSelectorModal extends React.PureComponent<
     const { query } = this.state;
 
     const queryResultSolids = pipeline
-      ? filterSolidsByQuery(pipeline.solids, query).all
+      ? filterByQuery(pipeline.solids, query).all
       : [];
 
     const queryInvalid = queryResultSolids.length === 0 || query.length === 0;
@@ -148,8 +148,8 @@ class SolidSelectorModal extends React.PureComponent<
               transform: "translateX(-50%)"
             }}
           >
-            <SolidQueryInput
-              solids={pipeline ? pipeline.solids : []}
+            <GraphQueryInput
+              items={pipeline ? pipeline.solids : []}
               value={query}
               onChange={this.handleSetQuery}
               autoFocus={true}

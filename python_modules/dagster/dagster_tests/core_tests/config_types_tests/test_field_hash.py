@@ -18,14 +18,14 @@ def test_hash_diff():
 
     assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(str)})
 
-    assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(int, is_optional=True)})
+    assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(int, is_required=False)})
 
     assert _hash({'same_name': Field(int)}) != _hash(
-        {'same_name': Field(int, is_optional=True, default_value=2)}
+        {'same_name': Field(int, is_required=False, default_value=2)}
     )
 
-    assert _hash({'same_name': Field(int, is_optional=True)}) != _hash(
-        {'same_name': Field(int, is_optional=True, default_value=2)}
+    assert _hash({'same_name': Field(int, is_required=False)}) != _hash(
+        {'same_name': Field(int, is_required=False, default_value=2)}
     )
 
     assert _hash({'same_name': Field(int)}) != _hash({'same_name': Field(int, description='desc')})
@@ -103,7 +103,7 @@ def test_construct_different_selectors():
 def test_kitchen_sink():
     big_dict_1 = Shape(
         {
-            'field_one': Field(int, default_value=2, is_optional=True),
+            'field_one': Field(int, default_value=2, is_required=False),
             'field_two': Field(
                 Shape(
                     {
@@ -127,7 +127,7 @@ def test_kitchen_sink():
 
     big_dict_2 = Shape(
         {
-            'field_one': Field(int, default_value=2, is_optional=True),
+            'field_one': Field(int, default_value=2, is_required=False),
             'field_two': Field(
                 Shape(
                     fields={
@@ -155,7 +155,7 @@ def test_kitchen_sink():
     # differs way down in tree
     big_dict_3 = Shape(
         {
-            'field_one': Field(int, default_value=2, is_optional=True),
+            'field_one': Field(int, default_value=2, is_required=False),
             'field_two': Field(
                 Shape(
                     fields={

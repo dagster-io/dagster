@@ -50,6 +50,17 @@
   execution, especially in a multiprocessing or remote execution environment.
 - The `@system_storage` decorator now requires argument `required_resource_keys`, which was
   previously optional.
+- `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
+  with python's typing and dagster's definition of `Optional`, which indicates None-ability,
+  rather than existence. `is_optional` is deprecated and will be removed in a future version.
+- `step_metadata_fn` has been removed from `SolidDefinition` & `@solid`.
+- Dagster Type System Changes
+
+  - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
+  - Core type check function of DagsterType can now return a naked `bool` in addition
+    to a `TypeCheck` object.
+  - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
+    a custom type_check is needed, use `DagsterType`.
 
 **New**
 

@@ -37,7 +37,7 @@ def mem_system_storage(init_context):
 @system_storage(
     name='filesystem',
     is_persistent=True,
-    config={'base_dir': Field(str, is_optional=True)},
+    config={'base_dir': Field(str, is_required=False)},
     required_resource_keys=set(),
 )
 def fs_system_storage(init_context):

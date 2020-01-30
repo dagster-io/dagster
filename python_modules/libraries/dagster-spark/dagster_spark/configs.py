@@ -21,7 +21,7 @@ def define_spark_config():
     master_url = Field(
         str,
         description='The master URL for the cluster (e.g. spark://23.195.26.187:7077)',
-        is_optional=False,
+        is_required=True,
     )
 
     deploy_mode = Field(
@@ -34,7 +34,7 @@ def define_spark_config():
         as a client to the cluster. The input and output of the application is attached to the
         console. Thus, this mode is especially suitable for applications that involve the REPL (e.g.
         Spark shell).''',
-        is_optional=True,
+        is_required=False,
     )
 
     application_jar = Field(
@@ -43,19 +43,19 @@ def define_spark_config():
                         dependencies. The URL must be globally visible inside of your cluster, for
                         instance, an hdfs:// path or a file:// path that is present on all nodes.
                         ''',
-        is_optional=False,
+        is_required=True,
     )
 
     application_arguments = Field(
         str,
         description='Arguments passed to the main method of your main class, if any',
-        is_optional=True,
+        is_required=False,
     )
 
     spark_home = Field(
         str,
         description='The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.',
-        is_optional=True,
+        is_required=False,
     )
 
     return {

@@ -449,28 +449,6 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_pipeline_with_execution_metadata(snapshot):
-    environment_dict = {'solids': {'solid_metadata_creation': {'config': {'str_value': 'foobar'}}}}
-    result = execute_dagster_graphql(
-        define_test_context(),
-        EXECUTION_PLAN_QUERY,
-        variables={
-            'pipeline': {'name': 'pipeline_with_step_metadata'},
-            'environmentConfigData': environment_dict,
-            'mode': 'default',
-        },
-    )
-
-    steps_data = result.data['executionPlan']['steps']
-    assert len(steps_data) == 1
-    step_data = steps_data[0]
-    assert step_data['key'] == 'solid_metadata_creation.compute'
-    assert len(step_data['metadata']) == 1
-    assert step_data['metadata'][0] == {'key': 'computed', 'value': 'foobar1'}
-
-    snapshot.assert_match(result.data)
-
-
 def test_basic_execute_plan_with_materialization():
     with get_temp_file_name() as out_csv_path:
 

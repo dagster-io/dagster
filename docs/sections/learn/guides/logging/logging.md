@@ -172,8 +172,8 @@ import logging
 
 @logger(
     {
-        'log_level': Field(str, is_optional=True, default_value='INFO'),
-        'name': Field(str, is_optional=True, default_value='dagster'),
+        'log_level': Field(str, is_required=False, default_value='INFO'),
+        'name': Field(str, is_required=False, default_value='dagster'),
     },
     description='A JSON-formatted console logger',
 )

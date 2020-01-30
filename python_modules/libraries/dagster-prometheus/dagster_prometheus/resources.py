@@ -109,7 +109,7 @@ class PrometheusResource(object):
         'timeout': Field(
             int,
             default_value=30,
-            is_optional=True,
+            is_required=False,
             description='is how long delete will attempt to connect before giving up. '
             'Defaults to 30s.',
         ),

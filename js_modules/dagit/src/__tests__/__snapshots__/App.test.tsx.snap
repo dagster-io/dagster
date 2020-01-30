@@ -231,20 +231,21 @@ exports[`renders execution 1`] = `
       />
     </div>
     <div
-      className="ExecutionSessionContainer__SplitPanelFlexbox-sc-13rxma3-0 imcNTe"
+      className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+      id="split-panel-container"
     >
       <div
-        className="SplitPanelChildren__Split-u7l43w-4 hXmEu"
+        className="split-panel"
         style={
           Object {
             "flexShrink": 0,
             "minWidth": undefined,
+            "width": "75vw",
           }
         }
-        width={75}
       >
         <div
-          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-1 cQJTMR"
+          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 eBitZF"
         >
           <span
             className="bp3-popover-wrapper"
@@ -341,10 +342,10 @@ exports[`renders execution 1`] = `
           />
         </div>
         <div
-          className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-2 djNEkQ"
+          className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-1 gQbmPS"
         />
         <div
-          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-3 jezrRd"
+          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-2 hWTxaW"
         >
           <button
             className="bp3-button bp3-active bp3-small"
@@ -383,26 +384,21 @@ exports[`renders execution 1`] = `
         <span />
       </div>
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+        className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
       >
         <div
-          className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+          className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
           onMouseDown={[Function]}
         />
       </div>
       <div
-        className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
-      >
-        <div
-          style={
-            Object {
-              "position": "absolute",
-              "right": 10,
-              "top": -41,
-              "zIndex": 3,
-            }
+        className="split-panel"
+        style={
+          Object {
+            "flex": 1,
           }
-        />
+        }
+      >
         <div
           className="RunPreview__NonIdealWrap-sc-5v37v5-0 hRNQzE"
         >
@@ -650,17 +646,18 @@ exports[`renders pipeline page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
-      width={70}
     >
       <div
         className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
@@ -800,7 +797,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -810,7 +807,7 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -895,6 +892,23 @@ exports[`renders pipeline page 1`] = `
             value=""
           />
         </div>
+      </div>
+      <div
+        className="PipelineExplorer__OptionsOverlay-sc-188h86i-1 jTjOLj"
+      >
+        <label
+          className="bp3-control bp3-checkbox"
+        >
+          <input
+            checked={false}
+            onChange={[Function]}
+            type="checkbox"
+          />
+          <span
+            className="bp3-control-indicator"
+          />
+          Explode composites
+        </label>
       </div>
       <div
         onDoubleClick={[Function]}
@@ -1012,7 +1026,7 @@ exports[`renders pipeline page 1`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -1021,7 +1035,7 @@ exports[`renders pipeline page 1`] = `
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -1030,7 +1044,7 @@ exports[`renders pipeline page 1`] = `
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2095,7 +2109,7 @@ load_q2_on_time_data:data_frame
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2104,7 +2118,7 @@ load_q2_on_time_data:data_frame
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2113,7 +2127,7 @@ load_q2_on_time_data:data_frame
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2815,7 +2829,7 @@ process_sfo_weather_data:result
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2824,7 +2838,7 @@ process_sfo_weather_data:result
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -2833,7 +2847,7 @@ process_sfo_weather_data:result
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3107,7 +3121,7 @@ join_q2_data:master_cord_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3116,7 +3130,7 @@ join_q2_data:master_cord_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3125,7 +3139,7 @@ join_q2_data:master_cord_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3399,7 +3413,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3408,7 +3422,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3417,7 +3431,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3688,7 +3702,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3697,7 +3711,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3706,7 +3720,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3977,7 +3991,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3986,7 +4000,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -3995,7 +4009,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -4430,7 +4444,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -4518,18 +4532,23 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -4924,17 +4943,18 @@ exports[`renders pipeline solid page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
-      width={70}
     >
       <div
         className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
@@ -5074,7 +5094,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -5084,7 +5104,7 @@ exports[`renders pipeline solid page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -5169,6 +5189,23 @@ exports[`renders pipeline solid page 1`] = `
             value=""
           />
         </div>
+      </div>
+      <div
+        className="PipelineExplorer__OptionsOverlay-sc-188h86i-1 jTjOLj"
+      >
+        <label
+          className="bp3-control bp3-checkbox"
+        >
+          <input
+            checked={false}
+            onChange={[Function]}
+            type="checkbox"
+          />
+          <span
+            className="bp3-control-indicator"
+          />
+          Explode composites
+        </label>
       </div>
       <div
         onDoubleClick={[Function]}
@@ -5286,7 +5323,7 @@ exports[`renders pipeline solid page 1`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -5295,7 +5332,7 @@ exports[`renders pipeline solid page 1`] = `
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -5304,7 +5341,7 @@ exports[`renders pipeline solid page 1`] = `
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -6369,7 +6406,7 @@ load_q2_on_time_data:data_frame
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -6378,7 +6415,7 @@ load_q2_on_time_data:data_frame
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -6387,7 +6424,7 @@ load_q2_on_time_data:data_frame
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7089,7 +7126,7 @@ process_sfo_weather_data:result
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7098,7 +7135,7 @@ process_sfo_weather_data:result
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7107,7 +7144,7 @@ process_sfo_weather_data:result
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7381,7 +7418,7 @@ join_q2_data:master_cord_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7390,7 +7427,7 @@ join_q2_data:master_cord_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7399,7 +7436,7 @@ join_q2_data:master_cord_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7673,7 +7710,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7682,7 +7719,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7691,7 +7728,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7962,7 +7999,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7971,7 +8008,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -7980,7 +8017,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -8251,7 +8288,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -8260,7 +8297,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -8269,7 +8306,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -8704,7 +8741,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -8792,18 +8829,23 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -9198,17 +9240,18 @@ exports[`renders solids explorer 1`] = `
     <span />
   </div>
   <div
-    className="SolidsRoot__Wrapper-ie1ggt-4 isKnyD"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 hwaSCk"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": 420,
+          "width": "40vw",
         }
       }
-      width={40}
     >
       <div
         style={
@@ -12510,15 +12553,20 @@ exports[`renders solids explorer 1`] = `
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
         className="SolidsRoot__SolidDetailScrollContainer-ie1ggt-2 yIWFb"
@@ -12536,7 +12584,7 @@ exports[`renders solids explorer 1`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -12545,7 +12593,7 @@ exports[`renders solids explorer 1`] = `
                 y={60}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -12554,7 +12602,7 @@ exports[`renders solids explorer 1`] = `
                 y={63}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -13121,7 +13169,7 @@ more detail.
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      spark
+                      file_cache
                     </h4>
                   </div>
                   <div
@@ -13150,7 +13198,7 @@ more detail.
                     <h4
                       className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
                     >
-                      file_cache
+                      spark
                     </h4>
                   </div>
                 </div>
@@ -13405,6 +13453,41 @@ more detail.
                       <div
                         style={
                           Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        master_cord_s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
                             "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
@@ -13412,7 +13495,7 @@ more detail.
                         }
                       >
                         
-                        process_q2_ticket_data
+                        process_q2_coupon_data
                       </div>
                       <div
                         style={
@@ -13487,76 +13570,6 @@ more detail.
                       <div
                         style={
                           Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        master_cord_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
-                            "fontWeight": 600,
-                            "paddingLeft": 0,
-                            "paddingRight": 15,
-                          }
-                        }
-                      >
-                        
-                        may_on_time_s3_to_df
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
-                    onClick={[Function]}
-                  >
-                    <div
-                      style={
-                        Object {
-                          "color": "#0E5A8A",
-                        }
-                      }
-                    >
-                      airline_demo_ingest_pipeline
-                    </div>
-                    <div
-                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
-                      style={
-                        Object {
-                          "width": 150,
-                        }
-                      }
-                    >
-                      <div
-                        style={
-                          Object {
                             "fontWeight": 300,
                             "paddingLeft": 0,
                             "paddingRight": 15,
@@ -13564,7 +13577,7 @@ more detail.
                         }
                       >
                         
-                        process_q2_coupon_data
+                        process_q2_ticket_data
                       </div>
                       <div
                         style={
@@ -13659,6 +13672,41 @@ more detail.
                       >
                         ↳
                         s3_to_df
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    onClick={[Function]}
+                  >
+                    <div
+                      style={
+                        Object {
+                          "color": "#0E5A8A",
+                        }
+                      }
+                    >
+                      airline_demo_ingest_pipeline
+                    </div>
+                    <div
+                      className="LogsRowComponents__SolidColumnContainer-sc-1k6mers-2 cMdRsj"
+                      style={
+                        Object {
+                          "width": 150,
+                        }
+                      }
+                    >
+                      <div
+                        style={
+                          Object {
+                            "fontWeight": 600,
+                            "paddingLeft": 0,
+                            "paddingRight": 15,
+                          }
+                        }
+                      >
+                        
+                        may_on_time_s3_to_df
                       </div>
                     </div>
                   </div>
@@ -13872,17 +13920,18 @@ exports[`renders type page 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
-      width={70}
     >
       <div
         className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
@@ -14022,7 +14071,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -14032,7 +14081,7 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -14117,6 +14166,23 @@ exports[`renders type page 1`] = `
             value=""
           />
         </div>
+      </div>
+      <div
+        className="PipelineExplorer__OptionsOverlay-sc-188h86i-1 jTjOLj"
+      >
+        <label
+          className="bp3-control bp3-checkbox"
+        >
+          <input
+            checked={false}
+            onChange={[Function]}
+            type="checkbox"
+          />
+          <span
+            className="bp3-control-indicator"
+          />
+          Explode composites
+        </label>
       </div>
       <div
         onDoubleClick={[Function]}
@@ -14234,7 +14300,7 @@ exports[`renders type page 1`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -14243,7 +14309,7 @@ exports[`renders type page 1`] = `
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -14252,7 +14318,7 @@ exports[`renders type page 1`] = `
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -15317,7 +15383,7 @@ load_q2_on_time_data:data_frame
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -15326,7 +15392,7 @@ load_q2_on_time_data:data_frame
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -15335,7 +15401,7 @@ load_q2_on_time_data:data_frame
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16037,7 +16103,7 @@ process_sfo_weather_data:result
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16046,7 +16112,7 @@ process_sfo_weather_data:result
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16055,7 +16121,7 @@ process_sfo_weather_data:result
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16329,7 +16395,7 @@ join_q2_data:master_cord_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16338,7 +16404,7 @@ join_q2_data:master_cord_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16347,7 +16413,7 @@ join_q2_data:master_cord_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16621,7 +16687,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16630,7 +16696,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16639,7 +16705,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16910,7 +16976,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16919,7 +16985,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -16928,7 +16994,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -17199,7 +17265,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -17208,7 +17274,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -17217,7 +17283,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -17652,7 +17718,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -17740,18 +17806,23 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -18146,17 +18217,18 @@ exports[`renders type page 2`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
-      width={70}
     >
       <div
         className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
@@ -18296,7 +18368,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -18306,7 +18378,7 @@ exports[`renders type page 2`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -18391,6 +18463,23 @@ exports[`renders type page 2`] = `
             value=""
           />
         </div>
+      </div>
+      <div
+        className="PipelineExplorer__OptionsOverlay-sc-188h86i-1 jTjOLj"
+      >
+        <label
+          className="bp3-control bp3-checkbox"
+        >
+          <input
+            checked={false}
+            onChange={[Function]}
+            type="checkbox"
+          />
+          <span
+            className="bp3-control-indicator"
+          />
+          Explode composites
+        </label>
       </div>
       <div
         onDoubleClick={[Function]}
@@ -18508,7 +18597,7 @@ exports[`renders type page 2`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -18517,7 +18606,7 @@ exports[`renders type page 2`] = `
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -18526,7 +18615,7 @@ exports[`renders type page 2`] = `
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -19591,7 +19680,7 @@ load_q2_on_time_data:data_frame
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -19600,7 +19689,7 @@ load_q2_on_time_data:data_frame
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -19609,7 +19698,7 @@ load_q2_on_time_data:data_frame
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20311,7 +20400,7 @@ process_sfo_weather_data:result
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20320,7 +20409,7 @@ process_sfo_weather_data:result
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20329,7 +20418,7 @@ process_sfo_weather_data:result
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20603,7 +20692,7 @@ join_q2_data:master_cord_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20612,7 +20701,7 @@ join_q2_data:master_cord_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20621,7 +20710,7 @@ join_q2_data:master_cord_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20895,7 +20984,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20904,7 +20993,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -20913,7 +21002,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21184,7 +21273,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21193,7 +21282,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21202,7 +21291,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21473,7 +21562,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21482,7 +21571,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21491,7 +21580,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -21926,7 +22015,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -22014,18 +22103,23 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"
@@ -22420,17 +22514,18 @@ exports[`renders without error 1`] = `
     <span />
   </div>
   <div
-    className="PipelineExplorer__PipelinesContainer-sc-188h86i-0 loSkMM"
+    className="SplitPanelContainer__Container-wb7tmo-4 hbGmlI"
+    id="split-panel-container"
   >
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 gYfAIW"
+      className="split-panel"
       style={
         Object {
           "flexShrink": 0,
           "minWidth": undefined,
+          "width": "70vw",
         }
       }
-      width={70}
     >
       <div
         className="PipelineExplorer__PathOverlay-sc-188h86i-3 bXLkra"
@@ -22570,7 +22665,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="SolidQueryInput__SolidQueryInputContainer-sc-1g49o08-0 gdXJpG"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
       >
         <span
           className="bp3-popover-wrapper"
@@ -22580,7 +22675,7 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group SolidQueryInput__SolidQueryInputField-sc-1g49o08-1 jWygyt"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -22665,6 +22760,23 @@ exports[`renders without error 1`] = `
             value=""
           />
         </div>
+      </div>
+      <div
+        className="PipelineExplorer__OptionsOverlay-sc-188h86i-1 jTjOLj"
+      >
+        <label
+          className="bp3-control bp3-checkbox"
+        >
+          <input
+            checked={false}
+            onChange={[Function]}
+            type="checkbox"
+          />
+          <span
+            className="bp3-control-indicator"
+          />
+          Explode composites
+        </label>
       </div>
       <div
         onDoubleClick={[Function]}
@@ -22782,7 +22894,7 @@ exports[`renders without error 1`] = `
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -22791,7 +22903,7 @@ exports[`renders without error 1`] = `
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -22800,7 +22912,7 @@ exports[`renders without error 1`] = `
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -23865,7 +23977,7 @@ load_q2_on_time_data:data_frame
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -23874,7 +23986,7 @@ load_q2_on_time_data:data_frame
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -23883,7 +23995,7 @@ load_q2_on_time_data:data_frame
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24585,7 +24697,7 @@ process_sfo_weather_data:result
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24594,7 +24706,7 @@ process_sfo_weather_data:result
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24603,7 +24715,7 @@ process_sfo_weather_data:result
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24877,7 +24989,7 @@ join_q2_data:master_cord_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24886,7 +24998,7 @@ join_q2_data:master_cord_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -24895,7 +25007,7 @@ join_q2_data:master_cord_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25169,7 +25281,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25178,7 +25290,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25187,7 +25299,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25458,7 +25570,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25467,7 +25579,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25476,7 +25588,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25747,7 +25859,7 @@ join_q2_data:may_data
               onDoubleClick={[Function]}
             >
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={99}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25756,7 +25868,7 @@ join_q2_data:may_data
                 y={160}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={93}
                 stroke="#979797"
                 strokeWidth={1}
@@ -25765,7 +25877,7 @@ join_q2_data:may_data
                 y={163}
               />
               <rect
-                fill="rgb(230, 219, 238)"
+                fill="#E6DBEE"
                 height={87}
                 stroke="#979797"
                 strokeWidth={1}
@@ -26200,7 +26312,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ehZmwG"
+          className="sc-bdVaJa ljAPCL"
           id="zoom-slider-container"
         >
           <span
@@ -26288,18 +26400,23 @@ load_q2_sfo_weather:data_frame
       </div>
     </div>
     <div
-      className="SplitPanelChildren__horizontal-u7l43w-0 kfFMcF"
+      className="SplitPanelContainer__horizontal-wb7tmo-0 jrVDrw"
     >
       <div
-        className="SplitPanelChildren__horizontal-u7l43w-2 fRBkOX"
+        className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
         onMouseDown={[Function]}
       />
     </div>
     <div
-      className="SplitPanelChildren__Split-u7l43w-4 iUOUQP"
+      className="split-panel"
+      style={
+        Object {
+          "flex": 1,
+        }
+      }
     >
       <div
-        className="PipelineExplorer__RightInfoPanel-sc-188h86i-1 fSPyAH"
+        className="PipelineExplorer__RightInfoPanel-sc-188h86i-0 ekcMKG"
       >
         <div
           className="SidebarTabbedContainer__Tabs-sc-1ddso41-0 fGzNxF"

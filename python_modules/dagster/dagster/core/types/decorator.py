@@ -11,7 +11,6 @@ def _decorate_as_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    type_check=None,
 ):
     runtime_type = define_python_dagster_type(
         name=name,
@@ -21,7 +20,6 @@ def _decorate_as_dagster_type(
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
-        type_check=type_check,
     )
 
     register_python_type(bare_cls, runtime_type)
@@ -36,7 +34,6 @@ def dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    type_check=None,
 ):
     '''Decorate a Python class to turn it into a Dagster type.
     
@@ -70,11 +67,6 @@ def dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
-            will be called in place of the default isinstance type check. This function should
-            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
-            metadata should be emitted along with the type check success or failure, an instance of
-            :py:class:`TypeCheck` with the ``success`` field set appropriately.
 
     Examples:
 
@@ -115,7 +107,6 @@ def dagster_type(
             output_materialization_config=output_materialization_config,
             serialization_strategy=serialization_strategy,
             auto_plugins=auto_plugins,
-            type_check=type_check,
         )
 
     # check for no args, no parens case
@@ -134,7 +125,6 @@ def as_dagster_type(
     output_materialization_config=None,
     serialization_strategy=None,
     auto_plugins=None,
-    type_check=None,
 ):
     '''Create a Dagster type corresponding to an existing Python type.
 
@@ -168,11 +158,6 @@ def as_dagster_type(
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        type_check (Optional[Callable[[Any], Union[bool, TypeCheck]]]): If specified, this function
-            will be called in place of the default isinstance type check. This function should
-            return ``True`` if the type check succeds, ``False`` if it fails, or, if additional
-            metadata should be emitted along with the type check success or failure, an instance of
-            :py:class:`TypeCheck` with the ``success`` field set appropriately.
     
     Examples:
 
@@ -203,5 +188,4 @@ def as_dagster_type(
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
         auto_plugins=auto_plugins,
-        type_check=type_check,
     )

@@ -1,4 +1,3 @@
-import functools
 import os
 import subprocess
 
@@ -66,14 +65,6 @@ def create_spark_shell_cmd(solid_config, main_class):
     return spark_shell_cmd
 
 
-def step_metadata_fn(environment_config, solid_name, main_class):
-    return {
-        'spark_submit_command': ' '.join(
-            create_spark_shell_cmd(environment_config.solids[solid_name].config, main_class)
-        )
-    }
-
-
 class SparkSolidDefinition(SolidDefinition):
     '''This solid is a generic representation of a parameterized Spark job.
 
@@ -117,9 +108,6 @@ class SparkSolidDefinition(SolidDefinition):
             compute_fn=_spark_compute_fn,
             config=define_spark_config(),
             metadata={'kind': 'spark', 'main_class': main_class},
-            step_metadata_fn=functools.partial(
-                step_metadata_fn, solid_name=name, main_class=main_class
-            ),
         )
 
 

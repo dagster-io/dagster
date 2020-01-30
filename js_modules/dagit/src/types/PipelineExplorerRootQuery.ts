@@ -1001,42 +1001,6 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   dependedBy: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_outputs_dependedBy[];
 }
 
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata {
-  __typename: "MetadataItemDefinition";
-  key: string;
-  value: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions {
-  __typename: "InputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  displayName: string;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions {
-  __typename: "OutputDefinition";
-  name: string;
-  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition {
-  __typename: "CompositeSolidDefinition";
-  name: string;
-  metadata: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
-  inputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
-  outputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
-}
-
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
@@ -1085,7 +1049,99 @@ export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles
   configField: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_configField | null;
 }
 
-export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition = PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition;
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata {
+  __typename: "MetadataItemDefinition";
+  key: string;
+  value: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions {
+  __typename: "InputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  displayName: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions {
+  __typename: "OutputDefinition";
+  name: string;
+  type: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition {
+  __typename: "InputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput {
+  __typename: "Input";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput_definition;
+  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput_solid;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings {
+  __typename: "InputMapping";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_definition;
+  mappedInput: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings_mappedInput;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition {
+  __typename: "OutputDefinition";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput {
+  __typename: "Output";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput_definition;
+  solid: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput_solid;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings {
+  __typename: "OutputMapping";
+  definition: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_definition;
+  mappedOutput: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings_mappedOutput;
+}
+
+export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition {
+  __typename: "CompositeSolidDefinition";
+  name: string;
+  metadata: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
+  inputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
+  outputDefinitions: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
+  inputMappings: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputMappings[];
+  outputMappings: PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputMappings[];
+}
+
+export type PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition = PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition | PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition;
 
 export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_solidHandles_solid {
   __typename: "Solid";
@@ -1123,5 +1179,6 @@ export interface PipelineExplorerRootQuery {
 
 export interface PipelineExplorerRootQueryVariables {
   pipeline: string;
-  parentHandleID: string;
+  rootHandleID: string;
+  requestScopeHandleID?: string | null;
 }

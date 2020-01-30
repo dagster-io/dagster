@@ -9,7 +9,7 @@ from .config import CeleryConfig
     config={
         'broker': Field(
             String,
-            is_optional=True,
+            is_required=False,
             description=(
                 'The URL of the Celery broker. Default: '
                 '\'pyamqp://guest@{os.getenv(\'DAGSTER_CELERY_BROKER_HOST\','
@@ -18,15 +18,15 @@ from .config import CeleryConfig
         ),
         'backend': Field(
             String,
-            is_optional=True,
+            is_required=False,
             default_value='rpc://',
             description='The URL of the Celery results backend. Default: \'rpc://\'.',
         ),
         'include': Field(
-            [str], is_optional=True, description='List of modules every worker should import'
+            [str], is_required=False, description='List of modules every worker should import'
         ),
         'config_source': Field(
-            Permissive(), is_optional=True, description='Settings for the Celery app.'
+            Permissive(), is_required=False, description='Settings for the Celery app.'
         ),
     },
 )

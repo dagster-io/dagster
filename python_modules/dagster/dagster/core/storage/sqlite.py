@@ -18,7 +18,7 @@ def run_migrations_offline(*args, **kwargs):
 def run_migrations_online(*args, **kwargs):
     try:
         run_migrations_online_(*args, **kwargs)
-    except sqlite3.DatabaseError as exc:
+    except (sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
         # This is to deal with concurrent execution -- if this table already exists thanks to a
         # race with another process, we are fine and can continue.
         if not 'table alembic_version already exists' in str(exc):

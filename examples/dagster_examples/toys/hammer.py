@@ -29,7 +29,7 @@ def get_executor_defs():
         'chase_size': Field(
             int,
             default_value=100000,
-            is_optional=True,
+            is_required=False,
             description='How big should the pointer chase array be?',
         )
     },
@@ -52,7 +52,7 @@ def hammer(context, chase_duration):
 
 
 @solid(
-    config=Field(int, is_optional=True, default_value=1),
+    config=Field(int, is_required=False, default_value=1),
     output_defs=[
         OutputDefinition(int, 'out_1'),
         OutputDefinition(int, 'out_2'),

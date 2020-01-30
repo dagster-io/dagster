@@ -104,36 +104,6 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
             }
           }
         }
-      }
-    `,
-    ParentSolidNodeDefinitionFragment: gql`
-      fragment ParentSolidNodeDefinitionFragment on ISolidDefinition {
-        __typename
-        name
-        metadata {
-          key
-          value
-        }
-        inputDefinitions {
-          name
-          type {
-            displayName
-          }
-        }
-        outputDefinitions {
-          name
-          type {
-            displayName
-          }
-        }
-        ... on SolidDefinition {
-          configField {
-            configType {
-              key
-              description
-            }
-          }
-        }
         ... on CompositeSolidDefinition {
           inputMappings {
             definition {
@@ -238,7 +208,13 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
     return (
       <SVGFlowLayoutRect
         {...layout.solid}
-        fill={PipelineColorScale(composite ? "solidComposite" : "solid")}
+        fill={PipelineColorScale(
+          composite
+            ? "solidComposite"
+            : invocation?.name.includes(".")
+            ? "solidCompositeChild"
+            : "solid"
+        )}
         stroke="#979797"
         strokeWidth={1}
         spacing={0}

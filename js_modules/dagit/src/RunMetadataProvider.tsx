@@ -65,6 +65,7 @@ export interface IRunMetadataDict {
   startingProcessAt?: number;
   startedProcessAt?: number;
   startedPipelineAt?: number;
+  minStepStart?: number;
   exitedAt?: number;
   processId?: number;
   initFailed?: boolean;
@@ -217,6 +218,13 @@ export function extractMetadataFromLogs(
       metadata.steps[stepKey] = step;
     }
   });
+
+  metadata.minStepStart = Math.min(
+    ...Object.values(metadata.steps)
+      .map(s => s.start || 0)
+      .filter(v => !!v)
+  );
+
   return metadata;
 }
 

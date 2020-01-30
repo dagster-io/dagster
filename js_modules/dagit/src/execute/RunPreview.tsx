@@ -3,15 +3,18 @@ import styled from "styled-components/macro";
 import gql from "graphql-tag";
 import { NonIdealState, Colors, Icon } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
+import { ExecutionPlan } from "../plan/ExecutionPlan";
+import { GaantChart, GaantChartMode } from "../GaantChart";
+import { getFeatureFlags, FeatureFlag } from "../Util";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
   validation?: RunPreviewConfigValidationFragment;
+  toolbarActions?: React.ReactChild;
 }
 
 interface IErrorMessage {
@@ -35,7 +38,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
       fragment RunPreviewExecutionPlanResultFragment on ExecutionPlanResult {
         __typename
         ... on ExecutionPlan {
-          ...ExecutionPlanFragment
+          ...GaantChartExecutionPlanFragment
         }
         ... on PipelineNotFoundError {
           message
@@ -45,7 +48,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
         }
         ...PythonErrorFragment
       }
-      ${ExecutionPlan.fragments.ExecutionPlanFragment}
+      ${GaantChart.fragments.GaantChartExecutionPlanFragment}
       ${PythonErrorInfo.fragments.PythonErrorFragment}
     `
   };
@@ -55,7 +58,11 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
   };
 
   render() {
-    const { plan, validation } = this.props;
+    const { plan, validation, toolbarActions } = this.props;
+    const gaantPreview = getFeatureFlags().includes(
+      FeatureFlag.GaantExecutionPlan
+    );
+
     let pythonError = null;
     let errors: IErrorMessage[] = [];
     if (validation?.__typename === "PipelineConfigValidationInvalid") {
@@ -83,7 +90,21 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
     }
 
     return plan?.__typename === "ExecutionPlan" ? (
-      <ExecutionPlan executionPlan={plan} />
+      gaantPreview ? (
+        <GaantChart
+          plan={plan}
+          options={{ mode: GaantChartMode.WATERFALL }}
+          toolbarActions={toolbarActions}
+        />
+      ) : (
+        <>
+          <OptionsContainer>
+            <div style={{ flex: 1 }} />
+            {toolbarActions}
+          </OptionsContainer>
+          <ExecutionPlan executionPlan={plan} />
+        </>
+      )
     ) : (
       <NonIdealWrap>
         <NonIdealState
@@ -145,3 +166,12 @@ const ErrorRow = styled.div`
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
 `;
+
+const OptionsContainer = styled.div`
+  height: 47px;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 1px solid #A7B6C2;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}`;

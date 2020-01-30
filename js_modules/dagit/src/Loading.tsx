@@ -13,7 +13,8 @@ export default class Loading<TData> extends React.Component<
   ILoadingProps<TData>
 > {
   public render() {
-    const { error, data } = this.props.queryResult;
+    const { error, data, loading } = this.props.queryResult;
+
     if (error) {
       console.error(error);
       return (
@@ -27,7 +28,7 @@ export default class Loading<TData> extends React.Component<
         </LoadingContainer>
       );
     }
-    if (!data || Object.keys(data).length === 0) {
+    if (!data || loading || Object.keys(data).length === 0) {
       return (
         <LoadingContainer>
           <LoadingCentering>
