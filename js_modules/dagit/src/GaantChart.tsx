@@ -828,7 +828,12 @@ const TimescaleContainer = styled.div`
   }
   & .tick.highlight {
     color: white;
-    background: red;
+    background: linear-gradient(
+      to bottom,
+      ${Colors.GOLD3} 0%,
+      ${Colors.GOLD2} 100%
+    );
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
   }
   & .line {
     position: absolute;
@@ -838,6 +843,7 @@ const TimescaleContainer = styled.div`
     bottom: 0px;
   }
   & .line.highlight {
-    border-left: 1px solid red;
+    border-left: 1px solid ${Colors.GOLD2};
+    z-index: 3;
   }
 `;

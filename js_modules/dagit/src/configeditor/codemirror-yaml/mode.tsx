@@ -711,14 +711,15 @@ CodeMirror.registerHelper(
     editor: any
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
-    const docs = yaml.parseAllDocuments(text);
-    if (docs.length === 0) {
-      return [];
-    }
-    // Assumption
-    const doc = docs[0];
+
+    // TODO: In some scenarios where every line yields an error `parseDocument` can take 1s+
+    // and returns 20,000+ errors. The library does not have a "bail out" option but we need one.
+    // However we can't switch libraries because we need the structured document model this returns.
+    // (It's not just text parsed to plain JS objects.)
+    const doc = yaml.parseDocument(text);
     const lints: Array<CodemirrorLintError> = [];
-    doc.errors.forEach(error => {
+
+    doc.errors.slice(0, 10).forEach(error => {
       lints.push({
         message: error.message,
         severity: "error",

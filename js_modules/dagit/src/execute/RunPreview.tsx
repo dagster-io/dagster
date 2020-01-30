@@ -17,11 +17,18 @@ interface IRunPreviewProps {
   toolbarActions?: React.ReactChild;
 }
 
+interface IRunPreviewState {
+  showErrorModal: boolean;
+}
+
 interface IErrorMessage {
   message: string | JSX.Element;
 }
 
-export class RunPreview extends React.PureComponent<IRunPreviewProps> {
+export class RunPreview extends React.Component<
+  IRunPreviewProps,
+  IRunPreviewState
+> {
   static fragments = {
     RunPreviewConfigValidationFragment: gql`
       fragment RunPreviewConfigValidationFragment on PipelineConfigValidationResult {
@@ -53,11 +60,23 @@ export class RunPreview extends React.PureComponent<IRunPreviewProps> {
     `
   };
 
-  state = {
+  state: IRunPreviewState = {
     showErrorModal: false
   };
 
+  shouldComponentUpdate(
+    nextProps: IRunPreviewProps,
+    nextState: IRunPreviewState
+  ) {
+    return (
+      nextProps.plan !== this.props.plan ||
+      nextProps.validation !== this.props.validation ||
+      nextState.showErrorModal !== this.state.showErrorModal
+    );
+  }
+
   render() {
+    console.log("run preview re-render");
     const { plan, validation, toolbarActions } = this.props;
     const gaantPreview = getFeatureFlags().includes(
       FeatureFlag.GaantExecutionPlan
