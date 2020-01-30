@@ -2,7 +2,7 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors, Button } from "@blueprintjs/core";
+import { Colors, Button, Spinner } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { RunPreview } from "./RunPreview";
@@ -249,13 +249,15 @@ export default class ExecutionSessionContainer extends React.Component<
                 onChange={this.onSolidSubsetChange}
               />
               <div style={{ width: 5 }} />
-              {pipeline && (
+              {pipeline ? (
                 <ConfigEditorModePicker
                   modes={pipeline.modes}
                   modeError={modeError}
                   onModeChange={this.onModeChange}
                   modeName={currentSession.mode}
                 />
+              ) : (
+                <Spinner size={20} />
               )}
             </SessionSettingsBar>
             <ConfigEditorPresetInsertionContainer>
