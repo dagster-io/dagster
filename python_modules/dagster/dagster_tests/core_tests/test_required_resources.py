@@ -11,13 +11,13 @@ from dagster import (
     RunConfig,
     String,
     composite_solid,
-    dagster_type,
     execute_pipeline,
     input_hydration_config,
     output_materialization_config,
     pipeline,
     resource,
     solid,
+    usable_as_dagster_type,
 )
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
@@ -300,7 +300,7 @@ def test_custom_type_with_resource_dependent_hydration():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        @dagster_type(input_hydration_config=InputHydration)
+        @usable_as_dagster_type(input_hydration_config=InputHydration)
         class CustomType(str):
             pass
 
@@ -340,7 +340,7 @@ def test_resource_dependent_hydration_with_selective_init():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        @dagster_type(input_hydration_config=InputHydration)
+        @usable_as_dagster_type(input_hydration_config=InputHydration)
         class CustomType(str):
             pass
 

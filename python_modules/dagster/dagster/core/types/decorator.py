@@ -1,9 +1,9 @@
 from dagster import check
 
-from .dagster_type import PythonObjectDagsterType, map_python_type_to_dagster_type
+from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 
 
-def dagster_type(
+def usable_as_dagster_type(
     name=None,
     description=None,
     input_hydration_config=None,
@@ -49,7 +49,7 @@ def dagster_type(
     .. code-block:: python
 
         # dagster_aws.s3.file_manager.S3FileHandle
-        @dagster_type
+        @usable_as_dagster_type
         class S3FileHandle(FileHandle):
             def __init__(self, s3_bucket, s3_key):
                 self._s3_bucket = check.str_param(s3_bucket, 's3_bucket')
@@ -76,7 +76,7 @@ def dagster_type(
         check.type_param(bare_cls, 'bare_cls')
         new_name = name if name else bare_cls.__name__
 
-        map_python_type_to_dagster_type(
+        make_python_type_usable_as_dagster_type(
             bare_cls,
             PythonObjectDagsterType(
                 name=new_name,
@@ -93,7 +93,7 @@ def dagster_type(
     # check for no args, no parens case
     if callable(name):
         bare_cls = name  # with no parens, name is actually the decorated class
-        map_python_type_to_dagster_type(
+        make_python_type_usable_as_dagster_type(
             bare_cls,
             PythonObjectDagsterType(python_type=bare_cls, name=bare_cls.__name__, description=None),
         )

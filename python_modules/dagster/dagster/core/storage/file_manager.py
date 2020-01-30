@@ -9,14 +9,14 @@ import six
 
 from dagster import check
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.decorator import dagster_type
+from dagster.core.types.decorator import usable_as_dagster_type
 from dagster.utils import mkdir_p
 
 from .temp_file_manager import TempfileManager
 
 
 # pylint: disable=no-init
-@dagster_type
+@usable_as_dagster_type
 class FileHandle(six.with_metaclass(ABCMeta)):
     '''A file handle is a reference to a file.
     
@@ -36,7 +36,7 @@ class FileHandle(six.with_metaclass(ABCMeta)):
         raise NotImplementedError()
 
 
-@dagster_type
+@usable_as_dagster_type
 class LocalFileHandle(FileHandle):
     def __init__(self, path):
         self._path = check.str_param(path, 'path')

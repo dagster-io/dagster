@@ -5,13 +5,13 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     String,
-    dagster_type,
     execute_pipeline,
     input_hydration_config,
     output_materialization_config,
     pipeline,
     resource,
     solid,
+    usable_as_dagster_type,
 )
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
@@ -40,7 +40,7 @@ def test_user_error_boundary_input_hydration():
     def InputHydration(context, hello):
         raise UserError()
 
-    @dagster_type(input_hydration_config=InputHydration)
+    @usable_as_dagster_type(input_hydration_config=InputHydration)
     class CustomType(str):
         pass
 

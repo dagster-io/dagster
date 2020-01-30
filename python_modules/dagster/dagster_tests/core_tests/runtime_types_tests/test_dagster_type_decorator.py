@@ -1,19 +1,19 @@
 import collections
 
-from dagster import PythonObjectDagsterType, dagster_type
+from dagster import PythonObjectDagsterType, usable_as_dagster_type
 from dagster.core.types.dagster_type import resolve_dagster_type
 
 
 def test_dagster_type_decorator():
-    @dagster_type(name=None)
+    @usable_as_dagster_type(name=None)
     class Foo(object):
         pass
 
-    @dagster_type()
+    @usable_as_dagster_type()
     class Bar(object):
         pass
 
-    @dagster_type
+    @usable_as_dagster_type
     class Baaz(object):
         pass
 
@@ -23,7 +23,7 @@ def test_dagster_type_decorator():
 
 
 def test_dagster_type_decorator_name_desc():
-    @dagster_type(name='DifferentName', description='desc')
+    @usable_as_dagster_type(name='DifferentName', description='desc')
     class Something(object):
         pass
 

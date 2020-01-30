@@ -180,7 +180,7 @@ def test_bad_output_definition():
         match=re.escape(
             'Invalid type: dagster_type must be a Python type, a type constructed using '
             'python.typing, a type imported from the dagster module, or a class annotated using '
-            'as_dagster_type or @dagster_type: got foo'
+            '@usable_as_dagster_type: got foo'
         ),
     ):
         _output = OutputDefinition('foo')
@@ -191,7 +191,7 @@ def test_bad_output_definition():
         match=re.escape(
             'Invalid type: dagster_type must be a Python type, a type constructed using '
             'python.typing, a type imported from the dagster module, or a class annotated using '
-            'as_dagster_type or @dagster_type: got {\'foo\': \'bar\'}, which isn\'t hashable. '
+            '@usable_as_dagster_type: got {\'foo\': \'bar\'}, which isn\'t hashable. '
             'Did you pass an instance of a type instead of the type?'
         ),
     ):
@@ -207,7 +207,7 @@ def test_bad_output_definition():
         match=re.escape(
             'Invalid type: dagster_type must be a Python type, a type constructed using '
             'python.typing, a type imported from the dagster module, or a class annotated using '
-            'as_dagster_type or @dagster_type: got '
+            '@usable_as_dagster_type: got '
             '<dagster_tests.core_tests.definitions_tests.test_definition_errors'
         )
         + '('  # py27

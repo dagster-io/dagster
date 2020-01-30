@@ -43,7 +43,7 @@ use Dagster's type system to type the output of ``read_csv``, so that we can do 
 we construct the pipeline, ensuring that any solid consuming the output of ``read_csv`` expects to
 receive a data frame.
 
-To do this, we'll use the :py:func:`@dagster_type <dagster.dagster_type>` decorator:
+To do this, we'll use the :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator:
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
    :lines: 3-14
@@ -84,7 +84,7 @@ Sometimes we know more about the types of our values, and we'd like to do deeper
 example, in the case of the ``SimpleDataFrame``, we expect to see a list of OrderedDicts, and for
 each of these OrderedDicts to have the same fields, in the same order.
 
-The :py:func:`@dagster_type <dagster.dagster_type>` decorator lets us specify custom type checks
+The :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator lets us specify custom type checks
 like this.
 
 .. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py

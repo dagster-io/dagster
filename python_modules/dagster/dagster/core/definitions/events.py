@@ -282,7 +282,7 @@ class TypeCheck(namedtuple('_TypeCheck', 'success description metadata_entries')
     
     Events of this type should be returned by user-defined type checks when they need to encapsulate
     additional metadata about a type check's success or failure. (i.e., when using
-    :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`, or the underlying
+    :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
     :py:func:`PythonObjectDagsterType` API.)
 
     Solid compute functions should generally avoid yielding events of this type to avoid confusion.

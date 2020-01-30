@@ -103,7 +103,10 @@ from dagster.core.storage.system_storage import (
 )
 from dagster.core.types.config_schema import input_hydration_config, output_materialization_config
 from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
-from dagster.core.types.decorator import dagster_type
+from dagster.core.types.decorator import (
+    make_python_type_usable_as_dagster_type,
+    usable_as_dagster_type,
+)
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
@@ -208,8 +211,10 @@ __all__ = [
     'SerializationStrategy',
     'Nothing',
     # type creation
-    'dagster_type',
+    'DagsterType',
     'PythonObjectDagsterType',
+    'make_python_type_usable_as_dagster_type',
+    'usable_as_dagster_type',
     # config
     'Array',
     'Noneable',

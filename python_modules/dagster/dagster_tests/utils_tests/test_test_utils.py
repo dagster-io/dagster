@@ -2,7 +2,17 @@ import typing
 
 import pytest
 
-from dagster import Any, Dict, List, Optional, PipelineDefinition, Set, String, Tuple, dagster_type
+from dagster import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    PipelineDefinition,
+    Set,
+    String,
+    Tuple,
+    usable_as_dagster_type,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.temp_file import _unlink_swallow_errors
 from dagster.utils.test import check_dagster_type, execute_solids_within_pipeline
@@ -122,7 +132,7 @@ def test_check_dagster_type():
     res = check_dagster_type(Optional[str], None)
     assert res.success
 
-    @dagster_type
+    @usable_as_dagster_type
     class Baz(object):
         pass
 
