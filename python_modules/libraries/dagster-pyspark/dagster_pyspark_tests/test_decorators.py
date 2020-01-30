@@ -45,7 +45,9 @@ def test_pyspark_decorator_with_arguments():
 
 
 def test_named_pyspark_decorator():
-    @pyspark_solid(name='blah', description='foo bar', config_field=Field(Dict({'foo': Field(str)})))
+    @pyspark_solid(
+        name='blah', description='foo bar', config_field=Field(Dict({'foo': Field(str)}))
+    )
     def pyspark_job(context):
         rdd = context.resources.pyspark.spark_context.parallelize(range(10))
         for item in rdd.collect():

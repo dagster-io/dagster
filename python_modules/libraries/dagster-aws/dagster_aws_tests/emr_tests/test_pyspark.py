@@ -7,8 +7,8 @@ from moto import mock_emr
 
 from dagster import (
     DagsterInvalidDefinitionError,
-    Field,
     Dict,
+    Field,
     ModeDefinition,
     RunConfig,
     execute_pipeline,
@@ -28,7 +28,9 @@ def example_solid(context):
 
 
 @pyspark_solid(
-    name='blah', description='this is a test', config=Field(Dict({'foo': Field(str), 'bar': Field(int)}))
+    name='blah',
+    description='this is a test',
+    config_field=Field(Dict({'foo': Field(str), 'bar': Field(int)})),
 )
 def other_example_solid(context):
     list_p = [('John', 19), ('Jennifer', 29), ('Adam', 35), ('Henry', 50)]
