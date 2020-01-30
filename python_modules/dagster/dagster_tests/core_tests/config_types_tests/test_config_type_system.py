@@ -87,7 +87,7 @@ def _mixed_required_optional_string_config_dict_with_default():
     return convert_potential_field(
         {
             'optional_arg': Field(String, is_required=False, default_value='some_default'),
-            'required_arg': Field(String, is_optional=False),
+            'required_arg': Field(String, is_required=True),
             'optional_arg_no_default': Field(String, is_required=False),
         }
     )
