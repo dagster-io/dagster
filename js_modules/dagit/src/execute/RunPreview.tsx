@@ -151,6 +151,8 @@ const ErrorsWrap = styled.div`
   padding-top: 2vh;
   font-size: 0.9em;
   color: ${Colors.BLACK};
+  max-width: 900px;
+  margin: auto;
 `;
 
 const ErrorRow = styled.div`
