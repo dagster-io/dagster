@@ -2,6 +2,10 @@
 
 ### Quickstart
 
+To get a local rabbitmq broker started and available via the default `pyamqp://guest@localhost:5672`, in this directory run:
+
+    docker-compose up
+
 To run a celery worker:
 
     celery -A dagster_celery.tasks worker -l info
