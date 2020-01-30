@@ -21,7 +21,7 @@ interface IErrorMessage {
   message: string | JSX.Element;
 }
 
-export class RunPreview extends React.Component<IRunPreviewProps> {
+export class RunPreview extends React.PureComponent<IRunPreviewProps> {
   static fragments = {
     RunPreviewConfigValidationFragment: gql`
       fragment RunPreviewConfigValidationFragment on PipelineConfigValidationResult {
