@@ -16,7 +16,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: dagster
     app.kubernetes.io/name: dagster
-    app.kubernetes.io/version: 0.6.6
+    app.kubernetes.io/version: 0.6.8
   name: dagster-job-{run_id}
 spec:
   backoff_limit: 4
@@ -25,7 +25,7 @@ spec:
       labels:
         app.kubernetes.io/instance: dagster
         app.kubernetes.io/name: dagster
-        app.kubernetes.io/version: 0.6.6
+        app.kubernetes.io/version: 0.6.8
       name: dagster-job-pod-{run_id}
     spec:
       containers:
