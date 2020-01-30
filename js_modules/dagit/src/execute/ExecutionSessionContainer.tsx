@@ -364,24 +364,31 @@ interface ExecutionSessionContainerErrorProps {
   currentSession: IExecutionSession;
 }
 
-export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => (
-  <SplitPanelContainer
-    identifier={"execution"}
-    firstInitialPercent={75}
-    first={
-      <>
-        <SessionSettingsBar>
-          <PipelineJumpBar
-            selectedPipelineName={props.currentSession.pipeline}
-            onChange={name => props.onSaveSession({ pipeline: name })}
-          />
-        </SessionSettingsBar>
-        {props.children}
-      </>
-    }
-    second={<RunPreview />}
-  />
-);
+export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => {
+  const gaantPreview = getFeatureFlags().includes(
+    FeatureFlag.GaantExecutionPlan
+  );
+
+  return (
+    <SplitPanelContainer
+      axis={gaantPreview ? "vertical" : "horizontal"}
+      identifier={"execution"}
+      firstInitialPercent={75}
+      first={
+        <>
+          <SessionSettingsBar>
+            <PipelineJumpBar
+              selectedPipelineName={props.currentSession.pipeline}
+              onChange={name => props.onSaveSession({ pipeline: name })}
+            />
+          </SessionSettingsBar>
+          {props.children}
+        </>
+      }
+      second={<RunPreview />}
+    />
+  );
+};
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(
