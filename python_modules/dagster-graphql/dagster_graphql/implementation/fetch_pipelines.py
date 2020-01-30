@@ -96,7 +96,7 @@ def get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector):
 
 
 def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
-    from ..schema.errors import DauphinPipelineNotFoundError
+    from ..schema.errors import DauphinPipelineNotFoundError, DauphinInvalidSubsetError
 
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
@@ -106,6 +106,15 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
         )
 
     except UserFacingGraphQLError as exc:
-        if isinstance(exc.dauphin_error, DauphinPipelineNotFoundError):
+        if (
+            isinstance(exc.dauphin_error, DauphinPipelineNotFoundError)
+            or
+            # At this time DauphinPipeline represents a potentially subsetted
+            # pipeline so if the solids used to subset no longer exist
+            # we can't return the correct instance so we fallback to
+            # UnknownPipeline
+            isinstance(exc.dauphin_error, DauphinInvalidSubsetError)
+        ):
             return graphene_info.schema.type_named('UnknownPipeline')(selector.name)
+
         raise
