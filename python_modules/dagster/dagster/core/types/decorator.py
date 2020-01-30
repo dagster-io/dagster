@@ -1,6 +1,6 @@
 from dagster import check
 
-from .dagster_type import define_python_dagster_type, map_python_type_to_dagster_type
+from .dagster_type import PythonObjectDagsterType, map_python_type_to_dagster_type
 
 
 def dagster_type(
@@ -78,7 +78,7 @@ def dagster_type(
 
         map_python_type_to_dagster_type(
             bare_cls,
-            define_python_dagster_type(
+            PythonObjectDagsterType(
                 name=new_name,
                 description=description,
                 python_type=bare_cls,
@@ -95,9 +95,7 @@ def dagster_type(
         bare_cls = name  # with no parens, name is actually the decorated class
         map_python_type_to_dagster_type(
             bare_cls,
-            define_python_dagster_type(
-                python_type=bare_cls, name=bare_cls.__name__, description=None
-            ),
+            PythonObjectDagsterType(python_type=bare_cls, name=bare_cls.__name__, description=None),
         )
         return bare_cls
 

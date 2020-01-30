@@ -17,9 +17,9 @@ from dagster import (
     Materialization,
     OutputDefinition,
     Path,
+    PythonObjectDagsterType,
     String,
     composite_solid,
-    define_python_dagster_type,
     input_hydration_config,
     lambda_solid,
     output_materialization_config,
@@ -50,7 +50,7 @@ def df_output_schema(_context, path, value):
     return Materialization.file(path)
 
 
-PoorMansDataFrame = define_python_dagster_type(
+PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
     name='PoorMansDataFrame',
     input_hydration_config=df_input_schema,

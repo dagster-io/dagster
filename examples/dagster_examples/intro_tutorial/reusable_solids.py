@@ -6,8 +6,8 @@ from dagster import (
     Field,
     Output,
     OutputDefinition,
+    PythonObjectDagsterType,
     String,
-    define_python_dagster_type,
     execute_pipeline,
     pipeline,
     solid,
@@ -16,9 +16,7 @@ from dagster import (
 if typing.TYPE_CHECKING:
     DataFrame = list
 else:
-    DataFrame = define_python_dagster_type(
-        list, name='DataFrame'
-    )  # type: Any
+    DataFrame = PythonObjectDagsterType(list, name='DataFrame')  # type: Any
 
 
 @solid

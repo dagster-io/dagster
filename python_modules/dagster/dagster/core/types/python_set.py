@@ -2,9 +2,9 @@ from dagster import check
 from dagster.config.config_type import Array
 
 from .config_schema import InputHydrationConfig
-from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
-PythonSet = define_python_dagster_type(
+PythonSet = PythonObjectDagsterType(
     set, 'PythonSet', description='''Represents a python dictionary to pass between solids'''
 )
 

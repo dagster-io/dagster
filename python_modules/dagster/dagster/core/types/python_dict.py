@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
-from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 
 @input_hydration_config(Permissive())
@@ -10,7 +10,7 @@ def _dict_input(_context, value):
     return value
 
 
-PythonDict = define_python_dagster_type(
+PythonDict = PythonObjectDagsterType(
     dict,
     'PythonDict',
     input_hydration_config=_dict_input,

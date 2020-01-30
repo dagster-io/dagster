@@ -1,6 +1,6 @@
 import collections
 
-from dagster import dagster_type, define_python_dagster_type
+from dagster import PythonObjectDagsterType, dagster_type
 from dagster.core.types.dagster_type import resolve_dagster_type
 
 
@@ -34,11 +34,11 @@ def test_dagster_type_decorator_name_desc():
 
 def test_make_dagster_type():
     SomeNamedTuple = collections.namedtuple('SomeNamedTuple', 'prop')
-    DagsterSomeNamedTuple = define_python_dagster_type(SomeNamedTuple)
+    DagsterSomeNamedTuple = PythonObjectDagsterType(SomeNamedTuple)
     runtime_type = resolve_dagster_type(DagsterSomeNamedTuple)
     assert runtime_type.name == 'SomeNamedTuple'
     assert SomeNamedTuple(prop='foo').prop == 'foo'
 
-    DagsterNewNameNamedTuple = define_python_dagster_type(SomeNamedTuple, name='OverwriteName')
+    DagsterNewNameNamedTuple = PythonObjectDagsterType(SomeNamedTuple, name='OverwriteName')
     runtime_type = resolve_dagster_type(DagsterNewNameNamedTuple)
     assert runtime_type.name == 'OverwriteName'

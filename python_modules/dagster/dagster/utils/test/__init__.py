@@ -280,7 +280,7 @@ def check_dagster_type(dagster_type, value):
         dagster_type (Any): The Dagster type to test. Should be one of the
             :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
             :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`, or
-            :py:func:`define_python_dagster_type`, or a Python type.
+            :py:func:`PythonObjectDagsterType`, or a Python type.
         value (Any): The runtime value to test.
 
     Returns:

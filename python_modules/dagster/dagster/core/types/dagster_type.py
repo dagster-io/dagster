@@ -365,12 +365,12 @@ class _Nothing(DagsterType):
         return TypeCheck(success=True)
 
 
-class PythonObjectType(DagsterType):
+class PythonObjectDagsterType(DagsterType):
     def __init__(self, python_type, key=None, name=None, **kwargs):
         self.python_type = check.type_param(python_type, 'python_type')
         name = check.opt_str_param(name, 'name', python_type.__name__)
         key = check.opt_str_param(key, 'key', name)
-        super(PythonObjectType, self).__init__(
+        super(PythonObjectDagsterType, self).__init__(
             key=key, name=name, type_check_fn=self.type_check_method, **kwargs
         )
 
@@ -389,75 +389,6 @@ class PythonObjectType(DagsterType):
             )
 
         return TypeCheck(success=True)
-
-
-def define_python_dagster_type(
-    python_type,
-    name=None,
-    description=None,
-    input_hydration_config=None,
-    output_materialization_config=None,
-    serialization_strategy=None,
-    auto_plugins=None,
-):
-    '''Core machinery for defining a Dagster type corresponding to an existing python type.
-
-    Users should generally use the :py:func:`@dagster_type` decorator or :py:func:`as_dagster_type`,
-    both of which defer to this function.
-
-    Args:
-        python_type (cls): The python type to wrap as a Dagster type.
-        name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
-            the ``python_type`` will be used.
-        description (Optional[str]): A user-readable description of the type.
-        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class constructed
-            using the :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator
-            that can map config data to a value of this type.
-        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
-            constructed using the
-            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
-            decorator that can persist values of this type.
-        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
-            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
-            this value when automatically persisting it between execution steps. You should set
-            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
-            for this type.
-        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
-            depending on the storage being used for intermediates, they should specify this
-            argument. In these cases the serialization_strategy argument is not sufficient because
-            serialization requires specialized API calls, e.g. to call an S3 API directly instead
-            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-    '''
-
-    check.type_param(python_type, 'python_type')
-    check.opt_str_param(name, 'name', python_type.__name__)
-    check.opt_str_param(description, 'description')
-    check.opt_inst_param(input_hydration_config, 'input_hydration_config', InputHydrationConfig)
-    check.opt_inst_param(
-        output_materialization_config, 'output_materialization_config', OutputMaterializationConfig
-    )
-    check.opt_inst_param(
-        serialization_strategy,
-        'serialization_strategy',
-        SerializationStrategy,
-        default=PickleSerializationStrategy(),
-    )
-
-    auto_plugins = check.opt_list_param(auto_plugins, 'auto_plugins', of_type=type)
-    check.param_invariant(
-        all(issubclass(auto_plugin_type, TypeStoragePlugin) for auto_plugin_type in auto_plugins),
-        'auto_plugins',
-    )
-
-    return PythonObjectType(
-        python_type=python_type,
-        name=name,
-        description=description,
-        input_hydration_config=input_hydration_config,
-        output_materialization_config=output_materialization_config,
-        serialization_strategy=serialization_strategy,
-        auto_plugins=auto_plugins,
-    )
 
 
 class NoneableInputSchema(InputHydrationConfig):

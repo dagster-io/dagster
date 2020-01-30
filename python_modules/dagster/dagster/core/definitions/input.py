@@ -17,7 +17,7 @@ class InputDefinition(object):
         dagster_type (Optional[Any]):  The type of this input. Users should provide one of the
             :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
             :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type`, or
-            :py:func:`define_python_dagster_type`, or a Python type. Defaults to :py:class:`Any`.
+            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
     '''
 
