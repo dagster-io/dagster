@@ -6,7 +6,6 @@ import six
 import sqlalchemy as db
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
