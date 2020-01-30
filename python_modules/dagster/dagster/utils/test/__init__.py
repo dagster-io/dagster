@@ -38,7 +38,7 @@ from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
 
 # pylint: disable=unused-import
-from .temp_file import (
+from ..temp_file import (
     get_temp_dir,
     get_temp_file_handle,
     get_temp_file_handle_with_data,
@@ -46,7 +46,7 @@ from .temp_file import (
     get_temp_file_name_with_data,
     get_temp_file_names,
 )
-from .typing_api import is_typing_type
+from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
