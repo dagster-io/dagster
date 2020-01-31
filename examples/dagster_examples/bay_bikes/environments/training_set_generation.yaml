@@ -1,0 +1,19 @@
+solids:
+  produce_trip_dataset:
+    solids:
+      load_entire_trip_table:
+        config:
+          index_label: uuid
+        inputs:
+          table_name:
+            value: trips
+  produce_weather_dataset:
+    solids:
+      load_entire_weather_table:
+        config:
+          index_label: uuid
+          subsets:
+          - time
+        inputs:
+          table_name:
+            value: weather

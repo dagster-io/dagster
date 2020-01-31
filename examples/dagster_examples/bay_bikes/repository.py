@@ -1,6 +1,10 @@
 from dagster import RepositoryDefinition
 
-from .pipelines import extract_daily_weather_data_pipeline, model_training_pipeline
+from .pipelines import (
+    extract_daily_weather_data_pipeline,
+    generate_training_set,
+    monthly_trip_pipeline,
+)
 
 
 def define_repo():
@@ -8,6 +12,7 @@ def define_repo():
         name='bay_bikes_demo',
         pipeline_dict={
             'extract_daily_weather_data_pipeline': lambda: extract_daily_weather_data_pipeline,
-            'model_training_pipeline': lambda: model_training_pipeline,
+            'monthly_trip_pipeline': lambda: monthly_trip_pipeline,
+            'generate_training_set': lambda: generate_training_set,
         },
     )
