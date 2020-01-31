@@ -196,7 +196,8 @@ const Container = styled.div<{
   flex-direction: ${({ axis }) => (axis === "vertical" ? "column" : "row")};
   flex: 1 1;
   width: 100%;
-  min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
+  min-width: 0;
+  min-height: 0;
 
   .split-panel {
     position: relative;
