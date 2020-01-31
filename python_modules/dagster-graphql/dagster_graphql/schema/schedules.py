@@ -144,7 +144,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
                     ]
                     typename = json_result['__typename']
 
-                    if typename == 'StartPipelineExecutionSuccess':
+                    if (
+                        typename == 'StartPipelineExecutionSuccess'
+                        or typename == 'LaunchPipelineExecutionSuccess'
+                    ):
                         status = DauphinScheduleAttemptStatus.SUCCESS
                         run_id = json_result['run']['runId']
                         run = graphene_info.schema.type_named('PipelineRun')(

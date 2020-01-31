@@ -276,6 +276,18 @@ mutation(
         }
       }
     }
+    ... on RunLauncherNotDefinedError {
+      message
+    }
+    ... on LaunchPipelineExecutionSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+      }
+    }
 
   }
 }
