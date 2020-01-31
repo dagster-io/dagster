@@ -830,7 +830,7 @@ type Query {
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
   partitionSetOrError(partitionSetName: String): PartitionSetOrError!
-  pipelineRunsOrError(filter: PipelineRunsFilter!, cursor: String, limit: Int): PipelineRunsOrError!
+  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
   usedSolids: [UsedSolid!]!
