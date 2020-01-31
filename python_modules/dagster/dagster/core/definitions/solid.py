@@ -235,7 +235,7 @@ class SolidDefinition(ISolidDefinition):
 
     @property
     def required_resource_keys(self):
-        return self._required_resource_keys
+        return frozenset(self._required_resource_keys)
 
     @property
     def has_config_entry(self):

@@ -317,13 +317,6 @@ class ExecutionPlan(
             for step_key_level in toposort(self.deps)
         ]
 
-    def get_solid_def_name_set(self):
-        return {
-            step.solid_definition_name
-            for k, step in self.step_dict.items()
-            if k in self.step_keys_to_execute
-        }
-
     def execution_step_levels(self):
         return [
             [self.step_dict[step_key] for step_key in sorted(step_key_level)]

@@ -145,7 +145,7 @@ class Manager(object):
                 pipeline_context=pipeline_context,
                 solid_config=None,
                 resource_keys_to_init=get_required_resource_keys_to_init(
-                    [self.solid_def], pipeline_context.system_storage_def,
+                    execution_plan, pipeline_context.system_storage_def
                 ),
             )
 
@@ -217,13 +217,12 @@ class Manager(object):
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
 
-            resource_keys_to_init = get_required_resource_keys_to_init(
-                [self.solid_def], pipeline_context.system_storage_def,
-            )
             self.context = DagstermillExecutionContext(
                 pipeline_context=pipeline_context,
                 solid_config=solid_config,
-                resource_keys_to_init=resource_keys_to_init,
+                resource_keys_to_init=get_required_resource_keys_to_init(
+                    execution_plan, pipeline_context.system_storage_def
+                ),
             )
 
         return self.context

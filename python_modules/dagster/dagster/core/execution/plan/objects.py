@@ -149,13 +149,14 @@ class StepInput(
         return {handle.step_key for handle in self.source_handles}
 
 
-class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional')):
-    def __new__(cls, name, runtime_type, optional):
+class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional should_materialize')):
+    def __new__(cls, name, runtime_type, optional, should_materialize):
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             runtime_type=check.inst_param(runtime_type, 'runtime_type', DagsterType),
             optional=check.bool_param(optional, 'optional'),
+            should_materialize=check.bool_param(should_materialize, 'should_materialize'),
         )
 
 

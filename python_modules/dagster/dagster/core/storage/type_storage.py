@@ -26,6 +26,10 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def get_object(cls, intermediate_store, context, runtime_type, paths):
         raise NotImplementedError()
 
+    @classmethod
+    def required_resource_keys(cls):
+        return frozenset()
+
 
 class TypeStoragePluginRegistry(object):
     def __init__(self, types_to_register):

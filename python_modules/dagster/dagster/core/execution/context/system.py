@@ -194,11 +194,17 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
     def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
+        from dagster.core.execution.context_creation_pipeline import (
+            get_required_resource_keys_for_step,
+        )
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
-            self.solid.resource_mapper_fn, self.solid_def.required_resource_keys,
+            self.solid.resource_mapper_fn,
+            get_required_resource_keys_for_step(
+                step, pipeline_context_data.pipeline_def, pipeline_context_data.system_storage_def,
+            ),
         )
         self._log_manager = log_manager
 

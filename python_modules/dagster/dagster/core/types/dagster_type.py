@@ -288,6 +288,7 @@ class Anyish(DagsterType):
         serialization_strategy=None,
         is_builtin=False,
         description=None,
+        auto_plugins=None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -298,6 +299,7 @@ class Anyish(DagsterType):
             is_builtin=is_builtin,
             type_check_fn=self.type_check_method,
             description=description,
+            auto_plugins=auto_plugins,
         )
 
     def type_check_method(self, _value):
@@ -325,6 +327,7 @@ def create_any_type(
     output_materialization_config=None,
     serialization_strategy=None,
     description=None,
+    auto_plugins=None,
 ):
     return Anyish(
         key=name,
@@ -333,6 +336,7 @@ def create_any_type(
         input_hydration_config=input_hydration_config,
         output_materialization_config=output_materialization_config,
         serialization_strategy=serialization_strategy,
+        auto_plugins=auto_plugins,
     )
 
 
