@@ -16,6 +16,7 @@ from dagster.core.definitions.events import (
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
@@ -92,6 +93,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     mode = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
     canCancel = dauphin.NonNull(dauphin.Boolean)
+    executionSelection = dauphin.NonNull('ExecutionSelection')
 
     def __init__(self, pipeline_run):
         super(DauphinPipelineRun, self).__init__(
@@ -141,6 +143,23 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_canCancel(self, graphene_info):
         return graphene_info.context.execution_manager.can_terminate(self.run_id)
+
+    def resolve_executionSelection(self, graphene_info):
+        return graphene_info.schema.type_named('ExecutionSelection')(self._pipeline_run.selector)
+
+
+# output version of input type DauphinExecutionSelector
+class DauphinExectionSelection(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ExecutionSelection'
+
+    name = dauphin.NonNull(dauphin.String)
+    solidSubset = dauphin.List(dauphin.NonNull(dauphin.String))
+
+    def __init__(self, selector):
+        check.inst_param(selector, 'selector', ExecutionSelector)
+        self.name = selector.name
+        self.solidSubset = selector.solid_subset
 
 
 class DauphinLogLevel(dauphin.Enum):

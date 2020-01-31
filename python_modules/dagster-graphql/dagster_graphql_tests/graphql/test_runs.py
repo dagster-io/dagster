@@ -1,10 +1,9 @@
 import copy
 
-from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
 
+from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline
 from dagster.core.instance import DagsterInstance
-
-from .utils import define_test_context, sync_execute_get_run_log_data
 
 RUNS_QUERY = '''
 query PipelineRunsRootQuery($name: String!) {
@@ -58,6 +57,29 @@ mutation DeleteRun($runId: String!) {
 '''
 
 
+ALL_RUNS_QUERY = '''
+{
+  pipelineRunsOrError{
+    ... on PipelineRuns {
+      results {
+        runId
+        pipeline {
+          __typename
+          ... on PipelineReference {
+            name
+          }
+        }
+        executionSelection {
+          name
+          solidSubset
+        }
+      }
+    }
+  }
+}
+'''
+
+
 def _get_runs_data(result, run_id):
     for run_data in result.data['pipeline']['runs']:
         if run_data['runId'] == run_id:
@@ -68,6 +90,11 @@ def _get_runs_data(result, run_id):
 
 
 def test_get_runs_over_graphql():
+    from .utils import (
+        define_test_context,
+        sync_execute_get_run_log_data,
+    )
+
     payload_one = sync_execute_get_run_log_data(
         {
             'executionParams': {
@@ -136,3 +163,120 @@ def test_get_runs_over_graphql():
         read_context, DELETE_RUN_MUTATION, variables={'runId': run_id_two}
     )
     assert result.data['deletePipelineRun']['__typename'] == 'PipelineRunNotFoundError'
+
+
+def get_repo_at_time_1():
+    @lambda_solid
+    def solid_A():
+        pass
+
+    @lambda_solid
+    def solid_B():
+        pass
+
+    @pipeline
+    def evolving_pipeline():
+        solid_A()
+        solid_B()
+
+    @pipeline
+    def foo_pipeline():
+        solid_A()
+
+    return RepositoryDefinition('evolving_repo', pipeline_defs=[evolving_pipeline, foo_pipeline])
+
+
+def get_repo_at_time_2():
+    @lambda_solid
+    def solid_A():
+        pass
+
+    @lambda_solid
+    def solid_B_prime():
+        pass
+
+    @pipeline
+    def evolving_pipeline():
+        solid_A()
+        solid_B_prime()
+
+    @pipeline
+    def bar_pipeline():
+        solid_A()
+
+    return RepositoryDefinition('evolving_repo', pipeline_defs=[evolving_pipeline, bar_pipeline])
+
+
+def test_runs_over_time():
+    instance = DagsterInstance.local_temp()
+
+    repo_1 = get_repo_at_time_1()
+
+    full_evolve_run_id = execute_pipeline(
+        repo_1.get_pipeline('evolving_pipeline'), instance=instance
+    ).run_id
+    foo_run_id = execute_pipeline(repo_1.get_pipeline('foo_pipeline'), instance=instance).run_id
+    evolve_a_run_id = execute_pipeline(
+        repo_1.get_pipeline('evolving_pipeline').build_sub_pipeline(['solid_A']), instance=instance
+    ).run_id
+    evolve_b_run_id = execute_pipeline(
+        repo_1.get_pipeline('evolving_pipeline').build_sub_pipeline(['solid_B']), instance=instance
+    ).run_id
+
+    context_at_time_1 = define_context_for_file(__file__, 'get_repo_at_time_1', instance)
+
+    result = execute_dagster_graphql(context_at_time_1, ALL_RUNS_QUERY)
+    assert result.data
+
+    t1_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
+
+    assert t1_runs[full_evolve_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t1_runs[full_evolve_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': None,
+    }
+    assert t1_runs[foo_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t1_runs[foo_run_id]['executionSelection'] == {
+        'name': 'foo_pipeline',
+        'solidSubset': None,
+    }
+    assert t1_runs[evolve_a_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t1_runs[evolve_a_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': ['solid_A'],
+    }
+    assert t1_runs[evolve_b_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t1_runs[evolve_b_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': ['solid_B'],
+    }
+
+    context_at_time_2 = define_context_for_file(__file__, 'get_repo_at_time_2', instance)
+
+    result = execute_dagster_graphql(context_at_time_2, ALL_RUNS_QUERY)
+    assert result.data
+
+    t2_runs = {run['runId']: run for run in result.data['pipelineRunsOrError']['results']}
+
+    assert t2_runs[full_evolve_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t1_runs[full_evolve_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': None,
+    }
+    assert t2_runs[evolve_a_run_id]['pipeline']['__typename'] == 'Pipeline'
+    assert t2_runs[evolve_a_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': ['solid_A'],
+    }
+    # pipeline name changed
+    assert t2_runs[foo_run_id]['pipeline']['__typename'] == 'UnknownPipeline'
+    assert t1_runs[foo_run_id]['executionSelection'] == {
+        'name': 'foo_pipeline',
+        'solidSubset': None,
+    }
+    # subset no longer valid - b renamed
+    assert t2_runs[evolve_b_run_id]['pipeline']['__typename'] == 'UnknownPipeline'
+    assert t2_runs[evolve_b_run_id]['executionSelection'] == {
+        'name': 'evolving_pipeline',
+        'solidSubset': ['solid_B'],
+    }
