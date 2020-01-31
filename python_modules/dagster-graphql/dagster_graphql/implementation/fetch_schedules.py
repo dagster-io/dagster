@@ -17,7 +17,7 @@ def get_scheduler_or_error(graphene_info):
 
     runningSchedules = [
         graphene_info.schema.type_named('RunningSchedule')(graphene_info, schedule=s)
-        for s in instance.all_schedules(repository.name)
+        for s in instance.all_schedules(repository)
     ]
 
     return graphene_info.schema.type_named('Scheduler')(runningSchedules=runningSchedules)
@@ -27,7 +27,7 @@ def get_scheduler_or_error(graphene_info):
 def get_schedule_or_error(graphene_info, schedule_name):
     repository = graphene_info.context.get_repository()
     instance = graphene_info.context.instance
-    schedule = instance.get_schedule_by_name(repository.name, schedule_name)
+    schedule = instance.get_schedule_by_name(repository, schedule_name)
 
     if not schedule:
         raise UserFacingGraphQLError(
@@ -70,7 +70,7 @@ def get_dagster_schedule(graphene_info, schedule_name):
     if not instance.scheduler:
         raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
 
-    schedule = instance.get_schedule_by_name(repository.name, schedule_name)
+    schedule = instance.get_schedule_by_name(repository, schedule_name)
     if not schedule:
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('ScheduleNotFoundError')(schedule_name=schedule_name)
@@ -82,5 +82,5 @@ def get_dagster_schedule(graphene_info, schedule_name):
 def get_schedule_attempt_filenames(graphene_info, schedule_name):
     instance = graphene_info.context.instance
     repository = graphene_info.context.get_repository()
-    log_dir = instance.log_path_for_schedule(repository.name, schedule_name)
+    log_dir = instance.log_path_for_schedule(repository, schedule_name)
     return glob.glob(os.path.join(log_dir, "*.result"))

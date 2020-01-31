@@ -174,7 +174,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
         repository = graphene_info.context.get_repository()
-        return instance.log_path_for_schedule(repository.name, self._schedule.name)
+        return instance.log_path_for_schedule(repository, self._schedule.name)
 
     def resolve_runs(self, graphene_info, **kwargs):
         return [
@@ -218,7 +218,7 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
         repository = graphene_info.context.get_repository()
         instance = graphene_info.context.instance
 
-        schedule = instance.start_schedule(repository.name, schedule_name)
+        schedule = instance.start_schedule(repository, schedule_name)
 
         return graphene_info.schema.type_named('RunningScheduleResult')(
             schedule=graphene_info.schema.type_named('RunningSchedule')(
@@ -240,7 +240,7 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
         repository = graphene_info.context.get_repository()
         instance = graphene_info.context.instance
 
-        schedule = instance.stop_schedule(repository.name, schedule_name)
+        schedule = instance.stop_schedule(repository, schedule_name)
 
         return graphene_info.schema.type_named('RunningScheduleResult')(
             schedule=graphene_info.schema.type_named('RunningSchedule')(

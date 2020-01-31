@@ -4,6 +4,7 @@ import sys
 from dagster_cron import SystemCronScheduler
 
 from dagster import ScheduleDefinition, check
+from dagster.core.definitions import RepositoryDefinition
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.scheduler import Schedule, SchedulerHandle
 from dagster.core.scheduler.storage import FilesystemScheduleStorage
@@ -19,11 +20,11 @@ class MockSystemCronScheduler(SystemCronScheduler):
     the user's crontab during tests
     '''
 
-    def _start_cron_job(self, instance, repository_name, schedule):
-        self._write_bash_script_to_file(instance, repository_name, schedule)
+    def _start_cron_job(self, instance, repository, schedule):
+        self._write_bash_script_to_file(instance, repository, schedule)
 
-    def _end_cron_job(self, repository_name, schedule):
-        script_file = self._get_bash_script_file_path(repository_name, schedule)
+    def _end_cron_job(self, repository, schedule):
+        script_file = self._get_bash_script_file_path(repository, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
 
@@ -60,8 +61,9 @@ def define_scheduler():
 
 def test_init():
     with TemporaryDirectory() as tempdir:
-        repository_name = 'test_repository'
         instance = DagsterInstance.local_temp(tempdir=tempdir)
+        repository = RepositoryDefinition(name="test_repository")
+
         scheduler_handle = define_scheduler()
         assert scheduler_handle
 
@@ -69,20 +71,19 @@ def test_init():
         scheduler_handle.up(
             python_path=sys.executable,
             repository_path="",
-            repository_name=repository_name,
+            repository=repository,
             instance=instance,
         )
 
         # Check schedules are saved to disk
         assert 'schedules' in os.listdir(tempdir)
 
-        schedules = instance.all_schedules(repository_name)
+        schedules = instance.all_schedules(repository)
 
         for schedule in schedules:
             assert "/bin/python" in schedule.python_path
-
             assert "{}.json".format(schedule.name) in os.listdir(
-                os.path.join(tempdir, 'schedules', repository_name)
+                os.path.join(tempdir, 'schedules', repository.name)
             )
 
 
@@ -100,7 +101,7 @@ def define_scheduler_instance(tempdir):
 
 def test_start_and_stop_schedule():
     with TemporaryDirectory() as tempdir:
-        repository_name = 'test_repository'
+        repository = RepositoryDefinition(name="test_repository")
         instance = define_scheduler_instance(tempdir)
         scheduler_handle = define_scheduler()
         assert scheduler_handle
@@ -109,7 +110,7 @@ def test_start_and_stop_schedule():
         scheduler_handle.up(
             python_path=sys.executable,
             repository_path="",
-            repository_name=repository_name,
+            repository=repository,
             instance=instance,
         )
 
@@ -118,27 +119,27 @@ def test_start_and_stop_schedule():
         )
 
         # Start schedule
-        schedule = instance.start_schedule(repository_name, "no_config_pipeline_every_min_schedule")
+        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
 
         check.inst_param(schedule, 'schedule', Schedule)
         assert "/bin/python" in schedule.python_path
 
         assert 'schedules' in os.listdir(tempdir)
 
-        assert "{}.{}.sh".format(repository_name, schedule_def.name) in os.listdir(
+        assert "{}.{}.sh".format(repository.name, schedule_def.name) in os.listdir(
             os.path.join(tempdir, 'schedules')
         )
 
         # End schedule
-        instance.stop_schedule(repository_name, "no_config_pipeline_every_min_schedule")
-        assert "{}.{}.sh".format(repository_name, schedule_def.name) not in os.listdir(
+        instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
+        assert "{}.{}.sh".format(repository.name, schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules')
         )
 
 
 def test_wipe():
     with TemporaryDirectory() as tempdir:
-        repository_name = "test_respository"
+        repository = RepositoryDefinition(name="test_repository")
         instance = define_scheduler_instance(tempdir)
         scheduler_handle = define_scheduler()
         assert scheduler_handle
@@ -147,15 +148,15 @@ def test_wipe():
         scheduler_handle.up(
             python_path=sys.executable,
             repository_path="",
-            repository_name=repository_name,
+            repository=repository,
             instance=instance,
         )
 
         # Start schedule
-        instance.start_schedule(repository_name, "no_config_pipeline_every_min_schedule")
+        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
 
         # Wipe scheduler
         instance.wipe_all_schedules()
 
         # Check schedules are wiped
-        assert instance.all_schedules(repository_name) == []
+        assert instance.all_schedules(repository) == []

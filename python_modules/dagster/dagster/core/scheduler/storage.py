@@ -8,6 +8,7 @@ from collections import OrderedDict
 import six
 
 from dagster import check, utils
+from dagster.core.definitions import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.serdes import (
     ConfigurableClass,
@@ -20,17 +21,17 @@ from .scheduler import Schedule
 
 class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def all_schedules(self, repository_name):
+    def all_schedules(self, repository):
         '''Return all schedules present in the storage
         '''
 
     @abc.abstractmethod
-    def get_schedule_by_name(self, repository_name, schedule_name):
+    def get_schedule_by_name(self, repository, schedule_name):
         '''Return the unique schedule with the given name
         '''
 
     @abc.abstractmethod
-    def add_schedule(self, repository_name, schedule):
+    def add_schedule(self, repository, schedule):
         '''Add a schedule to storage.
 
         Args:
@@ -38,7 +39,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def update_schedule(self, repository_name, schedule):
+    def update_schedule(self, repository, schedule):
         '''Update a schedule already in storage, using schedule name to match schedules.
 
         Args:
@@ -46,7 +47,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def delete_schedule(self, repository_name, schedule):
+    def delete_schedule(self, repository, schedule):
         '''Delete a schedule from storage.
 
         Args:
@@ -59,7 +60,7 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def get_log_path(self, repository_name, schedule_name):
+    def get_log_path(self, repository, schedule_name):
         '''Get path to store logs for schedule
         '''
 
@@ -87,75 +88,84 @@ class FilesystemScheduleStorage(ScheduleStorage, ConfigurableClass):
     def from_local(base_dir, inst_data=None):
         return FilesystemScheduleStorage(base_dir, inst_data)
 
-    def all_schedules(self, repository_name):
-        if repository_name not in self._schedules:
+    def all_schedules(self, repository):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        if repository.name not in self._schedules:
             return []
 
-        return [s for s in self._schedules[repository_name].values()]
+        return [s for s in self._schedules[repository.name].values()]
 
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        if repository_name not in self._schedules:
+    def get_schedule_by_name(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+
+        if repository.name not in self._schedules:
             return None
 
-        return self._schedules[repository_name].get(schedule_name)
+        return self._schedules[repository.name].get(schedule_name)
 
-    def add_schedule(self, repository_name, schedule):
+    def add_schedule(self, repository, schedule):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
         check.inst_param(schedule, 'schedule', Schedule)
 
-        if not repository_name in self._schedules:
-            self._schedules[repository_name] = OrderedDict()
+        if not repository.name in self._schedules:
+            self._schedules[repository.name] = OrderedDict()
 
-        self._schedules[repository_name][schedule.name] = schedule
-        self._write_schedule_to_file(repository_name, schedule)
+        self._schedules[repository.name][schedule.name] = schedule
+        self._write_schedule_to_file(repository, schedule)
 
-    def update_schedule(self, repository_name, schedule):
-        check.str_param(repository_name, 'repository_name')
+    def update_schedule(self, repository, schedule):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
         check.inst_param(schedule, 'schedule', Schedule)
 
-        if repository_name not in self._schedules:
+        if repository.name not in self._schedules:
             raise DagsterInvariantViolationError(
                 'Repository {repository_name} is not present in storage'.format(
-                    repository_name=repository_name
+                    repository_name=repository.name
                 )
             )
 
-        if schedule.name not in self._schedules[repository_name]:
+        if schedule.name not in self._schedules[repository.name]:
             raise DagsterInvariantViolationError(
                 'Schedule {name} is not present in storage'.format(name=schedule.name)
             )
 
-        self.add_schedule(repository_name, schedule)
+        self.add_schedule(repository, schedule)
 
-    def delete_schedule(self, repository_name, schedule):
-        check.str_param(repository_name, 'repository_name')
+    def delete_schedule(self, repository, schedule):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
         check.inst_param(schedule, 'schedule', Schedule)
 
-        if repository_name not in self._schedules:
+        if repository.name not in self._schedules:
             raise DagsterInvariantViolationError(
                 'Repository {repository_name} is not present in storage'.format(
-                    repository_name=repository_name
+                    repository_name=repository.name
                 )
             )
 
-        if schedule.name not in self._schedules[repository_name]:
+        if schedule.name not in self._schedules[repository.name]:
             raise DagsterInvariantViolationError(
                 'Schedule {name} is not present in storage'.format(name=schedule.name)
             )
 
-        self._schedules[repository_name].pop(schedule.name)
-        self._delete_schedule_file(repository_name, schedule)
+        self._schedules[repository.name].pop(schedule.name)
+        self._delete_schedule_file(repository, schedule)
 
     def wipe(self):
         self._schedules = OrderedDict()
         for repository_name in self._schedules.keys():
             shutil.rmtree(os.path.join(self._base_dir, repository_name))
 
-    def get_log_path(self, repository_name, schedule_name):
+    def get_log_path(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
         check.str_param(schedule_name, 'schedule_name')
-        return os.path.join(self._base_dir, repository_name, 'logs', '{}'.format(schedule_name),)
+        return os.path.join(self._base_dir, repository.name, 'logs', '{}'.format(schedule_name),)
 
-    def _write_schedule_to_file(self, repository_name, schedule):
-        repository_folder = os.path.join(self._base_dir, repository_name)
+    def _write_schedule_to_file(self, repository, schedule):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.inst_param(schedule, 'schedule', Schedule)
+
+        repository_folder = os.path.join(self._base_dir, repository.name)
         utils.mkdir_p(repository_folder)
 
         metadata_file = os.path.join(repository_folder, '{}.json'.format(schedule.name),)
@@ -165,9 +175,12 @@ class FilesystemScheduleStorage(ScheduleStorage, ConfigurableClass):
 
         return metadata_file
 
-    def _delete_schedule_file(self, repository_name, schedule):
+    def _delete_schedule_file(self, repository, schedule):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.inst_param(schedule, 'schedule', Schedule)
+
         metadata_file = os.path.join(
-            self._base_dir, repository_name, '{}.json'.format(schedule.name),
+            self._base_dir, repository.name, '{}.json'.format(schedule.name),
         )
 
         os.remove(metadata_file)

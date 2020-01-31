@@ -62,8 +62,8 @@ def repository_target_argument(f):
     )
 
 
-def print_changes(scheduler_handle, repository_name, instance, print_fn=print, preview=False):
-    changeset = scheduler_handle.get_change_set(repository_name, instance.schedule_storage)
+def print_changes(scheduler_handle, repository, instance, print_fn=print, preview=False):
+    changeset = scheduler_handle.get_change_set(repository, instance)
     if len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
@@ -126,7 +126,7 @@ def execute_preview_command(cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, repository.name, instance, print_fn, preview=True)
+    print_changes(scheduler_handle, repository, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -157,12 +157,12 @@ def execute_up_command(preview, cli_args, print_fn):
         print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
         return
 
-    print_changes(scheduler_handle, repository.name, instance, print_fn, preview=preview)
+    print_changes(scheduler_handle, repository, instance, print_fn, preview=preview)
     if preview:
         return
 
     try:
-        scheduler_handle.up(python_path, repository_path, repository.name, instance=instance)
+        scheduler_handle.up(python_path, repository_path, repository, instance=instance)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -202,14 +202,14 @@ def execute_list_command(running_filter, stopped_filter, name_filter, verbose, c
 
     if running_filter:
         schedules = [
-            s for s in instance.all_schedules(repository.name) if s.status == ScheduleStatus.RUNNING
+            s for s in instance.all_schedules(repository) if s.status == ScheduleStatus.RUNNING
         ]
     elif stopped_filter:
         schedules = [
-            s for s in instance.all_schedules(repository.name) if s.status == ScheduleStatus.STOPPED
+            s for s in instance.all_schedules(repository) if s.status == ScheduleStatus.STOPPED
         ]
     else:
-        schedules = instance.all_schedules(repository.name)
+        schedules = instance.all_schedules(repository)
 
     for schedule in schedules:
         schedule_def = schedule_handle.get_schedule_def_by_name(schedule.name)
@@ -270,16 +270,16 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
         return
 
     if all_flag:
-        for schedule in instance.all_schedules(repository.name):
+        for schedule in instance.all_schedules(repository):
             try:
-                schedule = instance.start_schedule(repository.name, schedule.name)
+                schedule = instance.start_schedule(repository, schedule.name)
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
         print_fn("Started all schedules for repository {name}".format(name=repository.name))
     else:
         try:
-            schedule = instance.start_schedule(repository.name, schedule_name)
+            schedule = instance.start_schedule(repository, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 
@@ -307,7 +307,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
         return
 
     try:
-        instance.stop_schedule(repository.name, schedule_name)
+        instance.stop_schedule(repository, schedule_name)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -340,11 +340,11 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
         return
 
     if all_running_flag:
-        for schedule in instance.all_schedules(repository.name):
+        for schedule in instance.all_schedules(repository):
             if schedule.status == ScheduleStatus.RUNNING:
                 try:
-                    instance.stop_schedule(repository.name, schedule.name)
-                    instance.start_schedule(repository.name, schedule.name)
+                    instance.stop_schedule(repository, schedule.name)
+                    instance.start_schedule(repository, schedule.name)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -352,7 +352,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             "Restarted all running schedules for repository {name}".format(name=repository.name)
         )
     else:
-        schedule = instance.get_schedule_by_name(repository.name, schedule_name)
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if schedule.status != ScheduleStatus.RUNNING:
             click.UsageError(
                 "Cannot restart a schedule {name} because is not currently running".format(
@@ -361,8 +361,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             )
 
         try:
-            instance.stop_schedule(repository.name, schedule_name)
-            instance.start_schedule(repository.name, schedule_name)
+            instance.stop_schedule(repository, schedule_name)
+            instance.start_schedule(repository, schedule_name)
         except DagsterInvariantViolationError as ex:
             raise click.UsageError(ex)
 

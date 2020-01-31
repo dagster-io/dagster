@@ -424,31 +424,31 @@ class DagsterInstance:
 
     # Scheduler
 
-    def start_schedule(self, repository_name, schedule_name):
-        return self._scheduler.start_schedule(self, repository_name, schedule_name)
+    def start_schedule(self, repository, schedule_name):
+        return self._scheduler.start_schedule(self, repository, schedule_name)
 
-    def stop_schedule(self, repository_name, schedule_name):
-        return self._scheduler.stop_schedule(self, repository_name, schedule_name)
+    def stop_schedule(self, repository, schedule_name):
+        return self._scheduler.stop_schedule(self, repository, schedule_name)
 
-    def end_schedule(self, repository_name, schedule_name):
-        return self._scheduler.end_schedule(self, repository_name, schedule_name)
+    def end_schedule(self, repository, schedule_name):
+        return self._scheduler.end_schedule(self, repository, schedule_name)
 
     # Schedule Storage
 
-    def all_schedules(self, repository_name):
-        return self._schedule_storage.all_schedules(repository_name)
+    def all_schedules(self, repository):
+        return self._schedule_storage.all_schedules(repository)
 
-    def get_schedule_by_name(self, repository_name, schedule_name):
-        return self._schedule_storage.get_schedule_by_name(repository_name, schedule_name)
+    def get_schedule_by_name(self, repository, schedule_name):
+        return self._schedule_storage.get_schedule_by_name(repository, schedule_name)
 
-    def add_schedule(self, repository_name, schedule):
-        return self._schedule_storage.add_schedule(repository_name, schedule)
+    def add_schedule(self, repository, schedule):
+        return self._schedule_storage.add_schedule(repository, schedule)
 
-    def update_schedule(self, repository_name, schedule):
-        return self._schedule_storage.update_schedule(repository_name, schedule)
+    def update_schedule(self, repository, schedule):
+        return self._schedule_storage.update_schedule(repository, schedule)
 
-    def delete_schedule(self, repository_name, schedule):
-        return self._schedule_storage.delete_schedule(repository_name, schedule)
+    def delete_schedule(self, repository, schedule):
+        return self._schedule_storage.delete_schedule(repository, schedule)
 
     def wipe_all_schedules(self):
         if self._scheduler:
@@ -456,5 +456,5 @@ class DagsterInstance:
 
         self._schedule_storage.wipe()
 
-    def log_path_for_schedule(self, repository_name, schedule_name):
-        return self._schedule_storage.get_log_path(repository_name, schedule_name)
+    def log_path_for_schedule(self, repository, schedule_name):
+        return self._schedule_storage.get_log_path(repository, schedule_name)

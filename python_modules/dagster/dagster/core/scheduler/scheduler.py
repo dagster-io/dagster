@@ -62,7 +62,7 @@ class SchedulerHandle(object):
         check.list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
         self._schedule_defs = schedule_defs
 
-    def up(self, python_path, repository_path, repository_name, instance):
+    def up(self, python_path, repository_path, repository, instance):
         '''SchedulerHandle stores a list of up-to-date ScheduleDefinitions and a reference to a
         ScheduleStorage. When `up` is called, it reconciles the ScheduleDefinitions list and
         ScheduleStorage to ensure there is a 1-1 correlation between ScheduleDefinitions and
@@ -84,7 +84,7 @@ class SchedulerHandle(object):
         for schedule_def in self._schedule_defs:
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
-            existing_schedule = instance.get_schedule_by_name(repository_name, schedule_def.name)
+            existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
             if existing_schedule:
                 # Keep the status, but replace schedule_def, python_path, and repository_path
                 schedule = Schedule(
@@ -94,7 +94,7 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                instance.update_schedule(repository_name, schedule)
+                instance.update_schedule(repository, schedule)
                 schedules_to_restart.append(schedule)
             else:
                 schedule = Schedule(
@@ -104,25 +104,25 @@ class SchedulerHandle(object):
                     repository_path,
                 )
 
-                instance.add_schedule(repository_name, schedule)
+                instance.add_schedule(repository, schedule)
 
         # Delete all existing schedules that are not in schedule_defs
         schedule_def_names = {s.name for s in self._schedule_defs}
-        existing_schedule_names = set([s.name for s in instance.all_schedules(repository_name)])
+        existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
         schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
         for schedule in schedules_to_restart:
             # Restart is only needed if the schedule was previously running
             if schedule.status == ScheduleStatus.RUNNING:
-                instance.stop_schedule(repository_name, schedule.name)
-                instance.start_schedule(repository_name, schedule.name)
+                instance.stop_schedule(repository, schedule.name)
+                instance.start_schedule(repository, schedule.name)
 
         for schedule_name in schedule_names_to_delete:
-            instance.end_schedule(repository_name, schedule_name)
+            instance.end_schedule(repository, schedule_name)
 
-    def get_change_set(self, repository_name, instance):
+    def get_change_set(self, repository, instance):
         schedule_defs = self.all_schedule_defs()
-        schedules = instance.all_schedules(repository_name)
+        schedules = instance.all_schedules(repository)
         return get_schedule_change_set(schedules, schedule_defs)
 
     def all_schedule_defs(self):
@@ -136,7 +136,7 @@ class SchedulerHandle(object):
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def start_schedule(self, instance, repository_name, schedule_name):
+    def start_schedule(self, instance, repository, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:
@@ -144,7 +144,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def stop_schedule(self, instance, repository_name, schedule_name):
+    def stop_schedule(self, instance, repository, schedule_name):
         '''Stops an existing pipeline schedule
 
         Args:
@@ -152,7 +152,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def end_schedule(self, instance, repository_name, schedule_name):
+    def end_schedule(self, instance, repository, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:

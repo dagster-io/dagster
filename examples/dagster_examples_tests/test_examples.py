@@ -47,10 +47,11 @@ def test_schedules():
         # state about the schedules to disk before running them.
         # Note: This dependency will be removed soon.
         scheduler_handle = context.scheduler_handle
+        repository = context.get_repository()
         scheduler_handle.up(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '../'),
-            repository_name="hello_cereal_repository",
+            repository=repository,
             instance=instance,
         )
 
