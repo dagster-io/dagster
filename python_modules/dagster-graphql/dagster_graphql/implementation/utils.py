@@ -21,9 +21,13 @@ def capture_dauphin_error(fn):
 
 
 class UserFacingGraphQLError(Exception):
-    def __init__(self, dauphin_error, *args, **kwargs):
+    def __init__(self, dauphin_error):
         self.dauphin_error = dauphin_error
-        super(UserFacingGraphQLError, self).__init__(*args, **kwargs)
+        message = '[{cls}] {message}'.format(
+            cls=dauphin_error.__class__.__name__,
+            message=dauphin_error.message if hasattr(dauphin_error, 'message') else None,
+        )
+        super(UserFacingGraphQLError, self).__init__(message)
 
 
 class ExecutionParams(

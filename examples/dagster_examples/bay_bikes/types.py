@@ -174,8 +174,8 @@ def compute_weather_dataframe_event_metadata(dataframe):
     ]
 
 
-RawWeatherDataFrameSchema = [
-    PandasColumn.integer_column('time', unique=True),
+WeatherDataFrameSchema = [
+    PandasColumn.datetime_column('time', unique=True),
     PandasColumn.categorical_column(
         'summary',
         categories={
@@ -216,6 +216,7 @@ RawWeatherDataFrameSchema = [
             'Drizzle starting in the afternoon.',
             'Rain in the morning and afternoon.',
             'Possible drizzle throughout the day.',
+            'Possible light rain throughout the day.',
             'Heavy rain until morning, starting again in the evening.',
             'Foggy overnight.',
             'Rain in the evening and overnight.',
@@ -244,17 +245,13 @@ RawWeatherDataFrameSchema = [
     PandasColumn.float_column('cloudCover', min_value=0.0, max_value=1.0),
     PandasColumn.integer_column('uvIndex', min_value=0, max_value=12),
     PandasColumn.integer_column('uvIndexTime', min_value=0),
-    PandasColumn.float_column('visibility', min_value=0.0, max_value=10.0),
+    PandasColumn.numeric_column(
+        'visibility', min_value=0.0, max_value=10.0, expected_dtypes={'int64', 'float64'}
+    ),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
-]
-
-WeatherDataFrameSchema = RawWeatherDataFrameSchema + [
     PandasColumn.boolean_column('didRain', exists=True),
 ]
 
-RawWeatherDataFrame = create_dagster_pandas_dataframe_type(
-    name='RawWeatherDataFrame', columns=RawWeatherDataFrameSchema,
-)
 
 WeatherDataFrame = create_dagster_pandas_dataframe_type(
     name='WeatherDataFrame',

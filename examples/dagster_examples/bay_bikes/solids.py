@@ -1,9 +1,9 @@
 import os
 import uuid
-import zipfile
 from datetime import timedelta
 from time import gmtime, strftime
 from typing import Tuple
+from zipfile import ZipFile
 
 import requests
 from dagster_examples.bay_bikes.constants import (
@@ -14,7 +14,6 @@ from dagster_examples.bay_bikes.constants import (
 )
 from dagster_examples.bay_bikes.types import (
     RawTripDataFrame,
-    RawWeatherDataFrame,
     TrafficDataFrame,
     TrainingSet,
     TripDataFrame,
@@ -23,14 +22,13 @@ from dagster_examples.bay_bikes.types import (
 from keras.layers import LSTM, Dense
 from keras.models import Sequential
 from numpy import array, ndarray, transpose
-from pandas import DataFrame, concat, date_range, get_dummies, read_csv, to_datetime
+from pandas import DataFrame, date_range, get_dummies, read_csv, read_sql_table, to_datetime
 
 from dagster import (
     Any,
     EventMetadataEntry,
     Field,
     InputDefinition,
-    List,
     Materialization,
     Output,
     OutputDefinition,
@@ -60,40 +58,14 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
     config={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
-def download_zipfiles_from_urls(
-    context, base_url: str, file_names: List[str], target_dir: str
-) -> List[str]:
+def download_zipfile_from_url(context, file_name: str, base_url: str) -> str:
     # mount dirs onto volume
-    zipfile_location = os.path.join(context.resources.volume, target_dir)
-    if not os.path.exists(zipfile_location):
-        os.mkdir(zipfile_location)
-    for file_name in file_names:
-        if not os.path.exists(os.path.join(zipfile_location, file_name)):
-            _download_zipfile_from_url(
-                "/".join([base_url, file_name]),
-                os.path.join(zipfile_location, file_name),
-                context.solid_config['chunk_size'],
-            )
-    return file_names
-
-
-def _unzip_file(zipfile_path: str, target: str) -> str:
-    with zipfile.ZipFile(zipfile_path, 'r') as zip_fp:
-        zip_fp.extractall(target)
-        return zip_fp.namelist()[0]
-
-
-@solid(required_resource_keys={'volume'})
-def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str) -> List[str]:
-    # mount dirs onto volume
-    zipfile_location = os.path.join(context.resources.volume, source_dir)
-    csv_location = os.path.join(context.resources.volume, target_dir)
-    if not os.path.exists(csv_location):
-        os.mkdir(csv_location)
-    return [
-        _unzip_file(os.path.join(zipfile_location, file_name), csv_location)
-        for file_name in file_names
-    ]
+    target = os.path.join(context.resources.volume, file_name)
+    if not os.path.exists(target):
+        _download_zipfile_from_url(
+            "/".join([base_url, file_name]), target, context.solid_config['chunk_size'],
+        )
+    return os.path.join(context.resources.volume, file_name)
 
 
 @solid(
@@ -103,26 +75,22 @@ def unzip_files(context, file_names: List[str], source_dir: str, target_dir: str
             default_value=',',
             is_required=False,
             description=('A one-character string used to separate fields.'),
-        )
+        ),
+        'compression': Field(str, default_value='infer', is_required=False,),
     },
     required_resource_keys={'volume'},
 )
-def consolidate_csv_files(context, input_file_names: List[str], source_dir: str) -> DataFrame:
-    # mount dirs onto volume
-    csv_file_location = os.path.join(context.resources.volume, source_dir)
-    if not os.path.exists(csv_file_location):
-        os.mkdir(csv_file_location)
-    # There must be a header in all of these dataframes or pandas won't know how to concatinate dataframes.
-    dataset = concat(
-        [
-            read_csv(
-                os.path.join(csv_file_location, file_name),
-                sep=context.solid_config['delimiter'],
-                header=0,
-            )
-            for file_name in input_file_names
-        ]
+def load_compressed_csv_file(
+    context, input_file_path: str, target_csv_file_in_archive: str
+) -> DataFrame:
+    # There must be a header in all of these dataframes or it becomes had to load into a table or concat dataframes.
+    dataset = read_csv(
+        ZipFile(input_file_path).open(target_csv_file_in_archive),
+        sep=context.solid_config['delimiter'],
+        header=0,
+        compression=context.solid_config['compression'],
     )
+    dataset['uuid'] = [uuid.uuid4() for _ in range(len(dataset))]
     return dataset
 
 
@@ -141,7 +109,7 @@ def download_csv_from_bucket_and_return_dataframe(
 
 
 @solid(config={'index_label': Field(str),}, required_resource_keys={'postgres_db'})
-def insert_row_into_table(context, row: DataFrame, table_name: str):
+def insert_into_table(context, row: DataFrame, table_name: str):
     row.to_sql(
         table_name,
         context.resources.postgres_db.engine,
@@ -149,6 +117,26 @@ def insert_row_into_table(context, row: DataFrame, table_name: str):
         index=False,
         index_label=context.solid_config['index_label'],
     )
+
+
+@solid(
+    config={
+        'index_label': Field(str),
+        'subsets': Field([str], is_required=False, default_value=[]),
+    },
+    required_resource_keys={'postgres_db'},
+)
+def download_table_as_dataframe(context, table_name: str) -> DataFrame:
+    dataframe = read_sql_table(
+        table_name,
+        context.resources.postgres_db.engine,
+        index_col=context.solid_config['index_label'],
+    )
+    # De-Duplicate Table
+    subsets = context.solid_config['subsets']
+    if subsets:
+        return dataframe.drop_duplicates(subset=subsets)
+    return dataframe.drop_duplicates()
 
 
 @solid(
@@ -207,25 +195,11 @@ def preprocess_trip_dataset(_, dataframe: DataFrame) -> DataFrame:
 
 @composite_solid(output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)])
 def produce_trip_dataset():
-    download_baybike_zipfiles_from_url = download_zipfiles_from_urls.alias(
-        'download_baybike_zipfiles_from_url'
-    )
-    unzip_baybike_zipfiles = unzip_files.alias('unzip_baybike_zipfiles')
-    consolidate_baybike_data_into_trip_dataset = consolidate_csv_files.alias(
-        'consolidate_baybike_data_into_trip_dataset'
-    )
-
-    return preprocess_trip_dataset(
-        consolidate_baybike_data_into_trip_dataset(
-            unzip_baybike_zipfiles(download_baybike_zipfiles_from_url())
-        )
-    )
+    load_entire_trip_table = download_table_as_dataframe.alias('load_entire_trip_table')
+    return preprocess_trip_dataset(load_entire_trip_table())
 
 
-@solid(
-    input_defs=[InputDefinition(name='dataframe', dagster_type=RawWeatherDataFrame)],
-    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
-)
+@solid(output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],)
 def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     '''
     Steps:
@@ -266,10 +240,8 @@ def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)]
 )
 def produce_weather_dataset() -> DataFrame:
-    download_weather_dataset = download_csv_from_bucket_and_return_dataframe.alias(
-        'download_weather_dataset'
-    )
-    return preprocess_weather_dataset(download_weather_dataset())
+    load_entire_weather_table = download_table_as_dataframe.alias('load_entire_weather_table')
+    return preprocess_weather_dataset(load_entire_weather_table())
 
 
 @solid(
@@ -474,3 +446,8 @@ def train_lstm_model(context, training_set: TrainingSet):
         ],
     )
     yield Output(model)
+
+
+@solid
+def do_nothing(_, df_a, df_b):
+    return (df_a, df_b)

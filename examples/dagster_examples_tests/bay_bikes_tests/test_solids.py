@@ -16,6 +16,7 @@ from requests import HTTPError
 from dagster import ModeDefinition, execute_solid
 
 START_TIME = 1514793600
+VOLUME_TARGET_DIRECTORY = '/tmp/bar'
 
 
 class MockResponse:

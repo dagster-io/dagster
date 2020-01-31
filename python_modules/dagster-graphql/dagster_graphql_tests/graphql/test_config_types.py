@@ -67,6 +67,10 @@ query PipelineQuery(
         ... on PipelineNotFoundError {
             pipelineName
         }
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 '''

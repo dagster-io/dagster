@@ -4,18 +4,19 @@ from datetime import datetime, timedelta
 from dagster_cron import SystemCronScheduler
 
 from dagster import daily_schedule, schedules
+from dagster.core.definitions.decorators import monthly_schedule
 
-RESOURCE_CREDENTIALS = ['DARK_SKY_API_KEY', 'GOOGLE_APPLICATION_CREDENTIALS']
+now = datetime.now()
 
 
 @daily_schedule(
     pipeline_name='extract_daily_weather_data_pipeline',
     start_date=datetime(year=2019, month=1, day=1),
-    execution_time=(datetime.now() + timedelta(minutes=1)).time(),
+    execution_time=(now + timedelta(minutes=1)).time(),
     mode='development',
-    environment_vars={cred_name: os.environ.get(cred_name) for cred_name in RESOURCE_CREDENTIALS},
+    environment_vars={'DARK_SKY_API_KEY': os.environ.get('DARK_SKY_API_KEY', '')},
 )
-def daily_ingest_schedule(date):
+def daily_weather_ingest_schedule(date):
     unix_seconds_since_epoch = int((date - datetime(year=1970, month=1, day=1)).total_seconds())
     return {
         "resources": {
@@ -41,6 +42,52 @@ def daily_ingest_schedule(date):
     }
 
 
+@monthly_schedule(
+    pipeline_name='monthly_trip_pipeline',
+    start_date=datetime(year=2018, month=1, day=1),
+    execution_time=(now + timedelta(minutes=1)).time(),
+    execution_day_of_month=now.day,
+    mode='development',
+)
+def monthly_trip_ingest_schedule(date):
+    return {
+        'resources': {
+            'postgres_db': {
+                'config': {
+                    'postgres_db_name': 'test',
+                    'postgres_hostname': 'localhost',
+                    'postgres_password': 'test',
+                    'postgres_username': 'test',
+                }
+            },
+            'volume': {'config': {'mount_location': '/tmp'}},
+        },
+        'solids': {
+            'download_baybike_zipfile_from_url': {
+                'inputs': {
+                    'file_name': {
+                        'value': '{}-fordgobike-tripdata.csv.zip'.format(
+                            date.date().strftime('%Y%m')
+                        )
+                    },
+                    'base_url': {'value': 'https://s3.amazonaws.com/baywheels-data'},
+                }
+            },
+            'load_baybike_data_into_dataframe': {
+                'inputs': {
+                    'target_csv_file_in_archive': {
+                        'value': '{}-fordgobike-tripdata.csv'.format(date.date().strftime('%Y%m'))
+                    }
+                }
+            },
+            'insert_trip_data_into_table': {
+                'config': {'index_label': 'uuid'},
+                'inputs': {'table_name': 'trips'},
+            },
+        },
+    }
+
+
 @schedules(scheduler=SystemCronScheduler)
 def define_scheduler():
-    return [daily_ingest_schedule]
+    return [daily_weather_ingest_schedule, monthly_trip_ingest_schedule]
