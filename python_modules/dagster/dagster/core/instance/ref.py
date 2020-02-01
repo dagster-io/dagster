@@ -131,8 +131,8 @@ class InstanceRef(
             config_value,
             'schedule_storage',
             ConfigurableClassData(
-                'dagster.core.scheduler.storage',
-                'FilesystemScheduleStorage',
+                'dagster.core.storage.schedules',
+                'SqliteScheduleStorage',
                 yaml.dump({'base_dir': _schedule_directory(base_dir)}, default_flow_style=False),
             ),
         )

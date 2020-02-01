@@ -7,6 +7,7 @@ import six
 from crontab import CronTab
 
 from dagster import DagsterInvariantViolationError, check, seven, utils
+from dagster.core.definitions import RepositoryDefinition
 from dagster.core.scheduler import ScheduleStatus, Scheduler
 from dagster.core.serdes import ConfigurableClass
 
@@ -139,6 +140,13 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         script_file = self._get_bash_script_file_path(repository, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
+
+    def get_log_path(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+        return os.path.join(
+            self._artifacts_dir, repository.name, 'logs', '{}'.format(schedule_name)
+        )
 
     def _write_bash_script_to_file(self, instance, repository, schedule):
         script_file = self._get_bash_script_file_path(repository, schedule)

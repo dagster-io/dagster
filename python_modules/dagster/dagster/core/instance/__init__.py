@@ -109,7 +109,7 @@ class DagsterInstance:
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
-        from dagster.core.scheduler.storage import ScheduleStorage
+        from dagster.core.storage.schedules import ScheduleStorage
         from dagster.core.scheduler import Scheduler
         from dagster.core.launcher import RunLauncher
 
@@ -457,4 +457,4 @@ class DagsterInstance:
         self._schedule_storage.wipe()
 
     def log_path_for_schedule(self, repository, schedule_name):
-        return self._schedule_storage.get_log_path(repository, schedule_name)
+        return self._scheduler.get_log_path(repository, schedule_name)

@@ -37,17 +37,6 @@ def apply_click_params(command, *click_params):
     return command
 
 
-def dagster_home_error_message_for_command(command_str):
-    return (
-        "$DAGSTER_HOME is not set, but is needed for the scheduler. "
-        "To use the scheduler, set the home directory for dagster by exporting DAGSTER_HOME "
-        "in your .bashrc or .bash_profile, or set DAGSTER_HOME for this command"
-        "\nExamples:"
-        "\n1. export DAGSTER_HOME=\"~/dagster\""
-        "\n2. DAGSTER_HOME=\"~/dagster\" {command_str}".format(command_str=command_str)
-    )
-
-
 def repository_target_argument(f):
     return apply_click_params(
         f,
@@ -381,12 +370,14 @@ def execute_wipe_command(cli_args, print_fn):
     repository = handle.build_repository_definition()
 
     instance = DagsterInstance.get()
-
-    schedule_handle = handle.build_scheduler_handle()
-
-    if not schedule_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    if not instance.scheduler:
+        raise click.UsageError(
+            'A scheduler must be configured to run schedule commands. You can configure a scheduler '
+            '(e.g. dagster_cron.scheduler.SystemCronScheduler) on your instance '
+            '`dagster.yaml` settings. See '
+            'https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/scheduler.html for more'
+            'information.'
+        )
 
     confirmation = click.prompt(
         'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'

@@ -159,6 +159,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             schedule_name (string): The schedule to end and delete
         '''
 
+    @abc.abstractmethod
+    def get_log_path(self, repository, schedule_name):
+        '''Get path to store logs for schedule
+        '''
+
 
 @whitelist_for_serdes
 class Schedule(

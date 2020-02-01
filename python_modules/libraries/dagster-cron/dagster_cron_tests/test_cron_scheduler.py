@@ -7,11 +7,11 @@ from dagster import ScheduleDefinition, check
 from dagster.core.definitions import RepositoryDefinition
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.scheduler import Schedule, SchedulerHandle
-from dagster.core.scheduler.storage import FilesystemScheduleStorage
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.seven import TemporaryDirectory
 
 
@@ -82,9 +82,6 @@ def test_init():
 
         for schedule in schedules:
             assert "/bin/python" in schedule.python_path
-            assert "{}.json".format(schedule.name) in os.listdir(
-                os.path.join(tempdir, 'schedules', repository.name)
-            )
 
 
 def define_scheduler_instance(tempdir):
@@ -94,7 +91,7 @@ def define_scheduler_instance(tempdir):
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
         compute_log_manager=NoOpComputeLogManager(tempdir),
-        schedule_storage=FilesystemScheduleStorage(os.path.join(tempdir, 'schedules')),
+        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
         scheduler=SystemCronScheduler(os.path.join(tempdir, 'schedules')),
     )
 
