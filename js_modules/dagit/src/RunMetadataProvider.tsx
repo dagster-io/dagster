@@ -190,23 +190,23 @@ export function extractMetadataFromLogs(
       if (log.__typename === "ExecutionStepStartEvent") {
         if (step.state === IStepState.WAITING) {
           step.state = IStepState.RUNNING;
-          step.transitionedAt = timestamp;
           step.start = timestamp;
+          step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
         } else {
           // we have already received a success / skipped / failure event
           // and this message is out of order.
         }
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         step.state = IStepState.SUCCEEDED;
-        step.transitionedAt = timestamp;
-        step.finish = timestamp;
+        step.finish = Math.max(timestamp, step.finish || 0);
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
         step.state = IStepState.SKIPPED;
-        step.transitionedAt = timestamp;
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         step.state = IStepState.FAILED;
-        step.transitionedAt = timestamp;
-        step.finish = timestamp;
+        step.finish = Math.max(timestamp, step.finish || 0);
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,
