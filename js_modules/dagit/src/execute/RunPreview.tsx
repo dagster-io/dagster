@@ -8,7 +8,7 @@ import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigVali
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
 import { ExecutionPlan } from "../plan/ExecutionPlan";
-import { GaantChart, GaantChartMode } from "../GaantChart";
+import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
 import { getFeatureFlags, FeatureFlag } from "../Util";
 
 interface IRunPreviewProps {
@@ -17,11 +17,18 @@ interface IRunPreviewProps {
   toolbarActions?: React.ReactChild;
 }
 
+interface IRunPreviewState {
+  showErrorModal: boolean;
+}
+
 interface IErrorMessage {
   message: string | JSX.Element;
 }
 
-export class RunPreview extends React.Component<IRunPreviewProps> {
+export class RunPreview extends React.Component<
+  IRunPreviewProps,
+  IRunPreviewState
+> {
   static fragments = {
     RunPreviewConfigValidationFragment: gql`
       fragment RunPreviewConfigValidationFragment on PipelineConfigValidationResult {
@@ -53,9 +60,20 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
     `
   };
 
-  state = {
+  state: IRunPreviewState = {
     showErrorModal: false
   };
+
+  shouldComponentUpdate(
+    nextProps: IRunPreviewProps,
+    nextState: IRunPreviewState
+  ) {
+    return (
+      nextProps.plan !== this.props.plan ||
+      nextProps.validation !== this.props.validation ||
+      nextState.showErrorModal !== this.state.showErrorModal
+    );
+  }
 
   render() {
     const { plan, validation, toolbarActions } = this.props;
@@ -93,7 +111,7 @@ export class RunPreview extends React.Component<IRunPreviewProps> {
       gaantPreview ? (
         <GaantChart
           plan={plan}
-          options={{ mode: GaantChartMode.WATERFALL }}
+          options={{ mode: GaantChartMode.WATERFALL, hideTimedMode: true }}
           toolbarActions={toolbarActions}
         />
       ) : (
@@ -151,6 +169,8 @@ const ErrorsWrap = styled.div`
   padding-top: 2vh;
   font-size: 0.9em;
   color: ${Colors.BLACK};
+  max-width: 900px;
+  margin: auto;
 `;
 
 const ErrorRow = styled.div`

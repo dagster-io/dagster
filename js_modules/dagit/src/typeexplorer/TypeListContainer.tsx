@@ -1,6 +1,5 @@
 import gql from "graphql-tag";
 import * as React from "react";
-import styled from "styled-components/macro";
 import Loading from "../Loading";
 import { useQuery } from "react-apollo";
 import TypeList from "./TypeList";
@@ -27,11 +26,7 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
     <Loading queryResult={queryResult}>
       {data => {
         if (data.pipelineOrError.__typename === "Pipeline") {
-          return (
-            <TypeListWrapper>
-              <TypeList types={data.pipelineOrError.runtimeTypes} />
-            </TypeListWrapper>
-          );
+          return <TypeList types={data.pipelineOrError.runtimeTypes} />;
         } else {
           return null;
         }
@@ -54,8 +49,4 @@ export const TYPE_LIST_CONTAINER_QUERY = gql`
   }
 
   ${TypeList.fragments.TypeListFragment}
-`;
-
-const TypeListWrapper = styled.div`
-  padding: 5px;
 `;

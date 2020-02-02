@@ -81,7 +81,9 @@ interface IDividerProps {
 export class PanelDivider extends React.Component<IDividerProps> {
   ref = React.createRef<any>();
 
-  onMouseDown = () => {
+  onMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+
     this.props.onSetResizing(true);
 
     const onMouseMove = (event: MouseEvent) => {
@@ -147,6 +149,7 @@ export const SplitPanelToggles = ({
 const DividerWrapper = {
   horizontal: styled.div<{ resizing: boolean }>`
     width: 4px;
+    z-index: 2;
     background: ${Colors.WHITE};
     border-left: 1px solid
       ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
@@ -156,6 +159,7 @@ const DividerWrapper = {
   `,
   vertical: styled.div<{ resizing: boolean }>`
     height: 4px;
+    z-index: 2;
     background: ${Colors.WHITE};
     border-top: 1px solid
       ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
@@ -192,7 +196,8 @@ const Container = styled.div<{
   flex-direction: ${({ axis }) => (axis === "vertical" ? "column" : "row")};
   flex: 1 1;
   width: 100%;
-  min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
+  min-width: 0;
+  min-height: 0;
 
   .split-panel {
     position: relative;
@@ -201,5 +206,6 @@ const Container = styled.div<{
       200ms ease-out;
     flex-direction: column;
     display: flex;
+    min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
   }
 `;

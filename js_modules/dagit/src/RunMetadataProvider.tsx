@@ -62,6 +62,7 @@ export interface IStepMetadata {
 }
 
 export interface IRunMetadataDict {
+  mostRecentLogAt: number;
   startingProcessAt?: number;
   startedProcessAt?: number;
   startedPipelineAt?: number;
@@ -73,6 +74,11 @@ export interface IRunMetadataDict {
     [stepKey: string]: IStepMetadata;
   };
 }
+
+export const EMPTY_RUN_METADATA: IRunMetadataDict = {
+  mostRecentLogAt: 0,
+  steps: {}
+};
 
 function itemsForMetadataEntries(
   metadataEntries: TempMetadataEntryFragment[]
@@ -139,29 +145,34 @@ export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
+    mostRecentLogAt: 0,
     steps: {}
   };
 
   logs.forEach(log => {
+    const timestamp = Number.parseInt(log.timestamp);
+
+    metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
+
     if (log.__typename === "PipelineProcessStartEvent") {
-      metadata.startingProcessAt = Number.parseInt(log.timestamp);
+      metadata.startingProcessAt = timestamp;
     }
     if (log.__typename === "PipelineProcessStartedEvent") {
-      metadata.startedProcessAt = Number.parseInt(log.timestamp);
+      metadata.startedProcessAt = timestamp;
       metadata.processId = log.processId;
     }
     if (log.__typename === "PipelineStartEvent") {
-      metadata.startedPipelineAt = Number.parseInt(log.timestamp);
+      metadata.startedPipelineAt = timestamp;
     }
     if (log.__typename === "PipelineInitFailureEvent") {
       metadata.initFailed = true;
-      metadata.exitedAt = Number.parseInt(log.timestamp);
+      metadata.exitedAt = timestamp;
     }
     if (
       log.__typename === "PipelineFailureEvent" ||
       log.__typename === "PipelineSuccessEvent"
     ) {
-      metadata.exitedAt = Number.parseInt(log.timestamp);
+      metadata.exitedAt = timestamp;
     }
 
     if (log.step) {
@@ -179,23 +190,23 @@ export function extractMetadataFromLogs(
       if (log.__typename === "ExecutionStepStartEvent") {
         if (step.state === IStepState.WAITING) {
           step.state = IStepState.RUNNING;
-          step.transitionedAt = timestamp;
           step.start = timestamp;
+          step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
         } else {
           // we have already received a success / skipped / failure event
           // and this message is out of order.
         }
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         step.state = IStepState.SUCCEEDED;
-        step.transitionedAt = timestamp;
-        step.finish = timestamp;
+        step.finish = Math.max(timestamp, step.finish || 0);
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
         step.state = IStepState.SKIPPED;
-        step.transitionedAt = timestamp;
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         step.state = IStepState.FAILED;
-        step.transitionedAt = timestamp;
-        step.finish = timestamp;
+        step.finish = Math.max(timestamp, step.finish || 0);
+        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,

@@ -3,7 +3,12 @@ import * as querystring from "query-string";
 
 import Loading from "../Loading";
 import { RouteComponentProps } from "react-router";
-
+import {
+  CellMeasurer,
+  CellMeasurerCache,
+  AutoSizer,
+  List
+} from "react-virtualized";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import styled from "styled-components/macro";
@@ -36,9 +41,9 @@ function flatUniq(arrs: string[][]) {
   return Object.keys(results).sort((a, b) => a.localeCompare(b));
 }
 
-function searchSuggestionsForSolids(
-  solids: SolidsRootQuery_usedSolids[]
-): SuggestionProvider[] {
+type Solid = SolidsRootQuery_usedSolids;
+
+function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
   return [
     {
       token: "name",
@@ -71,7 +76,7 @@ function searchSuggestionsForSolids(
 }
 
 function filterSolidsWithSearch(
-  solids: SolidsRootQuery_usedSolids[],
+  solids: Solid[],
   search: TokenizingFieldValue[]
 ) {
   return solids.filter(s => {
@@ -122,12 +127,13 @@ export const SolidsRoot: React.FunctionComponent<RouteComponentProps> = route =>
 
 const SolidsRootWithData: React.FunctionComponent<{
   route: RouteComponentProps;
-  usedSolids: SolidsRootQuery_usedSolids[];
+  usedSolids: Solid[];
 }> = ({ route: { location, match, history }, usedSolids }) => {
   const { q, typeExplorer } = querystring.parse(location.search);
   const suggestions = searchSuggestionsForSolids(usedSolids);
   const search = tokenizedValuesFromString((q as string) || "", suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
+
   const selected = usedSolids.find(
     s => s.definition.name === match.params["name"]
   );
@@ -160,13 +166,7 @@ const SolidsRootWithData: React.FunctionComponent<{
       firstInitialPercent={40}
       firstMinSize={420}
       first={
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100%"
-          }}
-        >
+        <SolidListColumnContainer>
           <div
             style={{
               padding: "15px 10px",
@@ -180,23 +180,22 @@ const SolidsRootWithData: React.FunctionComponent<{
               placeholder={"Filter by name or input/output type..."}
             />
           </div>
-          <SolidListScrollContainer>
-            {filtered
-              .sort((a, b) =>
-                a.definition.name.localeCompare(b.definition.name)
-              )
-              .map(s => (
-                <SolidListItem
-                  key={s.definition.name}
-                  selected={s === selected}
-                  onClick={() => onClickSolid(s.definition.name)}
-                >
-                  <SolidName>{s.definition.name}</SolidName>
-                  <SolidTypeSignature definition={s.definition} />
-                </SolidListItem>
-              ))}
-          </SolidListScrollContainer>
-        </div>
+          <div style={{ flex: 1 }}>
+            <AutoSizer>
+              {({ height, width }) => (
+                <SolidList
+                  height={height}
+                  width={width}
+                  selected={selected}
+                  onClickSolid={onClickSolid}
+                  items={filtered.sort((a, b) =>
+                    a.definition.name.localeCompare(b.definition.name)
+                  )}
+                />
+              )}
+            </AutoSizer>
+          </div>
+        </SolidListColumnContainer>
       }
       second={
         selected ? (
@@ -217,6 +216,56 @@ const SolidsRootWithData: React.FunctionComponent<{
           />
         )
       }
+    />
+  );
+};
+
+const SolidList: React.FunctionComponent<{
+  items: Solid[];
+  width: number;
+  height: number;
+  selected: Solid | undefined;
+  onClickSolid: (name: string) => void;
+}> = props => {
+  const cache = React.useRef(
+    new CellMeasurerCache({ defaultHeight: 60, fixedWidth: true })
+  );
+
+  // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect
+  // but we need it to run /before/ the render not just after it completes.
+  const lastWidth = React.useRef(props.width);
+  if (props.width !== lastWidth.current) {
+    cache.current.clearAll();
+    lastWidth.current = props.width;
+  }
+
+  return (
+    <List
+      width={props.width}
+      height={props.height}
+      rowCount={props.items.length}
+      rowHeight={cache.current.rowHeight}
+      rowRenderer={({ parent, index, key, style }) => {
+        const solid = props.items[index];
+        return (
+          <CellMeasurer
+            cache={cache.current}
+            index={index}
+            parent={parent}
+            key={key}
+          >
+            <SolidListItem
+              style={style}
+              selected={solid === props.selected}
+              onClick={() => props.onClickSolid(solid.definition.name)}
+            >
+              <SolidName>{solid.definition.name}</SolidName>
+              <SolidTypeSignature definition={solid.definition} />
+            </SolidListItem>
+          </CellMeasurer>
+        );
+      }}
+      overscanRowCount={10}
     />
   );
 };
@@ -320,11 +369,6 @@ const SolidListItem = styled.div<{ selected: boolean }>`
   }
 `;
 
-const SolidListScrollContainer = styled.div`
-  overflow: scroll;
-  flex: 1;
-`;
-
 const SolidDetailScrollContainer = styled.div`
   overflow: scroll;
   flex: 1;
@@ -333,4 +377,10 @@ const SolidDetailScrollContainer = styled.div`
 const SolidName = styled.div`
   flex: 1;
   font-weight: 600;
+`;
+
+const SolidListColumnContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 `;

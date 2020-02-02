@@ -69,23 +69,25 @@ export const App: React.FunctionComponent = () => {
   const { pipelines, error } = extractData(result.data);
 
   return (
-    <BrowserRouter>
-      {error ? (
-        <PythonErrorInfo
-          contextMsg={`${error.__typename} encountered when loading pipelines:`}
-          error={error}
-          centered={true}
-        />
-      ) : (
-        <PipelineNamesContext.Provider value={pipelines}>
-          <div style={{ display: "flex", height: "100%" }}>
-            <LeftNav />
-            <AppRoutes />
-            <CustomAlertProvider />
-          </div>
+    <div style={{ display: "flex", height: "100%" }}>
+      <BrowserRouter>
+        <PipelineNamesContext.Provider value={pipelines || []}>
+          <LeftNav />
+          {error ? (
+            <PythonErrorInfo
+              contextMsg={`${error.__typename} encountered when loading pipelines:`}
+              error={error}
+              centered={true}
+            />
+          ) : (
+            <>
+              <AppRoutes />
+              <CustomAlertProvider />
+            </>
+          )}
         </PipelineNamesContext.Provider>
-      )}
-    </BrowserRouter>
+      </BrowserRouter>
+    </div>
   );
 };
 

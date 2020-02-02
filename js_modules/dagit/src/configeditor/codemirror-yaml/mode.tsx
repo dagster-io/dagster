@@ -711,26 +711,51 @@ CodeMirror.registerHelper(
     editor: any
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
-    const docs = yaml.parseAllDocuments(text);
-    if (docs.length === 0) {
-      return [];
-    }
-    // Assumption
-    const doc = docs[0];
+
+    // TODO: In some scenarios where every line yields an error `parseDocument` can take 1s+
+    // and returns 20,000+ errors. The library does not have a "bail out" option but we need one.
+    // However we can't switch libraries because we need the structured document model this returns.
+    // (It's not just text parsed to plain JS objects.)
+    const doc = yaml.parseDocument(text);
     const lints: Array<CodemirrorLintError> = [];
-    doc.errors.forEach(error => {
+    const lintingTruncated = doc.errors.length > 10;
+    let lastMarkLocation: CodeMirror.Position | undefined;
+
+    doc.errors.slice(0, 10).forEach(error => {
+      const from = codeMirrorDoc.posFromIndex(
+        error.source.range ? error.source.range.start : 0
+      ) as CodeMirror.Position;
+      const to = codeMirrorDoc.posFromIndex(
+        error.source.range ? error.source.range.end : Number.MAX_SAFE_INTEGER
+      ) as CodeMirror.Position;
+
+      if (!lastMarkLocation || lastMarkLocation.line < from.line) {
+        lastMarkLocation = from;
+      }
+
       lints.push({
         message: error.message,
         severity: "error",
         type: "syntax",
-        from: codeMirrorDoc.posFromIndex(
-          error.source.range ? error.source.range.start : 0
-        ) as any,
-        to: codeMirrorDoc.posFromIndex(
-          error.source.range ? error.source.range.end : Number.MAX_SAFE_INTEGER
-        ) as any
+        from,
+        to
       });
     });
+
+    if (lintingTruncated && lastMarkLocation) {
+      const nextLineLocation: CodeMirror.Position = {
+        line: lastMarkLocation.line + 1,
+        ch: 0
+      };
+      lints.push({
+        message: `${doc.errors.length -
+          lints.length} more errors - bailed out.`,
+        severity: "warning",
+        type: "syntax",
+        from: nextLineLocation,
+        to: nextLineLocation
+      });
+    }
 
     if (doc.errors.length === 0) {
       const json = doc.toJSON() || {};

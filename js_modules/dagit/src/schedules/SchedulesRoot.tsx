@@ -32,7 +32,7 @@ export default class SchedulesRoot extends React.Component {
         partialRefetch={true}
       >
         {(queryResult: QueryResult<SchedulesRootQuery, any>) => (
-          <Loading queryResult={queryResult}>
+          <Loading queryResult={queryResult} allowStaleData={true}>
             {result => {
               const { scheduler } = result;
 

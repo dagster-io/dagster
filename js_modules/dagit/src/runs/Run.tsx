@@ -30,7 +30,7 @@ import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
   RunPipelineRunEventFragment
 } from "./types/RunPipelineRunEventFragment";
-import { GaantChart, GaantChartMode } from "../GaantChart";
+import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
 import { getFeatureFlags, FeatureFlag } from "../Util";
 import { RunActionButtons } from "./RunActionButtons";
 
@@ -261,7 +261,11 @@ const RunWithData = ({
         showSpinner={false}
         filter={logsFilter}
         onSetFilter={onSetLogsFilter}
-      />
+      >
+        {!gaantPreview && (
+          <RunActionButtons run={run} onReexecute={onReexecute} />
+        )}
+      </LogsToolbar>
       <LogsScrollingTable
         nodes={filteredNodes}
         filterKey={JSON.stringify(logsFilter)}
