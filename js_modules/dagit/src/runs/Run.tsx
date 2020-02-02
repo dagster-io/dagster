@@ -261,7 +261,11 @@ const RunWithData = ({
         showSpinner={false}
         filter={logsFilter}
         onSetFilter={onSetLogsFilter}
-      />
+      >
+        {!gaantPreview && (
+          <RunActionButtons run={run} onReexecute={onReexecute} />
+        )}
+      </LogsToolbar>
       <LogsScrollingTable
         nodes={filteredNodes}
         filterKey={JSON.stringify(logsFilter)}
