@@ -217,7 +217,7 @@ export default (props: ISolidSelectorProps) => {
   if (subsetError) {
     buttonText = "Invalid Solid Selection";
   } else {
-    buttonText = query;
+    buttonText = query || "*";
   }
 
   return (
