@@ -189,7 +189,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
           </Filters>
         </div>
 
-        <Loading queryResult={queryResult}>
+        <Loading queryResult={queryResult} allowStaleData={true}>
           {({ pipelineRunsOrError }) => {
             if (pipelineRunsOrError.__typename !== "PipelineRuns") {
               return (

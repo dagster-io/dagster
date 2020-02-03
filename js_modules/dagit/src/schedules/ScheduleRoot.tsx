@@ -47,7 +47,7 @@ export class ScheduleRoot extends React.Component<IScheduleRootProps> {
         partialRefetch={true}
       >
         {(queryResult: QueryResult<ScheduleRootQuery, any>) => (
-          <Loading queryResult={queryResult}>
+          <Loading queryResult={queryResult} allowStaleData={true}>
             {result => {
               const { scheduleOrError } = result;
 

@@ -48,8 +48,8 @@ export function applyRemoveSession(data: IStorageData, key: string) {
   const idx = Object.keys(next.sessions).indexOf(key);
   delete next.sessions[key];
   if (next.current === key) {
-    const remainingKeys = Object.keys(next.sessions);
-    next.current = remainingKeys[idx] || remainingKeys[0];
+    const remaining = Object.keys(next.sessions);
+    next.current = remaining[idx] || remaining[idx - 1] || remaining[0];
   }
   return next;
 }

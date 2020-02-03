@@ -144,7 +144,7 @@ class _PlanBuilder(object):
             # Create and add execution plan step for the solid compute function
             if isinstance(solid.definition, SolidDefinition):
                 solid_compute_step = create_compute_step(
-                    self.pipeline_name, solid, step_inputs, handle
+                    self.pipeline_name, self.environment_config, solid, step_inputs, handle
                 )
                 self.add_step(solid_compute_step)
 
@@ -317,13 +317,6 @@ class ExecutionPlan(
             for step_key_level in toposort(self.deps)
         ]
 
-    def get_solid_def_name_set(self):
-        return {
-            step.solid_definition_name
-            for k, step in self.step_dict.items()
-            if k in self.step_keys_to_execute
-        }
-
     def execution_step_levels(self):
         return [
             [self.step_dict[step_key] for step_key in sorted(step_key_level)]
@@ -382,7 +375,7 @@ class ExecutionPlan(
 
 
 def _default_sort_key(step):
-    return step.metadata.get('dagster/priority', 0) * -1
+    return int(step.tags.get('dagster/priority', 0)) * -1
 
 
 class ActiveExecution(object):

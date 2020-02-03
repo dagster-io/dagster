@@ -75,23 +75,23 @@ def test_active_execution_plan():
 
 
 def test_priorities():
-    @solid(metadata={'priority': 5})
+    @solid(tags={'priority': 5})
     def pri_5(_):
         pass
 
-    @solid(metadata={'priority': 4})
+    @solid(tags={'priority': 4})
     def pri_4(_):
         pass
 
-    @solid(metadata={'priority': 3})
+    @solid(tags={'priority': 3})
     def pri_3(_):
         pass
 
-    @solid(metadata={'priority': 2})
+    @solid(tags={'priority': 2})
     def pri_2(_):
         pass
 
-    @solid(metadata={'priority': -1})
+    @solid(tags={'priority': -1})
     def pri_neg_1(_):
         pass
 
@@ -108,7 +108,7 @@ def test_priorities():
         pri_5()
         pri_4()
 
-    sort_key_fn = lambda step: step.metadata.get('priority', 0) * -1
+    sort_key_fn = lambda step: int(step.tags.get('priority', 0)) * -1
 
     plan = create_execution_plan(priorities)
     active_execution = plan.start(sort_key_fn)

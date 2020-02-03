@@ -18,6 +18,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
+from dagster.core.execution.plan.objects import StepInputSourceType
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -96,18 +97,64 @@ ContextCreationData = namedtuple(
 )
 
 
-def get_required_resource_keys_to_init(solid_defs, system_storage_def):
+def get_required_resource_keys_to_init(execution_plan, system_storage_def):
     resource_keys = set()
+
     resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
 
-    for solid_def in solid_defs:
-        resource_keys = resource_keys.union(solid_def.required_resource_keys)
+    for step_key, step in execution_plan.step_dict.items():
+        if step_key not in execution_plan.step_keys_to_execute:
+            continue
+        resource_keys = resource_keys.union(
+            get_required_resource_keys_for_step(
+                step, execution_plan.pipeline_def, system_storage_def
+            )
+        )
+
+    return frozenset(resource_keys)
+
+
+def get_required_resource_keys_for_step(execution_step, pipeline_def, system_storage_def):
+    resource_keys = set()
+
+    # add all the system storage resource keys
+    resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
+    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
+
+    # add all the solid compute resource keys
+    resource_keys = resource_keys.union(solid_def.required_resource_keys)
+
+    # add input hydration config resource keys
+    for step_input in execution_step.step_inputs:
+        if (
+            step_input.source_type == StepInputSourceType.CONFIG
+            and step_input.runtime_type.input_hydration_config
+        ):
+            resource_keys = resource_keys.union(
+                step_input.runtime_type.input_hydration_config.required_resource_keys()
+            )
+
+    # add output materialization config resource keys
+    for step_output in execution_step.step_outputs:
+        if (
+            step_output.should_materialize
+            and step_output.runtime_type.output_materialization_config
+        ):
+            resource_keys = resource_keys.union(
+                step_output.runtime_type.output_materialization_config.required_resource_keys()
+            )
+
+    # add all the storage-compatible plugin resource keys
+    for runtime_type in solid_def.all_runtime_types():
+        for auto_plugin in runtime_type.auto_plugins:
+            if auto_plugin.compatible_with_storage_def(system_storage_def):
+                resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
 
     return frozenset(resource_keys)
 
 
 def create_context_creation_data(
-    pipeline_def, environment_dict, pipeline_run, instance, solid_def_names_in_execution
+    pipeline_def, environment_dict, pipeline_run, instance, execution_plan
 ):
     environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, pipeline_run)
 
@@ -127,12 +174,7 @@ def create_context_creation_data(
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            [
-                solid_def
-                for solid_def in pipeline_def.all_solid_defs
-                if solid_def.name in solid_def_names_in_execution
-            ],
-            system_storage_def,
+            execution_plan, system_storage_def
         ),
     )
 
@@ -156,11 +198,7 @@ def scoped_pipeline_context(
     check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
 
     context_creation_data = create_context_creation_data(
-        pipeline_def,
-        environment_dict,
-        pipeline_run,
-        instance,
-        execution_plan.get_solid_def_name_set(),
+        pipeline_def, environment_dict, pipeline_run, instance, execution_plan,
     )
 
     # After this try block, a Dagster exception thrown will result in a pipeline init failure event.

@@ -54,6 +54,8 @@
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
 - `step_metadata_fn` has been removed from `SolidDefinition` & `@solid`.
+- `SolidDefinition` & `@solid` now takes `tags` and enforces that values are strings or
+  are safetly encoded as JSON. `metadata` is deprecated and will be removed in a future version.
 - Dagster Type System Changes
 
   - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.

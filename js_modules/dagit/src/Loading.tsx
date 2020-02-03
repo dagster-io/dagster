@@ -7,12 +7,14 @@ import { IconNames } from "@blueprintjs/icons";
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;
   children: (data: TData) => React.ReactNode;
+  allowStaleData?: boolean;
 }
 
 export default class Loading<TData> extends React.Component<
   ILoadingProps<TData>
 > {
   public render() {
+    const { children, allowStaleData = false } = this.props;
     const { error, data, loading } = this.props.queryResult;
 
     if (error) {
@@ -28,7 +30,11 @@ export default class Loading<TData> extends React.Component<
         </LoadingContainer>
       );
     }
-    if (!data || loading || Object.keys(data).length === 0) {
+    if (
+      !data ||
+      (loading && !allowStaleData) ||
+      Object.keys(data).length === 0
+    ) {
       return (
         <LoadingContainer>
           <LoadingCentering>
@@ -37,7 +43,7 @@ export default class Loading<TData> extends React.Component<
         </LoadingContainer>
       );
     }
-    return this.props.children(data as TData);
+    return children(data as TData);
   }
 }
 

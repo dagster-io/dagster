@@ -7,7 +7,8 @@ import { TypeListFragment } from "./types/TypeListFragment";
 import {
   SidebarSubhead,
   SidebarSection,
-  SidebarTitle
+  SidebarTitle,
+  SectionInner
 } from "../SidebarComponents";
 
 interface ITypeListProps {
@@ -56,7 +57,9 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
     return (
       <>
         <SidebarSubhead />
-        <SidebarTitle>Pipeline Types</SidebarTitle>
+        <SectionInner>
+          <SidebarTitle>Pipeline Types</SidebarTitle>
+        </SectionInner>
         {Object.keys(groups).map((title, idx) => (
           <SidebarSection
             key={idx}

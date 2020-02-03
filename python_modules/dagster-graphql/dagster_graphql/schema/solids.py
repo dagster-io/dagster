@@ -43,7 +43,7 @@ class ISolidDefinitionMixin(object):
     def resolve_metadata(self, graphene_info):
         return [
             graphene_info.schema.type_named('MetadataItemDefinition')(key=item[0], value=item[1])
-            for item in self._solid_def.metadata.items()
+            for item in self._solid_def.tags.items()
         ]
 
     def resolve_input_definitions(self, graphene_info):

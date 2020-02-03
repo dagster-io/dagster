@@ -19,7 +19,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { SubsetError } from "./ExecutionSessionContainer";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery } from "../GraphQueryImpl";
+import { filterByQuery, MAX_RENDERED_FOR_EMPTY_QUERY } from "../GraphQueryImpl";
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -77,7 +77,13 @@ class SolidSelectorModal extends React.PureComponent<
   graphRef = React.createRef<PipelineGraph>();
 
   componentDidMount() {
-    this.handleSetQuery(this.props.query || "*");
+    const { query, pipeline } = this.props;
+
+    const initialIsSlowRender =
+      query === "*" && pipeline.solids.length > MAX_RENDERED_FOR_EMPTY_QUERY;
+    const initial = initialIsSlowRender ? "" : query || "";
+
+    this.handleSetQuery(initial);
   }
 
   handleSetQuery = (query: string) => {
@@ -211,7 +217,7 @@ export default (props: ISolidSelectorProps) => {
   if (subsetError) {
     buttonText = "Invalid Solid Selection";
   } else {
-    buttonText = query;
+    buttonText = query || "*";
   }
 
   return (

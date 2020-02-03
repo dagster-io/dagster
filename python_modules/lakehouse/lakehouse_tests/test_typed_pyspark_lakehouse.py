@@ -74,7 +74,6 @@ def typed_pyspark_table(spark_type, name=None, input_tables=None, description=No
     def _wrap(fn):
         return pyspark_table(
             name=name,
-            metadata={'spark_type': spark_type},
             input_tables=input_tables,
             description=description + '\n\n' + create_column_descriptions(spark_type)
             if description

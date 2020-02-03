@@ -2,7 +2,7 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors, Button } from "@blueprintjs/core";
+import { Colors, Button, Spinner } from "@blueprintjs/core";
 import { ApolloConsumer } from "react-apollo";
 
 import { RunPreview } from "./RunPreview";
@@ -226,6 +226,7 @@ export default class ExecutionSessionContainer extends React.Component<
       <SplitPanelContainer
         axis={gaantPreview ? "vertical" : "horizontal"}
         identifier={"execution"}
+        firstMinSize={gaantPreview ? 100 : 500}
         firstInitialPercent={75}
         first={
           <>
@@ -249,13 +250,15 @@ export default class ExecutionSessionContainer extends React.Component<
                 onChange={this.onSolidSubsetChange}
               />
               <div style={{ width: 5 }} />
-              {pipeline && (
+              {pipeline ? (
                 <ConfigEditorModePicker
                   modes={pipeline.modes}
                   modeError={modeError}
                   onModeChange={this.onModeChange}
                   modeName={currentSession.mode}
                 />
+              ) : (
+                <Spinner size={20} />
               )}
             </SessionSettingsBar>
             <ConfigEditorPresetInsertionContainer>
@@ -364,24 +367,32 @@ interface ExecutionSessionContainerErrorProps {
   currentSession: IExecutionSession;
 }
 
-export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => (
-  <SplitPanelContainer
-    identifier={"execution"}
-    firstInitialPercent={75}
-    first={
-      <>
-        <SessionSettingsBar>
-          <PipelineJumpBar
-            selectedPipelineName={props.currentSession.pipeline}
-            onChange={name => props.onSaveSession({ pipeline: name })}
-          />
-        </SessionSettingsBar>
-        {props.children}
-      </>
-    }
-    second={<RunPreview />}
-  />
-);
+export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => {
+  const gaantPreview = getFeatureFlags().includes(
+    FeatureFlag.GaantExecutionPlan
+  );
+
+  return (
+    <SplitPanelContainer
+      axis={gaantPreview ? "vertical" : "horizontal"}
+      identifier={"execution"}
+      firstInitialPercent={75}
+      firstMinSize={gaantPreview ? 100 : 500}
+      first={
+        <>
+          <SessionSettingsBar>
+            <PipelineJumpBar
+              selectedPipelineName={props.currentSession.pipeline}
+              onChange={name => props.onSaveSession({ pipeline: name })}
+            />
+          </SessionSettingsBar>
+          {props.children}
+        </>
+      }
+      second={<RunPreview />}
+    />
+  );
+};
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

@@ -94,6 +94,7 @@ const LogsToolbarContainer = styled.div`
   padding: 5px 15px;
   border-bottom: 1px solid ${Colors.GRAY4};
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.07);
+  z-index: 2;
 `;
 
 const LogsToolbarDivider = styled.div`

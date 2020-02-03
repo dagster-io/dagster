@@ -15,9 +15,7 @@ class SqlLiteLakehouse(Lakehouse):
         return None, None
 
 
-def sqlite_table(
-    name=None, input_tables=None, other_input_defs=None, metadata=None, description=None
-):
+def sqlite_table(name=None, input_tables=None, other_input_defs=None, tags=None, description=None):
     if callable(name):
         fn = name
         return create_lakehouse_table_def(
@@ -30,7 +28,7 @@ def sqlite_table(
             lakehouse_fn=fn,
             input_tables=input_tables,
             other_input_defs=other_input_defs,
-            metadata=metadata,
+            tags=tags,
             description=description,
             required_resource_keys={'conn'},
         )

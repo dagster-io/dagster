@@ -51,15 +51,15 @@ class CeleryEngine(Engine):
         apply_kwargs = defaultdict(dict)  # Dict[step_key, Dict[str, Any]]
 
         priority_for_step = lambda step: (
-            -1 * step.metadata.get('dagster-celery/priority', task_default_priority)
+            -1 * int(step.tags.get('dagster-celery/priority', task_default_priority))
         )
         priority_for_key = lambda step_key: (-1 * apply_kwargs[step_key]['priority'])
         _warn_on_priority_misuse(pipeline_context, execution_plan)
 
         for step_key in execution_plan.step_keys_to_execute:
             step = execution_plan.get_step_by_key(step_key)
-            priority = step.metadata.get('dagster-celery/priority', task_default_priority)
-            queue = step.metadata.get('dagster-celery/queue', task_default_queue)
+            priority = int(step.tags.get('dagster-celery/priority', task_default_priority))
+            queue = step.tags.get('dagster-celery/queue', task_default_queue)
             task = create_task(app)
 
             variables = {
@@ -131,8 +131,8 @@ def _warn_on_priority_misuse(context, execution_plan):
     for key in execution_plan.step_keys_to_execute:
         step = execution_plan.get_step_by_key(key)
         if (
-            step.metadata.get('dagster/priority') is not None
-            and step.metadata.get('dagster-celery/priority') is None
+            step.tags.get('dagster/priority') is not None
+            and step.tags.get('dagster-celery/priority') is None
         ):
             bad_keys.append(key)
 

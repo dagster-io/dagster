@@ -7,11 +7,20 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 
 
-def create_compute_step(pipeline_name, solid, step_inputs, handle):
+def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):
     check.str_param(pipeline_name, 'pipeline_name')
     check.inst_param(solid, 'solid', Solid)
     check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
     check.opt_inst_param(handle, 'handle', SolidHandle)
+
+    # the environment config has the solid output name configured
+    config_output_names = set()
+    current_handle = handle
+    while current_handle:
+        solid_config = environment_config.solids.get(current_handle.to_string())
+        current_handle = current_handle.parent
+        for output_spec in solid_config.outputs:
+            config_output_names = config_output_names.union(output_spec.keys())
 
     return ExecutionStep(
         pipeline_name=pipeline_name,
@@ -19,7 +28,10 @@ def create_compute_step(pipeline_name, solid, step_inputs, handle):
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(
-                name=name, runtime_type=output_def.runtime_type, optional=output_def.optional
+                name=name,
+                runtime_type=output_def.runtime_type,
+                optional=output_def.optional,
+                should_materialize=name in config_output_names,
             )
             for name, output_def in solid.definition.output_dict.items()
         ],
@@ -28,7 +40,7 @@ def create_compute_step(pipeline_name, solid, step_inputs, handle):
         ),
         kind=StepKind.COMPUTE,
         solid_handle=handle,
-        metadata=solid.metadata,
+        tags=solid.tags,
     )
 
 

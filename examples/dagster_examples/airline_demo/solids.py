@@ -187,7 +187,7 @@ def do_prefix_column_names(df, prefix):
     return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
 
 
-@solid(required_resource_keys={'spark'})  # required for dagster_pyspark.DataFrame
+@solid
 def canonicalize_column_names(_context, data_frame: DataFrame) -> DataFrame:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
@@ -196,7 +196,7 @@ def replace_values_spark(data_frame, old, new):
     return data_frame.na.replace(old, new)
 
 
-@solid(required_resource_keys={'spark'})  # required for dagster_pyspark.DataFrame
+@solid
 def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame:
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
@@ -205,7 +205,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
 @solid(
     output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
     config={'table_name': String},
-    required_resource_keys={'db_info', 'spark'},  # required for dagster_pyspark.DataFrame
+    required_resource_keys={'db_info'},
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
@@ -231,7 +231,6 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
             Int, description='The integer percentage of rows to sample from the input dataset.',
         )
     },
-    required_resource_keys={'spark'},  # required for dagster_pyspark.DataFrame
 )
 def subsample_spark_dataset(context, data_frame: DataFrame) -> DataFrame:
     return data_frame.sample(
@@ -506,7 +505,7 @@ sfo_delays_by_destination = notebook_solid(
     It then joins the that origin and destination airport with the data in the
     master_cord_data.
     ''',
-    required_resource_keys={'spark'},  # required for dagster_pyspark.DataFrame
+    required_resource_keys={'spark'},
 )
 def join_q2_data(
     context,

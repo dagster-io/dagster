@@ -72,6 +72,7 @@ export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
     $handleID: String!
   ) {
     pipeline(params: { name: $pipeline }) {
+      name
       solidHandle(handleID: $handleID) {
         solid {
           ...SidebarSolidInvocationFragment

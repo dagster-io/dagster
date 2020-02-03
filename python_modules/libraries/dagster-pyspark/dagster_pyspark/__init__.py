@@ -22,7 +22,8 @@ from .resources import PySparkResourceDefinition, pyspark_resource, spark_sessio
                 'header': Field(Bool, is_required=False),
             }
         }
-    )
+    ),
+    required_resource_keys={'spark'},
 )
 def load_rdd(context, file_type, file_options):
     if file_type == 'csv':
@@ -44,7 +45,8 @@ def load_rdd(context, file_type, file_options):
                 }
             )
         }
-    )
+    ),
+    required_resource_keys={'spark'},
 )
 def write_rdd(context, file_type, file_options, spark_rdd):
     if file_type == 'csv':
@@ -105,6 +107,10 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
             intermediate_store.uri_for_paths(paths, protocol='s3a://')
         )
 
+    @classmethod
+    def required_resource_keys(cls):
+        return frozenset({'spark'})
+
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
@@ -122,6 +128,10 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
         return context.resources.spark.spark_session.read.parquet(
             os.path.join(intermediate_store.root, *paths)
         )
+
+    @classmethod
+    def required_resource_keys(cls):
+        return frozenset({'spark'})
 
 
 DataFrame = as_dagster_type(
