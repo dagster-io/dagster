@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import os
+import shutil
 from contextlib import contextmanager
 
 import pytest
@@ -25,6 +26,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
 
@@ -129,6 +131,20 @@ def test_fails():
 
 def events_of_type(result, event_type):
     return [event for event in result.event_list if event.event_type_value == event_type]
+
+
+@solid(config=str)
+def destroy(context, x):
+    shutil.rmtree(context.solid_config)
+    return x
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def engine_error():
+    a = simple()
+    b = destroy(a)
+
+    subtract(a, b)
 
 
 @contextmanager
@@ -357,3 +373,22 @@ def test_bad_broker():
         pass
 
     assert saw_engine_error
+
+
+def test_engine_error():
+    with pytest.raises(DagsterSubprocessError):
+        with seven.TemporaryDirectory() as tempdir:
+            storage = os.path.join(tempdir, 'flakey_storage')
+            execute_pipeline(
+                ExecutionTargetHandle.for_pipeline_python_file(
+                    __file__, 'engine_error',
+                ).build_pipeline_definition(),
+                environment_dict={
+                    'storage': {'filesystem': {'config': {'base_dir': storage}}},
+                    'execution': {
+                        'celery': {'config': {'config_source': {'task_always_eager': True}}}
+                    },
+                    'solids': {'destroy': {'config': storage}},
+                },
+                instance=DagsterInstance.local_temp(tempdir=tempdir),
+            )
