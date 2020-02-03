@@ -183,7 +183,7 @@ From the CLI, use ``-p`` or ``--preset``:
 
 .. code-block:: shell
 
-    $ dagster pipeline execute -f modes.py -n modes_pipeline -p unittest
+    $ dagster pipeline execute -f presets.py -n presets_pipeline -p unittest
 
 From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute_pipeline_with_preset>`:
 
