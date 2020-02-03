@@ -13,7 +13,6 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     RunConfig,
-    SolidInvocation,
     String,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -68,12 +67,7 @@ def make_compute_fn():
 
 
 def _do_construct(solids, dependencies):
-    solids = {
-        s.name: Solid(
-            name=s.name, definition=s, resource_mapper_fn=SolidInvocation.default_resource_mapper_fn
-        )
-        for s in solids
-    }
+    solids = {s.name: Solid(name=s.name, definition=s) for s in solids}
     dependency_structure = DependencyStructure.from_definitions(solids, dependencies)
     return _create_adjacency_lists(list(solids.values()), dependency_structure)
 

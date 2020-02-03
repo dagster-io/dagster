@@ -17,7 +17,6 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     SerializationStrategy,
-    SolidInvocation,
     String,
     check,
     dagster_type,
@@ -137,7 +136,7 @@ def test_using_s3_for_subplan(s3_bucket):
             s3_bucket,
             run_id,
             s3_session=context.scoped_resources_builder.build(
-                mapper_fn=SolidInvocation.default_resource_mapper_fn, required_resource_keys={'s3'},
+                required_resource_keys={'s3'},
             ).s3.session,
         )
         assert store.has_intermediate(context, 'return_one.compute')
@@ -302,7 +301,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
             s3_bucket=s3_bucket,
             s3_prefix=s3_prefix,
             s3_session=context.scoped_resources_builder.build(
-                mapper_fn=SolidInvocation.default_resource_mapper_fn, required_resource_keys={'s3'},
+                required_resource_keys={'s3'}
             ).s3.session,
         )
         assert store.root == '/'.join(['custom_prefix', 'storage', run_id])

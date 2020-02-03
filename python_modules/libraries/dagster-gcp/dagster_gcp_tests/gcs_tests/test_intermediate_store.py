@@ -17,7 +17,6 @@ from dagster import (
     OutputDefinition,
     RunConfig,
     SerializationStrategy,
-    SolidInvocation,
     String,
     check,
     dagster_type,
@@ -133,7 +132,6 @@ def test_using_gcs_for_subplan(gcs_bucket):
             gcs_bucket,
             run_id,
             client=context.scoped_resources_builder.build(
-                mapper_fn=SolidInvocation.default_resource_mapper_fn,
                 required_resource_keys={'gcs'},
             ).gcs.client,
         )
@@ -301,7 +299,6 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
             client=context.scoped_resources_builder.build(
-                mapper_fn=SolidInvocation.default_resource_mapper_fn,
                 required_resource_keys={'gcs'},
             ).gcs.client,
         )

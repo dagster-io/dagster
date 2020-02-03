@@ -287,11 +287,6 @@ def test_execution_plan_subset_with_aliases():
     assert set(resources_initted.keys()) == {'b'}
 
 
-# TODO: Add test for resource mapping pending resolution of
-# https://github.com/dagster-io/dagster/issues/1950 and
-# https://github.com/dagster-io/dagster/issues/1949
-
-
 def test_custom_type_with_resource_dependent_hydration():
     def define_input_hydration_pipeline(should_require_resources):
         @resource

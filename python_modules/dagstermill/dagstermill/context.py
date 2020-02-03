@@ -75,10 +75,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     def resources(self):
         '''collections.namedtuple: A dynamically-created type whose properties allow access to
         resources.'''
-        from dagster.core.definitions import SolidInvocation
-
         return self._pipeline_context.scoped_resources_builder.build(
-            mapper_fn=SolidInvocation.default_resource_mapper_fn,
             required_resource_keys=self._resource_keys_to_init,
         )
 
