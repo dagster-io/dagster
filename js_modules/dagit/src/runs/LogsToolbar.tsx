@@ -109,4 +109,7 @@ const FilterInputGroup = styled(InputGroup)`
   flex: 2;
   max-width: 275px;
   min-width: 100px;
+  & input {
+    padding-right: 22px !important;
+  }
 `;
