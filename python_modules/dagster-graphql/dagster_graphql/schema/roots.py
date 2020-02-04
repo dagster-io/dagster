@@ -92,7 +92,7 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineRunsOrError = dauphin.Field(
         dauphin.NonNull('PipelineRunsOrError'),
-        filter=dauphin.Argument(dauphin.NonNull('PipelineRunsFilter')),
+        filter=dauphin.Argument('PipelineRunsFilter'),
         cursor=dauphin.String(),
         limit=dauphin.Int(),
     )
@@ -164,7 +164,9 @@ class DauphinQuery(dauphin.ObjectType):
         return get_pipelines_or_raise(graphene_info)
 
     def resolve_pipelineRunsOrError(self, graphene_info, **kwargs):
-        filters = kwargs['filter'].to_selector()
+        filters = kwargs.get('filter')
+        if filters is not None:
+            filters = filters.to_selector()
 
         return graphene_info.schema.type_named('PipelineRuns')(
             results=get_runs(graphene_info, filters, kwargs.get('cursor'), kwargs.get('limit'))

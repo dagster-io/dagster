@@ -13,19 +13,13 @@ from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
 
-class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn tags')):
+class SolidInvocation(namedtuple('Solid', 'name alias tags')):
     '''Identifies an instance of a solid in a pipeline dependency structure.
 
     Args:
         name (str): Name of the solid of which this is an instance.
         alias (Optional[str]): Name specific to this instance of the solid. Necessary when there are
             multiple instances of the same solid.
-        resource_mapper_fn (Optional[Callable]): Provide this function to remap resources available
-            in this pipeline to the resource keys required by the solid definition, e.g., when
-            using a library solid that expects a resource to have a different name than the name of
-            the compatible resource available in this pipeline. Should take a dictionary whose
-            keys are the resource keys provided by the pipeline and return a dictionary whose keys
-            are the resource keys required by the solid definition, interchanging the values.
         tags (Optional[Dict[str, Any]]): Optional tags values to extend or override those
             set on the solid definition.
 
@@ -58,19 +52,12 @@ class SolidInvocation(namedtuple('Solid', 'name alias resource_mapper_fn tags'))
 
     '''
 
-    def __new__(cls, name, alias=None, resource_mapper_fn=None, tags=None):
+    def __new__(cls, name, alias=None, tags=None):
         name = check.str_param(name, 'name')
         alias = check.opt_str_param(alias, 'alias')
-        resource_mapper_fn = check.opt_callable_param(
-            resource_mapper_fn, 'resource_mapper_fn', SolidInvocation.default_resource_mapper_fn
-        )
         tags = frozentags(check.opt_dict_param(tags, 'tags', value_type=str, key_type=str))
 
-        return super(cls, SolidInvocation).__new__(cls, name, alias, resource_mapper_fn, tags)
-
-    @staticmethod
-    def default_resource_mapper_fn(resources, resource_deps):
-        return {r: resources.get(r) for r in resource_deps}
+        return super(cls, SolidInvocation).__new__(cls, name, alias, tags)
 
 
 class Solid(object):
@@ -85,13 +72,12 @@ class Solid(object):
     '''
 
     def __init__(
-        self, name, definition, resource_mapper_fn, container_definition=None, tags=None,
+        self, name, definition, container_definition=None, tags=None,
     ):
         from .solid import ISolidDefinition, CompositeSolidDefinition
 
         self.name = check.str_param(name, 'name')
         self.definition = check.inst_param(definition, 'definition', ISolidDefinition)
-        self.resource_mapper_fn = check.callable_param(resource_mapper_fn, 'resource_mapper_fn')
         self.container_definition = check.opt_inst_param(
             container_definition, 'container_definition', CompositeSolidDefinition
         )

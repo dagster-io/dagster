@@ -56,18 +56,18 @@ def get_run_tags(graphene_info):
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):
-    check.inst_param(filters, 'filters', PipelineRunsFilter)
+    check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
     check.opt_str_param(cursor, 'cursor')
     check.opt_int_param(limit, 'limit')
 
     instance = graphene_info.context.instance
     runs = []
 
-    if filters.run_id:
+    if filters and filters.run_id:
         run = instance.get_run_by_id(filters.run_id)
         if run:
             runs = [run]
-    elif filters.pipeline_name or filters.tags or filters.status:
+    elif filters and (filters.pipeline_name or filters.tags or filters.status):
         runs = instance.get_runs(filters, cursor, limit)
     else:
         runs = instance.get_runs(cursor=cursor, limit=limit)

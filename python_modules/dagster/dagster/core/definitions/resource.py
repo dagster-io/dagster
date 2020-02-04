@@ -124,7 +124,7 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
             ),
         )
 
-    def build(self, mapper_fn, required_resource_keys):
+    def build(self, required_resource_keys):
 
         '''We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
@@ -138,11 +138,12 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         and then binds the specified resources into an instance of this object, which can be consumed
         as, e.g., context.resources.foo.
         '''
-        check.callable_param(mapper_fn, 'mapper_fn')
         required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
-        resource_instance_dict = mapper_fn(self.resource_instance_dict, required_resource_keys)
+        resource_instance_dict = {
+            key: self.resource_instance_dict[key] for key in required_resource_keys
+        }
 
         class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):
             def __getattr__(self, attr):

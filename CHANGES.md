@@ -56,6 +56,7 @@
 - `step_metadata_fn` has been removed from `SolidDefinition` & `@solid`.
 - `SolidDefinition` & `@solid` now takes `tags` and enforces that values are strings or
   are safetly encoded as JSON. `metadata` is deprecated and will be removed in a future version.
+- `resource_mapper_fn` has been removed from `SolidInvocation`.
 - Dagster Type System Changes
 
   - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.

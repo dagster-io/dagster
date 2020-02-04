@@ -28,7 +28,7 @@ class BigQueryClient(bigquery.Client):
     ):
         try:
             super(BigQueryClient, self).delete_dataset(
-                dataset, delete_contents, retry, not_found_ok
+                dataset, delete_contents=delete_contents, retry=retry, not_found_ok=not_found_ok
             )
         except google.api_core.exceptions.NotFound:
             six.raise_from(
