@@ -6,11 +6,16 @@ import { Colors } from "@blueprintjs/core";
 import { MutationFunction, Mutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
-import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
+import {
+  ILogFilter,
+  LogsProvider,
+  GetDefaultLogFilter,
+  structuredFieldsFromLogFilter
+} from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
 import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
 import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
-import { RunMetadataProvider } from "../RunMetadataProvider";
+import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import {
   handleExecutionResult,
@@ -242,6 +247,7 @@ const RunWithData = ({
 }: RunWithDataProps) => {
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
+  const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
   const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
     __typename: "ExecutionPlan",
     steps: [],
@@ -269,10 +275,20 @@ const RunWithData = ({
                 />
               }
               toolbarActions={
-                <RunActionButtons run={run} onReexecute={onReexecute} />
+                <RunActionButtons
+                  run={run}
+                  artifactsPersisted={executionPlan.artifactsPersisted}
+                  onReexecute={onReexecute}
+                  selectedStep={selectedStep}
+                  selectedStepState={
+                    (selectedStep && metadata.steps[selectedStep]?.state) ||
+                    IStepState.WAITING
+                  }
+                />
               }
               plan={executionPlan}
               metadata={metadata}
+              selectedStep={selectedStep}
               onApplyStepFilter={stepKey =>
                 onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
               }

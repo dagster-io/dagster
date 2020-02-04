@@ -88,8 +88,9 @@ const toGraphQueryItems = weakmapMemoize(
 );
 
 interface GaantChartProps {
-  options?: Partial<GaantChartLayoutOptions>;
+  selectedStep: string | null;
   plan: GaantChartExecutionPlanFragment;
+  options?: Partial<GaantChartLayoutOptions>;
   metadata?: IRunMetadataDict;
   toolbarActions?: React.ReactChild;
   toolbarLeftActions?: React.ReactChild;
@@ -157,7 +158,7 @@ export class GaantChart extends React.Component<
   };
 
   render() {
-    const { metadata = EMPTY_RUN_METADATA, plan } = this.props;
+    const { metadata = EMPTY_RUN_METADATA, plan, selectedStep } = this.props;
     const { query, options } = this.state;
 
     const graph = toGraphQueryItems(plan);
@@ -263,6 +264,7 @@ export class GaantChart extends React.Component<
               <GaantStatusPanel
                 {...this.props}
                 metadata={metadata}
+                selectedStep={selectedStep}
                 onHighlightStep={name => {
                   document.dispatchEvent(
                     new CustomEvent("highlight-node", { detail: { name } })
@@ -291,7 +293,9 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
   const { options, layout, metadata = EMPTY_RUN_METADATA } = props;
 
   const items: React.ReactChild[] = [];
-  const hovered = layout.boxes[hoveredIdx];
+  const focused =
+    layout.boxes.find(b => b.node.name === props.selectedStep) ||
+    layout.boxes[hoveredIdx];
 
   React.useEffect(() => {
     const onEvent = (e: CustomEvent) => {
@@ -303,7 +307,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
   });
 
   layout.boxes.forEach((box, idx) => {
-    const highlighted = hovered === box || hovered?.children.includes(box);
+    const highlighted = focused === box || focused?.children.includes(box);
     const style = boxStyleFor(box.node.name, { metadata, options });
 
     items.push(
@@ -328,7 +332,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
         const childIsRendered = layout.boxes.includes(child);
         items.push(
           <GaantLine
-            highlighted={hovered && (hovered === box || hovered === child)}
+            darkened={focused && (focused === box || focused === child)}
             dotted={!childIsRendered}
             key={`${box.node.name}-${child.node.name}-${childIdx}`}
             start={box}
@@ -349,10 +353,10 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
           startMs={metadata.minStepStart || 0}
           nowMs={metadata.mostRecentLogAt}
           highlightedMs={
-            hovered
+            focused
               ? ([
-                  metadata.steps[hovered.node.name]?.start,
-                  metadata.steps[hovered.node.name]?.finish
+                  metadata.steps[focused.node.name]?.start,
+                  metadata.steps[focused.node.name]?.finish
                 ].filter(Number) as number[])
               : []
           }
@@ -374,13 +378,13 @@ const GaantLine = React.memo(
     start,
     end,
     dotted,
-    highlighted,
+    darkened,
     depIdx
   }: {
     start: GaantChartBox;
     end: GaantChartBox;
     dotted: boolean;
-    highlighted: boolean;
+    darkened: boolean;
     depIdx: number;
   }) => {
     const startIdx = start.y;
@@ -399,7 +403,7 @@ const GaantLine = React.memo(
         : Math.max(start.x + start.width / 2, end.x + end.width / 2);
 
     const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
-      highlighted ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
+      darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
     }`;
 
     return (
@@ -413,7 +417,7 @@ const GaantLine = React.memo(
             width: dotted ? 50 : maxX + (depIdx % 10) * LINE_SIZE - minX,
             top: minY - 1,
             borderTop: border,
-            zIndex: highlighted ? 100 : 1
+            zIndex: darkened ? 100 : 1
           }}
         />
         {maxIdx !== minIdx && !dotted && (
@@ -426,7 +430,7 @@ const GaantLine = React.memo(
               top: minY,
               height: maxY - minY,
               borderRight: border,
-              zIndex: highlighted ? 100 : 1
+              zIndex: darkened ? 100 : 1
             }}
           />
         )}

@@ -34,6 +34,21 @@ export const GetDefaultLogFilter = () => {
   };
 };
 
+export const structuredFieldsFromLogFilter = (filter: ILogFilter) => {
+  const textLower = filter.text.toLowerCase();
+  // step: sum_solid
+  const step =
+    (textLower.startsWith("step:") && filter.text.substr(5).trim()) || null;
+
+  // type: materialization or type: step start
+  const type =
+    (textLower.startsWith("type:") &&
+      textLower.substr(5).replace(/[ _-]/g, "")) ||
+    null;
+
+  return { step, type };
+};
+
 export interface ILogFilter {
   text: string;
   levels: { [key: string]: boolean };
@@ -182,25 +197,17 @@ export class LogsProvider extends React.Component<
     const { nodes } = this.state;
 
     const textLower = filter.text.toLowerCase();
-
-    // step: sum_solid
-    const textStep =
-      textLower.startsWith("step:") && filter.text.substr(5).trim();
-
-    // type: materialization or type: step start
-    const textType =
-      textLower.startsWith("type:") &&
-      textLower.substr(5).replace(/[ _-]/g, "");
+    const { type, step } = structuredFieldsFromLogFilter(filter);
 
     const filteredNodes = nodes.filter(node => {
       const l = node.__typename === "LogMessageEvent" ? node.level : "EVENT";
       if (!filter.levels[l]) return false;
       if (filter.since && Number(node.timestamp) < filter.since) return false;
 
-      if (textStep) {
-        return node.step && node.step.key === textStep;
-      } else if (textType) {
-        return node.__typename.toLowerCase().includes(textType);
+      if (step) {
+        return node.step && node.step.key === step;
+      } else if (type) {
+        return node.__typename.toLowerCase().includes(type);
       } else if (textLower) {
         return node.message.toLowerCase().includes(textLower);
       }

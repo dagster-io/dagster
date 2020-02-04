@@ -105,6 +105,7 @@ export class RunPreview extends React.Component<
     return plan?.__typename === "ExecutionPlan" ? (
       <GaantChart
         plan={plan}
+        selectedStep={null}
         options={{ mode: GaantChartMode.WATERFALL, hideTimedMode: true }}
         toolbarActions={toolbarActions}
       />

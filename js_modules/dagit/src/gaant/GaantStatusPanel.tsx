@@ -11,6 +11,7 @@ import { formatElapsedTime } from "../Util";
 interface GaantStatusPanelProps {
   plan: GaantChartExecutionPlanFragment;
   metadata: IRunMetadataDict;
+  selectedStep: string | null;
   run?: RunFragment;
 
   onApplyStepFilter?: (step: string) => void;
@@ -19,6 +20,7 @@ interface GaantStatusPanelProps {
 
 export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = ({
   metadata,
+  selectedStep,
   onApplyStepFilter,
   onHighlightStep
 }) => {
@@ -37,6 +39,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
             name={stepName}
             key={stepName}
             metadata={metadata}
+            selected={selectedStep === stepName}
             onClick={() => onApplyStepFilter?.(stepName)}
           />
         ))}
@@ -51,6 +54,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
             name={stepName}
             key={stepName}
             metadata={metadata}
+            selected={selectedStep === stepName}
             onClick={onApplyStepFilter}
             onHover={onHighlightStep}
           />
@@ -62,14 +66,16 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
 
 const StepItem: React.FunctionComponent<{
   name: string;
+  selected: boolean;
   metadata: IRunMetadataDict;
   onClick?: (name: string) => void;
   onHover?: (name: string | null) => void;
-}> = ({ name, metadata, onClick, onHover }) => {
+}> = ({ name, selected, metadata, onClick, onHover }) => {
   const step = metadata.steps[name];
   return (
     <StepItemContainer
       key={name}
+      selected={selected}
       onClick={() => onClick?.(name)}
       onMouseEnter={() => onHover?.(name)}
       onMouseLeave={() => onHover?.(null)}
@@ -115,7 +121,7 @@ const StepLabel = styled.div`
   flex: 1;
 `;
 
-const StepItemContainer = styled.div`
+const StepItemContainer = styled.div<{ selected: boolean }>`
   display: flex;
   line-height: 28px;
   height: 28px;
@@ -123,6 +129,7 @@ const StepItemContainer = styled.div`
   align-items: center;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
   font-size: 13px;
+  ${({ selected }) => selected && `background: ${Colors.LIGHT_GRAY4};`}
 
   &:hover {
     background: ${Colors.LIGHT_GRAY3};
