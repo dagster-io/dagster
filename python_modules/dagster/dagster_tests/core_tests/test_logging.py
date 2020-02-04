@@ -91,8 +91,7 @@ def test_logging_integer_log_levels():
     with _setup_logger('test', {'FOO': 3}) as (_captured_results, logger):
 
         dl = DagsterLogManager('123', {}, [logger])
-        with pytest.raises(AttributeError):
-            dl.log(3, 'test')  # pylint: disable=no-member
+        dl.log(3, 'test')  # pylint: disable=no-member
 
 
 def test_logging_bad_custom_log_levels():

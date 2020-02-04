@@ -21,6 +21,8 @@ ComputeLogFileData = namedtuple('ComputeLogFileData', 'path data cursor size dow
 
 
 class ComputeLogManager(six.with_metaclass(ABCMeta)):
+    '''Governs the logging of stdout and stderr from solid compute functions.'''
+
     # API
     @abstractmethod
     def get_local_path(self, run_id, step_key, io_type):

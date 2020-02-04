@@ -13,6 +13,8 @@ Dependencies and aliases
 ------------------------
 .. autoclass:: DependencyDefinition
 
+.. autoclass:: MultiDependencyDefinition
+
 .. autoclass:: SolidInvocation
 
 ----
