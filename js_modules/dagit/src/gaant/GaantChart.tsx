@@ -33,7 +33,10 @@ import {
   BOX_HEIGHT,
   BOX_MARGIN_Y,
   LINE_SIZE,
-  CSS_DURATION
+  CSS_DURATION,
+  BOX_DOT_WIDTH_CUTOFF,
+  BOX_SHOW_LABEL_WIDTH_CUTOFF,
+  BOX_DOT_SIZE
 } from "./Constants";
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { GaantStatusPanel } from "./GaantStatusPanel";
@@ -310,23 +313,40 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     const highlighted = focused === box || focused?.children.includes(box);
     const style = boxStyleFor(box.node.name, { metadata, options });
 
-    items.push(
-      <div
-        key={box.node.name}
-        style={{
-          left: box.x,
-          top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
-          width: box.width,
-          ...style
-        }}
-        className={`box ${highlighted && "highlighted"}`}
-        onClick={() => props.onApplyStepFilter?.(box.node.name)}
-        onMouseEnter={() => setHoveredIdx(idx)}
-        onMouseLeave={() => setHoveredIdx(-1)}
-      >
-        {box.node.name}
-      </div>
-    );
+    if (box.width === BOX_DOT_WIDTH_CUTOFF) {
+      items.push(
+        <div
+          key={box.node.name}
+          style={{
+            left: box.x,
+            top: BOX_HEIGHT * box.y + (BOX_HEIGHT - BOX_DOT_SIZE) / 2,
+            ...style
+          }}
+          className={`dot ${highlighted && "highlighted"}`}
+          onClick={() => props.onApplyStepFilter?.(box.node.name)}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(-1)}
+        />
+      );
+    } else {
+      items.push(
+        <div
+          key={box.node.name}
+          style={{
+            left: box.x,
+            top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
+            width: box.width,
+            ...style
+          }}
+          className={`box ${highlighted && "highlighted"}`}
+          onClick={() => props.onApplyStepFilter?.(box.node.name)}
+          onMouseEnter={() => setHoveredIdx(idx)}
+          onMouseLeave={() => setHoveredIdx(-1)}
+        >
+          {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : ""}
+        </div>
+      );
+    }
     if (options.mode !== GaantChartMode.FLAT) {
       box.children.forEach((child, childIdx) => {
         const childIsRendered = layout.boxes.includes(child);
@@ -457,6 +477,19 @@ const GaantChartContainer = styled.div`
     pointer-events: none;
     transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
       width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
+  }
+
+  .dot {
+    display: inline-block;
+    position: absolute;
+    width: ${BOX_DOT_SIZE}px;
+    height: ${BOX_DOT_SIZE}px;
+    border: 1px solid transparent;
+    z-index: 2;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    border-radius: ${BOX_DOT_SIZE / 2}px;
+
+    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear;
   }
 
   .box {

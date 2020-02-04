@@ -34,7 +34,10 @@ export const BOX_HEIGHT = 30;
 export const BOX_MARGIN_Y = 5;
 export const BOX_SPACING_X = 20;
 export const BOX_WIDTH = 100;
-export const BOX_MIN_WIDTH = 6;
+export const BOX_DOT_WIDTH_CUTOFF = 8;
+export const BOX_SHOW_LABEL_WIDTH_CUTOFF = 30;
+export const BOX_DOT_SIZE = 6;
+
 export const LINE_SIZE = 2;
 export const CSS_DURATION = `100ms`;
 

@@ -9,7 +9,7 @@ import {
   GaantChartMode,
   GaantChartLayout,
   BOX_WIDTH,
-  BOX_MIN_WIDTH,
+  BOX_DOT_WIDTH_CUTOFF,
   IGaantNode
 } from "./Constants";
 
@@ -228,7 +228,7 @@ const boxWidthFor = (
   if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
     if (stepInfo.start) {
       return Math.max(
-        BOX_MIN_WIDTH,
+        BOX_DOT_WIDTH_CUTOFF,
         ((stepInfo.finish || context.metadata.mostRecentLogAt) -
           stepInfo.start) *
           context.options.scale
