@@ -35,6 +35,8 @@ import {
   LINE_SIZE,
   CSS_DURATION
 } from "./Constants";
+import { SplitPanelContainer } from "../SplitPanelContainer";
+import { GaantStatusPanel } from "./GaantStatusPanel";
 
 export { GaantChartMode } from "./Constants";
 
@@ -166,11 +168,27 @@ export class GaantChart extends React.Component<
       options
     });
 
+    const content = (
+      <>
+        <GaantChartContent
+          {...this.props}
+          {...this.state}
+          layout={layout}
+          onWheel={this.onWheel}
+        />
+        <GraphQueryInput
+          items={graph}
+          value={query}
+          onChange={q => this.setState({ query: q })}
+          presets={interestingQueriesFor(metadata, layout)}
+        />
+      </>
+    );
     // todo perf: We can break buildLayout into a function that does not need metadata
     // and then a post-processor that resizes/shifts things using `metadata`. Then we can
     // memoize the time consuming vertical layout work.
     return (
-      <GaantChartContainer onWheel={this.onWheel}>
+      <GaantChartContainer>
         <OptionsContainer>
           {this.props.toolbarLeftActions}
           {this.props.toolbarLeftActions && <OptionsDivider />}
@@ -234,21 +252,40 @@ export class GaantChart extends React.Component<
           <div style={{ flex: 1 }} />
           {this.props.toolbarActions}
         </OptionsContainer>
-        <GaantChartContent {...this.props} {...this.state} layout={layout} />
-        <GraphQueryInput
-          items={graph}
-          value={query}
-          onChange={q => this.setState({ query: q })}
-          presets={interestingQueriesFor(metadata, layout)}
-        />
+
+        {metadata && options.mode === GaantChartMode.WATERFALL_TIMED ? (
+          <SplitPanelContainer
+            identifier="gaant-split"
+            axis="horizontal"
+            first={content}
+            firstInitialPercent={80}
+            second={
+              <GaantStatusPanel
+                {...this.props}
+                metadata={metadata}
+                onHighlightStep={name => {
+                  document.dispatchEvent(
+                    new CustomEvent("highlight-node", { detail: { name } })
+                  );
+                }}
+              />
+            }
+          />
+        ) : (
+          content
+        )}
       </GaantChartContainer>
     );
   }
 }
 
-const GaantChartContent = (
-  props: GaantChartProps & GaantChartState & { layout: GaantChartLayout }
-) => {
+type GaantChartContentProps = GaantChartProps &
+  GaantChartState & {
+    layout: GaantChartLayout;
+    onWheel: (e: React.WheelEvent) => void;
+  };
+
+const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
   const [scrollLeft, setScrollLeft] = React.useState<number>(0);
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const { options, layout, metadata = EMPTY_RUN_METADATA } = props;
@@ -256,9 +293,18 @@ const GaantChartContent = (
   const items: React.ReactChild[] = [];
   const hovered = layout.boxes[hoveredIdx];
 
+  React.useEffect(() => {
+    const onEvent = (e: CustomEvent) => {
+      const idx = layout.boxes.findIndex(b => b.node.name === e.detail.name);
+      setHoveredIdx(idx);
+    };
+    document.addEventListener("highlight-node", onEvent);
+    return () => document.removeEventListener("highlight-node", onEvent);
+  });
+
   layout.boxes.forEach((box, idx) => {
     const highlighted = hovered === box || hovered?.children.includes(box);
-    const style = boxStyleFor(box.node, { metadata, options });
+    const style = boxStyleFor(box.node.name, { metadata, options });
 
     items.push(
       <div
@@ -315,6 +361,7 @@ const GaantChartContent = (
       <div
         style={{ overflow: "scroll", flex: 1 }}
         onScroll={e => setScrollLeft(e.currentTarget.scrollLeft)}
+        onWheel={props.onWheel}
       >
         <div style={{ position: "relative" }}>{items}</div>
       </div>

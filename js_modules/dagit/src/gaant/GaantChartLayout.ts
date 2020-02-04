@@ -246,13 +246,16 @@ const ColorsForStates = {
 };
 
 export const boxStyleFor = (
-  step: GraphQueryItem,
-  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
+  stepName: string,
+  context: {
+    metadata: IRunMetadataDict;
+    options: { mode: GaantChartMode };
+  }
 ) => {
   let color = "#2491eb";
 
   if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
-    const info = context.metadata.steps[step.name];
+    const info = context.metadata.steps[stepName];
     if (!info || info.state === "waiting") {
       return {
         color: Colors.DARK_GRAY4,
