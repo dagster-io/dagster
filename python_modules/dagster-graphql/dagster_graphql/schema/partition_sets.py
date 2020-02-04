@@ -19,6 +19,7 @@ class DauphinPartition(dauphin.ObjectType):
     solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
+    tags = dauphin.non_null_list('PipelineTag')
 
     def __init__(self, partition, partition_set):
         self._partition = check.inst_param(partition, 'partition', Partition)
@@ -37,6 +38,12 @@ class DauphinPartition(dauphin.ObjectType):
     def resolve_environmentConfigYaml(self, _):
         environment_dict = self._partition_set.environment_dict_for_partition(self._partition)
         return yaml.dump(environment_dict, default_flow_style=False)
+
+    def resolve_tags(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in self._partition_set.tags_for_partition(self._partition).items()
+        ]
 
 
 class DauphinPartitionSet(dauphin.ObjectType):

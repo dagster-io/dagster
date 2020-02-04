@@ -366,6 +366,12 @@ exports[`renders execution 1`] = `
               </svg>
             </div>
           </div>
+          <div
+            className="ExecutionSessionContainer__TagEditorLink-sc-13rxma3-4 eEdRpB"
+            onClick={[Function]}
+          >
+            + Add tags
+          </div>
         </div>
         <div
           className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-1 gQbmPS"
@@ -406,8 +412,12 @@ exports[`renders execution 1`] = `
             </span>
           </button>
         </div>
-        <span />
-        <span />
+        <div
+          className="ExecutionSessionContainer__ConfigEditorContainer-sc-13rxma3-3 cfyltO"
+        >
+          <span />
+          <span />
+        </div>
       </div>
       <div
         className="SplitPanelContainer__horizontal-wb7tmo-0 kgSZgp"
