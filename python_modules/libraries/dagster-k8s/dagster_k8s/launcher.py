@@ -15,33 +15,62 @@ TTL_SECONDS_AFTER_FINISHED = 100
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
-    '''RunLauncher that starts a per-run Kubernetes Job.
+    '''RunLauncher that starts a Kubernetes Job for each pipeline run.
+
+    Encapsulates each pipeline run in a separate, isolated invocation of ``dagster-graphql``.
+
+    You may configure a Dagster instance to use this RunLauncher by adding a section to your
+    ``dagster.yaml`` like the following:
+
+    .. code-block:: yaml
+
+        run_launcher:
+            module: dagster_k8s.launcher
+            class: K8sRunLauncher
+            config:
+                service_account_name: job_runner_service_account
+                job_image: my_project/dagster_image:latest
+                instance_config_map: dagster_instance_config_map
     
+    As always when using a :py:class:`~dagster.core.serdes.ConfigurableClass`, the values
+    under the ``config`` key of this YAML block will be passed to the constructor. The full list
+    of acceptable values is given below by the constructor args.
+
     Args:
         service_account_name (str): The name of the Kubernetes service account under which to run
             the Job.
-        job_image (str): The name of the image to run in the Job -- must respond to
-            ``dagster-graphql -q`` invocations
+        job_image (str): The ``name`` of the image to use for the Job's Dagster container. This
+            image will be run with the command
+            ``dagster-graphql -p startPipelineExecution -v {executionParams}``.
         instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
-            order to provide a ConfigMap for the Dagster instance.
+            order to provide a ConfigMap for the Dagster instance. This Volume should contain a
+            ``dagster.yaml`` with appropriate values for run storage, event log storage, etc.
         load_kubeconfig (Optional[bool]): If ``True``, will load k8s config from the file specified
-            in ``kubeconfig_file`` (using ``kubernetes.config.load_kube_config``). Otherwise, we
-            assume the launcher is running in-cluster and load config using
+            in ``kubeconfig_file`` (using ``kubernetes.config.load_kube_config``). Set this value
+            if you are running the launcher outside of a k8s cluster (e.g., in test) or you intend
+            to target another cluster than that in which the launcher is running. If ``False``, we
+            assume the launcher is running within the target cluster and load config using
             ``kubernetes.config.load_incluster_config``. Default: ``False``.
         kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Required if
-            ``load_kubeconfig`` is ``True``.
+            ``load_kubeconfig`` is ``True``. 
         image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
-            which expresses a Kubernetes ``LocalObjectReference`` (e.g.,
+            which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
             ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
-            a pod basis. Typically, these will be provided through the service account, when needed.
+            a pod basis. Typically, these will be provided through the service account, when needed,
+            and you will not need to pass this argument.
             See:
             https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
             and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
-            enable local testing with kind. Default: ``'Always'``.
-        job_namespace (Optional[str]): The namespace into which to launch jobs. Default: "default"
-        env_froms (Optional[List[str]]): Additional custom ConfigMapEnvSource names from which to
-            draw environment variables (using `env_from`) for the Job. Default: ``[]``.
+            facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
+            ``"Always"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
+        job_namespace (Optional[str]): The namespace into which to launch new jobs. Note that any
+            other Kubernetes resources the Job requires (such as the service account) must be
+            present in this namespace. Default: ``"default"``
+        env_froms (Optional[List[str]]): A list of custom ConfigMapEnvSource names from which to
+            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
+            https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container
+
     '''
 
     def __init__(

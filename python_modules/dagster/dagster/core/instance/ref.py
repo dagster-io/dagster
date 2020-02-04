@@ -39,6 +39,11 @@ class InstanceRef(
         'run_launcher_data dagit_settings',
     )
 ):
+    '''Serializable representation of a :py:class:`DagsterInstance`.
+    
+    Users should not instantiate this class directly.
+    '''
+
     def __new__(
         self,
         local_artifact_storage_data,

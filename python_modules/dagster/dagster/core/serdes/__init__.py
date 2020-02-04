@@ -137,7 +137,10 @@ class ConfigurableClassData(
     '''Serializable tuple describing where to find a class and the config fragment that should
     be used to instantiate it.
 
-    Classes serialized in this way should implement dagster.serdes.ConfigurableClass.
+    Users should not instantiate this class directly.
+    
+    Classes intended to be serialized in this way should implement the 
+    :py:class:`dagster.serdes.ConfigurableClass` mixin.
     '''
 
     def __new__(cls, module_name, class_name, config_yaml):
@@ -212,6 +215,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     file in which third parties can place plugin packages. Instead, the intention is to make, e.g.,
     run storage, pluggable with a config chunk like:
 
+    .. code-block:: yaml
+
         run_storage:
             module: very_cool_package.run_storage
             class: SplendidRunStorage
@@ -226,7 +231,10 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
     Pieces of the Dagster system which we wish to make pluggable in this way should consume a config
     type such as:
 
-        {'module': str, 'class': str, 'config': Field(Permissive())},
+    .. code-block:: python
+
+        {'module': str, 'class': str, 'config': Field(Permissive())}
+
     '''
 
     @abstractproperty
@@ -257,6 +265,8 @@ class ConfigurableClass(six.with_metaclass(ABCMeta)):
 
         A common pattern is for the implementation to align the config_value with the signature
         of the ConfigurableClass's constructor:
+
+        .. code-block:: python
 
             @staticmethod
             def from_config_value(inst_data, config_value):

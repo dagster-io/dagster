@@ -108,7 +108,10 @@ class RunConfig(
 class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
     def get_engine(self):
-        '''(Engine): Return the corresponding engine class.'''
+        '''Get the configured engine.
+
+        Returns:
+            Engine: The configured engine.'''
 
 
 class InProcessExecutorConfig(ExecutorConfig):

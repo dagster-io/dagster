@@ -115,20 +115,19 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
     underlying loggers.
 
     An instance of the log manager is made available to solids as ``context.log``. Users should not
-    initialize instances of DagsterLogManager directly.
+    initialize instances of the log manager directly. To configure custom loggers, set the
+    ``logger_defs`` on a :py:class:`ModeDefinition` for a pipeline.
 
-    The log manager supports standard convenience methods like Python :py:mod:`python:logging`
-    (i.e., ``DagsterLogManager.{debug, info, warning, error, critical}``, expects
-    corresponding methods to be defined on the loggers passed to its constructor, and will delegate
-    to those methods on each logger.
+    The log manager supports standard convenience methods like those exposed by the Python standard
+    library :py:mod:`python:logging` module (i.e., within the body of a solid,
+    ``context.log.{debug, info, warning, warn, error, critical, fatal}``).
 
-    The underlying integer API can also be called directly using, e.g.,
-    ``DagsterLogManager.log(5, msg)``, and the log manager will delegate to the ``log`` method
+    The underlying integer API can also be called directly using, e.g.
+    ``context.log.log(5, msg)``, and the log manager will delegate to the ``log`` method
     defined on each of the loggers it manages.
 
     User-defined custom log levels are not supported, and calls to, e.g.,
-    ``DagsterLogManager.trace`` or ``DagsterLogManager.notice`` will result in hard exceptions at
-    runtime.
+    ``context.log.trace`` or ``context.log.notice`` will result in hard exceptions **at runtime**.
     '''
 
     def __new__(cls, run_id, logging_tags, loggers):
@@ -188,7 +187,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         )
 
     def _log(self, level, orig_message, message_props):
-        '''Actually invoke the underlying loggers for a given log level.
+        '''Invoke the underlying loggers for a given log level.
 
         Args:
             level (Union[str, int]): An integer represeting a Python logging level or one of the
@@ -206,8 +205,20 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         for logger_ in self.loggers:
             logger_.log(level, message, extra=extra)
 
+    def log(self, level, msg, **kwargs):
+        '''Invoke the underlying loggers for a given integer log level.
+
+        Args:
+            level (int): An integer represeting a Python logging level.
+            orig_message (str): The message to log.
+        '''
+
+        check.str_param(msg, 'msg')
+        check.int_param(level, 'level')
+        return self._log(level, msg, kwargs)
+
     def debug(self, msg, **kwargs):
-        '''Log at the DEBUG level.
+        '''Log at the ``logging.DEBUG`` level.
 
         The message will be automatically adorned with contextual information about the name
         of the pipeline, the name of the solid, etc., so it is generally unnecessary to include
@@ -225,7 +236,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         return self._log(logging.DEBUG, msg, kwargs)
 
     def info(self, msg, **kwargs):
-        '''Log at the INFO level.
+        '''Log at the ``logging.INFO`` level.
 
         See :py:meth:`~DagsterLogManager.debug`.
         '''
@@ -234,7 +245,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         return self._log(logging.INFO, msg, kwargs)
 
     def warning(self, msg, **kwargs):
-        '''Log at the WARNING level.
+        '''Log at the ``logging.WARNING`` level.
 
         See :py:meth:`~DagsterLogManager.debug`.
         '''
@@ -244,9 +255,10 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
 
     # Define the alias .warn()
     warn = warning
+    '''Alias for :py:meth:`~DagsterLogManager.warning`'''
 
     def error(self, msg, **kwargs):
-        '''Log at the ERROR level.
+        '''Log at the ``logging.ERROR`` level.
 
         See :py:meth:`~DagsterLogManager.debug`.
         '''
@@ -255,7 +267,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         return self._log(logging.ERROR, msg, kwargs)
 
     def critical(self, msg, **kwargs):
-        '''Log at the CRITICAL level.
+        '''Log at the ``logging.CRITICAL`` level.
 
         See :py:meth:`~DagsterLogManager.debug`.
         '''
@@ -264,3 +276,4 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
 
     # Define the alias .fatal()
     fatal = critical
+    '''Alias for :py:meth:`~DagsterLogManager.critical`'''
