@@ -39,7 +39,6 @@ import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
-import { getFeatureFlags, FeatureFlag } from "../Util";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -218,15 +217,11 @@ export default class ExecutionSessionContainer extends React.Component<
     const modeError = this.getModeError();
     const pipeline = this.getPipeline();
 
-    const gaantPreview = getFeatureFlags().includes(
-      FeatureFlag.GaantExecutionPlan
-    );
-
     return (
       <SplitPanelContainer
-        axis={gaantPreview ? "vertical" : "horizontal"}
+        axis={"vertical"}
         identifier={"execution"}
-        firstMinSize={gaantPreview ? 100 : 500}
+        firstMinSize={100}
         firstInitialPercent={75}
         first={
           <>
@@ -368,16 +363,12 @@ interface ExecutionSessionContainerErrorProps {
 }
 
 export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => {
-  const gaantPreview = getFeatureFlags().includes(
-    FeatureFlag.GaantExecutionPlan
-  );
-
   return (
     <SplitPanelContainer
-      axis={gaantPreview ? "vertical" : "horizontal"}
+      axis={"vertical"}
       identifier={"execution"}
       firstInitialPercent={75}
-      firstMinSize={gaantPreview ? 100 : 500}
+      firstMinSize={100}
       first={
         <>
           <SessionSettingsBar>
