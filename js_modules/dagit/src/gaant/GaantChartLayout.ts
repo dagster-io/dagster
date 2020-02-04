@@ -254,7 +254,7 @@ export const boxStyleFor = (
 ) => {
   let color = "#2491eb";
 
-  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
+  if (context.metadata.startedPipelineAt) {
     const info = context.metadata.steps[stepName];
     if (!info || info.state === "waiting") {
       return {
