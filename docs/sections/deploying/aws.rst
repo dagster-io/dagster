@@ -97,7 +97,7 @@ and ensure that the node or container hosting Dagit is able to connect to RDS.
 .. rubric:: S3 Intermediates Storage
 
 You'll probably also want to configure an S3 bucket to use for Dagster intermediates (see the
-`intermediates tutorial guide <../tutorial/intermediates.html>`_ for more info). Dagster supports
+`intermediates tutorial guide <../learn/tutorial/intermediates.html>`_ for more info). Dagster supports
 serializing data passed between solids to S3; to enable this, you need to add S3 storage to your
 :py:class:`ModeDefinition`:
 
