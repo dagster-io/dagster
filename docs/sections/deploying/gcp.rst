@@ -53,8 +53,8 @@ instance, and that the node or container hosting Dagit is able to connect to RDS
 .. rubric:: GCS Intermediates Storage
 
 You'll also want to configure a GCS bucket to use for Dagster intermediates (see the `intermediates
-tutorial guide <../tutorial/intermediates.html>`_ for more info). Dagster supports serializing data
-passed between solids to GCS; to enable this, you need to add S3 storage to your
+tutorial guide <../learn/tutorial/intermediates.html>`_ for more info). Dagster supports serializing data
+passed between solids to GCS; to enable this, you need to add GCS storage to your
 :py:class:`ModeDefinition`:
 
 .. code-block:: python
@@ -74,7 +74,7 @@ Then, just add the following YAML to your pipeline config:
     storage:
       gcs:
         config:
-          gcs_bucket: your-s3-bucket-name
+          gcs_bucket: your-gcs-bucket-name
 
 With this in place, your pipeline runs will store intermediates on GCS in the location
 ``gs://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute``
