@@ -1,7 +1,11 @@
+import sys
+
 from dagster import check
 from dagster.utils import ensure_single_item, frozendict, frozenlist
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_type import ConfigType, ConfigTypeKind
+from .errors import create_failed_post_processing_error
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
 from .validation_context import ValidationContext
@@ -12,46 +16,67 @@ def post_process_config(config_type, config_value):
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
     )
-    return _post_process_config(ctx, config_value)
+    return _recursively_process_config(ctx, config_value)
 
 
-def _post_process_config(context, config_value):
+def _recursively_process_config(context, config_value):
+    evr = _recursively_resolve_defaults(context, config_value)
+
+    if evr.success:
+        return _post_process(context, evr.value)
+    else:
+        return evr
+
+
+def _recursively_resolve_defaults(context, config_value):
     kind = context.config_type.kind
 
     if kind == ConfigTypeKind.SCALAR:
         return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.ENUM:
-        return EvaluateValueResult.for_value(context.config_type.to_python_value(config_value))
+        return EvaluateValueResult.for_value(config_value)
     elif kind == ConfigTypeKind.SELECTOR:
-        return _post_process_config_to_selector(context, config_value)
+        return _recurse_in_to_selector(context, config_value)
     elif ConfigTypeKind.is_shape(kind):
-        return _post_process_shape_config(context, config_value)
+        return _recurse_in_to_shape(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
-        return _post_process_array_config(context, config_value)
+        return _recurse_in_to_array(context, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return EvaluateValueResult.for_value(None)
-        return _post_process_config(context.for_nullable_inner_type(), config_value)
+        else:
+            return _recursively_process_config(context.for_nullable_inner_type(), config_value)
     elif kind == ConfigTypeKind.ANY:
         return EvaluateValueResult.for_value(config_value)
     elif context.config_type.kind == ConfigTypeKind.SCALAR_UNION:
-        return _post_process_scalar_union_type(context, config_value)
+        return _recurse_in_to_scalar_union(context, config_value)
     else:
         check.failed('Unsupported type {name}'.format(name=context.config_type.name))
 
 
-def _post_process_scalar_union_type(context, config_value):
+def _post_process(context, config_value):
+    try:
+        new_value = context.config_type.post_process(config_value)
+        return EvaluateValueResult.for_value(new_value)
+    except Exception:  # pylint: disable=broad-except
+        error_data = serializable_error_info_from_exc_info(sys.exc_info())
+        return EvaluateValueResult.for_error(
+            create_failed_post_processing_error(context, config_value, error_data)
+        )
+
+
+def _recurse_in_to_scalar_union(context, config_value):
     if isinstance(config_value, dict) or isinstance(config_value, list):
-        return _post_process_config(
+        return _recursively_process_config(
             context.for_new_config_type(context.config_type.non_scalar_type), config_value
         )
     else:
-        return _post_process_config(
+        return _recursively_process_config(
             context.for_new_config_type(context.config_type.scalar_type), config_value
         )
 
 
-def _post_process_config_to_selector(context, config_value):
+def _recurse_in_to_selector(context, config_value):
     check.invariant(
         context.config_type.kind == ConfigTypeKind.SELECTOR,
         'Non-selector not caught in validation',
@@ -66,7 +91,7 @@ def _post_process_config_to_selector(context, config_value):
 
     field_def = context.config_type.fields[field_name]
 
-    field_evr = _post_process_config(
+    field_evr = _recursively_process_config(
         context.for_field(field_def, field_name),
         {}
         if incoming_field_value is None and ConfigTypeKind.has_fields(field_def.config_type.kind)
@@ -78,7 +103,7 @@ def _post_process_config_to_selector(context, config_value):
     return field_evr
 
 
-def _post_process_shape_config(context, config_value):
+def _recurse_in_to_shape(context, config_value):
     check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), 'Unexpected non shape type')
     config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
 
@@ -89,12 +114,12 @@ def _post_process_shape_config(context, config_value):
 
     for expected_field, field_def in fields.items():
         if expected_field in incoming_fields:
-            processed_fields[expected_field] = _post_process_config(
+            processed_fields[expected_field] = _recursively_process_config(
                 context.for_field(field_def, expected_field), config_value[expected_field]
             )
 
         elif field_def.default_provided:
-            processed_fields[expected_field] = _post_process_config(
+            processed_fields[expected_field] = _recursively_process_config(
                 context.for_field(field_def, expected_field), field_def.default_value
             )
 
@@ -118,7 +143,7 @@ def _post_process_shape_config(context, config_value):
     )
 
 
-def _post_process_array_config(context, config_value):
+def _recurse_in_to_array(context, config_value):
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, 'Unexpected non array type')
 
     if not config_value:
@@ -129,7 +154,8 @@ def _post_process_array_config(context, config_value):
             check.failed('Null array member not caught in validation')
 
     results = [
-        _post_process_config(context.for_array(idx), item) for idx, item in enumerate(config_value)
+        _recursively_process_config(context.for_array(idx), item)
+        for idx, item in enumerate(config_value)
     ]
 
     errors = [result.error for result in results if not result.success]

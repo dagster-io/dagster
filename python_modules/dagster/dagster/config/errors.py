@@ -3,6 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.errors import DagsterError
+from dagster.utils.error import SerializableErrorInfo
 
 from .config_type import ConfigType, ConfigTypeKind
 from .field import check_field_param
@@ -18,6 +19,7 @@ class DagsterEvaluationErrorReason(Enum):
     FIELD_NOT_DEFINED = 'FIELD_NOT_DEFINED'
     FIELDS_NOT_DEFINED = 'FIELDS_NOT_DEFINED'
     SELECTOR_FIELD_ERROR = 'SELECTOR_FIELD_ERROR'
+    FAILED_POST_PROCESSING = 'FAILED_POST_PROCESSING'
 
 
 class FieldsNotDefinedErrorData(namedtuple('_FieldsNotDefinedErrorData', 'field_names')):
@@ -76,6 +78,7 @@ ERROR_DATA_TYPES = (
     MissingFieldsErrorData,
     RuntimeMismatchErrorData,
     SelectorTypeErrorData,
+    SerializableErrorInfo,
 )
 
 
@@ -371,4 +374,20 @@ def create_none_not_allowed_error(context):
             path_msg=get_friendly_path_msg(context.stack),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(None)),
+    )
+
+
+def create_failed_post_processing_error(context, original_value, error_data):
+    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(error_data, 'error_data', SerializableErrorInfo)
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.FAILED_POST_PROCESSING,
+        message='Post processing {path_msg} of original value {original_value} failed:\n{error}'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+            original_value=original_value,
+            error=error_data.to_string(),
+        ),
+        error_data=error_data,
     )

@@ -1,3 +1,6 @@
+import os
+from contextlib import contextmanager
+
 from dagster import (
     DagsterInvariantViolationError,
     Output,
@@ -98,3 +101,16 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         comp_solid.alias('outer')()
 
     return nested_pipeline
+
+
+@contextmanager
+def environ(env):
+    """Temporarily set environment variables inside the context manager and
+    fully restore previous environment afterwards
+    """
+    original_env = dict(os.environ)
+    os.environ.update(env)
+    try:
+        yield
+    finally:
+        os.environ.update(original_env)

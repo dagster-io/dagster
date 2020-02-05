@@ -5,6 +5,7 @@ from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.test_utils import environ
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test.run_storage import TestRunStorage
 
@@ -116,7 +117,7 @@ def test_load_from_config(hostname):
         module: dagster_postgres.run_storage
         class: PostgresRunStorage
         config:
-            postgres_url: postgresql://test:test@{hostname}:5432/test
+          postgres_url: postgresql://test:test@{hostname}:5432/test
     '''.format(
         hostname=hostname
     )
@@ -126,17 +127,37 @@ def test_load_from_config(hostname):
         module: dagster_postgres.run_storage
         class: PostgresRunStorage
         config:
-            postgres_db:
-              username: test
-              password: test
-              hostname: {hostname}
-              db_name: test
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
     '''.format(
         hostname=hostname
     )
 
-    # pylint: disable=protected-access
-    from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._run_storage
-    from_explicit = DagsterInstance.local_temp(overrides=yaml.safe_load(explicit_cfg))._run_storage
+    with environ({'TEST_PG_PASSWORD': 'test'}):
+        env_cfg = '''
+        run_storage:
+          module: dagster_postgres.run_storage
+          class: PostgresRunStorage
+          config:
+            postgres_db:
+              username: test
+              password:
+                env: TEST_PG_PASSWORD
+              hostname: {hostname}
+              db_name: test
+        '''.format(
+            hostname=hostname
+        )
 
-    assert from_url.postgres_url == from_explicit.postgres_url
+        # pylint: disable=protected-access
+        from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._run_storage
+        from_explicit = DagsterInstance.local_temp(
+            overrides=yaml.safe_load(explicit_cfg)
+        )._run_storage
+        from_env = DagsterInstance.local_temp(overrides=yaml.safe_load(env_cfg))._run_storage
+
+        assert from_url.postgres_url == from_explicit.postgres_url
+        assert from_url.postgres_url == from_env.postgres_url

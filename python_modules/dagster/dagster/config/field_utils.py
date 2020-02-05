@@ -129,14 +129,14 @@ def _define_permissive_dict_key(fields, description):
 
 class Permissive(_ConfigHasFields):
     '''Defines a config dict with a partially specified schema.
-    
+
     A permissive dict allows partial specification of the config schema. Any fields with a
     specified schema will be type checked. Other fields will be allowed, but will be ignored by
     the type checker.
 
     Args:
         fields (Dict[str, Field]): The partial specification of the config dict.
-    
+
     **Examples**
 
     .. code-block:: python
@@ -171,7 +171,7 @@ def _define_selector_key(fields, description):
 
 class Selector(_ConfigHasFields):
     '''Define a config field requiring the user to select one option.
-    
+
     Selectors are used when you want to be able to present several different options in config but
     allow only one to be selected. For example, a single input might be read in from either a csv
     file or a parquet file, but not both at once.
@@ -183,7 +183,7 @@ class Selector(_ConfigHasFields):
 
     Args:
         fields (Dict[str, Field]): The fields from which the user must select.
-    
+
     Examples:
 
     .. code-block:: python

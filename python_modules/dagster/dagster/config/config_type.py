@@ -70,6 +70,9 @@ class ConfigType(object):
     def recursive_config_types(self):
         return []
 
+    def post_process(self, value):
+        return value
+
 
 # Scalars, Composites, Selectors, Lists, Optional, Any
 
@@ -238,16 +241,16 @@ class Enum(ConfigType):
     def is_valid_config_enum_value(self, config_value):
         return config_value in self._valid_config_values
 
-    def to_python_value(self, config_value):
+    def post_process(self, value):
         for ev in self.enum_values:
-            if ev.config_value == config_value:
+            if ev.config_value == value:
                 return ev.python_value
 
         check.failed(
             (
                 'Should never reach this. config_value should be pre-validated. '
                 'Got {config_value}'
-            ).format(config_value=config_value)
+            ).format(config_value=value)
         )
 
     @classmethod
@@ -280,7 +283,9 @@ class Enum(ConfigType):
 
 
 class ScalarUnion(ConfigType):
-    def __init__(self, scalar_type, non_scalar_type):
+    def __init__(
+        self, scalar_type, non_scalar_type, _key=None,
+    ):
         self.scalar_type = check.inst_param(scalar_type, 'scalar_type', ConfigType)
         self.non_scalar_type = check.inst_param(non_scalar_type, 'non_scalar_type', ConfigType)
 
@@ -291,7 +296,11 @@ class ScalarUnion(ConfigType):
             'non_scalar_type',
         )
 
-        key = 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
+        # https://github.com/dagster-io/dagster/issues/2133
+        key = check.opt_str_param(
+            _key, '_key', 'ScalarUnion.{}-{}'.format(scalar_type.key, non_scalar_type.key)
+        )
+
         super(ScalarUnion, self).__init__(
             key=key, kind=ConfigTypeKind.SCALAR_UNION, type_params=[scalar_type, non_scalar_type],
         )
