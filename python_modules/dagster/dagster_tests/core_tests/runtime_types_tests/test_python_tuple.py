@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     InputDefinition,
     OutputDefinition,
     execute_solid,
@@ -25,7 +25,7 @@ def test_vanilla_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -42,7 +42,7 @@ def test_vanilla_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})
 
 
@@ -59,7 +59,7 @@ def test_open_typing_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -76,7 +76,7 @@ def test_open_typing_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})
 
 
@@ -128,7 +128,7 @@ def test_closed_typing_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -137,7 +137,7 @@ def test_closed_typing_tuple_output_fail_wrong_member_types():
     def emit_tuple():
         return (1, 'nope')
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -146,7 +146,7 @@ def test_closed_typing_tuple_output_fail_wrong_length():
     def emit_tuple():
         return (1,)
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -163,5 +163,5 @@ def test_closed_typing_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})

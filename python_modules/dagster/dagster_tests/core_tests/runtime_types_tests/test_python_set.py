@@ -3,7 +3,7 @@ import typing
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     InputDefinition,
     Optional,
     OutputDefinition,
@@ -27,7 +27,7 @@ def test_vanilla_set_output_fail():
     def emit_set():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
@@ -44,7 +44,7 @@ def test_vanilla_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
 
@@ -61,7 +61,7 @@ def test_open_typing_set_output_fail():
     def emit_set():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
@@ -78,7 +78,7 @@ def test_open_typing_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
 
@@ -125,8 +125,8 @@ def test_closed_typing_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': {'fkjdf'}})
