@@ -4,6 +4,7 @@ Guides
 .. toctree::
   :maxdepth: 1
 
+  dagster_types
   solid/solid
   testing/testing
   testing/expectations
