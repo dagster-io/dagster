@@ -7,13 +7,13 @@ class ForkedPdb(pdb.Pdb):
     """
     A Pdb subclass that may be used from a forked multiprocessing child
     Usage:
-        from dagster.utils.pdb import set_trace
+        from dagster.utils.pdb import ForkedPdb
 
         @solid
         def complex_solid(_):
             # some complicated stuff
 
-            set_trace()
+            ForkedPdb().set_trace()
 
             # some other complicated stuff
 

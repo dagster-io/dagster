@@ -113,6 +113,11 @@ dagit_run_logs
 python_modules/dagit/node_modules/
 python_modules/dagit/yarn.lock
 
+# Gatsby stuff
+docs/gatsby/**/node_modules/
+docs/gatsby/**/_build
+docs/gatsby/**/public
+docs/gatsby/**/versions/
 # Data
 data
 
