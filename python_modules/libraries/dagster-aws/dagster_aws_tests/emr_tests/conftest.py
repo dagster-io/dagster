@@ -5,6 +5,7 @@ import pytest
 def emr_cluster_config():
     return {
         'Name': 'test-emr',
+        'LogUri': 's3n://emr-cluster-logs/elasticmapreduce/',
         'ReleaseLabel': 'emr-5.23.0',
         'Instances': {
             'MasterInstanceType': 'm4.large',

@@ -20,13 +20,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import gzip
+import re
 import time
+from io import BytesIO
 
 import boto3
+import six
+from botocore.exceptions import WaiterError
 from dagster_aws.utils.mrjob.utils import _boto3_now, _wrap_aws_client, strip_microseconds
 
 import dagster
 from dagster import check
+from dagster.seven import urlparse
 
 from .types import EMR_CLUSTER_TERMINATED_STATES, EmrClusterState, EmrStepState
 
@@ -39,10 +45,29 @@ _FALLBACK_SERVICE_ROLE = 'EMR_DefaultRole'
 _FALLBACK_INSTANCE_PROFILE = 'EMR_EC2_DefaultRole'
 
 
+class EmrError(Exception):
+    pass
+
+
 class EmrJobRunner:
     def __init__(
         self, region, check_cluster_every=30, aws_access_key_id=None, aws_secret_access_key=None,
     ):
+        '''This object encapsulates various utilities for interacting with EMR clusters and invoking
+        steps (jobs) on them.
+
+        See also :py:class:`~dagster_aws.emr.EmrPySparkResource`, which wraps this job runner in a
+        resource for pyspark workloads.
+
+        Args:
+            region (str): AWS region to use
+            check_cluster_every (int, optional): How frequently to poll boto3 APIs for updates.
+                Defaults to 30 seconds.
+            aws_access_key_id ([type], optional): AWS access key ID. Defaults to None, which will
+                use the default boto3 credentials chain.
+            aws_secret_access_key ([type], optional): AWS secret access key. Defaults to None, which
+                will use the default boto3 credentials chain.
+        '''
         self.region = check.str_param(region, 'region')
 
         # This is in seconds
@@ -53,7 +78,11 @@ class EmrJobRunner:
         )
 
     def make_emr_client(self):
-        '''Creates a boto3 EMR client.
+        '''Creates a boto3 EMR client. Construction is wrapped in retries in case client connection
+        fails transiently.
+
+        Returns:
+            botocore.client.EMR: An EMR client
         '''
         raw_emr_client = boto3.client(
             'emr',
@@ -63,14 +92,65 @@ class EmrJobRunner:
         )
         return _wrap_aws_client(raw_emr_client, min_backoff=self.check_cluster_every)
 
-    def add_tags(self, context, tags, cluster_id):
-        '''Add tags in the dict *tags* to cluster *cluster_id*. Do nothing
-        if *tags* is empty or ``None``'''
-        check.opt_dict_param(tags, 'tags')
-        check.str_param(cluster_id, 'cluster_id')
+    def cluster_id_from_name(self, cluster_name):
+        '''Get a cluster ID in the format "j-123ABC123ABC1" given a cluster name "my cool cluster".
 
-        if not tags:
-            return
+        Args:
+            cluster_name (str): The name of the cluster for which to find an ID
+
+        Returns:
+            str: The ID of the cluster
+
+        Raises:
+            EmrError: No cluster with the specified name exists
+        '''
+        check.str_param(cluster_name, 'cluster_name')
+
+        response = self.make_emr_client().list_clusters().get('Clusters', [])
+        for cluster in response:
+            if cluster['Name'] == cluster_name:
+                return cluster['Id']
+
+        raise EmrError(
+            'cluster {cluster_name} not found in region {region}'.format(
+                cluster_name=cluster_name, region=self.region
+            )
+        )
+
+    @staticmethod
+    def construct_step_dict_for_command(step_name, command, action_on_failure='CONTINUE'):
+        '''Construct an EMR step definition which uses command-runner.jar to execute a shell command
+        on the EMR master.
+
+        Args:
+            step_name (str): The name of the EMR step (will show up in the EMR UI)
+            command (str): The shell command to execute with command-runner.jar
+            action_on_failure (str, optional): Configure action on failure (e.g., continue, or
+                terminate the cluster). Defaults to 'CONTINUE'.
+
+        Returns:
+            dict: Step definition dict
+        '''
+        check.str_param(step_name, 'step_name')
+        check.list_param(command, 'command', of_type=str)
+        check.str_param(action_on_failure, 'action_on_failure')
+
+        return {
+            'Name': step_name,
+            'ActionOnFailure': action_on_failure,
+            'HadoopJarStep': {'Jar': 'command-runner.jar', 'Args': command},
+        }
+
+    def add_tags(self, context, tags, cluster_id):
+        '''Add tags in the dict tags to cluster cluster_id.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            tags (dict): Dictionary of {'key': 'value'} tags
+            cluster_id (str): The ID of the cluster to tag
+        '''
+        check.dict_param(tags, 'tags')
+        check.str_param(cluster_id, 'cluster_id')
 
         tags_items = sorted(tags.items())
 
@@ -85,6 +165,14 @@ class EmrJobRunner:
 
     def run_job_flow(self, context, cluster_config):
         '''Create an empty cluster on EMR, and return the ID of that job flow.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            cluster_config (dict): Configuration for this EMR job flow. See:
+                https://docs.aws.amazon.com/emr/latest/APIReference/API_RunJobFlow.html
+
+        Returns:
+            str: The cluster ID, e.g. "j-ZKIY4CKQRX72"
         '''
         check.dict_param(cluster_config, 'cluster_config')
 
@@ -106,17 +194,50 @@ class EmrJobRunner:
         return cluster_id
 
     def describe_cluster(self, cluster_id):
+        '''Thin wrapper over boto3 describe_cluster.
+
+        Args:
+            cluster_id (str): Cluster to inspect
+
+        Returns:
+            dict: The cluster info. See:
+                https://docs.aws.amazon.com/emr/latest/APIReference/API_DescribeCluster.html
+        '''
         check.str_param(cluster_id, 'cluster_id')
 
         emr_client = self.make_emr_client()
-        return emr_client.describe_cluster(ClusterId=cluster_id)['Cluster']
+        return emr_client.describe_cluster(ClusterId=cluster_id)
+
+    def describe_step(self, cluster_id, step_id):
+        '''Thin wrapper over boto3 describe_step.
+
+        Args:
+            cluster_id (str): Cluster to inspect
+            step_id (str): Step ID to describe
+
+        Returns:
+            dict: The step info. See:
+                https://docs.aws.amazon.com/emr/latest/APIReference/API_DescribeStep.html
+        '''
+        check.str_param(cluster_id, 'cluster_id')
+        check.str_param(step_id, 'step_id')
+
+        emr_client = self.make_emr_client()
+        return emr_client.describe_step(ClusterId=cluster_id, StepId=step_id)
 
     def add_job_flow_steps(self, context, cluster_id, step_defs):
         '''Submit the constructed job flow steps to EMR for execution.
 
-        Returns: list of step IDs
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            cluster_id (str): The ID of the cluster
+            step_defs (List[dict]): List of steps; see also `construct_step_dict_for_command`
+
+        Returns:
+            List[str]: list of step IDs.
         '''
-        check.list_param(step_defs, 'step_defs')
+        check.str_param(cluster_id, 'cluster_id')
+        check.list_param(step_defs, 'step_defs', of_type=dict)
 
         emr_client = self.make_emr_client()
 
@@ -128,7 +249,13 @@ class EmrJobRunner:
         return emr_client.add_job_flow_steps(**steps_kwargs)['StepIds']
 
     def wait_for_steps_to_complete(self, context, cluster_id, step_ids):
-        '''Wait for every step of the job to complete, one by one.'''
+        '''Wait for every step of the job to complete, one by one.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            cluster_id (str): The ID of the cluster
+            step_ids (List[str]): List of step IDs to wait for
+        '''
         check.str_param(cluster_id, 'cluster_id')
         check.list_param(step_ids, 'step_ids', of_type=str)
 
@@ -137,26 +264,30 @@ class EmrJobRunner:
             self._wait_for_step_to_complete(context, cluster_id, step_id)
 
     def _wait_for_step_to_complete(self, context, cluster_id, step_id):
-        '''Helper for _wait_for_steps_to_complete(). Wait for
-        step with the given ID to complete, and fetch counters.
-        If it fails, attempt to diagnose the error, and raise an
-        exception.
+        '''Helper for wait_for_steps_to_complete(). Wait for step with the given ID to complete.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            cluster_id (str): The ID of the cluster
+            step_id (str): Step ID to wait for
+
+        Raises:
+            EmrError: Raised when the step is marked by EMR as failed instead of completing
+                successfully.
         '''
         check.str_param(cluster_id, 'cluster_id')
         check.str_param(step_id, 'step_id')
-
-        emr_client = self.make_emr_client()
 
         while True:
             # don't antagonize EMR's throttling
             context.log.debug('Waiting %.1f seconds...' % self.check_cluster_every)
             time.sleep(self.check_cluster_every)
 
-            step = emr_client.describe_step(ClusterId=cluster_id, StepId=step_id)['Step']
+            step = self.describe_step(cluster_id, step_id)['Step']
             step_state = EmrStepState(step['Status']['State'])
 
             if step_state == EmrStepState.Pending:
-                cluster = self.describe_cluster(cluster_id)
+                cluster = self.describe_cluster(cluster_id)['Cluster']
 
                 reason = _get_reason(cluster)
                 reason_desc = (': %s' % reason) if reason else ''
@@ -190,7 +321,7 @@ class EmrJobRunner:
 
                 # print cluster status; this might give more context
                 # why step didn't succeed
-                cluster = self.describe_cluster(cluster_id)
+                cluster = self.describe_cluster(cluster_id)['Cluster']
                 reason = _get_reason(cluster)
                 reason_desc = (': %s' % reason) if reason else ''
                 context.log.info(
@@ -213,10 +344,12 @@ class EmrJobRunner:
             if step_state == EmrStepState.Failed:
                 context.log.info('Step %s failed' % step_id)
 
-            raise Exception('step failed')
+            raise EmrError('step failed')
 
     def _check_for_missing_default_iam_roles(self, context, cluster):
         '''If cluster couldn't start due to missing IAM roles, tell user what to do.'''
+
+        check.dict_param(cluster, 'cluster')
 
         reason = _get_reason(cluster)
         if any(
@@ -227,6 +360,106 @@ class EmrJobRunner:
                 'IAM roles are missing. See documentation for IAM roles on EMR here: '
                 'https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-iam-roles.html'
             )
+
+    def log_location_for_cluster(self, cluster_id):
+        '''EMR clusters are typically launched with S3 logging configured. This method inspects a
+        cluster using boto3 describe_cluster to retrieve the log URI.
+
+        Args:
+            cluster_id (str): The cluster to inspect.
+
+        Raises:
+            EmrError: the log URI was missing (S3 log mirroring not enabled for this cluster)
+
+        Returns:
+            (str, str): log bucket and key
+        '''
+        check.str_param(cluster_id, 'cluster_id')
+
+        # The S3 log URI is specified per job flow (cluster)
+        log_uri = self.describe_cluster(cluster_id)['Cluster'].get('LogUri', None)
+
+        # ugh, seriously boto3?! This will come back as string "None"
+        if log_uri == 'None' or log_uri is None:
+            raise EmrError('Log URI not specified, cannot retrieve step execution logs')
+
+        # For some reason the API returns an s3n:// protocol log URI instead of s3://
+        log_uri = re.sub('^s3n', 's3', log_uri)
+        log_uri_parsed = urlparse(log_uri)
+        log_bucket = log_uri_parsed.netloc
+        log_key_prefix = log_uri_parsed.path.lstrip('/')
+        return log_bucket, log_key_prefix
+
+    def retrieve_logs_for_step_id(self, context, cluster_id, step_id):
+        '''Retrieves stdout and stderr logs for the given step ID.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            cluster_id (str): EMR cluster ID
+            step_id (str): EMR step ID for the job that was submitted.
+
+        Returns
+            (str, str): Tuple of stdout log string contents, and stderr log string contents
+        '''
+        check.str_param(cluster_id, 'cluster_id')
+        check.str_param(step_id, 'step_id')
+
+        log_bucket, log_key_prefix = self.log_location_for_cluster(cluster_id)
+
+        prefix = '{log_key_prefix}{cluster_id}/steps/{step_id}'.format(
+            log_key_prefix=log_key_prefix, cluster_id=cluster_id, step_id=step_id
+        )
+        stdout_log = self.wait_for_log(
+            context, log_bucket, '{prefix}/stdout.gz'.format(prefix=prefix)
+        )
+        stderr_log = self.wait_for_log(
+            context, log_bucket, '{prefix}/stderr.gz'.format(prefix=prefix)
+        )
+        return stdout_log, stderr_log
+
+    def wait_for_log(self, context, log_bucket, log_key, waiter_delay=30, waiter_max_attempts=20):
+        '''Wait for gzipped EMR logs to appear on S3. Note that EMR syncs logs to S3 every 5
+        minutes, so this may take a long time.
+
+        Args:
+            context (SystemPipelineExecutionContext): context, for logging
+            log_bucket (str): S3 bucket where log is expected to appear
+            log_key (str): S3 key for the log file
+            waiter_delay (int): How long to wait between attempts to check S3 for the log file
+            waiter_max_attempts (int): Number of attempts before giving up on waiting
+
+        Raises:
+            EmrError: Raised if we waited the full duration and the logs did not appear
+
+        Returns:
+            str: contents of the log file
+        '''
+        check.str_param(log_bucket, 'log_bucket')
+        check.str_param(log_key, 'log_key')
+        check.int_param(waiter_delay, 'waiter_delay')
+        check.int_param(waiter_max_attempts, 'waiter_max_attempts')
+
+        context.log.info(
+            'Attempting to get log: s3://{log_bucket}/{log_key}'.format(
+                log_bucket=log_bucket, log_key=log_key
+            )
+        )
+
+        s3 = _wrap_aws_client(boto3.client('s3'), min_backoff=self.check_cluster_every)
+        waiter = s3.get_waiter('object_exists')
+        try:
+            waiter.wait(
+                Bucket=log_bucket,
+                Key=log_key,
+                WaiterConfig={'Delay': waiter_delay, 'MaxAttempts': waiter_max_attempts},
+            )
+        except WaiterError as err:
+            six.raise_from(
+                EmrError('EMR log file did not appear on S3 after waiting'), err,
+            )
+        obj = BytesIO(s3.get_object(Bucket=log_bucket, Key=log_key)['Body'].read())
+        gzip_file = gzip.GzipFile(fileobj=obj)
+        return gzip_file.read().decode('utf-8')
 
 
 def _get_reason(cluster_or_step):

@@ -50,14 +50,3 @@ def build_pyspark_zip(zip_file, path):
                     continue
 
                 zf.write(abs_fname, os.path.relpath(os.path.join(root, fname), path))
-
-
-def get_install_requirements_step(python_dependencies, action_on_failure, python_binary='python3'):
-    return {
-        'Name': 'Install Dependencies',
-        'ActionOnFailure': action_on_failure,
-        'HadoopJarStep': {
-            'Jar': 'command-runner.jar',
-            'Args': ['sudo', python_binary, '-m', 'pip', 'install'] + python_dependencies,
-        },
-    }
