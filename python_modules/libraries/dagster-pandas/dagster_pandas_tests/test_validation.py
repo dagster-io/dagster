@@ -1,6 +1,7 @@
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
+    ColumnExistsConstraint,
     ColumnTypeConstraint,
     ConstraintViolationException,
     InRangeColumnConstraint,
@@ -12,7 +13,7 @@ from dagster_pandas.validation import PandasColumn, validate_constraints
 from pandas import DataFrame
 
 
-def test_validate_collection_schema_ok():
+def test_validate_constraints_ok():
     column_constraints = [
         PandasColumn(name='foo', constraints=[ColumnTypeConstraint('object')]),
     ]
@@ -33,7 +34,7 @@ def test_validate_collection_schema_ok():
         ),
     ],
 )
-def test_validate_collection_schema_throw_error(column_constraints, dataframe):
+def test_validate_constraints_throw_error(column_constraints, dataframe):
     with pytest.raises(ConstraintViolationException):
         validate_constraints(dataframe, pandas_columns=column_constraints)
 
@@ -85,6 +86,13 @@ def has_constraints(column, constraints):
         ):
             return False
     return True
+
+
+def test_exists_column_composition():
+    exists_column = PandasColumn.exists('foo')
+    assert isinstance(exists_column, PandasColumn)
+    assert len(exists_column.constraints) == 1
+    assert isinstance(exists_column.constraints[0], ColumnExistsConstraint)
 
 
 @pytest.mark.parametrize(

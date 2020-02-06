@@ -187,6 +187,9 @@ def create_dagster_pandas_dataframe_type(
 
 
 def _execute_summary_stats(type_name, value, event_metadata_fn):
+    if not event_metadata_fn:
+        return []
+
     metadata_entries = event_metadata_fn(value)
 
     if not (

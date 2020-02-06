@@ -45,6 +45,13 @@ class PandasColumn:
         return constraints
 
     @classmethod
+    def exists(cls, name, exists=False, unique=False):
+        return cls(
+            name=check.str_param(name, 'name'),
+            constraints=cls.add_configurable_constraints([], exists=exists, unique=unique),
+        )
+
+    @classmethod
     def boolean_column(cls, name, exists=False, unique=False):
         return cls(
             name=check.str_param(name, 'name'),
