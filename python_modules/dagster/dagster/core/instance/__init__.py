@@ -99,6 +99,8 @@ class DagsterInstance:
         run_storage,
         event_storage,
         compute_log_manager,
+        schedule_storage=None,
+        scheduler=None,
         run_launcher=None,
         dagit_settings=None,
         ref=None,
@@ -107,6 +109,8 @@ class DagsterInstance:
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
+        from dagster.core.storage.schedules import ScheduleStorage
+        from dagster.core.scheduler import Scheduler
         from dagster.core.launcher import RunLauncher
 
         self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
@@ -118,6 +122,10 @@ class DagsterInstance:
         self._compute_log_manager = check.inst_param(
             compute_log_manager, 'compute_log_manager', ComputeLogManager
         )
+        self._schedule_storage = check.opt_inst_param(
+            schedule_storage, 'schedule_storage', ScheduleStorage
+        )
+        self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
         self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
@@ -181,6 +189,8 @@ class DagsterInstance:
             run_storage=instance_ref.run_storage,
             event_storage=instance_ref.event_storage,
             compute_log_manager=instance_ref.compute_log_manager,
+            schedule_storage=instance_ref.schedule_storage,
+            scheduler=instance_ref.scheduler,
             run_launcher=instance_ref.run_launcher,
             dagit_settings=instance_ref.dagit_settings,
             ref=instance_ref,
@@ -231,6 +241,8 @@ class DagsterInstance:
             '  Run Storage:\n{run}\n'
             '  Event Log Storage:\n{event}\n'
             '  Compute Log Manager:\n{compute}\n'
+            '  Schedule Storage:\n{schedule_storage}\n'
+            '  Scheduler:\n{scheduler}\n'
             '  Run Launcher:\n{run_launcher}\n'
             '  Dagit:\n{dagit}\n'
             ''.format(
@@ -238,10 +250,24 @@ class DagsterInstance:
                 run=_info(self._run_storage),
                 event=_info(self._event_storage),
                 compute=_info(self._compute_log_manager),
+                schedule_storage=_info(self._schedule_storage),
+                scheduler=_info(self._scheduler),
                 run_launcher=_info(self._run_launcher),
                 dagit=_info(dagit_settings),
             )
         )
+
+    # schedule storage
+
+    @property
+    def schedule_storage(self):
+        return self._schedule_storage
+
+    # schedule storage
+
+    @property
+    def scheduler(self):
+        return self._scheduler
 
     # run launcher
 
@@ -395,3 +421,40 @@ class DagsterInstance:
 
     def launch_run(self, run):
         return self._run_launcher.launch_run(self, run)
+
+    # Scheduler
+
+    def start_schedule(self, repository, schedule_name):
+        return self._scheduler.start_schedule(self, repository, schedule_name)
+
+    def stop_schedule(self, repository, schedule_name):
+        return self._scheduler.stop_schedule(self, repository, schedule_name)
+
+    def end_schedule(self, repository, schedule_name):
+        return self._scheduler.end_schedule(self, repository, schedule_name)
+
+    # Schedule Storage
+
+    def all_schedules(self, repository):
+        return self._schedule_storage.all_schedules(repository)
+
+    def get_schedule_by_name(self, repository, schedule_name):
+        return self._schedule_storage.get_schedule_by_name(repository, schedule_name)
+
+    def add_schedule(self, repository, schedule):
+        return self._schedule_storage.add_schedule(repository, schedule)
+
+    def update_schedule(self, repository, schedule):
+        return self._schedule_storage.update_schedule(repository, schedule)
+
+    def delete_schedule(self, repository, schedule):
+        return self._schedule_storage.delete_schedule(repository, schedule)
+
+    def wipe_all_schedules(self):
+        if self._scheduler:
+            self._scheduler.wipe()
+
+        self._schedule_storage.wipe()
+
+    def log_path_for_schedule(self, repository, schedule_name):
+        return self._scheduler.get_log_path(repository, schedule_name)

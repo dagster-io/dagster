@@ -42,7 +42,6 @@ export const ScheduleRow: React.FunctionComponent<{
   schedule: ScheduleFragment;
 }> = ({ schedule }) => {
   const {
-    id,
     status,
     scheduleDefinition,
     logsPath,
@@ -92,7 +91,10 @@ export const ScheduleRow: React.FunctionComponent<{
                   stopRunningSchedule: {
                     __typename: "RunningScheduleResult",
                     schedule: {
-                      id: id,
+                      scheduleDefinition: {
+                        __typename: "ScheduleDefinition",
+                        name: name
+                      },
                       __typename: "RunningSchedule",
                       status: ScheduleStatus.STOPPED
                     }
@@ -106,7 +108,10 @@ export const ScheduleRow: React.FunctionComponent<{
                   startSchedule: {
                     __typename: "RunningScheduleResult",
                     schedule: {
-                      id: id,
+                      scheduleDefinition: {
+                        __typename: "ScheduleDefinition",
+                        name: name
+                      },
                       __typename: "RunningSchedule",
                       status: ScheduleStatus.RUNNING
                     }
@@ -312,7 +317,7 @@ export const ScheduleRow: React.FunctionComponent<{
 
 export const ScheduleRowFragment = gql`
   fragment ScheduleFragment on RunningSchedule {
-    id
+    __typename
     scheduleDefinition {
       name
       executionParamsString
@@ -380,7 +385,11 @@ const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleName: String!) {
     startSchedule(scheduleName: $scheduleName) {
       schedule {
-        id
+        __typename
+        scheduleDefinition {
+          __typename
+          name
+        }
         status
       }
     }
@@ -391,7 +400,11 @@ const STOP_SCHEDULE_MUTATION = gql`
   mutation StopSchedule($scheduleName: String!) {
     stopRunningSchedule(scheduleName: $scheduleName) {
       schedule {
-        id
+        __typename
+        scheduleDefinition {
+          __typename
+          name
+        }
         status
       }
     }

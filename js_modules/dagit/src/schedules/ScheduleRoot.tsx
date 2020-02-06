@@ -152,7 +152,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
     scheduleOrError(scheduleName: $scheduleName) {
       ... on RunningSchedule {
         ...ScheduleFragment
-        id
         scheduleDefinition {
           name
         }

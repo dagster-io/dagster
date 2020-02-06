@@ -10,6 +10,7 @@ from dagster import (
     DependencyDefinition,
     ModeDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     SolidInvocation,
     SystemStorageData,
     TypeCheck,
@@ -30,7 +31,6 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleStatus, Scheduler
-from dagster.core.scheduler.storage import ScheduleStorage
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -326,20 +326,12 @@ def restore_directory(src):
 
 
 class FilesytemTestScheduler(Scheduler):
-    def __init__(self, artifacts_dir, schedule_storage):
-        check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
+    def __init__(self, artifacts_dir):
         check.str_param(artifacts_dir, 'artifacts_dir')
-        self._storage = schedule_storage
         self._artifacts_dir = artifacts_dir
 
-    def all_schedules(self, status=None):
-        return self._storage.all_schedules(status)
-
-    def get_schedule_by_name(self, name):
-        return self._storage.get_schedule_by_name(name)
-
-    def start_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def start_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to start schedule {name}, but it does not exist.'.format(
@@ -355,11 +347,11 @@ class FilesytemTestScheduler(Scheduler):
             )
 
         started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        self._storage.update_schedule(started_schedule)
+        instance.update_schedule(repository, started_schedule)
         return schedule
 
-    def stop_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def stop_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to stop schedule {name}, but was never initialized.'
@@ -374,11 +366,11 @@ class FilesytemTestScheduler(Scheduler):
             )
 
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        self._storage.update_schedule(stopped_schedule)
+        instance.update_schedule(repository, stopped_schedule)
         return stopped_schedule
 
-    def end_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def end_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to end schedule {name}, but it is not running.'.format(
@@ -386,11 +378,15 @@ class FilesytemTestScheduler(Scheduler):
                 )
             )
 
-        self._storage.delete_schedule(schedule)
+        instance.storage.delete_schedule(repository, schedule)
         return schedule
 
-    def wipe(self):
-        self._storage.wipe()
+    def get_log_path(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+        return os.path.join(
+            self._artifacts_dir, repository.name, 'logs', '{}'.format(schedule_name)
+        )
 
-    def log_path_for_schedule(self, schedule_name):
-        return ""
+    def wipe(self):
+        pass

@@ -92,7 +92,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     class Meta(object):
         name = 'RunningSchedule'
 
-    id = dauphin.NonNull(dauphin.String)
     schedule_definition = dauphin.NonNull('ScheduleDefinition')
     python_path = dauphin.Field(dauphin.String)
     repository_path = dauphin.Field(dauphin.String)
@@ -107,7 +106,6 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         self._schedule = check.inst_param(schedule, 'schedule', Schedule)
 
         super(DauphinRunningSchedule, self).__init__(
-            id=schedule.schedule_id,
             schedule_definition=graphene_info.schema.type_named('ScheduleDefinition')(
                 graphene_info=graphene_info,
                 schedule_def=get_dagster_schedule_def(graphene_info, schedule.name),
@@ -174,23 +172,22 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         return len(attempt_files)
 
     def resolve_logs_path(self, graphene_info):
-        scheduler = graphene_info.context.get_scheduler()
-        return scheduler.log_path_for_schedule(self._schedule.name)
+        instance = graphene_info.context.instance
+        repository = graphene_info.context.get_repository()
+        return instance.log_path_for_schedule(repository, self._schedule.name)
 
     def resolve_runs(self, graphene_info, **kwargs):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(
-                    tags={'dagster/schedule_id': self._schedule.schedule_id}
-                ),
+                filters=PipelineRunsFilter(tags={'dagster/schedule_name': self._schedule.name}),
                 limit=kwargs.get('limit'),
             )
         ]
 
     def resolve_runs_count(self, graphene_info):
         return graphene_info.context.instance.get_runs_count(
-            filter=PipelineRunsFilter(tags=[("dagster/schedule_id", self._schedule.schedule_id)])
+            filter=PipelineRunsFilter(tags=[("dagster/schedule_name", self._schedule.name)])
         )
 
 
@@ -218,9 +215,10 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
     Output = dauphin.NonNull('RunningScheduleResult')
 
     def mutate(self, graphene_info, schedule_name):
-        scheduler = graphene_info.context.get_scheduler()
+        repository = graphene_info.context.get_repository()
+        instance = graphene_info.context.instance
 
-        schedule = scheduler.start_schedule(schedule_name)
+        schedule = instance.start_schedule(repository, schedule_name)
 
         return graphene_info.schema.type_named('RunningScheduleResult')(
             schedule=graphene_info.schema.type_named('RunningSchedule')(
@@ -239,9 +237,10 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
     Output = dauphin.NonNull('RunningScheduleResult')
 
     def mutate(self, graphene_info, schedule_name):
-        scheduler = graphene_info.context.get_scheduler()
+        repository = graphene_info.context.get_repository()
+        instance = graphene_info.context.instance
 
-        schedule = scheduler.stop_schedule(schedule_name)
+        schedule = instance.stop_schedule(repository, schedule_name)
 
         return graphene_info.schema.type_named('RunningScheduleResult')(
             schedule=graphene_info.schema.type_named('RunningSchedule')(

@@ -3,7 +3,7 @@ import os
 import pytest
 from dagster_bash import bash_command_solid, bash_script_solid
 
-from dagster import DagsterExecutionStepExecutionError, composite_solid, execute_solid
+from dagster import Failure, composite_solid, execute_solid
 
 
 def test_bash_command_solid():
@@ -17,12 +17,9 @@ def test_bash_command_solid():
 
 
 def test_bash_command_retcode():
-    with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
+    with pytest.raises(Failure) as exc_info:
         execute_solid(bash_command_solid('exit 1'))
-
-    assert 'step key: "bash_solid.compute"' in str(exc_info.value)
-    assert 'solid invocation: "bash_solid"' in str(exc_info.value)
-    assert 'solid definition: "bash_solid"' in str(exc_info.value)
+    assert '[bash][bash_solid] Bash command failed' in str(exc_info.value)
 
 
 def test_bash_command_buffer_logs():

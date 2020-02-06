@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     Dict,
     InputDefinition,
     OutputDefinition,
@@ -36,7 +36,7 @@ def test_basic_solid_dict_int_int_output_faile():
     def emit_dict_int_int():
         return {1: '1'}
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_dict_int_int)
 
 
@@ -53,5 +53,5 @@ def test_basic_solid_dict_int_int_input_fails():
     def emit_dict_int_int(ddict):
         return ddict
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_dict_int_int, input_values={'ddict': {'1': 2}})

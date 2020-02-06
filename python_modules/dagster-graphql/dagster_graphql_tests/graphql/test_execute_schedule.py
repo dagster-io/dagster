@@ -1,4 +1,3 @@
-import sys
 import uuid
 
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
@@ -20,11 +19,6 @@ def test_basic_start_scheduled_execution():
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
         )
 
         result = execute_dagster_graphql(
@@ -71,11 +65,6 @@ def test_basic_start_scheduled_execution_with_run_launcher():
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
-        )
-
         result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
@@ -110,11 +99,6 @@ def test_basic_start_scheduled_execution_with_environment_dict_fn():
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
-        )
-
         result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
@@ -142,36 +126,11 @@ def test_basic_start_scheduled_execution_with_environment_dict_fn():
         )
 
 
-def test_start_scheduled_execution_with_predefined_schedule_id_tag():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        context = define_context_for_repository_yaml(
-            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
-        )
-
-        result = execute_dagster_graphql(
-            context,
-            START_SCHEDULED_EXECUTION_QUERY,
-            variables={'scheduleName': 'no_config_pipeline_hourly_schedule_with_schedule_id_tag'},
-        )
-        assert result.data['startScheduledExecution']['__typename'] == 'PythonError'
-
-
 def test_start_scheduled_execution_with_should_execute():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
         )
 
         result = execute_dagster_graphql(
@@ -191,11 +150,6 @@ def test_partition_based_execution():
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
         )
 
         result = execute_dagster_graphql(
@@ -244,11 +198,6 @@ def test_partition_based_custom_selector():
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
-        )
-
         result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
@@ -294,11 +243,6 @@ def test_partition_based_decorator():
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
 
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
-        )
-
         result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
@@ -317,11 +261,6 @@ def test_partition_based_multi_mode_decorator():
         instance = DagsterInstance.local_temp(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-        )
-
-        scheduler_handle = context.scheduler_handle
-        scheduler_handle.up(
-            python_path=sys.executable, repository_path=file_relative_path(__file__, '../')
         )
 
         result = execute_dagster_graphql(

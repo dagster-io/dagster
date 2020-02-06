@@ -53,7 +53,6 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList {
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
-  id: string;
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   logsPath: string;
   attempts: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts[];

@@ -44,7 +44,6 @@ export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempt
 
 export interface SchedulesRootQuery_scheduler_Scheduler_runningSchedules {
   __typename: "RunningSchedule";
-  id: string;
   scheduleDefinition: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_scheduleDefinition;
   logsPath: string;
   attempts: SchedulesRootQuery_scheduler_Scheduler_runningSchedules_attempts[];

@@ -4,7 +4,7 @@ import pytest
 
 from dagster import (
     DagsterInvariantViolationError,
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     Field,
     InputDefinition,
     Int,
@@ -15,7 +15,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.errors import DagsterExecutionStepExecutionError
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.utility_solids import (
     create_root_solid,
@@ -115,10 +114,10 @@ def test_single_solid_error():
     def throw_error():
         raise SomeError()
 
-    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
+    with pytest.raises(SomeError) as e_info:
         execute_solid(throw_error)
 
-    assert isinstance(e_info.value.__cause__, SomeError)
+    assert isinstance(e_info.value, SomeError)
 
 
 def test_single_solid_type_checking_output_error():
@@ -126,7 +125,7 @@ def test_single_solid_type_checking_output_error():
     def return_string():
         return 'ksjdfkjd'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(return_string)
 
 
@@ -138,10 +137,10 @@ def test_failing_solid_in_isolation():
     def throw_an_error():
         raise ThisException('nope')
 
-    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
+    with pytest.raises(ThisException) as e_info:
         execute_solid(throw_an_error)
 
-    assert isinstance(e_info.value.__cause__, ThisException)
+    assert isinstance(e_info.value, ThisException)
 
 
 def test_composites():
@@ -249,7 +248,7 @@ def test_single_solid_with_bad_inputs():
     )
 
     assert not result.success
-    assert result.failure_data.error.cls_name == 'Failure'
+    assert result.failure_data.error.cls_name == 'DagsterTypeCheckDidNotPass'
     assert (
         'Type check failed for step input num_two of type Int' in result.failure_data.error.message
     )

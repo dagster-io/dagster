@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from dagster import check
 from dagster.core.engine.engine_base import Engine
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
@@ -79,10 +80,13 @@ class CeleryEngine(Engine):
             }
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
+        step_errors = {}
         completed_steps = set({})  # Set[step_key]
         active_execution = execution_plan.start(sort_key_fn=priority_for_step)
+        stopping = False
 
-        while not active_execution.is_complete or step_results:
+        while (not active_execution.is_complete and not stopping) or step_results:
+
             results_to_pop = []
             for step_key, result in sorted(
                 step_results.items(), key=lambda x: priority_for_key(x[0])
@@ -90,18 +94,27 @@ class CeleryEngine(Engine):
                 if result.ready():
                     try:
                         step_events = result.get()
-                    except Exception:  # pylint: disable=broad-except
+                    except Exception as e:  # pylint: disable=broad-except
                         # We will want to do more to handle the exception here.. maybe subclass Task
                         # Certainly yield an engine or pipeline event
                         step_events = []
+                        step_errors[step_key] = serializable_error_info_from_exc_info(
+                            sys.exc_info()
+                        )
+                        stopping = True
                     for step_event in step_events:
                         yield deserialize_json_to_dagster_namedtuple(step_event)
                     results_to_pop.append(step_key)
                     completed_steps.add(step_key)
+
             for step_key in results_to_pop:
                 if step_key in step_results:
                     del step_results[step_key]
                     active_execution.mark_complete(step_key)
+
+            # dont add any new steps if we are stopping
+            if stopping:
+                continue
 
             # This is a slight refinement. If we have n workers idle and schedule m > n steps for
             # execution, the first n steps will be picked up by the idle workers in the order in
@@ -124,6 +137,19 @@ class CeleryEngine(Engine):
                     raise
 
             time.sleep(TICK_SECONDS)
+
+        if step_errors:
+            raise DagsterSubprocessError(
+                'During celery execution errors occured in workers:\n{error_list}'.format(
+                    error_list='\n'.join(
+                        [
+                            '[{step}]: {err}'.format(step=key, err=err.to_string())
+                            for key, err in step_errors.items()
+                        ]
+                    )
+                ),
+                subprocess_error_infos=list(step_errors.values()),
+            )
 
 
 def _warn_on_priority_misuse(context, execution_plan):
