@@ -10,16 +10,16 @@ from dagster.config.post_process import post_process_config
 
 def test_post_process_config():
     scalar_config_type = resolve_to_config_type(String)
-    assert post_process_config(scalar_config_type, 'foo') == 'foo'
-    assert post_process_config(scalar_config_type, 3) == 3
-    assert post_process_config(scalar_config_type, {}) == {}
-    assert post_process_config(scalar_config_type, None) is None
+    assert post_process_config(scalar_config_type, 'foo').value == 'foo'
+    assert post_process_config(scalar_config_type, 3).value == 3
+    assert post_process_config(scalar_config_type, {}).value == {}
+    assert post_process_config(scalar_config_type, None).value is None
 
     enum_config_type = resolve_to_config_type(
         Enum('an_enum', [EnumValue('foo'), EnumValue('bar', python_value=3)])
     )
-    assert post_process_config(enum_config_type, 'foo') == 'foo'
-    assert post_process_config(enum_config_type, 'bar') == 3
+    assert post_process_config(enum_config_type, 'foo').value == 'foo'
+    assert post_process_config(enum_config_type, 'bar').value == 3
     with pytest.raises(CheckError, match='config_value should be pre-validated'):
         post_process_config(enum_config_type, 'baz')
     with pytest.raises(CheckError, match='config_value should be pre-validated'):
@@ -27,15 +27,15 @@ def test_post_process_config():
 
     list_config_type = resolve_to_config_type([str])
 
-    assert post_process_config(list_config_type, ['foo']) == ['foo']
-    assert post_process_config(list_config_type, None) == []
+    assert post_process_config(list_config_type, ['foo']).value == ['foo']
+    assert post_process_config(list_config_type, None).value == []
     with pytest.raises(CheckError, match='Null array member not caught'):
-        assert post_process_config(list_config_type, [None]) == [None]
+        assert post_process_config(list_config_type, [None]).value == [None]
 
     nullable_list_config_type = resolve_to_config_type([Noneable(str)])
-    assert post_process_config(nullable_list_config_type, ['foo']) == ['foo']
-    assert post_process_config(nullable_list_config_type, [None]) == [None]
-    assert post_process_config(nullable_list_config_type, None) == []
+    assert post_process_config(nullable_list_config_type, ['foo']).value == ['foo']
+    assert post_process_config(nullable_list_config_type, [None]).value == [None]
+    assert post_process_config(nullable_list_config_type, None).value == []
 
     composite_config_type = resolve_to_config_type(
         {
@@ -57,15 +57,15 @@ def test_post_process_config():
 
     assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'nimble'}
-    ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'nimble'}
+    ).value == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'nimble'}
 
     assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}}
-    ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip'}
+    ).value == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip'}
 
     assert post_process_config(
         composite_config_type, {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quiggle': 'squiggle'}
-    ) == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip', 'quiggle': 'squiggle'}
+    ).value == {'foo': 'zowie', 'bar': {'baz': ['giraffe']}, 'quux': 'zip', 'quiggle': 'squiggle'}
 
     nested_composite_config_type = resolve_to_config_type(
         {
@@ -87,15 +87,15 @@ def test_post_process_config():
 
     assert post_process_config(
         nested_composite_config_type, {'fruts': {'apple': 'strawberry'}}
-    ) == {'fruts': {'apple': 'strawberry', 'potato': 'pie'}}
+    ).value == {'fruts': {'apple': 'strawberry', 'potato': 'pie'}}
 
     assert post_process_config(
         nested_composite_config_type, {'fruts': {'apple': 'a', 'banana': 'b', 'potato': 'c'}}
-    ) == {'fruts': {'apple': 'a', 'banana': 'b', 'potato': 'c'}}
+    ).value == {'fruts': {'apple': 'a', 'banana': 'b', 'potato': 'c'}}
 
     any_config_type = resolve_to_config_type(Any)
 
-    assert post_process_config(any_config_type, {'foo': 'bar'}) == {'foo': 'bar'}
+    assert post_process_config(any_config_type, {'foo': 'bar'}).value == {'foo': 'bar'}
 
     assert post_process_config(
         ConfigType('gargle', given_name='bargle', kind=ConfigTypeKind.ANY), 3
@@ -123,19 +123,21 @@ def test_post_process_config():
     with pytest.raises(CheckError):
         post_process_config(selector_config_type, {'one': 'foo', 'another': 'bar'})
 
-    assert post_process_config(selector_config_type, {'one': 'foo'}) == {'one': 'foo'}
+    assert post_process_config(selector_config_type, {'one': 'foo'}).value == {'one': 'foo'}
 
-    assert post_process_config(selector_config_type, {'one': None}) == {'one': None}
+    assert post_process_config(selector_config_type, {'one': None}).value == {'one': None}
 
-    assert post_process_config(selector_config_type, {'one': {}}) == {'one': {}}
+    assert post_process_config(selector_config_type, {'one': {}}).value == {'one': {}}
 
-    assert post_process_config(selector_config_type, {'another': {}}) == {'another': {'foo': 'bar'}}
+    assert post_process_config(selector_config_type, {'another': {}}).value == {
+        'another': {'foo': 'bar'}
+    }
 
     singleton_selector_config_type = resolve_to_config_type(
         Selector({'foo': Field(String, default_value='bar', is_required=False)})
     )
 
-    assert post_process_config(singleton_selector_config_type, None) == {'foo': 'bar'}
+    assert post_process_config(singleton_selector_config_type, None).value == {'foo': 'bar'}
 
     permissive_dict_config_type = resolve_to_config_type(
         Permissive(
@@ -146,7 +148,7 @@ def test_post_process_config():
     with pytest.raises(CheckError, match='Missing non-optional composite member'):
         post_process_config(permissive_dict_config_type, None)
 
-    assert post_process_config(permissive_dict_config_type, {'foo': 'wow', 'mau': 'mau'}) == {
+    assert post_process_config(permissive_dict_config_type, {'foo': 'wow', 'mau': 'mau'}).value == {
         'foo': 'wow',
         'bar': 'baz',
         'mau': 'mau',

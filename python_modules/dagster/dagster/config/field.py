@@ -1,12 +1,15 @@
 from dagster import check
 from dagster.builtins import BuiltinEnum
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+)
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
 
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
+from .config_type import Array, ConfigAnyInstance, ConfigType
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
-from .post_process import post_process_config
 
 
 def _is_config_type_class(obj):
@@ -116,7 +119,7 @@ def resolve_to_config_type(dagster_type):
 
 class Field(object):
     '''Defines the schema for a configuration field.
- 
+
     Config fields are parsed according to their schemas in order to yield values available at
     pipeline execution time through the config system. Config fields can be set on solids, on custom
     data types (as the :py:func:`@input_hydration_schema <dagster.input_hydration_schema>`), and on
@@ -165,6 +168,9 @@ class Field(object):
         is_required=None,
         description=None,
     ):
+        from .validate import validate_config
+        from .post_process import post_process_config
+
         if not isinstance(dagster_type, ConfigType):
             config_type = resolve_to_config_type(dagster_type)
             if not config_type:
@@ -199,35 +205,31 @@ class Field(object):
                 'default_value',
                 'required arguments should not specify default values',
             )
+        self._default_value = default_value
+
+        # check explicit default value
+        if self.default_provided:
+            # invoke through property in case it is callable
+            value = self.default_value
+            evr = validate_config(self.config_type, value)
+            if not evr.success:
+                raise DagsterInvalidConfigError(
+                    'Invalid default_value for Field.', evr.errors, default_value,
+                )
 
         if canonical_is_required is None:
-            # neither is_required nor is_optional where specified
+            # neither is_required nor is_optional were specified
             canonical_is_required = not all_optional_type(self.config_type)
 
-            self._default_value = (
-                default_value
-                if canonical_is_required
-                else post_process_config(self.config_type, None)
-            )
-        else:
-            self._default_value = default_value
-
-        if (
-            config_type.kind == ConfigTypeKind.SCALAR
-            and self._default_value != FIELD_NO_DEFAULT_PROVIDED
-        ):
-            check.param_invariant(
-                config_type.is_config_scalar_valid(self._default_value),
-                'default_value',
-                (
-                    'default value not valid for config type {name}, '
-                    'got value {val} of type {type}'
-                ).format(
-                    name=config_type.given_name,
-                    val=self._default_value,
-                    type=type(self._default_value),
-                ),
-            )
+            # on implicitly optional - set the default value
+            # by resolving the defaults of the type
+            if not canonical_is_required and self._default_value == FIELD_NO_DEFAULT_PROVIDED:
+                evr = post_process_config(self.config_type, None)
+                if not evr.success:
+                    raise DagsterInvalidConfigError(
+                        'Unable to resolve implicit default_value for Field.', evr.errors, None,
+                    )
+                self._default_value = evr.value
 
         self.is_optional = not canonical_is_required
 

@@ -19,7 +19,6 @@ from dagster import (
     Set,
     String,
     Tuple,
-    check,
     composite_solid,
     execute_pipeline,
     execute_solid,
@@ -771,7 +770,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
 
 
 def test_invalid_default_values():
-    with pytest.raises(check.ParameterCheckError):
+    with pytest.raises(DagsterInvalidConfigError):
 
         @solid(config=Field(Int, default_value='3'))
         def _solid():

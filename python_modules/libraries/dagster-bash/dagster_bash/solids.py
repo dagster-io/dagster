@@ -9,6 +9,7 @@ from dagster import (
     Failure,
     Field,
     InputDefinition,
+    Noneable,
     Nothing,
     OutputDefinition,
     Permissive,
@@ -60,7 +61,7 @@ def bash_command_solid(
         output_defs=[OutputDefinition(str, 'result')],
         config={
             'env': Field(
-                Permissive(),
+                Noneable(Permissive()),
                 default_value=None,
                 is_required=False,
                 description='An optional dict of environment variables to pass to the subprocess.',
