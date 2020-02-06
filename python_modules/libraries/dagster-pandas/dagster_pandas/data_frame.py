@@ -4,7 +4,7 @@ from dagster_pandas.constraints import (
     ColumnTypeConstraint,
     ConstraintViolationException,
 )
-from dagster_pandas.validation import PandasColumn, validate_collection_schema
+from dagster_pandas.validation import PandasColumn, validate_constraints
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -167,13 +167,12 @@ def create_dagster_pandas_dataframe_type(
                 ),
             )
 
-        if columns is not None:
-            try:
-                validate_collection_schema(
-                    columns, value, dataframe_constraints=dataframe_constraints
-                )
-            except ConstraintViolationException as e:
-                return TypeCheck(success=False, description=str(e))
+        try:
+            validate_constraints(
+                value, pandas_columns=columns, dataframe_constraints=dataframe_constraints
+            )
+        except ConstraintViolationException as e:
+            return TypeCheck(success=False, description=str(e))
 
         return TypeCheck(
             success=True,

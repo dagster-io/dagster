@@ -8,20 +8,20 @@ from dagster_pandas.constraints import (
     RowCountConstraint,
     UniqueColumnConstraint,
 )
-from dagster_pandas.validation import PandasColumn, validate_collection_schema
+from dagster_pandas.validation import PandasColumn, validate_constraints
 from pandas import DataFrame
 
 
 def test_validate_collection_schema_ok():
-    collection_schema = [
+    column_constraints = [
         PandasColumn(name='foo', constraints=[ColumnTypeConstraint('object')]),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})
-    assert validate_collection_schema(collection_schema, dataframe) is None
+    assert validate_constraints(dataframe, pandas_columns=column_constraints) is None
 
 
 @pytest.mark.parametrize(
-    'collection_schema, dataframe',
+    'column_constraints, dataframe',
     [
         (
             [PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
@@ -33,27 +33,47 @@ def test_validate_collection_schema_ok():
         ),
     ],
 )
-def test_validate_collection_schema_throw_error(collection_schema, dataframe):
+def test_validate_collection_schema_throw_error(column_constraints, dataframe):
     with pytest.raises(ConstraintViolationException):
-        validate_collection_schema(collection_schema, dataframe)
+        validate_constraints(dataframe, pandas_columns=column_constraints)
 
 
 def test_shape_validation_ok():
     assert (
-        validate_collection_schema(
-            [PandasColumn.integer_column('foo', min_value=0), PandasColumn.string_column('bar')],
+        validate_constraints(
             DataFrame({'foo': [2], 'bar': ['hello']}),
+            pandas_columns=[
+                PandasColumn.integer_column('foo', min_value=0),
+                PandasColumn.string_column('bar'),
+            ],
             dataframe_constraints=[RowCountConstraint(1)],
         )
         is None
     )
 
 
+def test_shape_validation_without_column_constraints():
+    assert (
+        validate_constraints(
+            DataFrame({'foo': [2], 'bar': ['hello']}), dataframe_constraints=[RowCountConstraint(1)]
+        )
+        is None
+    )
+
+    with pytest.raises(ConstraintViolationException):
+        validate_constraints(
+            DataFrame({'foo': [2], 'bar': ['hello']}), dataframe_constraints=[RowCountConstraint(2)]
+        )
+
+
 def test_shape_validation_throw_error():
     with pytest.raises(ConstraintViolationException):
-        validate_collection_schema(
-            [PandasColumn.integer_column('foo', min_value=0), PandasColumn.string_column('bar')],
+        validate_constraints(
             DataFrame({'foo': [2], 'bar': ['hello']}),
+            pandas_columns=[
+                PandasColumn.integer_column('foo', min_value=0),
+                PandasColumn.string_column('bar'),
+            ],
             dataframe_constraints=[RowCountConstraint(2)],
         )
 
