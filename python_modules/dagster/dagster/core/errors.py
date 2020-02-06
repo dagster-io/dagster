@@ -246,6 +246,23 @@ class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
+class DagsterInputHydrationConfigError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occurred while executing the body of an input hydration
+    config function defined in a :class:`InputHydrationConfig <dagster.InputHydrationConfig>` during
+    input hydration of a custom type
+    '''
+
+
+class DagsterOutputMaterializationError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occurred while executing the body of an output
+    materialization function defined in a
+    :class:`OutputMaterializationConfig <dagster.OutputMaterializationConfig>` during output
+    materialization of a custom type
+    '''
+
+
 class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method
