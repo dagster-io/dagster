@@ -111,6 +111,11 @@ Instance
 
 ----
 
+.. currentmodule:: dagster.core.storage.compute_log_manager
+
+.. autoclass:: ComputeLogManager
+   :members:
+
 Scheduling
 ----------
 
