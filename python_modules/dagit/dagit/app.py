@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import uuid
+import warnings
 
 import nbformat
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -24,7 +25,6 @@ from nbconvert import HTMLExporter
 from dagster import ExecutionTargetHandle
 from dagster import __version__ as dagster_version
 from dagster import check, seven
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -177,18 +177,22 @@ def create_app(handle, instance, reloader=None):
 
     # Automatically initialize scheduler everytime Dagit loads
     scheduler_handle = context.scheduler_handle
+    scheduler = instance.scheduler
+
     if scheduler_handle:
-        if not instance.scheduler:
-            raise DagsterInvariantViolationError(
-                'You have defined ScheduleDefinitions for this repository, but have'
+        if scheduler:
+            handle = context.get_handle()
+            python_path = sys.executable
+            repository_path = handle.data.repository_yaml
+            repository = context.get_repository()
+            scheduler_handle.up(
+                python_path, repository_path, repository=repository, instance=instance
+            )
+        else:
+            warnings.warn(
+                'You have defined ScheduleDefinitions for this repository, but have '
                 'not defined a scheduler on the instance'
             )
-
-        handle = context.get_handle()
-        python_path = sys.executable
-        repository_path = handle.data.repository_yaml
-        repository = context.get_repository()
-        scheduler_handle.up(python_path, repository_path, repository=repository, instance=instance)
 
     app.add_url_rule(
         '/graphql',
