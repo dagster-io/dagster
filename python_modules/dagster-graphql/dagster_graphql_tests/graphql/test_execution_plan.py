@@ -399,9 +399,12 @@ def test_invalid_config_fetch_execute_plan(snapshot):
     assert result.data['executionPlan']['__typename'] == 'PipelineConfigValidationInvalid'
     assert len(result.data['executionPlan']['errors']) == 1
     assert (
-        result.data['executionPlan']['errors'][0]['message']
-        == 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+        'Invalid scalar at path root:solids:sum_solid:inputs:num'
+        in result.data['executionPlan']['errors'][0]['message']
     )
+    result.data['executionPlan']['errors'][0][
+        'message'
+    ] = 'Invalid scalar at path root:solids:sum_solid:inputs:num'
     snapshot.assert_match(result.data)
 
 
@@ -431,9 +434,12 @@ def test_invalid_config_execute_plan(snapshot):
     assert result.data['executePlan']['__typename'] == 'PipelineConfigValidationInvalid'
     assert len(result.data['executePlan']['errors']) == 1
     assert (
-        result.data['executePlan']['errors'][0]['message']
-        == 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+        'Invalid scalar at path root:solids:sum_solid:inputs:num'
+        in result.data['executePlan']['errors'][0]['message']
     )
+    result.data['executePlan']['errors'][0][
+        'message'
+    ] = 'Invalid scalar at path root:solids:sum_solid:inputs:num'
     snapshot.assert_match(result.data)
 
 

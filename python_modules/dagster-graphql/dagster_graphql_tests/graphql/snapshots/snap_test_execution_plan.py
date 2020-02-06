@@ -566,7 +566,7 @@ snapshots['test_invalid_config_fetch_execute_plan 1'] = {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {
-                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
             }
         ],
         'pipeline': {
@@ -580,7 +580,7 @@ snapshots['test_invalid_config_execute_plan 1'] = {
         '__typename': 'PipelineConfigValidationInvalid',
         'errors': [
             {
-                'message': 'Value at path root:solids:sum_solid:inputs:num is not valid. Expected "Path"'
+                'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
             }
         ],
         'pipeline': {

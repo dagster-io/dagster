@@ -281,8 +281,12 @@ def create_scalar_error(context, config_value):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Value {path_msg} is not valid. Expected "{type_name}"'.format(
-            path_msg=get_friendly_path_msg(context.stack), type_name=context.config_type.given_name
+        message='Invalid scalar {path_msg} value "{config_value}" of type '
+        '"{type}" is not valid for expected type "{type_name}"'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+            type_name=context.config_type.given_name,
+            config_value=config_value,
+            type=type(config_value),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
     )

@@ -192,10 +192,9 @@ def test_mix_layer_computed_mapping():
     assert 'Solid "layer_two_double_wrap" with definition "layer_two_double_wrap"' in str(
         exc_info.value
     )
-
     assert (
         'Error 1: Type failure at path "root:layer_three_wrap:config:number" on type "Int". '
-        'Value at path root:layer_three_wrap:config:number is not valid. Expected "Int"'
+        'Invalid scalar at path root:layer_three_wrap:config:number'
     ) in str(exc_info.value)
 
     result = execute_pipeline(
@@ -414,9 +413,8 @@ def test_direct_composite_descent_with_error():
     )
 
     assert (
-        '''Error 1: Type failure at path "root:layer2:config" on type "String". '''
-        '''Value at path root:layer2:config is not valid. Expected "String".'''
-        in str(exc_info.value)
+        'Error 1: Type failure at path "root:layer2:config" on type "String". Invalid scalar at '
+        'path root:layer2:config' in str(exc_info.value)
     )
 
 
