@@ -439,6 +439,8 @@ builtin types above.
 Making New Types
 ----------------
 
+.. autoclass:: DagsterType
+
 .. autofunction:: as_dagster_type
 
 .. autodecorator:: dagster_type

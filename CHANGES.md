@@ -97,6 +97,9 @@
     a custom type_check is needed, use `DagsterType`.
   - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
 
+- We no longer publish base Docker images. Please see the updated deployment docs for an example
+  Dockerfile off of which you can work.
+
 **New**
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.

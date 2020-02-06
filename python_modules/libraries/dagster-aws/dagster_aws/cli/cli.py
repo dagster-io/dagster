@@ -47,7 +47,7 @@ def get_dagster_home():
     '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
     '''
 
-    dagster_home = os.getenv('DAGSTER_HOME')
+    dagster_home = os.path.expanduser(os.getenv('DAGSTER_HOME'))
     if dagster_home is None:
         Term.fatal(
             '''DAGSTER_HOME is not set! Before continuing, set with e.g.:
@@ -60,7 +60,7 @@ You may want to add this line to your .bashrc or .zshrc file.
 
     Term.info('Found DAGSTER_HOME in environment at: %s' % dagster_home)
 
-    if not os.path.isdir(dagster_home):
+    if not os.path.isdir(os.path.expanduser(dagster_home)):
         Term.fatal('The specified DAGSTER_HOME folder does not exist! Create before continuing.')
     return dagster_home
 
@@ -169,6 +169,7 @@ def init(use_master):
     if rds_config:
         rds_config.save(dagster_home)
         click.echo(rds_config.as_table() + '\n')
+        sync_dagster_yaml(ec2_config, rds_config)
 
     click.echo(click.style(COMPLETED_HELP_TEXT, fg='green'))
 
@@ -180,7 +181,7 @@ def shell():
     cfg = EC2Config.load(dagster_home)
 
     # Lands us directly in /opt/dagster (app dir may not exist yet)
-    run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster; bash')
+    run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster; $SHELL -l')
 
 
 @main.command()

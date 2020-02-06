@@ -2,6 +2,7 @@
 
 .. toctree::
   :maxdepth: 3
+  :includehidden:
   :name: Documentation
 
   Install <sections/install/install>

@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import update_wrapper
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
@@ -40,7 +41,7 @@ class ResourceDefinition(object):
 
     def __init__(self, resource_fn, config=None, description=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config',)
+        self._config_field = check_user_facing_opt_config_param(config, 'config')
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -70,6 +71,23 @@ class ResourceDefinition(object):
             config=str,
             description=description,
         )
+
+
+class _ResourceDecoratorCallable(object):
+    def __init__(self, config=None, description=None):
+        self.config = check_user_facing_opt_config_param(config, 'config')
+        self.description = check.opt_str_param(description, 'description')
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        resource_def = ResourceDefinition(
+            resource_fn=fn, config=self.config, description=self.description,
+        )
+
+        update_wrapper(resource_def, wrapped=fn)
+
+        return resource_def
 
 
 def resource(config=None, description=None):
@@ -102,10 +120,10 @@ def resource(config=None, description=None):
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config) and not is_callable_valid_config_arg(config):
-        return ResourceDefinition(resource_fn=config)
+        return _ResourceDecoratorCallable()(config)
 
     def _wrap(resource_fn):
-        return ResourceDefinition(resource_fn, config, description)
+        return _ResourceDecoratorCallable(config=config, description=description)(resource_fn)
 
     return _wrap
 
