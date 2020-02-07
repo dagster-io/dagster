@@ -81,6 +81,13 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                 )
                 step = steps[0]
                 step_context = pipeline_context.for_step(step)
+                check.invariant(
+                    all(
+                        hasattr(step_context.resources, resource_key)
+                        for resource_key in step_context.required_resource_keys
+                    ),
+                    'expected step context to have all required resources',
+                )
 
                 with mirror_step_io(step_context):
                     # capture all of the logs for this step

@@ -166,6 +166,7 @@ def define_repository():
             pipeline_with_expectations,
             pipeline_with_list,
             required_resource_pipeline,
+            retry_resource_pipeline,
             scalar_output_pipeline,
             spew_pipeline,
             noop_pipeline,
@@ -556,3 +557,30 @@ def eventually_successful():
         return depth
 
     reset(fail(fail(fail(spawn()))))
+
+
+@resource
+def resource_a(_):
+    return 'A'
+
+
+@resource
+def resource_b(_):
+    return 'B'
+
+
+@solid(required_resource_keys={'a'})
+def start(context):
+    assert context.resources.a == 'A'
+    return 1
+
+
+@solid(required_resource_keys={'b'})
+def will_fail(context, num):
+    assert context.resources.b == 'B'
+    raise Exception('fail')
+
+
+@pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})])
+def retry_resource_pipeline():
+    will_fail(start())

@@ -190,7 +190,7 @@ class SystemPipelineExecutionContext(object):
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
-    __slots__ = ['_step', '_resources']
+    __slots__ = ['_step', '_resources', '_required_resource_keys']
 
     def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
@@ -200,10 +200,11 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
+        self._required_resource_keys = get_required_resource_keys_for_step(
+            step, pipeline_context_data.pipeline_def, pipeline_context_data.system_storage_def,
+        )
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
-            get_required_resource_keys_for_step(
-                step, pipeline_context_data.pipeline_def, pipeline_context_data.system_storage_def,
-            ),
+            self._required_resource_keys
         )
         self._log_manager = log_manager
 
@@ -229,6 +230,10 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     @property
     def resources(self):
         return self._resources
+
+    @property
+    def required_resource_keys(self):
+        return self._required_resource_keys
 
     @property
     def log(self):

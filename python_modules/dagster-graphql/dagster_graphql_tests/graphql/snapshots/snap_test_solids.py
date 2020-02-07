@@ -499,6 +499,22 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'start'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_resource_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'start'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'sum_solid'
             },
             'invocations': [
@@ -596,6 +612,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'throw_a_thing'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'will_fail'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_resource_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'will_fail'
                     }
                 }
             ]
