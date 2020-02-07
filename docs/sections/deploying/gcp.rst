@@ -59,10 +59,15 @@ passed between solids to GCS; to enable this, you need to add GCS storage to you
 
 .. code-block:: python
 
+    from dagster_gcp.gcs.resources import gcs_resource
     from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
     from dagster import ModeDefinition
 
-    prod_mode = ModeDefinition(name='prod', system_storage_defs=gcs_plus_default_storage_defs)
+    prod_mode = ModeDefinition(
+        name='prod',
+        system_storage_defs=gcs_plus_default_storage_defs,
+        resource_defs={'gcs': gcs_resource}
+    )
 
 
 Then, just add the following YAML to your pipeline config:

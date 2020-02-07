@@ -103,10 +103,15 @@ serializing data passed between solids to S3; to enable this, you need to add S3
 
 .. code-block:: python
 
+    from dagster_aws.s3.resources import s3_resource
     from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
     from dagster import ModeDefinition
 
-    prod_mode = ModeDefinition(name='prod', system_storage_defs=s3_plus_default_storage_defs)
+    prod_mode = ModeDefinition(
+        name='prod',
+        system_storage_defs=s3_plus_default_storage_defs,
+        resource_defs={'s3': s3_resource}
+    )
 
 
 Then, just add the following YAML to your pipeline config:
