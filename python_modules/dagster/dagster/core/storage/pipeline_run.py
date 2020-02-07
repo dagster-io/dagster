@@ -58,6 +58,7 @@ class PipelineRun(
     ),
     IRunConfig,
 ):
+    '''Serializable internal representation of a pipeline run, as stored in a :py:class:`RunStorage`.'''
 
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve

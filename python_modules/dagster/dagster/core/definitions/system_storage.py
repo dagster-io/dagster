@@ -13,29 +13,29 @@ class SystemStorageDefinition(
         'name is_persistent config_field system_storage_creation_fn required_resource_keys',
     )
 ):
-    '''
-    Dagster stores run metadata and intermediate data on the user's behalf.
-    The SystemStorageDefinition exists in order to configure and customize
-    those behaviors.
+    '''Defines run metadata and intermediate data storage behaviors.
 
-    Example storage definitions are the mem_system_storage in this module,
-    which stores all intermediates and run data in memory. and the fs_system_storage,
-    which stores all that data in the local filesystem.
+    Example storage definitions are the default :py:func:`mem_system_storage`, which stores all
+    intermediates and run data in memory, and :py:func:`fs_system_storage`, which stores all that
+    data in the local filesystem. By default, storage definitions can be configured on a
+    per-pipeline run basis by setting the ``storage.in_memory`` and ``storage.filesystem`` keys in
+    pipeline run configuration respectively.
 
-    In dagster_aws there is the S3SystemStorageDefinition. We anticipate having
-    system storage for every major cloud provider. And it is user customizable
-    for users with custom infrastructure needs.
+    It's possible to write additional system storage definitions, such as the
+    :py:class:`dagster_aws.S3SystemStorageDefinition`. Library authors can write system storages to
+    support additional cloud providers, and users can write custom system storages to support their
+    own infrastructure needs.
 
-    The storage definitions passed into the ModeDefinition determine the config
-    schema of the "storage" section of the environment configuration.
+    Storage definitions can be made available to pipelines by setting the ``system_storage_defs`` on
+    a :py:class:`ModeDefinition` attached to the pipeline definition. This will determine the config
+    schema of the ``storage`` key in the pipeline run configuration.
 
     Args:
         name (str): Name of the storage mode.
-        is_persistent (bool): Does storage def persist in a way that can cross process/node
-            boundaries. Execution with, for example, the multiprocess executor or within
-            the context of dagster-airflow requires a persistent storage mode.
-        config (Optional[Any]): The schema for the config. Configuration data available in
-            `init_context.system_storage_config`.
+        is_persistent (bool): Whether the storage is persistent in a way that can cross process/node
+            boundaries. Execution with, for example, the multiprocess executor, or with
+            dagster-airflow, requires a persistent storage mode.
+        config (Optional[Any]): The schema for the storage's configuration field.
             This value can be a:
 
                 - :py:class:`Field`
@@ -45,11 +45,13 @@ class SystemStorageDefinition(
                 - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
                   in the dictionary get resolved by the same rules, recursively.
 
+            Configuration data passed in this field will be made available to the
+            ``system_storage_creation_fn`` under ``init_context.system_storage_config``.
+
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
-            Called by the system. The author of the StorageSystemDefinition must provide this function,
-            which consumes the init context and then emits the SystemStorageData.
-        required_resource_keys(Set[str]):
-            The resources that this storage needs at runtime to function.
+            Called to construct the storage. This function should consume the init context and emit
+            a :py:class:`SystemStorageData`.
+        required_resource_keys(Set[str]): The resources that this storage needs at runtime to function.
     '''
 
     def __new__(
@@ -83,11 +85,13 @@ class SystemStorageData(object):
 
 
 def system_storage(required_resource_keys, name=None, is_persistent=True, config=None):
-    '''A decorator for creating a SystemStorageDefinition. The decorated function will be used as the
-    system_storage_creation_fn in a SystemStorageDefinition.
+    '''Creates a system storage definition.
+    
+    The decorated function will be passed as the ``system_storage_creation_fn`` to a
+    :py:class:`SystemStorageDefinition`.
 
     Args:
-        name (str)
+        name (str): The name of the system storage.
         is_persistent (bool): Does storage def persist in way that can cross process/node
             boundaries. Execution with, for example, the multiprocess executor or within
             the context of dagster-airflow require a persistent storage mode.

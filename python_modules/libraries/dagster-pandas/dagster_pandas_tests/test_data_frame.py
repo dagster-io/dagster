@@ -4,7 +4,7 @@ from dagster_pandas.constraints import (
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
 )
-from dagster_pandas.data_frame import create_dagster_pandas_dataframe_type
+from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
 from pandas import DataFrame
 
@@ -66,6 +66,20 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
             assert any([entry.label == 'max_pid' for entry in mock_df_output_event_metadata])
 
 
+def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
+    BasicDF = create_dagster_pandas_dataframe_type(
+        name='BasicDF',
+        columns=[
+            PandasColumn.integer_column('pid', exists=True),
+            PandasColumn.string_column('names'),
+        ],
+        event_metadata_fn=None,
+    )
+    assert isinstance(BasicDF, DagsterType)
+    basic_type_check = BasicDF.type_check(DataFrame({'pid': [1], 'names': ['foo']}))
+    assert basic_type_check.success
+
+
 def test_bad_dataframe_type_returns_bad_stuff():
     with pytest.raises(DagsterInvariantViolationError):
         BadDFBadSummaryStats = create_dagster_pandas_dataframe_type(
@@ -113,3 +127,29 @@ def test_dataframe_description_generation_multi_constraints():
         TestDataFrame.description
         == "\n### Columns\n**foo**: `int64`\n+ 0 < values < 100\n+ No Null values allowed.\n\n"
     )
+
+
+def test_execute_summary_stats_null_function():
+    assert _execute_summary_stats('foo', DataFrame(), None) == []
+
+    metadata_entries = _execute_summary_stats(
+        'foo',
+        DataFrame({'bar': [1, 2, 3]}),
+        lambda value: [EventMetadataEntry.text('baz', 'qux', 'quux')],
+    )
+    assert len(metadata_entries) == 1
+    assert metadata_entries[0].label == 'qux'
+    assert metadata_entries[0].description == 'quux'
+    assert metadata_entries[0].entry_data.text == 'baz'
+
+
+def test_execute_summary_stats_error():
+    with pytest.raises(DagsterInvariantViolationError):
+        assert _execute_summary_stats('foo', DataFrame({}), lambda value: 'jajaja')
+
+    with pytest.raises(DagsterInvariantViolationError):
+        assert _execute_summary_stats(
+            'foo',
+            DataFrame({}),
+            lambda value: [EventMetadataEntry.text('baz', 'qux', 'quux'), 'rofl'],
+        )

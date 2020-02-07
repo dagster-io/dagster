@@ -6,7 +6,9 @@ from dagster.core.definitions import ExpectationResult, Materialization, Output,
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
+    DagsterInputHydrationConfigError,
     DagsterInvariantViolationError,
+    DagsterOutputMaterializationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
@@ -193,9 +195,27 @@ def _input_values_from_intermediates_manager(step_context):
             )
 
         else:  # is from config
-            input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
-                step_context, step_input.config_data
-            )
+
+            def _generate_error_boundary_msg_for_step_input(_context, _input):
+                return lambda: '''Error occured during input hydration:
+                input name: "{input}"
+                step key: "{key}"
+                solid invocation: "{solid}"
+                solid definition: "{solid_def}"
+                '''.format(
+                    input=_input.name,
+                    key=_context.step.key,
+                    solid_def=_context.solid_def.name,
+                    solid=_context.solid.name,
+                )
+
+            with user_code_error_boundary(
+                DagsterInputHydrationConfigError,
+                msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
+            ):
+                input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
+                    step_context, step_input.config_data
+                )
         input_values[step_input.name] = input_value
 
     return input_values
@@ -592,9 +612,23 @@ def _create_output_materializations(step_context, output_name, value):
             config_output_name, output_spec = list(output_spec.items())[0]
             if config_output_name == output_name:
                 step_output = step.step_output_named(output_name)
-                materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
-                    step_context, output_spec, value
-                )
+                with user_code_error_boundary(
+                    DagsterOutputMaterializationError,
+                    msg_fn=lambda: '''Error occured during output materialization:
+                    output name: "{output_name}"
+                    step key: "{key}"
+                    solid invocation: "{solid}"
+                    solid definition: "{solid_def}"
+                    '''.format(
+                        output_name=output_name,
+                        key=step_context.step.key,
+                        solid_def=step_context.solid_def.name,
+                        solid=step_context.solid.name,
+                    ),
+                ):
+                    materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
+                        step_context, output_spec, value
+                    )
 
                 if not isinstance(materialization, Materialization):
                     raise DagsterInvariantViolationError(

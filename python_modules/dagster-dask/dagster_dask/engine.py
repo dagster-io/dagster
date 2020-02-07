@@ -61,8 +61,8 @@ class DaskEngine(Engine):  # pylint: disable=no-init
                 'Must use persistent DagsterInstance for non-local Dask execution',
             )
             check.invariant(
-                storage.get('s3'),
-                'Must use S3 storage with non-local Dask address {dask_address}'.format(
+                storage.get('s3') or storage.get('gcs'),
+                'Must use S3 or GCS storage with non-local Dask address {dask_address}'.format(
                     dask_address=dask_config.address
                 ),
             )

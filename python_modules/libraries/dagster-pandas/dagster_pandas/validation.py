@@ -45,6 +45,13 @@ class PandasColumn:
         return constraints
 
     @classmethod
+    def exists(cls, name, exists=False, unique=False):
+        return cls(
+            name=check.str_param(name, 'name'),
+            constraints=cls.add_configurable_constraints([], exists=exists, unique=unique),
+        )
+
+    @classmethod
     def boolean_column(cls, name, exists=False, unique=False):
         return cls(
             name=check.str_param(name, 'name'),
@@ -134,17 +141,18 @@ class PandasColumn:
         )
 
 
-def validate_collection_schema(collection_schema, dataframe, dataframe_constraints=None):
-    collection_schema = check.list_param(
-        collection_schema, 'collection_schema', of_type=PandasColumn
-    )
+def validate_constraints(dataframe, pandas_columns=None, dataframe_constraints=None):
     dataframe = check.inst_param(dataframe, 'dataframe', DataFrame)
+    pandas_columns = check.opt_list_param(
+        pandas_columns, 'column_constraints', of_type=PandasColumn
+    )
     dataframe_constraints = check.opt_list_param(
         dataframe_constraints, 'dataframe_constraints', of_type=DataFrameConstraint
     )
 
-    for column in collection_schema:
-        column.validate(dataframe)
+    if pandas_columns:
+        for column in pandas_columns:
+            column.validate(dataframe)
 
     if dataframe_constraints:
         for dataframe_constraint in dataframe_constraints:
