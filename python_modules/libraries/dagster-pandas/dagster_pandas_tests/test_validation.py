@@ -120,9 +120,9 @@ def test_datetime_column_composition(composer, composer_args, expected_constrain
     assert has_constraints(column, expected_constraints)
 
     # Test non nullable constraint flag
-    exists_included_constraints = expected_constraints + [NonNullableColumnConstraint]
-    non_nullable_column = composer('foo', *composer_args, exists=True)
-    assert has_constraints(non_nullable_column, exists_included_constraints)
+    non_nullable_included_constraints = expected_constraints + [NonNullableColumnConstraint]
+    non_nullable_column = composer('foo', *composer_args, non_nullable=True)
+    assert has_constraints(non_nullable_column, non_nullable_included_constraints)
 
     # Test unique constraint flag
     distinct_included_constraints = expected_constraints + [UniqueColumnConstraint]

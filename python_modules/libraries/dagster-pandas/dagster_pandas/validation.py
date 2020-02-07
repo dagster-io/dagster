@@ -12,23 +12,24 @@ from pandas import DataFrame, Timestamp
 
 from dagster import check
 
-_BASE_CONSTRAINTS = [
-    ColumnExistsConstraint(),
-]
-
-_CONFIGURABLE_CONSTRAINTS = {
-    'exists': NonNullableColumnConstraint,
-    'unique': UniqueColumnConstraint,
-}
-
-
 PANDAS_NUMERIC_TYPES = {'int64', 'float'}
+
+
+def _construct_keyword_constraints(non_nullable, unique):
+    non_nullable = check.bool_param(non_nullable, 'exists')
+    unique = check.bool_param(unique, 'unique')
+    constraints = []
+    if non_nullable:
+        constraints.append(NonNullableColumnConstraint())
+    if unique:
+        constraints.append(UniqueColumnConstraint())
+    return constraints
 
 
 class PandasColumn:
     def __init__(self, name, constraints=None):
         self.name = check.str_param(name, 'name')
-        self.constraints = _BASE_CONSTRAINTS + check.opt_list_param(
+        self.constraints = [ColumnExistsConstraint()] + check.opt_list_param(
             constraints, 'constraints', of_type=Constraint
         )
 
@@ -37,107 +38,88 @@ class PandasColumn:
             constraint.validate(dataframe, self.name)
 
     @staticmethod
-    def add_configurable_constraints(constraints, **kwargs):
-        for configurable_constraint_flag, constraint in _CONFIGURABLE_CONSTRAINTS.items():
-            apply_constraint = kwargs.get(configurable_constraint_flag, False)
-            if apply_constraint:
-                constraints.append(constraint())
-        return constraints
-
-    @classmethod
-    def exists(cls, name, exists=False, unique=False):
-        return cls(
+    def exists(name, non_nullable=False, unique=False):
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints([], exists=exists, unique=unique),
+            constraints=_construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
-    @classmethod
-    def boolean_column(cls, name, exists=False, unique=False):
-        return cls(
+    @staticmethod
+    def boolean_column(name, non_nullable=False, unique=False):
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints(
-                [ColumnTypeConstraint('bool')], exists=exists, unique=unique,
-            ),
+            constraints=[ColumnTypeConstraint('bool')]
+            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
-    @classmethod
+    @staticmethod
     def numeric_column(
-        cls,
         name,
         expected_dtypes,
         min_value=-float('inf'),
         max_value=float('inf'),
-        exists=False,
+        non_nullable=False,
         unique=False,
     ):
-        return cls(
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints(
-                [
-                    ColumnTypeConstraint(expected_dtypes),
-                    InRangeColumnConstraint(
-                        check.numeric_param(min_value, 'min_value'),
-                        check.numeric_param(max_value, 'max_value'),
-                    ),
-                ],
-                exists=exists,
-                unique=unique,
-            ),
+            constraints=[
+                ColumnTypeConstraint(expected_dtypes),
+                InRangeColumnConstraint(
+                    check.numeric_param(min_value, 'min_value'),
+                    check.numeric_param(max_value, 'max_value'),
+                ),
+            ]
+            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
-    @classmethod
+    @staticmethod
     def integer_column(
-        cls, name, min_value=-float('inf'), max_value=float('inf'), exists=False, unique=False
+        name, min_value=-float('inf'), max_value=float('inf'), non_nullable=False, unique=False
     ):
-        return cls.numeric_column(name, 'int64', min_value, max_value, exists=exists, unique=unique)
-
-    @classmethod
-    def float_column(
-        cls, name, min_value=-float('inf'), max_value=float('inf'), exists=False, unique=False
-    ):
-        return cls.numeric_column(
-            name, 'float64', min_value, max_value, exists=exists, unique=unique
+        return PandasColumn.numeric_column(
+            name, 'int64', min_value, max_value, non_nullable=non_nullable, unique=unique
         )
 
-    @classmethod
+    @staticmethod
+    def float_column(
+        name, min_value=-float('inf'), max_value=float('inf'), non_nullable=False, unique=False
+    ):
+        return PandasColumn.numeric_column(
+            name, 'float64', min_value, max_value, non_nullable=non_nullable, unique=unique
+        )
+
+    @staticmethod
     def datetime_column(
-        cls,
         name,
         min_datetime=Timestamp.min,
         max_datetime=Timestamp.max,
-        exists=False,
+        non_nullable=False,
         unique=False,
     ):
-        return cls(
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints(
-                [
-                    ColumnTypeConstraint({'datetime64[ns]'}),
-                    InRangeColumnConstraint(min_datetime, max_datetime),
-                ],
-                exists=exists,
-                unique=unique,
-            ),
+            constraints=[
+                ColumnTypeConstraint({'datetime64[ns]'}),
+                InRangeColumnConstraint(min_datetime, max_datetime),
+            ]
+            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
-    @classmethod
-    def string_column(cls, name, exists=False, unique=False):
-        return cls(
+    @staticmethod
+    def string_column(name, non_nullable=False, unique=False):
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints(
-                [ColumnTypeConstraint('object')], exists=exists, unique=unique
-            ),
+            constraints=[ColumnTypeConstraint('object')]
+            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
-    @classmethod
-    def categorical_column(cls, name, categories, of_types='object', exists=False, unique=False):
-        return cls(
+    @staticmethod
+    def categorical_column(name, categories, of_types='object', non_nullable=False, unique=False):
+        return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=cls.add_configurable_constraints(
-                [ColumnTypeConstraint(of_types), CategoricalColumnConstraint(categories)],
-                exists=exists,
-                unique=unique,
-            ),
+            constraints=[ColumnTypeConstraint(of_types), CategoricalColumnConstraint(categories)]
+            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
         )
 
 
