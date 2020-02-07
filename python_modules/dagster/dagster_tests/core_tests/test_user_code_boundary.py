@@ -5,7 +5,7 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     String,
-    as_dagster_type,
+    dagster_type,
     execute_pipeline,
     input_hydration_config,
     output_materialization_config,
@@ -36,18 +36,15 @@ def test_user_error_boundary_solid_compute():
 
 
 def test_user_error_boundary_input_hydration():
-    class CustomType(str):
-        pass
-
     @input_hydration_config(String)
     def InputHydration(context, hello):
         raise UserError()
 
-    CustomDagsterType = as_dagster_type(
-        CustomType, name='CustomType', input_hydration_config=InputHydration
-    )
+    @dagster_type(input_hydration_config=InputHydration)
+    class CustomType(str):
+        pass
 
-    @solid(input_defs=[InputDefinition('custom_type', CustomDagsterType)])
+    @solid(input_defs=[InputDefinition('custom_type', CustomType)])
     def input_hydration_solid(context, custom_type):
         context.log.info(custom_type)
 

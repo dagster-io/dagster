@@ -10,8 +10,8 @@ from dagster import (
     ResourceDefinition,
     RunConfig,
     String,
-    as_dagster_type,
     composite_solid,
+    dagster_type,
     execute_pipeline,
     input_hydration_config,
     output_materialization_config,
@@ -293,9 +293,6 @@ def test_custom_type_with_resource_dependent_hydration():
         def resource_a(_):
             yield 'A'
 
-        class CustomType(str):
-            pass
-
         @input_hydration_config(
             String, required_resource_keys={'a'} if should_require_resources else set()
         )
@@ -303,11 +300,11 @@ def test_custom_type_with_resource_dependent_hydration():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        CustomDagsterType = as_dagster_type(
-            CustomType, name='CustomType', input_hydration_config=InputHydration
-        )
+        @dagster_type(input_hydration_config=InputHydration)
+        class CustomType(str):
+            pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomDagsterType)])
+        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
@@ -338,23 +335,20 @@ def test_resource_dependent_hydration_with_selective_init():
             resources_initted['a'] = True
             yield 'A'
 
-        class CustomType(str):
-            pass
-
         @input_hydration_config(String, required_resource_keys={'a'})
         def InputHydration(context, hello):
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        CustomDagsterType = as_dagster_type(
-            CustomType, name='CustomType', input_hydration_config=InputHydration
-        )
+        @dagster_type(input_hydration_config=InputHydration)
+        class CustomType(str):
+            pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomDagsterType)])
+        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
-        @solid(output_defs=[OutputDefinition(CustomDagsterType)])
+        @solid(output_defs=[OutputDefinition(CustomType)])
         def source_custom_type(_):
             return CustomType('from solid')
 
