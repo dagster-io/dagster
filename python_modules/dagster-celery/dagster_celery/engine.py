@@ -80,6 +80,7 @@ class CeleryEngine(Engine):
             }
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
+        step_success = {}
         step_errors = {}
         completed_steps = set({})  # Set[step_key]
         active_execution = execution_plan.start(sort_key_fn=priority_for_step)
@@ -103,14 +104,36 @@ class CeleryEngine(Engine):
                         )
                         stopping = True
                     for step_event in step_events:
-                        yield deserialize_json_to_dagster_namedtuple(step_event)
+                        event = deserialize_json_to_dagster_namedtuple(step_event)
+                        yield event
+                        if event.is_step_success:
+                            step_success[step_key] = True
+                        elif event.is_step_failure:
+                            step_success[step_key] = False
+
                     results_to_pop.append(step_key)
                     completed_steps.add(step_key)
 
             for step_key in results_to_pop:
                 if step_key in step_results:
                     del step_results[step_key]
-                    active_execution.mark_complete(step_key)
+                    was_success = step_success.get(step_key)
+                    if was_success == True:
+                        active_execution.mark_success(step_key)
+                    elif was_success == False:
+                        active_execution.mark_failed(step_key)
+                    else:
+                        # check errors list?
+                        pipeline_context.log.error(
+                            'Step {key} finished without success or failure event, assuming failure.'.format(
+                                key=step_key
+                            )
+                        )
+                        active_execution.mark_failed(step_key)
+
+            # process skips from failures or uncovered inputs
+            for event in active_execution.skipped_step_events_iterator(pipeline_context):
+                yield event
 
             # dont add any new steps if we are stopping
             if stopping:
@@ -121,7 +144,7 @@ class CeleryEngine(Engine):
             # which they are scheduled (and the following m-n steps will be executed in priority
             # order, provided that it takes longer to execute a step than to schedule it). The test
             # case has m >> n to exhibit this behavior in the absence of this sort step.
-            for step in active_execution.get_available_steps():
+            for step in active_execution.get_steps_to_execute():
                 try:
                     step_results[step.key] = task_signatures[step.key].apply_async(
                         **apply_kwargs[step.key]

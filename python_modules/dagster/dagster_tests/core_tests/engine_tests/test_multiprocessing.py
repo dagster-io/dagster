@@ -7,7 +7,6 @@ from dagster import (
     InputDefinition,
     Nothing,
     OutputDefinition,
-    PipelineDefinition,
     PresetDefinition,
     String,
     execute_pipeline,
@@ -91,10 +90,18 @@ def define_diamond_pipeline():
 
 def define_error_pipeline():
     @lambda_solid
+    def should_never_execute(_x):
+        assert False  # this should never execute
+
+    @lambda_solid
     def throw_error():
         raise Exception('bad programmer')
 
-    return PipelineDefinition(name='error_pipeline', solid_defs=[throw_error])
+    @pipeline
+    def error_pipeline():
+        should_never_execute(throw_error())
+
+    return error_pipeline
 
 
 def test_error_pipeline():

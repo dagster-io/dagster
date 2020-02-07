@@ -68,14 +68,13 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
             ):
                 yield event
 
-            failed_or_skipped_steps = set()
-
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             active_execution = execution_plan.start()
             while not active_execution.is_complete:
-                steps = active_execution.get_available_steps(limit=1)
+
+                steps = active_execution.get_steps_to_execute(limit=1)
                 check.invariant(
                     len(steps) == 1, 'Invariant Violation: expected step to be available to execute'
                 )
@@ -91,24 +90,6 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
 
                 with mirror_step_io(step_context):
                     # capture all of the logs for this step
-
-                    failed_inputs = []
-                    for step_input in step.step_inputs:
-                        failed_inputs.extend(
-                            failed_or_skipped_steps.intersection(step_input.dependency_keys)
-                        )
-
-                    if failed_inputs:
-                        step_context.log.info(
-                            (
-                                'Dependencies for step {step} failed: {failed_inputs}. Not executing.'
-                            ).format(step=step.key, failed_inputs=failed_inputs)
-                        )
-                        failed_or_skipped_steps.add(step.key)
-                        yield DagsterEvent.step_skipped_event(step_context)
-                        active_execution.mark_complete(step.key)
-                        continue
-
                     uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
                         step_context, step
                     )
@@ -123,21 +104,37 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                                 'inputs: {uncovered_inputs}'
                             ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                         )
-                        failed_or_skipped_steps.add(step.key)
                         yield DagsterEvent.step_skipped_event(step_context)
-                        active_execution.mark_complete(step.key)
+                        active_execution.mark_skipped(step.key)
                         continue
 
+                    step_success = None
                     for step_event in check.generator(
                         dagster_event_sequence_for_step(step_context)
                     ):
                         check.inst(step_event, DagsterEvent)
-                        if step_event.is_step_failure:
-                            failed_or_skipped_steps.add(step.key)
-
                         yield step_event
 
-                    active_execution.mark_complete(step.key)
+                        if step_event.is_step_failure:
+                            step_success = False
+                        elif step_event.is_step_success:
+                            step_success = True
+
+                    if step_success == True:
+                        active_execution.mark_success(step.key)
+                    elif step_success == False:
+                        active_execution.mark_failed(step.key)
+                    else:
+                        pipeline_context.log.error(
+                            'Step {key} finished without success or failure event, assuming failure.'.format(
+                                key=step.key
+                            )
+                        )
+                        active_execution.mark_failed(step.key)
+
+                # process skips from failures or uncovered inputs
+                for event in active_execution.skipped_step_events_iterator(pipeline_context):
+                    yield event
 
         yield DagsterEvent.engine_event(
             pipeline_context,
