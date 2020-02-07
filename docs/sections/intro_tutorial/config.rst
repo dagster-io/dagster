@@ -5,7 +5,7 @@ Solids often depend in predictable ways on features of the external world or the
 they're invoked. For example, consider an extended version of our csv-reading solid that implements
 more of the options available in the underlying Python API:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_bad_1.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config_bad_1.py
    :lines: 6-26
    :linenos:
    :lineno-start: 6
@@ -21,7 +21,7 @@ we might have dozens or hundreds of parameters like these.
 But hoisting all of these parameters into the signature of the solid function as inputs isn't the
 right answer either:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_bad_2.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config_bad_2.py
    :lines: 6-36
    :linenos:
    :lineno-start: 6
@@ -40,7 +40,7 @@ values.
 
 The solution is to define a config schema for our solid:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config.py
    :linenos:
    :lines: 1-102
    :emphasize-lines: 15, 33-41, 87
@@ -78,7 +78,7 @@ You can see that we've added a new section to the solid config. In addition to t
 section, which we'll still use to set the ``csv_path`` input, we now have a ``config`` section,
 where we can set values defined in the ``config`` argument to :py:func:`@solid <dagster.solid>`.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/config_env_bad.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config_env_bad.yaml
    :linenos:
    :language: YAML
    :caption: config_env_bad.yaml

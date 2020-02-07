@@ -9,7 +9,7 @@ where some solids conditionally execute based on the presence of an upstream out
 Suppose we're interested in splitting hot and cold cereals into separate datasets and processing
 them separately, based on config.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
    :lineno-start: 31
    :caption: multiple_outputs.py
@@ -23,7 +23,7 @@ corresponds to one of these declared outputs.
 
 We'll define two downstream solids and hook them up to the multiple outputs from ``split_cereals``.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
    :lineno-start: 58
    :caption: multiple_outputs.py
@@ -66,7 +66,7 @@ interfaces with common third party tools.)
 Let's replace ``sort_hot_cereals_by_calories`` and ``sort_cold_cereals_by_calories`` by two aliases
 of the same library solid:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
    :linenos:
    :lineno-start: 59
    :lines: 59-76
@@ -82,7 +82,7 @@ within this pipeline.
 
 Configuring solids also uses the aliases, as in the following YAML:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/reusable_solids.yaml
    :linenos:
    :emphasize-lines: 6, 8
    :caption: reusable_solids.yaml

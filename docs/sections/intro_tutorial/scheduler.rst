@@ -19,7 +19,7 @@ You must also ensure that ``cron`` is installed on the machine you're running th
 Pipeline
 ^^^^^^^^
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
    :lines: 1-34
    :caption: scheduler.py
@@ -56,7 +56,7 @@ pipeline will run, such as its config.
 We wrap the schedule definition in a function decorated with
 :py:class:`@schedules <dagster.schedules>`:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/scheduler.py
    :linenos:
    :lines: 36-45
    :lineno-start: 38
@@ -65,7 +65,7 @@ We wrap the schedule definition in a function decorated with
 To complete the picture, we'll need to extend the ``repository.yaml`` structure we've met before
 with a new key, ``scheduler``.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/scheduler.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/scheduler.yaml
    :linenos:
    :caption: scheduler.yaml
 

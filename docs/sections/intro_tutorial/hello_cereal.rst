@@ -13,7 +13,7 @@ Or, if you've cloned the dagster git repository, you'll find this dataset at
 
 To get the flavor of this dataset, let's look at the header and the first five rows:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/cereal.csv
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/cereal.csv
    :linenos:
    :lines: 1-6
    :caption: cereals.csv
@@ -34,7 +34,7 @@ annotating ordinary Python functions with the :py:func:`@solid <solid>` decorato
 The logic in our first solid is very straightforward: it just reads in the csv from a hardcoded path
 and logs the number of rows it finds.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
    :lines: 1-18
    :caption: hello_cereal.py
@@ -54,7 +54,7 @@ A pipeline is a set of solids arranged into a DAG (or
 You'll typically define pipelines by annotating ordinary Python functions with the
 :py:func:`@pipeline <pipeline>` decorator.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
    :lineno-start: 21
    :lines: 21-23
@@ -152,7 +152,7 @@ Using the Python API to execute a pipeline
 If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI
 at all. Just add a few lines to ``hello_cereal.py``:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
    :lineno-start: 26
    :lines: 26-28
@@ -180,7 +180,7 @@ These functions synchronously execute a pipeline or solid and return results obj
 investigate, in detail, the success or failure of execution, the outputs produced by solids, and
 (as we'll see later) other events associated with execution.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal.py
    :linenos:
    :caption: hello_cereal.py
    :lineno-start: 31

@@ -18,7 +18,7 @@ Dagster provides the concept of a repository, a collection of pipelines that the
 target as a whole. Repositories are declared using the
 :py:func:`RepositoryDefinition <dagster.RepositoryDefinition>` API as follows:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repos.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/repos.py
    :linenos:
    :lines: 10-24
    :lineno-start: 10
@@ -43,7 +43,7 @@ let's create a declarative config file with this information to make using the c
 easier. Save this file as ``repository.yaml``. This is the default name for a repository config file,
 although you can tell the CLI tools to use any file you like with the ``-y`` flag.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/repository.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/repository.yaml
    :language: YAML
    :caption: repository.yaml
 

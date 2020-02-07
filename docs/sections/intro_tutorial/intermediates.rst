@@ -16,7 +16,7 @@ expensive upstream computations.
 
 To turn intermediate storage on, just set another key in the pipeline config:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/intermediates.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/intermediates.yaml
    :linenos:
    :emphasize-lines: 6-7
    :caption: intermediates.yaml
@@ -36,7 +36,7 @@ Our toy ``LessSimpleDataFrame`` is, of course, pickleable, but supposing it was 
 custom :py:class:`SerializationStrategy <dagster.SerializationStrategy>` on it to tell Dagster how
 to store intermediates of this type.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/serialization_strategy.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/serialization_strategy.py
    :lines: 12-36
    :linenos:
    :lineno-start: 12
@@ -63,14 +63,14 @@ actively debugging them.
 You can also manually specify intermediates from previous runs as inputs to solids. Recall the
 syntax we used to set input values using the config system:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
    :language: YAML
    :linenos:
    :caption: inputs_env.yaml
 
 Instead of setting the key ``value`` (i.e., providing a ), we can also set ``pickle``, as follows:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/reexecution_env.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/reexecution_env.yaml
    :language: YAML
    :linenos:
    :caption: reexecution_env.yaml

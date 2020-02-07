@@ -16,7 +16,7 @@ they aren't used to define the data dependencies that structure a pipeline's DAG
 Suppose that we rewrite our ``sort_calories`` solid so that it saves the newly sorted data frame to
 disk.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/materializations.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/materializations.py
    :lines: 23-43
    :linenos:
    :lineno-start: 23
@@ -26,7 +26,7 @@ We've taken the basic precaution of ensuring that the saved csv file has a diffe
 each run of the pipeline. But there's no way for Dagit to know about this persistent artifact.
 So we'll add the following lines:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/materializations.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/materializations.py
    :lines: 23-53
    :linenos:
    :lineno-start: 23
@@ -56,7 +56,7 @@ Suppose we would like to be able to configure outputs of our toy custom type, th
 (This is a reasonable idea, since .csv files are human-readable and manipulable by a wide variety
 of third party tools, while pickle is a binary format.)
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/output_materialization.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.py
    :lines: 29-64
    :linenos:
    :lineno-start: 29
@@ -64,7 +64,7 @@ of third party tools, while pickle is a binary format.)
 
 We set the output materialization config on the type:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/output_materialization.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.py
    :lines: 67-74
    :linenos:
    :lineno-start: 67
@@ -73,7 +73,7 @@ We set the output materialization config on the type:
 
 Now we can tell Dagster to materialize intermediate outputs of this type by providing config:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/output_materialization.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.yaml
    :linenos:
    :lines: 6-10
    :lineno-start: 6

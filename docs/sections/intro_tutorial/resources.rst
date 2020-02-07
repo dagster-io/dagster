@@ -18,7 +18,7 @@ This grossly understates the nutritional difference between our different cereal
 
 Let's transform our dataset and then store it in a normalized table in the warehouse:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/resources.py
     :caption: resources.py
     :linenos:
     :lineno-start: 57
@@ -41,7 +41,7 @@ resource-specific config. (Unlike the contexts we've seen so far, which are inst
 :py:class:`SystemComputeExecutionContext <dagster.SystemComputeExecutionContext>`, this context is
 an instance of :py:class:`InitResourceContext <dagster.InitResourceContext>`.)
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/resources.py
     :caption: resources.py
     :linenos:
     :lineno-start: 16
@@ -52,7 +52,7 @@ The last thing we need to do is to attach the resource to our pipeline, so that 
 initialized when the pipeline run begins and made available to our solid logic as
 ``context.resources.warehouse``.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/resources.py
     :caption: resources.py
     :linenos:
     :lineno-start: 83
@@ -67,7 +67,7 @@ will take the place of the ``default`` mode).
 
 We can put it all together with the following config:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/resources.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/resources.yaml
     :caption: resources.yaml
     :language: YAML
     :linenos:
@@ -85,7 +85,7 @@ pipeline's dependency on this resource. Dagster also provides a way for solids t
 their resource requirements, to make it easier to keep track of which resources need to be
 provided for a pipeline.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/required_resources.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/required_resources.py
     :caption: required_resources.py
     :linenos:
     :lineno-start: 55
@@ -109,7 +109,7 @@ APIs of the resources agree, and the fundamental operations they expose are test
 environment, we can test business logic independent of environments that may be very costly or
 difficult to test against.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/modes.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
    :lines: 74-83
    :linenos:
    :lineno-start: 74
@@ -119,7 +119,7 @@ Even if you're not familiar with SQLAlchemy, it's enough to note that this is a 
 implementation of the ``warehouse`` resource. To make this implementation available to Dagster, we
 attach it to a :py:class:`ModeDefinition <dagster.ModeDefinition>`.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/modes.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
    :lines: 126-141
    :linenos:
    :lineno-start: 126
@@ -135,7 +135,7 @@ From the command line, we can set ``-d`` or ``--mode`` and select the name of th
 
 From the Python API, we can use the :py:class:`RunConfig <dagster.RunConfig>`:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/modes.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
    :lines: 151-155
    :linenos:
    :lineno-start: 151
@@ -160,7 +160,7 @@ different environments, or want to pull database credentials from different envi
 
 Dagster calls this a config preset:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/presets.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/presets.py
    :lines: 127-166
    :linenos:
    :lineno-start: 127
@@ -187,7 +187,7 @@ From the CLI, use ``-p`` or ``--preset``:
 
 From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute_pipeline_with_preset>`:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/presets.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/presets.py
    :lines: 171
    :dedent: 4
 

@@ -11,7 +11,7 @@ But what about when you want to define your own types?
 
 Let's look back at our simple ``read_csv`` solid.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_typed.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_typed.py
    :lines: 6-12
    :caption: inputs_typed.py
    :linenos:
@@ -45,7 +45,7 @@ receive a data frame.
 
 To do this, we'll use the :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types.py
    :lines: 3-14
    :linenos:
    :lineno-start: 3
@@ -53,7 +53,7 @@ To do this, we'll use the :py:func:`@usable_as_dagster_type <dagster.dagster_typ
 
 Now we can annotate the rest of our pipeline with our new type:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types.py
    :lines: 17-43
    :emphasize-lines: 2, 7, 11
    :linenos:
@@ -87,7 +87,7 @@ each of these OrderedDicts to have the same fields, in the same order.
 The :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator lets us specify custom type checks
 like this.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
    :lines: 6-29
    :linenos:
    :lineno-start: 6
@@ -97,7 +97,7 @@ like this.
 Now, if our solid logic fails to return the right type, we'll see a type check failure. Let's
 replace our ``read_csv`` solid with the following bad logic:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
    :lines: 32-38
    :linenos:
    :lineno-start: 32
@@ -122,7 +122,7 @@ Providing input values for custom types in config
 We saw earlier how, when a solid doesn't receive all of its inputs from other solids further
 upstream in the pipeline, we can specify its input values in config:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
    :language: YAML
    :linenos:
    :caption: inputs_env.yaml
@@ -139,7 +139,7 @@ a general purpose ``read_csv`` solid.
 
 What we want to be able to do is write:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_type_input.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_type_input.yaml
    :language: YAML
    :linenos:
    :caption: custom_type_input.yaml
@@ -148,7 +148,7 @@ In order for the Dagster machinery to be able to decode the config value ``{'csv
 into an input of the correct ``LessSimpleDataFrame`` value, we need to write what we call an
 input hydration config.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
    :lines: 31-37
    :linenos:
    :lineno-start: 31
@@ -168,7 +168,7 @@ other formats and sources, and might have a selector with fields like ``parquet`
 
 Then insert this into the original declaration:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
    :lines: 40-47
    :emphasize-lines: 5
    :linenos:
@@ -178,7 +178,7 @@ Then insert this into the original declaration:
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
    :lines: 73-79
    :linenos:
    :lineno-start: 73
@@ -192,7 +192,7 @@ are doing what you expect them to. Dagster includes a utility function,
 :py:func:`check_dagster_type <dagster.check_dagster_type>`, that lets you type check any Dagster
 type against any value.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_test.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_test.py
    :lines: 97-108
    :linenos:
    :lineno-start: 97
@@ -213,7 +213,7 @@ object that contains metadata about the success or failure of the type check.
 
 Let's see how to use this to emit some summary statistics about our DataFrame type:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_4.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_4.py
    :lines: 17-69
    :linenos:
    :lineno-start: 17
@@ -254,7 +254,7 @@ process in the world that generates your data will shift (making some of your ex
 To support this kind of assertion, Dagster includes support for expressing your expectations about
 data in solid logic.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_5.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_5.py
    :lines: 93-135
    :linenos:
    :lineno-start: 93

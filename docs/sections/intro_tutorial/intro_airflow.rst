@@ -30,7 +30,7 @@ Scaffolding your pipeline for Airflow
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We'll use our familiar, simple demo pipeline:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/airflow.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/airflow.py
    :linenos:
    :caption: airflow.py
 
@@ -46,7 +46,7 @@ default, this tool will write the Airflow-compatible DAG scaffold out to ``$AIRF
 
 Let's take a look at the generated file:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
    :linenos:
    :caption: hello_cereal_pipeline.py
 

@@ -14,7 +14,7 @@ As an example, let's compose two instances of a complex, general-purpose ``read_
 with some domain-specific logic for the specific purpose of joining our cereal dataset with a
 lookup table providing human-readable names for the cereal manufacturers.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composite_solids.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/composite_solids.py
    :linenos:
    :lines: 126-130
    :lineno-start: 126
@@ -38,7 +38,7 @@ composite solid as a whole.
 
 Config for the individual solids making up the composite is nested, as follows:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/composite_solids.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/composite_solids.yaml
    :linenos:
    :language: YAML
    :caption: composite_solids.yaml

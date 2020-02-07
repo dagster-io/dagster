@@ -5,7 +5,7 @@ Parametrizing solids with inputs
 
 So far, we've only seen solids whose behavior is the same every time they're run:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/serial_pipeline.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/serial_pipeline.py
    :lines: 6-15
    :linenos:
    :lineno-start: 6
@@ -15,7 +15,7 @@ In general, though, rather than relying on hardcoded values like ``dataset_path`
 able to parametrize our solid logic. Appropriately parameterized solids are more testable, and
 also more reusable. Consider the following more generic solid:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs.py
    :lines: 6-12
    :linenos:
    :lineno-start: 6
@@ -28,7 +28,7 @@ test csv file. And we can use the output of another upstream solid to determine 
 
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs.py
    :lines: 1-36
    :linenos:
    :emphasize-lines: 36
@@ -54,7 +54,7 @@ This dict contains all of the user-provided configuration with which to execute 
 it can have :ref:`a lot of sections <config_schema>`, but we'll only use one of them here:
 per-solid configuration, which is specified under the key ``solids``:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
     :lineno-start: 40
     :lines: 40-44
@@ -67,7 +67,7 @@ that we can specify the value of the input ``csv_path``.
 
 Now you can pass this environment dict to :py:func:`execute_pipeline`:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs.py
     :linenos:
     :lines: 45-47
     :dedent: 4
@@ -82,7 +82,7 @@ When executing pipelines with the dagster CLI, we'll need to provide the environ
 config file. We use YAML for the file-based representation of an environment dict, but the values
 are the same as before:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_env.yaml
    :language: YAML
    :linenos:
    :caption: inputs_env.yaml
@@ -152,7 +152,7 @@ For example, we may want to test ``sort_by_calories`` on a controlled data set w
 most and least caloric cereals in advance, but without having to flow its input from an upstream
 solid implementing a data ingest process.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/test_inputs.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/test_inputs.py
    :lines: 9-22
    :lineno-start: 9
    :linenos:
@@ -205,7 +205,7 @@ any errors in the config won't be surfaced until the pipeline is executed.
 
 For example, when we execute our pipeline with this config, it'll fail at runtime:
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yaml
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_env_bad.yaml
    :language: YAML
    :linenos:
    :caption: inputs_env_bad.yaml
@@ -226,7 +226,7 @@ make the inputs typed.
 A user can apply types to inputs and outputs using Python 3's type annotation syntax. In this case,
 we just want to type the input as the built-in ``str``.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/inputs_typed.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_typed.py
    :lines: 6-12
    :emphasize-lines: 2
    :linenos:
