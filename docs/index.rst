@@ -10,6 +10,6 @@
   Learn <sections/learn/index>
   Demos <sections/demos/index>
   API Docs <sections/api/index>
-  Reference <sections/reference/index>
+  Concepts <sections/concepts/index>
   Deploying <sections/deploying/index>
   Community <sections/community/index>

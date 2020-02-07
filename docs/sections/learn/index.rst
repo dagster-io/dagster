@@ -13,5 +13,4 @@ data engineering and data science workflows.
 .. toctree::
   :maxdepth: 2
 
-  principles
   guides/index

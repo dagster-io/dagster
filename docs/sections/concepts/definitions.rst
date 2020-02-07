@@ -1,12 +1,5 @@
-Reference
----------
-As you get started with Dagster, you'll find that there are a number of important concepts
-underpinning the system. Some of these concepts, like DAGs, will undoubtably be familiar
-if you've previously worked with tools like Airflow. However, Dagster has some important differences
-from other workflow systems to facilitate operating at a higher level of abstraction.
-
 Solid
-^^^^^
+-----
 
 .. image:: solid.png
     :scale: 40 %
@@ -34,7 +27,7 @@ You can check out `the solid guide <../learn/guides/solid/solid.html>`__ for a d
 solids and how they can be used.
 
 Compute Function
-^^^^^^^^^^^^^^^^
+----------------
 
 .. image:: compute_fn.png
     :scale: 40 %
@@ -46,7 +39,7 @@ solid is invoked by the Dagster engine.
 
 
 Outputs
-^^^^^^^
+-------
 
 .. image:: outputs.png
     :scale: 40 %
@@ -81,7 +74,7 @@ to just return a value instead of yielding it, and will automatically wrap the r
 .. _pipeline:
 
 Pipelines & DAGs
-^^^^^^^^^^^^^^^^
+----------------
 
 .. image:: pipeline.png
     :scale: 40 %
@@ -116,7 +109,7 @@ you can combine resources and modes in pipeline execution.
 .. _dependency-definition:
 
 Dependencies
-^^^^^^^^^^^^
+------------
 
 .. image:: dependency.png
     :scale: 40 %
@@ -135,7 +128,7 @@ Dependencies are expressed using Dagster's simple function invocation DSL; you c
 dependencies.
 
 Resources
-^^^^^^^^^
+---------
 
 .. image:: resource.png
     :scale: 40 %
@@ -148,7 +141,7 @@ They are typically defined using the :func:`@resource <dagster.resource>` decora
 :class:`ResourceDefinition` class directly.
 
 Repository
-^^^^^^^^^^
+----------
 
 .. image:: repository.png
     :scale: 40 %
@@ -161,7 +154,7 @@ higher-level tools with a special ``repository.yaml`` file that tells the tools 
 repository definition.
 
 Composite Solids
-^^^^^^^^^^^^^^^^
+----------------
 
 .. image:: composites.png
     :scale: 40 %
@@ -185,7 +178,7 @@ can see an example of composition in action in the
 `tutorial <../learn/tutorial/composite_solids.html>`__.
 
 Dagster Types
-^^^^^^^^^^^^^
+-------------
 
 The Dagster type system allows authors of solids and pipelines to optionally and gradually define
 the types of the data that flows between solids, and so to introduce compile-time and runtime checks
@@ -195,7 +188,7 @@ Types also allow for custom materialization, and are typically defined using the
 :class:`DagsterType <dagster.DagsterType>`.
 
 Environment Config
-^^^^^^^^^^^^^^^^^^
+------------------
 
 Environment config defines the external environment with which a pipeline will interact for a given
 execution plan. Environment config can be used to change solid behavior, define pipeline- or
@@ -212,7 +205,7 @@ pipeline could also operate against a local test database), how to log the resul
 computations, or where to put artifacts like plots and summary tables.
 
 Configuration Schemas
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 In Dagster, configuration is explicitly typed with configuration schemas. Configuration schemas
 define how users can config pipelines. They tell the Dagster engine how to type check user-supplied
@@ -224,7 +217,8 @@ loggers :func:`@logger <dagster.logger>`, you can supply a configuration schema 
 available configuration for that object.
 
 Execution Plan
-^^^^^^^^^^^^^^
+--------------
+
 An execution plan is a concrete plan for executing a DAG of execution steps created by compiling a
 pipeline and a config. The execution plan is aware of the topological ordering of the execution
 steps, enabling physical execution on one of the available executor engines (e.g., in-process,
@@ -233,7 +227,7 @@ multiprocess, using Airflow).
 Users do not directly instantiate or manipulate execution plans.
 
 Execution Step
-^^^^^^^^^^^^^^
+--------------
 
 Execution steps are concrete computations. When a pipeline is compiled with an environment config,
 each solid is compiled into one or more corresponding execution steps. Some execution steps are
@@ -243,7 +237,7 @@ generated in order to materialize outputs, check expectations against outputs, e
 Users do not directly instantiate or manipulate execution steps.
 
 Dagster Event
-^^^^^^^^^^^^^
+-------------
 
 When a pipeline is executed, a stream of events communicate the progress of its execution. This
 includes top level events when the pipeline starts and completes, when execution steps succeed,
