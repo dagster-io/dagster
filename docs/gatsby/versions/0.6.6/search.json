@@ -1,0 +1,6 @@
+{
+  "current_page_name": "search",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

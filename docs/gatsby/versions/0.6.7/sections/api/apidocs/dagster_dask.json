@@ -1,0 +1,23 @@
+{
+  "parents": [{ "link": "../../api/", "title": "API Docs" }],
+  "prev": { "link": "../dagster_cron/", "title": "dagster_cron" },
+  "next": { "link": "../../../reference/reference/", "title": "Reference" },
+  "title": "dagster_dask",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"dagster-dask\">\n<h1>dagster_dask<a class=\"headerlink\" href=\"#dagster-dask\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<dl class=\"data\">\n<dt id=\"dagster_dask.dask_executor\">\n<code class=\"sig-prename descclassname\">dagster_dask.</code><code class=\"sig-name descname\">dask_executor</code><em class=\"property\"> ExecutorDefinition</em><a class=\"reference internal\" href=\"../../../../_modules/dagster_dask/executor/#dask_executor\"><span class=\"viewcode-link\">[source]</span></a><a class=\"headerlink\" href=\"#dagster_dask.dask_executor\" title=\"Permalink to this definition\">\u00b6</a></dt>\n<dd><p>Dask-based executor.</p>\n<p>If the Dask executor is used without providing executor-specific config, a local Dask cluster\nwill be created (as when calling <a class=\"reference external\" href=\"https://distributed.dask.org/en/latest/api.html#distributed.Client\" title=\"(in Dask.distributed v2.8.1+13.g447b2c2a)\"><code class=\"xref py py-class docutils literal notranslate\"><span class=\"pre\">dask.distributed.Client()</span></code></a>\nwithout specifying the scheduler address).</p>\n<p>The Dask executor optionally takes the following config:</p>\n<div class=\"highlight-default notranslate\"><div class=\"highlight\"><pre><span></span>{\n    address?: &#39;127.0.0.1:8786&#39;,  # The address of a Dask scheduler\n    timeout?: 5,  # Timeout duration for initial connection to the scheduler\n    scheduler_file?: &#39;/path/to/file&#39;  # Path to a file with scheduler information\n    # Whether to connect directly to the workers, or ask the scheduler to serve as\n    # intermediary\n    direct_to_workers?: False,\n    heartbeat_interval?: 1000,  # Time in milliseconds between heartbeats to scheduler\n}\n</pre></div>\n</div>\n<p>If you\u2019d like to configure a dask executor in addition to the\n<a class=\"reference internal\" href=\"../execution/#dagster.default_executors\" title=\"dagster.default_executors\"><code class=\"xref py py-class docutils literal notranslate\"><span class=\"pre\">default_executors</span></code></a>, you should add it to the <code class=\"docutils literal notranslate\"><span class=\"pre\">executor_defs</span></code> defined on a\n<a class=\"reference internal\" href=\"../pipeline/#dagster.ModeDefinition\" title=\"dagster.ModeDefinition\"><code class=\"xref py py-class docutils literal notranslate\"><span class=\"pre\">ModeDefinition</span></code></a> as follows:</p>\n<div class=\"highlight-python notranslate\"><div class=\"highlight\"><pre><span></span><span class=\"kn\">from</span> <span class=\"nn\">dagster</span> <span class=\"kn\">import</span> <span class=\"n\">ModeDefinition</span><span class=\"p\">,</span> <span class=\"n\">default_executors</span><span class=\"p\">,</span> <span class=\"n\">pipeline</span>\n<span class=\"kn\">from</span> <span class=\"nn\">dagster_dask</span> <span class=\"kn\">import</span> <span class=\"n\">dask_executor</span>\n\n<span class=\"nd\">@pipeline</span><span class=\"p\">(</span><span class=\"n\">mode_defs</span><span class=\"o\">=</span><span class=\"p\">[</span><span class=\"n\">ModeDefinition</span><span class=\"p\">(</span><span class=\"n\">executor_defs</span><span class=\"o\">=</span><span class=\"n\">default_executors</span> <span class=\"o\">+</span> <span class=\"p\">[</span><span class=\"n\">dask_executor</span><span class=\"p\">])])</span>\n<span class=\"k\">def</span> <span class=\"nf\">dask_enabled_pipeline</span><span class=\"p\">():</span>\n    <span class=\"k\">pass</span>\n</pre></div>\n</div>\n</dd></dl>\n\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/reference/reference", "Reference", "N", "next"],
+    ["sections/api/apidocs/dagster_cron", "dagster_cron", "P", "previous"]
+  ],
+  "sourcename": "sections/api/apidocs/dagster_dask.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">dagster_dask</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/api/apidocs/dagster_dask",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

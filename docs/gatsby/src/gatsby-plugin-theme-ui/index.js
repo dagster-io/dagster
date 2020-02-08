@@ -58,6 +58,6 @@ export default {
     },
   },
   header: {
-    gutter: [rem(125), rem(125), rem(180)],
+    gutter: [rem(88), rem(100), rem(155)],
   },
 }

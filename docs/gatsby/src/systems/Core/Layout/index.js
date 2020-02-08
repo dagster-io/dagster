@@ -12,7 +12,6 @@ import PropTypes from 'prop-types'
 
 import { Sidebar } from 'systems/Sidebar'
 import { Header } from 'systems/Header'
-import { VersionProvider } from 'systems/Version'
 
 import { responsiveMachine } from './machines/responsive'
 import * as styles from './styles'
@@ -50,25 +49,23 @@ export const Layout = ({ children }) => {
   return (
     <Location>
       {({ location }) => (
-        <VersionProvider>
-          <Styled.root>
-            <main sx={styles.main}>
-              <Header
+        <Styled.root>
+          <main sx={styles.main}>
+            <Header
+              ref={sidebarRef}
+              onMenuClick={handleToggle}
+              sidebarOpened={showing}
+            />
+            <div sx={styles.page(state)}>
+              <Sidebar
                 ref={sidebarRef}
-                onMenuClick={handleToggle}
-                sidebarOpened={showing}
+                location={location}
+                onLinkClick={handleToggle}
               />
-              <div sx={styles.page(state)}>
-                <Sidebar
-                  ref={sidebarRef}
-                  location={location}
-                  onLinkClick={handleToggle}
-                />
-                <div sx={styles.content(state)}>{children}</div>
-              </div>
-            </main>
-          </Styled.root>
-        </VersionProvider>
+              <div sx={styles.content(state)}>{children}</div>
+            </div>
+          </main>
+        </Styled.root>
       )}
     </Location>
   )

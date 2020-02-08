@@ -1,0 +1,39 @@
+{
+  "parents": [
+    { "link": "../../learn/", "title": "Learn" },
+    { "link": "../", "title": "Tutorial" }
+  ],
+  "prev": {
+    "link": "../resources/",
+    "title": "Parametrizing pipelines with resources"
+  },
+  "next": { "link": "../scheduler/", "title": "Scheduling pipeline runs" },
+  "title": "Organizing pipelines in repositories",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"organizing-pipelines-in-repositories\">\n<h1>Organizing pipelines in repositories<a class=\"headerlink\" href=\"#organizing-pipelines-in-repositories\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<p>In all of the examples we\u2019ve seen so far, we\u2019ve specified a file (<code class=\"docutils literal notranslate\"><span class=\"pre\">-f</span></code>) or a module (<code class=\"docutils literal notranslate\"><span class=\"pre\">-m</span></code>) and\nnamed a pipeline definition function (<code class=\"docutils literal notranslate\"><span class=\"pre\">-n</span></code>) in order to tell the CLI tools how to load a pipeline,\ne.g.:</p>\n<div class=\"highlight-console notranslate\"><div class=\"highlight\"><pre><span></span><span class=\"gp\">$</span> dagit -f hello_cereal.py -n hello_cereal_pipeline\n<span class=\"gp\">$</span> dagster pipeline execute -f hello_cereal.py <span class=\"se\">\\</span>\n    -n hello_cereal_pipeline\n</pre></div>\n</div>\n<p>But most of the time, especially when working on long-running projects with other people, we will\nwant to be able to target many pipelines at once with our tools.</p>\n<p>Dagster provides the concept of a repository, a collection of pipelines that the Dagster tools can\ntarget as a whole. Repositories are declared using the\n<a class=\"reference internal\" href=\"../../../api/apidocs/pipeline/#dagster.RepositoryDefinition\" title=\"dagster.RepositoryDefinition\"><code class=\"xref py py-func docutils literal notranslate\"><span class=\"pre\">RepositoryDefinition</span></code></a> API as follows:</p>\n<div class=\"literal-block-wrapper docutils container\" id=\"id1\">\n<div class=\"code-block-caption\"><span class=\"caption-text\">repos.py</span><a class=\"headerlink\" href=\"#id1\" title=\"Permalink to this code\">\u00b6</a></div>\n<div class=\"highlight-default notranslate\"><table class=\"highlighttable\"><tr><td class=\"linenos\"><div class=\"linenodiv\"><pre>10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24</pre></div></td><td class=\"code\"><div class=\"highlight\"><pre><span></span><span class=\"kn\">from</span> <span class=\"nn\">hello_cereal</span> <span class=\"kn\">import</span> <span class=\"n\">hello_cereal_pipeline</span>\n<span class=\"kn\">from</span> <span class=\"nn\">complex_pipeline</span> <span class=\"kn\">import</span> <span class=\"n\">complex_pipeline</span>\n\n\n<span class=\"k\">def</span> <span class=\"nf\">define_repo</span><span class=\"p\">():</span>\n    <span class=\"k\">return</span> <span class=\"n\">RepositoryDefinition</span><span class=\"p\">(</span>\n        <span class=\"n\">name</span><span class=\"o\">=</span><span class=\"s1\">&#39;hello_cereal_repository&#39;</span><span class=\"p\">,</span>\n        <span class=\"c1\"># Note that we can pass a function, rather than pipeline instance.</span>\n        <span class=\"c1\"># This allows us to construct pipelines lazily, if, e.g.,</span>\n        <span class=\"c1\"># initializing a pipeline involves any heavy compute</span>\n        <span class=\"n\">pipeline_dict</span><span class=\"o\">=</span><span class=\"p\">{</span>\n            <span class=\"s1\">&#39;hello_cereal_pipeline&#39;</span><span class=\"p\">:</span> <span class=\"k\">lambda</span><span class=\"p\">:</span> <span class=\"n\">hello_cereal_pipeline</span><span class=\"p\">,</span>\n            <span class=\"s1\">&#39;complex_pipeline&#39;</span><span class=\"p\">:</span> <span class=\"k\">lambda</span><span class=\"p\">:</span> <span class=\"n\">complex_pipeline</span><span class=\"p\">,</span>\n        <span class=\"p\">},</span>\n    <span class=\"p\">)</span>\n</pre></div>\n</td></tr></table></div>\n</div>\n<p>Note that the name of the pipeline in the <code class=\"docutils literal notranslate\"><span class=\"pre\">RepositoryDefinition</span></code> must match the name we declared\nfor it in its <code class=\"docutils literal notranslate\"><span class=\"pre\">pipeline</span></code> (the default is the function name). Don\u2019t worry, if these names don\u2019t\nmatch, you\u2019ll see a helpful error message.</p>\n<p>If you save this file as <code class=\"docutils literal notranslate\"><span class=\"pre\">repos.py</span></code>, you can then run the command line tools on it. Try running:</p>\n<div class=\"highlight-console notranslate\"><div class=\"highlight\"><pre><span></span><span class=\"gp\">$</span> dagit -f repos.py -n define_repo\n</pre></div>\n</div>\n<p>Now you can see the list of all pipelines in the repo via the dropdown at the top:</p>\n<a class=\"\"\n               data-lightbox=\"group-89dff476-4f8c-4070-ad90-6ff2c4161c86\"\n               href=\"../../../../_images/repos1.png\"\n               title=\"\"\n               data-title=\"\"\n               ><img src=\"../../../../_images/repos1.png\"\n                     class=\"\"\n                     width=\"100%\"\n                     height=\"auto\"\n                     alt=\"\"/>\n                </a><p>Typing the name of the file and function defining the repository gets tiresome and repetitive, so\nlet\u2019s create a declarative config file with this information to make using the command line tools\neasier. Save this file as <code class=\"docutils literal notranslate\"><span class=\"pre\">repository.yaml</span></code>. This is the default name for a repository config file,\nalthough you can tell the CLI tools to use any file you like with the <code class=\"docutils literal notranslate\"><span class=\"pre\">-y</span></code> flag.</p>\n<div class=\"literal-block-wrapper docutils container\" id=\"id2\">\n<div class=\"code-block-caption\"><span class=\"caption-text\">repository.yaml</span><a class=\"headerlink\" href=\"#id2\" title=\"Permalink to this code\">\u00b6</a></div>\n<div class=\"highlight-YAML notranslate\"><div class=\"highlight\"><pre><span></span><span class=\"nt\">repository</span><span class=\"p\">:</span>\n  <span class=\"nt\">module</span><span class=\"p\">:</span> <span class=\"l l-Scalar l-Scalar-Plain\">dagster_examples.intro_tutorial.repos</span>\n  <span class=\"nt\">fn</span><span class=\"p\">:</span> <span class=\"l l-Scalar l-Scalar-Plain\">define_repo</span>\n</pre></div>\n</div>\n</div>\n<p>Now you should be able to list the pipelines in this repo without all the typing:</p>\n<div class=\"highlight-console notranslate\"><div class=\"highlight\"><pre><span></span><span class=\"gp\">$</span> dagit\n</pre></div>\n</div>\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    [
+      "sections/learn/tutorial/scheduler",
+      "Scheduling pipeline runs",
+      "N",
+      "next"
+    ],
+    [
+      "sections/learn/tutorial/resources",
+      "Parametrizing pipelines with resources",
+      "P",
+      "previous"
+    ]
+  ],
+  "sourcename": "sections/learn/tutorial/repos.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Organizing pipelines in repositories</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/learn/tutorial/repos",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

@@ -1,0 +1,3 @@
+[submodule "dagster"]
+	path = dagster
+	url = https://github.com/dagster-io/dagster

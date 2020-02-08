@@ -8,12 +8,12 @@ export const wrapper = {
   alignItems: 'center',
   position: 'absolute',
   top: 0,
-  left: 0,
+  right: 0,
   minWidth: t => [minWidthCalc(t, 2), minWidthCalc(t, 3), minWidthCalc(t, 4)],
   bg: 'header.bg',
   px: 3,
   py: 3,
-  m: [2, 3, 4],
+  my: [2, 3, 4],
   borderRadius: `999px 0 0 999px`,
   boxShadow: '0 2px 15px rgba(0,0,0,0.15)',
 }
@@ -54,33 +54,6 @@ export const logo = showing => ({
   ...toggleVisiblity(showing),
   width: [showing ? 0 : 60, 60, 80],
   height: [60, 60, 80],
-})
-
-export const search = showing => ({
-  ml: [showing ? 0 : 3, 3, 4],
-  overflow: ['hidden', 'auto'],
-  display: 'flex',
-  alignItems: 'center',
-  fontSize: 4,
-
-  ':hover': {
-    cursor: 'pointer',
-  },
-
-  svg: {
-    mr: 3,
-    stroke: 'gray.4',
-  },
-
-  input: {
-    width: [showing ? 150 : 0, 150],
-    maxWidth: ['inherit', rem(400)],
-    outline: 'none',
-    appearance: 'none',
-    border: 0,
-    bg: 'transparent',
-    transition: 'width .3s',
-  },
 })
 
 export const socialIcons = showing => ({

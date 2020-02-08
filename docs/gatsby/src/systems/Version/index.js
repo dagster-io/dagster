@@ -1,50 +1,55 @@
-import React from "react";
-import { createContext, useEffect, useContext, useState } from "react";
-import { useStaticQuery, graphql, navigate } from "gatsby";
+import React from 'react'
+import { createContext, useEffect, useContext, useState } from 'react'
+import { useStaticQuery, graphql, navigate } from 'gatsby'
 
-import { useLocalStorage } from "utils/localStorage";
+import { useLocalStorage } from 'utils/localStorage'
+import { version, all } from '~dagster-info'
 
-const ctx = createContext();
+const ctx = createContext({
+  version: {
+    all,
+    current: version,
+    last: version,
+  },
+})
 
 export const VersionProvider = ({ children }) => {
-  const storage = useLocalStorage("currentVersion");
-  const [current, setCurrentState] = useState(storage.get());
+  const storage = useLocalStorage('currentVersion')
+  const [current, setCurrentState] = useState(storage.get())
 
   const data = useStaticQuery(graphql`
     query VersionQuery {
       version: dagsterVersion
       allVersions: allDagsterVersion
     }
-  `);
+  `)
 
   const setCurrent = version => {
-    setCurrentState(version);
-    navigate(`${version}/install/install`);
-  };
+    setCurrentState(version)
+    navigate(`${version}/install/install`)
+  }
 
   useEffect(() => {
-    storage.set(current);
+    storage.set(current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current]);
+  }, [current])
 
   return (
     <ctx.Provider
       value={{
         setCurrent,
         version: {
-          current:
-            (current !== "undefined" && current !== "null" && current) ||
-            data.version,
+          current: current || data.version || version,
           all: data.allVersions,
-          last: data.version
-        }
+          last: data.version,
+        },
       }}
     >
       {children}
     </ctx.Provider>
-  );
-};
+  )
+}
 
 export const useVersion = () => {
-  return useContext(ctx);
-};
+  return useContext(ctx)
+}

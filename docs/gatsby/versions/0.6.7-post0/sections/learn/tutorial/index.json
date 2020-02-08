@@ -1,0 +1,23 @@
+{
+  "parents": [{ "link": "../learn/", "title": "Learn" }],
+  "prev": { "link": "../learn/", "title": "Learn" },
+  "next": { "link": "hello_cereal/", "title": "Hello, cereal!" },
+  "title": "Tutorial",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"tutorial\">\n<h1>Tutorial<a class=\"headerlink\" href=\"#tutorial\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<div class=\"toctree-wrapper compound\">\n<ul>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"hello_cereal/\">Hello, cereal!</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"hello_cereal/#executing-our-first-pipeline\">Executing our first pipeline</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"hello_cereal/#testing-solids-and-pipelines\">Testing solids and pipelines</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"hello_dag/\">Connecting solids together</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"inputs/\">Parametrizing solids with inputs</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"inputs/#using-the-dagit-config-editor\">Using the Dagit config editor</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"inputs/#type-checking-inputs\">Type-checking inputs</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"config/\">Parametrizing solids with config</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"types/\">User-defined types</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"types/#metadata-and-data-quality-checks\">Metadata and data quality checks</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"multiple_outputs/\">Multiple and conditional outputs</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"multiple_outputs/#reusable-solids\">Reusable solids</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"composite_solids/\">Composing solids</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"materializations/\">Materializations</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"intermediates/\">Intermediates</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"resources/\">Parametrizing pipelines with resources</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"resources/#pipeline-modes\">Pipeline modes</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"resources/#pipeline-config-presets\">Pipeline config presets</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"repos/\">Organizing pipelines in repositories</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"scheduler/\">Scheduling pipeline runs</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"intro_airflow/\">Deploying to Airflow</a></li>\n</ul>\n</div>\n<p>You can find all of the tutorial code checked into the dagster repository at\n<code class=\"docutils literal notranslate\"><span class=\"pre\">dagster/examples/dagster_examples/intro_tutorial</span></code>.</p>\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/learn/tutorial/hello_cereal", "Hello, cereal!", "N", "next"],
+    ["sections/learn/learn", "Learn", "P", "previous"]
+  ],
+  "sourcename": "sections/learn/tutorial/index.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Tutorial</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/learn/tutorial/index",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

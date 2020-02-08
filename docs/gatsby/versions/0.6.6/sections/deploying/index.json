@@ -1,0 +1,23 @@
+{
+  "parents": [],
+  "prev": { "link": "../reference/reference/", "title": "Reference" },
+  "next": { "link": "deploying/", "title": "Architectural overview" },
+  "title": "Deploying Dagster",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"deploying-dagster\">\n<h1>Deploying Dagster<a class=\"headerlink\" href=\"#deploying-dagster\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<div class=\"toctree-wrapper compound\">\n<ul>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"deploying/\">Architectural overview</a><ul>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"deploying/#execution\">Execution</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"deploying/#scheduling\">Scheduling</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"deploying/#storage\">Storage</a></li>\n</ul>\n</li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"instance/\">Configuring an instance</a><ul>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"instance/#writing-a-dagster-yaml\">Writing a dagster.yaml</a></li>\n</ul>\n</li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"dagit/\">Standalone Dagit</a><ul>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dagit/#aws-quick-start\">AWS Quick Start</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dagit/#manually-configuring-dagit\">Manually Configuring Dagit</a></li>\n</ul>\n</li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"airflow/\">Deploying to Airflow</a><ul>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#requirements\">Requirements</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#using-presets\">Using Presets</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#implementation-notes\">Implementation Notes</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#containerizing-your-repository\">Containerizing your repository</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#defining-your-pipeline-as-a-containerized-airflow-dag\">Defining your pipeline as a containerized Airflow DAG</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#docker-bind-mount-for-filesystem-intermediate-storage\">Docker bind-mount for filesystem intermediate storage</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#using-s3-with-dagster-airflow\">Using S3 with dagster-airflow</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"airflow/#compatibility\">Compatibility</a></li>\n</ul>\n</li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"dask/\">Executing on Dask</a><ul>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dask/#introduction\">Introduction</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dask/#local-execution\">Local Execution</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dask/#distributed-cluster-execution\">Distributed Cluster Execution</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dask/#dask-resources\">Dask Resources</a></li>\n<li class=\"toctree-l2\"><a class=\"reference internal\" href=\"dask/#limitations\">Limitations</a></li>\n</ul>\n</li>\n</ul>\n</div>\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/deploying/deploying", "Architectural overview", "N", "next"],
+    ["sections/reference/reference", "Reference", "P", "previous"]
+  ],
+  "sourcename": "sections/deploying/index.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Deploying Dagster</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/deploying/index",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

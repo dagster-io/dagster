@@ -1,0 +1,23 @@
+{
+  "parents": [],
+  "prev": { "link": "../../reference/reference/", "title": "Reference" },
+  "next": { "link": "../instance/", "title": "Instance Configuration" },
+  "title": "Deploying",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"deploying\">\n<h1>Deploying<a class=\"headerlink\" href=\"#deploying\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<p>As is the case with all workflow orchestration, when deploying Dagster pipelines you are faced with\nconcerns around <strong>execution</strong>, <strong>scheduling</strong>, and <strong>storage</strong>.</p>\n<ul>\n<li><p>Execution\nDagster out of the box supports single and multi process executors. These executors work well for pipelines of moderate size\nor if your pipelines leverage external systems or clusters for heavy compute tasks.</p>\n<p><a class=\"reference external\" href=\"https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask\">dagster-dask</a>\nmakes Dask available as another alternative for distributed execution. See the guide below for more details on using Dask.</p>\n</li>\n<li><p>Scheduling\nDagster offers a scheduler backed by system cron via the package\n<a class=\"reference external\" href=\"https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-cron\">dagster-cron</a> .\nThese schedules are managed in code and deployed using Dagit or the Dagster CLI.</p>\n<p>Scheduling can also be achieved by deploying to\n<a class=\"reference external\" href=\"https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow\">Airflow</a>.\nSee the guide below for more details.</p>\n</li>\n<li><p>Storage\n\u201cInstance\u201d is the concept we use to represent a particular installation or deployment of Dagster. An instance\nrepresents the collection of systems that are used to control how Dagster persists the artifacts it generates.\nSee the guide below for details on how to configure your Dagster instance.</p></li>\n</ul>\n<div class=\"toctree-wrapper compound\">\n<ul>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"../instance/\">Instance Configuration</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"../dagit/\">Standalone Dagit</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"../airflow/\">Deploying to Airflow</a></li>\n<li class=\"toctree-l1\"><a class=\"reference internal\" href=\"../dask/\">Executing on Dask</a></li>\n</ul>\n</div>\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/deploying/instance", "Instance Configuration", "N", "next"],
+    ["sections/reference/reference", "Reference", "P", "previous"]
+  ],
+  "sourcename": "sections/deploying/deploying.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Deploying</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/deploying/deploying",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

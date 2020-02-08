@@ -1,0 +1,26 @@
+{
+  "parents": [
+    { "link": "../../../learn/", "title": "Learn" },
+    { "link": "../../", "title": "Guides" }
+  ],
+  "prev": { "link": "../testing/", "title": "Testing Guide" },
+  "next": { "link": "../../logging/logging/", "title": "Logging Guide" },
+  "title": "Data Quality Tests",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"data-quality-tests\">\n<span id=\"data-quality-tests\"></span><h1>Data Quality Tests<a class=\"headerlink\" href=\"#data-quality-tests\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<p>One of the reasons why traditional software engineering techniques do not apply to data pipelining is because the data pipeline authors do not control the incoming data. One might say that traditional application developers do not control their input, because they do not control their users. However this analogy is flawed. If a user presents invalid input to an application, the developer can simply refuse to do the computation, report an error to the user, and have her re-enter the data.</p>\n<p>This is not possible for a data pipeline author. They are taking input from systems or previous data pipelining step that they do not control. If unexpected inputs appear that breaks the computation, the developer must update the upstream data source somehow \u2013 which is often impossible \u2013 or update the computation to adjust to the unexpected input \u2013 which is what almost always happens. Software abstractions and techniques in data pipelining must account for this unfortunate reality.</p>\n<p>Testing the code of a data pipeline is necessary but not sufficient to ensure that a data pipeline works and reliable. You must also monitor your pipeline. Monitoring traditionally has meant that you monitoring the operational aspects of a pipeline or system \u2013 e.g. monitoring resource consumption, error rates, and so forth. However this is also insufficient to the task.</p>\n<p>Because, as described above, data pipeline authors do not control their incoming data, there are a number of assumptions baked into the code they have written in terms of the shape and nature of that data. It is critical that the pipeline author move those assumptions from being implicit to explicit.</p>\n<p>When data computations are built, their authors are expected to sample and view data at a given instant in time, and then that computation is expected to operate in perpetuity on all the data that will ever come. That at minimum difficult and oftentimes impossible.</p>\n<p>Data quality tests that explicitly encode the assumptions of a data pipeline author are critical to the health of a well-functioning data application. Broken assumptions should be detected as early as possible and as clearly as possible. They should be executed whenever data passes through the system, and then actions \u2013 e.g. emitting a message to a monitoring system, or halting the computation. Ideally these actions are taken based on some sort of policy engine driven by configuration.</p>\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/learn/guides/logging/logging", "Logging Guide", "N", "next"],
+    ["sections/learn/guides/testing/testing", "Testing Guide", "P", "previous"]
+  ],
+  "sourcename": "sections/learn/guides/testing/expectations.md.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Data Quality Tests</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".md",
+  "current_page_name": "sections/learn/guides/testing/expectations",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

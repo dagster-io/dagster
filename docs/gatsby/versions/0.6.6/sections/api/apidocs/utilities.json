@@ -1,0 +1,23 @@
+{
+  "parents": [{ "link": "../../api/", "title": "API Docs" }],
+  "prev": { "link": "../errors/", "title": "Errors" },
+  "next": { "link": "../schedules/", "title": "Schedules" },
+  "title": "Utilities",
+  "meta": {},
+  "body": "<div class=\"section\" id=\"utilities\">\n<h1>Utilities<a class=\"headerlink\" href=\"#utilities\" title=\"Permalink to this headline\">\u00b6</a></h1>\n<dl class=\"function\">\n<dt id=\"dagster.file_relative_path\">\n<code class=\"sig-prename descclassname\">dagster.</code><code class=\"sig-name descname\">file_relative_path</code><span class=\"sig-paren\">(</span><em class=\"sig-param\">dunderfile</em>, <em class=\"sig-param\">relative_path</em><span class=\"sig-paren\">)</span><a class=\"reference internal\" href=\"../../../../_modules/dagster/utils/#file_relative_path\"><span class=\"viewcode-link\">[source]</span></a><a class=\"headerlink\" href=\"#dagster.file_relative_path\" title=\"Permalink to this definition\">\u00b6</a></dt>\n<dd><p>This function is useful when one needs to load a file that is\nrelative to the position of the current file. (Such as when\nyou encode a configuration file path in source file and want\nin runnable in any current working directory)</p>\n<p>It is meant to be used like the following:</p>\n<p>file_relative_path(__file__, \u2018path/relative/to/file\u2019)</p>\n</dd></dl>\n\n</div>\n",
+  "metatags": "",
+  "rellinks": [
+    ["genindex", "General Index", "I", "index"],
+    ["py-modindex", "Python Module Index", "", "modules"],
+    ["sections/api/apidocs/schedules", "Schedules", "N", "next"],
+    ["sections/api/apidocs/errors", "Errors", "P", "previous"]
+  ],
+  "sourcename": "sections/api/apidocs/utilities.rst.txt",
+  "toc": "<ul>\n<li><a class=\"reference internal\" href=\"#\">Utilities</a></li>\n</ul>\n",
+  "display_toc": false,
+  "page_source_suffix": ".rst",
+  "current_page_name": "sections/api/apidocs/utilities",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

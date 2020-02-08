@@ -6,6 +6,10 @@ export const wrapper = {
   fontFamily: 'mono',
   my: [3, 3, 4],
 
+  pre: {
+    pl: 0,
+  },
+
   // --------------------------------
   // Code file
   // --------------------------------
@@ -28,6 +32,8 @@ export const wrapper = {
   '.code-block': {
     border,
     display: 'flex',
+    maxWidth: '100%',
+    overflow: 'auto',
   },
   '.code-block > pre': {
     borderRadius: 0,

@@ -1,0 +1,24 @@
+{
+  "indextitle": "Python Module Index",
+  "content": [
+    [
+      "d",
+      [
+        [
+          "dagster",
+          0,
+          "sections/api/apidocs/types",
+          "module-dagster",
+          "",
+          "",
+          ""
+        ]
+      ]
+    ]
+  ],
+  "collapse_index": true,
+  "current_page_name": "py-modindex",
+  "sidebars": ["globaltoc.html", "searchbox.html"],
+  "customsidebar": null,
+  "alabaster_version": "0.7.12"
+}

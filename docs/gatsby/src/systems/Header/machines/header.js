@@ -44,9 +44,6 @@ export const headerMachine = Machine(
         target: 'checking',
         actions: 'setWidth',
       },
-      CHANGE: {
-        actions: assign({ value: (_, ev) => ev.data }),
-      },
     },
   },
   {

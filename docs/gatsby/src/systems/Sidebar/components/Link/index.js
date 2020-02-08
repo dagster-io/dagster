@@ -2,8 +2,8 @@
 import { jsx } from 'theme-ui'
 import { useRef } from 'react'
 
-import { Link as BaseLink } from 'systems/Core'
 import { useVersion } from 'systems/Version'
+import { Link as BaseLink } from 'systems/Core'
 
 import { isToctreeLi } from '../List'
 import * as styles from './styles'
@@ -25,8 +25,8 @@ const getLinkId = path => {
 }
 
 export const Link = props => {
-  const { version } = useVersion()
   const { href, children } = props
+  const { version } = useVersion()
 
   const ref = useRef(null)
   const id = getLinkId(href)
@@ -44,7 +44,7 @@ export const Link = props => {
     </a>
   ) : (
     // eslint-disable-next-line jsx-a11y/anchor-is-valid
-    <BaseLink {...commonProps} ref={ref} to={`${version.current}/${href}`}>
+    <BaseLink {...commonProps} ref={ref} to={`/${version.current}/${href}`}>
       {children}
     </BaseLink>
   )
