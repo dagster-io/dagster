@@ -9,6 +9,7 @@ from dagster import check
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
@@ -372,7 +373,7 @@ def test_successful_pipeline_reexecution(snapshot):
             pass
         return result_data
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -407,7 +408,7 @@ def test_successful_pipeline_reexecution(snapshot):
         == expected_value_repr
     )
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     result_two = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -451,7 +452,7 @@ def test_successful_pipeline_reexecution(snapshot):
 def test_pipeline_reexecution_info_query(snapshot):
     context = define_test_context()
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
@@ -465,7 +466,7 @@ def test_pipeline_reexecution_info_query(snapshot):
         },
     )
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
     execute_dagster_graphql(
         context,
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
@@ -500,7 +501,7 @@ def test_pipeline_reexecution_info_query(snapshot):
 
 
 def test_pipeline_reexecution_invalid_step_in_subset():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     execute_dagster_graphql(
         define_test_context(),
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
@@ -514,7 +515,7 @@ def test_pipeline_reexecution_invalid_step_in_subset():
         },
     )
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     result_two = execute_dagster_graphql(
         define_test_context(),

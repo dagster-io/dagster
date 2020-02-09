@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 import yaml
 
@@ -7,6 +5,7 @@ from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.utils.test.run_storage import TestRunStorage
 
 TestRunStorage.__test__ = False
@@ -39,7 +38,7 @@ def build_run(
 
 def test_add_get_postgres_run_storage(clean_storage):
     run_storage = clean_storage
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
     added = run_storage.add_run(run_to_add)
     assert added
@@ -49,7 +48,7 @@ def test_add_get_postgres_run_storage(clean_storage):
     assert run_to_add == fetched_run
 
     assert run_storage.has_run(run_id)
-    assert not run_storage.has_run(str(uuid.uuid4()))
+    assert not run_storage.has_run(make_new_run_id())
 
     assert run_storage.get_runs() == [run_to_add]
     assert run_storage.get_runs(PipelineRunsFilter(pipeline_name='pipeline_name')) == [run_to_add]
@@ -62,7 +61,7 @@ def test_add_get_postgres_run_storage(clean_storage):
 def test_handle_run_event_pipeline_success_test(clean_storage):
     run_storage = clean_storage
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     run_to_add = build_run(pipeline_name='pipeline_name', run_id=run_id)
     run_storage.add_run(run_to_add)
 
@@ -81,7 +80,7 @@ def test_handle_run_event_pipeline_success_test(clean_storage):
     assert run_storage.get_run_by_id(run_id).status == PipelineRunStatus.STARTED
 
     run_storage.handle_run_event(
-        str(uuid.uuid4()),  # diff run
+        make_new_run_id(),  # diff run
         DagsterEvent(
             message='a message',
             event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,

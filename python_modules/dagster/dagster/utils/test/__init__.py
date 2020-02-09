@@ -36,6 +36,7 @@ from dagster.core.storage.intermediates_manager import InMemoryIntermediatesMana
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
+from dagster.core.utils import make_new_run_id
 
 # pylint: disable=unused-import
 from ..temp_file import (
@@ -50,7 +51,7 @@ from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     loggers = check.opt_dict_param(
         logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
     )

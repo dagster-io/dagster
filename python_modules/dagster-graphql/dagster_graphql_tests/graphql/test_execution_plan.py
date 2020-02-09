@@ -1,11 +1,11 @@
 import re
-import uuid
 
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
@@ -136,7 +136,7 @@ def clean_log_messages(result_data):
 
 
 def test_success_whole_execution_plan(snapshot):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
@@ -173,7 +173,7 @@ def test_success_whole_execution_plan(snapshot):
 
 
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
@@ -212,7 +212,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
 
 
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result = execute_dagster_graphql(
@@ -251,7 +251,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
 
 
 def test_successful_one_part_execute_plan(snapshot):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     instance.create_empty_run(run_id, 'csv_hello_world')
 
@@ -309,7 +309,7 @@ def test_successful_one_part_execute_plan(snapshot):
 
 
 def test_successful_two_part_execute_plan(snapshot):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, 'csv_hello_world')
     result_one = execute_dagster_graphql(
@@ -501,7 +501,7 @@ def test_basic_execute_plan_with_materialization():
             'sum_sq_solid.compute',
         ]
 
-        run_id = str(uuid.uuid4())
+        run_id = make_new_run_id()
         instance.create_empty_run(run_id, 'csv_hello_world')
 
         result = execute_dagster_graphql(

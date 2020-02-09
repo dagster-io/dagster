@@ -4,7 +4,6 @@ import pickle
 import shutil
 import tempfile
 import threading
-import uuid
 from collections import OrderedDict
 
 import dagstermill
@@ -22,6 +21,7 @@ from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import pack_value
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.utils import safe_tempfile_path
 
 
@@ -35,7 +35,7 @@ def in_pipeline_manager(
 ):
     manager = Manager()
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
     marshal_dir = tempfile.mkdtemp()
 

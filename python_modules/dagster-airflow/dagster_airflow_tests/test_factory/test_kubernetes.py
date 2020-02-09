@@ -1,5 +1,4 @@
 import os
-import uuid
 
 import pytest
 from airflow.exceptions import AirflowException
@@ -13,6 +12,7 @@ from dagster_airflow_tests.conftest import dagster_docker_image  # pylint: disab
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
+from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list, script_relative_path
 
 from .utils import validate_pipeline_execution
@@ -78,7 +78,7 @@ def test_error_dag_k8s(
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_kubernetized_for_handle(

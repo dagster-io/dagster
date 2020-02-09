@@ -1,5 +1,3 @@
-import uuid
-
 from dagster_graphql.client.mutations import (
     execute_execute_plan_mutation,
     execute_execute_plan_mutation_raw,
@@ -7,6 +5,7 @@ from dagster_graphql.client.mutations import (
 
 from dagster import ExecutionTargetHandle
 from dagster.core.instance import DagsterInstance
+from dagster.core.utils import make_new_run_id
 
 EXPECTED_EVENTS = {
     ('ENGINE_EVENT', None),
@@ -41,7 +40,7 @@ def test_execute_execute_plan_mutation():
     handle = ExecutionTargetHandle.for_pipeline_module(
         'dagster_examples.toys.sleepy', pipeline_name
     )
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, pipeline_name)
 
@@ -66,7 +65,7 @@ def test_execute_execute_plan_mutation_raw():
     handle = ExecutionTargetHandle.for_pipeline_module(
         'dagster_examples.toys.sleepy', pipeline_name
     )
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
     instance.create_empty_run(run_id, pipeline_name)
     variables = {

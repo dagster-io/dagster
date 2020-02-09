@@ -1,5 +1,4 @@
 import time
-import uuid
 from collections import Counter
 
 import yaml
@@ -11,6 +10,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 
 TEST_TIMEOUT = 5
@@ -353,7 +353,7 @@ def test_listen_notify_single_run_event(conn_string):
 
     event_list = []
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     event_log_storage.event_watcher.watch_run(run_id, 0, event_list.append)
 
@@ -385,8 +385,8 @@ def test_listen_notify_filter_two_runs_event(conn_string):
     event_list_one = []
     event_list_two = []
 
-    run_id_one = str(uuid.uuid4())
-    run_id_two = str(uuid.uuid4())
+    run_id_one = make_new_run_id()
+    run_id_two = make_new_run_id()
 
     event_log_storage.event_watcher.watch_run(run_id_one, 0, event_list_one.append)
     event_log_storage.event_watcher.watch_run(run_id_two, 0, event_list_two.append)
@@ -425,8 +425,8 @@ def test_listen_notify_filter_run_event(conn_string):
     def _solids():
         return_one()
 
-    run_id_one = str(uuid.uuid4())
-    run_id_two = str(uuid.uuid4())
+    run_id_one = make_new_run_id()
+    run_id_two = make_new_run_id()
 
     # only watch one of the runs
     event_list = []

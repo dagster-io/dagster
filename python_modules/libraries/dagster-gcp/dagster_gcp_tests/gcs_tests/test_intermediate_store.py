@@ -1,5 +1,4 @@
 import csv
-import uuid
 from collections import OrderedDict
 from io import BytesIO
 
@@ -32,6 +31,7 @@ from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePlug
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
+from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -97,7 +97,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     environment_dict = {'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket}}}}
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     execution_plan = create_execution_plan(
         pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id)
@@ -185,7 +185,7 @@ class FancyStringGCSTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-i
 
 @nettest
 def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(
         run_id=run_id,
@@ -208,7 +208,7 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
 
 @nettest
 def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(
         run_id=run_id,
@@ -227,7 +227,7 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
 
 @nettest
 def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner_type(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -246,7 +246,7 @@ def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner
 
 @nettest
 def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
 
@@ -272,7 +272,7 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
 
 @nettest
 def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     gcs_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
@@ -309,7 +309,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
 
 @nettest
 def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(
         run_id=run_id, gcs_bucket=gcs_bucket, gcs_prefix='custom_prefix'
@@ -332,8 +332,8 @@ def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
 
 @nettest
 def test_gcs_intermediate_store(gcs_bucket):
-    run_id = str(uuid.uuid4())
-    run_id_2 = str(uuid.uuid4())
+    run_id = make_new_run_id()
+    run_id_2 = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
@@ -385,7 +385,7 @@ class LessSimpleDataFrame(list):
 
 
 def test_custom_read_write_mode(gcs_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
     try:
