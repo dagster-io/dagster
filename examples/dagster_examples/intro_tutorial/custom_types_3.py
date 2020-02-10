@@ -1,5 +1,4 @@
 import csv
-import typing
 
 from dagster import (
     DagsterType,
@@ -38,15 +37,12 @@ def less_simple_data_frame_input_hydration_config(context, selector):
     return lines
 
 
-if typing.TYPE_CHECKING:
-    LessSimpleDataFrame = list
-else:
-    LessSimpleDataFrame = DagsterType(
-        name='LessSimpleDataFrame',
-        description='A more sophisticated data frame that type checks its structure.',
-        type_check_fn=less_simple_data_frame_type_check,
-        input_hydration_config=less_simple_data_frame_input_hydration_config,
-    )
+LessSimpleDataFrame = DagsterType(
+    name='LessSimpleDataFrame',
+    description='A more sophisticated data frame that type checks its structure.',
+    type_check_fn=less_simple_data_frame_type_check,
+    input_hydration_config=less_simple_data_frame_input_hydration_config,
+)
 
 
 @solid

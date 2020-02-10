@@ -43,21 +43,21 @@ use Dagster's type system to type the output of ``read_csv``, so that we can do 
 we construct the pipeline, ensuring that any solid consuming the output of ``read_csv`` expects to
 receive a data frame.
 
-To do this, we'll use the :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator:
+To do this, we'll use the :py:class:`DagsterType <dagster.dagster_type>` class:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 3-14
+   :lines: 5-9
    :linenos:
-   :lineno-start: 3
+   :lineno-start: 5
    :caption: custom_types.py
 
 Now we can annotate the rest of our pipeline with our new type:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types.py
-   :lines: 17-43
-   :emphasize-lines: 2, 7, 11
+   :lines: 13-35
+   :emphasize-lines: 1, 10
    :linenos:
-   :lineno-start: 17
+   :lineno-start: 13
    :caption: custom_types.py
 
 
@@ -74,7 +74,7 @@ You can see that the output of ``read_csv`` (which by default has the name ``res
 to be of type ``SimpleDataFrame``.
 
 
-Custom type checks
+Complex type checks
 ^^^^^^^^^^^^^^^^^^
 
 The Dagster framework will fail type checks when a value isn't an instance of the type we're
@@ -84,8 +84,7 @@ Sometimes we know more about the types of our values, and we'd like to do deeper
 example, in the case of the ``SimpleDataFrame``, we expect to see a list of OrderedDicts, and for
 each of these OrderedDicts to have the same fields, in the same order.
 
-The :py:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator lets us specify custom type checks
-like this.
+The type check function allows us to do this.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
    :lines: 6-29
@@ -98,9 +97,9 @@ Now, if our solid logic fails to return the right type, we'll see a type check f
 replace our ``read_csv`` solid with the following bad logic:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_2.py
-   :lines: 32-38
+   :lines: 30-35
    :linenos:
-   :lineno-start: 32
+   :lineno-start: 30
    :caption: custom_types_2.py
 
 When we run the pipeline with this solid, we'll see an error like:
@@ -172,16 +171,16 @@ Then insert this into the original declaration:
    :lines: 40-47
    :emphasize-lines: 5
    :linenos:
-   :lineno-start: 40
+   :lineno-start: 45
    :caption: custom_types_3.py
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_3.py
-   :lines: 73-79
+   :lines: 69-78
    :linenos:
-   :lineno-start: 73
+   :lineno-start: 69
    :caption: custom_types_3.py
 
 Testing custom types
@@ -193,9 +192,9 @@ are doing what you expect them to. Dagster includes a utility function,
 type against any value.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_test.py
-   :lines: 97-108
+   :lines: 99-110
    :linenos:
-   :lineno-start: 97
+   :lineno-start: 99
    :caption: custom_types_test.py
 
 Well tested library types can be reused across solids and pipelines to provide standardized type
@@ -255,9 +254,9 @@ To support this kind of assertion, Dagster includes support for expressing your 
 data in solid logic.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_5.py
-   :lines: 93-135
+   :lines: 91-133
    :linenos:
-   :lineno-start: 93
+   :lineno-start: 91
    :emphasize-lines: 1-3, 31
    :caption: custom_types_5.py
 
@@ -277,3 +276,34 @@ This part of this system remains relatively immature, but yielding structured ex
 from your solid logic means that in future, tools like Dagit will be able to aggregate and track
 expectation results, as well as implement sophisticated policy engines to drive alerting and
 exception handling on a deep semantic basis.
+
+
+MyPy Compliance
+^^^^^^^^^^^^^^^
+
+In cases where DagsterTypes are created that do not have corresponding usable Python types, and
+the user wishes to remain mypy compliant, there are two options.
+
+One is using ``InputDefinition`` and ``OutputDefinition`` exclusively for dagster types,
+and reserving type annotations for naked Python types *only*. This is verbose, but
+is explicit and clear.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_verbose.py
+   :lines: 19-43
+   :linenos:
+   :lineno-start: 19
+   :caption: custom_types_mypy_verbose.py
+
+If one wishes to use type annotations exclusively but still use dagster types without
+a 1:1 python type counterpart, the typechecking behavior must be modified. For this
+we recommend using the ``typing.TYPE_CHECKING`` property in the python typing module.
+
+While inelegant, this centralizes boilerplate to the type instantiation, rather than
+have it on all places where the type is referenced.
+
+.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_typing_trick.py
+   :lines: 6-22
+   :linenos:
+   :lineno-start: 6 
+   :emphasize-lines: 1-8
+   :caption: custom_types_mypy_typing_trick.py

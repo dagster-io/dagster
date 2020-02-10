@@ -1,6 +1,14 @@
 import csv
 
-from dagster import DagsterType, execute_pipeline, pipeline, solid
+from dagster import (
+    DagsterType,
+    InputDefinition,
+    OutputDefinition,
+    String,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 
 SimpleDataFrame = DagsterType(
     name='SimpleDataFrame',
@@ -9,8 +17,11 @@ SimpleDataFrame = DagsterType(
 )
 
 
-@solid
-def read_csv(context, csv_path: str) -> SimpleDataFrame:
+@solid(
+    input_defs=[InputDefinition('csv_path', String)],
+    output_defs=[OutputDefinition(SimpleDataFrame)],
+)
+def read_csv(context, csv_path: str) -> list:
     with open(csv_path, 'r') as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -18,8 +29,8 @@ def read_csv(context, csv_path: str) -> SimpleDataFrame:
     return lines
 
 
-@solid
-def sort_by_calories(context, cereals: SimpleDataFrame):
+@solid(input_defs=[InputDefinition('cereals', SimpleDataFrame)])
+def sort_by_calories(context, cereals: list):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal['calories'])
     context.log.info(
         'Least caloric cereal: {least_caloric}'.format(

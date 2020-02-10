@@ -607,7 +607,7 @@ def gatsby_docs_build_tests():
         )
 
     return tests
-    
+
 
 def releasability_tests():
     tests = []
@@ -676,7 +676,10 @@ if __name__ == "__main__":
         .run(
             "pip install mypy",
             # start small by making sure the local code type checks
-            "mypy examples --ignore-missing-imports",
+            "mypy examples/dagster_examples/airline_demo "
+            "examples/dagster_examples/bay_bikes "
+            "examples/dagster_examples/intro_tutorial/custom_types_mypy* "
+            "--ignore-missing-imports",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),

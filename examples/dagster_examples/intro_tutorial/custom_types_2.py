@@ -1,5 +1,4 @@
 import csv
-import typing
 
 from dagster import DagsterType, execute_pipeline, pipeline, solid
 
@@ -21,14 +20,11 @@ def less_simple_data_frame_type_check(value):
     return True
 
 
-if typing.TYPE_CHECKING:
-    LessSimpleDataFrame = list
-else:
-    LessSimpleDataFrame = DagsterType(
-        name='LessSimpleDataFrame',
-        description='A more sophisticated data frame that type checks its structure.',
-        type_check_fn=less_simple_data_frame_type_check,
-    )
+LessSimpleDataFrame = DagsterType(
+    name='LessSimpleDataFrame',
+    description='A more sophisticated data frame that type checks its structure.',
+    type_check_fn=less_simple_data_frame_type_check,
+)
 
 
 @solid
