@@ -97,7 +97,7 @@ def test_invoke_entrypoint():
     runner = CliRunner()
     result = runner.invoke(main, ['worker'])
     assert result.exit_code == 0
-    assert 'dagster-celery start' in result.output
+    assert 'Start a dagster celery worker' in result.output
 
 
 @skip_ci

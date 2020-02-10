@@ -26,7 +26,7 @@ from .config import CeleryConfig
             [str], is_required=False, description='List of modules every worker should import'
         ),
         'config_source': Field(
-            Permissive(), is_required=False, description='Settings for the Celery app.'
+            Permissive(), is_required=False, description='Additional settings for the Celery app.'
         ),
     },
 )
@@ -43,22 +43,10 @@ def celery_executor(init_context):
     :py:class:`celery.Celery` constructor.
 
     In the most common case, you may want to modify the ``broker`` and ``backend`` (e.g., to use
-    Redis  instead of RabbitMQ). We expect that ``celery_settings`` will be less frequently
+    Redis instead of RabbitMQ). We expect that ``config_source`` will be less frequently
     modified, but that when solid executions are especially fast or slow, or when there are
-    different requirements around idempotence or retry, it will make sense to execute pipelines
+    different requirements around idempotence or retry, it may make sense to execute pipelines
     with variations on these settings.
-
-    **Config**:
-    .. code-block::
-
-        {
-            broker?: 'pyamqp://guest@localhost//',  # The URL of the Celery broker
-            backend?: 'rpc://', # The URL of the Celery results backend
-            include?: ['my_module'], # List of modules every worker should import
-            celery_settings: {
-                ... # Celery app config
-            }
-        }
 
     If you'd like to configure a celery executor in addition to the
     :py:class:`~dagster.default_executors`, you should add it to the ``executor_defs`` defined on a
@@ -72,6 +60,19 @@ def celery_executor(init_context):
         @pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [celery_executor])])
         def celery_enabled_pipeline():
             pass
+
+    Then you can configure the executor as follows:
+
+    .. code-block:: YAML
+
+        execution:
+          celery:
+            config:
+              broker?: 'pyamqp://guest@localhost//',  # The URL of the Celery broker
+              backend?: 'rpc://', # The URL of the Celery results backend
+              include?: ['my_module'], # List of modules every worker should import
+              config_source:
+                  ...
 
     '''
     check_cross_process_constraints(init_context)

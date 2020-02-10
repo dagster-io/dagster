@@ -36,7 +36,6 @@ class CeleryConfig(
         broker (Optional[str]): The URL of the Celery broker.
         backend (Optional[str]): The URL of the Celery backend.
         include (Optional[List[str]]): List of modules every worker should import.
-        queues (Optional[List[Dict]]):
         config_source (Optional[Dict]): Config settings for the Celery app.
 
     '''
