@@ -1,3 +1,4 @@
+from dagster_graphql.client.util import execution_params_from_pipeline_run
 from kubernetes import client, config
 
 from dagster import Field
@@ -31,7 +32,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 service_account_name: job_runner_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster_instance_config_map
-    
+
     As always when using a :py:class:`~dagster.core.serdes.ConfigurableClass`, the values
     under the ``config`` key of this YAML block will be passed to the constructor. The full list
     of acceptable values is given below by the constructor args.
@@ -52,7 +53,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             assume the launcher is running within the target cluster and load config using
             ``kubernetes.config.load_incluster_config``. Default: ``False``.
         kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Required if
-            ``load_kubeconfig`` is ``True``. 
+            ``load_kubeconfig`` is ``True``.
         image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
             which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
             ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
@@ -144,20 +145,18 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'app.kubernetes.io/version': dagster_version,
         }
 
-        execution_params = {
-            'executionParams': {
-                'selector': run.selector.to_graphql_input(),
-                "environmentConfigData": run.environment_dict,
-                'executionMetadata': {"runId": run.run_id},
-                "mode": run.mode,
-            },
-        }
+        execution_params = execution_params_from_pipeline_run(run)
 
         job_container = client.V1Container(
             name='dagster-job-%s' % run.run_id,
             image=self.job_image,
             command=['dagster-graphql'],
-            args=["-p", "startPipelineExecution", "-v", json.dumps(execution_params)],
+            args=[
+                "-p",
+                "startPipelineExecution",
+                "-v",
+                json.dumps({'executionParams': execution_params.to_graphql_input()}),
+            ],
             image_pull_policy=self.image_pull_policy,
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
             env_from=[

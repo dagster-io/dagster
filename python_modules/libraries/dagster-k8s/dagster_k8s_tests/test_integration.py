@@ -15,7 +15,8 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     run_id = uuid.uuid4().hex
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
+    tags = {'key': 'value'}
+    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict, tags)
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
