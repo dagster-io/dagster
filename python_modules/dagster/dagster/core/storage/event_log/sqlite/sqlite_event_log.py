@@ -86,16 +86,18 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             # the root nodes of a pipeline execute simultaneously on Airflow with SQLite storage
             # configured and contend with each other to init the db. When we hit the following
             # errors, we know that another process is on the case and it's safe to continue:
+            err_msg = str(exc)
             if not (
-                'table event_logs already exists' in str(exc)
-                or 'database is locked' in str(exc)
-                or 'table alembic_version already exists' in str(exc)
+                'table event_logs already exists' in err_msg
+                or 'database is locked' in err_msg
+                or 'table alembic_version already exists' in err_msg
+                or 'UNIQUE constraint failed: alembic_version.version_num' in err_msg
             ):
                 raise
             else:
                 logging.info(
                     'SqliteEventLogStorage._initdb: Encountered apparent concurrent init, '
-                    'swallowing {str_exc}'.format(str_exc=str(exc))
+                    'swallowing {str_exc}'.format(str_exc=err_msg)
                 )
 
     @contextmanager
