@@ -42,6 +42,7 @@ export const wrapper = showing => ({
 
   'ul h4': {
     fontSize: 3,
+    mb: 0,
   },
 
   mark: {
@@ -52,11 +53,24 @@ export const wrapper = showing => ({
   a: {
     color: 'gray.1',
   },
+
+  '.ais-Snippet': {
+    fontSize: 1,
+  },
 })
 
 export const poweredBy = {
-  py: 2,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  py: 3,
+  pb: 2,
   fontSize: 2,
   textAlign: 'right',
   borderTop: t => `1px solid ${t.colors.lightGray[2]}`,
+
+  img: {
+    mb: 0,
+    ml: 2,
+  },
 }

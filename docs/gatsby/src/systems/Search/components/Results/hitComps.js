@@ -1,5 +1,5 @@
 import React from 'react'
-import { Highlight } from 'react-instantsearch-dom'
+import { Highlight, Snippet } from 'react-instantsearch-dom'
 import { Link } from 'gatsby'
 
 export const PageHit = (clickHandler, version) => ({ hit }) => (
@@ -8,6 +8,7 @@ export const PageHit = (clickHandler, version) => ({ hit }) => (
       <h4>
         <Highlight attribute="title" hit={hit} tagName="mark" />
       </h4>
+      <Snippet attribute="markdown" tagName="mark" hit={hit} />
     </Link>
   </div>
 )
@@ -18,6 +19,7 @@ export const ModuleHit = (clickHandler, version) => ({ hit }) => (
       <h4>
         <Highlight attribute="title" hit={hit} tagName="mark" />
       </h4>
+      <Snippet attribute="markdown" tagName="mark" hit={hit} />
     </Link>
   </div>
 )

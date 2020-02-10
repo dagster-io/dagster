@@ -37,7 +37,7 @@ export const Search = React.forwardRef((props, ref) => {
         <Input onFocus={() => setFocus(true)} {...{ collapse: true, focus }} />
         <Results
           indices={indices}
-          showing={query.length > 0 && focus}
+          showing={query && query.length > 0 && focus}
           onClose={() => setFocus(false)}
         />
       </div>

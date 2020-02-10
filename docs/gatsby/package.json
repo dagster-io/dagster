@@ -94,6 +94,7 @@
     "remark-stringify": "^7.0.4",
     "remote-git-tags": "^3.0.0",
     "shelljs": "^0.8.3",
+    "strip-markdown": "^3.1.1",
     "unified": "^8.4.2",
     "unist-util-inspect": "^5.0.0",
     "unist-util-map": "^2.0.0"

@@ -3,6 +3,7 @@ import { jsx } from 'theme-ui'
 import * as styles from './styles'
 
 import * as hitComps from './hitComps'
+import algoliaLogo from './algolia-logo.svg'
 import { Index, Hits, connectStateResults } from 'react-instantsearch-dom'
 import { useVersion } from 'systems/Version'
 
@@ -36,7 +37,9 @@ export default function({ showing, indices, onClose }) {
           </Index>
         )
       })}
-      <span sx={styles.poweredBy}>Powered by Algolia</span>
+      <div sx={styles.poweredBy}>
+        Powered by <img src={algoliaLogo} sx={{ width: 80 }} />
+      </div>
     </div>
   )
 }
