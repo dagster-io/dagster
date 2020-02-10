@@ -10,6 +10,7 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.net import is_local_uri
 
 from .config import CeleryConfig
 from .defaults import task_default_priority, task_default_queue
@@ -33,6 +34,24 @@ class CeleryEngine(Engine):
         )
 
         celery_config = pipeline_context.executor_config
+
+        storage = pipeline_context.environment_dict.get('storage')
+
+        if (celery_config.broker and not is_local_uri(celery_config.broker)) or (
+            celery_config.backend and not is_local_uri(celery_config.backend)
+        ):
+            check.invariant(
+                storage.get('s3') or storage.get('gcs'),
+                'Must use S3 or GCS storage with non-local Celery broker: {broker} '
+                'and backend: {backend}'.format(
+                    broker=celery_config.broker, backend=celery_config.backend
+                ),
+            )
+        else:
+            check.invariant(
+                not storage.get('in_memory'),
+                'Cannot use in-memory storage with Celery, use filesystem, S3, or GCS',
+            )
 
         pipeline_name = pipeline_context.pipeline_def.name
 
