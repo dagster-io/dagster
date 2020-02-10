@@ -13,14 +13,13 @@ import {
   IGaantNode
 } from "./Constants";
 
-interface BuildLayoutParams {
+export interface BuildLayoutParams {
   nodes: IGaantNode[];
-  metadata: IRunMetadataDict;
-  options: GaantChartLayoutOptions;
+  mode: GaantChartMode;
 }
 
 export const buildLayout = (params: BuildLayoutParams) => {
-  const { nodes, metadata, options } = params;
+  const { nodes, mode } = params;
 
   // Step 1: Place the nodes that have no dependencies into the layout.
 
@@ -29,12 +28,13 @@ export const buildLayout = (params: BuildLayoutParams) => {
       i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name))
     );
 
-  let boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
+  const boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
     node: node,
     children: [],
     x: -1,
     y: -1,
-    width: boxWidthFor(node, params)
+    minX: -1,
+    width: BOX_WIDTH
   }));
 
   // Step 2: Recursively iterate through the graph and insert child nodes
@@ -47,39 +47,19 @@ export const buildLayout = (params: BuildLayoutParams) => {
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
   const deepen = (box: GaantChartBox, x: number) => {
-    box.x = Math.max(x, box.x);
+    box.x = box.minX = Math.max(x, box.x);
     box.children.forEach(child =>
       deepen(child, box.x + box.width + BOX_SPACING_X)
     );
   };
   roots.forEach(box => deepen(box, LEFT_INSET));
 
-  // Step 3.5: Assign X values based on the actual computation start times if we have them
-
-  if (
-    options.mode === GaantChartMode.WATERFALL_TIMED &&
-    metadata.minStepStart
-  ) {
-    const deepenOrUseMetadata = (box: GaantChartBox, x: number) => {
-      const start = metadata.steps[box.node.name]?.start;
-      if (!start) {
-        box.x = Math.max(x, box.x);
-      } else {
-        box.x = LEFT_INSET + (start - metadata.minStepStart!) * options.scale;
-      }
-      box.children.forEach(child =>
-        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
-      );
-    };
-    roots.forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
-  }
-
   // Step 4: Assign Y values (row numbers not pixel values)
-  if (options.mode === GaantChartMode.FLAT) {
+  if (mode === GaantChartMode.FLAT) {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
-      box.x = LEFT_INSET + box.x * 0.1;
+      box.x = box.minX = LEFT_INSET + box.x * 0.1;
     });
   } else {
     const parents: { [name: string]: GaantChartBox[] } = {};
@@ -154,6 +134,38 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
+  return { boxes, roots } as GaantChartLayout;
+};
+
+export const adjustLayoutWithRunMetadata = (
+  { roots, boxes }: GaantChartLayout,
+  options: GaantChartLayoutOptions,
+  metadata: IRunMetadataDict
+) => {
+  // Move and size boxes based on the run metadata. Note that we don't totally invalidate
+  // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
+  // step ordering, etc. should obey the constraints we already planned for). We just push
+  // boxes around on their existing rows.
+  if (
+    options.mode === GaantChartMode.WATERFALL_TIMED &&
+    metadata.minStepStart
+  ) {
+    const deepenOrUseMetadata = (box: GaantChartBox, x: number) => {
+      box.width = boxWidthFor(box.node, { options, metadata });
+
+      const start = metadata.steps[box.node.name]?.start;
+      if (!start) {
+        box.x = Math.max(x, box.minX);
+      } else {
+        box.x = LEFT_INSET + (start - metadata.minStepStart!) * options.scale;
+      }
+      box.children.forEach(child =>
+        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
+      );
+    };
+    roots.forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+  }
+
   // Apply display options / filtering
   if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
     boxes = boxes.filter(b => {
@@ -162,7 +174,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     });
   }
 
-  return { boxes } as GaantChartLayout;
+  return { roots, boxes } as GaantChartLayout;
 };
 
 const ensureSubtreeBelow = (
@@ -204,7 +216,8 @@ const addChildren = (
         depBox = {
           children: [],
           node: depNode,
-          width: boxWidthFor(depNode, params),
+          width: BOX_WIDTH,
+          minX: 0,
           x: 0,
           y: -1
         };

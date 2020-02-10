@@ -19,7 +19,9 @@ import { filterByQuery } from "../GraphQueryImpl";
 import {
   buildLayout,
   boxStyleFor,
-  interestingQueriesFor
+  interestingQueriesFor,
+  adjustLayoutWithRunMetadata,
+  BuildLayoutParams
 } from "./GaantChartLayout";
 import {
   GaantChartLayoutOptions,
@@ -137,6 +139,9 @@ export class GaantChart extends React.Component<
     `
   };
 
+  _cachedLayout: GaantChartLayout | null = null;
+  _cachedLayoutParams: BuildLayoutParams | null = null;
+
   constructor(props: GaantChartProps) {
     super(props);
 
@@ -145,6 +150,18 @@ export class GaantChart extends React.Component<
       options: Object.assign(DEFAULT_OPTIONS, props.options)
     };
   }
+
+  getLayout = (params: BuildLayoutParams) => {
+    if (
+      !this._cachedLayoutParams ||
+      this._cachedLayoutParams.nodes !== params.nodes ||
+      this._cachedLayoutParams.mode !== params.mode
+    ) {
+      this._cachedLayout = buildLayout(params);
+      this._cachedLayoutParams = params;
+    }
+    return this._cachedLayout!;
+  };
 
   updateOptions = (changes: Partial<GaantChartLayoutOptions>) => {
     this.setState({
@@ -166,11 +183,14 @@ export class GaantChart extends React.Component<
 
     const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, query);
-    const layout = buildLayout({
-      nodes: graphFiltered.all,
-      metadata,
-      options
-    });
+    const layout = adjustLayoutWithRunMetadata(
+      this.getLayout({
+        nodes: graphFiltered.all,
+        mode: options.mode
+      }),
+      options,
+      metadata
+    );
 
     const content = (
       <>
@@ -196,39 +216,11 @@ export class GaantChart extends React.Component<
         <OptionsContainer>
           {this.props.toolbarLeftActions}
           {this.props.toolbarLeftActions && <OptionsDivider />}
-          <ButtonGroup style={{ flexShrink: 0 }}>
-            <Button
-              key={GaantChartMode.FLAT}
-              small={true}
-              icon="column-layout"
-              title={"Flat"}
-              active={options.mode === GaantChartMode.FLAT}
-              onClick={() => this.updateOptions({ mode: GaantChartMode.FLAT })}
-            />
-            <Button
-              key={GaantChartMode.WATERFALL}
-              small={true}
-              icon="gantt-chart"
-              title={"Waterfall"}
-              active={options.mode === GaantChartMode.WATERFALL}
-              onClick={() =>
-                this.updateOptions({ mode: GaantChartMode.WATERFALL })
-              }
-            />
-            {!options.hideTimedMode && (
-              <Button
-                key={GaantChartMode.WATERFALL_TIMED}
-                small={true}
-                icon="time"
-                rightIcon="gantt-chart"
-                title={"Waterfall with Execution Timing"}
-                active={options.mode === GaantChartMode.WATERFALL_TIMED}
-                onClick={() =>
-                  this.updateOptions({ mode: GaantChartMode.WATERFALL_TIMED })
-                }
-              />
-            )}
-          </ButtonGroup>
+          <GaantChartModeControl
+            value={options.mode}
+            onChange={mode => this.updateOptions({ mode })}
+            hideTimedMode={options.hideTimedMode}
+          />
           {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
               <div style={{ width: 15 }} />
@@ -534,3 +526,39 @@ const OptionsDivider = styled.div`
   margin-left: 7px;
   border-left: 1px solid ${Colors.LIGHT_GRAY3};
 `;
+
+const GaantChartModeControl: React.FunctionComponent<{
+  value: GaantChartMode;
+  hideTimedMode: boolean;
+  onChange: (mode: GaantChartMode) => void;
+}> = ({ value, onChange, hideTimedMode }) => (
+  <ButtonGroup style={{ flexShrink: 0 }}>
+    <Button
+      key={GaantChartMode.FLAT}
+      small={true}
+      icon="column-layout"
+      title={"Flat"}
+      active={value === GaantChartMode.FLAT}
+      onClick={() => onChange(GaantChartMode.FLAT)}
+    />
+    <Button
+      key={GaantChartMode.WATERFALL}
+      small={true}
+      icon="gantt-chart"
+      title={"Waterfall"}
+      active={value === GaantChartMode.WATERFALL}
+      onClick={() => onChange(GaantChartMode.WATERFALL)}
+    />
+    {!hideTimedMode && (
+      <Button
+        key={GaantChartMode.WATERFALL_TIMED}
+        small={true}
+        icon="time"
+        rightIcon="gantt-chart"
+        title={"Waterfall with Execution Timing"}
+        active={value === GaantChartMode.WATERFALL_TIMED}
+        onClick={() => onChange(GaantChartMode.WATERFALL_TIMED)}
+      />
+    )}
+  </ButtonGroup>
+);

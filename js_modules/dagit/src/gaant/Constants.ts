@@ -5,12 +5,18 @@ export type IGaantNode = GraphQueryItem;
 export interface GaantChartBox {
   children: GaantChartBox[];
   node: IGaantNode;
-  x: number;
   width: number;
+  x: number;
   y: number;
+
+  // the X initial position of this box determined by the layout algorithm
+  // (before run metadata is applied) necessary to enforce the gaant arrow
+  // direction.
+  minX: number;
 }
 
 export interface GaantChartLayout {
+  roots: GaantChartBox[];
   boxes: GaantChartBox[];
 }
 
