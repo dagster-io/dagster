@@ -1,3 +1,4 @@
+import re
 import uuid
 
 from dagster_graphql.test.utils import execute_dagster_graphql
@@ -66,6 +67,9 @@ mutation ($executionParams: ExecutionParams!) {
             hasFailures
             stepEvents {
                 __typename
+                ... on MessageEvent {
+                    message
+                }
                 step {
                     key
                     metadata {
@@ -120,6 +124,17 @@ def get_named_thing(llist, name):
     check.failed('not found')
 
 
+# for snapshot testing remove any varying values
+def clean_log_messages(result_data):
+    for idx in range(len(result_data['executePlan']['stepEvents'])):
+        message = result_data['executePlan']['stepEvents'][idx].get('message')
+        if message is not None:
+            result_data['executePlan']['stepEvents'][idx]['message'] = re.sub(
+                r'(\d+(\.\d+)?)', '{N}', message
+            )
+    return result_data
+
+
 def test_success_whole_execution_plan(snapshot):
     run_id = str(uuid.uuid4())
     instance = DagsterInstance.local_temp()
@@ -151,7 +166,7 @@ def test_success_whole_execution_plan(snapshot):
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
 
-    snapshot.assert_match(result.data)
+    snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
@@ -190,7 +205,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
 
-    snapshot.assert_match(result.data)
+    snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
@@ -229,7 +244,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     assert 'sum_solid.compute' in step_events
     assert 'sum_sq_solid.compute' in step_events
 
-    snapshot.assert_match(result.data)
+    snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert not store.has_intermediate(None, 'sum_solid.compute')
     assert not store.has_intermediate(None, 'sum_sq_solid.compute')
@@ -283,7 +298,7 @@ def test_successful_one_part_execute_plan(snapshot):
     assert step_events[4]['step']['key'] == 'sum_solid.compute'
     assert step_events[5]['step']['key'] == 'sum_solid.compute'
 
-    snapshot.assert_match(result.data)
+    snapshot.assert_match(clean_log_messages(result.data))
 
     store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
@@ -313,7 +328,7 @@ def test_successful_two_part_execute_plan(snapshot):
 
     assert result_one.data['executePlan']['__typename'] == 'ExecutePlanSuccess'
 
-    snapshot.assert_match(result_one.data)
+    snapshot.assert_match(clean_log_messages(result_one.data))
 
     result_two = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -350,7 +365,7 @@ def test_successful_two_part_execute_plan(snapshot):
     assert step_events[4]['outputName'] == 'result'
     assert step_events[5]['step']['key'] == 'sum_sq_solid.compute'
 
-    snapshot.assert_match(result_two.data)
+    snapshot.assert_match(clean_log_messages(result_two.data))
 
     expected_value_repr = (
         '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''

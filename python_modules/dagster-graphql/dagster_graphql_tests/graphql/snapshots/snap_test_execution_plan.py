@@ -16,10 +16,12 @@ snapshots['test_success_whole_execution_plan 1'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_solid.compute".',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -28,6 +30,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "num" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -36,6 +39,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -45,6 +49,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -53,6 +58,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -61,6 +67,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_sq_solid.compute".',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -69,6 +76,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Retrieved intermediate object for input sum_df in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -77,6 +85,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "sum_df" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -85,6 +94,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -94,6 +104,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -102,6 +113,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_sq_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -110,6 +122,7 @@ snapshots['test_success_whole_execution_plan 1'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
@@ -126,10 +139,12 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_solid.compute".',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -138,6 +153,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "num" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -146,6 +162,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -155,6 +172,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -163,6 +181,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -171,6 +190,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_sq_solid.compute".',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -179,6 +199,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Retrieved intermediate object for input sum_df in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -187,6 +208,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "sum_df" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -195,6 +217,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -204,6 +227,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -212,6 +236,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_sq_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -220,6 +245,7 @@ snapshots['test_success_whole_execution_plan_with_filesystem_config 1'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
@@ -236,10 +262,12 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_solid.compute".',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -248,6 +276,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "num" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -256,6 +285,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -265,6 +295,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -273,6 +304,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_sq_solid.compute".',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -281,6 +313,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "sum_df" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -289,6 +322,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -298,6 +332,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_sq_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -306,6 +341,7 @@ snapshots['test_success_whole_execution_plan_with_in_memory_config 1'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
@@ -322,10 +358,12 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_solid.compute".',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -334,6 +372,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "num" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -342,6 +381,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -351,6 +391,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -359,6 +400,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -367,6 +409,7 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
@@ -383,10 +426,12 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_solid.compute".',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -395,6 +440,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "num" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -403,6 +449,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_solid.compute',
@@ -412,6 +459,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -420,6 +468,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_solid.compute',
                     'metadata': [
@@ -428,6 +477,7 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
@@ -444,10 +494,12 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
         'stepEvents': [
             {
                 '__typename': 'EngineEvent',
+                'message': 'Executing steps in process (pid: {N})',
                 'step': None
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
+                'message': 'Started execution of step "sum_sq_solid.compute".',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -456,6 +508,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Retrieved intermediate object for input sum_df in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -464,6 +517,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'ExecutionStepInputEvent',
+                'message': 'Got input "sum_df" of type "PoorMansDataFrame". (Type check passed).',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -472,6 +526,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'ExecutionStepOutputEvent',
+                'message': 'Yielded output "result" of type "PoorMansDataFrame". (Type check passed).',
                 'outputName': 'result',
                 'step': {
                     'key': 'sum_sq_solid.compute',
@@ -481,6 +536,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'ObjectStoreOperationEvent',
+                'message': 'Stored intermediate object for output result in filesystem object store using pickle.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -489,6 +545,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'ExecutionStepSuccessEvent',
+                'message': 'Finished execution of step "sum_sq_solid.compute" in {N}ms.',
                 'step': {
                     'key': 'sum_sq_solid.compute',
                     'metadata': [
@@ -497,6 +554,7 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             },
             {
                 '__typename': 'EngineEvent',
+                'message': 'Finished steps in process (pid: {N}) in {N}ms',
                 'step': None
             }
         ]
