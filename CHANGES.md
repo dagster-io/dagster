@@ -95,6 +95,7 @@
     to a `TypeCheck` object.
   - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
     a custom type_check is needed, use `DagsterType`.
+  - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
 
 **New**
 

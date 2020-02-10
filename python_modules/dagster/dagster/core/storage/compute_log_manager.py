@@ -17,45 +17,132 @@ class ComputeIOType(Enum):
     STDERR = 'stderr'
 
 
-ComputeLogFileData = namedtuple('ComputeLogFileData', 'path data cursor size download_url')
+class ComputeLogFileData(namedtuple('ComputeLogFileData', 'path data cursor size download_url')):
+    '''Representation of a chunk of compute execution log data'''
+
+    def __new__(cls, path, data, cursor, size, download_url):
+        return super(ComputeLogFileData, cls).__new__(
+            cls,
+            path=check.str_param(path, 'path'),
+            data=check.opt_str_param(data, 'data'),
+            cursor=check.int_param(cursor, 'cursor'),
+            size=check.int_param(size, 'size'),
+            download_url=check.opt_str_param(download_url, 'download_url'),
+        )
 
 
 class ComputeLogManager(six.with_metaclass(ABCMeta)):
-    '''Governs the logging of stdout and stderr from solid compute functions.'''
+    '''Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
+    steps of pipeline solids.'''
 
-    # API
     @abstractmethod
     def get_local_path(self, run_id, step_key, io_type):
-        pass
+        '''Get the local path of the logfile for a given execution step.  This determines the
+        location on the local filesystem to which stdout/stderr will be rerouted.
+
+        Args:
+            run_id (str): The id of the pipeline run.
+            step_key (str): The unique descriptor of the execution step
+                            (e.g. `solid_invocation.compute`)
+            io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
+
+        Returns:
+            Path
+        '''
 
     @abstractmethod
     def is_compute_completed(self, run_id, step_key):
-        pass
+        '''Flag indicating when computation for a given execution step has completed.
+
+        Args:
+            run_id (str): The id of the pipeline run.
+            step_key (str): The unique descriptor of the execution step
+                            (e.g. `solid_invocation.compute`)
+
+        Returns:
+            Boolean
+        '''
 
     @abstractmethod
     def on_compute_start(self, step_context):
-        pass
+        '''Hook called when computation for a given execution step is starting.
+
+        Args:
+            step_context (SystemStepExecutionContext): The execution context for the compute step
+        '''
 
     @abstractmethod
     def on_compute_finish(self, step_context):
-        pass
+        '''Hook called when computation for a given execution step is finished.
+
+        Args:
+            step_context (SystemStepExecutionContext): The execution context for the compute step
+        '''
 
     @abstractmethod
     def download_url(self, run_id, step_key, io_type):
-        pass
+        '''Get a URL where the logs can be downloaded.
+
+        Args:
+            run_id (str): The id of the pipeline run.
+            step_key (str): The unique descriptor of the execution step
+                            (e.g. `solid_invocation.compute`)
+            io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
+
+        Returns:
+            String
+        '''
 
     @abstractmethod
     def read_logs_file(self, run_id, step_key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        pass
+        '''Get compute log data for a given compute step.
+
+        Args:
+            run_id (str): The id of the pipeline run.
+            step_key (str): The unique descriptor of the execution step
+                            (e.g. `solid_invocation.compute`)
+            io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
+            cursor (Optional[Int]): Starting cursor (byte) of log file
+            max_bytes (Optional[Int]): Maximum number of bytes to be read and returned
+
+        Returns:
+            ComputeLogFileData
+        '''
+
+    def enabled(self, _step_context):
+        '''Hook for disabling compute log capture.
+
+        Args:
+            _step_context (SystemStepExecutionContext): The execution context for the compute step
+
+        Returns:
+            Boolean
+        '''
+        return True
 
     @abstractmethod
     def on_subscribe(self, subscription):
-        pass
+        '''Hook for managing streaming subscriptions for log data from `dagit`
 
-    def enabled(self, _step_context):
-        return True
+        Args:
+            subscription (ComputeLogSubscription): subscription object which manages when to send
+                back data to the subscriber
+        '''
 
     def observable(self, run_id, step_key, io_type, cursor=None):
+        '''Return an Observable which streams back log data from the execution logs for a given
+        compute step.
+
+        Args:
+            run_id (str): The id of the pipeline run.
+            step_key (str): The unique descriptor of the execution step
+                            (e.g. `solid_invocation.compute`)
+            io_type (ComputeIOType): Flag indicating the I/O type, either stdout or stderr
+            cursor (Optional[Int]): Starting cursor (byte) of log file
+
+        Returns:
+            Observable
+        '''
         check.str_param(run_id, 'run_id')
         check.str_param(step_key, 'step_key')
         check.inst_param(io_type, 'io_type', ComputeIOType)
@@ -72,6 +159,10 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
 
 class ComputeLogSubscription(object):
+    '''Observable object that generates ComputeLogFileData objects as compute step execution logs
+    are written
+    '''
+
     def __init__(self, manager, run_id, step_key, io_type, cursor):
         self.manager = manager
         self.run_id = run_id

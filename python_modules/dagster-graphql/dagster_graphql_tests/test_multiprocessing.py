@@ -17,8 +17,8 @@ from dagster import (
     Materialization,
     OutputDefinition,
     Path,
+    PythonObjectDagsterType,
     String,
-    as_dagster_type,
     composite_solid,
     input_hydration_config,
     lambda_solid,
@@ -34,16 +34,10 @@ from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, safe_tempfile_path
 
 
-class PoorMansDataFrame_(list):
-    pass
-
-
 @input_hydration_config(Path)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
-        return PoorMansDataFrame_(
-            [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
-        )
+        return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @output_materialization_config(Path)
@@ -56,8 +50,9 @@ def df_output_schema(_context, path, value):
     return Materialization.file(path)
 
 
-PoorMansDataFrame = as_dagster_type(
-    PoorMansDataFrame_,
+PoorMansDataFrame = PythonObjectDagsterType(
+    python_type=list,
+    name='PoorMansDataFrame',
     input_hydration_config=df_input_schema,
     output_materialization_config=df_output_schema,
 )
@@ -179,7 +174,7 @@ def sum_solid(num):
     sum_df = deepcopy(num)
     for x in sum_df:
         x['sum'] = x['num1'] + x['num2']
-    return PoorMansDataFrame(sum_df)
+    return sum_df
 
 
 @lambda_solid(

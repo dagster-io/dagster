@@ -81,13 +81,13 @@ def test_runtime_type_query_works():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'PoorMansDataFrame_'},
+        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'PoorMansDataFrame'},
     )
 
     assert not result.errors
     assert result.data
     assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
-    assert result.data['runtimeTypeOrError']['name'] == 'PoorMansDataFrame_'
+    assert result.data['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
 def test_runtime_type_builtin_query():

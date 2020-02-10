@@ -38,7 +38,7 @@ def test_basic_pipeline_with_pandas_dataframe_dagster_type():
     BasicDF = create_dagster_pandas_dataframe_type(
         name='BasicDF',
         columns=[
-            PandasColumn.integer_column('pid', exists=True),
+            PandasColumn.integer_column('pid', non_nullable=True),
             PandasColumn.string_column('names'),
         ],
         event_metadata_fn=compute_event_metadata,
@@ -70,7 +70,7 @@ def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
     BasicDF = create_dagster_pandas_dataframe_type(
         name='BasicDF',
         columns=[
-            PandasColumn.integer_column('pid', exists=True),
+            PandasColumn.integer_column('pid', non_nullable=True),
             PandasColumn.string_column('names'),
         ],
         event_metadata_fn=None,

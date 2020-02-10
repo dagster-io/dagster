@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from google.cloud import storage
 
-from dagster import check, dagster_type
+from dagster import check, usable_as_dagster_type
 from dagster.core.storage.file_manager import (
     FileHandle,
     FileManager,
@@ -13,7 +13,7 @@ from dagster.core.storage.file_manager import (
 )
 
 
-@dagster_type
+@usable_as_dagster_type
 class GCSFileHandle(FileHandle):
     def __init__(self, gcs_bucket, gcs_key):
         self._gcs_bucket = check.str_param(gcs_bucket, 'gcs_bucket')

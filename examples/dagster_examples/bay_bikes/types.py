@@ -249,7 +249,7 @@ WeatherDataFrameSchema = [
         'visibility', min_value=0.0, max_value=10.0, expected_dtypes={'int64', 'float64'}
     ),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
-    PandasColumn.boolean_column('didRain', exists=True),
+    PandasColumn.boolean_column('didRain', non_nullable=True),
 ]
 
 

@@ -2,10 +2,10 @@ import csv
 
 from dagster import (
     SerializationStrategy,
-    dagster_type,
     execute_pipeline,
     pipeline,
     solid,
+    usable_as_dagster_type,
 )
 
 
@@ -26,7 +26,7 @@ class CsvSerializationStrategy(SerializationStrategy):
         return LessSimpleDataFrame([row for row in reader])
 
 
-@dagster_type(
+@usable_as_dagster_type(
     name='LessSimpleDataFrame',
     description=(
         'A naive representation of a data frame, e.g., as returned by '

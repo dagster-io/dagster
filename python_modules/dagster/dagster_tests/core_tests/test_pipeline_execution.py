@@ -656,7 +656,7 @@ def test_basic_pipeline_selector():
     def pipe():
         def_one()
 
-    assert set(pipe.selector.solid_subset) == {'def_one'}
+    assert pipe.selector.solid_subset == None
 
 
 def test_selector_with_partial_dependency_dict():
@@ -674,12 +674,9 @@ def test_selector_with_partial_dependency_dict():
         name='pipe_two', solid_defs=[def_one, def_two], dependencies={'def_one': {}}
     )
 
-    # if it is in solid defs it will execute even if it is not in dependencies dictionary
-    assert set(pipe_two.selector.solid_subset) == {'def_one', 'def_two'}
-
     execute_pipeline(pipe_two)
 
-    # verify that it did execute
+    # if it is in solid defs it will execute even if it is not in dependencies dictionary
     assert set(executed.keys()) == {'one', 'two'}
 
 

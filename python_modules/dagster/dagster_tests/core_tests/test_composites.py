@@ -12,12 +12,12 @@ from dagster import (
     PipelineDefinition,
     String,
     composite_solid,
-    dagster_type,
     execute_pipeline,
     execute_solid,
     lambda_solid,
     pipeline,
     solid,
+    usable_as_dagster_type,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.core.utility_solids import (
@@ -228,7 +228,7 @@ def test_io_error_is_decent():
 
 
 def test_types_descent():
-    @dagster_type
+    @usable_as_dagster_type
     class Foo(object):
         pass
 

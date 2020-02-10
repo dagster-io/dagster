@@ -443,7 +443,7 @@ Making New Types
 
 .. autodecorator:: dagster_type
 
-.. autofunction:: define_python_dagster_type
+.. autofunction:: PythonObjectDagsterType
 
 .. autofunction:: input_hydration_config
 

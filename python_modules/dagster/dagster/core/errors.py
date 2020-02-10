@@ -272,9 +272,11 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     '''
 
     def __init__(self, resource_name, *args, **kwargs):
-        msg = 'Unknown resource `{resource_name}`.  Make sure `{resource_name}` is a valid resource on the pipeline and that it has been specified in the `required_resource_keys` argument for the solid.'.format(
-            resource_name=resource_name
-        )
+        self.resource_name = check.str_param(resource_name, 'resource_name')
+        msg = (
+            'Unknown resource `{resource_name}. Specify `{resource_name}` as a required resource '
+            'on the compute / config function that accessed it.'
+        ).format(resource_name=resource_name)
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 

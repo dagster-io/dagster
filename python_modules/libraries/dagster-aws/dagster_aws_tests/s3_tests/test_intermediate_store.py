@@ -19,10 +19,10 @@ from dagster import (
     SerializationStrategy,
     String,
     check,
-    dagster_type,
     execute_pipeline,
     lambda_solid,
     pipeline,
+    usable_as_dagster_type,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
@@ -377,7 +377,7 @@ class CsvSerializationStrategy(SerializationStrategy):
         return LessSimpleDataFrame([row for row in reader])
 
 
-@dagster_type(
+@usable_as_dagster_type(
     name="LessSimpleDataFrame",
     description=("A naive representation of a data frame, e.g., as returned by " "csv.DictReader."),
     serialization_strategy=CsvSerializationStrategy(),

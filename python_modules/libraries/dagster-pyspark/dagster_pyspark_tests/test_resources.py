@@ -1,5 +1,5 @@
-from dagster_pyspark import DataFrame, pyspark_resource
-from pyspark.sql import Row
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import DataFrame, Row
 
 from dagster import ModeDefinition, execute_solid, solid
 

@@ -141,8 +141,13 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
+        # it is possible that the surrounding context does NOT have the required resource keys
+        # because we are building a context for steps that we are not going to execute (e.g. in the
+        # resume/retry case, in order to generate copy intermediates events)
         resource_instance_dict = {
-            key: self.resource_instance_dict[key] for key in required_resource_keys
+            key: self.resource_instance_dict[key]
+            for key in required_resource_keys
+            if key in self.resource_instance_dict
         }
 
         class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):

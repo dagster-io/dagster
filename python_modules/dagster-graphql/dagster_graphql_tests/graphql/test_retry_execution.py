@@ -167,3 +167,40 @@ def test_retry_pipeline_execution():
     assert step_did_not_run(logs, 'fail_2.compute')
     assert step_did_succeed(logs, 'fail_3.compute')
     assert step_did_succeed(logs, 'reset.compute')
+
+
+def test_retry_resource_pipeline():
+    context = define_test_context(instance=DagsterInstance.local_temp())
+    result = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': {
+                'mode': 'default',
+                'selector': {'name': 'retry_resource_pipeline'},
+                'environmentConfigData': {'storage': {'filesystem': {}}},
+            }
+        },
+    )
+
+    run_id = result.data['startPipelineExecution']['run']['runId']
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert step_did_succeed(logs, 'start.compute')
+    assert step_did_fail(logs, 'will_fail.compute')
+
+    retry_one = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': {
+                'mode': 'default',
+                'selector': {'name': 'retry_resource_pipeline'},
+                'environmentConfigData': {'storage': {'filesystem': {}}},
+                'retryRunId': run_id,
+            }
+        },
+    )
+    run_id = retry_one.data['startPipelineExecution']['run']['runId']
+    logs = retry_one.data['startPipelineExecution']['run']['logs']['nodes']
+    assert step_did_not_run(logs, 'start.compute')
+    assert step_did_fail(logs, 'will_fail.compute')

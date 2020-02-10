@@ -19,14 +19,18 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.types.dagster_type import DagsterType, PythonObjectType, resolve_dagster_type
+from dagster.core.types.dagster_type import (
+    DagsterType,
+    PythonObjectDagsterType,
+    resolve_dagster_type,
+)
 
 
 class BarObj(object):
     pass
 
 
-class _Bar(PythonObjectType):
+class _Bar(PythonObjectDagsterType):
     def __init__(self):
         super(_Bar, self).__init__(BarObj, name='Bar', description='A bar.')
 
