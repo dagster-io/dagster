@@ -4,4 +4,4 @@ export const wrapper = {
   "&.toctree-l1 > ul": {
     mt: 0
   }
-}
+};

@@ -15,4 +15,4 @@ export const wrapper = {
   backgroundPosition: "right .7em top 50%, 0 0",
   backgroundSize: ".65em auto, 100%",
   border: "none"
-}
+};

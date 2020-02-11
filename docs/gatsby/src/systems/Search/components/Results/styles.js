@@ -57,7 +57,7 @@ export const wrapper = showing => ({
   ".ais-Snippet": {
     fontSize: 1
   }
-})
+});
 
 export const poweredBy = {
   display: "flex",
@@ -73,4 +73,4 @@ export const poweredBy = {
     mb: 0,
     ml: 2
   }
-}
+};

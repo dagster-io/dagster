@@ -1,6 +1,6 @@
-import React from "react"
-import { Highlight, Snippet } from "react-instantsearch-dom"
-import { Link } from "gatsby"
+import React from "react";
+import { Highlight, Snippet } from "react-instantsearch-dom";
+import { Link } from "gatsby";
 
 export const PageHit = (clickHandler, version) => ({ hit }) => (
   <div>
@@ -11,7 +11,7 @@ export const PageHit = (clickHandler, version) => ({ hit }) => (
       <Snippet attribute="markdown" tagName="mark" hit={hit} />
     </Link>
   </div>
-)
+);
 
 export const ModuleHit = (clickHandler, version) => ({ hit }) => (
   <div>
@@ -22,4 +22,4 @@ export const ModuleHit = (clickHandler, version) => ({ hit }) => (
       <Snippet attribute="markdown" tagName="mark" hit={hit} />
     </Link>
   </div>
-)
+);

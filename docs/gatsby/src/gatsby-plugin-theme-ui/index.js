@@ -1,5 +1,5 @@
-import { rem } from "utils/css"
-import colors from "./colors"
+import { rem } from "utils/css";
+import colors from "./colors";
 
 export default {
   breakpoints: ["600px", "1024px", "1366px"],
@@ -60,4 +60,4 @@ export default {
   header: {
     gutter: [rem(88), rem(100), rem(155)]
   }
-}
+};

@@ -1,6 +1,6 @@
-import { rem } from "utils/css"
+import { rem } from "utils/css";
 
-const minWidthCalc = (t, space) => `calc(100% - ${rem(t.space[space])})`
+const minWidthCalc = (t, space) => `calc(100% - ${rem(t.space[space])})`;
 
 export const wrapper = {
   zIndex: 99,
@@ -16,20 +16,20 @@ export const wrapper = {
   my: [2, 3, 4],
   borderRadius: `999px 0 0 999px`,
   boxShadow: "0 2px 15px rgba(0,0,0,0.15)"
-}
+};
 
 export const right = {
   display: "flex",
   alignItems: "center",
   flex: 1
-}
+};
 
 const toggleVisiblity = showing => ({
   visibility: [showing ? "hidden" : "visible", "visible"],
   width: [showing ? 0 : "auto", "auto"],
   opacity: [showing ? 0 : 1, 1],
   transition: "all .3s"
-})
+});
 
 export const menuBtn = showing => ({
   ...toggleVisiblity(showing),
@@ -48,13 +48,13 @@ export const menuBtn = showing => ({
   svg: {
     stroke: "gray.3"
   }
-})
+});
 
 export const logo = showing => ({
   ...toggleVisiblity(showing),
   width: [showing ? 0 : 60, 60, 80],
   height: [60, 60, 80]
-})
+});
 
 export const socialIcons = showing => ({
   mr: [2, 2, 4],
@@ -66,4 +66,4 @@ export const socialIcons = showing => ({
   "a:hover > svg": {
     stroke: "blue.4"
   }
-})
+});

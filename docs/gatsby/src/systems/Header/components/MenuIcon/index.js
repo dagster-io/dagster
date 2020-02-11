@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { jsx } from "theme-ui"
+import { jsx } from "theme-ui";
 
 const iconStyle = opened => ({
   width: "30px",
@@ -55,7 +55,7 @@ const iconStyle = opened => ({
       left: "50%"
     }
   })
-})
+});
 
 export const MenuIcon = ({ opened }) => {
   return (
@@ -65,5 +65,5 @@ export const MenuIcon = ({ opened }) => {
       <span id="menu-icon-span"></span>
       <span id="menu-icon-span"></span>
     </div>
-  )
-}
+  );
+};

@@ -1,6 +1,6 @@
 const border = t => {
-  return `1px solid ${t.colors.lightGray[1]}`
-}
+  return `1px solid ${t.colors.lightGray[1]}`;
+};
 
 export const wrapper = {
   fontFamily: "mono",
@@ -72,4 +72,4 @@ export const wrapper = {
     p: 0,
     border: 0
   }
-}
+};

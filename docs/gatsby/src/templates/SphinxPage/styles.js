@@ -1,18 +1,18 @@
 export const wrapper = {
   display: "flex",
   height: "100%"
-}
+};
 
 export const content = {
   flex: 1,
   py: [3, 4, 0],
   px: [3, 4, 5],
   maxWidth: ["100%", "100%", "calc(100% - 280px)"]
-}
+};
 
 export const icon = {
   mr: 1
-}
+};
 
 export const btnShowToc = {
   my: 3,
@@ -28,4 +28,4 @@ export const btnShowToc = {
   fontSize: 12,
   fontWeight: "bold",
   color: "gray.1"
-}
+};

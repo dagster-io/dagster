@@ -28,4 +28,4 @@ export const wrapper = {
     mb: 0,
     fontSize: 2
   }
-}
+};

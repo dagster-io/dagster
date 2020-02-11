@@ -1,4 +1,4 @@
-import { Machine, assign } from "xstate"
+import { Machine, assign } from "xstate";
 
 const machine = Machine({
   id: "responsive",
@@ -35,21 +35,21 @@ const machine = Machine({
       target: "checking"
     }
   }
-})
+});
 
 const guards = {
   isDesktop: ctx => {
-    return ctx.width >= 1366
+    return ctx.width >= 1366;
   }
-}
+};
 
 const actions = {
   setWidth: assign({
     width: (_, ev) => ev.data
   })
-}
+};
 
 export const responsiveMachine = machine.withConfig({
   guards,
   actions
-})
+});

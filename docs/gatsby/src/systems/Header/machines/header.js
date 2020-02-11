@@ -1,4 +1,4 @@
-import { Machine, assign } from "xstate"
+import { Machine, assign } from "xstate";
 
 export const headerMachine = Machine(
   {
@@ -19,7 +19,7 @@ export const headerMachine = Machine(
             {
               target: "nothing",
               cond: ctx => {
-                return ctx.width > 600
+                return ctx.width > 600;
               }
             },
             { target: "closed" }
@@ -53,4 +53,4 @@ export const headerMachine = Machine(
       })
     }
   }
-)
+);

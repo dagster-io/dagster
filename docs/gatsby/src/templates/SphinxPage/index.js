@@ -1,27 +1,27 @@
 /** @jsx jsx */
-import { jsx } from "theme-ui"
-import { useState } from "react"
-import { FileText } from "react-feather"
-import useWindowSize from "react-use/lib/useWindowSize"
+import { jsx } from "theme-ui";
+import { useState } from "react";
+import { FileText } from "react-feather";
+import useWindowSize from "react-use/lib/useWindowSize";
 
-import { Layout, SEO } from "systems/Core"
+import { Layout, SEO } from "systems/Core";
 
-import { ReactParser } from "../../systems/ReactParser"
-import { TableOfContents } from "./components/TableOfContents"
-import * as styles from "./styles"
+import { ReactParser } from "../../systems/ReactParser";
+import { TableOfContents } from "./components/TableOfContents";
+import * as styles from "./styles";
 
 const SphinxPage = ({ pageContext: ctx }) => {
-  const { page } = ctx
-  const { width } = useWindowSize()
-  const [showToc, setShowToc] = useState(false)
-  const isMobile = width < 1024
+  const { page } = ctx;
+  const { width } = useWindowSize();
+  const [showToc, setShowToc] = useState(false);
+  const isMobile = width < 1024;
 
   function handleShowToc() {
-    setShowToc(s => !s)
+    setShowToc(s => !s);
   }
 
   function handleCloseToc() {
-    setShowToc(false)
+    setShowToc(false);
   }
 
   return (
@@ -46,7 +46,7 @@ const SphinxPage = ({ pageContext: ctx }) => {
         </TableOfContents>
       </main>
     </Layout>
-  )
-}
+  );
+};
 
-export default SphinxPage
+export default SphinxPage;
