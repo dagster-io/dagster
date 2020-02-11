@@ -198,7 +198,7 @@ export const GraphQueryInput = React.memo(
               icon={IconNames.LAYERS}
               rightIcon={IconNames.CROSS}
               onClick={() => {
-                props.onChange("");
+                props.onChange("*");
               }}
             />
           ) : (
