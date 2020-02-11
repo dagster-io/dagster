@@ -33,7 +33,7 @@ export enum GaantChartMode {
   WATERFALL_TIMED = "waterfall-timed"
 }
 
-export const MIN_SCALE = 0.005;
+export const MIN_SCALE = 0.0002;
 export const MAX_SCALE = 0.5;
 export const LEFT_INSET = 5;
 export const BOX_HEIGHT = 30;

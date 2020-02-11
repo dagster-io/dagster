@@ -11,7 +11,53 @@ interface GaantChartTimescaleProps {
   highlightedMs: number[];
 }
 
+const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
+const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
+const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+
 const TICK_LABEL_WIDTH = 40;
+const TICK_CONFIG = [
+  {
+    tickIntervalMs: 0.5 * 1000,
+    tickLabels: msToSubsecondLabel
+  },
+  {
+    tickIntervalMs: 1 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 5 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 10 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 30 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 60 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 2 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 5 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 10 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 20 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  }
+];
 
 export const GaantChartTimescale = ({
   scale,
@@ -21,29 +67,28 @@ export const GaantChartTimescale = ({
   highlightedMs
 }: GaantChartTimescaleProps) => {
   const viewportWidth = window.innerWidth;
-
-  const pxPerMs = scale;
-  const msPerTick = 1000 * (scale < 0.1 ? 5 : scale < 0.2 ? 1 : 0.5);
-  const pxPerTick = msPerTick * pxPerMs;
   const transform = `translate(${LEFT_INSET - scrollLeft}px)`;
-
   const ticks: React.ReactChild[] = [];
   const lines: React.ReactChild[] = [];
 
-  const labelPrecision = scale < 0.2 ? 0 : 1;
-  const labelForTime = (ms: number, precision: number = labelPrecision) =>
-    `${Number(ms / 1000).toFixed(precision)}s`;
+  const pxPerMs = scale;
+  const { tickIntervalMs, tickLabels } =
+    TICK_CONFIG.find(t => t.tickIntervalMs * pxPerMs > 80) ||
+    TICK_CONFIG[TICK_CONFIG.length - 1];
 
+  const pxPerTick = tickIntervalMs * pxPerMs;
   const firstTickX = Math.floor(scrollLeft / pxPerTick) * pxPerTick;
 
   for (let x = firstTickX; x < firstTickX + viewportWidth; x += pxPerTick) {
     if (x - scrollLeft < 10) continue;
-    const label = labelForTime(x / pxPerMs);
+    const ms = x / pxPerMs;
+    const key = `${ms.toFixed(2)}`;
+    const label = tickLabels(ms);
     lines.push(
-      <div className="line" key={label} style={{ left: x, transform }} />
+      <div className="line" key={key} style={{ left: x, transform }} />
     );
     ticks.push(
-      <div className="tick" key={label} style={{ left: x - 20, transform }}>
+      <div className="tick" key={key} style={{ left: x - 20, transform }}>
         {label}
       </div>
     );
@@ -63,7 +108,7 @@ export const GaantChartTimescale = ({
               transform
             }}
           >
-            {labelForTime(highlightedMs[1] - highlightedMs[0], 2)}
+            {tickLabels(highlightedMs[1] - highlightedMs[0])}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
@@ -79,7 +124,7 @@ export const GaantChartTimescale = ({
               className="tick highlight"
               style={{ left: timeX + labelOffset, transform }}
             >
-              {labelForTime(ms - startMs, 2)}
+              {tickLabels(ms - startMs)}
             </div>
           );
         })}
