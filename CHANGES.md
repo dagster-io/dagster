@@ -97,6 +97,8 @@
   - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
     a custom type_check is needed, use `DagsterType`.
   - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
+  - `type_check_fn` on `DagsterType` (formerly `RunTimeType`) now takes a first argument `context` of type
+    `TypeCheckContext` in addition to the second argument of value.
 
 - We no longer publish base Docker images. Please see the updated deployment docs for an example
   Dockerfile off of which you can work.

@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 else:
     SimpleDataFrame = DagsterType(
         name='SimpleDataFrame',
-        type_check_fn=lambda value: isinstance(value, list),
+        type_check_fn=lambda _, value: isinstance(value, list),
         description='A naive representation of a data frame, e.g., as returned by csv.DictReader.',
     )
 

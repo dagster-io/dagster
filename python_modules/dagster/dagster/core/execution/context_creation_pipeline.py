@@ -124,8 +124,9 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
     # add all the solid compute resource keys
     resource_keys = resource_keys.union(solid_def.required_resource_keys)
 
-    # add input hydration config resource keys
+    # add input type and input hydration config resource keys
     for step_input in execution_step.step_inputs:
+        resource_keys = resource_keys.union(step_input.runtime_type.required_resource_keys)
         if (
             step_input.source_type == StepInputSourceType.CONFIG
             and step_input.runtime_type.input_hydration_config
@@ -134,8 +135,9 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
                 step_input.runtime_type.input_hydration_config.required_resource_keys()
             )
 
-    # add output materialization config resource keys
+    # add output type and output materialization config resource keys
     for step_output in execution_step.step_outputs:
+        resource_keys = resource_keys.union(step_output.runtime_type.required_resource_keys)
         if (
             step_output.should_materialize
             and step_output.runtime_type.output_materialization_config

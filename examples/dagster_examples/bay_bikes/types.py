@@ -260,7 +260,7 @@ WeatherDataFrame = create_dagster_pandas_dataframe_type(
 )
 
 
-def validate_snapshot_timeseries(training_set_data):
+def validate_snapshot_timeseries(_, training_set_data):
     if not isinstance(training_set_data, tuple):
         return TypeCheck(False)
 

@@ -82,20 +82,20 @@ def test_python_mapping():
     assert add_one.input_defs[0].runtime_type.name == 'Int'
 
     runtime = resolve_dagster_type(float)
-    runtime.type_check(1.0)
-    res = runtime.type_check(1)
+    runtime.type_check(None, 1.0)
+    res = runtime.type_check(None, 1)
     assert not res.success
 
     runtime = resolve_dagster_type(bool)
-    runtime.type_check(True)
-    res = runtime.type_check(1)
+    runtime.type_check(None, True)
+    res = runtime.type_check(None, 1)
     assert not res.success
 
 
 def test_double_runtime_type():
 
-    AlwaysSucceedsFoo = DagsterType(name='Foo', type_check_fn=lambda _: True)
-    AlwaysFailsFoo = DagsterType(name='Foo', type_check_fn=lambda _: False)
+    AlwaysSucceedsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: True)
+    AlwaysFailsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: False)
 
     @lambda_solid
     def return_a_thing():

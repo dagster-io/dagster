@@ -3,7 +3,7 @@ import csv
 from dagster import DagsterType, execute_pipeline, pipeline, solid
 
 
-def less_simple_data_frame_type_check(value):
+def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return False
 

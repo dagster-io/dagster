@@ -13,13 +13,13 @@ from dagster import (
 def test_typed_python_dict():
     int_to_int = Dict[int, int]
 
-    int_to_int.type_check({1: 1})
+    int_to_int.type_check(None, {1: 1})
 
 
 def test_typed_python_dict_failure():
     int_to_int = Dict[int, int]
 
-    res = int_to_int.type_check({1: '1'})
+    res = int_to_int.type_check(None, {1: '1'})
     assert not res.success
 
 

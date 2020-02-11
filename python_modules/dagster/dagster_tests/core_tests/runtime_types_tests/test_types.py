@@ -11,12 +11,14 @@ from dagster import (
     InputDefinition,
     Int,
     List,
+    ModeDefinition,
     Optional,
     OutputDefinition,
     TypeCheck,
     execute_pipeline,
     lambda_solid,
     pipeline,
+    resource,
     solid,
 )
 from dagster.core.types.dagster_type import (
@@ -51,7 +53,7 @@ def test_python_object_type():
 
 
 def test_python_object_type_with_custom_type_check():
-    def eq_3(value):
+    def eq_3(_, value):
         return isinstance(value, int) and value == 3
 
     Int3 = DagsterType(name='Int3', type_check_fn=eq_3)
@@ -64,23 +66,26 @@ def test_python_object_type_with_custom_type_check():
 def test_nullable_python_object_type():
     nullable_type_bar = resolve_dagster_type(Optional[Bar])
 
-    assert_type_check(nullable_type_bar.type_check(BarObj()))
-    assert_type_check(nullable_type_bar.type_check(None))
+    # https://github.com/dagster-io/dagster/issues/2141
+    # this test and others near by
 
-    res = nullable_type_bar.type_check('not_a_bar')
+    assert_type_check(nullable_type_bar.type_check(None, BarObj()))
+    assert_type_check(nullable_type_bar.type_check(None, None))
+
+    res = nullable_type_bar.type_check(None, 'not_a_bar')
     assert not res.success
 
 
 def test_nullable_int_coercion():
     int_type = resolve_dagster_type(Int)
-    assert_type_check(int_type.type_check(1))
+    assert_type_check(int_type.type_check(None, 1))
 
-    res = int_type.type_check(None)
+    res = int_type.type_check(None, None)
     assert not res.success
 
     nullable_int_type = resolve_dagster_type(Optional[Int])
-    assert_type_check(nullable_int_type.type_check(1))
-    assert_type_check(nullable_int_type.type_check(None))
+    assert_type_check(nullable_int_type.type_check(None, 1))
+    assert_type_check(nullable_int_type.type_check(None, None))
 
 
 def assert_type_check(type_check):
@@ -88,12 +93,12 @@ def assert_type_check(type_check):
 
 
 def assert_success(runtime_type, value):
-    type_check_result = runtime_type.type_check(value)
+    type_check_result = runtime_type.type_check(None, value)
     assert_type_check(type_check_result)
 
 
 def assert_failure(runtime_type, value):
-    res = runtime_type.type_check(value)
+    res = runtime_type.type_check(None, value)
     assert not res.success
 
 
@@ -246,14 +251,14 @@ class AlwaysFailsException(Exception):
     pass
 
 
-def _always_fails(_value):
+def _always_fails(_, _value):
     raise AlwaysFailsException('kdjfkjd')
 
 
 ThrowsExceptionType = DagsterType(name='ThrowsExceptionType', type_check_fn=_always_fails,)
 
 
-def _return_bad_value(_value):
+def _return_bad_value(_, _value):
     return 'foo'
 
 
@@ -352,7 +357,7 @@ def test_output_type_throw_arbitrary_exception():
 
 
 def define_custom_dict(name, permitted_key_names):
-    def type_check_method(value):
+    def type_check_method(_, value):
         if not isinstance(value, dict):
             return TypeCheck(
                 False,
@@ -405,7 +410,7 @@ def test_fan_in_custom_types_with_storage():
     assert pipeline_result.success
 
 
-ReturnBoolType = DagsterType(name='ReturnBoolType', type_check_fn=lambda _: True)
+ReturnBoolType = DagsterType(name='ReturnBoolType', type_check_fn=lambda _, _val: True)
 
 
 def test_return_bool_type():
@@ -421,7 +426,7 @@ def test_return_bool_type():
 
 
 def test_raise_on_error_type_check_returns_false():
-    FalsyType = DagsterType(name='FalsyType', type_check_fn=lambda _: False)
+    FalsyType = DagsterType(name='FalsyType', type_check_fn=lambda _, _val: False)
 
     @solid(output_defs=[OutputDefinition(FalsyType)])
     def foo_solid(_):
@@ -449,7 +454,7 @@ def test_raise_on_error_type_check_returns_false():
 def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     FalsyType = DagsterType(
         name='FalsyType',
-        type_check_fn=lambda _: TypeCheck(
+        type_check_fn=lambda _, _val: TypeCheck(
             success=False, metadata_entries=[EventMetadataEntry.text('foo', 'bar', 'baz')]
         ),
     )
@@ -482,7 +487,7 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
 
 
 def test_raise_on_error_true_type_check_raises_exception():
-    def raise_exception_inner(_):
+    def raise_exception_inner(_context, _):
         raise Failure('I am dissapoint')
 
     ThrowExceptionType = DagsterType(name='ThrowExceptionType', type_check_fn=raise_exception_inner)
@@ -510,7 +515,9 @@ def test_raise_on_error_true_type_check_raises_exception():
 
 
 def test_raise_on_error_true_type_check_returns_true():
-    TruthyExceptionType = DagsterType(name='TruthyExceptionType', type_check_fn=lambda _: True)
+    TruthyExceptionType = DagsterType(
+        name='TruthyExceptionType', type_check_fn=lambda _, _val: True
+    )
 
     @solid(output_defs=[OutputDefinition(TruthyExceptionType)])
     def foo_solid(_):
@@ -534,7 +541,7 @@ def test_raise_on_error_true_type_check_returns_true():
 def test_raise_on_error_true_type_check_returns_successful_type_check():
     TruthyExceptionType = DagsterType(
         name='TruthyExceptionType',
-        type_check_fn=lambda _: TypeCheck(
+        type_check_fn=lambda _, _val: TypeCheck(
             success=True, metadata_entries=[EventMetadataEntry.text('foo', 'bar', 'baz')]
         ),
     )
@@ -568,3 +575,34 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
         DagsterEventType.STEP_OUTPUT.value,
         DagsterEventType.STEP_SUCCESS.value,
     ]
+
+
+def test_contextual_type_check():
+    def fancy_type_check(context, value):
+        return TypeCheck(success=context.resources.foo.check(value))
+
+    custom = DagsterType(
+        key='custom', name='custom', type_check_fn=fancy_type_check, required_resource_keys={'foo'}
+    )
+
+    @resource
+    def foo(_context):
+        class _Foo:
+            def check(self, _value):
+                return True
+
+        return _Foo()
+
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @solid(input_defs=[InputDefinition('inp', custom)])
+    def bar(_context, inp):
+        return inp
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'foo': foo})])
+    def fancy_pipeline():
+        bar(return_one())
+
+    assert execute_pipeline(fancy_pipeline).success

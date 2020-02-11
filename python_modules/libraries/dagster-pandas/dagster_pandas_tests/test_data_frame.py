@@ -76,7 +76,7 @@ def test_create_dagster_pandas_dataframe_type_with_null_event_metadata_fn():
         event_metadata_fn=None,
     )
     assert isinstance(BasicDF, DagsterType)
-    basic_type_check = BasicDF.type_check(DataFrame({'pid': [1], 'names': ['foo']}))
+    basic_type_check = check_dagster_type(BasicDF, DataFrame({'pid': [1], 'names': ['foo']}))
     assert basic_type_check.success
 
 

@@ -28,7 +28,7 @@ class _TypedPythonDict(DagsterType):
             type_check_fn=self.type_check_method,
         )
 
-    def type_check_method(self, value):
+    def type_check_method(self, context, value):
         from dagster.core.definitions.events import TypeCheck
 
         if not isinstance(value, dict):
@@ -40,10 +40,10 @@ class _TypedPythonDict(DagsterType):
             )
 
         for key, value in value.items():
-            key_check = self.key_type.type_check(key)
+            key_check = self.key_type.type_check(context, key)
             if not key_check.success:
                 return key_check
-            value_check = self.value_type.type_check(value)
+            value_check = self.value_type.type_check(context, value)
             if not value_check.success:
                 return value_check
 

@@ -12,7 +12,7 @@ from dagster import (
 )
 
 
-def less_simple_data_frame_type_check(value):
+def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return False
 

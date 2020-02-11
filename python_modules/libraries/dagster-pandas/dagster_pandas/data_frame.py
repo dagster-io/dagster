@@ -81,7 +81,7 @@ def dataframe_input_schema(_context, file_type, file_options):
         )
 
 
-def df_type_check(value):
+def df_type_check(_, value):
     if not isinstance(value, pd.DataFrame):
         return TypeCheck(success=False)
     return TypeCheck(
@@ -158,7 +158,7 @@ def create_dagster_pandas_dataframe_type(
         check.opt_list_param(columns, 'columns', of_type=PandasColumn),
     )
 
-    def _dagster_type_check(value):
+    def _dagster_type_check(_, value):
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,

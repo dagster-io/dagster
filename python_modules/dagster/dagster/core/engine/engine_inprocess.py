@@ -383,8 +383,8 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         self.dagster_type = check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
 
 
-def _do_type_check(runtime_type, value):
-    type_check = runtime_type.type_check(value)
+def _do_type_check(context, runtime_type, value):
+    type_check = runtime_type.type_check(context, value)
     if not isinstance(type_check, TypeCheck):
         return TypeCheck(
             success=False,
@@ -434,7 +434,9 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             step_key=step_context.step.key,
         ),
     ):
-        type_check = _do_type_check(step_input.runtime_type, input_value)
+        type_check = _do_type_check(
+            step_context.for_type(step_input.runtime_type), step_input.runtime_type, input_value,
+        )
 
         yield _create_step_input_event(
             step_context, input_name, type_check=type_check, success=type_check.success
@@ -488,7 +490,9 @@ def _type_checked_step_output_event_sequence(step_context, output):
             step_key=step_context.step.key,
         ),
     ):
-        type_check = _do_type_check(step_output.runtime_type, output.value)
+        type_check = _do_type_check(
+            step_context.for_type(step_output.runtime_type), step_output.runtime_type, output.value
+        )
 
         yield _create_step_output_event(
             step_context, output, type_check=type_check, success=type_check.success
