@@ -85,11 +85,13 @@ export class Run extends React.Component<IRunProps, IRunState> {
             }
           }
           artifactsPersisted
+          ...GaantChartExecutionPlanFragment
         }
         stepKeysToExecute
       }
 
       ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
+      ${GaantChart.fragments.GaantChartExecutionPlanFragment}
     `,
     RunPipelineRunEventFragment: gql`
       fragment RunPipelineRunEventFragment on PipelineRunEvent {

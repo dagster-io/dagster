@@ -9,6 +9,7 @@ import { isEqual } from "lodash";
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
   value: string;
+  placeholder: string;
   onChange: (value: string) => void;
   autoFocus?: boolean;
   presets?: { name: string; value: string }[];
@@ -24,10 +25,10 @@ interface ActiveSuggestionInfo {
  * number of immediate input or output connections and randomly highlighting
  * either the ++solid or solid++ or solid+* syntax.
  */
-const placeholderTextForItems = (items: GraphQueryItem[]) => {
+const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
   const seed = items.length % 3;
 
-  let placeholder = "Type a Solid Subset";
+  let placeholder = base;
   if (items.length === 0) return placeholder;
 
   const ranked = items.map<{
@@ -174,7 +175,10 @@ export const GraphQueryInput = React.memo(
             value={pendingValue}
             leftIcon={"send-to-graph"}
             autoFocus={props.autoFocus}
-            placeholder={placeholderTextForItems(props.items)}
+            placeholder={placeholderTextForItems(
+              props.placeholder,
+              props.items
+            )}
             onChange={(e: React.ChangeEvent<any>) =>
               setPendingValue(e.target.value)
             }

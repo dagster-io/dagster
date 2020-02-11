@@ -186,6 +186,7 @@ export class GaantChart extends React.Component<
         <GraphQueryInput
           items={graph}
           value={query}
+          placeholder="Type a Step Subset"
           onChange={q => this.setState({ query: q })}
           presets={interestingQueriesFor(metadata, layout)}
         />

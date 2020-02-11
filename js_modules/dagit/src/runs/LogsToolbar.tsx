@@ -10,11 +10,7 @@ import {
   Icon
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import {
-  ILogFilter,
-  LogLevel,
-  structuredFieldsFromLogFilter
-} from "./LogsProvider";
+import { ILogFilter, LogLevel } from "./LogsProvider";
 import { ComputeLogLink } from "./ComputeLogModal";
 import { IStepState } from "../RunMetadataProvider";
 

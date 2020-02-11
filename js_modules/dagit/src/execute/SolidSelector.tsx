@@ -157,6 +157,7 @@ class SolidSelectorModal extends React.PureComponent<
             <GraphQueryInput
               items={pipeline ? pipeline.solids : []}
               value={query}
+              placeholder="Type a Solid Subset"
               onChange={this.handleSetQuery}
               autoFocus={true}
             />
