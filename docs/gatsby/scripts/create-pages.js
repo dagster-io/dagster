@@ -1,7 +1,7 @@
-const path = require('path')
+const path = require("path");
 
-const { getAllBuildedVersions } = require('./utils/get-version')
-const ALL_VERSIONS = getAllBuildedVersions()
+const { getAllBuildedVersions } = require("./utils/get-version");
+const ALL_VERSIONS = getAllBuildedVersions();
 
 module.exports = async ({ graphql, actions }) => {
   const result = await graphql(`
@@ -22,18 +22,18 @@ module.exports = async ({ graphql, actions }) => {
         }
       }
     }
-  `)
+  `);
   result.data.allSphinxPage.edges.forEach(({ node }) => {
     if (node.slug) {
       ALL_VERSIONS.forEach(version => {
         actions.createPage({
           path: `${version}/${node.slug}`,
-          component: path.resolve('./src/templates/SphinxPage/index.js'),
+          component: path.resolve("./src/templates/SphinxPage/index.js"),
           context: {
-            page: node,
-          },
-        })
-      })
+            page: node
+          }
+        });
+      });
     }
-  })
-}
+  });
+};

@@ -1,65 +1,65 @@
-const { parseHtml, parseMarkdown, toParseFive } = require('./parse-html')
+const { parseHtml, parseMarkdown, toParseFive } = require("./parse-html");
 
 const {
   getCurrentVersion,
-  getAllBuildedVersions,
-} = require('./utils/get-version')
+  getAllBuildedVersions
+} = require("./utils/get-version");
 
-const { getSlug } = require('./utils/get-slug')
+const { getSlug } = require("./utils/get-slug");
 
 module.exports = ({ createResolvers }) => {
   const resolvers = {
     Query: {
       dagsterVersion: {
-        type: 'String',
+        type: "String",
         resolve() {
-          return getCurrentVersion()
-        },
+          return getCurrentVersion();
+        }
       },
       allDagsterVersion: {
-        type: '[String!]',
+        type: "[String!]",
         resolve() {
-          return getAllBuildedVersions()
-        },
-      },
+          return getAllBuildedVersions();
+        }
+      }
     },
     SphinxPage: {
       body: {
         resolve(source) {
           try {
-            return parseHtml(source.body, getCurrentVersion())
+            return parseHtml(source.body, getCurrentVersion());
           } catch (err) {
-            return source.body
+            return source.body;
           }
-        },
+        }
       },
       parsed: {
         resolve(source) {
-          return toParseFive(source.body)
-        },
+          return toParseFive(source.body);
+        }
       },
       tocParsed: {
         resolve(source) {
-          return source.toc && toParseFive(source.toc)
-        },
+          return source.toc && toParseFive(source.toc);
+        }
       },
       markdown: {
         resolve(source) {
           try {
-            const md = parseMarkdown(source.body, getCurrentVersion())
-            return md.slice(0, 5000)
+            const md = parseMarkdown(source.body, getCurrentVersion());
+            return md.slice(0, 5000);
           } catch (err) {
-            return source.body
+            return source.body;
           }
-        },
+        }
       },
       slug: {
         resolve(source) {
-          return getSlug(source)
-        },
-      },
-    },
-  }
+          return getSlug(source);
+        }
+      }
+    }
+  };
 
-  createResolvers(resolvers)
-}
+  createResolvers(resolvers);
+};

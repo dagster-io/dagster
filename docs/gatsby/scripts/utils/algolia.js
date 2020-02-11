@@ -1,4 +1,4 @@
-const R = require('ramda')
+const R = require("ramda");
 
 const pageQuery = `{
   pages: allSphinxPage(limit: 10000) {
@@ -11,11 +11,11 @@ const pageQuery = `{
       }
     }
   }
-}`
+}`;
 
 const settings = {
-  attributesToSnippet: [`markdown:20`],
-}
+  attributesToSnippet: [`markdown:20`]
+};
 
 const queries = [
   {
@@ -24,9 +24,9 @@ const queries = [
     indexName: `Pages`,
     transformer: ({ data }) => {
       return data.pages.edges
-        .filter(({ node }) => node.slug && !node.slug.startsWith('_modules'))
-        .map(R.prop('node'))
-    },
+        .filter(({ node }) => node.slug && !node.slug.startsWith("_modules"))
+        .map(R.prop("node"));
+    }
   },
   {
     settings,
@@ -34,10 +34,10 @@ const queries = [
     indexName: `Modules`,
     transformer: ({ data }) => {
       return data.pages.edges
-        .filter(({ node }) => node.slug && node.slug.startsWith('_modules'))
-        .map(R.prop('node'))
-    },
-  },
-]
+        .filter(({ node }) => node.slug && node.slug.startsWith("_modules"))
+        .map(R.prop("node"));
+    }
+  }
+];
 
-module.exports = queries
+module.exports = queries;
