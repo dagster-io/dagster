@@ -3,9 +3,10 @@
 import os
 import re
 
+import dagster_pyspark
 from dagster_aws.s3.solids import S3Coordinate
-from dagster_pyspark import NativeSparkDataFrame as DataFrame
 from dagstermill import define_dagstermill_solid
+from pyspark.sql import DataFrame
 from sqlalchemy import text
 
 from dagster import (
@@ -21,12 +22,19 @@ from dagster import (
     String,
     check,
     composite_solid,
+    make_python_type_usable_as_dagster_type,
     solid,
 )
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .types import SqlTableName
 from .unzip_file_handle import unzip_file_handle
+
+# Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
+make_python_type_usable_as_dagster_type(
+    python_type=DataFrame, dagster_type=dagster_pyspark.DataFrame
+)
+
 
 PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
 

@@ -17,7 +17,6 @@ from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
-from dagster.core.types.dagster_type import make_python_type_usable_as_dagster_type
 
 from .decorators import pyspark_solid
 from .resources import PySparkResourceDefinition, pyspark_resource, spark_session_from_config
@@ -75,8 +74,6 @@ SparkRDD = PythonObjectDagsterType(
     input_hydration_config=load_rdd,
     output_materialization_config=write_rdd,
 )
-
-make_python_type_usable_as_dagster_type(python_type=RDD, dagster_type=SparkRDD)
 
 
 @output_selector_schema(
@@ -156,5 +153,3 @@ DataFrame = PythonObjectDagsterType(
     auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
     output_materialization_config=spark_df_output_schema,
 )
-
-make_python_type_usable_as_dagster_type(python_type=NativeSparkDataFrame, dagster_type=DataFrame)
