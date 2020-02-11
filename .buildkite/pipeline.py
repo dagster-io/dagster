@@ -599,7 +599,7 @@ def gatsby_docs_build_tests():
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs/gatsby",
                 "yarn install",
-                "yarn sphinx",
+                "yarn sphinx -v 0.7.0",
                 "yarn build",
             )
             .on_integration_image(version)
