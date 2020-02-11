@@ -326,14 +326,20 @@ export const interestingQueriesFor = (
   metadata: IRunMetadataDict,
   layout: GaantChartLayout
 ) => {
-  if (layout.boxes.length === 0) return;
+  if (layout.boxes.length === 0) {
+    return;
+  }
+  const results: { name: string; value: string }[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
     .filter(k => metadata.steps[k].state === "failed")
     .map(k => `+${k}`)
     .join(", ");
+  if (errorsQuery) {
+    results.push({ name: "Errors", value: errorsQuery });
+  }
 
-  const slowestStepsQuery = Object.keys(metadata.steps)
+  const slowStepsQuery = Object.keys(metadata.steps)
     .filter(k => metadata.steps[k]?.finish && metadata.steps[k]?.start)
     .sort(
       (a, b) =>
@@ -344,15 +350,17 @@ export const interestingQueriesFor = (
     .slice(0, 5)
     .map(k => `${k}`)
     .join(", ");
+  if (slowStepsQuery) {
+    results.push({ name: "Slowest Individual Steps", value: slowStepsQuery });
+  }
 
   const rightmostBox = [...layout.boxes].sort(
     (a, b) => b.x + b.width - (a.x + a.width)
   )[0];
-  const slowestPathQuery = `*${rightmostBox.node.name}`;
+  const slowPathQuery = `*${rightmostBox.node.name}`;
+  if (slowPathQuery) {
+    results.push({ name: "Slowest Path", value: slowPathQuery });
+  }
 
-  return [
-    { name: "Errors", value: errorsQuery },
-    { name: "Slowest Individual Steps", value: slowestStepsQuery },
-    { name: "Slowest Path", value: slowestPathQuery }
-  ];
+  return results;
 };
