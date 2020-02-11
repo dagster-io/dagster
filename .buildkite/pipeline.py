@@ -602,7 +602,9 @@ def gatsby_docs_build_tests():
                 "yarn sphinx -v 0.6.6",
                 "yarn build",
             )
-            .on_integration_image(version)
+            .on_integration_image(
+                version, ['ALGOLIA_APP_ID', 'ALGOLIA_SEARCH_KEY', 'ALGOLIA_ADMIN_KEY']
+            )
             .build()
         )
 
