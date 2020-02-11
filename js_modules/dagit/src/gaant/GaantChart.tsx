@@ -5,12 +5,12 @@ import { Colors, Checkbox } from "@blueprintjs/core";
 import { isEqual } from "lodash";
 
 import { weakmapMemoize } from "../Util";
-import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
 import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
 import { GaantChartTimescale } from "./GaantChartTimescale";
 import { RunFragment } from "../runs/types/RunFragment";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery } from "../GraphQueryImpl";
+import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
 import {
   buildLayout,
   boxStyleFor,
@@ -207,21 +207,21 @@ export class GaantChart extends React.Component<
           {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
               <div style={{ width: 15 }} />
-              <Checkbox
-                style={{ marginBottom: 0 }}
-                label="Hide waiting"
-                checked={options.hideWaiting}
-                onClick={() =>
-                  this.updateOptions({ hideWaiting: !options.hideWaiting })
-                }
-              />
-              <div style={{ width: 15 }} />
               <div style={{ width: 200 }}>
                 <ZoomSlider
                   value={options.zoom}
                   onChange={v => this.updateOptions({ zoom: v })}
                 />
               </div>
+              <div style={{ width: 15 }} />
+              <Checkbox
+                style={{ marginBottom: 0 }}
+                label="Hide unstarted steps"
+                checked={options.hideWaiting}
+                onClick={() =>
+                  this.updateOptions({ hideWaiting: !options.hideWaiting })
+                }
+              />
             </>
           )}
           <div style={{ flex: 1 }} />
@@ -357,14 +357,19 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
         const bounds = boundsForLine(box, child);
         if (!intersectsViewport(bounds)) return;
 
-        const childIsRendered = layout.boxes.includes(child);
+        const childNotDrawn = !layout.boxes.includes(child);
+        const childWaiting = metadata.mostRecentLogAt
+          ? !metadata.steps[child.node.name]?.state
+          : false;
+
         items.push(
           <GaantLine
             darkened={
               (focused || hovered) === box || (focused || hovered) === child
             }
-            dotted={!childIsRendered}
+            dotted={childNotDrawn || childWaiting}
             key={`${box.node.name}-${child.node.name}-${childIdx}`}
+            depNotDrawn={childNotDrawn}
             depIdx={childIdx}
             {...bounds}
           />
@@ -470,11 +475,13 @@ const GaantLine = React.memo(
     maxY,
     dotted,
     darkened,
-    depIdx
+    depIdx,
+    depNotDrawn
   }: {
     dotted: boolean;
     darkened: boolean;
     depIdx: number;
+    depNotDrawn: boolean;
   } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
       darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
@@ -487,13 +494,13 @@ const GaantLine = React.memo(
           style={{
             height: 1,
             left: minX,
-            width: dotted ? 50 : maxX + (depIdx % 10) * LINE_SIZE - minX,
+            width: depNotDrawn ? 50 : maxX + (depIdx % 10) * LINE_SIZE - minX,
             top: minY - 1,
             borderTop: border,
             zIndex: darkened ? 100 : 1
           }}
         />
-        {minY !== maxY && !dotted && (
+        {minY !== maxY && !depNotDrawn && (
           <div
             className="line"
             style={{

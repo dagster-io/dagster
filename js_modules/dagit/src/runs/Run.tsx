@@ -245,8 +245,7 @@ const RunWithData = ({
   logsFilter,
   logsLoading,
   onReexecute,
-  onSetLogsFilter,
-  onShowStateDetails
+  onSetLogsFilter
 }: RunWithDataProps) => {
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
@@ -258,15 +257,15 @@ const RunWithData = ({
   };
 
   return (
-    <SplitPanelContainer
-      ref={splitPanelContainer}
-      axis={"vertical"}
-      identifier="run-gaant"
-      firstInitialPercent={35}
-      firstMinSize={40}
-      first={
-        <RunMetadataProvider logs={allNodes}>
-          {metadata => (
+    <RunMetadataProvider logs={allNodes}>
+      {metadata => (
+        <SplitPanelContainer
+          ref={splitPanelContainer}
+          axis={"vertical"}
+          identifier="run-gaant"
+          firstInitialPercent={35}
+          firstMinSize={40}
+          first={
             <GaantChart
               options={{
                 mode: GaantChartMode.WATERFALL_TIMED
@@ -296,24 +295,29 @@ const RunWithData = ({
                 onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
               }
             />
-          )}
-        </RunMetadataProvider>
-      }
-      second={
-        <LogsContainer>
-          <LogsToolbar
-            showSpinner={false}
-            filter={logsFilter}
-            onSetFilter={onSetLogsFilter}
-          />
-          <LogsScrollingTable
-            nodes={filteredNodes}
-            loading={logsLoading}
-            filterKey={JSON.stringify(logsFilter)}
-          />
-        </LogsContainer>
-      }
-    />
+          }
+          second={
+            <LogsContainer>
+              <LogsToolbar
+                showSpinner={false}
+                onSetFilter={onSetLogsFilter}
+                filter={logsFilter}
+                filterStep={selectedStep}
+                filterStepState={
+                  (selectedStep && metadata.steps[selectedStep]?.state) ||
+                  IStepState.WAITING
+                }
+              />
+              <LogsScrollingTable
+                nodes={filteredNodes}
+                loading={logsLoading}
+                filterKey={JSON.stringify(logsFilter)}
+              />
+            </LogsContainer>
+          }
+        />
+      )}
+    </RunMetadataProvider>
   );
 };
 
