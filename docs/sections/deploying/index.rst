@@ -33,8 +33,8 @@ take advantage of the environment in which they're deployed.
   instance
   local
   celery
+  k8s
   aws
   gcp
   dask
-  scheduler
   airflow

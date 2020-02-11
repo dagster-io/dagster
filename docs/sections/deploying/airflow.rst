@@ -10,7 +10,9 @@ This is the approach we use to deploy Dagster pipelines to Airflow (using the
 `dagster-airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow>`__
 package).
 
-We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. But if you
+We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. (We recommend
+the built-in `scheduler and partition system <../intro_tutorial/scheduler.html>`_ for scheduling
+pipelines, and the `Celery-based executor <celery.html>`_ for large-scale deployments.) But if you
 have a large existing Airflow install, this integration will allow you to follow an incremental
 adoption path.
 
