@@ -1,7 +1,7 @@
 import datetime
 import inspect
 import warnings
-from functools import wraps
+from functools import update_wrapper, wraps
 
 from dateutil.relativedelta import relativedelta
 
@@ -73,7 +73,7 @@ class _LambdaSolid(object):
         positional_inputs = validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
         compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
 
-        return SolidDefinition(
+        solid_def = SolidDefinition(
             name=self.name,
             input_defs=input_defs,
             output_defs=[output_def],
@@ -81,6 +81,8 @@ class _LambdaSolid(object):
             description=self.description,
             positional_inputs=positional_inputs,
         )
+        update_wrapper(solid_def, fn)
+        return solid_def
 
 
 class _Solid(object):
@@ -131,7 +133,7 @@ class _Solid(object):
         positional_inputs = validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
         compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
-        return SolidDefinition(
+        solid_def = SolidDefinition(
             name=self.name,
             input_defs=input_defs,
             output_defs=output_defs,
@@ -142,6 +144,8 @@ class _Solid(object):
             tags=self.tags,
             positional_inputs=positional_inputs,
         )
+        update_wrapper(solid_def, fn)
+        return solid_def
 
 
 def schedules(name=None):

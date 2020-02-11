@@ -377,3 +377,30 @@ def test_schedule_decorators_bad():
         )
         def monthly_foo_schedule_under():
             return {}
+
+
+def test_solid_docstring():
+    @solid
+    def foo_solid(_):
+        '''FOO_DOCSTRING'''
+        return
+
+    @lambda_solid
+    def bar_solid():
+        '''BAR_DOCSTRING'''
+        return
+
+    @solid(name='baz')
+    def baz_solid(_):
+        '''BAZ_DOCSTRING'''
+        return
+
+    @lambda_solid(name='quux')
+    def quux_solid():
+        '''QUUX_DOCSTRING'''
+        return
+
+    assert foo_solid.__doc__ == 'FOO_DOCSTRING'
+    assert bar_solid.__doc__ == 'BAR_DOCSTRING'
+    assert baz_solid.__doc__ == 'BAZ_DOCSTRING'
+    assert quux_solid.__doc__ == 'QUUX_DOCSTRING'
