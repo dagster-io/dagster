@@ -1,8 +1,8 @@
 export const wrapper = {
-  '&, &:visited, &:active': {
-    color: 'primary',
+  "&, &:visited, &:active": {
+    color: "primary"
   },
-  ':hover': {
-    color: 'blue.4',
-  },
-}
+  ":hover": {
+    color: "blue.4"
+  }
+};

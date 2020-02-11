@@ -1,5 +1,5 @@
 export const wrapper = {
-  position: 'relative',
-  display: 'grid',
-  gridGap: 2,
-}
+  position: "relative",
+  display: "grid",
+  gridGap: 2
+};

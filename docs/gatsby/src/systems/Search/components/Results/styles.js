@@ -1,76 +1,76 @@
 export const wrapper = showing => ({
   p: 3,
-  borderRadius: 'radius',
-  display: showing ? 'grid' : 'none',
-  minWidth: ['90%', '90%', '600px'],
-  maxHeight: '80vh',
-  overflow: 'auto',
+  borderRadius: "radius",
+  display: showing ? "grid" : "none",
+  minWidth: ["90%", "90%", "600px"],
+  maxHeight: "80vh",
+  overflow: "auto",
   zIndex: 2,
-  position: 'absolute',
-  top: 'calc(100% + 0.5em)',
-  background: 'white',
+  position: "absolute",
+  top: "calc(100% + 0.5em)",
+  background: "white",
   boxShadow: 5,
 
   header: {
     my: 3,
     pb: 3,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottom: t => `1px solid ${t.colors.lightGray[2]}`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: t => `1px solid ${t.colors.lightGray[2]}`
   },
 
-  'header:first-of-type': {
-    mt: 0,
+  "header:first-of-type": {
+    mt: 0
   },
 
-  'header > h3': {
+  "header > h3": {
     m: 0,
     fontSize: 4,
-    color: 'primary',
+    color: "primary"
   },
 
-  'header > span': {
-    fontSize: 3,
+  "header > span": {
+    fontSize: 3
   },
 
   ul: {
-    listStyle: 'none',
+    listStyle: "none",
     p: 0,
-    m: 0,
+    m: 0
   },
 
-  'ul h4': {
+  "ul h4": {
     fontSize: 3,
-    mb: 0,
+    mb: 0
   },
 
   mark: {
-    bg: 'lightGray.1',
-    color: 'dark.1',
+    bg: "lightGray.1",
+    color: "dark.1"
   },
 
   a: {
-    color: 'gray.1',
+    color: "gray.1"
   },
 
-  '.ais-Snippet': {
-    fontSize: 1,
-  },
-})
+  ".ais-Snippet": {
+    fontSize: 1
+  }
+});
 
 export const poweredBy = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-end",
   py: 3,
   pb: 2,
   fontSize: 2,
-  textAlign: 'right',
+  textAlign: "right",
   borderTop: t => `1px solid ${t.colors.lightGray[2]}`,
 
   img: {
     mb: 0,
-    ml: 2,
-  },
-}
+    ml: 2
+  }
+};
