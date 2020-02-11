@@ -1,5 +1,4 @@
 import os
-import uuid
 
 import pytest
 
@@ -11,6 +10,7 @@ from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.types.marshal import SerializationStrategy
+from dagster.core.utils import make_new_run_id
 from dagster.utils import mkdir_p
 from dagster.utils.test import yield_empty_pipeline_context
 
@@ -45,7 +45,7 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
 
 
 def test_file_system_intermediate_store():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     intermediate_store = build_fs_intermediate_store(
         instance.intermediates_directory, run_id=run_id
@@ -62,7 +62,7 @@ def test_file_system_intermediate_store():
 
 
 def test_file_system_intermediate_store_composite_types():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
 
     intermediate_store = build_fs_intermediate_store(
@@ -80,7 +80,7 @@ def test_file_system_intermediate_store_composite_types():
 
 
 def test_file_system_intermediate_store_with_custom_serializer():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     intermediate_store = build_fs_intermediate_store(
         instance.intermediates_directory, run_id=run_id
@@ -98,7 +98,7 @@ def test_file_system_intermediate_store_with_custom_serializer():
 
 
 def test_file_system_intermediate_store_composite_types_with_custom_serializer_for_inner_type():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     intermediate_store = build_fs_intermediate_store(
         instance.intermediates_directory, run_id=run_id
@@ -116,7 +116,7 @@ def test_file_system_intermediate_store_composite_types_with_custom_serializer_f
 
 
 def test_file_system_intermediate_store_with_type_storage_plugin():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
 
     intermediate_store = build_fs_intermediate_store(
@@ -139,7 +139,7 @@ def test_file_system_intermediate_store_with_type_storage_plugin():
 
 
 def test_file_system_intermediate_store_with_composite_type_storage_plugin():
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = build_fs_intermediate_store(
         DagsterInstance.ephemeral().intermediates_directory,

@@ -25,6 +25,11 @@ export function useStorageForCurrentPipelines(
   // have pipelines that belong to the current repository
   const [localStorageData, onLocalStorageSave] = useStorage(namespace);
   const pipelineNames = React.useContext(PipelineNamesContext);
+  if (!pipelineNames || !pipelineNames.length) {
+    // may be still loading, skip filtering
+    return [localStorageData, onLocalStorageSave];
+  }
+
   const { sessions } = localStorageData;
   const filteredSessions = {};
   Object.values(sessions).forEach(session => {

@@ -1,95 +1,40 @@
 Deploying Dagster
 -----------------
 
-Quick Start
-~~~~~~~~~~~
+Getting started with Dagster is as easy as running:
 
-Dagster supports a wide variety of deployment environments. You can find a full guide to the
-different components of a Dagster deployment in the `reference guide <reference.html>`_.
+.. code-block:: shell
 
-When configuring a Dagster deployment, at minimum you'll likely want to configure up two things:
-**execution** and **storage**:
+    pip install dagit
+    dagit
 
-.. rubric:: Execution
+Dagster supports a wide variety of more sophisticated deployment strategies for production.
 
-Out of the box, Dagster runs single-process execution. To enable multi-process execution, add the
-following to your pipeline configuration YAML:
-
-.. code-block:: yaml
-
-    :caption: execution_config.yaml
-
-    execution:
-      multiprocess:
-        config:
-          max_concurrent: 0
-    storage:
-      filesystem:
-
-
-Any pipelines that are configured with this YAML will execute in multiprocess mode. Note that
-setting ``max_concurrent`` to 0 implies setting concurrency of
-:py:func:`python:multiprocessing.cpu_count`. Along with native execution, Dagster supports other
-execution engines including `Airflow <other/airflow.html>`_ and `Dask <other/dask.html>`_; check out
-the `reference guide <reference.html>`_ for more information.
-
-.. rubric:: Storage
-
-The best place to start is to set the environment variable ``$DAGSTER_HOME`` to a local folder in
-the environment where you run Dagster/Dagit. The system will then use that folder for run/events and
-logs storage.
-
-In a production context with large-scale data, you'll want to consider storing data elsewhere.
-
-Runs and events use local SQLite databases in ``$DAGSTER_HOME`` by default; we also support
-PostgreSQL storage. To use PostgreSQL for runs and events storage, add the following lines to your
-``$DAGSTER_HOME/dagster.yaml``:
-
-.. code-block:: yaml
-
-   :caption: dagster.yaml
-
-    run_storage:
-        module: dagster_postgres.run_storage
-        class: PostgresRunStorage
-        config:
-            postgres_url: "postgresql://{username}:{password}@{host}:5432/{database}"
-
-    event_log_storage:
-        module: dagster_postgres.event_log
-        class: PostgresEventLogStorage
-        config:
-            postgres_url: "postgresql://{username}:{password}@{host}:5432/{database}"
-
-and replace the connection string fields indicated with the appropriate configuration for your
+Typically, you'll want to deploy Dagit somewhere, configure the way that it stores information and
+launches runs, and make sure your pipelines are configured to run appropriately for your
 environment.
 
-System storage is set to in-memory by default. For pipelines which execute in multi-process mode or
-otherwise need to share data across process or machine boundaries, intermediates should be stored
-elsewhere—this is why we set storage to filesystem for the multiprocess execution configuration
-above.
+If you're using the Celery engine, you'll want to run worker processes to parallelize execution.
 
-In general, intermediates can be stored on the filesystem by configuring storage in your pipeline
-configuration YAML:
+Alternatively, you may want to deploy Dagster pipelines into a completely different scheduling and
+execution environment, like Apache Airflow.
 
-.. code-block:: yaml
+No matter how you're planning to deploy Dagster, you should first understand its default behavior.
 
-    :caption: execution_config.yaml
+You should also be familiar with configuring the Dagster instance, which organizes all of the
+information specific to a particular installation or deployment of Dagster, using ``dagster.yaml``.
 
-    storage:
-      filesystem:
-        config:
-          base_dir: /tmp/foo/
-
-
-More Information
-~~~~~~~~~~~~~~~~
+And you should be aware of the per-pipeline run configuration you'll need for your pipeline runs to
+take advantage of the environment in which they're deployed.
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
 
+  instance
   local
+  k8s
   aws
   gcp
-  reference
-  other/index
+  dask
+  scheduler
+  airflow

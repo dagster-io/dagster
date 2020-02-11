@@ -585,6 +585,7 @@ type Partition {
   solidSubset: [String!]
   mode: String!
   environmentConfigYaml: String!
+  tags: [PipelineTag!]!
 }
 
 type PartitionSet {

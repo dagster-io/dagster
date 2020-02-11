@@ -2,6 +2,7 @@ import os
 
 import boto3
 import six
+from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 from dagster_pyspark import PySparkResourceDefinition
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict, format_for_cli
@@ -11,7 +12,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import get_system_temp_directory
 
 from .emr import EmrJobRunner
-from .utils import build_main_file, build_pyspark_zip, get_install_requirements_step
+from .utils import build_main_file, build_pyspark_zip
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = '/usr/lib/spark/'
@@ -48,6 +49,18 @@ class EmrPySparkResource(PySparkResourceDefinition):
             self.emr_job_runner.wait_for_steps_to_complete(
                 context, self.config['cluster_id'], step_ids
             )
+            if self.config['wait_for_logs']:
+                stdout_log, stderr_log = self.emr_job_runner.retrieve_logs_for_step_id(
+                    context, self.config['cluster_id'], step_ids[1]
+                )
+                # Since stderr is YARN / Hadoop Log4J output, parse and reformat those log lines for
+                # Dagster's logging system.
+                records = parse_hadoop_log4j_records(stderr_log)
+                for record in records:
+                    context.log._log(  # pylint: disable=protected-access
+                        record.level, record.logger + ': ' + record.message, {}
+                    )
+                context.log.info(stdout_log)
 
         return new_compute_fn
 
@@ -136,7 +149,13 @@ class EmrPySparkResource(PySparkResourceDefinition):
         if os.path.exists(requirements_file):
             with open(requirements_file, 'rb') as f:
                 python_dependencies = six.ensure_str(f.read()).split('\n')
-                steps.append(get_install_requirements_step(python_dependencies, action_on_failure))
+                steps.append(
+                    EmrJobRunner.construct_step_dict_for_command(
+                        'Install Dependencies',
+                        ['sudo', 'python3', '-m', 'pip', 'install'] + python_dependencies,
+                        action_on_failure=action_on_failure,
+                    )
+                )
 
         # Execute Solid via spark-submit
         conf = dict(flatten_dict(self.config.get('spark_conf')))
@@ -148,27 +167,26 @@ class EmrPySparkResource(PySparkResourceDefinition):
             'other than "yarn"' % conf.get('spark.master'),
         )
 
+        command = (
+            [
+                EMR_SPARK_HOME + 'bin/spark-submit',
+                '--master',
+                'yarn',
+                '--deploy-mode',
+                conf.get('spark.submit.deployMode', 'client'),
+            ]
+            + format_for_cli(list(flatten_dict(conf)))
+            + [
+                '--py-files',
+                's3://%s/%s/pyspark.zip' % (staging_bucket, run_id),
+                's3://%s/%s/main.py' % (staging_bucket, run_id),
+            ]
+        )
+
         steps.append(
-            {
-                'Name': 'Execute Solid %s' % solid_name,
-                'ActionOnFailure': action_on_failure,
-                'HadoopJarStep': {
-                    'Jar': 'command-runner.jar',
-                    'Args': [
-                        EMR_SPARK_HOME + 'bin/spark-submit',
-                        '--master',
-                        'yarn',
-                        '--deploy-mode',
-                        conf.get('spark.submit.deployMode', 'client'),
-                    ]
-                    + format_for_cli(list(flatten_dict(conf)))
-                    + [
-                        '--py-files',
-                        's3://%s/%s/pyspark.zip' % (staging_bucket, run_id),
-                        's3://%s/%s/main.py' % (staging_bucket, run_id),
-                    ],
-                },
-            }
+            EmrJobRunner.construct_step_dict_for_command(
+                'Execute Solid %s' % solid_name, command, action_on_failure=action_on_failure
+            )
         )
         return steps
 
@@ -200,6 +218,14 @@ class EmrPySparkResource(PySparkResourceDefinition):
             is_required=False,
             description='Path to a requirements.txt file; the current directory is searched if none'
             ' is specified.',
+        ),
+        'wait_for_logs': Field(
+            bool,
+            is_required=False,
+            default_value=False,
+            description='If set, the system will wait for EMR logs to appear on S3. Note that logs '
+            'are copied every 5 minutes, so enabling this will add several minutes to the job '
+            'runtime',
         ),
     }
 )

@@ -1,10 +1,10 @@
 import datetime
 import itertools
 import logging
-import uuid
 from collections import OrderedDict, namedtuple
 
 from dagster import check, seven
+from dagster.core.utils import make_new_run_id
 from dagster.utils import frozendict
 
 DAGSTER_META_KEY = 'dagster_meta'
@@ -156,7 +156,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
         check.invariant('log_message_id' not in message_props, 'log_message_id reserved value')
         check.invariant('log_timestamp' not in message_props, 'log_timestamp reserved value')
 
-        log_message_id = str(uuid.uuid4())
+        log_message_id = make_new_run_id()
 
         log_timestamp = datetime.datetime.utcnow().isoformat()
 

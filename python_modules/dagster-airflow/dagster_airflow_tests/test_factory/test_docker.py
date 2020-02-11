@@ -14,6 +14,7 @@ from dagster_airflow_tests.conftest import dagster_docker_image, environments_pa
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
+from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
@@ -110,7 +111,7 @@ def test_error_dag_containerized(
     ]
     environment_dict = load_yaml_from_glob_list(environment_yaml)
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     execution_date = timezone.utcnow()
 
     dag, tasks = make_airflow_dag_containerized_for_handle(

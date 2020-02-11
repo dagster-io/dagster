@@ -23,6 +23,11 @@ export interface IExecutionSessionPlan {
   }>;
 }
 
+export interface PipelineRunTag {
+  key: string;
+  value: string;
+}
+
 export interface IExecutionSession {
   key: string;
   name: string;
@@ -31,6 +36,7 @@ export interface IExecutionSession {
   mode: string | null;
   solidSubset: string[] | null;
   solidSubsetQuery: string | null;
+  tags: PipelineRunTag[];
 
   // this is set when you execute the session and freeze it
   runId?: string;
@@ -92,6 +98,7 @@ export function applyCreateSession(
         solidSubset: null,
         solidSubsetQuery: "*",
         pipeline: "",
+        tags: [],
         runId: undefined,
         ...initial,
         configChangedSinceRun: false,

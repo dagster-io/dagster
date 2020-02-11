@@ -1,9 +1,8 @@
-import uuid
-
 import pytest
 
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 
 
 class TestRunStorage:
@@ -50,7 +49,7 @@ class TestRunStorage:
 
     def test_basic_storage(self, storage):
         assert storage
-        run_id = str(uuid.uuid4())
+        run_id = make_new_run_id()
         added = storage.add_run(
             TestRunStorage.build_run(run_id=run_id, pipeline_name='some_pipeline')
         )
@@ -67,7 +66,7 @@ class TestRunStorage:
 
     def test_clear(self, storage):
         assert storage
-        run_id = str(uuid.uuid4())
+        run_id = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name='some_pipeline'))
         assert len(storage.get_runs()) == 1
         storage.wipe()
@@ -75,8 +74,8 @@ class TestRunStorage:
 
     def test_fetch_by_pipeline(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=one, pipeline_name='some_pipeline'))
         storage.add_run(TestRunStorage.build_run(run_id=two, pipeline_name='some_other_pipeline'))
         assert len(storage.get_runs()) == 2
@@ -86,9 +85,9 @@ class TestRunStorage:
 
     def test_fetch_by_filter(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
-        three = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
 
         storage.add_run(
             TestRunStorage.build_run(
@@ -205,9 +204,9 @@ class TestRunStorage:
 
     def test_fetch_count_by_tag(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
-        three = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
@@ -240,9 +239,9 @@ class TestRunStorage:
 
     def test_fetch_by_tags(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
-        three = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one,
@@ -275,7 +274,7 @@ class TestRunStorage:
 
     def test_paginated_fetch(self, storage):
         assert storage
-        one, two, three = [str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())]
+        one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one, pipeline_name='some_pipeline', tags={'mytag': 'hello'}
@@ -316,10 +315,10 @@ class TestRunStorage:
 
     def test_fetch_by_status(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
-        three = str(uuid.uuid4())
-        four = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
+        four = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.NOT_STARTED
@@ -363,10 +362,10 @@ class TestRunStorage:
 
     def test_fetch_by_status_cursored(self, storage):
         assert storage
-        one = str(uuid.uuid4())
-        two = str(uuid.uuid4())
-        three = str(uuid.uuid4())
-        four = str(uuid.uuid4())
+        one = make_new_run_id()
+        two = make_new_run_id()
+        three = make_new_run_id()
+        four = make_new_run_id()
         storage.add_run(
             TestRunStorage.build_run(
                 run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.STARTED
@@ -413,7 +412,7 @@ class TestRunStorage:
 
     def test_delete(self, storage):
         assert storage
-        run_id = str(uuid.uuid4())
+        run_id = make_new_run_id()
         storage.add_run(TestRunStorage.build_run(run_id=run_id, pipeline_name='some_pipeline'))
         assert len(storage.get_runs()) == 1
         storage.delete_run(run_id)

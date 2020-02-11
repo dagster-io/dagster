@@ -52,6 +52,7 @@ def test_retry_requires_intermediates():
 
     assert not result.errors
     assert result.data
+
     run_id = result.data['startPipelineExecution']['run']['runId']
     assert run_id
     logs = result.data['startPipelineExecution']['run']['logs']['nodes']

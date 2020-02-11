@@ -107,12 +107,12 @@ def test_bad_config():
         (
             # Dataset must be of form project_name.dataset_name
             {'default_dataset': 'this is not a valid dataset'},
-            'Value at path root:solids:test:config:query_job_config:default_dataset is not valid. Expected "_Dataset"',
+            'Invalid scalar at path root:solids:test:config:query_job_config:default_dataset',
         ),
         (
             # Table must be of form project_name.dataset_name.table_name
             {'destination': 'this is not a valid table'},
-            'Value at path root:solids:test:config:query_job_config:destination is not valid. Expected "_Table"',
+            'Invalid scalar at path root:solids:test:config:query_job_config:destination',
         ),
         (
             # Priority must match enum values
@@ -142,7 +142,7 @@ def test_bad_config():
     for config_fragment, error_message in configs_and_expected_errors:
         config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
         result = validate_config(env_type, config)
-        assert result.errors[0].message == error_message
+        assert error_message in result.errors[0].message
 
 
 def test_create_delete_dataset():

@@ -13,6 +13,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.config import IRunConfig
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import toposort
@@ -384,27 +385,43 @@ class ActiveExecution(object):
         self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', _default_sort_key)
 
         self._pending = self._plan.execution_deps()
+
         self._completed = set()
+        self._success = set()
+        self._failed = set()
+        self._skipped = set()
+
         self._in_flight = set()
-        self._available = []
 
-        self._update_available()
+        self._executable = []
+        self._to_skip = []
 
-    def _update_available(self):
-        now_available = []
+        self._update()
+
+    def _update(self):
+        new_steps_to_execute = []
+        new_steps_to_skip = []
         for step_key, requirements in self._pending.items():
-            if requirements.issubset(self._completed):
-                now_available.append(step_key)
 
-        for key in now_available:
-            self._available.append(key)
+            if requirements.issubset(self._completed):
+                if requirements.issubset(self._success):
+                    new_steps_to_execute.append(step_key)
+                else:
+                    new_steps_to_skip.append(step_key)
+
+        for key in new_steps_to_execute:
+            self._executable.append(key)
             del self._pending[key]
 
-    def get_available_steps(self, limit=None):
+        for key in new_steps_to_skip:
+            self._to_skip.append(key)
+            del self._pending[key]
+
+    def get_steps_to_execute(self, limit=None):
         check.opt_int_param(limit, 'limit')
 
         steps = sorted(
-            [self._plan.get_step_by_key(key) for key in self._available], key=self._sort_key_fn
+            [self._plan.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
         )
 
         if limit:
@@ -412,23 +429,76 @@ class ActiveExecution(object):
 
         for step in steps:
             self._in_flight.add(step.key)
-            self._available.remove(step.key)
+            self._executable.remove(step.key)
 
         return steps
 
-    def mark_complete(self, step_key):
+    def get_steps_to_skip(self):
+        steps = []
+        steps_to_skip = list(self._to_skip)
+        for key in steps_to_skip:
+            steps.append(self._plan.get_step_by_key(key))
+            self._in_flight.add(key)
+            self._to_skip.remove(key)
+
+        return sorted(steps, key=self._sort_key_fn)
+
+    def skipped_step_events_iterator(self, pipeline_context):
+        failed_or_skipped_steps = self._skipped.union(self._failed)
+
+        steps_to_skip = self.get_steps_to_skip()
+        while steps_to_skip:
+            for step in steps_to_skip:
+                step_context = pipeline_context.for_step(step)
+                failed_inputs = []
+                for step_input in step.step_inputs:
+                    failed_inputs.extend(
+                        failed_or_skipped_steps.intersection(step_input.dependency_keys)
+                    )
+
+                step_context.log.info(
+                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
+                        step=step.key, failed_inputs=failed_inputs
+                    )
+                )
+                yield DagsterEvent.step_skipped_event(step_context)
+
+                self.mark_skipped(step.key)
+
+            steps_to_skip = self.get_steps_to_skip()
+
+    def mark_failed(self, step_key):
+        self._failed.add(step_key)
+        self._mark_complete(step_key)
+
+    def mark_success(self, step_key):
+        self._success.add(step_key)
+        self._mark_complete(step_key)
+
+    def mark_skipped(self, step_key):
+        self._skipped.add(step_key)
+        self._mark_complete(step_key)
+
+    def _mark_complete(self, step_key):
         check.invariant(
             step_key not in self._completed,
-            'Attempted to mark step as complete that was already completed',
+            'Attempted to mark step {} as complete that was already completed'.format(step_key),
         )
         check.invariant(
             step_key in self._in_flight,
-            'Attempted to mark step as complete that was not known to be in flight',
+            'Attempted to mark step {} as complete that was not known to be in flight'.format(
+                step_key
+            ),
         )
         self._in_flight.remove(step_key)
         self._completed.add(step_key)
-        self._update_available()
+        self._update()
 
     @property
     def is_complete(self):
-        return len(self._pending) == 0 and len(self._in_flight) == 0 and len(self._available) == 0
+        return (
+            len(self._pending) == 0
+            and len(self._in_flight) == 0
+            and len(self._executable) == 0
+            and len(self._to_skip) == 0
+        )

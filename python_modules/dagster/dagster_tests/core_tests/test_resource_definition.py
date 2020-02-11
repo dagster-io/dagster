@@ -1,5 +1,3 @@
-import uuid
-
 from dagster import (
     DagsterResourceFunctionError,
     Field,
@@ -16,6 +14,7 @@ from dagster import (
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.utils import make_new_run_id
 
 
 def define_string_resource():
@@ -443,7 +442,7 @@ def test_resource_init_failure():
     assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
 
     execution_plan = create_execution_plan(pipeline)
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
 
     step_events = execute_plan(

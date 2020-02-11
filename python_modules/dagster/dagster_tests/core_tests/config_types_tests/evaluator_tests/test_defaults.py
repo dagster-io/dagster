@@ -20,11 +20,14 @@ def test_post_process_config():
     )
     assert post_process_config(enum_config_type, 'foo').value == 'foo'
     assert post_process_config(enum_config_type, 'bar').value == 3
-    with pytest.raises(CheckError, match='config_value should be pre-validated'):
-        post_process_config(enum_config_type, 'baz')
-    with pytest.raises(CheckError, match='config_value should be pre-validated'):
-        post_process_config(enum_config_type, None)
-
+    assert (
+        'config_value should be pre-validated'
+        in post_process_config(enum_config_type, 'baz').errors[0].message
+    )
+    assert (
+        'config_value should be pre-validated'
+        in post_process_config(enum_config_type, None).errors[0].message
+    )
     list_config_type = resolve_to_config_type([str])
 
     assert post_process_config(list_config_type, ['foo']).value == ['foo']

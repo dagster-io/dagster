@@ -1,61 +1,41 @@
 .. _deployment-gcp:
 
-GCP Deployment
---------------
+Deploying to GCP
+----------------
 
-.. rubric:: Compute Engine hosted Dagit
+Hosting Dagit on GCE
+~~~~~~~~~~~~~~~~~~~~
 
-To host dagit on a bare VM or in Docker on ECS, see the `Local or Standalone Dagit <local.html>`_
-guide.
-
-.. rubric:: Execution
-
-Out of the box, Dagster runs single-process execution. To enable multi-process execution, add the
-following to your pipeline configuration YAML:
-
-.. code-block:: yaml
-
-    :caption: execution_config.yaml
-
-    execution:
-      multiprocess:
-        max_concurrent: 0
-    storage:
-      filesystem:
+To host dagit on a bare VM or in Docker on GCE, see `Running Dagit as a service <local.html>`_.
 
 
-.. rubric:: Run / Events Storage
+Using Cloud SQL for run and event log storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We recommend launching a Cloud SQL PostgreSQL instance for run and events data. You should then
-configure Dagit to use Cloud SQL; as noted previously, this can be accomplished by adding the
-following to ``$DAGSTER_HOME/dagster.yaml``:
+We recommend launching a Cloud SQL PostgreSQL instance for run and events data. You can configure
+Dagit to use Cloud SQL to run and events data by setting blocks in your
+``$DAGSTER_HOME/dagster.yaml`` appropriately:
 
-.. code-block:: yaml
-
-   :caption: dagster.yaml
-
-    run_storage:
-        module: dagster_postgres.run_storage
-        class: PostgresRunStorage
-        config:
-            postgres_url: "postgresql://{username}:{password}@{host}:5432/{database}"
-
-    event_log_storage:
-        module: dagster_postgres.event_log
-        class: PostgresEventLogStorage
-        config:
-            postgres_url: "postgresql://{username}:{password}@{host}:5432/{database}"
-
+.. literalinclude:: dagster-pg.yaml
+  :caption: dagster.yaml
 
 In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL
-instance, and that the node or container hosting Dagit is able to connect to RDS.
+instance, and that the node or container hosting Dagit is able to connect to Cloud SQL.
 
-.. rubric:: GCS Intermediates Storage
+Be sure that this file is present, and `DAGSTER_HOME` is set, on the node where Dagit is running.
 
-You'll also want to configure a GCS bucket to use for Dagster intermediates (see the `intermediates
-tutorial guide <../learn/tutorial/intermediates.html>`_ for more info). Dagster supports serializing data
-passed between solids to GCS; to enable this, you need to add GCS storage to your
-:py:class:`ModeDefinition`:
+Note that using Cloud SQL for run and event log storage does not require that Dagit be running in
+the cloud. If you are connecting a local Dagit instance to a remote Cloud SQL storage, double check
+that your local node is able to connect to Cloud SQL.
+
+Using GCS for intermediates storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You'll probably also want to configure a GCS bucket to store intermediates. This enables
+reexecution, review and audit of intermediate results, and cross-node cooperation (e.g., with the
+multiprocessing or Dagster celery executors).
+
+You'll first need to add GCS storage to your :py:class:`ModeDefinition`:
 
 .. code-block:: python
 
@@ -73,8 +53,6 @@ passed between solids to GCS; to enable this, you need to add GCS storage to you
 Then, just add the following YAML to your pipeline config:
 
 .. code-block:: yaml
-
-    :caption: execution_config.yaml
 
     storage:
       gcs:

@@ -39,7 +39,16 @@ import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
+import { TagContainer, TagEditor } from "./TagEditor";
 import { getFeatureFlags, FeatureFlag } from "../Util";
+import {
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions,
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags
+} from "./types/ConfigPartitionsQuery";
+import { ShortcutHandler } from "../ShortcutHandler";
+
+type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions;
+type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags;
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 
@@ -58,6 +67,7 @@ interface IExecutionSessionContainerState {
   editorHelpContext: ConfigEditorHelpContext | null;
   preview: PreviewConfigQuery | null;
   showWhitespace: boolean;
+  tagEditorOpen: boolean;
 }
 
 export type SubsetError =
@@ -109,7 +119,8 @@ export default class ExecutionSessionContainer extends React.Component<
   state: IExecutionSessionContainerState = {
     preview: null,
     showWhitespace: true,
-    editorHelpContext: null
+    editorHelpContext: null,
+    tagEditorOpen: false
   };
 
   mounted = false;
@@ -146,7 +157,7 @@ export default class ExecutionSessionContainer extends React.Component<
     const { currentSession } = this.props;
     const pipeline = this.getPipeline();
     if (!pipeline || !currentSession || !currentSession.mode) return;
-
+    const tags = currentSession.tags || [];
     let environmentConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
@@ -165,7 +176,8 @@ export default class ExecutionSessionContainer extends React.Component<
           name: pipeline.name,
           solidSubset: currentSession.solidSubset
         },
-        mode: currentSession.mode
+        mode: currentSession.mode,
+        executionMetadata: { tags }
       }
     };
   };
@@ -210,9 +222,29 @@ export default class ExecutionSessionContainer extends React.Component<
     return undefined;
   };
 
+  saveTags = (tags: PipelineTag[]) => {
+    const tagDict = {};
+    const toSave: PipelineTag[] = [];
+    tags.forEach((tag: PipelineTag) => {
+      if (!(tag.key in tagDict)) {
+        tagDict[tag.key] = tag.value;
+        toSave.push(tag);
+      }
+    });
+    this.props.onSaveSession({ tags: toSave });
+  };
+
+  openTagEditor = () => this.setState({ tagEditorOpen: true });
+  closeTagEditor = () => this.setState({ tagEditorOpen: false });
+
   render() {
     const { currentSession, onCreateSession, onSaveSession } = this.props;
-    const { preview, editorHelpContext, showWhitespace } = this.state;
+    const {
+      preview,
+      editorHelpContext,
+      showWhitespace,
+      tagEditorOpen
+    } = this.state;
     const environmentSchema = this.getEnvironmentSchema();
     const subsetError = this.getSubsetError();
     const modeError = this.getModeError();
@@ -222,6 +254,7 @@ export default class ExecutionSessionContainer extends React.Component<
       FeatureFlag.GaantExecutionPlan
     );
 
+    const tags = currentSession.tags || [];
     return (
       <SplitPanelContainer
         axis={gaantPreview ? "vertical" : "horizontal"}
@@ -260,7 +293,29 @@ export default class ExecutionSessionContainer extends React.Component<
               ) : (
                 <Spinner size={20} />
               )}
+              {tags.length || tagEditorOpen ? null : (
+                <ShortcutHandler
+                  shortcutLabel={"⌥T"}
+                  shortcutFilter={e => e.keyCode === 84 && e.altKey}
+                  onShortcut={this.openTagEditor}
+                >
+                  <TagEditorLink onClick={this.openTagEditor}>
+                    + Add tags
+                  </TagEditorLink>
+                </ShortcutHandler>
+              )}
+              {!pipeline ? null : (
+                <TagEditor
+                  tags={tags}
+                  onChange={this.saveTags}
+                  open={tagEditorOpen}
+                  onRequestClose={this.closeTagEditor}
+                />
+              )}
             </SessionSettingsBar>
+            {pipeline && tags.length ? (
+              <TagContainer tags={tags} onRequestEdit={this.openTagEditor} />
+            ) : null}
             <ConfigEditorPresetInsertionContainer>
               {pipeline && (
                 <ConfigEditorConfigPicker
@@ -281,66 +336,68 @@ export default class ExecutionSessionContainer extends React.Component<
                 }
               />
             </ConfigEditorDisplayOptionsContainer>
-            <ConfigEditorHelp
-              context={editorHelpContext}
-              allInnerTypes={environmentSchema?.allConfigTypes || []}
-            />
-            <ApolloConsumer>
-              {client => (
-                <ConfigEditor
-                  readOnly={false}
-                  environmentSchema={environmentSchema}
-                  configCode={currentSession.environmentConfigYaml}
-                  onConfigChange={this.onConfigChange}
-                  onHelpContextChange={next => {
-                    if (!isHelpContextEqual(editorHelpContext, next)) {
-                      this.setState({ editorHelpContext: next });
-                    }
-                  }}
-                  showWhitespace={showWhitespace}
-                  checkConfig={async environmentConfigData => {
-                    if (!currentSession.mode || modeError) {
-                      return {
-                        isValid: false,
-                        errors: [
-                          // FIXME this should be specific -- we should have an enumerated
-                          // validation error when there is no mode provided
-                          {
-                            message: "Must specify a mode",
-                            path: ["root"],
-                            reason: "MISSING_REQUIRED_FIELD"
-                          }
-                        ]
-                      };
-                    }
-                    const { data } = await client.query<
-                      PreviewConfigQuery,
-                      PreviewConfigQueryVariables
-                    >({
-                      fetchPolicy: "no-cache",
-                      query: PREVIEW_CONFIG_QUERY,
-                      variables: {
-                        environmentConfigData,
-                        pipeline: {
-                          name: currentSession.pipeline,
-                          solidSubset: currentSession.solidSubset
-                        },
-                        mode: currentSession.mode || "default"
+            <ConfigEditorContainer>
+              <ConfigEditorHelp
+                context={editorHelpContext}
+                allInnerTypes={environmentSchema?.allConfigTypes || []}
+              />
+              <ApolloConsumer>
+                {client => (
+                  <ConfigEditor
+                    readOnly={false}
+                    environmentSchema={environmentSchema}
+                    configCode={currentSession.environmentConfigYaml}
+                    onConfigChange={this.onConfigChange}
+                    onHelpContextChange={next => {
+                      if (!isHelpContextEqual(editorHelpContext, next)) {
+                        this.setState({ editorHelpContext: next });
                       }
-                    });
+                    }}
+                    showWhitespace={showWhitespace}
+                    checkConfig={async environmentConfigData => {
+                      if (!currentSession.mode || modeError) {
+                        return {
+                          isValid: false,
+                          errors: [
+                            // FIXME this should be specific -- we should have an enumerated
+                            // validation error when there is no mode provided
+                            {
+                              message: "Must specify a mode",
+                              path: ["root"],
+                              reason: "MISSING_REQUIRED_FIELD"
+                            }
+                          ]
+                        };
+                      }
+                      const { data } = await client.query<
+                        PreviewConfigQuery,
+                        PreviewConfigQueryVariables
+                      >({
+                        fetchPolicy: "no-cache",
+                        query: PREVIEW_CONFIG_QUERY,
+                        variables: {
+                          environmentConfigData,
+                          pipeline: {
+                            name: currentSession.pipeline,
+                            solidSubset: currentSession.solidSubset
+                          },
+                          mode: currentSession.mode || "default"
+                        }
+                      });
 
-                    if (this.mounted) {
-                      this.setState({ preview: data });
-                    }
+                      if (this.mounted) {
+                        this.setState({ preview: data });
+                      }
 
-                    return responseToValidationResult(
-                      environmentConfigData,
-                      data.isPipelineConfigValid
-                    );
-                  }}
-                />
-              )}
-            </ApolloConsumer>
+                      return responseToValidationResult(
+                        environmentConfigData,
+                        data.isPipelineConfigValid
+                      );
+                    }}
+                  />
+                )}
+              </ApolloConsumer>
+            </ConfigEditorContainer>
           </>
         }
         second={
@@ -445,4 +502,20 @@ const ConfigEditorDisplayOptionsContainer = styled.div`
   bottom: 14px;
   right: 14px;
   z-index: 10;
+`;
+
+const ConfigEditorContainer = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+`;
+const TagEditorLink = styled.div`
+  color: #666;
+  cursor: pointer;
+  margin-left: 15px;
+  text-decoration: underline;
+  &:hover {
+    color: #aaa;
+  }
 `;

@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from dagster import (
@@ -22,6 +20,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 
 
@@ -56,7 +55,7 @@ def define_addy_pipeline():
 def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    old_run_id = str(uuid.uuid4())
+    old_run_id = make_new_run_id()
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
         pipeline_def,
@@ -73,7 +72,7 @@ def test_execution_plan_reexecution():
 
     ## re-execute add_two
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name,
@@ -105,8 +104,8 @@ def test_execution_plan_reexecution():
 def test_execution_plan_wrong_run_id():
     pipeline_def = define_addy_pipeline()
 
-    unrun_id = str(uuid.uuid4())
-    new_run_id = str(uuid.uuid4())
+    unrun_id = make_new_run_id()
+    new_run_id = make_new_run_id()
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
 
     pipeline_run = PipelineRun(
@@ -139,7 +138,7 @@ def test_execution_plan_wrong_run_id():
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    old_run_id = str(uuid.uuid4())
+    old_run_id = make_new_run_id()
     environment_dict = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
     result = execute_pipeline(
         pipeline_def,
@@ -152,7 +151,7 @@ def test_execution_plan_reexecution_with_in_memory():
 
     ## re-execute add_two
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name,
@@ -178,7 +177,7 @@ def test_execution_plan_reexecution_with_in_memory():
 def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    old_run_id = str(uuid.uuid4())
+    old_run_id = make_new_run_id()
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
         pipeline_def,
@@ -195,7 +194,7 @@ def test_pipeline_step_key_subset_execution():
 
     ## re-execute add_two
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     pipeline_reexecution_result = execute_pipeline(
         pipeline_def,
@@ -223,14 +222,14 @@ def test_pipeline_step_key_subset_execution():
 
 def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
     pipeline_def = define_addy_pipeline()
-    old_run_id = str(uuid.uuid4())
+    old_run_id = make_new_run_id()
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
     result = execute_pipeline(
         pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=old_run_id)
     )
     assert result.success
 
-    new_run_id = str(uuid.uuid4())
+    new_run_id = make_new_run_id()
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_pipeline(

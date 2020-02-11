@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 import os
-import uuid
 
 import pytest
 from airflow.exceptions import AirflowException
@@ -19,6 +18,7 @@ from dagster_airflow_tests.conftest import environments_path  # pylint: disable=
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
+from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
@@ -126,6 +126,6 @@ def test_error_dag_python(environments_path):  # pylint: disable=redefined-outer
     dag, tasks = make_airflow_dag_for_handle(handle, pipeline_name, environment_dict)
 
     with pytest.raises(AirflowException) as exc_info:
-        execute_tasks_in_dag(dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date)
+        execute_tasks_in_dag(dag, tasks, run_id=make_new_run_id(), execution_date=execution_date)
 
     assert 'Exception: Unusual error' in str(exc_info.value)

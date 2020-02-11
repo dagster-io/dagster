@@ -3,16 +3,16 @@
 Deploying to Airflow
 --------------------
 
-Dagster is designed for incremental adoption, and to work with all of your existing Airflow
-infrastructure.
+It's also possible to schedule pipelines for execution by compiling them to a format that can be
+understood by a third-party scheduling system, and then defining schedules within that system.
 
-You can use all of Dagster's features and abstractions—the programming model, type systems, etc.
-while scheduling, executing, and monitoring your Dagster pipelines with Airflow, right alongside all
-of your existing Airflow DAGs.
+This is the approach we use to deploy Dagster pipelines to Airflow (using the
+`dagster-airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow>`__
+package).
 
-This integration is fairly simple. As with vanilla Dagster pipeline execution, Dagster compiles your
-pipeline and configuration together into an execution plan. In the case of Airflow, these execution
-plans are then mapped to a DAG, with a bijection between solids and Airflow operators.
+We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. But if you
+have a large existing Airflow install, this integration will allow you to follow an incremental
+adoption path.
 
 Requirements
 ^^^^^^^^^^^^
@@ -22,39 +22,55 @@ Requirements
 Overview
 ~~~~~~~~
 
-We support two modes of execution:
+A Dagster pipeline is first compiled with a set of config options into an execution plan,
+and then the individual execution steps are expressed as Airflow tasks using one of a set of custom
+wrapper operators (the same operator is used for each task in the DAG) . The resulting DAG can be
+deployed to an existing Airflow install and scheduled and monitored using all the tools being
+used for existing Airflow pipelines.
+
+We support two modes of execution (each of which uses its own operator):
 
 1. **Uncontainerized [Default]**: Tasks are invoked directly on the Airflow executors.
 2. **Containerized**: Tasks are executed in Docker containers.
 
-Instructions on setting up Dagster + Airflow in these modes are provided in the next two sections.
-
-Running Uncontainerized
+Running uncontainerized
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 To define an Airflow DAG corresponding to a Dagster pipeline, you'll put a new Python file defining
 your DAG in the directory in which Airflow looks for DAGs -- this is typically ``$AIRFLOW_HOME/dags``.
 
 You can automatically scaffold this file from your Python code with the ``dagster-airflow`` CLI tool.
-For example, if you've checked out Dagster to ``$DAGSTER_ROOT``:
+For example, (provided that the ``dagster_examples`` directory is on your ``PYTHONPATH`` or that
+you've pip installed it):
 
 .. code-block:: shell
 
-    $ pip install -e dagster/examples/
     $ dagster-airflow scaffold \
         --module-name dagster_examples.toys.sleepy \
         --pipeline-name sleepy_pipeline
 
-This will create a file in your local ``$AIRFLOW_HOME/dags`` folder named ``sleepy_pipeline.py``. You
-can simply edit this file, supplying the appropriate environment configuration and Airflow
+This will create a file in your local ``$AIRFLOW_HOME/dags`` folder named ``sleepy_pipeline.py``.
+
+Inside this file, an Airflow DAG corresponding to your Dagster pipeline will be defined using
+instances of :py:class:`~dagster_airflow.DagsterPythonOperator` to represent individual execution
+steps in the pipeline.
+
+You can now edit this file, supplying the appropriate environment configuration and Airflow
 ``DEFAULT_ARGS`` for your particular Airflow instance. When Airflow sweeps this directory looking for
 DAGs, it will find and execute this code, dynamically creating an Airflow DAG and steps
 corresponding to your Dagster pipeline.
 
-These are ordinary Airflow objects, and you can do eveything you would expect with them -- for example,
-adding :py:class:`ExternalTaskSensor <airflow.sensors.external_task_sensor.ExternalTaskSensor>`
-dependencies between the dynamically generated Airflow operators in this DAG and operators that you
-define in your other existing Airflow DAGs.
+Note that an extra ``storage`` parameter will be injected into your environment dict if it is not
+set. By default, this will use filesystem storage, but if your Airflow executors are running on
+multiple nodes, you will need either to configure this to point at a network filesystem, or consider
+an alternative such as S3 or GCS storage.
+
+You will also need to make sure that all of the Python and system requirements that your Dagster
+pipeline requires are available in your Airflow execution environment; e.g., if you're running
+Airflow on multiple nodes with Celery, this will be true for the Airflow master and all workers.
+
+You will also want to make sure you have a process in place to update your Airflow DAGs, as well as
+the Dagster code available to the Airflow workers, whenever your pipelines change.
 
 Using Presets
 ^^^^^^^^^^^^^
@@ -69,47 +85,23 @@ The Airflow scaffold utility also supports using presets when generating an Airf
         --pipeline-name error_monster \
         --preset passing
 
-Implementation Notes
-^^^^^^^^^^^^^^^^^^^^
-
-- We use a ``DagsterPythonOperator`` to wrap Dagster solids and define an Airflow DAG that corresponds
-  to a Dagster pipeline and can run in your Airflow environment uncontainerized.
-- Note that an extra ``storage`` parameter will be injected into your environment dict if it is not set.
-  You can set this for any Dagster pipeline (and intermediate values will be automatically
-  materialized in either ``filesystem`` or ``s3`` storage), but you **must** set it when converting a
-  pipeline to an Airflow DAG.
-- To execute your pipeline, you will also need to make sure that all of the Python and system
-  requirements that your Dagster pipeline requires are available in your Airflow environment; if
-  you're running Airflow on multiple nodes with the Celery executor, this will be true for the Airflow
-  master and all workers.
-
 Running Containerized
 ~~~~~~~~~~~~~~~~~~~~~
 
-We use a ``DagsterDockerOperator``, based on the ordinary Airflow
-:py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`, to wrap Dagster
-pipelines. In order to run containerized Dagster pipelines, you must have Docker running in your
+Running containerized, we use a :py:class:`~dagster_airflow.DagsterDockerOperator` to wrap Dagster
+pipelines.
+
+In order to run containerized Dagster pipelines, you must have Docker running in your
 Airflow environment (just as with the ordinary Airflow
 :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`).
 
-During execution, Dagster caches and transfers intermediate state between execution steps. This
-feature enables quick re-execution of execution steps from the Dagit UI.
+Running in a containerized context requires a persistent intermediate storage layer available to
+the Dagster containers, such as a network filesystem, S3, or GCS.
 
-When running uncontainerized on a single machine, this transfer can take place in memory or on the
-local file system, but running in a containerized context requires a persistent intermediate storage
-layer available to the Dagster containers.
+You'll also need to containerize your Dagster repository.
 
-Presently, we support S3 for persisting this intermediate state. To use it, you'll just need to set
-up an S3 bucket and expose AWS credentials via the usual Boto credentials chain. We plan on
-supporting other persistence targets like GCS, HDFS, and NFS in the future—please reach out to us if
-you require a different intermediate store for your use case.
-
-We use the ``DagsterDockerOperator`` to define an Airflow DAG that can run in completely isolated
-containers corresponding to your Dagster solids. To run containerized, you'll first need to
-containerize your repository. Then, you can define your Airflow DAG.
-
-Containerizing your repository
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Containerizing a Dagster repository
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure you have Docker installed, and write a Dockerfile like the following:
 
@@ -161,7 +153,7 @@ which image to run. E.g., if you want your image to be called ``dagster-airflow-
 If you want your containerized pipeline to be available to Airflow operators running on other
 machines (for example, in environments where Airflow workers are running remotely) you'll need to
 push your Docker image to a Docker registry so that remote instances of Docker can pull the image by
-name.
+name, or otherwise ensure that the image is available on remote nodes.
 
 For most production applications, you'll probably want to use a private Docker registry, rather than
 the public DockerHub, to store your containerized pipelines.
@@ -192,18 +184,18 @@ which Airflow looks for DAGs.
         op_kwargs=None
     )
 
-You can pass ``op_kwargs`` through to the the ``DagsterDockerOperator`` to use custom TLS settings, the
-private registry of your choice, etc., just as you would configure the ordinary Airflow
-:py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`.
+You can pass ``op_kwargs`` through to the the :py:class`~dagster_airflow.DagsterDockerOperator` to
+use custom TLS settings, the private registry of your choice, etc., just as you would configure the
+ordinary Airflow :py:class:`DockerOperator <airflow:airflow.operators.docker_operator.DockerOperator>`.
 
 Docker bind-mount for filesystem intermediate storage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, the DagsterDockerOperator will bind-mount ``/tmp`` on the host into ``/tmp`` in the Docker
-container. You can control this by setting the ``op_kwargs`` in
-:py:func:`make_airflow_dag <dagster_airflow.make_airflow_dag>`. For instance, if
-you'd prefer to mount ``/host_tmp`` on the host into ``/container_tmp`` in the container, and use this
-volume for intermediate storage, you can run:
+By default, the :py:class`~dagster_airflow.DagsterDockerOperator` will bind-mount ``/tmp`` on the
+host into ``/tmp`` in the Docker container. You can control this by setting the ``op_kwargs`` in
+:py:func:`~dagster_airflow.make_airflow_dag`. For instance, if you'd prefer to mount ``/host_tmp``
+on the host into ``/container_tmp`` in the container, and use this volume for intermediate storage,
+you can run:
 
 .. code-block:: python
 
@@ -216,24 +208,6 @@ volume for intermediate storage, you can run:
         dag_kwargs=None,
         op_kwargs={'host_tmp_dir': '/host_tmp', 'tmp_dir': '/container_tmp'}
     )
-
-Using S3 with dagster-airflow
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-You can also use S3 for dagster-airflow intermediate storage, and you **must** use S3 when running your
-DAGs with distributed executors.
-
-You'll need to create an S3 bucket, and provide AWS credentials granting read and write permissions
-to this bucket within your Docker containers. We recommend that you use credentials for an IAM user
-which has the
-`least privilege <https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege>`_
-required to access the S3 bucket for dagster-airflow.
-
-You can configure S3 storage as follows:
-
-.. code-block:: python
-
-    {'storage': {'s3': {'s3_bucket': 'my-cool-bucket'}}}
 
 Compatibility
 ^^^^^^^^^^^^^

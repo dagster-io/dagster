@@ -115,12 +115,6 @@ class SystemPipelineExecutionContext(object):
         return self._pipeline_context_data.executor_config
 
     @property
-    def run_config(self):
-        # backwards-compatability... should remove in 0.7.0
-        # https://github.com/dagster-io/dagster/issues/1874
-        return self._pipeline_context_data.pipeline_run
-
-    @property
     def pipeline_run(self):
         return self._pipeline_context_data.pipeline_run
 

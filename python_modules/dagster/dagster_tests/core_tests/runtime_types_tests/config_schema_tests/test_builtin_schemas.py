@@ -136,11 +136,9 @@ def test_int_input_schema_failure_wrong_value_type():
             environment_dict=single_input_env('take_int', 'num', {'value': 'dkjdfkdj'}),
             solid_subset=['take_int'],
         )
-
     assert (
-        'Error 1: Type failure at path "root:solids:take_int:inputs:num:value" on type '
-        '"Int". Value at path root:solids:take_int:inputs:num:value is not valid. '
-        'Expected "Int"' in str(exc_info.value)
+        'Error 1: Type failure at path "root:solids:take_int:inputs:num:value" on type "Int". Invalid scalar at path '
+        'root:solids:take_int:inputs:num:value' in str(exc_info.value)
     )
 
 
@@ -163,11 +161,10 @@ def test_int_input_schema_failure_raw_string():
             environment_dict=single_input_env('take_int', 'num', 'dkjdfkdj'),
             solid_subset=['take_int'],
         )
-
     assert (
-        'Error 1: Type failure at path "root:solids:take_int:inputs:num". '
-        'Value at path root:solids:take_int:inputs:num is not valid. Expected "Int".'
-    ) in str(exc_info.value)
+        'Error 1: Type failure at path "root:solids:take_int:inputs:num". Invalid scalar at path root:solids:take_int:inputs:num'
+        in str(exc_info.value)
+    )
 
 
 def single_output_env(solid_name, output_spec):

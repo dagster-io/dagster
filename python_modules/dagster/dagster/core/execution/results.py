@@ -430,7 +430,7 @@ class SolidExecutionResult(object):
         if self.success and self.compute_step_events:
             with self.reconstruct_context() as context:
                 execution_plan = create_execution_plan(
-                    context.pipeline_def, context.environment_dict, context.run_config
+                    context.pipeline_def, context.environment_dict, context.pipeline_run
                 )
                 values = {}
                 for compute_step_event in self.compute_step_events:
@@ -480,7 +480,7 @@ class SolidExecutionResult(object):
                 ):
                     with self.reconstruct_context() as context:
                         execution_plan = create_execution_plan(
-                            context.pipeline_def, context.environment_dict, context.run_config
+                            context.pipeline_def, context.environment_dict, context.pipeline_run
                         )
 
                         value = self._get_value(

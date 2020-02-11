@@ -1,6 +1,5 @@
 import logging
 import sys
-import uuid
 
 import pytest
 from airflow import DAG
@@ -9,6 +8,7 @@ from airflow.models import TaskInstance
 from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
 
+from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list
 
 
@@ -77,7 +77,7 @@ def dagster_airflow_python_operator_pipeline():
             assert isinstance(task, PythonOperator)
 
         return execute_tasks_in_dag(
-            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+            dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
         )
 
     return _pipeline_fn
@@ -129,7 +129,7 @@ def dagster_airflow_docker_operator_pipeline():
             assert isinstance(task, DagsterDockerOperator)
 
         return execute_tasks_in_dag(
-            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+            dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
         )
 
     return _pipeline_fn
@@ -191,7 +191,7 @@ def dagster_airflow_k8s_operator_pipeline():
             assert task.startup_timeout_seconds == 300
 
         return execute_tasks_in_dag(
-            dag, tasks, run_id=str(uuid.uuid4()), execution_date=execution_date
+            dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
         )
 
     return _pipeline_fn

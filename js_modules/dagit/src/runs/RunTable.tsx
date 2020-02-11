@@ -12,9 +12,7 @@ import {
   MenuDivider,
   Tooltip,
   NonIdealState,
-  Tag,
-  Intent,
-  Position
+  Intent
 } from "@blueprintjs/core";
 import {
   Details,
@@ -31,6 +29,7 @@ import {
   DELETE_MUTATION,
   CANCEL_MUTATION
 } from "./RunUtils";
+import { RunTag } from "./RunTag";
 import { formatElapsedTime, unixTimestampToString } from "../Util";
 import { SharedToaster } from "../DomUtils";
 
@@ -242,8 +241,6 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
   );
 };
 
-const DAGSTER_TAG_NAMESPACE = "dagster/";
-
 const RunTags: React.FunctionComponent<{
   tags: RunTableRunFragment_tags[];
 }> = ({ tags }) => {
@@ -273,36 +270,9 @@ const RunTags: React.FunctionComponent<{
           flexDirection: open ? undefined : "row"
         }}
       >
-        {tags.map((tag, idx) => {
-          if (tag.key.startsWith(DAGSTER_TAG_NAMESPACE)) {
-            const tagKey = tag.key.substr(DAGSTER_TAG_NAMESPACE.length);
-            const [h, s, l] = strToHSL(tagKey);
-            return (
-              <Tooltip
-                key={idx}
-                content={`${tag.key}=${tag.value}`}
-                wrapperTagName="div"
-                targetTagName="div"
-                position={Position.LEFT}
-              >
-                <Tag
-                  style={{
-                    margin: 1,
-                    backgroundColor: `hsl(${h}, ${s}%, ${l}%)`
-                  }}
-                >
-                  {`${tagKey}=${tag.value}`}
-                </Tag>
-              </Tooltip>
-            );
-          }
-          return (
-            <Tag
-              key={idx}
-              style={{ margin: 1 }}
-            >{`${tag.key}=${tag.value}`}</Tag>
-          );
-        })}
+        {tags.map((tag, idx) => (
+          <RunTag tag={tag} key={idx} />
+        ))}
         <div
           style={{
             display: open ? "none" : "block",
@@ -341,29 +311,6 @@ const RunTags: React.FunctionComponent<{
       </div>
     </div>
   );
-};
-
-const strToNumber = (str: string) => {
-  const seed = 113;
-  const seed2 = 149;
-  let current = 0;
-  str += "x";
-  const MAX_SAFE_INTEGER: number = Math.floor(Number.MAX_SAFE_INTEGER / seed);
-  for (let i = 0; i < str.length; i++) {
-    if (current > MAX_SAFE_INTEGER) {
-      current = Math.floor(current / seed);
-    }
-    current = current * seed2 + str.charCodeAt(i);
-  }
-  return current;
-};
-
-const strToHSL = (str: string) => {
-  const seed = 37;
-  const h = 218;
-  const s = (strToNumber(str) % 25) + 25;
-  const l = ((strToNumber(str) * seed) % 20) + 60;
-  return [h, s, l];
 };
 
 const RunActionsMenu: React.FunctionComponent<{

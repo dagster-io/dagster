@@ -57,10 +57,11 @@ extensions = [
 autosectionlabel_prefix_document = True
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', 'objects.inv'),
-    'airflow': ('https://airflow.apache.org', 'airflow.inv'),
-    'dask': ('https://distributed.dask.org/en/latest/', 'dask.inv'),
-    'celery': ('http://docs.celeryproject.org/en/latest/', 'celery.inv'),
+    'python': ('https://docs.python.org/3', 'intersphinx/python.inv'),
+    'airflow': ('https://airflow.apache.org', 'intersphinx/airflow.inv'),
+    'dask': ('https://distributed.dask.org/en/latest/', 'intersphinx/dask.inv'),
+    'celery': ('http://docs.celeryproject.org/en/latest/', 'intersphinx/celery.inv'),
+    'boto3': ('https://boto3.amazonaws.com/v1/documentation/api/latest/', 'intersphinx/boto3.inv'),
 }
 
 # Add any paths that contain templates here, relative to this directory.

@@ -208,7 +208,9 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
         execute_query_from_cli(handle, query, variables, output)
 
 
+cli = create_dagster_graphql_cli()
+
+
 def main():
-    cli = create_dagster_graphql_cli()
     # click magic
     cli(obj={})  # pylint:disable=E1120

@@ -37,7 +37,7 @@ def _do_setup(name='dagster-k8s'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'kubernetes'],
+        install_requires=['dagster', 'dagster_graphql', 'kubernetes'],
         tests_require=[],
         zip_safe=False,
     )

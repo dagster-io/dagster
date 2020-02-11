@@ -18,7 +18,7 @@ from .version import __version__
 
 
 def create_dagit_cli():
-    return ui(auto_envvar_prefix='DAGIT')  # pylint: disable=no-value-for-parameter
+    return ui  # pylint: disable=no-value-for-parameter
 
 
 REPO_TARGET_WARNING = (
@@ -106,7 +106,9 @@ def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None
             raise os_error
 
 
+cli = create_dagit_cli()
+
+
 def main():
-    cli = create_dagit_cli()
     # click magic
-    cli(obj={})  # pylint:disable=E1120
+    cli(auto_envvar_prefix='DAGIT')  # pylint:disable=E1120

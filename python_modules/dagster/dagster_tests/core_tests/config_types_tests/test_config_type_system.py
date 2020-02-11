@@ -289,7 +289,7 @@ def test_single_nested_config_undefined_errors():
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value at path root:nested:int_field is not valid. Expected "Int"',
+        match='Invalid scalar at path root:nested:int_field value "dkjfdk" of type .* is not valid for expected type "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
@@ -304,7 +304,7 @@ def test_single_nested_config_undefined_errors():
 
     with pytest.raises(
         DagsterEvaluateConfigValueError,
-        match='Value at path root:nested:int_field is not valid. Expected "Int"',
+        match='Invalid scalar at path root:nested:int_field value "{\'too_nested\': \'dkjfdk\'}" of type .* is not valid for expected type "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
@@ -770,10 +770,13 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
 
 
 def test_invalid_default_values():
-    with pytest.raises(DagsterInvalidConfigError):
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match='value "3" of type .* is not valid for expected type "Int"',
+    ):
 
         @solid(config=Field(Int, default_value='3'))
-        def _solid():
+        def _solid(_):
             pass
 
 

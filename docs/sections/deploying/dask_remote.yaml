@@ -1,0 +1,8 @@
+storage:
+  s3:
+    config:
+      s3_bucket: your_bucket_name
+execution:
+  dask:
+    config:
+      address: "dask_scheduler.dns_name:8787"

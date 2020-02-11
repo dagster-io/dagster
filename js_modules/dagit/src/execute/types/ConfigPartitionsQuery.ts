@@ -11,12 +11,19 @@ export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSetNotFoundE
   __typename: "PartitionSetNotFoundError" | "PythonError";
 }
 
+export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions {
   __typename: "Partition";
   name: string;
   solidSubset: string[] | null;
   environmentConfigYaml: string;
   mode: string;
+  tags: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags[];
 }
 
 export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet {

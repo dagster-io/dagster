@@ -1,6 +1,5 @@
 import csv
 import os
-import uuid
 from collections import OrderedDict
 
 import pytest
@@ -32,6 +31,7 @@ from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePlug
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
+from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
 
 
@@ -100,7 +100,7 @@ def test_using_s3_for_subplan(s3_bucket):
 
     environment_dict = {'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}}}
 
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     execution_plan = create_execution_plan(
         pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id)
@@ -187,7 +187,7 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
 
 @nettest
 def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
@@ -210,7 +210,7 @@ def test_s3_intermediate_store_with_type_storage_plugin(s3_bucket):
 
 @nettest
 def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(
         run_id=run_id,
@@ -229,7 +229,7 @@ def test_s3_intermediate_store_with_composite_type_storage_plugin(s3_bucket):
 
 @nettest
 def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -248,7 +248,7 @@ def test_s3_intermediate_store_composite_types_with_custom_serializer_for_inner_
 
 @nettest
 def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
 
@@ -274,7 +274,7 @@ def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
 
 @nettest
 def test_s3_pipeline_with_custom_prefix(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     s3_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
@@ -311,7 +311,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
 
 @nettest
 def test_s3_intermediate_store_with_custom_prefix(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(
         run_id=run_id, s3_bucket=s3_bucket, s3_prefix='custom_prefix'
@@ -334,8 +334,8 @@ def test_s3_intermediate_store_with_custom_prefix(s3_bucket):
 
 @nettest
 def test_s3_intermediate_store(s3_bucket):
-    run_id = str(uuid.uuid4())
-    run_id_2 = str(uuid.uuid4())
+    run_id = make_new_run_id()
+    run_id_2 = make_new_run_id()
 
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     assert intermediate_store.root == '/'.join(['dagster', 'storage', run_id])
@@ -387,7 +387,7 @@ class LessSimpleDataFrame(list):
 
 
 def test_custom_read_write_mode(s3_bucket):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     intermediate_store = S3IntermediateStore(run_id=run_id, s3_bucket=s3_bucket)
     data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
     try:
