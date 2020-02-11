@@ -63,12 +63,17 @@ async function main() {
 
   // Cd into dagster, checkout version and build
   process.chdir(SPHINX_BASE_DIR);
-  await sh.execAsync(`git checkout tags/${version} -b tag/${version}`);
+  // For now we're commenting this out -- this actually only works with some kind of submodule setup
+  // Context management (see `git checkout feat/docs` below) is also very fragile
+  // I think ultimately we want a script like build-version which explicitly builds a version
+  // (perhaps from a tag) but we need something else that ppl can just run in dev without any git
+  // shenanigans or tags etc.
+  // await sh.execAsync(`git checkout tags/${version} -b tag/${version}`);
   sh.rm("-rf", SPHINX_BUILD_DIR);
   sh.rm("-rf", NODE_MODULES);
   await sh.execAsync("make json");
-  await sh.execAsync("git checkout feat/docs");
-  await sh.execAsync(`git branch -D tag/${version}`);
+  // await sh.execAsync("git checkout feat/docs");
+  // await sh.execAsync(`git branch -D tag/${version}`);
   await fs.writeJSON(DAGSTER_INFO_PATH, {
     version,
     all: getAllBuildedVersions()
@@ -102,8 +107,8 @@ async function main() {
   // Commit build
   sh.cd(GATSBY_BASE_DIR);
   await sh.execAsync("yarn");
-  await sh.execAsync("git add versions");
-  await sh.execAsync(`git commit -m "docs: add new docs build ${version}"`);
+  // await sh.execAsync("git add versions");
+  // await sh.execAsync(`git commit -m "docs: add new docs build ${version}"`);
 }
 
 main();
