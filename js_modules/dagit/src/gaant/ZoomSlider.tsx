@@ -2,8 +2,8 @@ import * as React from "react";
 
 /**
  * Renders a horizontal slider that lets you adjust the graph's relative zoom from 1-100.
- * It uses Blueprint CSS but not the Slider component, becasue that renders twice and
- * triggers a re-layout as it sizes itself.
+ * It uses Blueprint CSS but not the Slider component, because that renders twice and
+ * forces a DOM layout to determine it's size (I think for tick marks, which we aren't using)
  */
 export const ZoomSlider: React.FunctionComponent<{
   value: number;

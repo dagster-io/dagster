@@ -7,6 +7,14 @@ const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
 const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
 const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 
+// We want to gracefully transition the tick marks shown as you zoom, but it's
+// nontrivial to programatically pick good intervals. (500ms => 1s => 5s, etc.)
+// This lookup table defines the available tick mark intervals and the labeling
+// that should be used for each one("2:00" or "2m" or "2s" or "0.05s", etc.).
+//
+// We use the first configuration that places ticks at least 80 pixels apart
+// at the rendered scale.
+//
 const TICK_LABEL_WIDTH = 40;
 const TICK_CONFIG = [
   {
@@ -81,7 +89,9 @@ export const GaantChartTimescale = ({
   const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
 
   for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
-    if (x - viewport.left < 10) continue;
+    if (x - viewport.left < 10) {
+      continue;
+    }
     const ms = x / pxPerMs;
     const key = `${ms.toFixed(2)}`;
     const label = tickLabels(ms);

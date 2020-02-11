@@ -23,7 +23,6 @@ import {
   GaantChartLayout,
   GaantChartMode,
   GaantChartBox,
-  GaantViewport,
   IGaantNode,
   DEFAULT_OPTIONS,
   BOX_HEIGHT,
@@ -40,6 +39,7 @@ import { SplitPanelContainer } from "../SplitPanelContainer";
 import { GaantChartModeControl } from "./GaantChartModeControl";
 import { GaantStatusPanel } from "./GaantStatusPanel";
 import { ZoomSlider } from "./ZoomSlider";
+import { useViewport } from "./useViewport";
 
 export { GaantChartMode } from "./Constants";
 
@@ -169,7 +169,7 @@ export class GaantChart extends React.Component<
   };
 
   render() {
-    const { metadata = EMPTY_RUN_METADATA, plan, selectedStep } = this.props;
+    const { metadata, plan, selectedStep } = this.props;
     const { query, options } = this.state;
 
     const graph = toGraphQueryItems(plan);
@@ -188,13 +188,13 @@ export class GaantChart extends React.Component<
           value={query}
           placeholder="Type a Step Subset"
           onChange={q => this.setState({ query: q })}
-          presets={interestingQueriesFor(metadata, layout)}
+          presets={
+            metadata ? interestingQueriesFor(metadata, layout) : undefined
+          }
         />
       </>
     );
-    // todo perf: We can break buildLayout into a function that does not need metadata
-    // and then a post-processor that resizes/shifts things using `metadata`. Then we can
-    // memoize the time consuming vertical layout work.
+
     return (
       <GaantChartContainer>
         <OptionsContainer>
@@ -217,7 +217,7 @@ export class GaantChart extends React.Component<
               <div style={{ width: 15 }} />
               <Checkbox
                 style={{ marginBottom: 0 }}
-                label="Hide unstarted steps"
+                label="Hide not started steps"
                 checked={options.hideWaiting}
                 onClick={() =>
                   this.updateOptions({ hideWaiting: !options.hideWaiting })
@@ -229,7 +229,7 @@ export class GaantChart extends React.Component<
           {this.props.toolbarActions}
         </OptionsContainer>
 
-        {metadata && options.mode === GaantChartMode.WATERFALL_TIMED ? (
+        {metadata ? (
           <SplitPanelContainer
             identifier="gaant-split"
             axis="horizontal"
@@ -259,59 +259,14 @@ export class GaantChart extends React.Component<
 type GaantChartContentProps = GaantChartProps &
   GaantChartState & { layout: GaantChartLayout };
 
-const useViewport = () => {
-  const ref = React.useRef<any>();
-  const [offset, setOffset] = React.useState<{ left: number; top: number }>({
-    left: 0,
-    top: 0
-  });
-  const [size, setSize] = React.useState<{ width: number; height: number }>({
-    width: 0,
-    height: 0
-  });
-
-  // Monitor the container for size changes (if possible, otherwise fall back)
-  // to capturing the initial size only. (Only old FF).
-  React.useEffect(() => {
-    if (!ref.current) return;
-
-    let resizeObserver: any;
-    if (ref.current instanceof HTMLElement && "ResizeObserver" in window) {
-      resizeObserver = new window["ResizeObserver"]((entries: any) => {
-        setSize({
-          width: entries[0].contentRect.width,
-          height: entries[0].contentRect.height
-        });
-      });
-      resizeObserver.observe(ref.current);
-    } else {
-      const rect = ref.current.getBoundingClientRect();
-      setSize({ width: rect.width, height: rect.height });
-    }
-    return () => {
-      resizeObserver?.disconnect();
-    };
-  }, []);
-
-  // Monitor the container for scroll offset changes
-  const onScroll = (e: React.UIEvent) => {
-    setOffset({
-      left: e.currentTarget.scrollLeft,
-      top: e.currentTarget.scrollTop
-    });
-  };
-
-  return {
-    viewport: { ...offset, ...size } as GaantViewport,
-    containerProps: { ref, onScroll }
-  };
-};
-
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
   const { viewport, containerProps } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const { options, metadata = EMPTY_RUN_METADATA } = props;
 
+  // The slider in the UI updates `options.zoom` from 1-100. We convert that value
+  // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
+  // To make the slider feel more linear, we convert the input from log10 to logE.
   const minScale =
     viewport.width && metadata.mostRecentLogAt && metadata.minStepStart
       ? (viewport.width - 150) /
@@ -323,6 +278,9 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
       ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
   );
 
+  // The `layout` we receive has been laid out and the rows / "waterfall" are final,
+  // but it doesn't incorporate the display scale or run metadata. We stretch and
+  // shift the layout boxes using this data to create the final layout for display.
   const items: React.ReactChild[] = [];
   const layout = adjustLayoutWithRunMetadata(
     props.layout,
@@ -333,6 +291,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
   const focused = layout.boxes.find(b => b.node.name === props.selectedStep);
   const hovered = layout.boxes[hoveredIdx];
 
+  // This custom event allows clicking in the sidebar to highlight nodes.
   React.useEffect(() => {
     const onEvent = (e: CustomEvent) => {
       setHoveredIdx(layout.boxes.findIndex(b => b.node.name === e.detail.name));
@@ -346,6 +305,8 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
   };
 
+  // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
+  // intersect with the current viewport.
   const intersectsViewport = (bounds: Bounds) =>
     bounds.minX < viewport.left + viewport.width &&
     bounds.maxX > viewport.left &&
@@ -356,8 +317,9 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     layout.boxes.forEach(box => {
       box.children.forEach((child, childIdx) => {
         const bounds = boundsForLine(box, child);
-        if (!intersectsViewport(bounds)) return;
-
+        if (!intersectsViewport(bounds)) {
+          return;
+        }
         const childNotDrawn = !layout.boxes.includes(child);
         const childWaiting = metadata.mostRecentLogAt
           ? !metadata.steps[child.node.name]?.state
@@ -381,9 +343,10 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
 
   layout.boxes.forEach((box, idx) => {
     const bounds = boundsForBox(box);
-    if (!intersectsViewport(bounds)) return;
-
     const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
+    if (!intersectsViewport(bounds)) {
+      return;
+    }
 
     items.push(
       <div
@@ -443,7 +406,11 @@ interface Bounds {
   maxY: number;
 }
 
-const boundsForBox = (a: GaantChartBox) => {
+/**
+ * Returns the top left + bottom right bounds for the provided Gaant chart box
+ * so that the box can be drawn and tested for intersection with the viewport.
+ */
+const boundsForBox = (a: GaantChartBox): Bounds => {
   return {
     minX: a.x,
     minY: a.y * BOX_HEIGHT,
@@ -452,7 +419,12 @@ const boundsForBox = (a: GaantChartBox) => {
   };
 };
 
-const boundsForLine = (a: GaantChartBox, b: GaantChartBox) => {
+/**
+ * Returns the top left + bottom right bounds for the line between two Gaant
+ * chart boxes. The boxes do not need to be provided in left -> right order.
+ * @param a: GaantChartBox
+ */
+const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
   const minIdx = Math.min(a.y, b.y);
   const maxIdx = Math.max(a.y, b.y);
 
@@ -465,9 +437,13 @@ const boundsForLine = (a: GaantChartBox, b: GaantChartBox) => {
       ? Math.max(a.x, b.x)
       : Math.max(a.x + a.width / 2, b.x + b.width / 2);
 
-  return { minX, minY, maxX, maxY } as Bounds;
+  return { minX, minY, maxX, maxY };
 };
 
+/**
+ * Renders a line on the Gaant visualization using a thin horizontal <div> and
+ * a thin vertical <div> as necessary.
+ */
 const GaantLine = React.memo(
   ({
     minX,

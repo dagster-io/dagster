@@ -13,8 +13,8 @@ export interface GaantChartBox {
   children: GaantChartBox[];
   node: IGaantNode;
   width: number;
-  x: number;
-  y: number;
+  x: number; // Note: This is a pixel value
+  y: number; // Note: This is a "row number" not a pixel value
   root: boolean;
 }
 
