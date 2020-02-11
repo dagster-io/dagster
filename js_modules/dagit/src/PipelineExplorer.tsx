@@ -224,6 +224,7 @@ export default class PipelineExplorer extends React.Component<
               <GraphQueryInput
                 items={solids}
                 value={visibleSolidsQuery}
+                placeholder="Type a Solid Subset"
                 onChange={this.handleQueryChange}
               />
             )}
