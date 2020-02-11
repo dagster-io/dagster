@@ -258,15 +258,53 @@ export class GaantChart extends React.Component<
 type GaantChartContentProps = GaantChartProps &
   GaantChartState & { layout: GaantChartLayout };
 
+interface GaantViewport {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+const useViewport = () => {
+  const ref = React.useRef<any>();
+  const [viewport, setViewport] = React.useState<GaantViewport>({
+    left: 0,
+    width: 0,
+    top: 0,
+    height: 0
+  });
+
+  React.useEffect(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    if (rect.width !== viewport.width || rect.height !== viewport.height) {
+      setViewport({ ...viewport, width: rect.width, height: rect.height });
+    }
+  }, [viewport, setViewport]);
+
+  const onScroll = (e: React.UIEvent) => {
+    setViewport({
+      ...viewport,
+      left: e.currentTarget.scrollLeft,
+      top: e.currentTarget.scrollTop
+    });
+  };
+
+  return {
+    viewport,
+    setViewport,
+    containerProps: { ref, onScroll }
+  };
+};
+
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
-  const [scrollLeft, setScrollLeft] = React.useState<number>(0);
+  const { viewport, setViewport, containerProps } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const { options, layout, metadata = EMPTY_RUN_METADATA } = props;
 
   const items: React.ReactChild[] = [];
-  const focused =
-    layout.boxes.find(b => b.node.name === props.selectedStep) ||
-    layout.boxes[hoveredIdx];
+  const focused = layout.boxes.find(b => b.node.name === props.selectedStep);
+  const hovered = layout.boxes[hoveredIdx];
 
   React.useEffect(() => {
     const onEvent = (e: CustomEvent) => {
@@ -277,59 +315,68 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     return () => document.removeEventListener("highlight-node", onEvent);
   });
 
-  layout.boxes.forEach((box, idx) => {
-    const highlighted = focused === box || focused?.children.includes(box);
-    const style = boxStyleFor(box.node.name, { metadata, options });
+  const layoutSize = {
+    width: Math.max(0, ...layout.boxes.map(b => b.x + b.width)),
+    height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
+  };
 
-    if (box.width === BOX_DOT_WIDTH_CUTOFF) {
-      items.push(
-        <div
-          key={box.node.name}
-          style={{
-            left: box.x,
-            top: BOX_HEIGHT * box.y + (BOX_HEIGHT - BOX_DOT_SIZE) / 2,
-            ...style
-          }}
-          className={`dot ${highlighted && "highlighted"}`}
-          onClick={() => props.onApplyStepFilter?.(box.node.name)}
-          onMouseEnter={() => setHoveredIdx(idx)}
-          onMouseLeave={() => setHoveredIdx(-1)}
-        />
-      );
-    } else {
-      items.push(
-        <div
-          key={box.node.name}
-          style={{
-            left: box.x,
-            top: BOX_HEIGHT * box.y + BOX_MARGIN_Y,
-            width: box.width,
-            ...style
-          }}
-          className={`box ${highlighted && "highlighted"}`}
-          onClick={() => props.onApplyStepFilter?.(box.node.name)}
-          onMouseEnter={() => setHoveredIdx(idx)}
-          onMouseLeave={() => setHoveredIdx(-1)}
-        >
-          {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : ""}
-        </div>
-      );
-    }
-    if (options.mode !== GaantChartMode.FLAT) {
+  const intersectsViewport = (bounds: Bounds) =>
+    bounds.minX < viewport.left + viewport.width &&
+    bounds.maxX > viewport.left &&
+    bounds.minY < viewport.top + viewport.height &&
+    bounds.maxY > viewport.top;
+
+  if (options.mode !== GaantChartMode.FLAT) {
+    layout.boxes.forEach(box => {
       box.children.forEach((child, childIdx) => {
+        const bounds = boundsForLine(box, child);
+        if (!intersectsViewport(bounds)) return;
+
         const childIsRendered = layout.boxes.includes(child);
         items.push(
           <GaantLine
-            darkened={focused && (focused === box || focused === child)}
+            darkened={
+              (focused || hovered) === box || (focused || hovered) === child
+            }
             dotted={!childIsRendered}
             key={`${box.node.name}-${child.node.name}-${childIdx}`}
-            start={box}
-            end={child}
             depIdx={childIdx}
+            {...bounds}
           />
         );
       });
-    }
+    });
+  }
+
+  layout.boxes.forEach((box, idx) => {
+    const bounds = boundsForBox(box);
+    if (!intersectsViewport(bounds)) return;
+
+    const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
+
+    items.push(
+      <div
+        key={box.node.name}
+        title={box.node.name}
+        onClick={() => props.onApplyStepFilter?.(box.node.name)}
+        onMouseEnter={() => setHoveredIdx(idx)}
+        onMouseLeave={() => setHoveredIdx(-1)}
+        className={`
+            ${useDot ? "dot" : "box"}
+            ${focused === box && "focused"}
+            ${hovered === box && "hovered"}`}
+        style={{
+          left: bounds.minX,
+          top:
+            bounds.minY +
+            (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+          width: useDot ? BOX_DOT_SIZE : box.width,
+          ...boxStyleFor(box.node.name, { metadata, options })
+        }}
+      >
+        {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
+      </div>
+    );
   });
 
   return (
@@ -337,7 +384,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
       {options.mode === GaantChartMode.WATERFALL_TIMED && (
         <GaantChartTimescale
           scale={options.scale}
-          scrollLeft={scrollLeft}
+          scrollLeft={viewport.left}
           startMs={metadata.minStepStart || 0}
           nowMs={metadata.mostRecentLogAt}
           highlightedMs={
@@ -350,45 +397,59 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
           }
         />
       )}
-      <div
-        style={{ overflow: "scroll", flex: 1 }}
-        onScroll={e => setScrollLeft(e.currentTarget.scrollLeft)}
-      >
-        <div style={{ position: "relative" }}>{items}</div>
+      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
+        <div style={{ position: "relative", ...layoutSize }}>{items}</div>
       </div>
     </>
   );
 };
 
+interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+const boundsForBox = (a: GaantChartBox) => {
+  return {
+    minX: a.x,
+    minY: a.y * BOX_HEIGHT,
+    maxX: a.x + a.width,
+    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT
+  };
+};
+
+const boundsForLine = (a: GaantChartBox, b: GaantChartBox) => {
+  const minIdx = Math.min(a.y, b.y);
+  const maxIdx = Math.max(a.y, b.y);
+
+  const maxY = maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
+  const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
+
+  const minX = Math.min(a.x + a.width, b.x + b.width);
+  const maxX =
+    maxIdx === minIdx
+      ? Math.max(a.x, b.x)
+      : Math.max(a.x + a.width / 2, b.x + b.width / 2);
+
+  return { minX, minY, maxX, maxY } as Bounds;
+};
+
 const GaantLine = React.memo(
   ({
-    start,
-    end,
+    minX,
+    minY,
+    maxX,
+    maxY,
     dotted,
     darkened,
     depIdx
   }: {
-    start: GaantChartBox;
-    end: GaantChartBox;
     dotted: boolean;
     darkened: boolean;
     depIdx: number;
-  }) => {
-    const startIdx = start.y;
-    const endIdx = end.y;
-
-    const minIdx = Math.min(startIdx, endIdx);
-    const maxIdx = Math.max(startIdx, endIdx);
-
-    const maxY = maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
-    const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
-
-    const minX = Math.min(start.x + start.width, end.x + end.width);
-    const maxX =
-      maxIdx === minIdx
-        ? Math.max(start.x, end.x)
-        : Math.max(start.x + start.width / 2, end.x + end.width / 2);
-
+  } & Bounds) => {
     const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
       darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
     }`;
@@ -397,7 +458,6 @@ const GaantLine = React.memo(
       <>
         <div
           className="line"
-          data-info={`from ${start.node.name} to ${end.node.name}`}
           style={{
             height: 1,
             left: minX,
@@ -407,10 +467,9 @@ const GaantLine = React.memo(
             zIndex: darkened ? 100 : 1
           }}
         />
-        {maxIdx !== minIdx && !dotted && (
+        {minY !== maxY && !dotted && (
           <div
             className="line"
-            data-info={`from ${start.node.name} to ${end.node.name}`}
             style={{
               width: 1,
               left: maxX + (depIdx % 10) * LINE_SIZE,
@@ -477,8 +536,12 @@ const GaantChartContainer = styled.div`
     transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
       width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
 
-    &.highlighted {
+    &.focused {
       border: 1px solid ${Colors.DARK_GRAY1};
+      box-shadow: 0 0 0 2px goldenrod;
+    }
+    &.hovered {
+      border: 1px solid ${Colors.DARK_GRAY3};
     }
   }
 `;

@@ -108,7 +108,7 @@ export const GaantChartTimescale = ({
               transform
             }}
           >
-            {tickLabels(highlightedMs[1] - highlightedMs[0])}
+            {msToSubsecondLabel(highlightedMs[1] - highlightedMs[0])}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
@@ -124,7 +124,7 @@ export const GaantChartTimescale = ({
               className="tick highlight"
               style={{ left: timeX + labelOffset, transform }}
             >
-              {tickLabels(ms - startMs)}
+              {msToSubsecondLabel(ms - startMs)}
             </div>
           );
         })}

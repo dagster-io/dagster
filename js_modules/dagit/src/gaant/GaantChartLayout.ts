@@ -284,18 +284,23 @@ export const adjustLayoutWithRunMetadata = (
     options.mode === GaantChartMode.WATERFALL_TIMED &&
     metadata.minStepStart
   ) {
+    // Apply all box widths
     for (const box of boxes) {
       box.width = boxWidthFor(box.node, { options, metadata });
     }
 
+    // Traverse the graph and push boxes right as we go to account for new widths
     const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
-      const start = metadata.steps[box.node.name]?.start;
+      const start =
+        metadata.steps[box.node.name] && metadata.steps[box.node.name].start;
       box.x = start
         ? LEFT_INSET + (start - metadata.minStepStart!) * options.scale
         : Math.max(parentX, box.x);
-      box.children.forEach(child =>
-        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
-      );
+
+      const minChildX = box.x + box.width + BOX_SPACING_X;
+      for (const child of box.children) {
+        deepenOrUseMetadata(child, minChildX);
+      }
     };
     boxes
       .filter(box => box.root)

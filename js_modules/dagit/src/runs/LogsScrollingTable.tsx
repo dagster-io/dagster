@@ -196,7 +196,14 @@ class LogsScrollingTableSized extends React.Component<
   render() {
     if (this.props.loading) {
       return (
-        <div style={{ zIndex: 2, height: "100%" }}>
+        <div
+          style={{
+            zIndex: 100,
+            position: "absolute",
+            width: "100%",
+            height: "calc(100% - 50px)"
+          }}
+        >
           <NonIdealState
             icon={<Spinner size={24} />}
             title="Fetching logs..."
