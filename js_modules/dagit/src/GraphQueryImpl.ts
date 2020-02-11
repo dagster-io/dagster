@@ -48,7 +48,7 @@ class GraphTraverser<T extends GraphQueryItem> {
 
     if (depth > 0) {
       step(item, next => {
-        if (!(item.name in results)) {
+        if (!(next.name in results)) {
           this.traverse(next, step, depth - 1, results);
         }
       });

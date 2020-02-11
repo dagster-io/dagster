@@ -168,6 +168,10 @@ export class GaantChart extends React.Component<
     });
   };
 
+  onDoubleClickStep = (stepKey: string) => {
+    this.setState({ query: `*${stepKey}*` });
+  };
+
   render() {
     const { metadata, plan, selectedStep } = this.props;
     const { query, options } = this.state;
@@ -182,7 +186,12 @@ export class GaantChart extends React.Component<
 
     const content = (
       <>
-        <GaantChartContent {...this.props} {...this.state} layout={layout} />
+        <GaantChartContent
+          {...this.props}
+          {...this.state}
+          layout={layout}
+          onDoubleClickStep={this.onDoubleClickStep}
+        />
         <GraphQueryInput
           items={graph}
           value={query}
@@ -240,6 +249,7 @@ export class GaantChart extends React.Component<
                 {...this.props}
                 metadata={metadata}
                 selectedStep={selectedStep}
+                onDoubleClickStep={this.onDoubleClickStep}
                 onHighlightStep={name => {
                   document.dispatchEvent(
                     new CustomEvent("highlight-node", { detail: { name } })
@@ -257,7 +267,10 @@ export class GaantChart extends React.Component<
 }
 
 type GaantChartContentProps = GaantChartProps &
-  GaantChartState & { layout: GaantChartLayout };
+  GaantChartState & {
+    layout: GaantChartLayout;
+    onDoubleClickStep: (stepName: string) => void;
+  };
 
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
   const { viewport, containerProps } = useViewport();
@@ -353,6 +366,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
         key={box.node.name}
         title={box.node.name}
         onClick={() => props.onApplyStepFilter?.(box.node.name)}
+        onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
         onMouseEnter={() => setHoveredIdx(idx)}
         onMouseLeave={() => setHoveredIdx(-1)}
         className={`

@@ -1,4 +1,4 @@
-import { IRunMetadataDict } from "../RunMetadataProvider";
+import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
 import { GraphQueryItem } from "../GraphQueryImpl";
 import { Colors } from "@blueprintjs/core";
 import {
@@ -212,10 +212,10 @@ const boxWidthFor = (
 };
 
 const ColorsForStates = {
-  running: Colors.GRAY3,
-  succeeded: Colors.GREEN2,
-  skipped: Colors.GOLD3,
-  failed: Colors.RED3
+  [IStepState.RUNNING]: Colors.GRAY3,
+  [IStepState.SUCCEEDED]: Colors.GREEN2,
+  [IStepState.SKIPPED]: Colors.GOLD3,
+  [IStepState.FAILED]: Colors.RED3
 };
 
 export const boxStyleFor = (
@@ -332,7 +332,7 @@ export const interestingQueriesFor = (
   const results: { name: string; value: string }[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
-    .filter(k => metadata.steps[k].state === "failed")
+    .filter(k => metadata.steps[k].state === IStepState.FAILED)
     .map(k => `+${k}`)
     .join(", ");
   if (errorsQuery) {

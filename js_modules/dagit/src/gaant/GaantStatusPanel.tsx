@@ -16,12 +16,14 @@ interface GaantStatusPanelProps {
 
   onApplyStepFilter?: (step: string) => void;
   onHighlightStep?: (step: string | null) => void;
+  onDoubleClickStep?: (step: string) => void;
 }
 
 export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = ({
   metadata,
   selectedStep,
   onApplyStepFilter,
+  onDoubleClickStep,
   onHighlightStep
 }) => {
   const executing = Object.keys(metadata.steps).filter(
@@ -40,7 +42,8 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
             key={stepName}
             metadata={metadata}
             selected={selectedStep === stepName}
-            onClick={() => onApplyStepFilter?.(stepName)}
+            onClick={onApplyStepFilter}
+            onDoubleClick={onDoubleClickStep}
           />
         ))}
       </Section>
@@ -56,6 +59,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
             metadata={metadata}
             selected={selectedStep === stepName}
             onClick={onApplyStepFilter}
+            onDoubleClick={onDoubleClickStep}
             onHover={onHighlightStep}
           />
         ))}
@@ -70,13 +74,15 @@ const StepItem: React.FunctionComponent<{
   metadata: IRunMetadataDict;
   onClick?: (name: string) => void;
   onHover?: (name: string | null) => void;
-}> = ({ name, selected, metadata, onClick, onHover }) => {
+  onDoubleClick?: (name: string) => void;
+}> = ({ name, selected, metadata, onClick, onHover, onDoubleClick }) => {
   const step = metadata.steps[name];
   return (
     <StepItemContainer
       key={name}
       selected={selected}
       onClick={() => onClick?.(name)}
+      onDoubleClick={() => onDoubleClick?.(name)}
       onMouseEnter={() => onHover?.(name)}
       onMouseLeave={() => onHover?.(null)}
     >
