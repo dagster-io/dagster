@@ -441,15 +441,15 @@ Making New Types
 
 .. autoclass:: DagsterType
 
-.. autofunction:: as_dagster_type
-
-.. autodecorator:: dagster_type
-
 .. autofunction:: PythonObjectDagsterType
 
 .. autofunction:: input_hydration_config
 
 .. autofunction:: output_materialization_config
+
+.. autofunction:: usable_as_dagster_type
+
+.. autofunction:: make_python_type_usable_as_dagster_type
 
 Testing New Types
 ^^^^^^^^^^^^^^^^^

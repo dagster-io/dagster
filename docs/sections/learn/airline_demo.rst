@@ -289,20 +289,10 @@ Returning to our ``s3_to_df`` solid, note the type signature of these solids.
     :alt: Ingest pipeline type signature
 
 
-The output has type ``DataFrame``, a Dagster type that wraps a ``pyspark.sql.DataFrame``.
-Defining types of this kind is straightforward and provides additional safety when your solids pass
-Python objects to each other:
-
-.. code-block:: python
-
-    DataFrame = as_dagster_type(
-        NativeSparkDataFrame, name='DataFrame', description='A Pyspark data frame.'
-    )
-
+The output has type ``DataFrame``, a Dagster type imported from ``dagster_pyspark`` that
+ensures a that the underlying output type is the python class ``pyspark.sql.DataFrame``.
 
 The transformation solids that follow all use the ``DataFrame`` for their intermediate results.
-You might also build DAGs where Pandas data frames, or some other in-memory Python object, are the
-common intermediate representation.
 
 Loading data to the warehouse
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

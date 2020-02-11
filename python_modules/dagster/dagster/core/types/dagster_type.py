@@ -19,7 +19,7 @@ class DagsterType(object):
     '''Define a type in dagster. These can be used in the inputs and outputs of solids.
 
     Args:
-        type_check (Callable[[Any], [Union[bool, TypeCheck]]]):
+        type_check_fn (Callable[[Any], [Union[bool, TypeCheck]]]):
             The function that defines the type check. It takes the value flowing
             through the input or output of the solid. If it passes, return either
             `True` or a `TypeCheck` with `success` set to `True`. If it fails,
@@ -31,20 +31,20 @@ class DagsterType(object):
 
             In the case of a generic type such as `List` or `Optional`, this is
             generated programatically based on the type parameters.
+
+            For most use cases, name should be set and the key argument should
+            not be specified.
         name (Optional[str]): A unique name given by a user. If key is None, key
             becomes this value. Name is not given in a case where the user does
             not specify a unique name for this type, such as a generic class.
-        is_builtin (bool): Defaults to False. This is used by tools to display or
-            filter built-in types (such as String, Int) to visually distinguish
-            them from user-defined types.
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
             inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
-            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            :py:func:`@input_hydration_config <dagster.input_hydration_config>` decorator to construct
             these arguments.
-        output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
+        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
             that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
             this type. As a rule, you should use the
             :py:func:`@output_materialization_config <dagster.output_materialization_config>`
@@ -59,6 +59,9 @@ class DagsterType(object):
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
+        is_builtin (bool): Defaults to False. This is used by tools to display or
+            filter built-in types (such as String, Int) to visually distinguish
+            them from user-defined types. Meant for internal use.
     '''
 
     def __init__(
@@ -366,6 +369,38 @@ class _Nothing(DagsterType):
 
 
 class PythonObjectDagsterType(DagsterType):
+    '''Define a type in dagster whose typecheck is an isinstance check.
+
+    Args:
+        python_type (Type): The dagster typecheck function calls instanceof on
+            this type.
+        name (Optional[str]): Name the type. Defaults to the name of ``python_type``.
+        key (Optional[str]): Key of the type. Defaults to name.
+        description (Optional[str]): A markdown-formatted string, displayed in tooling.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            this type. Specify this argument if you will need to shim values of this type using the
+            config machinery. As a rule, you should use the
+            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            these arguments.
+        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            this type. As a rule, you should use the
+            :py:func:`@output_materialization_config <dagster.output_materialization_config>`
+            decorator to construct these arguments.
+        serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
+            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
+            this value when automatically persisting it between execution steps. You should set
+            this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
+            for this type.
+        auto_plugins (Optional[List[TypeStoragePlugin]]): If types must be serialized differently
+            depending on the storage being used for intermediates, they should specify this
+            argument. In these cases the serialization_strategy argument is not sufficient because
+            serialization requires specialized API calls, e.g. to call an S3 API directly instead
+            of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
+
+    '''
+
     def __init__(self, python_type, key=None, name=None, **kwargs):
         self.python_type = check.type_param(python_type, 'python_type')
         name = check.opt_str_param(name, 'name', python_type.__name__)
@@ -583,25 +618,32 @@ as_dagster_type are registered here so that we can remap the Python types to run
 
 
 def make_python_type_usable_as_dagster_type(python_type, dagster_type):
+    '''
+    Take any existing python type and map it to a dagster type (generally created with
+    :py:class:`DagsterType <dagster.DagsterType>`) This can only be called once
+    on a given python type.
+    '''
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
     if python_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
         # This would be just a great place to insert a short URL pointing to the type system
         # documentation into the error message
         # https://github.com/dagster-io/dagster/issues/1831
         raise DagsterInvalidDefinitionError(
-            'A Dagster runtime type has already been registered for the Python type {python_type}. '
-            'You can resolve this collision by decorating a subclass of {python_type} with the '
-            '@map_to_dagster_type decorator, instead of decorating {python_type} or passing it to '
-            'as_dagster_type directly.'.format(python_type=python_type)
+            (
+                'A Dagster type has already been registered for the Python type '
+                '{python_type}. make_python_type_usable_as_dagster_type can only '
+                'be called once on a python type as it is registering a 1:1 mapping '
+                'between that python type and a dagster type.'
+            ).format(python_type=python_type)
         )
 
     _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY[python_type] = dagster_type
 
 
 DAGSTER_INVALID_TYPE_ERROR_MESSAGE = (
-    'Invalid type: dagster_type must be a Python type, a type constructed using '
-    'python.typing, a type imported from the dagster module, or a class annotated using '
-    '@usable_as_dagster_type: got {dagster_type}{additional_msg}'
+    'Invalid type: dagster_type must be DagsterType, a python scalar, or a python type '
+    'that has been marked usable as a dagster type via @usable_dagster_type or '
+    'make_python_type_usable_as_dagster_type: got {dagster_type}{additional_msg}'
 )
 
 
@@ -677,7 +719,7 @@ def resolve_dagster_type(dagster_type):
         )
 
     raise DagsterInvalidDefinitionError(
-        '{dagster_type} cannot be resolved to dagster type.'.format(dagster_type=dagster_type)
+        '{dagster_type} is not a valid dagster type.'.format(dagster_type=dagster_type)
     )
 
 

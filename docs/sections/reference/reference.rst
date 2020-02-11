@@ -192,9 +192,7 @@ the types of the data that flows between solids, and so to introduce compile-tim
 into their pipelines.
 
 Types also allow for custom materialization, and are typically defined using the
-:func:`@usable_as_dagster_type <dagster.dagster_type>` decorator or the
-:func:`as_dagster_type <dagster.as_dagster_type>` API. It is also possible to inherit from
-:class:`RuntimeType <dagster.RuntimeType>` directly.
+:class:`DagsterType <dagster.DagsterType>`.
 
 Environment Config
 ^^^^^^^^^^^^^^^^^^
