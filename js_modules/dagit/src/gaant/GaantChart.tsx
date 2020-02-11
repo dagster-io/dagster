@@ -260,38 +260,54 @@ type GaantChartContentProps = GaantChartProps &
 
 const useViewport = () => {
   const ref = React.useRef<any>();
-  const [viewport, setViewport] = React.useState<GaantViewport>({
+  const [offset, setOffset] = React.useState<{ left: number; top: number }>({
     left: 0,
+    top: 0
+  });
+  const [size, setSize] = React.useState<{ width: number; height: number }>({
     width: 0,
-    top: 0,
     height: 0
   });
 
+  // Monitor the container for size changes (if possible, otherwise fall back)
+  // to capturing the initial size only. (Only old FF).
   React.useEffect(() => {
     if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    if (rect.width !== viewport.width || rect.height !== viewport.height) {
-      setViewport({ ...viewport, width: rect.width, height: rect.height });
-    }
-  }, [viewport, setViewport]);
 
+    let resizeObserver: any;
+    if (ref.current instanceof HTMLElement && "ResizeObserver" in window) {
+      resizeObserver = new window["ResizeObserver"]((entries: any) => {
+        setSize({
+          width: entries[0].contentRect.width,
+          height: entries[0].contentRect.height
+        });
+      });
+      resizeObserver.observe(ref.current);
+    } else {
+      const rect = ref.current.getBoundingClientRect();
+      setSize({ width: rect.width, height: rect.height });
+    }
+    return () => {
+      resizeObserver?.disconnect();
+    };
+  }, []);
+
+  // Monitor the container for scroll offset changes
   const onScroll = (e: React.UIEvent) => {
-    setViewport({
-      ...viewport,
+    setOffset({
       left: e.currentTarget.scrollLeft,
       top: e.currentTarget.scrollTop
     });
   };
 
   return {
-    viewport,
-    setViewport,
+    viewport: { ...offset, ...size } as GaantViewport,
     containerProps: { ref, onScroll }
   };
 };
 
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
-  const { viewport, setViewport, containerProps } = useViewport();
+  const { viewport, containerProps } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const { options, metadata = EMPTY_RUN_METADATA } = props;
 
@@ -318,8 +334,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
 
   React.useEffect(() => {
     const onEvent = (e: CustomEvent) => {
-      const idx = layout.boxes.findIndex(b => b.node.name === e.detail.name);
-      setHoveredIdx(idx);
+      setHoveredIdx(layout.boxes.findIndex(b => b.node.name === e.detail.name));
     };
     document.addEventListener("highlight-node", onEvent);
     return () => document.removeEventListener("highlight-node", onEvent);
