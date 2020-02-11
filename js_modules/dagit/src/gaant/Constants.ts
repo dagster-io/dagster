@@ -2,6 +2,13 @@ import { GraphQueryItem } from "../GraphQueryImpl";
 
 export type IGaantNode = GraphQueryItem;
 
+export interface GaantViewport {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 export interface GaantChartBox {
   children: GaantChartBox[];
   node: IGaantNode;
@@ -17,7 +24,7 @@ export interface GaantChartLayout {
 
 export interface GaantChartLayoutOptions {
   mode: GaantChartMode;
-  scale: number;
+  zoom: number; // 1 => 100
   hideWaiting: boolean;
   hideTimedMode: boolean;
 }
@@ -46,5 +53,5 @@ export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
   mode: GaantChartMode.WATERFALL,
   hideWaiting: false,
   hideTimedMode: false,
-  scale: 0.15
+  zoom: 1
 };

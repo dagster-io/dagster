@@ -1,15 +1,7 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
-import { LEFT_INSET, CSS_DURATION } from "./Constants";
-
-interface GaantChartTimescaleProps {
-  scale: number;
-  scrollLeft: number;
-  nowMs: number;
-  startMs: number;
-  highlightedMs: number[];
-}
+import { LEFT_INSET, CSS_DURATION, GaantViewport } from "./Constants";
 
 const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
 const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
@@ -59,15 +51,24 @@ const TICK_CONFIG = [
   }
 ];
 
+interface GaantChartTimescaleProps {
+  scale: number;
+  viewport: GaantViewport;
+  layoutSize: { width: number; height: number };
+  nowMs: number;
+  startMs: number;
+  highlightedMs: number[];
+}
+
 export const GaantChartTimescale = ({
   scale,
-  scrollLeft,
+  viewport,
   nowMs,
   startMs,
-  highlightedMs
+  highlightedMs,
+  layoutSize
 }: GaantChartTimescaleProps) => {
-  const viewportWidth = window.innerWidth;
-  const transform = `translate(${LEFT_INSET - scrollLeft}px)`;
+  const transform = `translate(${LEFT_INSET - viewport.left}px)`;
   const ticks: React.ReactChild[] = [];
   const lines: React.ReactChild[] = [];
 
@@ -77,10 +78,10 @@ export const GaantChartTimescale = ({
     TICK_CONFIG[TICK_CONFIG.length - 1];
 
   const pxPerTick = tickIntervalMs * pxPerMs;
-  const firstTickX = Math.floor(scrollLeft / pxPerTick) * pxPerTick;
+  const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
 
-  for (let x = firstTickX; x < firstTickX + viewportWidth; x += pxPerTick) {
-    if (x - scrollLeft < 10) continue;
+  for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
+    if (x - viewport.left < 10) continue;
     const ms = x / pxPerMs;
     const key = `${ms.toFixed(2)}`;
     const label = tickLabels(ms);
@@ -114,7 +115,7 @@ export const GaantChartTimescale = ({
         {highlightedMs.map((ms, idx) => {
           const timeX = (ms - startMs) * pxPerMs;
           const labelOffset =
-            idx === 0 && timeX > TICK_LABEL_WIDTH + scrollLeft
+            idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left
               ? -(TICK_LABEL_WIDTH - 1)
               : 0;
 
@@ -141,7 +142,11 @@ export const GaantChartTimescale = ({
         {nowMs > startMs && (
           <div
             className="fog-of-war"
-            style={{ left: (nowMs - startMs) * pxPerMs, transform }}
+            style={{
+              left: (nowMs - startMs) * pxPerMs,
+              width: layoutSize.width - (nowMs - startMs) * pxPerMs,
+              transform
+            }}
           ></div>
         )}
       </TimescaleLinesContainer>

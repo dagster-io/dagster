@@ -201,7 +201,6 @@ export const GraphQueryInput = React.memo(
             <Popover
               content={
                 <Menu>
-                  <Menu.Divider title="Presets" />
                   {props.presets.map(preset => (
                     <MenuItem
                       key={preset.name}
@@ -261,6 +260,7 @@ const GraphQueryInputContainer = styled.div`
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
+  white-space: nowrap;
 `;
 
 const GraphQueryInputField = styled(InputGroup)`

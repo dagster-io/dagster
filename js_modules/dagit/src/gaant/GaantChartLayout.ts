@@ -195,16 +195,16 @@ const addChildren = (
 
 const boxWidthFor = (
   step: GraphQueryItem,
-  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
+  options: GaantChartLayoutOptions,
+  metadata: IRunMetadataDict,
+  scale: number
 ) => {
-  const stepInfo = context.metadata.steps[step.name] || {};
-  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
+  const stepInfo = metadata.steps[step.name] || {};
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     if (stepInfo.start) {
       return Math.max(
         BOX_DOT_WIDTH_CUTOFF,
-        ((stepInfo.finish || context.metadata.mostRecentLogAt) -
-          stepInfo.start) *
-          context.options.scale
+        ((stepInfo.finish || metadata.mostRecentLogAt) - stepInfo.start) * scale
       );
     }
   }
@@ -269,7 +269,8 @@ const cloneLayout = ({ boxes }: GaantChartLayout): GaantChartLayout => {
 export const adjustLayoutWithRunMetadata = (
   layout: GaantChartLayout,
   options: GaantChartLayoutOptions,
-  metadata: IRunMetadataDict
+  metadata: IRunMetadataDict,
+  scale: number
 ): GaantChartLayout => {
   // Clone the layout into a new set of JS objects so that React components can do shallow
   // comparison between the old set and the new set and code below can traverse + mutate
@@ -286,7 +287,7 @@ export const adjustLayoutWithRunMetadata = (
   ) {
     // Apply all box widths
     for (const box of boxes) {
-      box.width = boxWidthFor(box.node, { options, metadata });
+      box.width = boxWidthFor(box.node, options, metadata, scale);
     }
 
     // Traverse the graph and push boxes right as we go to account for new widths
@@ -294,7 +295,7 @@ export const adjustLayoutWithRunMetadata = (
       const start =
         metadata.steps[box.node.name] && metadata.steps[box.node.name].start;
       box.x = start
-        ? LEFT_INSET + (start - metadata.minStepStart!) * options.scale
+        ? LEFT_INSET + (start - metadata.minStepStart!) * scale
         : Math.max(parentX, box.x);
 
       const minChildX = box.x + box.width + BOX_SPACING_X;

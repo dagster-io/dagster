@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { ButtonGroup, Button, Colors, Checkbox } from "@blueprintjs/core";
+import { Colors, Checkbox } from "@blueprintjs/core";
 import { isEqual } from "lodash";
 
 import { weakmapMemoize } from "../Util";
@@ -23,20 +23,23 @@ import {
   GaantChartLayout,
   GaantChartMode,
   GaantChartBox,
+  GaantViewport,
   IGaantNode,
   DEFAULT_OPTIONS,
-  MIN_SCALE,
-  MAX_SCALE,
   BOX_HEIGHT,
   BOX_MARGIN_Y,
   LINE_SIZE,
   CSS_DURATION,
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SHOW_LABEL_WIDTH_CUTOFF,
-  BOX_DOT_SIZE
+  BOX_DOT_SIZE,
+  MIN_SCALE,
+  MAX_SCALE
 } from "./Constants";
 import { SplitPanelContainer } from "../SplitPanelContainer";
+import { GaantChartModeControl } from "./GaantChartModeControl";
 import { GaantStatusPanel } from "./GaantStatusPanel";
+import { ZoomSlider } from "./ZoomSlider";
 
 export { GaantChartMode } from "./Constants";
 
@@ -171,14 +174,11 @@ export class GaantChart extends React.Component<
 
     const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, query);
-    const layout = adjustLayoutWithRunMetadata(
-      this.getLayout({
-        nodes: graphFiltered.all,
-        mode: options.mode
-      }),
-      options,
-      metadata
-    );
+
+    const layout = this.getLayout({
+      nodes: graphFiltered.all,
+      mode: options.mode
+    });
 
     const content = (
       <>
@@ -217,9 +217,9 @@ export class GaantChart extends React.Component<
               />
               <div style={{ width: 15 }} />
               <div style={{ width: 200 }}>
-                <LogScaleSlider
-                  value={options.scale}
-                  onChange={v => this.updateOptions({ scale: v })}
+                <ZoomSlider
+                  value={options.zoom}
+                  onChange={v => this.updateOptions({ zoom: v })}
                 />
               </div>
             </>
@@ -258,13 +258,6 @@ export class GaantChart extends React.Component<
 type GaantChartContentProps = GaantChartProps &
   GaantChartState & { layout: GaantChartLayout };
 
-interface GaantViewport {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
-
 const useViewport = () => {
   const ref = React.useRef<any>();
   const [viewport, setViewport] = React.useState<GaantViewport>({
@@ -300,9 +293,26 @@ const useViewport = () => {
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
   const { viewport, setViewport, containerProps } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
-  const { options, layout, metadata = EMPTY_RUN_METADATA } = props;
+  const { options, metadata = EMPTY_RUN_METADATA } = props;
+
+  const minScale =
+    viewport.width && metadata.mostRecentLogAt && metadata.minStepStart
+      ? (viewport.width - 150) /
+        (metadata.mostRecentLogAt - metadata.minStepStart)
+      : MIN_SCALE;
+
+  const scale = Math.exp(
+    Math.log(minScale) +
+      ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
+  );
 
   const items: React.ReactChild[] = [];
+  const layout = adjustLayoutWithRunMetadata(
+    props.layout,
+    options,
+    metadata,
+    scale
+  );
   const focused = layout.boxes.find(b => b.node.name === props.selectedStep);
   const hovered = layout.boxes[hoveredIdx];
 
@@ -383,8 +393,9 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     <>
       {options.mode === GaantChartMode.WATERFALL_TIMED && (
         <GaantChartTimescale
-          scale={options.scale}
-          scrollLeft={viewport.left}
+          scale={scale}
+          viewport={viewport}
+          layoutSize={layoutSize}
           startMs={metadata.minStepStart || 0}
           nowMs={metadata.mostRecentLogAt}
           highlightedMs={
@@ -547,7 +558,7 @@ const GaantChartContainer = styled.div`
 `;
 
 const OptionsContainer = styled.div`
-  height: 40px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   padding: 5px 15px;
@@ -555,6 +566,7 @@ const OptionsContainer = styled.div`
   box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   background: ${Colors.WHITE};
   flex-shrink: 0;
+  flex-wrap: wrap;
   z-index: 3;
 }`;
 
@@ -565,104 +577,3 @@ const OptionsDivider = styled.div`
   margin-left: 7px;
   border-left: 1px solid ${Colors.LIGHT_GRAY3};
 `;
-
-const GaantChartModeControl: React.FunctionComponent<{
-  value: GaantChartMode;
-  hideTimedMode: boolean;
-  onChange: (mode: GaantChartMode) => void;
-}> = React.memo(({ value, onChange, hideTimedMode }) => (
-  <ButtonGroup style={{ flexShrink: 0 }}>
-    <Button
-      key={GaantChartMode.FLAT}
-      small={true}
-      icon="column-layout"
-      title={"Flat"}
-      active={value === GaantChartMode.FLAT}
-      onClick={() => onChange(GaantChartMode.FLAT)}
-    />
-    <Button
-      key={GaantChartMode.WATERFALL}
-      small={true}
-      icon="gantt-chart"
-      title={"Waterfall"}
-      active={value === GaantChartMode.WATERFALL}
-      onClick={() => onChange(GaantChartMode.WATERFALL)}
-    />
-    {!hideTimedMode && (
-      <Button
-        key={GaantChartMode.WATERFALL_TIMED}
-        small={true}
-        icon="time"
-        rightIcon="gantt-chart"
-        title={"Waterfall with Execution Timing"}
-        active={value === GaantChartMode.WATERFALL_TIMED}
-        onClick={() => onChange(GaantChartMode.WATERFALL_TIMED)}
-      />
-    )}
-  </ButtonGroup>
-));
-
-/**
- * LogScaleSlider renders a horizontal slider that lets you adjust the graph timescale
- * from MIN_SCALE to MAX_SCALE on a log scale. It uses Blueprint CSS but not the Slider
- * component, becasue that renders twice and triggers a re-layout as it sizes itself.
- */
-const LogScaleSlider: React.FunctionComponent<{
-  value: number;
-  onChange: (v: number) => void;
-}> = React.memo(props => {
-  const multiplier = (Math.log(MAX_SCALE) - Math.log(MIN_SCALE)) / 100;
-  const value = (Math.log(props.value) - Math.log(MIN_SCALE)) / multiplier;
-  const onChange = (v: number) =>
-    props.onChange(Math.exp(Math.log(MIN_SCALE) + multiplier * v));
-
-  return (
-    <div
-      className="bp3-slider bp3-slider-unlabeled"
-      onMouseDown={(e: React.MouseEvent) => {
-        const rect = e.currentTarget
-          .closest(".bp3-slider")!
-          .getBoundingClientRect();
-
-        let initialX: number;
-        if (
-          e.target instanceof HTMLElement &&
-          e.target.classList.contains("bp3-slider-handle")
-        ) {
-          initialX = e.pageX;
-        } else {
-          initialX = rect.left + (value / 100) * rect.width;
-        }
-
-        const onUpdate = (e: MouseEvent) => {
-          const nextValue = value + (e.pageX - initialX) * (100 / rect.width);
-          onChange(Math.max(0, Math.min(100, nextValue)));
-        };
-        const onRelease = (e: MouseEvent) => {
-          onUpdate(e);
-          document.removeEventListener("mousemove", onUpdate);
-          document.removeEventListener("mouseup", onRelease);
-        };
-        document.addEventListener("mousemove", onUpdate);
-        document.addEventListener("mouseup", onRelease);
-      }}
-    >
-      <div className="bp3-slider-track">
-        <div
-          className="bp3-slider-progress"
-          style={{ left: 0, right: 0, top: 0 }}
-        />
-        <div
-          className="bp3-slider-progress bp3-intent-primary"
-          style={{ left: 0, right: `${100 - value}%`, top: 0 }}
-        />
-      </div>
-      <div className="bp3-slider-axis" />
-      <span
-        className="bp3-slider-handle"
-        style={{ left: `calc(${value}% - 8px)` }}
-        tabIndex={0}
-      />
-    </div>
-  );
-});
