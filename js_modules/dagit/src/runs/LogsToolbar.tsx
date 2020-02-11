@@ -30,6 +30,7 @@ export default class LogsToolbar extends React.PureComponent<
         <FilterInputGroup
           leftIcon="filter"
           placeholder="Filter logs..."
+          className={filter.text.includes("step:") ? "has-step" : ""}
           small={true}
           value={filter.text}
           spellCheck={false}
@@ -111,5 +112,9 @@ const FilterInputGroup = styled(InputGroup)`
   min-width: 100px;
   & input {
     padding-right: 22px !important;
+  }
+  &.has-step {
+    box-shadow: 0 0 0 2px ${Colors.GOLD3};
+    border-radius: 3px;
   }
 `;

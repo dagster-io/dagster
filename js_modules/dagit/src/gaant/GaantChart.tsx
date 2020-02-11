@@ -564,7 +564,7 @@ const GaantChartContainer = styled.div`
 
     &.focused {
       border: 1px solid ${Colors.DARK_GRAY1};
-      box-shadow: 0 0 0 2px goldenrod;
+      box-shadow: 0 0 0 2px ${Colors.GOLD3};
     }
     &.hovered {
       border: 1px solid ${Colors.DARK_GRAY3};
