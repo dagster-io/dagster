@@ -1,4 +1,4 @@
-import { theme as t } from "utils/css";
+import { theme as t } from "utils/css"
 
 export const wrapper = isMobile => ({
   py: 5,
@@ -34,7 +34,7 @@ export const wrapper = isMobile => ({
     py: 4,
     boxShadow: "0 0 50px rgba(0,0,0,0.3)"
   })
-});
+})
 
 export const title = {
   display: "flex",
@@ -43,12 +43,12 @@ export const title = {
   fontSize: 12,
   color: "dark.3",
   mb: 3
-};
+}
 
 export const icon = {
   mr: 2,
   stroke: "gray.2"
-};
+}
 
 export const mobileWrapper = opened => ({
   position: "absolute",
@@ -59,4 +59,4 @@ export const mobileWrapper = opened => ({
   minHeight: "100%",
   pt: t("header.gutter"),
   bg: "rgba(0,0,0,.5)"
-});
+})

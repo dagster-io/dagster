@@ -1,14 +1,14 @@
-import { theme as t } from "utils/css";
+import { theme as t } from "utils/css"
 
 export const main = {
   position: "relative",
   maxWidth: "100vw",
   overflowX: "hidden"
-};
+}
 
 export const page = state => {
-  const closed = !state.matches("showing");
-  const transform = `translate(${closed ? "-180px" : 0})`;
+  const closed = !state.matches("showing")
+  const transform = `translate(${closed ? "-180px" : 0})`
 
   return {
     display: "flex",
@@ -16,11 +16,11 @@ export const page = state => {
     transform: [transform, transform, "none"],
     transition: "transform .3s",
     height: "100%"
-  };
-};
+  }
+}
 
 export const content = state => {
-  const closed = !state.matches("showing");
+  const closed = !state.matches("showing")
   return {
     flex: 1,
     mt: t("header.gutter"),
@@ -59,5 +59,5 @@ export const content = state => {
         transition: "all .3s"
       }
     })
-  };
-};
+  }
+}

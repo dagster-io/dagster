@@ -1,13 +1,13 @@
-import React from "react";
-import * as R from "ramda";
-import { connectSearchBox } from "react-instantsearch-dom";
+import React from "react"
+import * as R from "ramda"
+import { connectSearchBox } from "react-instantsearch-dom"
 
 const omitNonInputProps = R.omit([
   "createURL",
   "isSearchStalled",
   "currentRefinement",
   "indexContextValue"
-]);
+])
 
 export default connectSearchBox(({ refine, focus, collapse, ...rest }) => {
   return (
@@ -20,5 +20,5 @@ export default connectSearchBox(({ refine, focus, collapse, ...rest }) => {
       onChange={e => refine(e.target.value)}
       {...omitNonInputProps(rest)}
     />
-  );
-});
+  )
+})

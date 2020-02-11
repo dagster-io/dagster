@@ -1,18 +1,18 @@
-import { parse } from "flatted";
-import { useStaticQuery, graphql } from "gatsby";
+import { parse } from "flatted"
+import { useStaticQuery, graphql } from "gatsby"
 
-import { renderElements as defaultRenderElements } from "./components/Element";
+import { renderElements as defaultRenderElements } from "./components/Element"
 
 export const getBodyNodes = nodes => {
   if (nodes === undefined) {
-    return [];
+    return []
   }
 
   return nodes.reduce((obj, node) => {
-    if (node.tagName === "body") return node.childNodes;
-    return getBodyNodes(node.childNodes);
-  }, {});
-};
+    if (node.tagName === "body") return node.childNodes
+    return getBodyNodes(node.childNodes)
+  }, {})
+}
 
 export const ReactParser = ({
   tree: stringifiedTree,
@@ -33,16 +33,16 @@ export const ReactParser = ({
         }
       }
     }
-  `);
+  `)
 
   if (stringifiedTree === null) {
-    return [];
+    return []
   }
 
-  const tree = parse(stringifiedTree);
-  const bodyNodes = getBodyNodes(tree.childNodes);
+  const tree = parse(stringifiedTree)
+  const bodyNodes = getBodyNodes(tree.childNodes)
 
-  return bodyNodes.reduce(renderElements(data.allFile.edges), []);
-};
+  return bodyNodes.reduce(renderElements(data.allFile.edges), [])
+}
 
-export * from "./components/Element";
+export * from "./components/Element"

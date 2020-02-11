@@ -4,4 +4,4 @@ export const wrapper = {
   "> ul": {
     display: "none"
   }
-};
+}

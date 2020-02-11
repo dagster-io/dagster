@@ -1,4 +1,4 @@
-import { theme as t } from "utils/css";
+import { theme as t } from "utils/css"
 
 export const wrapper = {
   zIndex: 9,
@@ -21,7 +21,7 @@ export const wrapper = {
     listStyle: "none",
     color: "white"
   }
-};
+}
 
 export const active = (hasActive, top) => ({
   position: "absolute",
@@ -34,7 +34,7 @@ export const active = (hasActive, top) => ({
   right: "3px",
   transform: `translateY(${top - 3}px)`,
   transition: "transform .2s cubic-bezier(.25,.75,.5,1.25)"
-});
+})
 
 export const content = {
   display: "flex",
@@ -43,8 +43,8 @@ export const content = {
   height: "100%",
   maxHeight: "100vh",
   pt: t("header.gutter")
-};
+}
 
 export const menu = {
   mb: 4
-};
+}

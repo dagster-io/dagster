@@ -3,4 +3,4 @@ export const wrapper = {
   td: {
     padding: 0
   }
-};
+}

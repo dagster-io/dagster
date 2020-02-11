@@ -1,5 +1,5 @@
 /** @jsx jsx */
-import { jsx } from "theme-ui";
+import { jsx } from "theme-ui"
 
 export const ExternalLink = ({ href, children, ...props }) => {
   return (
@@ -12,5 +12,5 @@ export const ExternalLink = ({ href, children, ...props }) => {
     >
       {children}
     </a>
-  );
-};
+  )
+}

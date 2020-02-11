@@ -1,6 +1,6 @@
 /** @jsx jsx */
-import { jsx } from "theme-ui";
-import styleToObj from "style-to-object";
+import { jsx } from "theme-ui"
+import styleToObj from "style-to-object"
 
 import {
   Code,
@@ -12,25 +12,25 @@ import {
   Table,
   CodeSection,
   Pre
-} from "systems/Core";
+} from "systems/Core"
 
-import { useElement } from "../../hooks/useElement";
+import { useElement } from "../../hooks/useElement"
 
 export const isText = ({ nodeName }) => {
-  return nodeName === "#text";
-};
+  return nodeName === "#text"
+}
 
 const isHeading = tag => {
-  return ["h1", "h2", "h3", "h4", "h5", "h5"].indexOf(tag) !== -1;
-};
+  return ["h1", "h2", "h3", "h4", "h5", "h5"].indexOf(tag) !== -1
+}
 
 const isSphinxHeading = (Component, props) => {
-  return Component === "p" && props.className && props.className === "rubric";
-};
+  return Component === "p" && props.className && props.className === "rubric"
+}
 
 const isCode = (Component, _props) => {
-  return Component && Component.tagName === "code";
-};
+  return Component && Component.tagName === "code"
+}
 
 export const renderElements = images => (
   renderedElements,
@@ -39,36 +39,36 @@ export const renderElements = images => (
   _nodes
 ) => {
   if (isText(node)) {
-    renderedElements.push(node.value);
+    renderedElements.push(node.value)
   } else if (
     isCode(node) &&
     renderedElements.length > 0 &&
     isCode(renderedElements[-1]) //&&
   ) {
     renderedElements[-1].children =
-      renderedElements[-1].children + node.children;
+      renderedElements[-1].children + node.children
   } else {
     renderedElements.push(
       <Element key={node.nodeName + idx} {...node} images={images} />
-    );
+    )
   }
-  return renderedElements;
-};
+  return renderedElements
+}
 
 export const Element = node => {
-  const { tagName: Component, nodeName, childNodes, value, images = [] } = node;
-  const { props, children } = useElement(node, renderElements);
+  const { tagName: Component, nodeName, childNodes, value, images = [] } = node
+  const { props, children } = useElement(node, renderElements)
 
   if (props.style && typeof props.style == "string") {
-    props.style = styleToObj(props.style);
+    props.style = styleToObj(props.style)
   }
 
   if (nodeName === "#text") {
-    return value;
+    return value
   }
 
   if (!Component) {
-    return null;
+    return null
   }
 
   if (isSphinxHeading(Component, props)) {
@@ -76,35 +76,35 @@ export const Element = node => {
       <Heading tagName="h3" {...props}>
         {children}
       </Heading>
-    );
+    )
   }
 
   if (Component === "div" && props.id && props.id.startsWith("id")) {
-    return <CodeSection {...props} nodes={childNodes} />;
+    return <CodeSection {...props} nodes={childNodes} />
   }
 
   if (Component === "hr") {
-    return <hr {...props} />;
+    return <hr {...props} />
   }
 
   if (Component === "a") {
-    return <Link {...props}>{children}</Link>;
+    return <Link {...props}>{children}</Link>
   }
 
   if (Component === "table") {
-    return <Table {...props}>{children}</Table>;
+    return <Table {...props}>{children}</Table>
   }
 
   if (Component === "img") {
-    return <Image {...props} images={images} />;
+    return <Image {...props} images={images} />
   }
 
   if (isCode(Component)) {
-    return <Code {...props}>{children}</Code>;
+    return <Code {...props}>{children}</Code>
   }
 
   if (Component === "li") {
-    return <List {...props}>{children}</List>;
+    return <List {...props}>{children}</List>
   }
 
   if (
@@ -112,11 +112,11 @@ export const Element = node => {
     props.className &&
     ["function", "class", "data"].some(v => props.className.includes(v))
   ) {
-    return <Details {...props}>{children}</Details>;
+    return <Details {...props}>{children}</Details>
   }
 
   if (Component === "pre") {
-    return <Pre {...props}>{children}</Pre>;
+    return <Pre {...props}>{children}</Pre>
   }
 
   if (isHeading(Component)) {
@@ -124,8 +124,8 @@ export const Element = node => {
       <Heading {...props} tagName={Component}>
         {children}
       </Heading>
-    );
+    )
   }
 
-  return <Component {...props}>{children}</Component>;
-};
+  return <Component {...props}>{children}</Component>
+}

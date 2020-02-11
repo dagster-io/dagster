@@ -1,7 +1,7 @@
 /** @jsx jsx */
-import { jsx } from "theme-ui";
-import { useStaticQuery, graphql } from "gatsby";
-import Img from "gatsby-image";
+import { jsx } from "theme-ui"
+import { useStaticQuery, graphql } from "gatsby"
+import Img from "gatsby-image"
 
 export const Logo = props => {
   const data = useStaticQuery(
@@ -16,7 +16,7 @@ export const Logo = props => {
         }
       }
     `
-  );
+  )
 
-  return <Img {...props} fluid={data.placeholderImage.childImageSharp.fluid} />;
-};
+  return <Img {...props} fluid={data.placeholderImage.childImageSharp.fluid} />
+}

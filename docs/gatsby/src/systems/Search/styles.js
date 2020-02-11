@@ -1,4 +1,4 @@
-import { rem } from "utils/css";
+import { rem } from "utils/css"
 
 export const search = showing => ({
   ml: [showing ? 0 : 3, 3, 4],
@@ -25,4 +25,4 @@ export const search = showing => ({
     bg: "transparent",
     transition: "width .3s"
   }
-});
+})

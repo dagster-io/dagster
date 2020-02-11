@@ -5,4 +5,4 @@ export const wrapper = {
   ":hover": {
     color: "blue.4"
   }
-};
+}

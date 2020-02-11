@@ -9,7 +9,7 @@ export const wrapper = {
     borderRadius: 0,
     color: "dark.4",
     border: t => {
-      return `1px solid ${t.colors.lightGray[1]}`;
+      return `1px solid ${t.colors.lightGray[1]}`
     }
   },
 
@@ -18,4 +18,4 @@ export const wrapper = {
     left: "0px",
     zIndex: 0
   }
-};
+}

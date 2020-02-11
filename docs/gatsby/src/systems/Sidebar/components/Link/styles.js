@@ -9,4 +9,4 @@ export const link = {
   "&.active": {
     opacity: 1
   }
-};
+}

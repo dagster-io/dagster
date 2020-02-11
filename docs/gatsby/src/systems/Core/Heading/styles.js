@@ -5,7 +5,7 @@ const headingColor = {
   h4: "dark",
   h5: "dark",
   h6: "dark"
-};
+}
 
 export const wrapper = tag => ({
   position: "relative",
@@ -26,4 +26,4 @@ export const wrapper = tag => ({
   ":hover .permalink": {
     opacity: 0.6
   }
-});
+})
