@@ -3,8 +3,15 @@ import { createContext, useEffect, useContext, useState } from "react";
 import { useStaticQuery, graphql, navigate } from "gatsby";
 
 import { useLocalStorage } from "utils/localStorage";
+import { version, all } from "~dagster-info";
 
-const ctx = createContext();
+const ctx = createContext({
+  version: {
+    all,
+    current: version,
+    last: version
+  }
+});
 
 export const VersionProvider = ({ children }) => {
   const storage = useLocalStorage("currentVersion");
@@ -32,9 +39,7 @@ export const VersionProvider = ({ children }) => {
       value={{
         setCurrent,
         version: {
-          current:
-            (current !== "undefined" && current !== "null" && current) ||
-            data.version,
+          current: current || data.version || version,
           all: data.allVersions,
           last: data.version
         }

@@ -1,12 +1,12 @@
 export const link = {
-  fontFamily: 'heading',
+  fontFamily: "heading",
   fontWeight: 500,
   opacity: 0.6,
-  color: 'white !important',
+  color: "white !important",
   fontSize: 2,
   pr: 3,
 
-  '&.active': {
-    opacity: 1,
-  },
-}
+  "&.active": {
+    opacity: 1
+  }
+};

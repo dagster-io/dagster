@@ -1,5 +1,11 @@
-const { parseHtml, toParseFive } = require("./parse-html");
-const { getCurrentVersion, getAllVersions } = require("./utils/get-version");
+const { parseHtml, parseMarkdown, toParseFive } = require("./parse-html");
+
+const {
+  getCurrentVersion,
+  getAllBuildedVersions
+} = require("./utils/get-version");
+
+const { getSlug } = require("./utils/get-slug");
 
 module.exports = ({ createResolvers }) => {
   const resolvers = {
@@ -13,7 +19,7 @@ module.exports = ({ createResolvers }) => {
       allDagsterVersion: {
         type: "[String!]",
         resolve() {
-          return getAllVersions();
+          return getAllBuildedVersions();
         }
       }
     },
@@ -35,6 +41,21 @@ module.exports = ({ createResolvers }) => {
       tocParsed: {
         resolve(source) {
           return source.toc && toParseFive(source.toc);
+        }
+      },
+      markdown: {
+        resolve(source) {
+          try {
+            const md = parseMarkdown(source.body, getCurrentVersion());
+            return md.slice(0, 5000);
+          } catch (err) {
+            return source.body;
+          }
+        }
+      },
+      slug: {
+        resolve(source) {
+          return getSlug(source);
         }
       }
     }

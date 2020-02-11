@@ -599,10 +599,12 @@ def gatsby_docs_build_tests():
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs/gatsby",
                 "yarn install",
-                "yarn sphinx",
+                "yarn sphinx -v latest",
                 "yarn build",
             )
-            .on_integration_image(version)
+            .on_integration_image(
+                version, ['ALGOLIA_APP_ID', 'ALGOLIA_SEARCH_KEY', 'ALGOLIA_ADMIN_KEY']
+            )
             .build()
         )
 

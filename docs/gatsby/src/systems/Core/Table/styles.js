@@ -1,6 +1,6 @@
 export const wrapper = {
   my: 10,
   td: {
-    padding: 0,
-  },
-}
+    padding: 0
+  }
+};

@@ -1,7 +1,7 @@
 export const wrapper = {
   borderRadius: 0,
   position: "relative",
-  paddingLeft: "75px",
+  pl: 5,
 
   "> code": {
     p: 3,

@@ -2,7 +2,6 @@ import { parse } from "flatted";
 import { useStaticQuery, graphql } from "gatsby";
 
 import { renderElements as defaultRenderElements } from "./components/Element";
-import { string } from "prop-types";
 
 export const getBodyNodes = nodes => {
   if (nodes === undefined) {
