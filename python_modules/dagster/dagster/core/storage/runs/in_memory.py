@@ -3,6 +3,7 @@ from collections import OrderedDict, defaultdict
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.utils import frozendict
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus
 from .base import RunStorage
@@ -11,7 +12,7 @@ from .base import RunStorage
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
         self._runs = OrderedDict()
-        self._run_tags = defaultdict(set)
+        self._run_tags = defaultdict(dict)
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -22,8 +23,7 @@ class InMemoryRunStorage(RunStorage):
 
         self._runs[pipeline_run.run_id] = pipeline_run
         if pipeline_run.tags and len(pipeline_run.tags) > 0:
-            for k, v in pipeline_run.tags.items():
-                self._run_tags[k].add(v)
+            self._run_tags[pipeline_run.run_id] = frozendict(pipeline_run.tags)
 
         return pipeline_run
 
@@ -94,7 +94,12 @@ class InMemoryRunStorage(RunStorage):
         return self._runs.get(run_id)
 
     def get_run_tags(self):
-        return sorted([(k, v) for k, v in self._run_tags.items()], key=lambda x: x[0])
+        all_tags = defaultdict(set)
+        for _run_id, tags in self._run_tags.items():
+            for k, v in tags.items():
+                all_tags[k].add(v)
+
+        return sorted([(k, v) for k, v in all_tags.items()], key=lambda x: x[0])
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -103,6 +108,8 @@ class InMemoryRunStorage(RunStorage):
     def delete_run(self, run_id):
         check.str_param(run_id, 'run_id')
         del self._runs[run_id]
+        if run_id in self._run_tags:
+            del self._run_tags[run_id]
 
     def wipe(self):
         self._runs = OrderedDict()
