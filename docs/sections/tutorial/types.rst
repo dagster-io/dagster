@@ -75,7 +75,7 @@ to be of type ``SimpleDataFrame``.
 
 
 Complex type checks
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 The Dagster framework will fail type checks when a value isn't an instance of the type we're
 expecting, e.g., if ``read_csv`` were to return a ``str`` rather than a ``SimpleDataFrame``.
@@ -288,10 +288,11 @@ One is using ``InputDefinition`` and ``OutputDefinition`` exclusively for dagste
 and reserving type annotations for naked Python types *only*. This is verbose, but
 is explicit and clear.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_verbose.py
-   :lines: 19-43
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_verbose.py
+   :lines: 20-44
    :linenos:
-   :lineno-start: 19
+   :lineno-start: 20
+   :emphasize-lines: 1-5,13-14
    :caption: custom_types_mypy_verbose.py
 
 If one wishes to use type annotations exclusively but still use dagster types without
@@ -301,7 +302,7 @@ we recommend using the ``typing.TYPE_CHECKING`` property in the python typing mo
 While inelegant, this centralizes boilerplate to the type instantiation, rather than
 have it on all places where the type is referenced.
 
-.. literalinclude:: ../../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_typing_trick.py
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_mypy_typing_trick.py
    :lines: 6-22
    :linenos:
    :lineno-start: 6 
