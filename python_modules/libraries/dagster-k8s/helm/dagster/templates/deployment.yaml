@@ -36,15 +36,22 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
-          image: "{{ .Values.dagit.image }}"
-          command: ["dagit"]
-          args: ["-p", "80", "-h", "0.0.0.0"]
+          image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
+          # Restart cron schedules and launch dagit
+          command: [
+              "/bin/bash",
+              "-c",
+              "service cron start && \
+              /usr/local/bin/dagster schedule up && \
+              /usr/local/bin/dagster schedule restart --restart-all-running && \
+              dagit -h 0.0.0.0 -p 80"
+            ]
           env:
           - name: DAGSTER_HOME
-            value: "/opt/dagster/dagster_home"
+            value: "{{ .Values.dagster_home }}"
           volumeMounts:
             - name: dagster-instance
-              mountPath: "/opt/dagster/dagster_home/dagster.yaml"
+              mountPath: "{{ .Values.dagster_home }}/dagster.yaml"
               subPath: dagster.yaml
           ports:
             - name: http

@@ -8,5 +8,3 @@ metadata:
     chart: {{ template "dagster.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-data:
-  GREETINGS_FROM_DAGSTER: "hello!"
