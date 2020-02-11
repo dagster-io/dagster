@@ -8,15 +8,10 @@ export interface GaantChartBox {
   width: number;
   x: number;
   y: number;
-
-  // the X initial position of this box determined by the layout algorithm
-  // (before run metadata is applied) necessary to enforce the gaant arrow
-  // direction.
-  minX: number;
+  root: boolean;
 }
 
 export interface GaantChartLayout {
-  roots: GaantChartBox[];
   boxes: GaantChartBox[];
 }
 

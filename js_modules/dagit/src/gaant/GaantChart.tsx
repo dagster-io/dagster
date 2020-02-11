@@ -1,13 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import {
-  Slider,
-  ButtonGroup,
-  Button,
-  Colors,
-  Checkbox
-} from "@blueprintjs/core";
+import { ButtonGroup, Button, Colors, Checkbox } from "@blueprintjs/core";
+import { isEqual } from "lodash";
 
 import { weakmapMemoize } from "../Util";
 import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
@@ -428,7 +423,8 @@ const GaantLine = React.memo(
         )}
       </>
     );
-  }
+  },
+  isEqual
 );
 
 // Note: It is much faster to use standard CSS class selectors here than make
@@ -511,7 +507,7 @@ const GaantChartModeControl: React.FunctionComponent<{
   value: GaantChartMode;
   hideTimedMode: boolean;
   onChange: (mode: GaantChartMode) => void;
-}> = ({ value, onChange, hideTimedMode }) => (
+}> = React.memo(({ value, onChange, hideTimedMode }) => (
   <ButtonGroup style={{ flexShrink: 0 }}>
     <Button
       key={GaantChartMode.FLAT}
@@ -541,21 +537,69 @@ const GaantChartModeControl: React.FunctionComponent<{
       />
     )}
   </ButtonGroup>
-);
+));
 
+/**
+ * LogScaleSlider renders a horizontal slider that lets you adjust the graph timescale
+ * from MIN_SCALE to MAX_SCALE on a log scale. It uses Blueprint CSS but not the Slider
+ * component, becasue that renders twice and triggers a re-layout as it sizes itself.
+ */
 const LogScaleSlider: React.FunctionComponent<{
   value: number;
   onChange: (v: number) => void;
-}> = props => {
-  const scale = (Math.log(MAX_SCALE) - Math.log(MIN_SCALE)) / 100;
+}> = React.memo(props => {
+  const multiplier = (Math.log(MAX_SCALE) - Math.log(MIN_SCALE)) / 100;
+  const value = (Math.log(props.value) - Math.log(MIN_SCALE)) / multiplier;
+  const onChange = (v: number) =>
+    props.onChange(Math.exp(Math.log(MIN_SCALE) + multiplier * v));
+
   return (
-    <Slider
-      min={0}
-      max={100}
-      stepSize={0.01}
-      labelRenderer={false}
-      value={(Math.log(props.value) - Math.log(MIN_SCALE)) / scale}
-      onChange={v => props.onChange(Math.exp(Math.log(MIN_SCALE) + scale * v))}
-    />
+    <div
+      className="bp3-slider bp3-slider-unlabeled"
+      onMouseDown={(e: React.MouseEvent) => {
+        const rect = e.currentTarget
+          .closest(".bp3-slider")!
+          .getBoundingClientRect();
+
+        let initialX: number;
+        if (
+          e.target instanceof HTMLElement &&
+          e.target.classList.contains("bp3-slider-handle")
+        ) {
+          initialX = e.pageX;
+        } else {
+          initialX = rect.left + (value / 100) * rect.width;
+        }
+
+        const onUpdate = (e: MouseEvent) => {
+          const nextValue = value + (e.pageX - initialX) * (100 / rect.width);
+          onChange(Math.max(0, Math.min(100, nextValue)));
+        };
+        const onRelease = (e: MouseEvent) => {
+          onUpdate(e);
+          document.removeEventListener("mousemove", onUpdate);
+          document.removeEventListener("mouseup", onRelease);
+        };
+        document.addEventListener("mousemove", onUpdate);
+        document.addEventListener("mouseup", onRelease);
+      }}
+    >
+      <div className="bp3-slider-track">
+        <div
+          className="bp3-slider-progress"
+          style={{ left: 0, right: 0, top: 0 }}
+        />
+        <div
+          className="bp3-slider-progress bp3-intent-primary"
+          style={{ left: 0, right: `${100 - value}%`, top: 0 }}
+        />
+      </div>
+      <div className="bp3-slider-axis" />
+      <span
+        className="bp3-slider-handle"
+        style={{ left: `calc(${value}% - 8px)` }}
+        tabIndex={0}
+      />
+    </div>
   );
-};
+});

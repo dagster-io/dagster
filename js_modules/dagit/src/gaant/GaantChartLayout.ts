@@ -33,7 +33,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     children: [],
     x: -1,
     y: -1,
-    minX: -1,
+    root: true,
     width: BOX_WIDTH
   }));
 
@@ -47,7 +47,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
   const deepen = (box: GaantChartBox, x: number) => {
-    box.x = box.minX = Math.max(x, box.x);
+    box.x = Math.max(x, box.x);
     box.children.forEach(child =>
       deepen(child, box.x + box.width + BOX_SPACING_X)
     );
@@ -59,7 +59,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
-      box.x = box.minX = LEFT_INSET + box.x * 0.1;
+      box.x = LEFT_INSET + box.x * 0.1;
     });
   } else {
     const parents: { [name: string]: GaantChartBox[] } = {};
@@ -134,47 +134,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
-  return { boxes, roots } as GaantChartLayout;
-};
-
-export const adjustLayoutWithRunMetadata = (
-  { roots, boxes }: GaantChartLayout,
-  options: GaantChartLayoutOptions,
-  metadata: IRunMetadataDict
-) => {
-  // Move and size boxes based on the run metadata. Note that we don't totally invalidate
-  // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
-  // step ordering, etc. should obey the constraints we already planned for). We just push
-  // boxes around on their existing rows.
-  if (
-    options.mode === GaantChartMode.WATERFALL_TIMED &&
-    metadata.minStepStart
-  ) {
-    const deepenOrUseMetadata = (box: GaantChartBox, x: number) => {
-      box.width = boxWidthFor(box.node, { options, metadata });
-
-      const start = metadata.steps[box.node.name]?.start;
-      if (!start) {
-        box.x = Math.max(x, box.minX);
-      } else {
-        box.x = LEFT_INSET + (start - metadata.minStepStart!) * options.scale;
-      }
-      box.children.forEach(child =>
-        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
-      );
-    };
-    roots.forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
-  }
-
-  // Apply display options / filtering
-  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
-    boxes = boxes.filter(b => {
-      const state = metadata.steps[b.node.name]?.state || "waiting";
-      return state !== "waiting";
-    });
-  }
-
-  return { roots, boxes } as GaantChartLayout;
+  return { boxes } as GaantChartLayout;
 };
 
 const ensureSubtreeBelow = (
@@ -217,7 +177,7 @@ const addChildren = (
           children: [],
           node: depNode,
           width: BOX_WIDTH,
-          minX: 0,
+          root: false,
           x: 0,
           y: -1
         };
@@ -267,7 +227,10 @@ export const boxStyleFor = (
 ) => {
   let color = "#2491eb";
 
-  if (context.metadata.startedPipelineAt) {
+  if (
+    context.metadata.startedPipelineAt ||
+    context.options.mode === GaantChartMode.WATERFALL_TIMED
+  ) {
     const info = context.metadata.steps[stepName];
     if (!info || info.state === "waiting") {
       return {
@@ -283,6 +246,71 @@ export const boxStyleFor = (
   return {
     background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
   };
+};
+
+// Does a shallow clone of the boxes so attributes (`width`, `x`, etc) can be mutated.
+// This requires special logic because (for easy graph travesal), boxes.children references
+// other elements of the boxes array. A basic deepClone would replicate these into
+// copies rather than references.
+const cloneLayout = ({ boxes }: GaantChartLayout): GaantChartLayout => {
+  const map = new WeakMap();
+  const nextBoxes: GaantChartBox[] = [];
+  for (const box of boxes) {
+    const next = { ...box };
+    nextBoxes.push(next);
+    map.set(box, next);
+  }
+  for (let ii = 0; ii < boxes.length; ii++) {
+    nextBoxes[ii].children = boxes[ii].children.map(c => map.get(c));
+  }
+  return { boxes: nextBoxes };
+};
+
+export const adjustLayoutWithRunMetadata = (
+  layout: GaantChartLayout,
+  options: GaantChartLayoutOptions,
+  metadata: IRunMetadataDict
+): GaantChartLayout => {
+  // Clone the layout into a new set of JS objects so that React components can do shallow
+  // comparison between the old set and the new set and code below can traverse + mutate
+  // in place.
+  let { boxes } = cloneLayout(layout);
+
+  // Move and size boxes based on the run metadata. Note that we don't totally invalidate
+  // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
+  // step ordering, etc. should obey the constraints we already planned for). We just push
+  // boxes around on their existing rows.
+  if (
+    options.mode === GaantChartMode.WATERFALL_TIMED &&
+    metadata.minStepStart
+  ) {
+    for (const box of boxes) {
+      box.width = boxWidthFor(box.node, { options, metadata });
+    }
+
+    const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
+      const start = metadata.steps[box.node.name]?.start;
+      box.x = start
+        ? LEFT_INSET + (start - metadata.minStepStart!) * options.scale
+        : Math.max(parentX, box.x);
+      box.children.forEach(child =>
+        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
+      );
+    };
+    boxes
+      .filter(box => box.root)
+      .forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+  }
+
+  // Apply display options / filtering
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
+    boxes = boxes.filter(b => {
+      const state = metadata.steps[b.node.name]?.state || "waiting";
+      return state !== "waiting";
+    });
+  }
+
+  return { boxes };
 };
 
 /**
