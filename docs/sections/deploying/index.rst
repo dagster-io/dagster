@@ -32,7 +32,7 @@ take advantage of the environment in which they're deployed.
 
   instance
   local
-  k8s
+  celery
   aws
   gcp
   dask

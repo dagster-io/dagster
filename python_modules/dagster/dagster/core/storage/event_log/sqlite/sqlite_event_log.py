@@ -27,6 +27,30 @@ from ..sql_event_log import SqlEventLogStorage
 
 
 class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
+    '''SQLite-backed event log storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+
+    This is the default event log storage when none is specified in the ``dagster.yaml``.
+
+    To explicitly specify SQLite for event log storage, you can add a block such as the following
+    to your ``dagster.yaml``:
+
+    .. code-block:: YAML
+
+        run_storage:
+          module: dagster.core.storage.event_log
+          class: SqliteEventLogStorage
+          config:
+            base_dir: /path/to/dir
+    
+    The ``base_dir`` param tells the event log storage where on disk to store the databases. To
+    improve concurrent performance, event logs are stored in a separate SQLite database for each
+    run.
+    '''
+
     def __init__(self, base_dir, inst_data=None):
         '''Note that idempotent initialization of the SQLite database is done on a per-run_id
         basis in the body of connect, since each run is stored in a separate database.'''

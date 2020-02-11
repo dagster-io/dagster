@@ -31,6 +31,20 @@ WATCHER_POLL_INTERVAL = 0.2
 
 
 class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
+    '''Postgres-backed event log storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+
+    To use Postgres for event log storage, you can add a block such as the following to your
+    ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
+       :caption: dagster.yaml
+       :lines: 12-21
+    '''
+
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = check.str_param(postgres_url, 'postgres_url')
         self._event_watcher = PostgresEventWatcher(self.postgres_url)

@@ -11,6 +11,20 @@ from ..utils import pg_config, pg_url_from_config
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
+    '''Postgres-backed run storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+
+    To use Postgres for run storage, you can add a block such as the following to your
+    ``dagster.yaml``:
+
+    .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
+       :caption: dagster.yaml
+       :lines: 1-10
+    '''
+
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = postgres_url
         with self.get_engine() as engine:

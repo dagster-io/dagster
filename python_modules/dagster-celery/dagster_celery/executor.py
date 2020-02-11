@@ -68,12 +68,17 @@ def celery_executor(init_context):
         execution:
           celery:
             config:
-              broker?: 'pyamqp://guest@localhost//',  # The URL of the Celery broker
-              backend?: 'rpc://', # The URL of the Celery results backend
-              include?: ['my_module'], # List of modules every worker should import
-              config_source:
-                  ...
+              broker: 'pyamqp://guest@localhost//',  # Optional[str]: The URL of the Celery broker
+              backend: 'rpc://', # Optional[str]: The URL of the Celery results backend
+              include: ['my_module'], # Optional[List[str]]: Modules every worker should import
+              config_source: # Dict[str, Any]: Any additional parameters to pass to the
+                  ...        # Celery workers. This dict will be passed as the `config_source`
+                             # argument of celery.Celery().
 
+    Note that the YAML you provide here must align with the configuration with which the Celery
+    workers on which you hope to run were started. If, for example, you point the executor at a
+    different broker than the one your workers are listening to, the workers will never be able to
+    pick up tasks for execution.
     '''
     check_cross_process_constraints(init_context)
 
