@@ -62,11 +62,12 @@ interface ILogsFilterProviderProps {
   children: (props: {
     allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
     filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
+    loaded: boolean;
   }) => React.ReactChild;
 }
 
 interface ILogsFilterProviderState {
-  nodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
+  nodes: (RunPipelineRunEventFragment & { clientsideKey: string })[] | null;
 }
 
 export class LogsProvider extends React.Component<
@@ -74,7 +75,7 @@ export class LogsProvider extends React.Component<
   ILogsFilterProviderState
 > {
   state: ILogsFilterProviderState = {
-    nodes: []
+    nodes: null
   };
 
   _subscription: DirectGraphQLSubscription<PipelineRunLogsSubscription>;
@@ -126,7 +127,7 @@ export class LogsProvider extends React.Component<
   ) => {
     // Note: if the socket says this is the first response, it may be becacuse the connection
     // was dropped and re-opened, so we reset our local state to an empty array.
-    const nextNodes = isFirstResponse ? [] : [...this.state.nodes];
+    const nextNodes = isFirstResponse ? [] : [...(this.state.nodes || [])];
 
     let nextPipelineStatus: PipelineRunStatus | null = null;
     for (const msg of messages) {
@@ -193,9 +194,17 @@ export class LogsProvider extends React.Component<
   }
 
   render() {
-    const { filter } = this.props;
     const { nodes } = this.state;
 
+    if (nodes === null) {
+      return this.props.children({
+        allNodes: [],
+        filteredNodes: [],
+        loaded: false
+      });
+    }
+
+    const { filter } = this.props;
     const textLower = filter.text.toLowerCase();
     const { type, step } = structuredFieldsFromLogFilter(filter);
 
@@ -214,7 +223,11 @@ export class LogsProvider extends React.Component<
       return true;
     });
 
-    return this.props.children({ allNodes: nodes, filteredNodes });
+    return this.props.children({
+      allNodes: nodes,
+      filteredNodes,
+      loaded: true
+    });
   }
 }
 

@@ -202,11 +202,12 @@ export class Run extends React.Component<IRunProps, IRunState> {
               runId={run ? run.runId : ""}
               filter={logsFilter}
             >
-              {({ filteredNodes, allNodes }) => (
+              {({ filteredNodes, allNodes, loaded }) => (
                 <RunWithData
                   run={run}
                   filteredNodes={filteredNodes}
                   allNodes={allNodes}
+                  logsLoading={!loaded}
                   logsFilter={logsFilter}
                   onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
                   onShowStateDetails={this.onShowStateDetails}
@@ -228,6 +229,7 @@ interface RunWithDataProps {
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: ILogFilter;
+  logsLoading: boolean;
   onSetLogsFilter: (v: ILogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
@@ -241,6 +243,7 @@ const RunWithData = ({
   allNodes,
   filteredNodes,
   logsFilter,
+  logsLoading,
   onReexecute,
   onSetLogsFilter,
   onShowStateDetails
@@ -305,6 +308,7 @@ const RunWithData = ({
           />
           <LogsScrollingTable
             nodes={filteredNodes}
+            loading={logsLoading}
             filterKey={JSON.stringify(logsFilter)}
           />
         </LogsContainer>
