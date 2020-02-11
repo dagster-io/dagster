@@ -275,16 +275,22 @@ def solid(
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
         config (Optional[Any]): The schema for the config. Configuration data available
-            as context.solid_config.
-            This value can be a:
+            as context.solid_config. This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
 
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -702,16 +708,24 @@ def composite_solid(
             :py:class:`CompositeSolidDefinition`.
 
             To map multiple outputs, return a dictionary from the composition function.
-        config (Optional[Any]): The schema for the config.
-            This value can be a:
+        config (Optional[Any]): The schema for the config. Must be combined with the `config_fn`
+            argument in order to transform this config into the config for the contained
+            solids.
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
 
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
         config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.

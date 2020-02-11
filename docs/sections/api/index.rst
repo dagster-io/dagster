@@ -10,6 +10,7 @@ API Docs
   apidocs/pipeline
   apidocs/execution
   apidocs/types
+  apidocs/config
   apidocs/errors
   apidocs/utilities
   apidocs/schedules

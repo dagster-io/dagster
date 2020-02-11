@@ -15,15 +15,23 @@ class LoggerDefinition(object):
             on ``context.log`` are called from within solid compute logic.
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
-            This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            This value can be:
 
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
+
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
         description (Optional[str]): A human-readable description of this logger.
     '''
 
@@ -55,19 +63,24 @@ def logger(config=None, description=None):
     Args:
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
-            This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            This value can be:
 
-        config_field (Optional[Field]): Used in the rare case of a top level config type other than
-            a dictionary.
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
 
-            Only one of config or config_field can be provided.
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
+
         description (Optional[str]): A human-readable description of the logger.
     '''
     # This case is for when decorator is used bare, without arguments.

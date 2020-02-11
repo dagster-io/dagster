@@ -3,14 +3,12 @@ Types
 
 .. module:: dagster
 
-Dagster includes facilities for typing the input and output values of solids ("runtime" types), as
-well as for writing strongly typed config schemas to support tools like Dagit's config editor
-("config" types).
+Dagster includes facilities for typing the input and output values of solids ("runtime" types).
 
 .. _builtin:
 
-Built-in types
---------------
+Built-in primitives types 
+-------------------------
 
 .. attribute:: Any
 
@@ -231,8 +229,7 @@ Built-in types
 
 .. attribute:: Optional
 
-    Use this type only for inputs and outputs, if the value can also be ``None``. For config values,
-    set the ``is_optional`` parameter on :py:func:`Field <Field>`.
+    Use this type only for inputs and outputs, if the value can also be ``None``. For 
 
     **Examples:**
 
@@ -255,7 +252,7 @@ Built-in types
 
 .. attribute:: List
 
-    Use this type for inputs, outputs, or config values that are lists of values of the inner type.
+    Use this type for inputs, or outputs.
 
     Lists are also the appropriate input types when fanning in multiple outputs using a
     :py:class:`MultiDependencyDefinition` or the equivalent composition function syntax.
@@ -275,10 +272,6 @@ Built-in types
         )
         def concat_list_py2(_, xs) -> String:
             return ''.join(xs)
-
-        @solid(config=[str])
-        def concat_config(context) -> String:
-            return ''.join(context.solid_config)
 
         # Fanning in multiple outputs
         @solid
@@ -304,16 +297,10 @@ Built-in types
 
 .. attribute:: Dict
 
-    Use this type for inputs, outputs, or config values that are dicts.
+    Use this type for inputs, or outputs that are dicts.
 
     For inputs and outputs, you may optionally specify the key and value types using the square
     brackets syntax for Python typing.
-
-    For config values, you should pass an argument that is itself a dict from string keys to
-    :py:func:`Field <Field>` values, which will define the schema of the config dict. For config
-    values where you do not intend to enforce a schema on the dict, use :py:class:`Permissive`.
-    (If the top level ``config_field`` of a solid is a dict, as is usually the case, you may also
-    use the ``config`` param on :py:func:`@solid <solid>` and omit the top-level ``Dict`` type.)
 
     **Examples:**
 
@@ -331,21 +318,13 @@ Built-in types
         def repeat_py2(_, spec):
             return spec['word'] * spec['times']
 
-        @solid(config=Field(Dict({'word': Field(String), 'times': Int})))
-        def repeat_config(context) -> str:
-            return context.solid_config['word'] * context.solid_config['times']
-
 
 .. attribute:: Set
 
-    Use this type for inputs, outputs, or config values that are sets. Alias for
+    Use this type for inputs, or outputs that are sets. Alias for
     :py:class:`python:typing.Set`.
 
     You may optionally specify the inner type using the square brackets syntax for Python typing.
-
-    Config values should be passed as a list (in YAML or the Python config dict). Duplicate
-    entries will be silently coalesced.
-
     **Examples:**
 
     .. code-block:: python
@@ -362,24 +341,9 @@ Built-in types
         def set_solid_py2(_, set_input):
             return sorted([x for x in set_input])
 
-        @solid(config=Field(Set))
-        def set_config(context) -> list:
-            return sorted([str(x) for x in context.solid_config])
-
-
-        @solid(config=Field(Set[Any]))
-        def set_any_config(context) -> list:
-            return sorted([str(x) for x in context.solid_config])
-
-
-        @solid(config=Field(Set[str]))
-        def set_string_config(context) -> list:
-            return sorted([x for x in context.solid_config])
-
-
 .. attribute:: Tuple
 
-    Use this type for inputs, outputs, or config fields that are tuples. Alias for
+    Use this type for inputs or outputs that are tuples. Alias for
     :py:class:`python:typing.Tuple`.
 
     You may optionally specify the inner types using the square brackets syntax for Python typing.
@@ -402,39 +366,6 @@ Built-in types
         def tuple_solid_py2(_, tuple_input):
             return [x for x in tuple_input]
 
-        @solid(config=Field(Tuple))
-        def tuple_config(context) -> str:
-            return ':'.join([str(x) for x in context.solid_config])
-
-
-        @solid(config=Field(Tuple[Any, Any]))
-        def any_tuple_config(context) -> str:
-            return ':'.join([str(x) for x in context.solid_config])
-
-        @solid(config=Field(Tuple[String, Int, Float]))
-        def heterogeneous_tuple_config(context) -> str:
-            return ':'.join([str(x) for x in context.solid_config])
-
------
-
-Config Types
-------------
-
-The following types are used to describe the schema of configuration
-data via ``config_field``. They are used in conjunction with the
-builtin types above.
-
-.. autofunction:: Field
-
-.. autofunction:: Selector
-
-.. autofunction:: Permissive
-
-.. autofunction:: Enum
-
-.. autofunction:: EnumValue
-
------
 
 Making New Types
 ----------------
@@ -451,7 +382,7 @@ Making New Types
 
 .. autofunction:: make_python_type_usable_as_dagster_type
 
-Testing New Types
-^^^^^^^^^^^^^^^^^
+Testing Types
+^^^^^^^^^^^^^
 
 .. autofunction:: check_dagster_type
