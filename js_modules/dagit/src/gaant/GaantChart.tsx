@@ -170,13 +170,6 @@ export class GaantChart extends React.Component<
     });
   };
 
-  onWheel = (event: React.WheelEvent) => {
-    const next = this.state.options.scale * (1 - event.deltaY * 0.0025);
-    this.updateOptions({
-      scale: Math.max(MIN_SCALE, Math.min(MAX_SCALE, next))
-    });
-  };
-
   render() {
     const { metadata = EMPTY_RUN_METADATA, plan, selectedStep } = this.props;
     const { query, options } = this.state;
@@ -194,12 +187,7 @@ export class GaantChart extends React.Component<
 
     const content = (
       <>
-        <GaantChartContent
-          {...this.props}
-          {...this.state}
-          layout={layout}
-          onWheel={this.onWheel}
-        />
+        <GaantChartContent {...this.props} {...this.state} layout={layout} />
         <GraphQueryInput
           items={graph}
           value={query}
@@ -234,11 +222,7 @@ export class GaantChart extends React.Component<
               />
               <div style={{ width: 15 }} />
               <div style={{ width: 200 }}>
-                <Slider
-                  min={MIN_SCALE}
-                  max={MAX_SCALE}
-                  stepSize={0.01}
-                  labelRenderer={false}
+                <LogScaleSlider
                   value={options.scale}
                   onChange={v => this.updateOptions({ scale: v })}
                 />
@@ -277,10 +261,7 @@ export class GaantChart extends React.Component<
 }
 
 type GaantChartContentProps = GaantChartProps &
-  GaantChartState & {
-    layout: GaantChartLayout;
-    onWheel: (e: React.WheelEvent) => void;
-  };
+  GaantChartState & { layout: GaantChartLayout };
 
 const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
   const [scrollLeft, setScrollLeft] = React.useState<number>(0);
@@ -377,7 +358,6 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
       <div
         style={{ overflow: "scroll", flex: 1 }}
         onScroll={e => setScrollLeft(e.currentTarget.scrollLeft)}
-        onWheel={props.onWheel}
       >
         <div style={{ position: "relative" }}>{items}</div>
       </div>
@@ -562,3 +542,20 @@ const GaantChartModeControl: React.FunctionComponent<{
     )}
   </ButtonGroup>
 );
+
+const LogScaleSlider: React.FunctionComponent<{
+  value: number;
+  onChange: (v: number) => void;
+}> = props => {
+  const scale = (Math.log(MAX_SCALE) - Math.log(MIN_SCALE)) / 100;
+  return (
+    <Slider
+      min={0}
+      max={100}
+      stepSize={0.01}
+      labelRenderer={false}
+      value={(Math.log(props.value) - Math.log(MIN_SCALE)) / scale}
+      onChange={v => props.onChange(Math.exp(Math.log(MIN_SCALE) + scale * v))}
+    />
+  );
+};
