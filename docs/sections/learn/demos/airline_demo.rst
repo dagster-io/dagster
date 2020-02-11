@@ -116,7 +116,7 @@ Let's start by looking at the pipeline definition (in ``airline_demo/pipelines.p
 that we use solid aliasing to reuse the ``s3_to_df`` solid for several ingest steps:
 
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/pipelines.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/pipelines.py
    :lines: 96-103
 
 
@@ -158,7 +158,7 @@ external environment. In YAML, an entry in the config for one of our solids alia
 ``s3_to_df`` looks like this:
 
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/environments/local_fast_ingest.yaml
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/environments/local_fast_ingest.yaml
    :lines: 32-38
 
 
@@ -224,7 +224,7 @@ machines, often with a (anonymized or scrubbed) subset of data and with limited 
 remotely in CI/CD, with access to a production or replica environment, but where speed is of the
 essence; and remotely in production on live data.
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/pipelines.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/pipelines.py
    :lines: 46-69
 
 Here we've defined a ``db_info`` resource that exposes a unified API to our solid logic, but that
@@ -264,7 +264,7 @@ a proxy server, or using a different authentication schema.
 
 Finally, we bring it all together in the ``postgres_db_info_resource``:
 
-.. literalinclude:: ../../../examples/dagster_examples/common/resources.py
+.. literalinclude:: ../../../../examples/dagster_examples/common/resources.py
    :lines: 89-128
 
 By providing strongly typed configuration fields to the ``@resource`` decorator, we now have typeahead
@@ -300,7 +300,7 @@ Loading data to the warehouse
 The terminal nodes of this pipeline are all aliased instances of
 ``load_data_to_database_from_spark``:
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 198-216
 
 which abstracts the operation of loading a Spark data frame to a database—either our production
@@ -350,7 +350,7 @@ relatively complex computation against the data warehouse, an analyst only needs
 metadata along with their SQL query:
 
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 403-429
 
 
@@ -387,7 +387,7 @@ can be explored from within Dagit by drilling down on the tag:
 Let's start with the definition of our ``notebook_solid`` helper:
 
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 38-39
 
 
@@ -396,7 +396,7 @@ where to look for the notebooks. We define a new solid by using this function an
 a notebook file:
 
 
-.. literalinclude:: ../../../examples/dagster_examples/airline_demo/solids.py
+.. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 431-453
 
 

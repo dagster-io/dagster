@@ -14,3 +14,5 @@ data engineering and data science workflows.
   :maxdepth: 2
 
   guides/index
+  concepts/index
+  demos/index
