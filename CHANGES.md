@@ -76,9 +76,10 @@
 
   No imports and much simpler, cleaner syntax.
 
-* All solids that use a resource must explicitly list that resource using the argument
-  `required_resource_keys`. This is to enable efficient resource management during pipeline
-  execution, especially in a multiprocessing or remote execution environment.
+* All solids, types, and config functions that use a resource must explicitly list that
+  resource using the argument `required_resource_keys`. This is to enable efficient
+  resource management during pipeline execution, especially in a multiprocessing or
+  remote execution environment.
 * The `@system_storage` decorator now requires argument `required_resource_keys`, which was
   previously optional.
 
@@ -123,10 +124,12 @@
 
 - Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster process.
   As one example, this is used by `dagster-k8s` to submit pipeline execution as a kubernetes batch job.
+- Added support for adding tags to runs initiated from the `Playground` view in dagit.
 
 **Bugfix**
 
-- Ensured that all implementations of `RunStorage` clean up run tags when a run is deleted. May require a storage migration, using `dagster instance migrate`.
+- Ensured that all implementations of `RunStorage` clean up pipeline run tags when a run
+  is deleted. Requires a storage migration, using `dagster instance migrate`.
 - The multiprocess engine now handles solid subsets correctly.
 - The multiprocess engine will now correctly emit skip events for steps downstream of failures and other skips.
 

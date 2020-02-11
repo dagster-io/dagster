@@ -57,3 +57,29 @@ The semantics of `as_dagster_type` did not indicate what is was actually doing
 very well. This function is meant to take an _existing_ type -- often from
 a library that one doesn't control -- and make that type usable as a dagster
 type, the second argument.
+
+## Required Resources
+
+Any solid, type, or configuration function that accesses a resource off of a context
+object must declare that resource key with a `required_resource_key` argument.
+
+Error:
+
+`DagsterUnknownResourceError: Unknown resource <resource_name>. Specify <resource_name>
+as a required resource on the compute / config function that accessed it.`
+
+Fix:
+
+Find any references to context.resources.<resource_name>, and ensure that the enclosing
+solid definition, type definition, or config function has the resource key specified
+in its `required_resource_key` argument.
+
+Further information:
+
+When only a subset of solids are being executed in a given process, we only need to
+initialize resources that will be used by that subset of solids. In order to improve
+the performance of pipeline execution, we need each solid and type to explicitly declare
+its required resources.
+
+As a result, we should see improved performance for pipeline subset execution,
+multiprocess execution, and retry execution.
