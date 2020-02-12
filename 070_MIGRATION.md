@@ -72,6 +72,56 @@ two arguments instead of one. The first argument is a instance of `TypeCheckCont
 the second argument is the value being checked. This allows the type check
 to have access to resources.
 
+## Config System
+
+The config APIs have been renamed to have no collisions with names in neither python's
+`typing` API nor the dagster type system. Here are some example errors:
+
+Error:
+
+`dagster.core.errors.DagsterInvariantViolationError: Cannot resolve Dagster Type Optional.Int to a config type. Repr of type: <dagster.core.types.dagster_type.OptionalType object at 0x102bb2a50>`
+
+Fix:
+
+Use `Noneable` of `Optional`.
+
+Error:
+
+`TypeError: 'DagsterDictApi' object is not callable`
+
+Fix:
+
+Pass a raw python dictionary instead of Dict.
+
+`config=Dict({'foo': str})` becomes `config={'foo': str}`
+
+Error:
+
+`ImportError: cannot import name 'PermissiveDict' from 'dagster'`
+
+Fix:
+
+Use `Permissive` instead.
+
+Error:
+
+`dagster.core.errors.DagsterInvariantViolationError: Cannot use List in the context of config. Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.`
+
+Fix:
+
+This happens when a properly constructed List is used within config. Use Array instead.
+
+Error:
+
+`dagster.core.errors.DagsterInvalidDefinitionError: Invalid type: dagster_type must be DagsterType, a python scalar, or a python type that has been marked usable as a dagster type via @usable_dagster_type or make_python_type_usable_as_dagster_type: got <dagster.config.config_type.Noneable object at 0x1029c8a10>.`
+
+Fix:
+
+This happens when a List takes an invalid argument and is never constructed.
+The error could be much better. This is what happens a config type (in this
+case `Noneable`) is passed to a `List`. The fix is to use either `Array` or
+to use a bare list with a single element, which is a config type.
+
 ## Required Resources
 
 Any solid, type, or configuration function that accesses a resource off of a context

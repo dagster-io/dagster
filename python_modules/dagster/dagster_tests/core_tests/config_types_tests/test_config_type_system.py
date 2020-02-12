@@ -6,7 +6,6 @@ import pytest
 from dagster import (
     Any,
     DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     Field,
     Int,
@@ -669,11 +668,11 @@ def test_item_error_list_path():
 
 def test_list_in_config_error():
     error_msg = (
-        'Cannot use List in the context of a config file. '
+        'Cannot use List in the context of config. '
         'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
     )
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
+    with pytest.raises(DagsterInvariantViolationError, match=re.escape(error_msg)):
 
         @solid(config=List[int])
         def _no_runtime_list_in_config(_):
@@ -836,25 +835,25 @@ def test_typing_types_into_config():
 
 def test_no_set_in_config_system():
     set_error_msg = re.escape('Cannot use Set in the context of a config field.')
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
 
         @solid(config=Field(Set))
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
 
         @solid(config=Set)
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
 
         @solid(config=Field(Set[int]))
         def _bare_closed_set(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
 
         @solid(config=Set[int])
         def _bare_closed_set(_):
@@ -863,13 +862,13 @@ def test_no_set_in_config_system():
 
 def test_no_tuple_in_config_system():
     tuple_error_msg = re.escape('Cannot use Tuple in the context of a config field.')
-    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=tuple_error_msg):
 
         @solid(config=Field(Tuple))
         def _bare_open_tuple(_):
             pass
 
-    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
+    with pytest.raises(DagsterInvariantViolationError, match=tuple_error_msg):
 
         @solid(config=Field(Tuple[int]))
         def _bare_closed_set(_):
