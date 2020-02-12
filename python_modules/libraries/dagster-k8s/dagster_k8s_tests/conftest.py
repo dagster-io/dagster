@@ -276,8 +276,8 @@ def helm_chart(
             helm_cmd = '''helm install \\
             --set dagit.image.repository="{image}" \\
             --set dagit.image.tag="{tag}" \\
-            --set job_image.image.repository="{image}" \\
-            --set job_image.image.tag="{tag}" \\
+            --set job_runner.image.repository="{image}" \\
+            --set job_runner.image.tag="{tag}" \\
             --set imagePullPolicy="{image_pull_policy}" \\
             --set serviceAccount.name="dagit-admin" \\
             --set postgresqlPassword="test", \\

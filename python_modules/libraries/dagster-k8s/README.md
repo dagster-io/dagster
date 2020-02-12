@@ -29,9 +29,11 @@ run_launcher:
 For local dev (e.g., on kind or minikube):
 
     helm install \
-    --set dagit.image="dagster.io/dagster-docker-buildkite:py37-latest" \
-    --set job_image="dagster.io/dagster-docker-buildkite:py37-latest" \
-    --set imagePullPolicy="IfNotPresent" \
+        --set dagit.image.repository="dagster-docker-buildkite" \
+        --set dagit.image.tag="py37-latest" \
+        --set job_runner.image.repository="dagster.io/dagster-docker-buildkite" \
+        --set job_runner.image.tag="py37-latest" \
+        --set imagePullPolicy="IfNotPresent" \
     dagster \
     helm/dagster/
 
