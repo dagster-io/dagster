@@ -45,96 +45,52 @@ export const PipelineExecutionButtonGroup = (props: {
   const [launchPipelineExecution] = useMutation(
     LAUNCH_PIPELINE_EXECUTION_MUTATION
   );
-  const { data } = useQuery(RUN_LAUNCHER_QUERY);
-  const [localData, onSaveLocal] = useStorage();
 
-  const startButton = (
-    <ExecutionStartButton
-      title="Start Execution"
-      icon={IconNames.PLAY}
-      tooltip="Start execution in a subprocess"
-      activeText="Starting..."
-      shortcutLabel={`⌥G`}
-      shortcutFilter={e => e.keyCode === 71 && e.altKey}
-      onClick={async () => {
-        const variables = props.getVariables();
-        if (!variables) {
-          return;
-        }
+  const onExecute = async () => {
+    const variables = props.getVariables();
+    if (!variables) {
+      return;
+    }
 
-        const result = await startPipelineExecution({ variables });
-        handleExecutionResult(props.pipelineName, result, {
-          openInNewWindow: true
-        });
-      }}
-    />
-  );
+    const result = await startPipelineExecution({ variables });
+    handleExecutionResult(props.pipelineName, result, {
+      openInNewWindow: true
+    });
+  };
 
-  if (!data?.instance?.runLauncher?.name) {
-    return startButton;
-  }
+  const onLaunch = async () => {
+    const variables = props.getVariables();
+    if (variables == null) {
+      return;
+    }
 
-  const launchButton = (
-    <ExecutionStartButton
-      title="Launch Execution"
-      icon={IconNames.SEND_TO}
-      tooltip={`Launch execution via ${data.instance.runLauncher.name}`}
-      activeText="Launching..."
-      shortcutLabel={`⌥L`}
-      shortcutFilter={e => e.keyCode === 76 && e.altKey}
-      onClick={async () => {
-        const variables = props.getVariables();
-        if (variables == null) {
-          return;
-        }
-
-        const result = await launchPipelineExecution({ variables });
-        handleExecutionResult(props.pipelineName, result, {
-          openInNewWindow: true
-        });
-      }}
-    />
-  );
-
-  const selectedButton =
-    localData.selectedExecutionType === ExecutionType.LAUNCH
-      ? launchButton
-      : startButton;
-
-  const onSelectExecutionType = (selectedExecutionType: ExecutionType) => {
-    onSaveLocal({ ...localData, selectedExecutionType });
+    const result = await launchPipelineExecution({ variables });
+    handleExecutionResult(props.pipelineName, result, {
+      openInNewWindow: true
+    });
   };
 
   return (
-    <>
-      <ButtonGroup>
-        {selectedButton}
-        <Popover
-          position={Position.BOTTOM_RIGHT}
-          modifiers={{ arrow: { enabled: false } }}
-        >
-          <ExecutionButton>
-            <Icon icon={IconNames.CARET_DOWN} iconSize={17} />
-          </ExecutionButton>
-          <Menu style={{ padding: 0 }} large={true}>
-            <ExecutionMenuItem
-              title="Start Execution"
-              description="Start pipeline execution in a spawned subprocess"
-              icon={IconNames.PLAY}
-              onSelect={onSelectExecutionType}
-              type={ExecutionType.START}
-            />
-            <ExecutionMenuItem
-              title="Launch Execution"
-              description={`Launch / enqueue execution via ${data.instance.runLauncher.name}`}
-              icon={IconNames.SEND_TO}
-              onSelect={onSelectExecutionType}
-              type={ExecutionType.LAUNCH}
-            />
-          </Menu>
-        </Popover>
-      </ButtonGroup>
-    </>
+    <LaunchButtonGroup>
+      <ExecutionStartButton
+        title="Start Execution"
+        icon={IconNames.PLAY}
+        tooltip="Start execution in a subprocess"
+        activeText="Starting..."
+        shortcutLabel={`⌥G`}
+        shortcutFilter={e => e.keyCode === 71 && e.altKey}
+        onClick={onExecute}
+      />
+      <ExecutionStartButton
+        title="Launch Execution"
+        icon={IconNames.SEND_TO}
+        tooltip="Launch execution"
+        activeText="Launching..."
+        shortcutLabel={`⌥L`}
+        shortcutFilter={e => e.keyCode === 76 && e.altKey}
+        onClick={onLaunch}
+      />
+    </LaunchButtonGroup>
   );
 };
 
@@ -179,5 +135,71 @@ const ExecutionMenuItem = ({
         onSelect(type);
       }}
     />
+  );
+};
+
+export const LaunchButtonGroup = ({
+  children,
+  small,
+  onChange
+}: {
+  children: React.ReactNode;
+  small?: boolean;
+  onChange?: (type: ExecutionType) => void;
+}) => {
+  const [localData, onSaveLocal] = useStorage();
+  const { data } = useQuery(RUN_LAUNCHER_QUERY);
+
+  if (!children) {
+    return;
+  }
+
+  const startButton = children[0];
+  const launchButton = children[1];
+
+  if (!data?.instance?.runLauncher?.name) {
+    return startButton;
+  }
+
+  const selectedButton =
+    localData.selectedExecutionType === ExecutionType.LAUNCH
+      ? launchButton
+      : startButton;
+
+  const onSelectExecutionType = (selectedExecutionType: ExecutionType) => {
+    onSaveLocal({ ...localData, selectedExecutionType });
+    onChange && onChange(selectedExecutionType);
+  };
+
+  return (
+    <>
+      <ButtonGroup>
+        {selectedButton}
+        <Popover
+          position={Position.BOTTOM_RIGHT}
+          modifiers={{ arrow: { enabled: false } }}
+        >
+          <ExecutionButton small={small}>
+            <Icon icon={IconNames.CARET_DOWN} iconSize={17} />
+          </ExecutionButton>
+          <Menu style={{ padding: 0 }} large={true}>
+            <ExecutionMenuItem
+              title="Start Execution"
+              description="Start pipeline execution in a spawned subprocess"
+              icon={IconNames.PLAY}
+              onSelect={onSelectExecutionType}
+              type={ExecutionType.START}
+            />
+            <ExecutionMenuItem
+              title="Launch Execution"
+              description={`Launch / enqueue execution via ${data.instance.runLauncher.name}`}
+              icon={IconNames.SEND_TO}
+              onSelect={onSelectExecutionType}
+              type={ExecutionType.LAUNCH}
+            />
+          </Menu>
+        </Popover>
+      </ButtonGroup>
+    </>
   );
 };

@@ -169,9 +169,11 @@ export default class ExecutionStartButton extends React.Component<
 }
 
 export const ExecutionButton = ({
-  children
+  children,
+  small
 }: {
   children: React.ReactNode | null;
+  small?: boolean;
 }) => (
   <WebsocketStatusContext.Consumer>
     {websocketStatus => {
@@ -187,6 +189,7 @@ export const ExecutionButton = ({
               ? ExecutionButtonStatus.Disabled
               : ExecutionButtonStatus.Ready
           }
+          small={small}
           onClick={disconnected ? swallowEvent : undefined}
         >
           {children}
@@ -198,9 +201,10 @@ export const ExecutionButton = ({
 
 const ButtonContainer = styled(Button)<{
   state: ExecutionButtonStatus;
+  small?: boolean;
 }>`
   &&& {
-    height: 30px;
+    height: ${({ small }) => (small ? "24" : "30")}px;
     border-radius: 3px;
     flex-shrink: 0;
     background: ${({ state }) =>
