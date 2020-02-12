@@ -159,3 +159,63 @@ Replace all references to `context.run_config` with `context.pipeline_run`. The 
 on the pipeline execution context has been removed and replaced with `pipeline_run`, a `PipelineRun`
 instance. Along with the fields previously on `RunConfig`, this also includes the pipeline run
 status.
+
+## Scheduler
+
+Scheduler configuration has been moved to the `dagster.yaml`. After upgrading, the previous schedule
+history is no longer compatible with the new storage.
+
+Make sure you delete your existing `$DAGSTER_HOME/schedules` directory, then run:
+
+```
+dagster schedule wipe && dagster schedule up
+```
+
+Error:
+
+`TypeError: schedules() got an unexpected keyword argument 'scheduler'`
+
+Fix:
+
+The `@schedules` decorator no longer takes a `scheduler` argument. Remove the argument and instead
+configure the scheduler on the instance.
+
+Instead of:
+
+```
+@schedules(scheduler=SystemCronScheduler)
+def define_schedules():
+    ...
+```
+
+Remove the `scheduler` argument:
+
+```
+@schedules
+def define_schedules():
+    ...
+```
+
+Configure the scheduler on your instance by adding the following to `$DAGSTER_HOME/dagster.yaml`:
+
+```
+scheduler:
+    module: dagster_cron.cron_scheduler
+    class: SystemCronScheduler
+```
+
+Error:
+
+`TypeError: <lambda>() takes 0 positional arguments but 1 was given"`
+
+Stack Trace:
+
+```
+    File ".../dagster/python_modules/dagster/dagster/core/definitions/schedule.py", line 171, in should_execute
+        return self._should_execute(context)
+```
+
+Fix:
+
+The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now has a required
+first argument `context`, representing the `ScheduleExecutionContext`.
