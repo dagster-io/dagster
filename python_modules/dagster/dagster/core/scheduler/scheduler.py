@@ -160,7 +160,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def get_log_path(self, repository, schedule_name):
+    def get_log_path(self, instance, repository, schedule_name):
         '''Get path to store logs for schedule
         '''
 

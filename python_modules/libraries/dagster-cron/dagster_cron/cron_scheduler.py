@@ -1,12 +1,12 @@
-import glob
 import io
 import os
+import shutil
 import stat
 
 import six
 from crontab import CronTab
 
-from dagster import DagsterInvariantViolationError, check, seven, utils
+from dagster import DagsterInstance, DagsterInvariantViolationError, check, seven, utils
 from dagster.core.definitions import RepositoryDefinition
 from dagster.core.scheduler import ScheduleStatus, Scheduler
 from dagster.core.serdes import ConfigurableClass
@@ -20,9 +20,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
     '''
 
-    def __init__(self, artifacts_dir, inst_data=None):
-        check.str_param(artifacts_dir, 'artifacts_dir')
-        self._artifacts_dir = artifacts_dir
+    def __init__(self, inst_data=None):
         self._inst_data = inst_data
 
     @property
@@ -31,11 +29,11 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'artifacts_dir': str}
+        return {}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return SystemCronScheduler(artifacts_dir=config_value['artifacts_dir'], inst_data=inst_data)
+        return SystemCronScheduler(inst_data=inst_data)
 
     def start_schedule(self, instance, repository, schedule_name):
         schedule = instance.get_schedule_by_name(repository, schedule_name)
@@ -76,7 +74,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
         instance.update_schedule(repository, stopped_schedule)
-        self._end_cron_job(repository, schedule)
+        self._end_cron_job(instance, repository, stopped_schedule)
 
         return stopped_schedule
 
@@ -90,17 +88,25 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             )
 
         instance.delete_schedule(schedule)
-        self._end_cron_job(repository, schedule)
+        self._end_cron_job(instance, repository, schedule)
 
         return schedule
 
-    def wipe(self):
+    def wipe(self, instance):
+        # Note: This method deletes schedules from ALL repositories
+        check.inst_param(instance, 'instance', DagsterInstance)
 
-        bash_files = glob.glob(os.path.join(self._artifacts_dir, "*.sh"))
-        for bash_file in bash_files:
-            os.remove(bash_file)
+        # Delete all script files
+        script_directory = os.path.join(instance.schedules_directory(), "scripts")
+        if os.path.isdir(script_directory):
+            shutil.rmtree(script_directory)
 
-        # Delete any other crontabs that are from dagster
+        # Delete all logs
+        logs_directory = os.path.join(instance.schedules_directory(), "logs")
+        if os.path.isdir(logs_directory):
+            shutil.rmtree(logs_directory)
+
+        # Remove all cron jobs
         cron = CronTab(user=True)
         for job in cron:
             if 'dagster-schedule:' in job.comment:
@@ -108,12 +114,14 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
         cron.write()
 
-    def _get_file_prefix(self, repository, schedule):
-        return os.path.join(self._artifacts_dir, '{}.{}'.format(repository.name, schedule.name))
+    def _get_bash_script_file_path(self, instance, repository, schedule):
+        check.inst_param(instance, 'instance', DagsterInstance)
 
-    def _get_bash_script_file_path(self, repository, schedule):
-        file_prefix = self._get_file_prefix(repository, schedule)
-        return '{}.sh'.format(file_prefix)
+        script_directory = os.path.join(instance.schedules_directory(), "scripts")
+        utils.mkdir_p(script_directory)
+
+        script_file_name = "{}.{}.sh".format(repository.name, schedule.name)
+        return os.path.join(script_directory, script_file_name)
 
     def _start_cron_job(self, instance, repository, schedule):
         script_file = self._write_bash_script_to_file(instance, repository, schedule)
@@ -128,7 +136,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         job.setall(schedule.cron_schedule)
         my_cron.write()
 
-    def _end_cron_job(self, repository, schedule):
+    def _end_cron_job(self, instance, repository, schedule):
         my_cron = CronTab(user=True)
         my_cron.remove_all(
             comment='dagster-schedule: {repository_name}.{schedule_name}'.format(
@@ -137,24 +145,31 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         )
         my_cron.write()
 
-        script_file = self._get_bash_script_file_path(repository, schedule)
+        script_file = self._get_bash_script_file_path(instance, repository, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
 
-    def get_log_path(self, repository, schedule_name):
+    def get_log_path(self, instance, repository, schedule_name):
+        check.inst_param(instance, 'instance', DagsterInstance)
         check.inst_param(repository, 'repository', RepositoryDefinition)
         check.str_param(schedule_name, 'schedule_name')
-        return os.path.join(
-            self._artifacts_dir, repository.name, 'logs', '{}'.format(schedule_name)
-        )
+
+        logs_directory = os.path.join(instance.schedules_directory(), "logs")
+        schedule_logs_directory = os.path.join(logs_directory, repository.name, schedule_name)
+        return schedule_logs_directory
 
     def _write_bash_script_to_file(self, instance, repository, schedule):
-        script_file = self._get_bash_script_file_path(repository, schedule)
+        # Get path to store bash script
+        script_file = self._get_bash_script_file_path(instance, repository, schedule)
 
-        log_dir = instance.log_path_for_schedule(repository, schedule.name)
-        utils.mkdir_p(log_dir)
-        result_file = os.path.join(log_dir, "{}_{}.result".format("${RUN_DATE}", schedule.name))
+        # Get path to store schedule attempt logs
+        schedule_logs_path = self.get_log_path(instance, repository, schedule.name)
+        if not os.path.isdir(schedule_logs_path):
+            utils.mkdir_p(schedule_logs_path)
+        schedule_log_file_name = "{}_{}.result".format("${RUN_DATE}", schedule.name)
+        schedule_log_file_path = os.path.join(schedule_logs_path, schedule_log_file_name)
 
+        # Environment information needed for execution
         dagster_graphql_path = os.path.join(
             os.path.dirname(schedule.python_path), 'dagster-graphql'
         )
@@ -173,7 +188,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             dagster_graphql_path=dagster_graphql_path,
             repo_path=schedule.repository_path,
             variables=seven.json.dumps({"scheduleName": schedule.name}),
-            result_file=result_file,
+            result_file=schedule_log_file_path,
             dagster_home=dagster_home,
             env_vars="\n".join(
                 [

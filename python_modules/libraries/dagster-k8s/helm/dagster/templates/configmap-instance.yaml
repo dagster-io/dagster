@@ -12,8 +12,6 @@ data:
     scheduler:
       module: dagster_cron.cron_scheduler
       class: SystemCronScheduler
-      config:
-        artifacts_dir: {{ .Values.dagster_home }}/schedules
 
     run_launcher:
       module: dagster_k8s.launcher

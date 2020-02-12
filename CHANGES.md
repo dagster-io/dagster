@@ -29,8 +29,6 @@
   scheduler:
     module: dagster_cron.cron_scheduler
     class: SystemCronScheduler
-    config:
-      artifacts_dir: /path/to/dagster_home/schedules
   ```
 
   Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules` directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.

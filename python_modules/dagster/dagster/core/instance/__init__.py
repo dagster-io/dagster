@@ -103,7 +103,7 @@ class DagsterInstance:
             ``dagster.yaml`` using the :py:class:`~dagster.core.serdes.ConfigurableClass` machinery.
         compute_log_manager (ComputeLogManager): The compute log manager handles stdout and stderr
             logging for solid compute functions. By default, this will be a
-            :py:class:`dagster.core.storage.local_compute_log_manager.LocalComputeLogManager`. 
+            :py:class:`dagster.core.storage.local_compute_log_manager.LocalComputeLogManager`.
             Configurable in ``dagster.yaml`` using the
             :py:class:`~dagster.core.serdes.ConfigurableClass` machinery.
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
@@ -477,9 +477,9 @@ class DagsterInstance:
 
     def wipe_all_schedules(self):
         if self._scheduler:
-            self._scheduler.wipe()
+            self._scheduler.wipe(self)
 
         self._schedule_storage.wipe()
 
     def log_path_for_schedule(self, repository, schedule_name):
-        return self._scheduler.get_log_path(repository, schedule_name)
+        return self._scheduler.get_log_path(self, repository, schedule_name)
