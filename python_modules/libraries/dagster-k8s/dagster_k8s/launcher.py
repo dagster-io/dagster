@@ -159,12 +159,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ],
             image_pull_policy=self.image_pull_policy,
             env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
-            env_from=[
-                client.V1EnvFromSource(
-                    config_map_ref=client.V1ConfigMapEnvSource(name='dagster-job-env')
-                )
-            ]
-            + self.env_froms,
+            env_from=self.env_froms,
             volume_mounts=[
                 client.V1VolumeMount(
                     name='dagster-instance',
