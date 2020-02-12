@@ -174,7 +174,8 @@ export class GaantChart extends React.Component<
   };
 
   onDoubleClickStep = (stepKey: string) => {
-    this.setState({ query: `*${stepKey}*` });
+    const query = `*${stepKey}*`;
+    this.setState({ query: this.state.query !== query ? query : "*" });
   };
 
   render() {
@@ -335,6 +336,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
             focused={focused}
             viewport={viewport}
             setHoveredIdx={setHoveredIdx}
+            onApplyStepFilter={props.onApplyStepFilter}
             onDoubleClickStep={props.onDoubleClickStep}
           />
         </div>

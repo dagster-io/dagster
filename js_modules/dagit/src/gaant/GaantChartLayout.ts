@@ -356,12 +356,15 @@ export const interestingQueriesFor = (
     results.push({ name: "Slowest Individual Steps", value: slowStepsQuery });
   }
 
-  const rightmostBox = [...layout.boxes].sort(
-    (a, b) => b.x + b.width - (a.x + a.width)
-  )[0];
-  const slowPathQuery = `*${rightmostBox.node.name}`;
-  if (slowPathQuery) {
-    results.push({ name: "Slowest Path", value: slowPathQuery });
+  const rightmostCompletedBox = [...layout.boxes]
+    .filter(b => metadata.steps[b.node.name]?.finish)
+    .sort((a, b) => b.x + b.width - (a.x + a.width))[0];
+
+  if (rightmostCompletedBox) {
+    results.push({
+      name: "Slowest Path",
+      value: `*${rightmostCompletedBox.node.name}`
+    });
   }
 
   return results;
