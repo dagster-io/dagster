@@ -13,6 +13,7 @@ interface GaantStatusPanelProps {
   metadata: IRunMetadataDict;
   selectedStep: string | null;
   run?: RunFragment;
+  nowMs: number;
 
   onApplyStepFilter?: (step: string) => void;
   onHighlightStep?: (step: string | null) => void;
@@ -20,6 +21,7 @@ interface GaantStatusPanelProps {
 }
 
 export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = ({
+  nowMs,
   metadata,
   selectedStep,
   onApplyStepFilter,
@@ -32,38 +34,28 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   const errored = Object.keys(metadata.steps).filter(
     key => metadata.steps[key].state === IStepState.FAILED
   );
+  const renderStepItem = (stepName: string) => (
+    <StepItem
+      nowMs={nowMs}
+      name={stepName}
+      key={stepName}
+      metadata={metadata}
+      selected={selectedStep === stepName}
+      onClick={onApplyStepFilter}
+      onDoubleClick={onDoubleClickStep}
+      onHover={onHighlightStep}
+    />
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
       <SectionHeader>Executing</SectionHeader>
-      <Section>
-        {executing.map(stepName => (
-          <StepItem
-            name={stepName}
-            key={stepName}
-            metadata={metadata}
-            selected={selectedStep === stepName}
-            onClick={onApplyStepFilter}
-            onDoubleClick={onDoubleClickStep}
-          />
-        ))}
-      </Section>
+      <Section>{executing.map(renderStepItem)}</Section>
       {executing.length === 0 && (
         <EmptyNotice>No steps are executing</EmptyNotice>
       )}
       <SectionHeader>Errored</SectionHeader>
-      <Section>
-        {errored.map(stepName => (
-          <StepItem
-            name={stepName}
-            key={stepName}
-            metadata={metadata}
-            selected={selectedStep === stepName}
-            onClick={onApplyStepFilter}
-            onDoubleClick={onDoubleClickStep}
-            onHover={onHighlightStep}
-          />
-        ))}
-      </Section>
+      <Section>{errored.map(renderStepItem)}</Section>
     </div>
   );
 };
@@ -72,10 +64,11 @@ const StepItem: React.FunctionComponent<{
   name: string;
   selected: boolean;
   metadata: IRunMetadataDict;
+  nowMs: number;
   onClick?: (name: string) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({ name, selected, metadata, onClick, onHover, onDoubleClick }) => {
+}> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
   const step = metadata.steps[name];
   return (
     <StepItemContainer
@@ -99,9 +92,7 @@ const StepItem: React.FunctionComponent<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      <Elapsed>
-        {formatElapsedTime(metadata.mostRecentLogAt - step.start!)}
-      </Elapsed>
+      <Elapsed>{formatElapsedTime(nowMs - step.start!)}</Elapsed>
     </StepItemContainer>
   );
 };

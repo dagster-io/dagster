@@ -47,7 +47,7 @@ export const BOX_SHOW_LABEL_WIDTH_CUTOFF = 30;
 export const BOX_DOT_SIZE = 6;
 
 export const LINE_SIZE = 2;
-export const CSS_DURATION = `100ms`;
+export const CSS_DURATION = 100;
 
 export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
   mode: GaantChartMode.WATERFALL,

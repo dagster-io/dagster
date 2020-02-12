@@ -197,14 +197,15 @@ const boxWidthFor = (
   step: GraphQueryItem,
   options: GaantChartLayoutOptions,
   metadata: IRunMetadataDict,
-  scale: number
+  scale: number,
+  nowMs: number
 ) => {
   const stepInfo = metadata.steps[step.name] || {};
   if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     if (stepInfo.start) {
       return Math.max(
         BOX_DOT_WIDTH_CUTOFF,
-        ((stepInfo.finish || metadata.mostRecentLogAt) - stepInfo.start) * scale
+        ((stepInfo.finish || nowMs) - stepInfo.start) * scale
       );
     }
   }
@@ -270,7 +271,8 @@ export const adjustLayoutWithRunMetadata = (
   layout: GaantChartLayout,
   options: GaantChartLayoutOptions,
   metadata: IRunMetadataDict,
-  scale: number
+  scale: number,
+  nowMs: number
 ): GaantChartLayout => {
   // Clone the layout into a new set of JS objects so that React components can do shallow
   // comparison between the old set and the new set and code below can traverse + mutate
@@ -287,7 +289,7 @@ export const adjustLayoutWithRunMetadata = (
   ) {
     // Apply all box widths
     for (const box of boxes) {
-      box.width = boxWidthFor(box.node, options, metadata, scale);
+      box.width = boxWidthFor(box.node, options, metadata, scale, nowMs);
     }
 
     // Traverse the graph and push boxes right as we go to account for new widths

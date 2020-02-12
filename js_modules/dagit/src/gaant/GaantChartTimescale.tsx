@@ -158,7 +158,8 @@ export const GaantChartTimescale = ({
               left: (nowMs - startMs) * pxPerMs,
               width:
                 Math.max(layoutSize.width, viewport.width) -
-                (nowMs - startMs) * pxPerMs,
+                (nowMs - startMs) * pxPerMs +
+                100,
               transform
             }}
           ></div>
@@ -177,7 +178,7 @@ const TimescaleContainer = styled.div`
     width: ${TICK_LABEL_WIDTH}px;
     height: 20px;
     box-sizing: border-box;
-    transition: left ${CSS_DURATION} linear, width ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear, width ${CSS_DURATION}ms linear;
     text-align: center;
     font-size: 11px;
   }
@@ -201,7 +202,7 @@ const TimescaleContainer = styled.div`
   & .line {
     position: absolute;
     border-left: 1px solid #eee;
-    transition: left ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
@@ -214,7 +215,7 @@ const TimescaleContainer = styled.div`
   & .fog-of-war {
     position: absolute;
     background: rgba(0, 0, 0, 0.08);
-    transition: left ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
     width: 100%;

@@ -9,7 +9,7 @@ import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlan
 import { GaantChartTimescale } from "./GaantChartTimescale";
 import { RunFragment } from "../runs/types/RunFragment";
 import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery } from "../GraphQueryImpl";
+import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
 import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
 import {
   buildLayout,
@@ -33,7 +33,8 @@ import {
   BOX_SHOW_LABEL_WIDTH_CUTOFF,
   BOX_DOT_SIZE,
   MIN_SCALE,
-  MAX_SCALE
+  MAX_SCALE,
+  GaantViewport
 } from "./Constants";
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { GaantChartModeControl } from "./GaantChartModeControl";
@@ -168,12 +169,16 @@ export class GaantChart extends React.Component<
     });
   };
 
+  onUpdateQuery = (query: string) => {
+    this.setState({ query });
+  };
+
   onDoubleClickStep = (stepKey: string) => {
     this.setState({ query: `*${stepKey}*` });
   };
 
   render() {
-    const { metadata, plan, selectedStep } = this.props;
+    const { plan } = this.props;
     const { query, options } = this.state;
 
     const graph = toGraphQueryItems(plan);
@@ -183,26 +188,6 @@ export class GaantChart extends React.Component<
       nodes: graphFiltered.all,
       mode: options.mode
     });
-
-    const content = (
-      <>
-        <GaantChartContent
-          {...this.props}
-          {...this.state}
-          layout={layout}
-          onDoubleClickStep={this.onDoubleClickStep}
-        />
-        <GraphQueryInput
-          items={graph}
-          value={query}
-          placeholder="Type a Step Subset"
-          onChange={q => this.setState({ query: q })}
-          presets={
-            metadata ? interestingQueriesFor(metadata, layout) : undefined
-          }
-        />
-      </>
-    );
 
     return (
       <GaantChartContainer>
@@ -237,53 +222,38 @@ export class GaantChart extends React.Component<
           <div style={{ flex: 1 }} />
           {this.props.toolbarActions}
         </OptionsContainer>
-
-        {metadata ? (
-          <SplitPanelContainer
-            identifier="gaant-split"
-            axis="horizontal"
-            first={content}
-            firstInitialPercent={80}
-            second={
-              <GaantStatusPanel
-                {...this.props}
-                metadata={metadata}
-                selectedStep={selectedStep}
-                onDoubleClickStep={this.onDoubleClickStep}
-                onHighlightStep={name => {
-                  document.dispatchEvent(
-                    new CustomEvent("highlight-node", { detail: { name } })
-                  );
-                }}
-              />
-            }
-          />
-        ) : (
-          content
-        )}
+        <GaantChartInner
+          {...this.props}
+          {...this.state}
+          layout={layout}
+          graph={graph}
+          onUpdateQuery={this.onUpdateQuery}
+          onDoubleClickStep={this.onDoubleClickStep}
+        />
       </GaantChartContainer>
     );
   }
 }
-
-type GaantChartContentProps = GaantChartProps &
+type GaantChartInnerProps = GaantChartProps &
   GaantChartState & {
+    graph: GraphQueryItem[];
     layout: GaantChartLayout;
+    onUpdateQuery: (value: string) => void;
     onDoubleClickStep: (stepName: string) => void;
   };
 
-const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props => {
+const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
-  const { options, metadata = EMPTY_RUN_METADATA } = props;
+  const [nowMs, setNowMs] = React.useState<number>(Date.now());
+  const { options, metadata } = props;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
   // To make the slider feel more linear, we convert the input from log10 to logE.
   const minScale =
-    viewport.width && metadata.mostRecentLogAt && metadata.minStepStart
-      ? (viewport.width - 150) /
-        (metadata.mostRecentLogAt - metadata.minStepStart)
+    viewport.width && metadata && metadata.minStepStart
+      ? (viewport.width - 150) / (nowMs - metadata.minStepStart)
       : MIN_SCALE;
 
   const scale = Math.exp(
@@ -291,32 +261,132 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
       ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
   );
 
+  // When the pipeline is running we want the graph to be steadily moving, even if logs
+  // aren't arriving. To achieve this we determine an update interval based on the scale
+  // and advance a "now" value that is used as the currnet time when adjusting the layout
+  // to account for run metadata below.
+
+  // Because renders can happen "out of band" of our update interval, we set a timer for
+  // "time until the next interval after the current nowMs".
+  React.useEffect(() => {
+    if (scale === 0) return;
+    if (metadata?.exitedAt) {
+      if (nowMs !== metadata.exitedAt) {
+        setNowMs(metadata.exitedAt);
+      }
+      return;
+    }
+
+    // time required for 2px shift in viz, but not more rapid than our CSS animation duration
+    const renderInterval = Math.max(CSS_DURATION, 2 / scale);
+
+    const timeUntilIntervalElasped = renderInterval - (Date.now() - nowMs);
+    const timeout = setTimeout(
+      () => setNowMs(Date.now()),
+      timeUntilIntervalElasped
+    );
+    return () => clearTimeout(timeout);
+  }, [scale, setNowMs, metadata, nowMs]);
+
   // The `layout` we receive has been laid out and the rows / "waterfall" are final,
   // but it doesn't incorporate the display scale or run metadata. We stretch and
   // shift the layout boxes using this data to create the final layout for display.
-  const items: React.ReactChild[] = [];
   const layout = adjustLayoutWithRunMetadata(
     props.layout,
     options,
-    metadata,
-    scale
+    metadata || EMPTY_RUN_METADATA,
+    scale,
+    nowMs
   );
   const focused = layout.boxes.find(b => b.node.name === props.selectedStep);
   const hovered = layout.boxes[hoveredIdx];
-
-  // This custom event allows clicking in the sidebar to highlight nodes.
-  React.useEffect(() => {
-    const onEvent = (e: CustomEvent) => {
-      setHoveredIdx(layout.boxes.findIndex(b => b.node.name === e.detail.name));
-    };
-    document.addEventListener("highlight-node", onEvent);
-    return () => document.removeEventListener("highlight-node", onEvent);
-  });
 
   const layoutSize = {
     width: Math.max(0, ...layout.boxes.map(b => b.x + b.width)),
     height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
   };
+
+  const content = (
+    <>
+      {options.mode === GaantChartMode.WATERFALL_TIMED && (
+        <GaantChartTimescale
+          scale={scale}
+          viewport={viewport}
+          layoutSize={layoutSize}
+          startMs={metadata?.minStepStart || 0}
+          nowMs={nowMs}
+          highlightedMs={
+            focused
+              ? ([
+                  metadata?.steps[focused.node.name]?.start,
+                  metadata?.steps[focused.node.name]?.finish
+                ].filter(Number) as number[])
+              : []
+          }
+        />
+      )}
+      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
+        <div style={{ position: "relative", ...layoutSize }}>
+          <GaantChartViewportContents
+            options={options}
+            metadata={metadata || EMPTY_RUN_METADATA}
+            layout={layout}
+            hovered={hovered}
+            focused={focused}
+            viewport={viewport}
+            setHoveredIdx={setHoveredIdx}
+            onDoubleClickStep={props.onDoubleClickStep}
+          />
+        </div>
+      </div>
+
+      <GraphQueryInput
+        items={props.graph}
+        value={props.query}
+        placeholder="Type a Step Subset"
+        onChange={props.onUpdateQuery}
+        presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
+      />
+    </>
+  );
+
+  return metadata ? (
+    <SplitPanelContainer
+      identifier="gaant-split"
+      axis="horizontal"
+      first={content}
+      firstInitialPercent={80}
+      second={
+        <GaantStatusPanel
+          {...props}
+          nowMs={nowMs}
+          metadata={metadata}
+          onHighlightStep={name => {
+            setHoveredIdx(layout.boxes.findIndex(b => b.node.name === name));
+          }}
+        />
+      }
+    />
+  ) : (
+    content
+  );
+};
+
+interface GaantChartViewportContentsProps {
+  options: GaantChartLayoutOptions;
+  metadata: IRunMetadataDict;
+  layout: GaantChartLayout;
+  hovered: GaantChartBox | undefined;
+  focused: GaantChartBox | undefined;
+  viewport: GaantViewport;
+  setHoveredIdx: (idx: number) => void;
+  onDoubleClickStep: (step: string) => void;
+  onApplyStepFilter?: (step: string) => void;
+}
+
+const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
+  const { viewport, layout, hovered, focused, metadata, options } = props;
+  const items: React.ReactChild[] = [];
 
   // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
   // intersect with the current viewport.
@@ -334,7 +404,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
           return;
         }
         const childNotDrawn = !layout.boxes.includes(child);
-        const childWaiting = metadata.mostRecentLogAt
+        const childWaiting = metadata
           ? !metadata.steps[child.node.name]?.state
           : false;
 
@@ -367,8 +437,8 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
         title={box.node.name}
         onClick={() => props.onApplyStepFilter?.(box.node.name)}
         onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
-        onMouseEnter={() => setHoveredIdx(idx)}
-        onMouseLeave={() => setHoveredIdx(-1)}
+        onMouseEnter={() => props.setHoveredIdx(idx)}
+        onMouseLeave={() => props.setHoveredIdx(-1)}
         className={`
             ${useDot ? "dot" : "box"}
             ${focused === box && "focused"}
@@ -387,30 +457,7 @@ const GaantChartContent: React.FunctionComponent<GaantChartContentProps> = props
     );
   });
 
-  return (
-    <>
-      {options.mode === GaantChartMode.WATERFALL_TIMED && (
-        <GaantChartTimescale
-          scale={scale}
-          viewport={viewport}
-          layoutSize={layoutSize}
-          startMs={metadata.minStepStart || 0}
-          nowMs={metadata.mostRecentLogAt}
-          highlightedMs={
-            focused
-              ? ([
-                  metadata.steps[focused.node.name]?.start,
-                  metadata.steps[focused.node.name]?.finish
-                ].filter(Number) as number[])
-              : []
-          }
-        />
-      )}
-      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
-        <div style={{ position: "relative", ...layoutSize }}>{items}</div>
-      </div>
-    </>
-  );
+  return <>{items}</>;
 };
 
 interface Bounds {
@@ -526,8 +573,8 @@ const GaantChartContainer = styled.div`
     position: absolute;
     user-select: none;
     pointer-events: none;
-    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
-      width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
+    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
   }
 
   .dot {
@@ -540,7 +587,7 @@ const GaantChartContainer = styled.div`
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: ${BOX_DOT_SIZE / 2}px;
 
-    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear;
+    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
   }
 
   .box {
@@ -557,8 +604,8 @@ const GaantChartContainer = styled.div`
     border-radius: 2px;
     user-select: text;
 
-    transition: top ${CSS_DURATION} linear, left ${CSS_DURATION} linear,
-      width ${CSS_DURATION} linear, height ${CSS_DURATION} linear;
+    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
 
     &.focused {
       border: 1px solid ${Colors.DARK_GRAY1};
