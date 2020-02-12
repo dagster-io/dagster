@@ -22,7 +22,6 @@ nutritional facts about cereals.
   resources
   repos
   scheduler
-  intro_airflow
 
 
 You can find all of the tutorial code checked into the dagster repository at

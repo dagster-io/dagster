@@ -19,7 +19,15 @@ adoption path.
 Requirements
 ^^^^^^^^^^^^
 
-- The ``dagster-airflow`` library requires a preexisting Airflow install.
+You'll need an existing Airflow installation, and to install the ``dagster-airflow`` library into
+the Python environments in which your Airflow webserver and worker run.
+
+.. code-block:: shell
+
+    $ pip install dagster-airflow
+
+You'll also need to make sure that the Dagster pipeline you want to run using Airflow is available
+in the Python environments in which your Airflow webserver and worker run.
 
 Overview
 ~~~~~~~~
@@ -35,27 +43,56 @@ We support two modes of execution (each of which uses its own operator):
 1. **Uncontainerized [Default]**: Tasks are invoked directly on the Airflow executors.
 2. **Containerized**: Tasks are executed in Docker containers.
 
-Running uncontainerized
-~~~~~~~~~~~~~~~~~~~~~~~
+Quickstart
+~~~~~~~~~~
+For this quickstart, we'll use our familiar, simple demo pipeline:
 
-To define an Airflow DAG corresponding to a Dagster pipeline, you'll put a new Python file defining
-your DAG in the directory in which Airflow looks for DAGs -- this is typically ``$AIRFLOW_HOME/dags``.
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/airflow.py
+   :linenos:
+   :caption: airflow.py
 
-You can automatically scaffold this file from your Python code with the ``dagster-airflow`` CLI tool.
-For example, (provided that the ``dagster_examples`` directory is on your ``PYTHONPATH`` or that
-you've pip installed it):
+To compile this existing pipeline to Airflow, we'll use the ``dagster-airflow`` CLI tool. By
+default, this tool will write the Airflow-compatible DAG scaffold out to ``$AIRFLOW_HOME/dags``.
 
 .. code-block:: shell
 
     $ dagster-airflow scaffold \
-        --module-name dagster_examples.toys.sleepy \
-        --pipeline-name sleepy_pipeline
+        --module-name dagster_examples.intro_tutorial.airflow \
+        --pipeline-name hello_cereal_pipeline
+    Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 
-This will create a file in your local ``$AIRFLOW_HOME/dags`` folder named ``sleepy_pipeline.py``.
+Let's take a look at the generated file:
 
-Inside this file, an Airflow DAG corresponding to your Dagster pipeline will be defined using
-instances of :py:class:`~dagster_airflow.DagsterPythonOperator` to represent individual execution
-steps in the pipeline.
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
+   :linenos:
+   :caption: hello_cereal_pipeline.py
+
+This is a fairly straightforward file with four parts.
+
+First, we import the basic prerequisites to define our DAG (and also make sure that the string
+"DAG" appears in the file, so that the Airflow webserver will detect it).
+
+Second, we define the config that Dagster will compile our pipeline against. Unlike Dagster
+pipelines, Airflow DAGs can't be parameterized dynamically at execution time, so this config is
+static after it's loaded by the Airflow webserver.
+
+Third, we set the ``DEFAULT_ARGS`` that will be passed down as the ``default_args`` argument to the
+``airflow.DAG`` `constructor <https://airflow.apache.org/tutorial.html#example-pipeline-definition>`_.
+
+Finally, we define the DAG and its constituent tasks using
+:py:func:`make_airflow_dag <dagster_airflow.make_airflow_dag>`. If you run this code interactively,
+you'll see that ``dag`` and ``tasks`` are ordinary Airflow objects, just as you'd expect to see
+when defining an Airflow pipeline manually:
+
+.. code-block:: python
+
+    >>> dag
+    <DAG: hello_cereal_pipeline>
+    >>> tasks
+    [<Task(DagsterPythonOperator): hello_cereal>]
+
+Within this Airflow DAG, instances of :py:class:`~dagster_airflow.DagsterPythonOperator` represent
+individual execution steps in the Dagster pipeline.
 
 You can now edit this file, supplying the appropriate environment configuration and Airflow
 ``DEFAULT_ARGS`` for your particular Airflow instance. When Airflow sweeps this directory looking for
@@ -86,6 +123,26 @@ The Airflow scaffold utility also supports using presets when generating an Airf
         --module-name dagster_examples.toys.error_monster \
         --pipeline-name error_monster \
         --preset passing
+
+Running a pipeline on Airflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ensure that the Airflow webserver, scheduler (and any workers appropriate to the executor you have
+configured) are running. The ``dagster-airflow`` CLI tool will automatically put the generated DAG
+definition in ``$AIRLFLOW_HOME/dags``, but if you have a different setup, you should make sure that
+this file is wherever the Airflow webserver looks for DAG definitions.
+
+When you fire up the Airflow UI, you should see the new DAG:
+
+.. thumbnail:: intro_airflow_one.png
+
+Kick off a run manually, and you'll be able to use the ordinary views of the pipeline's progress:
+
+.. thumbnail:: intro_airflow_dag_view.png
+
+And logs will be available in the Airflow log viewer:
+
+.. thumbnail:: intro_airflow_logs_view.png
 
 Running Containerized
 ~~~~~~~~~~~~~~~~~~~~~
