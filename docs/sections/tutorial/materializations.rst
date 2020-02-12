@@ -57,17 +57,17 @@ Suppose we would like to be able to configure outputs of our toy custom type, th
 of third party tools, while pickle is a binary format.)
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.py
-   :lines: 29-64
+   :lines: 28-61
    :linenos:
-   :lineno-start: 29
+   :lineno-start: 28
    :caption: output_materialization.py
 
 We set the output materialization config on the type:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.py
-   :lines: 67-74
+   :lines: 64-71
    :linenos:
-   :lineno-start: 67
+   :lineno-start: 64
    :emphasize-lines: 5
    :caption: output_materialization.py
 

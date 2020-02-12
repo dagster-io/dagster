@@ -192,9 +192,9 @@ are doing what you expect them to. Dagster includes a utility function,
 type against any value.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/custom_types_test.py
-   :lines: 99-110
+   :lines: 100-112
    :linenos:
-   :lineno-start: 99
+   :lineno-start: 100
    :caption: custom_types_test.py
 
 Well tested library types can be reused across solids and pipelines to provide standardized type

@@ -14,7 +14,7 @@ them separately, based on config.
    :lineno-start: 31
    :caption: multiple_outputs.py
    :lines: 31-55
-   :emphasize-lines: 6-13, 20, 25
+   :emphasize-lines: 6-11, 20, 25
 
 Solids that yield multiple outputs must declare, and name, their outputs (passing ``output_defs``
 to the :py:func:`@solid <dagster.solid>` decorator). Output names must be unique and each
@@ -25,9 +25,9 @@ We'll define two downstream solids and hook them up to the multiple outputs from
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
-   :lineno-start: 58
+   :lineno-start: 53
    :caption: multiple_outputs.py
-   :lines: 58-82
+   :lines: 53-77
    :emphasize-lines: 23-25
 
 As usual, we can visualize this in Dagit:
@@ -68,8 +68,8 @@ of the same library solid:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
    :linenos:
-   :lineno-start: 59
-   :lines: 59-76
+   :lineno-start: 54
+   :lines: 54-71
    :emphasize-lines: 15-16
    :caption: reusable_solids.py
 
