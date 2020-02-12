@@ -9,3 +9,4 @@ Guides
   testing/expectations
   logging/logging
   data_science/data_science
+  dagster_pandas/dagster_pandas
