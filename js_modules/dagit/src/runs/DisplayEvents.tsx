@@ -2,7 +2,6 @@ import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors, Tag, Intent, Divider } from "@blueprintjs/core";
 import { DisplayEvent } from "./DisplayEvent";
-import { DisclosureTriangle } from "./ExecutionPlanBox";
 import {
   IExpectationResult,
   IExpectationResultStatus,
@@ -126,4 +125,15 @@ const ExpectationsTag = styled(Tag)`
   padding-left: 4px;
   padding-top: 0;
   padding-bottom: 0;
+`;
+
+const DisclosureTriangle = styled.div<{ expanded: boolean }>`
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid rgba(0, 0, 0, 0.5);
+  transition: transform 150ms linear;
+  transform: ${({ expanded }) =>
+    expanded ? "rotate(0deg)" : "rotate(-90deg)"};
 `;

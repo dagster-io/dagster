@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Dialog, Spinner, Intent } from "@blueprintjs/core";
+import { Dialog, Spinner, Intent, Button } from "@blueprintjs/core";
 import { RunContext } from "../runs/RunContext";
 import { IStepState } from "../RunMetadataProvider";
 import { DirectGraphQLSubscription } from "../DirectGraphQLSubscription";
@@ -44,7 +44,9 @@ export const ComputeLogLink = ({
 
   return (
     <>
-      <LogLink onClick={open}>{children}</LogLink>
+      <Button icon={"console"} small onClick={open}>
+        {children}
+      </Button>
       <Dialog
         onClose={close}
         style={{
@@ -266,9 +268,6 @@ const COMPUTE_LOGS_SUBSCRIPTION = gql`
   ${ComputeLogsProvider.fragments.subscription}
 `;
 
-const LogLink = styled.a`
-  margin-left: 10px;
-`;
 const LoadingContainer = styled.div`
   height: 100%;
   display: flex;

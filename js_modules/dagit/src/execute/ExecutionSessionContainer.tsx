@@ -40,7 +40,6 @@ import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
-import { getFeatureFlags, FeatureFlag } from "../Util";
 import {
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags
@@ -250,16 +249,12 @@ export default class ExecutionSessionContainer extends React.Component<
     const modeError = this.getModeError();
     const pipeline = this.getPipeline();
 
-    const gaantPreview = getFeatureFlags().includes(
-      FeatureFlag.GaantExecutionPlan
-    );
-
     const tags = currentSession.tags || [];
     return (
       <SplitPanelContainer
-        axis={gaantPreview ? "vertical" : "horizontal"}
+        axis={"vertical"}
         identifier={"execution"}
-        firstMinSize={gaantPreview ? 100 : 500}
+        firstMinSize={100}
         firstInitialPercent={75}
         first={
           <>
@@ -425,16 +420,12 @@ interface ExecutionSessionContainerErrorProps {
 }
 
 export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSessionContainerErrorProps> = props => {
-  const gaantPreview = getFeatureFlags().includes(
-    FeatureFlag.GaantExecutionPlan
-  );
-
   return (
     <SplitPanelContainer
-      axis={gaantPreview ? "vertical" : "horizontal"}
+      axis={"vertical"}
       identifier={"execution"}
       firstInitialPercent={75}
-      firstMinSize={gaantPreview ? 100 : 500}
+      firstMinSize={100}
       first={
         <>
           <SessionSettingsBar>

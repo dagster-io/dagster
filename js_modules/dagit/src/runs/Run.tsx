@@ -6,12 +6,16 @@ import { Colors } from "@blueprintjs/core";
 import { MutationFunction, Mutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
-import { ILogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
+import {
+  ILogFilter,
+  LogsProvider,
+  GetDefaultLogFilter,
+  structuredFieldsFromLogFilter
+} from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
 import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
 import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
-import { ExecutionPlan } from "../plan/ExecutionPlan";
-import { RunMetadataProvider } from "../RunMetadataProvider";
+import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import {
   handleExecutionResult,
@@ -31,7 +35,6 @@ import {
   RunPipelineRunEventFragment
 } from "./types/RunPipelineRunEventFragment";
 import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
-import { getFeatureFlags, FeatureFlag } from "../Util";
 import { RunActionButtons } from "./RunActionButtons";
 
 interface IRunProps {
@@ -67,7 +70,6 @@ export class Run extends React.Component<IRunProps, IRunState> {
           }
         }
         executionPlan {
-          ...ExecutionPlanFragment
           steps {
             key
             inputs {
@@ -83,12 +85,13 @@ export class Run extends React.Component<IRunProps, IRunState> {
             }
           }
           artifactsPersisted
+          ...GaantChartExecutionPlanFragment
         }
         stepKeysToExecute
       }
 
-      ${ExecutionPlan.fragments.ExecutionPlanFragment}
       ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
+      ${GaantChart.fragments.GaantChartExecutionPlanFragment}
     `,
     RunPipelineRunEventFragment: gql`
       fragment RunPipelineRunEventFragment on PipelineRunEvent {
@@ -201,11 +204,12 @@ export class Run extends React.Component<IRunProps, IRunState> {
               runId={run ? run.runId : ""}
               filter={logsFilter}
             >
-              {({ filteredNodes, allNodes }) => (
+              {({ filteredNodes, allNodes, loaded }) => (
                 <RunWithData
                   run={run}
                   filteredNodes={filteredNodes}
                   allNodes={allNodes}
+                  logsLoading={!loaded}
                   logsFilter={logsFilter}
                   onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
                   onShowStateDetails={this.onShowStateDetails}
@@ -227,6 +231,7 @@ interface RunWithDataProps {
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   logsFilter: ILogFilter;
+  logsLoading: boolean;
   onSetLogsFilter: (v: ILogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
@@ -240,49 +245,29 @@ const RunWithData = ({
   allNodes,
   filteredNodes,
   logsFilter,
+  logsLoading,
   onReexecute,
-  onSetLogsFilter,
-  onShowStateDetails
+  onSetLogsFilter
 }: RunWithDataProps) => {
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
-  const gaantPreview = getFeatureFlags().includes(
-    FeatureFlag.GaantExecutionPlan
-  );
+  const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
   const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
     __typename: "ExecutionPlan",
     steps: [],
     artifactsPersisted: false
   };
 
-  const logs = (
-    <LogsContainer>
-      <LogsToolbar
-        showSpinner={false}
-        filter={logsFilter}
-        onSetFilter={onSetLogsFilter}
-      >
-        {!gaantPreview && (
-          <RunActionButtons run={run} onReexecute={onReexecute} />
-        )}
-      </LogsToolbar>
-      <LogsScrollingTable
-        nodes={filteredNodes}
-        filterKey={JSON.stringify(logsFilter)}
-      />
-    </LogsContainer>
-  );
-
-  return gaantPreview ? (
-    <SplitPanelContainer
-      ref={splitPanelContainer}
-      axis={"vertical"}
-      identifier="run-gaant"
-      firstInitialPercent={35}
-      firstMinSize={40}
-      first={
-        <RunMetadataProvider logs={allNodes}>
-          {metadata => (
+  return (
+    <RunMetadataProvider logs={allNodes}>
+      {metadata => (
+        <SplitPanelContainer
+          ref={splitPanelContainer}
+          axis={"vertical"}
+          identifier="run-gaant"
+          firstInitialPercent={35}
+          firstMinSize={40}
+          first={
             <GaantChart
               options={{
                 mode: GaantChartMode.WATERFALL_TIMED
@@ -294,48 +279,50 @@ const RunWithData = ({
                 />
               }
               toolbarActions={
-                <RunActionButtons run={run} onReexecute={onReexecute} />
+                <RunActionButtons
+                  run={run}
+                  artifactsPersisted={executionPlan.artifactsPersisted}
+                  onReexecute={onReexecute}
+                  selectedStep={selectedStep}
+                  selectedStepState={
+                    (selectedStep && metadata.steps[selectedStep]?.state) ||
+                    IStepState.WAITING
+                  }
+                />
               }
               plan={executionPlan}
               metadata={metadata}
+              selectedStep={selectedStep}
               onApplyStepFilter={stepKey =>
                 onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
               }
             />
-          )}
-        </RunMetadataProvider>
-      }
-      second={logs}
-    />
-  ) : (
-    <SplitPanelContainer
-      axis={"horizontal"}
-      identifier="run"
-      firstInitialPercent={75}
-      firstMinSize={680}
-      first={logs}
-      second={
-        <RunMetadataProvider logs={allNodes}>
-          {metadata => (
-            <ExecutionPlan
-              run={run}
-              runMetadata={metadata}
-              executionPlan={executionPlan}
-              stepKeysToExecute={run?.stepKeysToExecute}
-              onShowStateDetails={stepKey => {
-                onShowStateDetails(stepKey, allNodes);
-              }}
-              onReexecuteStep={stepKey => onReexecute(stepKey)}
-              onApplyStepFilter={stepKey =>
-                onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
-              }
-            />
-          )}
-        </RunMetadataProvider>
-      }
-    />
+          }
+          second={
+            <LogsContainer>
+              <LogsToolbar
+                showSpinner={false}
+                onSetFilter={onSetLogsFilter}
+                filter={logsFilter}
+                filterStep={selectedStep}
+                filterStepState={
+                  (selectedStep && metadata.steps[selectedStep]?.state) ||
+                  IStepState.WAITING
+                }
+              />
+              <LogsScrollingTable
+                nodes={filteredNodes}
+                loading={logsLoading}
+                filterKey={JSON.stringify(logsFilter)}
+              />
+            </LogsContainer>
+          }
+        />
+      )}
+    </RunMetadataProvider>
   );
 };
+
 const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;

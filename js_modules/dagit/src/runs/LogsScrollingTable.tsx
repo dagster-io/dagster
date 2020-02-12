@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import gql from "graphql-tag";
-import { NonIdealState } from "@blueprintjs/core";
+import { NonIdealState, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
   CellMeasurer,
@@ -16,6 +16,7 @@ import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
 
 interface ILogsScrollingTableProps {
   nodes?: (LogsScrollingTableMessageFragment & { clientsideKey: string })[];
+  loading: boolean;
 
   // We use this string to know whether the changes to `nodes` require us to
   // re-layout the entire table. Appending new rows can be done very fast, but
@@ -193,6 +194,24 @@ class LogsScrollingTableSized extends React.Component<
   };
 
   render() {
+    if (this.props.loading) {
+      return (
+        <div
+          style={{
+            zIndex: 100,
+            position: "absolute",
+            width: "100%",
+            height: "calc(100% - 50px)"
+          }}
+        >
+          <NonIdealState
+            icon={<Spinner size={24} />}
+            title="Fetching logs..."
+          />
+        </div>
+      );
+    }
+
     return (
       <div onScroll={this.onScroll}>
         <List

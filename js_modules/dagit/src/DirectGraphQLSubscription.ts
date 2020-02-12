@@ -89,5 +89,5 @@ export class DirectGraphQLSubscription<T> {
     this.onFlushMessages(this.messageQueue, !this.messagesReceived);
     this.messagesReceived = true;
     this.messageQueue = [];
-  });
+  }, 50);
 }

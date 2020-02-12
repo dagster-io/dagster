@@ -231,7 +231,7 @@ exports[`renders execution 1`] = `
       />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 iGxzwI"
       id="split-panel-container"
     >
       <div
@@ -239,8 +239,8 @@ exports[`renders execution 1`] = `
         style={
           Object {
             "flexShrink": 0,
-            "minWidth": 500,
-            "width": "75vw",
+            "height": "75vh",
+            "minHeight": 100,
           }
         }
       >
@@ -420,10 +420,10 @@ exports[`renders execution 1`] = `
         </div>
       </div>
       <div
-        className="SplitPanelContainer__horizontal-wb7tmo-0 kgSZgp"
+        className="SplitPanelContainer__vertical-wb7tmo-1 bpTRMQ"
       >
         <div
-          className="SplitPanelContainer__horizontal-wb7tmo-2 dzDCxZ"
+          className="SplitPanelContainer__vertical-wb7tmo-3 haWKQt"
           onMouseDown={[Function]}
         />
       </div>
@@ -833,7 +833,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
       >
         <span
           className="bp3-popover-wrapper"
@@ -4766,7 +4766,7 @@ load_q2_sfo_weather:data_frame
                 className="bp3-collapse-body"
                 style={
                   Object {
-                    "transform": "translateY(-undefinedpxpx)",
+                    "transform": "translateY(-undefinedpx)",
                     "transition": undefined,
                   }
                 }
@@ -5130,7 +5130,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
       >
         <span
           className="bp3-popover-wrapper"
@@ -9063,7 +9063,7 @@ load_q2_sfo_weather:data_frame
                 className="bp3-collapse-body"
                 style={
                   Object {
-                    "transform": "translateY(-undefinedpxpx)",
+                    "transform": "translateY(-undefinedpx)",
                     "transition": undefined,
                   }
                 }
@@ -10891,7 +10891,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
       >
         <span
           className="bp3-popover-wrapper"
@@ -14824,7 +14824,7 @@ load_q2_sfo_weather:data_frame
                 className="bp3-collapse-body"
                 style={
                   Object {
-                    "transform": "translateY(-undefinedpxpx)",
+                    "transform": "translateY(-undefinedpx)",
                     "transition": undefined,
                   }
                 }
@@ -15188,7 +15188,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
       >
         <span
           className="bp3-popover-wrapper"
@@ -19121,7 +19121,7 @@ load_q2_sfo_weather:data_frame
                 className="bp3-collapse-body"
                 style={
                   Object {
-                    "transform": "translateY(-undefinedpxpx)",
+                    "transform": "translateY(-undefinedpx)",
                     "transition": undefined,
                   }
                 }
@@ -19485,7 +19485,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 iLBsdC"
+        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
       >
         <span
           className="bp3-popover-wrapper"
@@ -23418,7 +23418,7 @@ load_q2_sfo_weather:data_frame
                 className="bp3-collapse-body"
                 style={
                   Object {
-                    "transform": "translateY(-undefinedpxpx)",
+                    "transform": "translateY(-undefinedpx)",
                     "transition": undefined,
                   }
                 }

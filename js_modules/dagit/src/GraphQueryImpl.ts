@@ -38,14 +38,22 @@ class GraphTraverser<T extends GraphQueryItem> {
     return this.itemNameMap[name];
   }
 
-  traverse(item: T, step: TraverseStepFunction<T>, depth: number) {
-    const results: T[] = [item];
+  traverse(
+    item: T,
+    step: TraverseStepFunction<T>,
+    depth: number,
+    results: { [key: string]: T } = {}
+  ) {
+    results[item.name] = item;
+
     if (depth > 0) {
       step(item, next => {
-        results.push(...this.traverse(next, step, depth - 1));
+        if (!(next.name in results)) {
+          this.traverse(next, step, depth - 1, results);
+        }
       });
     }
-    return results;
+    return Object.values(results);
   }
 
   fetchUpstream(item: T, depth: number) {
