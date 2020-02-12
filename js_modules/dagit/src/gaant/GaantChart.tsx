@@ -255,10 +255,12 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
   // To make the slider feel more linear, we convert the input from log10 to logE.
-  const minScale =
-    viewport.width && metadata && metadata.minStepStart
-      ? (viewport.width - 150) / (nowMs - metadata.minStepStart)
-      : MIN_SCALE;
+  let minScale = MIN_SCALE;
+  if (viewport.width && metadata && metadata.minStepStart) {
+    const zoomToFitWidthPx = Math.max(1, viewport.width - 150);
+    const elapsedMs = Math.max(1, nowMs - metadata.minStepStart);
+    minScale = zoomToFitWidthPx / elapsedMs;
+  }
 
   const scale = Math.exp(
     Math.log(minScale) +
