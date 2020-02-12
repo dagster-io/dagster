@@ -30,7 +30,7 @@ from dagster import (
 from dagster.utils import mkdir_p, safe_isfile
 
 
-def file_exists_at_path_type_check(value):
+def file_exists_at_path_type_check(_, value):
     if not isinstance(value, six.string_types):
         return TypeCheck(
             success=False,

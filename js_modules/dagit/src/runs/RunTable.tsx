@@ -40,7 +40,7 @@ import {
   RunTableRunFragment_tags
 } from "./types/RunTableRunFragment";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { useMutation } from "react-apollo";
+import { useMutation, useLazyQuery } from "react-apollo";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 import PythonErrorInfo from "../PythonErrorInfo";
 
@@ -52,6 +52,16 @@ const TOOLTIP_MESSAGE_PIPELINE_MISSING =
   `This pipeline is not present in the currently loaded repository, ` +
   `so dagit can't browse the pipeline solids, but you can still view the logs.`;
 
+const PipelineEnvironmentYamlQuery = gql`
+  query PipelineEnvironmentYamlQuery($runId: ID!) {
+    pipelineRunOrError(runId: $runId) {
+      ... on PipelineRun {
+        environmentConfigYaml
+      }
+    }
+  }
+`;
+
 export class RunTable extends React.Component<RunTableProps> {
   static fragments = {
     RunTableRunFragment: gql`
@@ -61,7 +71,6 @@ export class RunTable extends React.Component<RunTableProps> {
         stepKeysToExecute
         canCancel
         mode
-        environmentConfigYaml
         pipeline {
           __typename
 
@@ -324,22 +333,30 @@ const RunActionsMenu: React.FunctionComponent<{
   const [destroy] = useMutation(DELETE_MUTATION, {
     refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
   });
+  const [loadEnv, { called, loading, data }] = useLazyQuery(
+    PipelineEnvironmentYamlQuery,
+    {
+      variables: { runId: run.runId }
+    }
+  );
 
+  const envYaml = data?.pipelineRunOrError?.environmentConfigYaml;
+  const infoReady = run.pipeline.__typename === "Pipeline" && envYaml != null;
   return (
     <Popover
       content={
         <Menu>
           <MenuItem
-            text="View Configuration..."
+            text={
+              loading ? "Loading Configuration..." : "View Configuration..."
+            }
+            disabled={envYaml == null}
             icon="share"
             onClick={() =>
               showCustomAlert({
                 title: "Config",
                 body: (
-                  <HighlightedCodeBlock
-                    value={run.environmentConfigYaml}
-                    languages={["yaml"]}
-                  />
+                  <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
                 )
               })
             }
@@ -348,13 +365,13 @@ const RunActionsMenu: React.FunctionComponent<{
 
           <MenuItem
             text="Open in Execute Tab..."
-            disabled={run.pipeline.__typename !== "Pipeline"}
+            disabled={!infoReady}
             icon="edit"
             target="_blank"
             href={`/playground/setup?${qs.stringify({
               mode: run.mode,
               pipeline: run.pipeline.name,
-              config: run.environmentConfigYaml,
+              config: envYaml,
               solidSubset:
                 run.pipeline.__typename === "Pipeline"
                   ? run.pipeline.solids.map(s => s.name)
@@ -363,16 +380,14 @@ const RunActionsMenu: React.FunctionComponent<{
           />
           <MenuItem
             text="Re-execute"
-            disabled={run.pipeline.__typename !== "Pipeline"}
+            disabled={!infoReady}
             icon="repeat"
             onClick={async () => {
               const result = await reexecute({
                 variables: {
                   executionParams: {
                     mode: run.mode,
-                    environmentConfigData: yaml.parse(
-                      run.environmentConfigYaml
-                    ),
+                    environmentConfigData: yaml.parse(envYaml),
                     selector: {
                       name: run.pipeline.name,
                       solidSubset:
@@ -413,6 +428,11 @@ const RunActionsMenu: React.FunctionComponent<{
         </Menu>
       }
       position={"bottom"}
+      onOpening={() => {
+        if (!called) {
+          loadEnv();
+        }
+      }}
     >
       <Button minimal={true} icon="more" />
     </Popover>

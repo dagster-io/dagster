@@ -3,7 +3,10 @@ const parse = require("rehype-parse");
 const sanitize = require("rehype-sanitize");
 const has = require("hast-util-has-property");
 const stringify = require("rehype-stringify");
+const rehype2remark = require("rehype-remark");
+const markdown = require("remark-stringify");
 const map = require("unist-util-map");
+const strip = require("strip-markdown");
 const parse5 = require("parse5");
 const minify = require("rehype-preset-minify");
 const { produce } = require("immer");
@@ -23,7 +26,7 @@ const rewriteLinks = (node, version) => {
 
 const addExternalAttributes = node => {
   const { className } = node.properties;
-  if (className.includes("external")) {
+  if (className && className.includes("external")) {
     node.properties.target = "_blank";
     node.properties.rel = "noopener noreferrer";
   }
@@ -84,7 +87,19 @@ const parseHtml = (body, version) => {
     .replace(/\n<\/body><\/html>$/, "");
 };
 
+const parseMarkdown = (body, version) => {
+  const html = parseHtml(body, version);
+  return unified()
+    .use(parse)
+    .use(rehype2remark)
+    .use(markdown)
+    .use(strip)
+    .processSync(html)
+    .toString();
+};
+
 exports.parseHtml = parseHtml;
+exports.parseMarkdown = parseMarkdown;
 
 exports.toParseFive = body => {
   const html = parseHtml(body, getCurrentVersion());

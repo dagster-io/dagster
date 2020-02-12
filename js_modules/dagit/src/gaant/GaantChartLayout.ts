@@ -1,4 +1,4 @@
-import { IRunMetadataDict } from "../RunMetadataProvider";
+import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
 import { GraphQueryItem } from "../GraphQueryImpl";
 import { Colors } from "@blueprintjs/core";
 import {
@@ -9,18 +9,17 @@ import {
   GaantChartMode,
   GaantChartLayout,
   BOX_WIDTH,
-  BOX_MIN_WIDTH,
+  BOX_DOT_WIDTH_CUTOFF,
   IGaantNode
 } from "./Constants";
 
-interface BuildLayoutParams {
+export interface BuildLayoutParams {
   nodes: IGaantNode[];
-  metadata: IRunMetadataDict;
-  options: GaantChartLayoutOptions;
+  mode: GaantChartMode;
 }
 
 export const buildLayout = (params: BuildLayoutParams) => {
-  const { nodes, metadata, options } = params;
+  const { nodes, mode } = params;
 
   // Step 1: Place the nodes that have no dependencies into the layout.
 
@@ -29,12 +28,13 @@ export const buildLayout = (params: BuildLayoutParams) => {
       i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name))
     );
 
-  let boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
+  const boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
     node: node,
     children: [],
     x: -1,
     y: -1,
-    width: boxWidthFor(node, params)
+    root: true,
+    width: BOX_WIDTH
   }));
 
   // Step 2: Recursively iterate through the graph and insert child nodes
@@ -54,28 +54,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
   };
   roots.forEach(box => deepen(box, LEFT_INSET));
 
-  // Step 3.5: Assign X values based on the actual computation start times if we have them
-
-  if (
-    options.mode === GaantChartMode.WATERFALL_TIMED &&
-    metadata.minStepStart
-  ) {
-    const deepenOrUseMetadata = (box: GaantChartBox, x: number) => {
-      const start = metadata.steps[box.node.name]?.start;
-      if (!start) {
-        box.x = Math.max(x, box.x);
-      } else {
-        box.x = LEFT_INSET + (start - metadata.minStepStart!) * options.scale;
-      }
-      box.children.forEach(child =>
-        deepenOrUseMetadata(child, box.x + box.width + BOX_SPACING_X)
-      );
-    };
-    roots.forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
-  }
-
   // Step 4: Assign Y values (row numbers not pixel values)
-  if (options.mode === GaantChartMode.FLAT) {
+  if (mode === GaantChartMode.FLAT) {
     boxes.forEach((box, idx) => {
       box.y = idx;
       box.width = 400;
@@ -154,14 +134,6 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
-  // Apply display options / filtering
-  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
-    boxes = boxes.filter(b => {
-      const state = metadata.steps[b.node.name]?.state || "waiting";
-      return state !== "waiting";
-    });
-  }
-
   return { boxes } as GaantChartLayout;
 };
 
@@ -204,7 +176,8 @@ const addChildren = (
         depBox = {
           children: [],
           node: depNode,
-          width: boxWidthFor(depNode, params),
+          width: BOX_WIDTH,
+          root: false,
           x: 0,
           y: -1
         };
@@ -222,16 +195,17 @@ const addChildren = (
 
 const boxWidthFor = (
   step: GraphQueryItem,
-  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
+  options: GaantChartLayoutOptions,
+  metadata: IRunMetadataDict,
+  scale: number,
+  nowMs: number
 ) => {
-  const stepInfo = context.metadata.steps[step.name] || {};
-  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
+  const stepInfo = metadata.steps[step.name] || {};
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     if (stepInfo.start) {
       return Math.max(
-        BOX_MIN_WIDTH,
-        ((stepInfo.finish || context.metadata.mostRecentLogAt) -
-          stepInfo.start) *
-          context.options.scale
+        BOX_DOT_WIDTH_CUTOFF,
+        ((stepInfo.finish || nowMs) - stepInfo.start) * scale
       );
     }
   }
@@ -239,20 +213,26 @@ const boxWidthFor = (
 };
 
 const ColorsForStates = {
-  running: Colors.GRAY3,
-  succeeded: Colors.GREEN2,
-  skipped: Colors.GOLD3,
-  failed: Colors.RED3
+  [IStepState.RUNNING]: Colors.GRAY3,
+  [IStepState.SUCCEEDED]: Colors.GREEN2,
+  [IStepState.SKIPPED]: Colors.GOLD3,
+  [IStepState.FAILED]: Colors.RED3
 };
 
 export const boxStyleFor = (
-  step: GraphQueryItem,
-  context: { metadata: IRunMetadataDict; options: GaantChartLayoutOptions }
+  stepName: string,
+  context: {
+    metadata: IRunMetadataDict;
+    options: { mode: GaantChartMode };
+  }
 ) => {
   let color = "#2491eb";
 
-  if (context.options.mode === GaantChartMode.WATERFALL_TIMED) {
-    const info = context.metadata.steps[step.name];
+  if (
+    context.metadata.startedPipelineAt ||
+    context.options.mode === GaantChartMode.WATERFALL_TIMED
+  ) {
+    const info = context.metadata.steps[stepName];
     if (!info || info.state === "waiting") {
       return {
         color: Colors.DARK_GRAY4,
@@ -269,6 +249,78 @@ export const boxStyleFor = (
   };
 };
 
+// Does a shallow clone of the boxes so attributes (`width`, `x`, etc) can be mutated.
+// This requires special logic because (for easy graph travesal), boxes.children references
+// other elements of the boxes array. A basic deepClone would replicate these into
+// copies rather than references.
+const cloneLayout = ({ boxes }: GaantChartLayout): GaantChartLayout => {
+  const map = new WeakMap();
+  const nextBoxes: GaantChartBox[] = [];
+  for (const box of boxes) {
+    const next = { ...box };
+    nextBoxes.push(next);
+    map.set(box, next);
+  }
+  for (let ii = 0; ii < boxes.length; ii++) {
+    nextBoxes[ii].children = boxes[ii].children.map(c => map.get(c));
+  }
+  return { boxes: nextBoxes };
+};
+
+export const adjustLayoutWithRunMetadata = (
+  layout: GaantChartLayout,
+  options: GaantChartLayoutOptions,
+  metadata: IRunMetadataDict,
+  scale: number,
+  nowMs: number
+): GaantChartLayout => {
+  // Clone the layout into a new set of JS objects so that React components can do shallow
+  // comparison between the old set and the new set and code below can traverse + mutate
+  // in place.
+  let { boxes } = cloneLayout(layout);
+
+  // Move and size boxes based on the run metadata. Note that we don't totally invalidate
+  // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
+  // step ordering, etc. should obey the constraints we already planned for). We just push
+  // boxes around on their existing rows.
+  if (
+    options.mode === GaantChartMode.WATERFALL_TIMED &&
+    metadata.minStepStart
+  ) {
+    // Apply all box widths
+    for (const box of boxes) {
+      box.width = boxWidthFor(box.node, options, metadata, scale, nowMs);
+    }
+
+    // Traverse the graph and push boxes right as we go to account for new widths
+    const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
+      const start =
+        metadata.steps[box.node.name] && metadata.steps[box.node.name].start;
+      box.x = start
+        ? LEFT_INSET + (start - metadata.minStepStart!) * scale
+        : Math.max(parentX, box.x);
+
+      const minChildX = box.x + box.width + BOX_SPACING_X;
+      for (const child of box.children) {
+        deepenOrUseMetadata(child, minChildX);
+      }
+    };
+    boxes
+      .filter(box => box.root)
+      .forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+  }
+
+  // Apply display options / filtering
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
+    boxes = boxes.filter(b => {
+      const state = metadata.steps[b.node.name]?.state || "waiting";
+      return state !== "waiting";
+    });
+  }
+
+  return { boxes };
+};
+
 /**
  * Returns a set of query presets that highlight interesting slices of the visualization.
  */
@@ -276,14 +328,20 @@ export const interestingQueriesFor = (
   metadata: IRunMetadataDict,
   layout: GaantChartLayout
 ) => {
-  if (layout.boxes.length === 0) return;
+  if (layout.boxes.length === 0) {
+    return;
+  }
+  const results: { name: string; value: string }[] = [];
 
   const errorsQuery = Object.keys(metadata.steps)
-    .filter(k => metadata.steps[k].state === "failed")
+    .filter(k => metadata.steps[k].state === IStepState.FAILED)
     .map(k => `+${k}`)
     .join(", ");
+  if (errorsQuery) {
+    results.push({ name: "Errors", value: errorsQuery });
+  }
 
-  const slowestStepsQuery = Object.keys(metadata.steps)
+  const slowStepsQuery = Object.keys(metadata.steps)
     .filter(k => metadata.steps[k]?.finish && metadata.steps[k]?.start)
     .sort(
       (a, b) =>
@@ -294,15 +352,20 @@ export const interestingQueriesFor = (
     .slice(0, 5)
     .map(k => `${k}`)
     .join(", ");
+  if (slowStepsQuery) {
+    results.push({ name: "Slowest Individual Steps", value: slowStepsQuery });
+  }
 
-  const rightmostBox = [...layout.boxes].sort(
-    (a, b) => b.x + b.width - (a.x + a.width)
-  )[0];
-  const slowestPathQuery = `*${rightmostBox.node.name}`;
+  const rightmostCompletedBox = [...layout.boxes]
+    .filter(b => metadata.steps[b.node.name]?.finish)
+    .sort((a, b) => b.x + b.width - (a.x + a.width))[0];
 
-  return [
-    { name: "Errors", value: errorsQuery },
-    { name: "Slowest Individual Steps", value: slowestStepsQuery },
-    { name: "Slowest Path", value: slowestPathQuery }
-  ];
+  if (rightmostCompletedBox) {
+    results.push({
+      name: "Slowest Path",
+      value: `*${rightmostCompletedBox.node.name}`
+    });
+  }
+
+  return results;
 };

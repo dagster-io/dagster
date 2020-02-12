@@ -417,3 +417,17 @@ class TestRunStorage:
         assert len(storage.get_runs()) == 1
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
+
+    def test_delete_with_tags(self, storage):
+        assert storage
+        run_id = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=run_id, pipeline_name='some_pipeline', tags={run_id: run_id},
+            )
+        )
+        assert len(storage.get_runs()) == 1
+        assert run_id in [key for key, value in storage.get_run_tags()]
+        storage.delete_run(run_id)
+        assert list(storage.get_runs()) == []
+        assert run_id not in [key for key, value in storage.get_run_tags()]

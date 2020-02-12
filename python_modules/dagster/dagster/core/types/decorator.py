@@ -11,14 +11,13 @@ def usable_as_dagster_type(
     serialization_strategy=None,
     auto_plugins=None,
 ):
-    '''Decorate a Python class to turn it into a Dagster type.
+    '''Decorate a Python class to make it usable as a Dagster Type.
     
     This is intended to make it straightforward to annotate existing business logic classes to
-    make them compatible with the Dagster type system and to add any additional facilities, such
-    as input schemas, that they may need to be useful in your pipelines.
+    make them dagster types whose typecheck is an isinstance check against that python class. 
 
     Args:
-        python_type (cls): The python type to wrap as a Dagster type.
+        python_type (cls): The python type to make usable as python type.
         name (Optional[str]): Name of the new Dagster type. If ``None``, the name (``__name__``) of
             the ``python_type`` will be used.
         description (Optional[str]): A user-readable description of the type.
@@ -26,7 +25,7 @@ def usable_as_dagster_type(
             inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
-            :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
+            :py:func:`@input_hydration_config <dagster.input_hydration_config>` decorator to construct
             these arguments.
         output_materialization_config (Optiona[OutputMaterializationConfig]): An instance of a class
             that inherits from :py:class:`OutputMaterializationConfig` and can persist values of

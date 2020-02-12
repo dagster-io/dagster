@@ -3,7 +3,7 @@ import os
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
-from dagster import (  # as_dagster_type,
+from dagster import (
     Bool,
     Field,
     Materialization,

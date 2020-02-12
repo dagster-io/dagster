@@ -1,49 +1,105 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
-import { LEFT_INSET, CSS_DURATION } from "./Constants";
+import { LEFT_INSET, CSS_DURATION, GaantViewport } from "./Constants";
+
+const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
+const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
+const msToSubsecondLabel = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
+
+// We want to gracefully transition the tick marks shown as you zoom, but it's
+// nontrivial to programatically pick good intervals. (500ms => 1s => 5s, etc.)
+// This lookup table defines the available tick mark intervals and the labeling
+// that should be used for each one("2:00" or "2m" or "2s" or "0.05s", etc.).
+//
+// We use the first configuration that places ticks at least 80 pixels apart
+// at the rendered scale.
+//
+const TICK_LABEL_WIDTH = 40;
+const TICK_CONFIG = [
+  {
+    tickIntervalMs: 0.5 * 1000,
+    tickLabels: msToSubsecondLabel
+  },
+  {
+    tickIntervalMs: 1 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 5 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 10 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 30 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 60 * 1000,
+    tickLabels: msToSecondLabel
+  },
+  {
+    tickIntervalMs: 2 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 5 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 10 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  },
+  {
+    tickIntervalMs: 20 * 60 * 1000,
+    tickLabels: msToMinuteLabel
+  }
+];
 
 interface GaantChartTimescaleProps {
   scale: number;
-  scrollLeft: number;
+  viewport: GaantViewport;
+  layoutSize: { width: number; height: number };
   nowMs: number;
   startMs: number;
   highlightedMs: number[];
 }
 
-const TICK_LABEL_WIDTH = 40;
-
 export const GaantChartTimescale = ({
   scale,
-  scrollLeft,
+  viewport,
   nowMs,
   startMs,
-  highlightedMs
+  highlightedMs,
+  layoutSize
 }: GaantChartTimescaleProps) => {
-  const viewportWidth = window.innerWidth;
-
-  const pxPerMs = scale;
-  const msPerTick = 1000 * (scale < 0.1 ? 5 : scale < 0.2 ? 1 : 0.5);
-  const pxPerTick = msPerTick * pxPerMs;
-  const transform = `translate(${LEFT_INSET - scrollLeft}px)`;
-
+  const transform = `translate(${LEFT_INSET - viewport.left}px)`;
   const ticks: React.ReactChild[] = [];
   const lines: React.ReactChild[] = [];
 
-  const labelPrecision = scale < 0.2 ? 0 : 1;
-  const labelForTime = (ms: number, precision: number = labelPrecision) =>
-    `${Number(ms / 1000).toFixed(precision)}s`;
+  const pxPerMs = scale;
+  const { tickIntervalMs, tickLabels } =
+    TICK_CONFIG.find(t => t.tickIntervalMs * pxPerMs > 80) ||
+    TICK_CONFIG[TICK_CONFIG.length - 1];
 
-  const firstTickX = Math.floor(scrollLeft / pxPerTick) * pxPerTick;
+  const pxPerTick = tickIntervalMs * pxPerMs;
+  const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
 
-  for (let x = firstTickX; x < firstTickX + viewportWidth; x += pxPerTick) {
-    if (x - scrollLeft < 10) continue;
-    const label = labelForTime(x / pxPerMs);
+  for (let x = firstTickX; x < firstTickX + viewport.width; x += pxPerTick) {
+    if (x - viewport.left < 10) {
+      continue;
+    }
+    const ms = x / pxPerMs;
+    const key = `${ms.toFixed(2)}`;
+    const label = tickLabels(ms);
     lines.push(
-      <div className="line" key={label} style={{ left: x, transform }} />
+      <div className="line" key={key} style={{ left: x, transform }} />
     );
     ticks.push(
-      <div className="tick" key={label} style={{ left: x - 20, transform }}>
+      <div className="tick" key={key} style={{ left: x - 20, transform }}>
         {label}
       </div>
     );
@@ -63,13 +119,13 @@ export const GaantChartTimescale = ({
               transform
             }}
           >
-            {labelForTime(highlightedMs[1] - highlightedMs[0], 2)}
+            {msToSubsecondLabel(highlightedMs[1] - highlightedMs[0])}
           </div>
         )}
         {highlightedMs.map((ms, idx) => {
           const timeX = (ms - startMs) * pxPerMs;
           const labelOffset =
-            idx === 0 && timeX > TICK_LABEL_WIDTH + scrollLeft
+            idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left
               ? -(TICK_LABEL_WIDTH - 1)
               : 0;
 
@@ -79,12 +135,14 @@ export const GaantChartTimescale = ({
               className="tick highlight"
               style={{ left: timeX + labelOffset, transform }}
             >
-              {labelForTime(ms - startMs, 2)}
+              {msToSubsecondLabel(ms - startMs)}
             </div>
           );
         })}
       </TimescaleTicksContainer>
-      <TimescaleLinesContainer>
+      <TimescaleLinesContainer
+        style={{ width: viewport.width, height: viewport.height }}
+      >
         {lines}
         {highlightedMs.map((ms, idx) => (
           <div
@@ -96,7 +154,14 @@ export const GaantChartTimescale = ({
         {nowMs > startMs && (
           <div
             className="fog-of-war"
-            style={{ left: (nowMs - startMs) * pxPerMs, transform }}
+            style={{
+              left: (nowMs - startMs) * pxPerMs,
+              width:
+                Math.max(layoutSize.width, viewport.width) -
+                (nowMs - startMs) * pxPerMs +
+                100,
+              transform
+            }}
           ></div>
         )}
       </TimescaleLinesContainer>
@@ -113,7 +178,7 @@ const TimescaleContainer = styled.div`
     width: ${TICK_LABEL_WIDTH}px;
     height: 20px;
     box-sizing: border-box;
-    transition: left ${CSS_DURATION} linear, width ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear, width ${CSS_DURATION}ms linear;
     text-align: center;
     font-size: 11px;
   }
@@ -137,7 +202,7 @@ const TimescaleContainer = styled.div`
   & .line {
     position: absolute;
     border-left: 1px solid #eee;
-    transition: left ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
   }
@@ -150,7 +215,7 @@ const TimescaleContainer = styled.div`
   & .fog-of-war {
     position: absolute;
     background: rgba(0, 0, 0, 0.08);
-    transition: left ${CSS_DURATION} linear;
+    transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;
     width: 100%;
@@ -171,10 +236,8 @@ const TimescaleTicksContainer = styled.div`
 
 const TimescaleLinesContainer = styled.div`
   z-index: 0;
-  bottom: 0;
-  top: 0;
+  top: 20px;
   left: 0;
-  right: 0;
   position: absolute;
   pointer-events: none;
   overflow: hidden;

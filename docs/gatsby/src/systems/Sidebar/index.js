@@ -55,7 +55,7 @@ export const renderElements = () => (renderedNodes, node, idx, _nodes) => {
   return renderedNodes;
 };
 
-export const Sidebar = forwardRef(({ location, onLinkClick }, ref) => {
+export const Sidebar = forwardRef(({ location, _onLinkClick }, ref) => {
   const data = useStaticQuery(graphql`
     query IndexPage {
       page: sphinxPage(current_page_name: { eq: "index" }) {
@@ -82,7 +82,7 @@ export const Sidebar = forwardRef(({ location, onLinkClick }, ref) => {
     <div ref={ref} sx={styles.wrapper}>
       <div sx={styles.content}>
         <Menu vertical sx={styles.menu}>
-          <span sx={styles.active(active, top)} />
+          {Boolean(top) && <span sx={styles.active(active, top)} />}
           <ReactParser
             tree={data.page.parsed}
             renderElements={renderElements}

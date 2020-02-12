@@ -28,7 +28,7 @@ const isSphinxHeading = (Component, props) => {
   return Component === "p" && props.className && props.className === "rubric";
 };
 
-const isCode = (Component, props) => {
+const isCode = (Component, _props) => {
   return Component && Component.tagName === "code";
 };
 

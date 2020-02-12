@@ -7,9 +7,7 @@ import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecuti
 import { RunPreviewConfigValidationFragment } from "./types/RunPreviewConfigValidationFragment";
 import PythonErrorInfo from "../PythonErrorInfo";
 import InfoModal from "../InfoModal";
-import { ExecutionPlan } from "../plan/ExecutionPlan";
 import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
-import { getFeatureFlags, FeatureFlag } from "../Util";
 
 interface IRunPreviewProps {
   plan?: RunPreviewExecutionPlanResultFragment;
@@ -77,9 +75,6 @@ export class RunPreview extends React.Component<
 
   render() {
     const { plan, validation, toolbarActions } = this.props;
-    const gaantPreview = getFeatureFlags().includes(
-      FeatureFlag.GaantExecutionPlan
-    );
 
     let pythonError = null;
     let errors: IErrorMessage[] = [];
@@ -108,21 +103,12 @@ export class RunPreview extends React.Component<
     }
 
     return plan?.__typename === "ExecutionPlan" ? (
-      gaantPreview ? (
-        <GaantChart
-          plan={plan}
-          options={{ mode: GaantChartMode.WATERFALL, hideTimedMode: true }}
-          toolbarActions={toolbarActions}
-        />
-      ) : (
-        <>
-          <OptionsContainer>
-            <div style={{ flex: 1 }} />
-            {toolbarActions}
-          </OptionsContainer>
-          <ExecutionPlan executionPlan={plan} />
-        </>
-      )
+      <GaantChart
+        plan={plan}
+        selectedStep={null}
+        options={{ mode: GaantChartMode.WATERFALL, hideTimedMode: true }}
+        toolbarActions={toolbarActions}
+      />
     ) : (
       <NonIdealWrap>
         <NonIdealState
@@ -186,12 +172,3 @@ const ErrorRow = styled.div`
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
 `;
-
-const OptionsContainer = styled.div`
-  height: 47px;
-  display: flex;
-  align-items: center;
-  padding: 5px 10px;
-  border-bottom: 1px solid #A7B6C2;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-}`;

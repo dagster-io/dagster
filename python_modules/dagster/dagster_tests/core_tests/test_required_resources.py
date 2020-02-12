@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     CompositeSolidDefinition,
+    DagsterType,
     DagsterUnknownResourceError,
     InputDefinition,
     Materialization,
@@ -563,3 +564,36 @@ def test_custom_type_with_resource_dependent_composite_materialization():
         define_composite_materialization_pipeline(resources_initted=resources_initted),
     ).success
     assert set(resources_initted.keys()) == set()
+
+
+def test_custom_type_with_resource_dependent_type_check():
+    def define_type_check_pipeline(should_require_resources):
+        @resource
+        def resource_a(_):
+            yield 'A'
+
+        def resource_based_type_check(context, value):
+            return context.resources.a == value
+
+        CustomType = DagsterType(
+            name='NeedsA',
+            type_check_fn=resource_based_type_check,
+            required_resource_keys={'a'} if should_require_resources else None,
+        )
+
+        @solid(output_defs=[OutputDefinition(CustomType, 'custom_type')])
+        def custom_type_solid(_):
+            return 'A'
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+        def type_check_pipeline():
+            custom_type_solid()
+
+        return type_check_pipeline
+
+    under_required_pipeline = define_type_check_pipeline(should_require_resources=False)
+    with pytest.raises(DagsterUnknownResourceError):
+        execute_pipeline(under_required_pipeline)
+
+    sufficiently_required_pipeline = define_type_check_pipeline(should_require_resources=True)
+    assert execute_pipeline(sufficiently_required_pipeline).success

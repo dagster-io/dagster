@@ -11,9 +11,13 @@ import {
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { ILogFilter, LogLevel } from "./LogsProvider";
+import { ComputeLogLink } from "./ComputeLogModal";
+import { IStepState } from "../RunMetadataProvider";
 
 interface ILogsToolbarProps {
   filter: ILogFilter;
+  filterStep: string | null;
+  filterStepState: IStepState;
   onSetFilter: (filter: ILogFilter) => void;
   showSpinner: boolean;
 }
@@ -24,12 +28,20 @@ export default class LogsToolbar extends React.PureComponent<
   ILogsToolbarProps
 > {
   render() {
-    const { filter, onSetFilter, showSpinner } = this.props;
+    const {
+      filter,
+      filterStep,
+      filterStepState,
+      onSetFilter,
+      showSpinner
+    } = this.props;
+
     return (
       <LogsToolbarContainer>
         <FilterInputGroup
           leftIcon="filter"
           placeholder="Filter logs..."
+          className={filterStep ? "has-step" : ""}
           small={true}
           value={filter.text}
           spellCheck={false}
@@ -72,6 +84,12 @@ export default class LogsToolbar extends React.PureComponent<
             />
           ))}
         </ButtonGroup>
+        {filterStep && <LogsToolbarDivider />}
+        {filterStep && (
+          <ComputeLogLink stepKey={filterStep} runState={filterStepState}>
+            View Raw Step Output
+          </ComputeLogLink>
+        )}
         <div style={{ minWidth: 15, flex: 1 }} />
         <Button
           text={"Clear"}
@@ -107,6 +125,13 @@ const LogsToolbarDivider = styled.div`
 
 const FilterInputGroup = styled(InputGroup)`
   flex: 2;
-  max-width: 275px;
+  max-width: 375px;
   min-width: 100px;
+  & input {
+    padding-right: 22px !important;
+  }
+  &.has-step {
+    box-shadow: 0 0 0 2px ${Colors.GOLD3};
+    border-radius: 3px;
+  }
 `;

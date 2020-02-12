@@ -110,6 +110,9 @@ class SystemPipelineExecutionContext(object):
             step,
         )
 
+    def for_type(self, dagster_type):
+        return TypeCheckContext(self._pipeline_context_data, self.log, dagster_type)
+
     @property
     def executor_config(self):
         return self._pipeline_context_data.executor_config
@@ -248,3 +251,24 @@ class SystemComputeExecutionContext(SystemStepExecutionContext):
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
+
+
+class TypeCheckContext(SystemPipelineExecutionContext):
+    '''The ``context`` object available to a type check function on a DagsterType.
+
+    Attributes:
+        log (DagsterLogManager): Centralized log dispatch from user code.
+        resources (Any): An object whose attributes contain the resources available to this solid.
+        run_id (str): The id of this pipeline run.
+    '''
+
+    def __init__(self, pipeline_context_data, log_manager, dagster_type):
+        super(TypeCheckContext, self).__init__(pipeline_context_data, log_manager)
+        self._resources = self._pipeline_context_data.scoped_resources_builder.build(
+            dagster_type.required_resource_keys
+        )
+        self._log_manager = log_manager
+
+    @property
+    def resources(self):
+        return self._resources

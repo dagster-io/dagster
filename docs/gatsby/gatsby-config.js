@@ -1,5 +1,9 @@
+require("dotenv").config();
+
 const path = require("path");
+
 const { getCurrentVersion } = require("./scripts/utils/get-version");
+const queries = require("./scripts/utils/algolia");
 
 const version = getCurrentVersion();
 const DOCS_PATH = path.join(__dirname, "versions", `${version}`);
@@ -12,6 +16,15 @@ module.exports = {
   },
   plugins: [
     "gatsby-plugin-react-helmet",
+    {
+      resolve: `gatsby-plugin-algolia`,
+      options: {
+        queries,
+        appId: process.env.ALGOLIA_APP_ID,
+        apiKey: process.env.ALGOLIA_ADMIN_KEY,
+        chunkSize: 10000 // default: 1000
+      }
+    },
     {
       resolve: "gatsby-source-filesystem",
       options: {
@@ -51,6 +64,14 @@ module.exports = {
       resolve: "gatsby-plugin-resolve-src",
       options: {
         addSassLoader: false
+      }
+    },
+    {
+      resolve: `gatsby-plugin-alias-imports`,
+      options: {
+        alias: {
+          "~dagster-info": path.join(__dirname, "dagster-info.json")
+        }
       }
     },
     {

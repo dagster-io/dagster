@@ -1,59 +1,56 @@
-import { Machine, assign } from 'xstate'
+import { Machine, assign } from "xstate";
 
 export const headerMachine = Machine(
   {
-    id: 'header',
-    initial: 'idle',
+    id: "header",
+    initial: "idle",
     states: {
       idle: {
         on: {
           SET_INITIAL_WIDTH: {
-            target: 'checking',
-            actions: 'setWidth',
-          },
-        },
+            target: "checking",
+            actions: "setWidth"
+          }
+        }
       },
       checking: {
         on: {
-          '': [
+          "": [
             {
-              target: 'nothing',
+              target: "nothing",
               cond: ctx => {
-                return ctx.width > 600
-              },
+                return ctx.width > 600;
+              }
             },
-            { target: 'closed' },
-          ],
-        },
+            { target: "closed" }
+          ]
+        }
       },
       closed: {
-        entry: assign({ value: '' }),
+        entry: assign({ value: "" }),
         on: {
-          TOGGLE: 'opened',
-        },
+          TOGGLE: "opened"
+        }
       },
       opened: {
         on: {
-          TOGGLE: 'closed',
-        },
+          TOGGLE: "closed"
+        }
       },
-      nothing: {},
+      nothing: {}
     },
     on: {
       SET_WIDTH: {
-        target: 'checking',
-        actions: 'setWidth',
-      },
-      CHANGE: {
-        actions: assign({ value: (_, ev) => ev.data }),
-      },
-    },
+        target: "checking",
+        actions: "setWidth"
+      }
+    }
   },
   {
     actions: {
       setWidth: assign({
-        width: (_, ev) => ev.data,
-      }),
-    },
-  },
-)
+        width: (_, ev) => ev.data
+      })
+    }
+  }
+);

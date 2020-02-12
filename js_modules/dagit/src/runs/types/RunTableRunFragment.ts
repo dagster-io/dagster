@@ -65,7 +65,6 @@ export interface RunTableRunFragment {
   stepKeysToExecute: string[] | null;
   canCancel: boolean;
   mode: string;
-  environmentConfigYaml: string;
   pipeline: RunTableRunFragment_pipeline;
   stats: RunTableRunFragment_stats;
   tags: RunTableRunFragment_tags[];

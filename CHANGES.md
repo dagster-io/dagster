@@ -81,6 +81,7 @@
   execution, especially in a multiprocessing or remote execution environment.
 * The `@system_storage` decorator now requires argument `required_resource_keys`, which was
   previously optional.
+
 - `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
@@ -96,6 +97,8 @@
   - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
     a custom type_check is needed, use `DagsterType`.
   - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
+  - `type_check_fn` on `DagsterType` (formerly `RunTimeType`) now takes a first argument `context` of type
+    `TypeCheckContext` in addition to the second argument of value.
 
 - We no longer publish base Docker images. Please see the updated deployment docs for an example
   Dockerfile off of which you can work.
@@ -103,6 +106,45 @@
 **New**
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
+- `dagster-postgres` storages can now be configured with separate arguments and environment variables, such as:
+
+  ```
+  run_storage:
+    module: dagster_postgres.run_storage
+    class: PostgresRunStorage
+    config:
+      postgres_db:
+        username: test
+        password:
+          env: ENV_VAR_FOR_PG_PASSWORD
+        hostname: localhost
+        db_name: test
+  ```
+
+- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster process.
+  As one example, this is used by `dagster-k8s` to submit pipeline execution as a kubernetes batch job.
+
+**Bugfix**
+
+- Ensured that all implementations of `RunStorage` clean up run tags when a run is deleted. May require a storage migration, using `dagster instance migrate`.
+- The multiprocess engine now handles solid subsets correctly.
+- The multiprocess engine will now correctly emit skip events for steps downstream of failures and other skips.
+
+## 0.6.9
+
+**Bugfix**
+
+- Improved SQLite concurrency issues, uncovered while using concurrent nodes in Airflow
+- Fixed sqlalchemy warnings (thanks @zzztimbo!)
+- Fixed Airflow integration issue where a Dagster child process triggered a signal handler of a
+  parent Airflow process via a process fork
+- Fixed GCS and AWS intermediate store implementations to be compatible with read/write mode
+  serialization strategies
+- Improve test stability
+
+**Documentation**
+
+- Improved descriptions for setting up the cron scheduler (thanks @zzztimbo!)
 
 ## 0.6.8
 

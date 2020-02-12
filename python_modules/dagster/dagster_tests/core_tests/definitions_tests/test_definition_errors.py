@@ -178,9 +178,10 @@ def test_bad_output_definition():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            'Invalid type: dagster_type must be a Python type, a type constructed using '
-            'python.typing, a type imported from the dagster module, or a class annotated using '
-            '@usable_as_dagster_type: got foo'
+            'Invalid type: dagster_type must be DagsterType, a python scalar, or '
+            'a python type that has been marked usable as a dagster type via '
+            '@usable_dagster_type or make_python_type_usable_as_dagster_type: '
+            'got foo'
         ),
     ):
         _output = OutputDefinition('foo')
@@ -189,9 +190,10 @@ def test_bad_output_definition():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            'Invalid type: dagster_type must be a Python type, a type constructed using '
-            'python.typing, a type imported from the dagster module, or a class annotated using '
-            '@usable_as_dagster_type: got {\'foo\': \'bar\'}, which isn\'t hashable. '
+            'Invalid type: dagster_type must be DagsterType, a python scalar, or '
+            'a python type that has been marked usable as a dagster type via '
+            '@usable_dagster_type or make_python_type_usable_as_dagster_type: '
+            'got {\'foo\': \'bar\'}, which isn\'t hashable. '
             'Did you pass an instance of a type instead of the type?'
         ),
     ):
@@ -205,10 +207,10 @@ def test_bad_output_definition():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape(
-            'Invalid type: dagster_type must be a Python type, a type constructed using '
-            'python.typing, a type imported from the dagster module, or a class annotated using '
-            '@usable_as_dagster_type: got '
-            '<dagster_tests.core_tests.definitions_tests.test_definition_errors'
+            'Invalid type: dagster_type must be DagsterType, a python scalar, or '
+            'a python type that has been marked usable as a dagster type via '
+            '@usable_dagster_type or make_python_type_usable_as_dagster_type: '
+            'got <dagster_tests.core_tests.definitions_tests.test_definition_errors'
         )
         + '('  # py27
         + re.escape('.test_bad_output_definition.<locals>')

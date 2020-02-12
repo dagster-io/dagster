@@ -41,7 +41,7 @@ class _TypedPythonTuple(DagsterType):
             type_check_fn=self.type_check_method,
         )
 
-    def type_check_method(self, value):
+    def type_check_method(self, context, value):
         from dagster.core.definitions.events import TypeCheck
 
         if not isinstance(value, tuple):
@@ -61,7 +61,7 @@ class _TypedPythonTuple(DagsterType):
             )
 
         for item, runtime_type in zip(value, self.runtime_types):
-            item_check = runtime_type.type_check(item)
+            item_check = runtime_type.type_check(context, item)
             if not item_check.success:
                 return item_check
 

@@ -2,13 +2,13 @@ import * as React from "react";
 import gql from "graphql-tag";
 import {
   Icon,
+  IconName,
   ButtonGroup,
   Popover,
   Position,
   Menu,
   MenuItem
 } from "@blueprintjs/core";
-import { IconNames, IconName } from "@blueprintjs/icons";
 import { useMutation, useQuery } from "react-apollo";
 import { useStorage, ExecutionType } from "../LocalStorage";
 
@@ -20,6 +20,7 @@ import {
 } from "../runs/RunUtils";
 import { StartPipelineExecutionVariables } from "../runs/types/StartPipelineExecution";
 import { LaunchPipelineExecutionVariables } from "../runs/types/LaunchPipelineExecution";
+import { IconNames } from "@blueprintjs/icons";
 
 const RUN_LAUNCHER_QUERY = gql`
   query RunLauncher {

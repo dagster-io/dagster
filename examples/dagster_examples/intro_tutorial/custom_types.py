@@ -1,17 +1,12 @@
 import csv
 
-from dagster import execute_pipeline, pipeline, solid, usable_as_dagster_type
+from dagster import DagsterType, execute_pipeline, pipeline, solid
 
-
-@usable_as_dagster_type(
+SimpleDataFrame = DagsterType(
     name='SimpleDataFrame',
-    description=(
-        'A naive representation of a data frame, e.g., as returned by '
-        'csv.DictReader.'
-    ),
+    type_check_fn=lambda _, value: isinstance(value, list),
+    description='A naive representation of a data frame, e.g., as returned by csv.DictReader.',
 )
-class SimpleDataFrame(list):
-    pass
 
 
 @solid
@@ -20,7 +15,7 @@ def read_csv(context, csv_path: str) -> SimpleDataFrame:
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
-    return SimpleDataFrame(lines)
+    return lines
 
 
 @solid
