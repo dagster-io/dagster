@@ -107,7 +107,7 @@ class SparkSolidDefinition(SolidDefinition):
             output_defs=[OutputDefinition(dagster_type=List[Path], name='paths')],
             compute_fn=_spark_compute_fn,
             config=define_spark_config(),
-            metadata={'kind': 'spark', 'main_class': main_class},
+            tags={'kind': 'spark', 'main_class': main_class},
         )
 
 
@@ -122,7 +122,7 @@ def create_spark_solid(name, main_class, description=None):
         config=define_spark_config(),
         input_defs=[InputDefinition('start', Nothing)],
         output_defs=[OutputDefinition(Nothing)],
-        metadata={'kind': 'spark', 'main_class': main_class},
+        tags={'kind': 'spark', 'main_class': main_class},
         required_resource_keys={'spark'},
     )
     def spark_solid(context):  # pylint: disable=unused-argument

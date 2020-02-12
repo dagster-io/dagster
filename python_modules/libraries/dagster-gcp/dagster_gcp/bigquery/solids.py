@@ -44,7 +44,7 @@ def bq_solid_for_queries(sql_queries):
         output_defs=[OutputDefinition(List[DataFrame])],
         config=define_bigquery_query_config(),
         required_resource_keys={'bigquery'},
-        metadata={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
+        tags={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
     )
     def bq_solid(context):  # pylint: disable=unused-argument
         query_job_config = _preprocess_config(context.solid_config.get('query_job_config', {}))

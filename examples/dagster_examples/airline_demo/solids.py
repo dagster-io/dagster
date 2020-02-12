@@ -123,7 +123,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         ],
         description=description,
         required_resource_keys={'db_info'},
-        metadata={'kind': 'sql', 'sql': sql_statement},
+        tags={'kind': 'sql', 'sql': sql_statement},
     )
     def _sql_solid(context, **input_defs):  # pylint: disable=unused-argument
         '''Inner function defining the new solid.
