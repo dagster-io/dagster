@@ -83,7 +83,7 @@ Error:
 
 Fix:
 
-Find any references to context.resources.<resource_name>, and ensure that the enclosing
+Find any references to `context.resources.<resource_name>`, and ensure that the enclosing
 solid definition, type definition, or config function has the resource key specified
 in its `required_resource_key` argument.
 
@@ -96,3 +96,16 @@ its required resources.
 
 As a result, we should see improved performance for pipeline subset execution,
 multiprocess execution, and retry execution.
+
+## RunConfig Removed
+
+Error:
+
+`AttributeError: 'ComputeExecutionContext' object has no attribute 'run_config'`
+
+Fix:
+
+Replace all references to `context.run_config` with `context.pipeline_run`. The `run_config` field
+on the pipeline execution context has been removed and replaced with `pipeline_run`, a `PipelineRun`
+instance. Along with the fields previously on `RunConfig`, this also includes the pipeline run
+status.
