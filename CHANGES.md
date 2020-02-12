@@ -104,6 +104,10 @@
 
 **New**
 
+- Early support for Python 3.8 is now available, and Dagster/Dagit along with many of our libraries
+  are now tested against 3.8. Note that several of our upstream dependencies have yet to publish
+  wheels for 3.8 on all platforms, so running on Python 3.8 likely still involves building some
+  dependencies from source.
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
 - `dagster-postgres` storages can now be configured with separate arguments and environment variables, such as:
 
@@ -123,6 +127,15 @@
 - Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster process.
   As one example, this is used by `dagster-k8s` to submit pipeline execution as a kubernetes batch job.
 - Added support for adding tags to runs initiated from the `Playground` view in dagit.
+- **[dagster-bash]** The Dagster bash solid factory now passes along `kwargs` to the underlying
+  solid construction, and now has a single `Nothing` input by default to make it easier to create a
+  sequencing dependency. Also, logs are now buffered by default to make execution less noisy.
+- **[dagster-aws]** We've improved our EMR support substantially in this release. The
+  `dagster_aws.emr` library now provides an `EmrJobRunner` with various utilities for creating EMR
+  clusters, submitting jobs, and waiting for jobs/logs. We also now provide a
+  `emr_pyspark_resource`, which together with the new `@pyspark_solid` decorator makes moving
+  pyspark execution from your laptop to EMR as simple as changing modes.
+- **[dagster-gcp]** GCS is now supported for system storage.
 
 **Bugfix**
 
