@@ -6,19 +6,22 @@ from dagster_pandas.constraints import (
 )
 from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
-from pandas import DataFrame
+from pandas import DataFrame, read_csv
 
 from dagster import (
     DagsterInvariantViolationError,
     DagsterType,
     EventMetadataEntry,
+    InputDefinition,
     Output,
     OutputDefinition,
     check_dagster_type,
     execute_pipeline,
+    execute_solid,
     pipeline,
     solid,
 )
+from dagster.utils import safe_tempfile_path
 
 
 def test_create_pandas_dataframe_dagster_type():
@@ -153,3 +156,36 @@ def test_execute_summary_stats_error():
             DataFrame({}),
             lambda value: [EventMetadataEntry.text('baz', 'qux', 'quux'), 'rofl'],
         )
+
+
+def test_custom_dagster_dataframe_hydration_ok():
+    input_dataframe = DataFrame({'foo': [1, 2, 3]})
+    with safe_tempfile_path() as input_csv_fp, safe_tempfile_path() as output_csv_fp:
+        input_dataframe.to_csv(input_csv_fp)
+        TestDataFrame = create_dagster_pandas_dataframe_type(
+            name='TestDataFrame', columns=[PandasColumn.exists('foo'),]
+        )
+
+        @solid(
+            input_defs=[InputDefinition('test_df', TestDataFrame)],
+            output_defs=[OutputDefinition(TestDataFrame)],
+        )
+        def use_test_dataframe(_, test_df):
+            test_df['bar'] = [2, 4, 6]
+            return test_df
+
+        solid_result = execute_solid(
+            use_test_dataframe,
+            environment_dict={
+                'solids': {
+                    'use_test_dataframe': {
+                        'inputs': {'test_df': {'csv': {'path': input_csv_fp}}},
+                        'outputs': [{'result': {'csv': {'path': output_csv_fp}}},],
+                    }
+                }
+            },
+        )
+
+        assert solid_result.success
+        solid_output_df = read_csv(output_csv_fp)
+        assert all(solid_output_df['bar'] == [2, 4, 6])
