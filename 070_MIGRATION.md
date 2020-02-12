@@ -29,6 +29,15 @@ Fix:
 
 Use `make_python_type_usable_as_dagster_type` instead.
 
+Error:
+
+`dagster.core.errors.DagsterInvalidDefinitionError: type_check_fn argument type "BadType" must take 2 arguments, received 1`
+
+Fix:
+
+Add a context argument (named `_`, `_context`, `context`, or `context_`) as the first argument
+of the `type_check_fn`. The second argument is the value being type-checked.
+
 Further Information:
 
 We have eliminated the `@dagster_type` and `as_dagster_type`
@@ -58,6 +67,11 @@ very well. This function is meant to take an _existing_ type -- often from
 a library that one doesn't control -- and make that type usable as a dagster
 type, the second argument.
 
+The `type_check_fn` argument has been renamed from `type_check` and now takes
+two arguments instead of one. The first argument is a instance of `TypeCheckContext`;
+the second argument is the value being checked. This allows the type check
+to have access to resources.
+
 ## Required Resources
 
 Any solid, type, or configuration function that accesses a resource off of a context
@@ -65,8 +79,7 @@ object must declare that resource key with a `required_resource_key` argument.
 
 Error:
 
-`DagsterUnknownResourceError: Unknown resource <resource_name>. Specify <resource_name>
-as a required resource on the compute / config function that accessed it.`
+`DagsterUnknownResourceError: Unknown resource <resource_name>. Specify <resource_name> as a required resource on the compute / config function that accessed it.`
 
 Fix:
 
