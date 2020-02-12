@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import update_wrapper
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
@@ -26,21 +27,30 @@ class ResourceDefinition(object):
             ``context.resources`` object.
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
-            This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            This value can be:
+
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
+
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
 
         description (Optional[str]): A human-readable description of the resource.
     '''
 
     def __init__(self, resource_fn, config=None, description=None):
         self._resource_fn = check.callable_param(resource_fn, 'resource_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config',)
+        self._config_field = check_user_facing_opt_config_param(config, 'config')
         self._description = check.opt_str_param(description, 'description')
 
     @property
@@ -72,6 +82,23 @@ class ResourceDefinition(object):
         )
 
 
+class _ResourceDecoratorCallable(object):
+    def __init__(self, config=None, description=None):
+        self.config = check_user_facing_opt_config_param(config, 'config')
+        self.description = check.opt_str_param(description, 'description')
+
+    def __call__(self, fn):
+        check.callable_param(fn, 'fn')
+
+        resource_def = ResourceDefinition(
+            resource_fn=fn, config=self.config, description=self.description,
+        )
+
+        update_wrapper(resource_def, wrapped=fn)
+
+        return resource_def
+
+
 def resource(config=None, description=None):
     '''Define a resource.
 
@@ -87,14 +114,21 @@ def resource(config=None, description=None):
     Args:
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
-            This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
+
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
 
         description(Optional[str]): A human-readable description of the resource.
     '''
@@ -102,10 +136,10 @@ def resource(config=None, description=None):
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
     if callable(config) and not is_callable_valid_config_arg(config):
-        return ResourceDefinition(resource_fn=config)
+        return _ResourceDecoratorCallable()(config)
 
     def _wrap(resource_fn):
-        return ResourceDefinition(resource_fn, config, description)
+        return _ResourceDecoratorCallable(config=config, description=description)(resource_fn)
 
     return _wrap
 
@@ -141,8 +175,13 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
         required_resource_keys = check.opt_set_param(
             required_resource_keys, 'required_resource_keys', of_type=str
         )
+        # it is possible that the surrounding context does NOT have the required resource keys
+        # because we are building a context for steps that we are not going to execute (e.g. in the
+        # resume/retry case, in order to generate copy intermediates events)
         resource_instance_dict = {
-            key: self.resource_instance_dict[key] for key in required_resource_keys
+            key: self.resource_instance_dict[key]
+            for key in required_resource_keys
+            if key in self.resource_instance_dict
         }
 
         class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):

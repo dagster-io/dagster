@@ -118,4 +118,4 @@ def test_native_enum_dagster_enum_from_classmethod():
 def test_native_enum_classmethod_creates_all_values():
     dagster_enum = Enum.from_python_enum(NativeEnum)
     for enum_value in NativeEnum:
-        assert enum_value is dagster_enum.to_python_value(enum_value.name)
+        assert enum_value is dagster_enum.post_process(enum_value.name)

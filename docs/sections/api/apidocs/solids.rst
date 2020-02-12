@@ -9,11 +9,11 @@ The foundational unit of composition in Dagster.
 
 Defining solids
 ---------------
-.. autodecorator:: lambda_solid
-
 .. autodecorator:: solid
 
 .. autoclass:: SolidDefinition
+
+.. autodecorator:: lambda_solid
 
 
 -------

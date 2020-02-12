@@ -15,6 +15,30 @@ from .utils import create_s3_session
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
+    '''Logs solid compute function stdout and stderr to S3.
+
+    Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
+    such as the following:
+
+    .. code-block:: YAML
+
+        compute_log_manager:
+          module: dagster_aws.s3.compute_log_manager
+          class: S3ComputeLogManager
+          config:
+            bucket: "mycorp-dagster-compute-logs"
+            local_dir: "/tmp/cool"
+            prefix: "dagster-test-"
+
+    Args:
+        bucket (str): The name of the s3 bucket to which to log.
+        local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
+            ``dagster.seven.get_system_temp_directory()``.
+        prefix (Optional[str]): Prefix for the log file keys.
+        inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
+            log manager when newed up from config.
+    '''
+
     def __init__(self, bucket, local_dir=None, inst_data=None, prefix='dagster'):
         self._s3_session = create_s3_session()
         self._s3_bucket = check.str_param(bucket, 'bucket')

@@ -11,7 +11,7 @@ from dagster import (
     input_hydration_config,
     solid,
 )
-from dagster.core.types.dagster_type import PythonObjectType
+from dagster.core.types.dagster_type import PythonObjectDagsterType
 
 from .file_manager import S3FileHandle
 
@@ -27,7 +27,7 @@ def dict_with_fields(name, fields):
         check.param_invariant(set(value.keys()) == field_names, 'value')
         return value
 
-    class _DictWithSchema(PythonObjectType):
+    class _DictWithSchema(PythonObjectDagsterType):
         def __init__(self):
             super(_DictWithSchema, self).__init__(
                 python_type=dict, name=name, input_hydration_config=_input_schema

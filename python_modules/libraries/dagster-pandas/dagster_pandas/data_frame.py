@@ -4,7 +4,7 @@ from dagster_pandas.constraints import (
     ColumnTypeConstraint,
     ConstraintViolationException,
 )
-from dagster_pandas.validation import PandasColumn, validate_collection_schema
+from dagster_pandas.validation import PandasColumn, validate_constraints
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -19,7 +19,7 @@ from dagster import (
 )
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
-from dagster.core.types.decorator import register_python_type
+from dagster.core.types.decorator import make_python_type_usable_as_dagster_type
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
 
@@ -81,7 +81,7 @@ def dataframe_input_schema(_context, file_type, file_options):
         )
 
 
-def df_type_check(value):
+def df_type_check(_, value):
     if not isinstance(value, pd.DataFrame):
         return TypeCheck(success=False)
     return TypeCheck(
@@ -104,7 +104,7 @@ DataFrame = DagsterType(
     type_check_fn=df_type_check,
 )
 
-register_python_type(pd.DataFrame, DataFrame)
+make_python_type_usable_as_dagster_type(pd.DataFrame, DataFrame)
 
 
 def _construct_constraint_list(constraints):
@@ -158,7 +158,7 @@ def create_dagster_pandas_dataframe_type(
         check.opt_list_param(columns, 'columns', of_type=PandasColumn),
     )
 
-    def _dagster_type_check(value):
+    def _dagster_type_check(_, value):
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
@@ -167,13 +167,12 @@ def create_dagster_pandas_dataframe_type(
                 ),
             )
 
-        if columns is not None:
-            try:
-                validate_collection_schema(
-                    columns, value, dataframe_constraints=dataframe_constraints
-                )
-            except ConstraintViolationException as e:
-                return TypeCheck(success=False, description=str(e))
+        try:
+            validate_constraints(
+                value, pandas_columns=columns, dataframe_constraints=dataframe_constraints
+            )
+        except ConstraintViolationException as e:
+            return TypeCheck(success=False, description=str(e))
 
         return TypeCheck(
             success=True,
@@ -188,6 +187,9 @@ def create_dagster_pandas_dataframe_type(
 
 
 def _execute_summary_stats(type_name, value, event_metadata_fn):
+    if not event_metadata_fn:
+        return []
+
     metadata_entries = event_metadata_fn(value)
 
     if not (

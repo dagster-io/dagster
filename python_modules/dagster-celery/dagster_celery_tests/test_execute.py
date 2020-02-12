@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import os
+import shutil
 from contextlib import contextmanager
 
 import pytest
@@ -17,6 +18,7 @@ from dagster import (
     OutputDefinition,
     PipelineExecutionResult,
     SolidExecutionResult,
+    check,
     default_executors,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -25,6 +27,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
 
@@ -117,18 +120,37 @@ def test_optional_outputs():
     bar.alias('third_consumer')(input_arg=foo_res.out_3)
 
 
-@solid
-def fails(_):
+@lambda_solid
+def fails():
     raise Exception('argjhgjh')
+
+
+@lambda_solid
+def should_never_execute(_):
+    assert False  # should never execute
 
 
 @pipeline(mode_defs=celery_mode_defs)
 def test_fails():
-    fails()
+    should_never_execute(fails())
 
 
 def events_of_type(result, event_type):
     return [event for event in result.event_list if event.event_type_value == event_type]
+
+
+@solid(config=str)
+def destroy(context, x):
+    shutil.rmtree(context.solid_config)
+    return x
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def engine_error():
+    a = simple()
+    b = destroy(a)
+
+    subtract(a, b)
 
 
 @contextmanager
@@ -248,9 +270,12 @@ def test_execute_optional_outputs_pipeline_on_celery(dagster_celery_worker):
 @skip_ci
 def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
     with execute_pipeline_on_celery('test_fails') as result:
-        assert len(result.solid_result_list) == 1
-        assert not result.solid_result_list[0].success
-        assert result.solid_result_list[0].failure_data.error.message == 'Exception: argjhgjh\n'
+        assert len(result.solid_result_list) == 2  # fail & skip
+        assert not result.result_for_solid('fails').success
+        assert (
+            result.result_for_solid('fails').failure_data.error.message == 'Exception: argjhgjh\n'
+        )
+        assert result.result_for_solid('should_never_execute').skipped
 
 
 def test_execute_eagerly_on_celery():
@@ -330,30 +355,44 @@ def test_execute_eagerly_optional_outputs_pipeline_on_celery():
 
 def test_execute_eagerly_fails_pipeline_on_celery():
     with execute_eagerly_on_celery('test_fails') as result:
-        assert len(result.solid_result_list) == 1
-        assert not result.solid_result_list[0].success
-        assert result.solid_result_list[0].failure_data.error.message == 'Exception: argjhgjh\n'
+        assert len(result.solid_result_list) == 2
+        assert not result.result_for_solid('fails').success
+        assert (
+            result.result_for_solid('fails').failure_data.error.message == 'Exception: argjhgjh\n'
+        )
+        assert result.result_for_solid('should_never_execute').skipped
 
 
 def test_bad_broker():
-    event_stream = execute_pipeline_iterator(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, 'test_diamond_pipeline'
-        ).build_pipeline_definition(),
-        environment_dict={
-            'storage': {'filesystem': {}},
-            'execution': {'celery': {'config': {'broker': 'bad@bad.bad'}}},
-        },
-        instance=DagsterInstance.local_temp(),
-    )
+    with pytest.raises(check.CheckError) as exc_info:
+        event_stream = execute_pipeline_iterator(
+            ExecutionTargetHandle.for_pipeline_python_file(
+                __file__, 'test_diamond_pipeline'
+            ).build_pipeline_definition(),
+            environment_dict={
+                'storage': {'filesystem': {}},
+                'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
+            },
+            instance=DagsterInstance.local_temp(),
+        )
+        list(event_stream)
+    assert 'Must use S3 or GCS storage with non-local Celery' in str(exc_info.value)
 
-    # ensure an engine event with an error is yielded if we cant connect to the broker
-    saw_engine_error = False
-    try:
-        for event in event_stream:
-            if event.is_engine_event:
-                saw_engine_error = bool(event.engine_event_data.error)
-    except Exception:  # pylint: disable=broad-except
-        pass
 
-    assert saw_engine_error
+def test_engine_error():
+    with pytest.raises(DagsterSubprocessError):
+        with seven.TemporaryDirectory() as tempdir:
+            storage = os.path.join(tempdir, 'flakey_storage')
+            execute_pipeline(
+                ExecutionTargetHandle.for_pipeline_python_file(
+                    __file__, 'engine_error',
+                ).build_pipeline_definition(),
+                environment_dict={
+                    'storage': {'filesystem': {'config': {'base_dir': storage}}},
+                    'execution': {
+                        'celery': {'config': {'config_source': {'task_always_eager': True}}}
+                    },
+                    'solids': {'destroy': {'config': storage}},
+                },
+                instance=DagsterInstance.local_temp(tempdir=tempdir),
+            )

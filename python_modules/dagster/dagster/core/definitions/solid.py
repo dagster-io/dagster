@@ -174,14 +174,23 @@ class SolidDefinition(ISolidDefinition):
         output_defs (List[OutputDefinition]): Outputs of the solid.
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.solid_config`.
-            This value can be a:
 
-                - :py:class:`Field`
-                - Python primitive types that resolve to dagster config types
-                    - int, float, bool, str, list.
-                - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-                - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-                  in the dictionary get resolved by the same rules, recursively.
+            This value can be:
+
+            1. A Python primitive type that resolve to dagster config
+               types: int, float, bool, str.
+
+            2. A dagster config type: Int, Float, Bool,
+               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
+               :py:class:`Shape`, :py:class:`Permissive`, etc
+
+            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
+               values in the dictionary get resolved by the same rules, recursively.
+
+            4. A bare python list of length one which itself is config type.
+               Becomes :py:class:`Array` with list element as an argument.
+
+            5. A instance of :py:class:`Field`.
 
         description (Optional[str]): Human-readable description of the solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may

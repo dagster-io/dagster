@@ -158,7 +158,7 @@ def test_bad_override():
     assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
     assert (
         'Error 1: Type failure at path "root:scalar_config_solid:config" on type "String". '
-        'Value at path root:scalar_config_solid:config is not valid. Expected "String".' in message
+        'Invalid scalar at path root:scalar_config_solid:config' in message
     )
 
 
@@ -387,9 +387,9 @@ def test_wrap_none_config_and_inputs():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_none:solids:basic:inputs:input_a:value is not '
-        'valid. Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_none:solids:basic:inputs:input_a:value'
+        in exc_info.value.errors[0].message
     )
 
     # Check bad config override
@@ -416,9 +416,9 @@ def test_wrap_none_config_and_inputs():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_none:solids:basic:config:config_field_a is not valid. '
-        'Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_none:solids:basic:config:config_field_a'
+        in exc_info.value.errors[0].message
     )
 
 
@@ -493,9 +493,9 @@ def test_wrap_all_config_no_inputs():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_all_config_no_inputs:config:config_field_a is not valid. '
-        'Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_all_config_no_inputs:config:config_field_a'
+        in exc_info.value.errors[0].message
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -511,9 +511,9 @@ def test_wrap_all_config_no_inputs():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_all_config_no_inputs:inputs:input_a:value is not valid.'
-        ' Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_all_config_no_inputs:inputs:input_a:value'
+        in exc_info.value.errors[0].message
     )
 
 
@@ -583,9 +583,9 @@ def test_wrap_all_config_one_input():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_all_config_one_input:config:config_field_a is not valid. '
-        'Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_all_config_one_input:config:config_field_a value'
+        in exc_info.value.errors[0].message
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -601,9 +601,9 @@ def test_wrap_all_config_one_input():
             },
         )
     assert len(exc_info.value.errors) == 1
-    assert exc_info.value.errors[0].message == (
-        'Value at path root:solids:wrap_all_config_one_input:inputs:input_a:value is not valid. '
-        'Expected "String"'
+    assert (
+        'Invalid scalar at path root:solids:wrap_all_config_one_input:inputs:input_a:value'
+        in exc_info.value.errors[0].message
     )
 
 

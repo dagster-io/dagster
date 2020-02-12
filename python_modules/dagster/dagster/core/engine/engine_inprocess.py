@@ -1,12 +1,14 @@
 import os
 import sys
 
-from dagster import check
-from dagster.core.definitions import ExpectationResult, Failure, Materialization, Output, TypeCheck
+from dagster import EventMetadataEntry, check
+from dagster.core.definitions import ExpectationResult, Materialization, Output, TypeCheck
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
+    DagsterInputHydrationConfigError,
     DagsterInvariantViolationError,
+    DagsterOutputMaterializationError,
     DagsterStepOutputNotFoundError,
     DagsterTypeCheckError,
     DagsterUserCodeExecutionError,
@@ -31,6 +33,7 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.object_store import ObjectStoreOperation
+from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
@@ -65,40 +68,28 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
             ):
                 yield event
 
-            failed_or_skipped_steps = set()
-
             # It would be good to implement a reference tracking algorithm here to
             # garbage collect results that are no longer needed by any steps
             # https://github.com/dagster-io/dagster/issues/811
             active_execution = execution_plan.start()
             while not active_execution.is_complete:
-                steps = active_execution.get_available_steps(limit=1)
+
+                steps = active_execution.get_steps_to_execute(limit=1)
                 check.invariant(
                     len(steps) == 1, 'Invariant Violation: expected step to be available to execute'
                 )
                 step = steps[0]
                 step_context = pipeline_context.for_step(step)
+                check.invariant(
+                    all(
+                        hasattr(step_context.resources, resource_key)
+                        for resource_key in step_context.required_resource_keys
+                    ),
+                    'expected step context to have all required resources',
+                )
 
                 with mirror_step_io(step_context):
                     # capture all of the logs for this step
-
-                    failed_inputs = []
-                    for step_input in step.step_inputs:
-                        failed_inputs.extend(
-                            failed_or_skipped_steps.intersection(step_input.dependency_keys)
-                        )
-
-                    if failed_inputs:
-                        step_context.log.info(
-                            (
-                                'Dependencies for step {step} failed: {failed_inputs}. Not executing.'
-                            ).format(step=step.key, failed_inputs=failed_inputs)
-                        )
-                        failed_or_skipped_steps.add(step.key)
-                        yield DagsterEvent.step_skipped_event(step_context)
-                        active_execution.mark_complete(step.key)
-                        continue
-
                     uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
                         step_context, step
                     )
@@ -113,21 +104,37 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                                 'inputs: {uncovered_inputs}'
                             ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                         )
-                        failed_or_skipped_steps.add(step.key)
                         yield DagsterEvent.step_skipped_event(step_context)
-                        active_execution.mark_complete(step.key)
+                        active_execution.mark_skipped(step.key)
                         continue
 
+                    step_success = None
                     for step_event in check.generator(
                         dagster_event_sequence_for_step(step_context)
                     ):
                         check.inst(step_event, DagsterEvent)
-                        if step_event.is_step_failure:
-                            failed_or_skipped_steps.add(step.key)
-
                         yield step_event
 
-                    active_execution.mark_complete(step.key)
+                        if step_event.is_step_failure:
+                            step_success = False
+                        elif step_event.is_step_success:
+                            step_success = True
+
+                    if step_success == True:
+                        active_execution.mark_success(step.key)
+                    elif step_success == False:
+                        active_execution.mark_failed(step.key)
+                    else:
+                        pipeline_context.log.error(
+                            'Step {key} finished without success or failure event, assuming failure.'.format(
+                                key=step.key
+                            )
+                        )
+                        active_execution.mark_failed(step.key)
+
+                # process skips from failures or uncovered inputs
+                for event in active_execution.skipped_step_events_iterator(pipeline_context):
+                    yield event
 
         yield DagsterEvent.engine_event(
             pipeline_context,
@@ -192,9 +199,27 @@ def _input_values_from_intermediates_manager(step_context):
             )
 
         else:  # is from config
-            input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
-                step_context, step_input.config_data
-            )
+
+            def _generate_error_boundary_msg_for_step_input(_context, _input):
+                return lambda: '''Error occured during input hydration:
+                input name: "{input}"
+                step key: "{key}"
+                solid invocation: "{solid}"
+                solid definition: "{solid_def}"
+                '''.format(
+                    input=_input.name,
+                    key=_context.step.key,
+                    solid_def=_context.solid_def.name,
+                    solid=_context.solid.name,
+                )
+
+            with user_code_error_boundary(
+                DagsterInputHydrationConfigError,
+                msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
+            ):
+                input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
+                    step_context, step_input.config_data
+                )
         input_values[step_input.name] = input_value
 
     return input_values
@@ -264,7 +289,7 @@ def dagster_event_sequence_for_step(step_context):
         )
 
         if step_context.raise_on_error:
-            raise dagster_user_error
+            raise dagster_user_error.user_exception
 
     # case (2) in top comment
     except DagsterError as dagster_error:
@@ -341,8 +366,25 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
                 )
 
 
-def _do_type_check(runtime_type, value):
-    type_check = runtime_type.type_check(value)
+class DagsterTypeCheckDidNotPass(DagsterError):
+    """
+    Raised when:
+
+    1. raise_on_error is True in calls to execute_pipeline, execute_solid and similar.
+    2. When a DagsterType's type check fails by returning False or TypeCheck with success=False.
+    """
+
+    def __init__(self, description=None, metadata_entries=None, dagster_type=None):
+        super(DagsterTypeCheckDidNotPass, self).__init__(description)
+        self.description = check.opt_str_param(description, 'description')
+        self.metadata_entries = check.opt_list_param(
+            metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
+        )
+        self.dagster_type = check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
+
+
+def _do_type_check(context, runtime_type, value):
+    type_check = runtime_type.type_check(context, value)
     if not isinstance(type_check, TypeCheck):
         return TypeCheck(
             success=False,
@@ -371,22 +413,6 @@ def _create_step_input_event(step_context, input_name, type_check, success):
     )
 
 
-def _type_check_from_failure(failure):
-    check.inst_param(failure, 'failure', Exception)
-
-    # TypeScript this ain't. pylint not aware of type discrimination
-    # pylint: disable=no-member
-
-    return (
-        TypeCheck(
-            False, failure.user_exception.description, failure.user_exception.metadata_entries
-        )
-        if isinstance(failure, DagsterTypeCheckError)
-        and isinstance(failure.user_exception, Failure)
-        else TypeCheck(False, str(failure), metadata_entries=[])
-    )
-
-
 def _type_checked_event_sequence_for_input(step_context, input_name, input_value):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
     check.str_param(input_name, 'input_name')
@@ -408,23 +434,21 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             step_key=step_context.step.key,
         ),
     ):
-        try:
-            type_check = _do_type_check(step_input.runtime_type, input_value)
-        except Exception as exc:  # pylint: disable=broad-except
-            type_check = _type_check_from_failure(exc)
+        type_check = _do_type_check(
+            step_context.for_type(step_input.runtime_type), step_input.runtime_type, input_value,
+        )
 
         yield _create_step_input_event(
             step_context, input_name, type_check=type_check, success=type_check.success
         )
 
         if not type_check.success:
-            raise Failure(
-                'Type check failed for step input {input_name} of type {runtime_type} on input value '
-                'of type {input_type}'.format(
-                    input_name=input_name,
-                    runtime_type=step_input.runtime_type.name,
-                    input_type=type(input_value),
-                )
+            raise DagsterTypeCheckDidNotPass(
+                description='Type check failed for step input {input_name} of type {runtime_type}.'.format(
+                    input_name=input_name, runtime_type=step_input.runtime_type.name,
+                ),
+                metadata_entries=type_check.metadata_entries,
+                dagster_type=step_input.runtime_type,
             )
 
 
@@ -466,22 +490,21 @@ def _type_checked_step_output_event_sequence(step_context, output):
             step_key=step_context.step.key,
         ),
     ):
-        try:
-            type_check = _do_type_check(step_output.runtime_type, output.value)
-        except Exception as exc:  # pylint: disable=broad-except
-            type_check = _type_check_from_failure(exc)
+        type_check = _do_type_check(
+            step_context.for_type(step_output.runtime_type), step_output.runtime_type, output.value
+        )
+
         yield _create_step_output_event(
             step_context, output, type_check=type_check, success=type_check.success
         )
 
         if not type_check.success:
-            raise Failure(
-                'Type check failed for step output {output_name} of type {runtime_type} on output '
-                'value of type {output_type}'.format(
-                    output_name=output.output_name,
-                    runtime_type=step_output.runtime_type.name,
-                    output_type=type(output.value),
-                )
+            raise DagsterTypeCheckDidNotPass(
+                description='Type check failed for step output {output_name} of type {runtime_type}.'.format(
+                    output_name=output.output_name, runtime_type=step_output.runtime_type.name,
+                ),
+                metadata_entries=type_check.metadata_entries,
+                dagster_type=step_output.runtime_type,
             )
 
 
@@ -597,9 +620,23 @@ def _create_output_materializations(step_context, output_name, value):
             config_output_name, output_spec = list(output_spec.items())[0]
             if config_output_name == output_name:
                 step_output = step.step_output_named(output_name)
-                materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
-                    step_context, output_spec, value
-                )
+                with user_code_error_boundary(
+                    DagsterOutputMaterializationError,
+                    msg_fn=lambda: '''Error occured during output materialization:
+                    output name: "{output_name}"
+                    step key: "{key}"
+                    solid invocation: "{solid}"
+                    solid definition: "{solid_def}"
+                    '''.format(
+                        output_name=output_name,
+                        key=step_context.step.key,
+                        solid_def=step_context.solid_def.name,
+                        solid=step_context.solid.name,
+                    ),
+                ):
+                    materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
+                        step_context, output_spec, value
+                    )
 
                 if not isinstance(materialization, Materialization):
                     raise DagsterInvariantViolationError(

@@ -1,8 +1,6 @@
 import os
 from datetime import datetime, timedelta
 
-from dagster_cron import SystemCronScheduler
-
 from dagster import daily_schedule, schedules
 from dagster.core.definitions.decorators import monthly_schedule
 
@@ -88,6 +86,6 @@ def monthly_trip_ingest_schedule(date):
     }
 
 
-@schedules(scheduler=SystemCronScheduler)
+@schedules
 def define_scheduler():
     return [daily_weather_ingest_schedule, monthly_trip_ingest_schedule]

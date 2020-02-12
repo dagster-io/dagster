@@ -26,7 +26,6 @@ from dagster import (
 from dagster.core.definitions.decorators import daily_schedule, hourly_schedule, monthly_schedule
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
-from dagster.utils.test import FilesytemTestScheduler
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name
@@ -293,7 +292,7 @@ def test_solid_no_arg():
 
 
 def test_scheduler():
-    @schedules(scheduler=FilesytemTestScheduler)
+    @schedules
     def define_scheduler():
         return [
             ScheduleDefinition(
@@ -378,3 +377,30 @@ def test_schedule_decorators_bad():
         )
         def monthly_foo_schedule_under():
             return {}
+
+
+def test_solid_docstring():
+    @solid
+    def foo_solid(_):
+        '''FOO_DOCSTRING'''
+        return
+
+    @lambda_solid
+    def bar_solid():
+        '''BAR_DOCSTRING'''
+        return
+
+    @solid(name='baz')
+    def baz_solid(_):
+        '''BAZ_DOCSTRING'''
+        return
+
+    @lambda_solid(name='quux')
+    def quux_solid():
+        '''QUUX_DOCSTRING'''
+        return
+
+    assert foo_solid.__doc__ == 'FOO_DOCSTRING'
+    assert bar_solid.__doc__ == 'BAR_DOCSTRING'
+    assert baz_solid.__doc__ == 'BAZ_DOCSTRING'
+    assert quux_solid.__doc__ == 'QUUX_DOCSTRING'

@@ -6,10 +6,16 @@ from dagster_aws.s3.resources import S3Resource
 
 
 def create_s3_fake_resource(buckets=None):
+    '''Create a mock :py:class:`S3Resource` for test.'''
     return S3Resource(S3FakeSession(buckets=buckets))
 
 
 class S3FakeSession(object):
+    '''Stateful mock of a boto3 s3 session for test.
+
+    Wraps a ``mock.MagicMock``. Buckets are implemented using an in-memory dict.
+    '''
+
     def __init__(self, buckets=None):
         from dagster.seven import mock
 

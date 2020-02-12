@@ -1,23 +1,22 @@
 import csv
+import typing
 
 from dagster import (
     Bool,
     Field,
     Output,
     OutputDefinition,
+    PythonObjectDagsterType,
     String,
-    as_dagster_type,
     execute_pipeline,
     pipeline,
     solid,
 )
 
-
-class _DataFrame(list):
-    pass
-
-
-DataFrame = as_dagster_type(_DataFrame, name='DataFrame')
+if typing.TYPE_CHECKING:
+    DataFrame = list
+else:
+    DataFrame = PythonObjectDagsterType(list, name='DataFrame')  # type: Any
 
 
 @solid
@@ -26,7 +25,7 @@ def read_csv(context, csv_path):
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
-    return DataFrame(lines)
+    return lines
 
 
 @solid(
@@ -45,14 +44,10 @@ def read_csv(context, csv_path):
 )
 def split_cereals(context, cereals):
     if context.solid_config['process_hot']:
-        hot_cereals = DataFrame(
-            [cereal for cereal in cereals if cereal['type'] == 'H']
-        )
+        hot_cereals = [cereal for cereal in cereals if cereal['type'] == 'H']
         yield Output(hot_cereals, 'hot_cereals')
     if context.solid_config['process_cold']:
-        cold_cereals = DataFrame(
-            [cereal for cereal in cereals if cereal['type'] == 'C']
-        )
+        cold_cereals = [cereal for cereal in cereals if cereal['type'] == 'C']
         yield Output(cold_cereals, 'cold_cereals')
 
 

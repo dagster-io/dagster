@@ -84,8 +84,13 @@ def select_vpc(client, ec2):
     vpc_ids = [vpc[0] for vpc in vpcs]
 
     Term.info(
-        'Note that this script will not create a VPC\non your behalf. Also, if you '
-        'don\'t know what this\nis, the default is almost certainly what you want'
+        'Note that this script will not create a VPC\n'
+        'on your behalf. If you don\'t know what this\n'
+        'is, the default is almost certainly what you want:\n'
+        'but please be aware that the instance we set up\n'
+        'is likely to be insecure (publicly accessible).\n'
+        'For production, you will probably want to set up\n'
+        'a secured VPC!'
     )
 
     while vpc not in vpc_ids:

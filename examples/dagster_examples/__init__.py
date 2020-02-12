@@ -1,9 +1,7 @@
-from dagster_cron import SystemCronScheduler
-
 from dagster import ScheduleDefinition, file_relative_path, schedules
 
 
-@schedules(scheduler=SystemCronScheduler)
+@schedules
 def define_scheduler():
     return [
         ScheduleDefinition(

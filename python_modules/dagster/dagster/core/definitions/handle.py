@@ -109,10 +109,7 @@ class SchedulerLoaderEntrypoint(
             cls, module, module_name, fn_name, from_handle
         )
 
-    def perform_load(self, artifacts_dir):
-        artifacts_dir = check.str_param(artifacts_dir, 'artifacts_dir')
-        repository_name = self.from_handle.build_repository_definition().name
-
+    def perform_load(self):
         # in the decorator case the attribute will be the actual definition
         if not hasattr(self.module, self.fn_name):
             raise DagsterInvariantViolationError(
@@ -121,8 +118,10 @@ class SchedulerLoaderEntrypoint(
 
         fn_scheduler = getattr(self.module, self.fn_name)
 
-        if callable(fn_scheduler):
-            scheduler = fn_scheduler(artifacts_dir=artifacts_dir, repository_name=repository_name)
+        if isinstance(fn_scheduler, SchedulerHandle):
+            inst = fn_scheduler
+        elif callable(fn_scheduler):
+            scheduler = fn_scheduler()
 
             if not isinstance(scheduler, SchedulerHandle):
                 raise DagsterInvariantViolationError(
@@ -464,7 +463,7 @@ class ExecutionTargetHandle(object):
             data, mode=_ExecutionTargetMode.PIPELINE, is_resolved_to_pipeline=True
         )
 
-    def build_scheduler_handle(self, artifacts_dir):
+    def build_scheduler_handle(self):
         # Cannot create a scheduler handle if the target mode is not a repository
         if self.mode != _ExecutionTargetMode.REPOSITORY:
             return None
@@ -474,7 +473,7 @@ class ExecutionTargetHandle(object):
         if not entrypoint:
             return None
 
-        return self.scheduler_handle_entrypoint.perform_load(artifacts_dir)
+        return self.scheduler_handle_entrypoint.perform_load()
 
     def build_partitions_handle(self):
         if self.mode != _ExecutionTargetMode.REPOSITORY:

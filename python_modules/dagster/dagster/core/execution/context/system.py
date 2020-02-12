@@ -110,15 +110,12 @@ class SystemPipelineExecutionContext(object):
             step,
         )
 
+    def for_type(self, dagster_type):
+        return TypeCheckContext(self._pipeline_context_data, self.log, dagster_type)
+
     @property
     def executor_config(self):
         return self._pipeline_context_data.executor_config
-
-    @property
-    def run_config(self):
-        # backwards-compatability... should remove in 0.7.0
-        # https://github.com/dagster-io/dagster/issues/1874
-        return self._pipeline_context_data.pipeline_run
 
     @property
     def pipeline_run(self):
@@ -190,7 +187,7 @@ class SystemPipelineExecutionContext(object):
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
-    __slots__ = ['_step', '_resources']
+    __slots__ = ['_step', '_resources', '_required_resource_keys']
 
     def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
@@ -200,10 +197,11 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)
+        self._required_resource_keys = get_required_resource_keys_for_step(
+            step, pipeline_context_data.pipeline_def, pipeline_context_data.system_storage_def,
+        )
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
-            get_required_resource_keys_for_step(
-                step, pipeline_context_data.pipeline_def, pipeline_context_data.system_storage_def,
-            ),
+            self._required_resource_keys
         )
         self._log_manager = log_manager
 
@@ -231,6 +229,10 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         return self._resources
 
     @property
+    def required_resource_keys(self):
+        return self._required_resource_keys
+
+    @property
     def log(self):
         return self._log_manager
 
@@ -249,3 +251,24 @@ class SystemComputeExecutionContext(SystemStepExecutionContext):
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self.solid_handle))
         return solid_config.config if solid_config else None
+
+
+class TypeCheckContext(SystemPipelineExecutionContext):
+    '''The ``context`` object available to a type check function on a DagsterType.
+
+    Attributes:
+        log (DagsterLogManager): Centralized log dispatch from user code.
+        resources (Any): An object whose attributes contain the resources available to this solid.
+        run_id (str): The id of this pipeline run.
+    '''
+
+    def __init__(self, pipeline_context_data, log_manager, dagster_type):
+        super(TypeCheckContext, self).__init__(pipeline_context_data, log_manager)
+        self._resources = self._pipeline_context_data.scoped_resources_builder.build(
+            dagster_type.required_resource_keys
+        )
+        self._log_manager = log_manager
+
+    @property
+    def resources(self):
+        return self._resources

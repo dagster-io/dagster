@@ -1,4 +1,3 @@
-import re
 from collections import namedtuple
 
 from dagster import check
@@ -36,10 +35,6 @@ class DaskConfig(
             direct_to_workers=check.opt_bool_param(direct_to_workers, 'direct_to_workers'),
             heartbeat_interval=check.opt_int_param(heartbeat_interval, 'heartbeat_interval'),
         )
-
-    @property
-    def is_remote_execution(self):
-        return self.address and not re.match(r'127\.0\.0\.1|0\.0\.0\.0|localhost', self.address)
 
     @staticmethod
     def get_engine():

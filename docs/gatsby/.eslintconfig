@@ -1,0 +1,2 @@
+config/**/*.js
+node_modules/**/*.ts

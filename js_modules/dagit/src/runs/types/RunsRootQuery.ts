@@ -65,7 +65,6 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   stepKeysToExecute: string[] | null;
   canCancel: boolean;
   mode: string;
-  environmentConfigYaml: string;
   pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];

@@ -4,11 +4,42 @@
 
 **Breaking**
 
-- `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
-- `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-- Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
-- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
-- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To upgrade, remove the first argument to `config_fn`.
+- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules that have been running are no longer compatible with current storage. To migrate,
+  remove the `scheduler` argument on all `@schedules` decorators:
+
+  instead of:
+
+  ```
+  @schedules(scheduler=SystemCronScheduler)
+  def define_schedules():
+    ...
+  ```
+
+  Remove the `scheduler` argument:
+
+  ```
+  @schedules
+  def define_schedules():
+    ...
+  ```
+
+  Next, configure the scheduler on your instance by adding the following to `$DAGSTER_HOME/dagster.yaml`:
+
+  ```
+  scheduler:
+    module: dagster_cron.cron_scheduler
+    class: SystemCronScheduler
+    config:
+      artifacts_dir: /path/to/dagster_home/schedules
+  ```
+
+  Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules` directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.
+
+* `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
+* `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
+* Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
+* The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
+* For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To upgrade, remove the first argument to `config_fn`.
 
   So instead of
 
@@ -22,7 +53,7 @@
   @composite_solid(config={}, config_fn=lambda config: {})
   ```
 
-- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
+* In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
 
   Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
 
@@ -45,11 +76,12 @@
 
   No imports and much simpler, cleaner syntax.
 
-- All solids that use a resource must explicitly list that resource using the argument
+* All solids that use a resource must explicitly list that resource using the argument
   `required_resource_keys`. This is to enable efficient resource management during pipeline
   execution, especially in a multiprocessing or remote execution environment.
-- The `@system_storage` decorator now requires argument `required_resource_keys`, which was
+* The `@system_storage` decorator now requires argument `required_resource_keys`, which was
   previously optional.
+
 - `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
@@ -64,10 +96,55 @@
     to a `TypeCheck` object.
   - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
     a custom type_check is needed, use `DagsterType`.
+  - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
+  - `type_check_fn` on `DagsterType` (formerly `RunTimeType`) now takes a first argument `context` of type
+    `TypeCheckContext` in addition to the second argument of value.
+
+- We no longer publish base Docker images. Please see the updated deployment docs for an example
+  Dockerfile off of which you can work.
 
 **New**
 
 - `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
+- `dagster-postgres` storages can now be configured with separate arguments and environment variables, such as:
+
+  ```
+  run_storage:
+    module: dagster_postgres.run_storage
+    class: PostgresRunStorage
+    config:
+      postgres_db:
+        username: test
+        password:
+          env: ENV_VAR_FOR_PG_PASSWORD
+        hostname: localhost
+        db_name: test
+  ```
+
+- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster process.
+  As one example, this is used by `dagster-k8s` to submit pipeline execution as a kubernetes batch job.
+
+**Bugfix**
+
+- Ensured that all implementations of `RunStorage` clean up run tags when a run is deleted. May require a storage migration, using `dagster instance migrate`.
+- The multiprocess engine now handles solid subsets correctly.
+- The multiprocess engine will now correctly emit skip events for steps downstream of failures and other skips.
+
+## 0.6.9
+
+**Bugfix**
+
+- Improved SQLite concurrency issues, uncovered while using concurrent nodes in Airflow
+- Fixed sqlalchemy warnings (thanks @zzztimbo!)
+- Fixed Airflow integration issue where a Dagster child process triggered a signal handler of a
+  parent Airflow process via a process fork
+- Fixed GCS and AWS intermediate store implementations to be compatible with read/write mode
+  serialization strategies
+- Improve test stability
+
+**Documentation**
+
+- Improved descriptions for setting up the cron scheduler (thanks @zzztimbo!)
 
 ## 0.6.8
 

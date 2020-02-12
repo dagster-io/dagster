@@ -43,7 +43,17 @@ export default class SchedulesRoot extends React.Component {
                       <NonIdealState
                         icon="calendar"
                         title="Scheduler"
-                        description="A scheduler is not defined for this repository."
+                        description={
+                          <p>
+                            A scheduler must be configured to view schedules.
+                            You can configure a scheduler on your instance
+                            through <code>dagster.yaml</code>. See the{" "}
+                            <a href="https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/scheduler.html">
+                              scheduler documentation
+                            </a>{" "}
+                            for more information.
+                          </p>
+                        }
                       />
                     </div>
                   </ScrollContainer>
@@ -119,7 +129,10 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
         </Legend>
       )}
       {props.schedules.map(schedule => (
-        <ScheduleRow schedule={schedule} key={schedule.id} />
+        <ScheduleRow
+          schedule={schedule}
+          key={schedule.scheduleDefinition.name}
+        />
       ))}
     </div>
   );

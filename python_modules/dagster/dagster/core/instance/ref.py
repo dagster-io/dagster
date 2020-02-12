@@ -21,6 +21,10 @@ def _event_logs_directory(base):
     return os.path.join(base, 'history', 'runs', '')
 
 
+def _schedule_directory(base):
+    return os.path.join(base, 'schedules')
+
+
 def configurable_class_data_or_default(config_value, field_name, default):
     if config_value.get(field_name):
         return ConfigurableClassData(
@@ -36,15 +40,22 @@ class InstanceRef(
     namedtuple(
         '_InstanceRef',
         'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data '
-        'run_launcher_data dagit_settings',
+        'schedule_storage_data scheduler_data run_launcher_data dagit_settings',
     )
 ):
+    '''Serializable representation of a :py:class:`DagsterInstance`.
+    
+    Users should not instantiate this class directly.
+    '''
+
     def __new__(
         self,
         local_artifact_storage_data,
         run_storage_data,
         event_storage_data,
         compute_logs_data,
+        schedule_storage_data,
+        scheduler_data,
         run_launcher_data,
         dagit_settings,
     ):
@@ -61,6 +72,12 @@ class InstanceRef(
             ),
             compute_logs_data=check.inst_param(
                 compute_logs_data, 'compute_logs_data', ConfigurableClassData
+            ),
+            schedule_storage_data=check.opt_inst_param(
+                schedule_storage_data, 'schedule_storage_data', ConfigurableClassData
+            ),
+            scheduler_data=check.opt_inst_param(
+                scheduler_data, 'scheduler_data', ConfigurableClassData
             ),
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, 'run_launcher_data', ConfigurableClassData
@@ -115,6 +132,17 @@ class InstanceRef(
             ),
         )
 
+        schedule_storage_data = configurable_class_data_or_default(
+            config_value,
+            'schedule_storage',
+            ConfigurableClassData(
+                'dagster.core.storage.schedules',
+                'SqliteScheduleStorage',
+                yaml.dump({'base_dir': _schedule_directory(base_dir)}, default_flow_style=False),
+            ),
+        )
+
+        scheduler_data = configurable_class_data_or_default(config_value, 'scheduler', None)
         run_launcher_data = configurable_class_data_or_default(config_value, 'run_launcher', None)
 
         return InstanceRef(
@@ -122,6 +150,8 @@ class InstanceRef(
             run_storage_data=run_storage_data,
             event_storage_data=event_storage_data,
             compute_logs_data=compute_logs_data,
+            schedule_storage_data=schedule_storage_data,
+            scheduler_data=scheduler_data,
             run_launcher_data=run_launcher_data,
             dagit_settings=config_value.get('dagit'),
         )
@@ -152,6 +182,14 @@ class InstanceRef(
     @property
     def compute_log_manager(self):
         return self.compute_logs_data.rehydrate()
+
+    @property
+    def schedule_storage(self):
+        return self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None
+
+    @property
+    def scheduler(self):
+        return self.scheduler_data.rehydrate() if self.scheduler_data else None
 
     @property
     def run_launcher(self):

@@ -2,7 +2,7 @@ from dagster import check
 from dagster.config.field_utils import Permissive
 
 from .config_schema import input_hydration_config
-from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 
 @input_hydration_config(Permissive())
@@ -10,7 +10,7 @@ def _dict_input(_context, value):
     return value
 
 
-PythonDict = define_python_dagster_type(
+PythonDict = PythonObjectDagsterType(
     dict,
     'PythonDict',
     input_hydration_config=_dict_input,
@@ -28,7 +28,7 @@ class _TypedPythonDict(DagsterType):
             type_check_fn=self.type_check_method,
         )
 
-    def type_check_method(self, value):
+    def type_check_method(self, context, value):
         from dagster.core.definitions.events import TypeCheck
 
         if not isinstance(value, dict):
@@ -40,10 +40,10 @@ class _TypedPythonDict(DagsterType):
             )
 
         for key, value in value.items():
-            key_check = self.key_type.type_check(key)
+            key_check = self.key_type.type_check(context, key)
             if not key_check.success:
                 return key_check
-            value_check = self.value_type.type_check(value)
+            value_check = self.value_type.type_check(context, value)
             if not value_check.success:
                 return value_check
 

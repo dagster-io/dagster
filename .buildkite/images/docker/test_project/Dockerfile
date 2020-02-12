@@ -7,7 +7,9 @@ ADD test_pipelines test_pipelines
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/gac.json"
 
-RUN pip install \
+RUN apt-get update -yqq && \
+    apt-get install -yqq cron && \
+    pip install \
     -e dagster \
     -e dagster-graphql \
     -e dagster-celery \

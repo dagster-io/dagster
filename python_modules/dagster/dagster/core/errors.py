@@ -246,6 +246,23 @@ class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
 
 
+class DagsterInputHydrationConfigError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occurred while executing the body of an input hydration
+    config function defined in a :class:`InputHydrationConfig <dagster.InputHydrationConfig>` during
+    input hydration of a custom type
+    '''
+
+
+class DagsterOutputMaterializationError(DagsterUserCodeExecutionError):
+    '''
+    Indicates that an unexpected error occurred while executing the body of an output
+    materialization function defined in a
+    :class:`OutputMaterializationConfig <dagster.OutputMaterializationConfig>` during output
+    materialization of a custom type
+    '''
+
+
 class DagsterUnknownResourceError(DagsterError, AttributeError):
     # inherits from AttributeError as it is raised within a __getattr__ call... used to support
     # object hasattr method
@@ -255,9 +272,11 @@ class DagsterUnknownResourceError(DagsterError, AttributeError):
     '''
 
     def __init__(self, resource_name, *args, **kwargs):
-        msg = 'Unknown resource `{resource_name}`.  Make sure `{resource_name}` is a valid resource on the pipeline and that it has been specified in the `required_resource_keys` argument for the solid.'.format(
-            resource_name=resource_name
-        )
+        self.resource_name = check.str_param(resource_name, 'resource_name')
+        msg = (
+            'Unknown resource `{resource_name}. Specify `{resource_name}` as a required resource '
+            'on the compute / config function that accessed it.'
+        ).format(resource_name=resource_name)
         super(DagsterUnknownResourceError, self).__init__(msg, *args, **kwargs)
 
 

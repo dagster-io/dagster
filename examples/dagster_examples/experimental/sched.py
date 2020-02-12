@@ -1,8 +1,6 @@
 import datetime
 
-from dagster_cron import SystemCronScheduler
-
-from dagster import daily_schedule, hourly_schedule, schedules
+from dagster import daily_schedule, hourly_schedule, schedule, schedules
 
 
 @hourly_schedule(
@@ -37,6 +35,19 @@ def daily_rollup_schedule(date):
     }
 
 
-@schedules(scheduler=SystemCronScheduler)
+@schedule(
+    name="test_schedule", cron_schedule="* * * * *", pipeline_name="metrics_pipeline",
+)
+def test_schedule(_):
+    return {
+        'solids': {
+            'save_metrics': {
+                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format("date")}}
+            }
+        },
+    }
+
+
+@schedules
 def define_scheduler():
-    return [daily_ingest_schedule, daily_rollup_schedule]
+    return [daily_ingest_schedule, daily_rollup_schedule, test_schedule]

@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     InputDefinition,
     OutputDefinition,
     execute_solid,
@@ -25,7 +25,7 @@ def test_vanilla_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -42,7 +42,7 @@ def test_vanilla_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})
 
 
@@ -59,7 +59,7 @@ def test_open_typing_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -76,25 +76,25 @@ def test_open_typing_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})
 
 
 def test_typed_python_tuple_directly():
     int_str_tuple = create_typed_tuple(int, str)
 
-    int_str_tuple.type_check((1, 'foo'))
+    int_str_tuple.type_check(None, (1, 'foo'))
 
-    res = int_str_tuple.type_check(None)
+    res = int_str_tuple.type_check(None, None)
     assert not res.success
 
-    res = int_str_tuple.type_check('bar')
+    res = int_str_tuple.type_check(None, 'bar')
     assert not res.success
 
-    res = int_str_tuple.type_check((1, 2, 3))
+    res = int_str_tuple.type_check(None, (1, 2, 3))
     assert not res.success
 
-    res = int_str_tuple.type_check(('1', 2))
+    res = int_str_tuple.type_check(None, ('1', 2))
     assert not res.success
 
 
@@ -103,15 +103,15 @@ def test_nested_python_tuple_directly():
 
     nested_tuple = create_typed_tuple(bool, list, int_str_tuple_kls)
 
-    nested_tuple.type_check((True, [1], (1, 'foo')))
+    nested_tuple.type_check(None, (True, [1], (1, 'foo')))
 
-    res = nested_tuple.type_check(None)
+    res = nested_tuple.type_check(None, None)
     assert not res.success
 
-    res = nested_tuple.type_check('bar')
+    res = nested_tuple.type_check(None, 'bar')
     assert not res.success
 
-    res = nested_tuple.type_check((True, [1], (1, 2)))
+    res = nested_tuple.type_check(None, (True, [1], (1, 2)))
     assert not res.success
 
 
@@ -128,7 +128,7 @@ def test_closed_typing_tuple_output_fail():
     def emit_tuple():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -137,7 +137,7 @@ def test_closed_typing_tuple_output_fail_wrong_member_types():
     def emit_tuple():
         return (1, 'nope')
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -146,7 +146,7 @@ def test_closed_typing_tuple_output_fail_wrong_length():
     def emit_tuple():
         return (1,)
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_tuple)
 
 
@@ -163,5 +163,5 @@ def test_closed_typing_tuple_input_fail():
     def take_tuple(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_tuple, input_values={'tt': 'fkjdf'})

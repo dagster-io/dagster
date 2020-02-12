@@ -1,7 +1,5 @@
 import csv
 
-from dagster_cron import SystemCronScheduler
-
 from dagster import (
     RepositoryDefinition,
     ScheduleDefinition,
@@ -35,7 +33,7 @@ def cereal_repository():
     )
 
 
-@schedules(SystemCronScheduler)
+@schedules
 def cereal_schedules():
     return [
         ScheduleDefinition(

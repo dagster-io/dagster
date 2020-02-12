@@ -620,6 +620,41 @@ def test_single_step_reexecution():
     assert reexecution_result.result_for_solid('add_one').output_value() == 2
 
 
+def test_two_step_reexecution():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    @pipeline
+    def two_step_reexec():
+        add_one(add_one(return_one()))
+
+    instance = DagsterInstance.ephemeral()
+    pipeline_result = execute_pipeline(
+        two_step_reexec, environment_dict={'storage': {'filesystem': {}}}, instance=instance
+    )
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one_2').output_value() == 3
+
+    reexecution_result = execute_pipeline(
+        two_step_reexec,
+        environment_dict={'storage': {'filesystem': {}}},
+        run_config=RunConfig(
+            previous_run_id=pipeline_result.run_id,
+            step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
+        ),
+        instance=instance,
+    )
+
+    assert reexecution_result.success
+    assert reexecution_result.result_for_solid('return_one').output_value() == None
+    assert reexecution_result.result_for_solid('add_one_2').output_value() == 3
+
+
 def test_optional():
     @solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y', is_optional=True)])
     def return_optional(_context):
@@ -656,7 +691,7 @@ def test_basic_pipeline_selector():
     def pipe():
         def_one()
 
-    assert set(pipe.selector.solid_subset) == {'def_one'}
+    assert pipe.selector.solid_subset == None
 
 
 def test_selector_with_partial_dependency_dict():
@@ -674,12 +709,9 @@ def test_selector_with_partial_dependency_dict():
         name='pipe_two', solid_defs=[def_one, def_two], dependencies={'def_one': {}}
     )
 
-    # if it is in solid defs it will execute even if it is not in dependencies dictionary
-    assert set(pipe_two.selector.solid_subset) == {'def_one', 'def_two'}
-
     execute_pipeline(pipe_two)
 
-    # verify that it did execute
+    # if it is in solid defs it will execute even if it is not in dependencies dictionary
     assert set(executed.keys()) == {'one', 'two'}
 
 

@@ -1,112 +1,71 @@
 .. _local-dagit:
 
-Local or Standalone Dagit
--------------------------
+Running Dagit as a service
+--------------------------
 
-The simplest way to deploy Dagster / Dagit is in standalone mode. You can deploy Dagit as a service
-in your environment; some options for configuring this are described below.
+The core of any deployment of Dagster is a Dagit process that serves a user interface and responds
+to GraphQL queries.
 
-.. rubric:: Run on a VM
-
-To launch Dagit on a bare VM, ensure that you've got a recent Python version (preferably 3.7, but
-2.7, 3.5, 3.6, and 3.7 are supported), and preferably a virtualenv configured. Then, you can install
-Dagster and any libraries you need:
-
-.. code-block:: shell
-
-    $ virtualenv --python=/usr/bin/python3 /some/path/to/venv
-    $ source /some/path/to/venv/bin/activate
-    $ pip install dagster dagit dagster-aws # ... any other dagster libraries you need, e.g. dagster-bash
-
-To run Dagit, you can run something like the following:
+Ensure that you are running a recent Python version (Dagster is tested on Python 2.7, 3.5, 3.6, 3.7,
+and 3.8). Typically, you'll want to run Dagit inside a
+`virtualenv <https://virtualenv.pypa.io/en/stable/>`_. Then, you can install Dagit and any
+additional libraries you might need.
 
 .. code-block:: shell
 
-    $ DAGSTER_HOME=/set/a/dagster_home dagit -h 0.0.0.0 -p 3000
+    $ pip install dagit
 
-In this configuration, Dagit will write execution logs to ``$DAGSTER_HOME/logs`` and listen on port
-3000. To run Dagit as a long-lived service on this host, you can install a systemd service similar
-to the AWS quick start, with something like:
+To run Dagit, you'll use a command such as the following:
 
-.. code-block::
+.. code-block:: shell
 
-    [Unit]
-    Description=Run Dagit
-    After=network.target
+    $ DAGSTER_HOME=/opt/dagster/dagster_home dagit -h 0.0.0.0 -p 3000
 
-    [Service]
-    Type=simple
-    User=ubuntu
-    ExecStart=/bin/bash -c '\
-        export DAGSTER_HOME=/opt/dagster/dagster_home && \
-        export PYTHONPATH=$PYTHONPATH:/opt/dagster/app && \
-        export LC_ALL=C.UTF-8 && \
-        export LANG=C.UTF-8 && \
-        source /opt/dagster/venv/bin/activate && \
-        /opt/dagster/venv/bin/dagit \
-            -h 0.0.0.0 \
-            -p 3000 \
-            -y /opt/dagster/app/repository.yaml
-    Restart=always
-    WorkingDirectory=/opt/dagster/app/
+In this configuration, Dagit will write execution logs to ``$DAGSTER_HOME/logs`` and listen on
+`0.0.0.0:3000`.
 
-    [Install]
-    WantedBy=multi-user.target
+Using systemd
+~~~~~~~~~~~~~
 
-Note that this assumes you've got a virtualenv for Dagster at ``/opt/dagster/venv`` and your client
-code and ``repository.yaml`` are located at ``/opt/dagster/app``.
+To run Dagit as a long-lived service, you can install a systemd service such as the following:
 
-.. rubric:: Docker
+.. literalinclude:: systemd/dagit.service
+  :caption: dagit.service
+
+Note that this assumes you've got a virtualenv for Dagster at ``/opt/dagster/venv`` and that your
+pipeline code and ``repository.yaml`` are located under ``/opt/dagster/app``.
+
+Dagit in Docker
+~~~~~~~~~~~~~~~
 
 If you are running on AWS ECS, Kubernetes, or some other container-based orchestration system,
-you'll likely want to containerize Dagit using Docker.
+you'll likely want to package Dagit using a Docker image.
 
 A minimal skeleton ``Dockerfile`` and entrypoint shell script that will run Dagit and the cron
 scheduler are shown below:
 
-.. code-block:: Dockerfile
+.. literalinclude:: docker/Dockerfile
+  :caption: Dockerfile
 
-    :caption: Dockerfile
+In this setup, the contents of ``entrypoint.sh`` should be something like the following. This
+script ensures that cron will run in the Docker container alongside Dagit:
 
-    FROM dagster:dagster-py37:latest
+.. literalinclude:: docker/entrypoint.sh
+  :caption: entrypoint.sh
 
-    RUN mkdir /opt/dagster/dagster_home
+In practice, you may want to volume your pipeline code into your containers to enable deployment
+patterns such as git-sync sidecars that avoid the need to rebuild images and redeploy containers
+when pipeline code changes.
 
-    WORKDIR /
+Dagit servers expose a health check endpoint at ``/dagit_info``, which returns a JSON response like:
 
-    # COPY ## -> TODO: copy your Dagster client code here
+.. code-block:: JSON
 
-    COPY entrypoint.sh .
-    RUN chmod +x /entrypoint.sh
+    {
+      "dagit_version": "0.6.6",
+      "dagster_graphql_version": "0.6.6",
+      "dagster_version": "0.6.6"
+    }
 
-    EXPOSE 3000
-
-    ENTRYPOINT ["/entrypoint.sh"]
-
-
-You can do something like the following ``entrypoint.sh`` to ensure cron is running in the Docker
-container alongside Dagit:
-
-.. code-block:: shell
-
-    :caption: entrypoint.sh
-
-    #!/bin/sh
-
-    # see: https://unix.stackexchange.com/a/453053 - fix link-count
-    touch /etc/crontab /etc/cron.*/*
-
-    service cron start
-
-    export DAGSTER_HOME=/opt/dagster/dagster_home
-
-    # Add all schedules
-    /usr/local/bin/dagster schedule up
-
-    # Restart previously running schedules
-    /usr/local/bin/dagster schedule restart --restart-all-running
-
-
-This ``Dockerfile`` is based on the `public Docker
-images <https://cloud.docker.com/u/dagster/repository/docker/dagster/dagster>`_. We publish versions
-for Python 2.7, 3.5, 3.6, and 3.7.
+Depending on your deployment philosophy, you may want to run dagit as a service within your
+container, use healthchecks as part of a container restart policy, or both.

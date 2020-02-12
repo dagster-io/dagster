@@ -2,9 +2,9 @@ from dagster import check
 from dagster.config.config_type import Array
 
 from .config_schema import InputHydrationConfig
-from .dagster_type import DagsterType, define_python_dagster_type, resolve_dagster_type
+from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
-PythonSet = define_python_dagster_type(
+PythonSet = PythonObjectDagsterType(
     set, 'PythonSet', description='''Represents a python dictionary to pass between solids'''
 )
 
@@ -44,7 +44,7 @@ class _TypedPythonSet(DagsterType):
             type_check_fn=self.type_check_method,
         )
 
-    def type_check_method(self, value):
+    def type_check_method(self, context, value):
         from dagster.core.definitions.events import TypeCheck
 
         if not isinstance(value, set):
@@ -56,7 +56,7 @@ class _TypedPythonSet(DagsterType):
             )
 
         for item in value:
-            item_check = self.item_type.type_check(item)
+            item_check = self.item_type.type_check(context, item)
             if not item_check.success:
                 return item_check
 

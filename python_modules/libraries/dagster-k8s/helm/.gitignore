@@ -1,0 +1,2 @@
+# Chart dependencies
+**/charts/*.tgz

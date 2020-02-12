@@ -9,9 +9,14 @@ import { ScheduleStatus } from "./../../types/globalTypes";
 // GraphQL mutation operation: StartSchedule
 // ====================================================
 
+export interface StartSchedule_startSchedule_schedule_scheduleDefinition {
+  __typename: "ScheduleDefinition";
+  name: string;
+}
+
 export interface StartSchedule_startSchedule_schedule {
   __typename: "RunningSchedule";
-  id: string;
+  scheduleDefinition: StartSchedule_startSchedule_schedule_scheduleDefinition;
   status: ScheduleStatus;
 }
 

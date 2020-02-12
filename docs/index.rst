@@ -2,11 +2,12 @@
 
 .. toctree::
   :maxdepth: 3
+  :includehidden:
   :name: Documentation
 
-  Install <sections/install/install>
-  Learn <sections/learn/learn>
-  API Docs <sections/api/api>
-  Reference <sections/reference/reference>
+  Install <sections/install/index>
+  Tutorial <sections/tutorial/index>
+  Learn <sections/learn/index>
+  API Docs <sections/api/index>
   Deploying <sections/deploying/index>
-  Community <sections/community/community>
+  Community <sections/community/index>

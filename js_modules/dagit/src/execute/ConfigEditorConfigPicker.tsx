@@ -119,7 +119,8 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
         pipeline: pipelineName,
         environmentConfigYaml: partition.environmentConfigYaml || "",
         solidSubset: partition.solidSubset,
-        mode: partition.mode
+        mode: partition.mode,
+        tags: partition.tags
       });
       onSelectPartition(partition);
     };
@@ -353,6 +354,10 @@ export const CONFIG_PARTITIONS_QUERY = gql`
           solidSubset
           environmentConfigYaml
           mode
+          tags {
+            key
+            value
+          }
         }
       }
     }

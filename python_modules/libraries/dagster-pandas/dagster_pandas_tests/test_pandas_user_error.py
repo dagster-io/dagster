@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     InputDefinition,
     OutputDefinition,
     execute_pipeline,
@@ -28,7 +28,7 @@ def test_wrong_output_value():
     def test_pipeline():
         return test_wrong_output(pass_solid())
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(test_pipeline)
 
 
@@ -43,5 +43,5 @@ def test_wrong_input_value():
     def test_pipeline():
         test_wrong_input(pass_solid())
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(test_pipeline)

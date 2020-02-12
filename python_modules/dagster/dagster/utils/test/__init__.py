@@ -8,8 +8,10 @@ from contextlib import contextmanager
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
+    Failure,
     ModeDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     SolidInvocation,
     SystemStorageData,
     TypeCheck,
@@ -30,12 +32,12 @@ from dagster.core.execution.context_creation_pipeline import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleStatus, Scheduler
-from dagster.core.scheduler.storage import ScheduleStorage
 from dagster.core.storage.file_manager import LocalFileManager
 from dagster.core.storage.intermediates_manager import InMemoryIntermediatesManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
+from dagster.core.utils import make_new_run_id
 
 # pylint: disable=unused-import
 from ..temp_file import (
@@ -50,7 +52,7 @@ from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
-    run_id = str(uuid.uuid4())
+    run_id = make_new_run_id()
     loggers = check.opt_dict_param(
         logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
     )
@@ -202,7 +204,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     with scoped_pipeline_context(
         pipeline,
         {},
-        PipelineRun.create_empty_run('empty', run_id=run_id),
+        PipelineRun.create_empty_run('empty', run_id=run_id if run_id is not None else 'TESTING',),
         instance or DagsterInstance.ephemeral(),
         create_execution_plan(pipeline),
     ) as context:
@@ -279,8 +281,8 @@ def check_dagster_type(dagster_type, value):
     Args:
         dagster_type (Any): The Dagster type to test. Should be one of the
             :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
-            :py:func:`as_dagster_type`, :py:func:`@dagster_type <dagster_type>`, or
-            :py:func:`define_python_dagster_type`, or a Python type.
+            :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or
+            :py:func:`PythonObjectDagsterType`, or a Python type.
         value (Any): The runtime value to test.
 
     Returns:
@@ -303,14 +305,20 @@ def check_dagster_type(dagster_type, value):
         )
 
     runtime_type = resolve_dagster_type(dagster_type)
-    type_check = runtime_type.type_check(value)
-    if not isinstance(type_check, TypeCheck):
-        raise DagsterInvariantViolationError(
-            'Type checks can only return TypeCheck. Type {type_name} returned {value}.'.format(
-                type_name=runtime_type.name, value=repr(type_check)
+    with yield_empty_pipeline_context() as pipeline_context:
+        context = pipeline_context.for_type(runtime_type)
+        try:
+            type_check = runtime_type.type_check(context, value)
+        except Failure as failure:
+            return TypeCheck(success=False, description=failure.description)
+
+        if not isinstance(type_check, TypeCheck):
+            raise DagsterInvariantViolationError(
+                'Type checks can only return TypeCheck. Type {type_name} returned {value}.'.format(
+                    type_name=runtime_type.name, value=repr(type_check)
+                )
             )
-        )
-    return type_check
+        return type_check
 
 
 @contextmanager
@@ -326,20 +334,12 @@ def restore_directory(src):
 
 
 class FilesytemTestScheduler(Scheduler):
-    def __init__(self, artifacts_dir, schedule_storage):
-        check.inst_param(schedule_storage, 'schedule_storage', ScheduleStorage)
+    def __init__(self, artifacts_dir):
         check.str_param(artifacts_dir, 'artifacts_dir')
-        self._storage = schedule_storage
         self._artifacts_dir = artifacts_dir
 
-    def all_schedules(self, status=None):
-        return self._storage.all_schedules(status)
-
-    def get_schedule_by_name(self, name):
-        return self._storage.get_schedule_by_name(name)
-
-    def start_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def start_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to start schedule {name}, but it does not exist.'.format(
@@ -355,11 +355,11 @@ class FilesytemTestScheduler(Scheduler):
             )
 
         started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        self._storage.update_schedule(started_schedule)
+        instance.update_schedule(repository, started_schedule)
         return schedule
 
-    def stop_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def stop_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to stop schedule {name}, but was never initialized.'
@@ -374,11 +374,11 @@ class FilesytemTestScheduler(Scheduler):
             )
 
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        self._storage.update_schedule(stopped_schedule)
+        instance.update_schedule(repository, stopped_schedule)
         return stopped_schedule
 
-    def end_schedule(self, schedule_name):
-        schedule = self.get_schedule_by_name(schedule_name)
+    def end_schedule(self, instance, repository, schedule_name):
+        schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:
             raise DagsterInvariantViolationError(
                 'You have attempted to end schedule {name}, but it is not running.'.format(
@@ -386,11 +386,15 @@ class FilesytemTestScheduler(Scheduler):
                 )
             )
 
-        self._storage.delete_schedule(schedule)
+        instance.storage.delete_schedule(repository, schedule)
         return schedule
 
-    def wipe(self):
-        self._storage.wipe()
+    def get_log_path(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+        return os.path.join(
+            self._artifacts_dir, repository.name, 'logs', '{}'.format(schedule_name)
+        )
 
-    def log_path_for_schedule(self, schedule_name):
-        return ""
+    def wipe(self):
+        pass

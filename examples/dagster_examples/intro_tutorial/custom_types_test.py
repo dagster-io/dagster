@@ -15,7 +15,7 @@ from dagster import (
 )
 
 
-def less_simple_data_frame_type_check(value):
+def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         raise Failure(
             'LessSimpleDataFrame should be a list of dicts, got '
@@ -41,6 +41,7 @@ def less_simple_data_frame_type_check(value):
                     actual=row_fields, idx=(i + 1), expected=fields
                 )
             )
+    return True
 
 
 @input_hydration_config(Selector({'csv': Field(String)}))

@@ -25,3 +25,13 @@ Dagster CLI
 .. click:: dagster.cli.utils:utils_cli
    :prog: dagster utils
    :show-nested:
+
+.. currentmodule:: dagster_graphql
+
+.. click:: dagster_graphql.cli:cli
+   :prog: dagster-graphql
+
+.. currentmodule:: dagit
+
+.. click:: dagit.cli:cli
+   :prog: dagit

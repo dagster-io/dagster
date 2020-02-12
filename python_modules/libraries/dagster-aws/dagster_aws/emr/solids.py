@@ -48,7 +48,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
                 # This will take a while... cluster creation usually > 5 minutes
                 time.sleep(poll_interval_sec)
 
-                cluster = job_runner.describe_cluster(cluster_id)
+                cluster = job_runner.describe_cluster(cluster_id)['Cluster']
                 context.log.info(
                     'EMR cluster %s state: %s' % (cluster_id, cluster['Status']['State'])
                 )

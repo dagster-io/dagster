@@ -18,7 +18,7 @@ RunTagsTable = db.Table(
     'run_tags',
     RunStorageSqlMetadata,
     db.Column('id', db.Integer, primary_key=True, autoincrement=True),
-    db.Column('run_id', None, db.ForeignKey('runs.run_id')),
+    db.Column('run_id', None, db.ForeignKey('runs.run_id', ondelete="CASCADE")),
     db.Column('key', db.String),
     db.Column('value', db.String),
 )

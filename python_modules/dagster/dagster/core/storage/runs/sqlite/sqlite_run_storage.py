@@ -1,6 +1,7 @@
 import os
 from contextlib import contextmanager
 
+import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster import check
@@ -9,7 +10,7 @@ from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 
 from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev
-from ..schema import RunStorageSqlMetadata
+from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
 
 
@@ -70,3 +71,13 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             for run in old_runs:
                 self.add_run(run)
             os.unlink(path_to_old_db)
+
+    def delete_run(self, run_id):
+        ''' Override the default sql delete run implementation until we can get full
+        support on cascading deletes '''
+        check.str_param(run_id, 'run_id')
+        remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
+        remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
+        with self.connect() as conn:
+            conn.execute(remove_tags)
+            conn.execute(remove_run)

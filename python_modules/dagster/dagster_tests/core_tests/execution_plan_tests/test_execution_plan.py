@@ -31,45 +31,95 @@ def test_active_execution_plan():
 
     active_execution = plan.start()
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 1
     step_1 = steps[0]
     assert step_1.key == 'return_two.compute'
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 0  # cant progress
 
-    active_execution.mark_complete(step_1.key)
+    active_execution.mark_success(step_1.key)
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 2
     step_2 = steps[0]
     step_3 = steps[1]
     assert step_2.key == 'add_three.compute'
     assert step_3.key == 'mult_three.compute'
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 0  # cant progress
 
-    active_execution.mark_complete(step_2.key)
+    active_execution.mark_success(step_2.key)
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 0  # cant progress
 
-    active_execution.mark_complete(step_3.key)
+    active_execution.mark_success(step_3.key)
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 1
     step_4 = steps[0]
 
     assert step_4.key == 'adder.compute'
 
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert len(steps) == 0  # cant progress
 
     assert not active_execution.is_complete
 
-    active_execution.mark_complete(step_4.key)
+    active_execution.mark_success(step_4.key)
+
+    assert active_execution.is_complete
+
+
+def test_failing_execution_plan():
+    pipeline_def = define_diamond_pipeline()
+    plan = create_execution_plan(pipeline_def)
+
+    active_execution = plan.start()
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    step_1 = steps[0]
+    assert step_1.key == 'return_two.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_success(step_1.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 2
+    step_2 = steps[0]
+    step_3 = steps[1]
+    assert step_2.key == 'add_three.compute'
+    assert step_3.key == 'mult_three.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_success(step_2.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    # uh oh failure
+    active_execution.mark_failed(step_3.key)
+
+    # cant progres to 4th step
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0
+
+    assert not active_execution.is_complete
+
+    steps = active_execution.get_steps_to_skip()
+    assert len(steps) == 1
+    step_4 = steps[0]
+
+    assert step_4.key == 'adder.compute'
+    active_execution.mark_skipped(step_4.key)
 
     assert active_execution.is_complete
 
@@ -112,7 +162,7 @@ def test_priorities():
 
     plan = create_execution_plan(priorities)
     active_execution = plan.start(sort_key_fn)
-    steps = active_execution.get_available_steps()
+    steps = active_execution.get_steps_to_execute()
     assert steps[0].key == 'pri_5.compute'
     assert steps[1].key == 'pri_4.compute'
     assert steps[2].key == 'pri_3.compute'

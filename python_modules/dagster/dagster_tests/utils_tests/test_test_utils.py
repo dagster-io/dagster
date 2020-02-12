@@ -1,9 +1,18 @@
-import re
 import typing
 
 import pytest
 
-from dagster import Any, Dict, List, Optional, PipelineDefinition, Set, String, Tuple, dagster_type
+from dagster import (
+    Any,
+    Dict,
+    List,
+    Optional,
+    PipelineDefinition,
+    Set,
+    String,
+    Tuple,
+    usable_as_dagster_type,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.temp_file import _unlink_swallow_errors
 from dagster.utils.test import check_dagster_type, execute_solids_within_pipeline
@@ -123,30 +132,7 @@ def test_check_dagster_type():
     res = check_dagster_type(Optional[str], None)
     assert res.success
 
-    class Foo(object):
-        pass
-
-    class Bar(object):
-        pass
-
-    res = check_dagster_type(Foo, Foo())
-    assert res.success
-
-    res = check_dagster_type(Foo, Bar())
-    assert not res.success
-    assert re.match(
-        re.escape('Value of type <class \'dagster_tests.utils_tests.test_test_utils')
-        + '('
-        + re.escape('.test_check_dagster_type.<locals>')
-        + ')?'
-        + re.escape(
-            '.Bar\'> failed type check for Dagster type Implicit[Foo], expected value to be '
-            'of Python type Foo.'
-        ),
-        res.description,
-    )
-
-    @dagster_type
+    @usable_as_dagster_type
     class Baz(object):
         pass
 

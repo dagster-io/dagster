@@ -92,18 +92,58 @@ def launch_background_worker(subprocess_args, env):
     )
 
 
-@click.command(name='start')
-@click.option('--name', '-n', type=click.STRING, default=None)
-@click.option('--config-yaml', '-y', type=click.Path(exists=True), default=None)
-@click.option('--queue', '-q', type=click.STRING, multiple=True)
-@click.option('--background', '-d', is_flag=True)
-@click.option('--includes', '-i', type=click.STRING, multiple=True)
-@click.option('--loglevel', '-l', type=click.STRING, default='INFO')
+@click.command(name='start', help='Start a dagster celery worker.')
+@click.option(
+    '--name',
+    '-n',
+    type=click.STRING,
+    default=None,
+    help=(
+        'The name of the worker. Defaults to a unique name prefixed with "dagster-" and ending '
+        'with the hostname.'
+    ),
+)
+@click.option(
+    '--config-yaml',
+    '-y',
+    type=click.Path(exists=True),
+    default=None,
+    help=(
+        'Specify the path to a config YAML file with options for the worker. This is the same '
+        'config block that you provide to dagster_celery.celery_executor when configuring a '
+        'pipeline for execution with Celery, with, e.g., the URL of the broker to use.'
+    ),
+)
+@click.option(
+    '--queue',
+    '-q',
+    type=click.STRING,
+    multiple=True,
+    help=(
+        'Names of the queues on which this worker should listen for tasks.  Provide multiple -q '
+        'arguments to specify multiple queues. Note that each celery worker may listen on no more '
+        'than four queues.'
+    ),
+)
+@click.option(
+    '--background', '-d', is_flag=True, help='Set this flag to run the worker in the background.'
+)
+@click.option(
+    '--includes',
+    '-i',
+    type=click.STRING,
+    multiple=True,
+    help=(
+        'Python modules the worker should import. Provide multiple -i arguments to specify '
+        'multiple modules.'
+    ),
+)
+@click.option(
+    '--loglevel', '-l', type=click.STRING, default='INFO', help='Log level for the worker.'
+)
 def worker_start_command(
     name=None, config_yaml=None, background=None, queue=None, includes=None, loglevel=None,
 ):
-    '''dagster-celery start'''
-
     loglevel_args = ['--loglevel', loglevel]
 
     if len(queue) > 4:
@@ -138,18 +178,54 @@ def worker_start_command(
         return subprocess.check_call(subprocess_args, env=env)
 
 
-@click.command(name='list')
-@click.option('--config-yaml', '-y', type=click.Path(exists=True), default=None)
+@click.command(
+    name='list',
+    help='List running dagster-celery workers. Note that we use the broker to contact the workers.',
+)
+@click.option(
+    '--config-yaml',
+    '-y',
+    type=click.Path(exists=True),
+    default=None,
+    help=(
+        'Specify the path to a config YAML file with options for the workers you are trying to '
+        'manage. This is the same config block that you provide to dagster_celery.celery_executor '
+        'when configuring a pipeline for execution with Celery, with, e.g., the URL of the broker '
+        'to use. Without this config file, you will not be able to find your workers (since the '
+        'CLI won\'t know how to reach the broker).'
+    ),
+)
 def worker_list_command(config_yaml=None):
     app = get_app(config_yaml)
 
     print(app.control.inspect(timeout=1).active())
 
 
-@click.command(name='terminate')
+@click.command(
+    name='terminate',
+    help=(
+        'Shut down dagster-celery workers. Note that we use the broker to send signals to the '
+        'workers to terminate -- if the broker is not running, this command is a no-op. '
+        'Provide the argument NAME to terminate a specific worker by name.'
+    ),
+)
 @click.argument('name', default='dagster')
-@click.option('--all', '-a', 'all_', is_flag=True)
-@click.option('--config-yaml', '-y', type=click.Path(exists=True), default=None)
+@click.option(
+    '--all', '-a', 'all_', is_flag=True, help='Set this flag to terminate all running workers.'
+)
+@click.option(
+    '--config-yaml',
+    '-y',
+    type=click.Path(exists=True),
+    default=None,
+    help=(
+        'Specify the path to a config YAML file with options for the workers you are trying to '
+        'manage. This is the same config block that you provide to dagster_celery.celery_executor '
+        'when configuring a pipeline for execution with Celery, with, e.g., the URL of the broker '
+        'to use. Without this config file, you will not be able to terminate your workers (since '
+        'the CLI won\'t know how to reach the broker).'
+    ),
+)
 def worker_terminate_command(name='dagster', config_yaml=None, all_=False):
     app = get_app(config_yaml)
 

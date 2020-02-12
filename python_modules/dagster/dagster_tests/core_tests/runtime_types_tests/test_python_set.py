@@ -3,7 +3,7 @@ import typing
 import pytest
 
 from dagster import (
-    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
     InputDefinition,
     Optional,
     OutputDefinition,
@@ -27,7 +27,7 @@ def test_vanilla_set_output_fail():
     def emit_set():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
@@ -44,7 +44,7 @@ def test_vanilla_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
 
@@ -61,7 +61,7 @@ def test_open_typing_set_output_fail():
     def emit_set():
         return 'foo'
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
@@ -78,37 +78,37 @@ def test_open_typing_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
 
 def test_runtime_set_of_int():
     set_runtime_type = create_typed_runtime_set(int)
 
-    set_runtime_type.type_check({1})
-    set_runtime_type.type_check(set())
+    set_runtime_type.type_check(None, {1})
+    set_runtime_type.type_check(None, set())
 
-    res = set_runtime_type.type_check(None)
+    res = set_runtime_type.type_check(None, None)
     assert not res.success
 
-    res = set_runtime_type.type_check('nope')
+    res = set_runtime_type.type_check(None, 'nope')
     assert not res.success
 
-    res = set_runtime_type.type_check({'nope'})
+    res = set_runtime_type.type_check(None, {'nope'})
     assert not res.success
 
 
 def test_runtime_optional_set():
     set_runtime_type = resolve_dagster_type(Optional[create_typed_runtime_set(int)])
 
-    set_runtime_type.type_check({1})
-    set_runtime_type.type_check(set())
-    set_runtime_type.type_check(None)
+    set_runtime_type.type_check(None, {1})
+    set_runtime_type.type_check(None, set())
+    set_runtime_type.type_check(None, None)
 
-    res = set_runtime_type.type_check('nope')
+    res = set_runtime_type.type_check(None, 'nope')
     assert not res.success
 
-    res = set_runtime_type.type_check({'nope'})
+    res = set_runtime_type.type_check(None, {'nope'})
     assert not res.success
 
 
@@ -125,8 +125,8 @@ def test_closed_typing_set_input_fail():
     def take_set(tt):
         return tt
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': 'fkjdf'})
 
-    with pytest.raises(DagsterTypeCheckError):
+    with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={'tt': {'fkjdf'}})

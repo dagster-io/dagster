@@ -5,8 +5,9 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError, DagstermillExecutionError
+from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
+from papermill import PapermillExecutionError
 
 from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
@@ -125,13 +126,11 @@ def test_notebook_dag():
 
 @pytest.mark.notebook_test
 def test_error_notebook():
-    with pytest.raises(
-        DagstermillError, match='Error occurred during the execution of Dagstermill solid'
-    ) as exc:
+    with pytest.raises(PapermillExecutionError) as exc:
         with exec_for_test('define_error_pipeline') as result:
             pass
 
-    assert 'Someone set up us the bomb' in exc.value.original_exc_info[1].args[0]
+    assert 'Someone set up us the bomb' in str(exc.value)
 
     with exec_for_test('define_error_pipeline', raise_on_error=False) as result:
         assert not result.success
@@ -259,9 +258,6 @@ def test_resources_notebook_with_exception():
 
 @pytest.mark.notebook_test
 def test_bad_kernel():
-    with pytest.raises(
-        DagstermillExecutionError,
-        match='Error occurred during the execution of Dagstermill solid bad_kernel_solid',
-    ):
+    with pytest.raises(NoSuchKernel):
         with exec_for_test('define_bad_kernel_pipeline'):
             pass

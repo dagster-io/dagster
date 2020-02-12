@@ -25,7 +25,7 @@ from .fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
 )
 from .fetch_runs import get_validated_config
-from .fetch_schedules import get_dagster_schedule, get_dagster_schedule_def
+from .fetch_schedules import get_dagster_schedule_def
 from .pipeline_run_storage import PipelineRunObservableSubscribe
 from .utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 
@@ -78,7 +78,6 @@ def start_scheduled_execution(graphene_info, schedule_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(schedule_name, 'schedule_name')
 
-    schedule = get_dagster_schedule(graphene_info, schedule_name)
     schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
 
     schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
@@ -93,9 +92,6 @@ def start_scheduled_execution(graphene_info, schedule_name):
     # Get environment_dict
     environment_dict = schedule_def.get_environment_dict(schedule_context)
     tags = schedule_def.get_tags(schedule_context)
-
-    check.invariant('dagster/schedule_id' not in tags)
-    tags['dagster/schedule_id'] = schedule.schedule_id
 
     check.invariant('dagster/schedule_name' not in tags)
     tags['dagster/schedule_name'] = schedule_def.name

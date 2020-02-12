@@ -55,7 +55,7 @@ Environment Dict Schema
 ^^^^^^^^^^^^^^^^^^^^^^^
   The ``environment_dict`` used by :py:func:`execute_pipeline` and
   :py:func:`execute_pipeline_iterator` has the following schema:
-  
+
   ::
 
       {
@@ -171,3 +171,12 @@ Executors
   The default executors available on any :py:class:`ModeDefinition` that does not provide custom
   executors. These are currently [:py:class:`in_process_executor`,
   :py:class:`multiprocess_executor`].
+
+Contexts
+--------
+
+.. autoclass:: SystemComputeExecutionContext
+  :members:
+
+.. autoclass:: TypeCheckContext
+  :members:

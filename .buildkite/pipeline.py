@@ -587,6 +587,30 @@ def pylint_steps():
     return res
 
 
+def gatsby_docs_build_tests():
+    tests = []
+    for version in [SupportedPython.V3_7]:
+        tests.append(
+            StepBuilder("gatsby docs build tests")
+            .run(
+                "pip install -r bin/requirements.txt -qqq",
+                "pip install -r bin/dev-requirements.txt -qqq",
+                "pip install -r .read-the-docs-requirements.txt -qqq",
+                "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+                "cd docs/gatsby",
+                "yarn install",
+                "yarn sphinx -v latest",
+                "yarn build",
+            )
+            .on_integration_image(
+                version, ['ALGOLIA_APP_ID', 'ALGOLIA_SEARCH_KEY', 'ALGOLIA_ADMIN_KEY']
+            )
+            .build()
+        )
+
+    return tests
+
+
 def releasability_tests():
     tests = []
     for version in [SupportedPython.V3_7]:
@@ -654,7 +678,10 @@ if __name__ == "__main__":
         .run(
             "pip install mypy",
             # start small by making sure the local code type checks
-            "mypy examples --ignore-missing-imports",
+            "mypy examples/dagster_examples/airline_demo "
+            "examples/dagster_examples/bay_bikes "
+            "examples/dagster_examples/intro_tutorial/custom_types_mypy* "
+            "--ignore-missing-imports",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
@@ -688,6 +715,8 @@ if __name__ == "__main__":
     steps += library_tests()
 
     steps += releasability_tests()
+
+    steps += gatsby_docs_build_tests()
 
     if DO_COVERAGE:
         steps += [wait_step(), coverage_step()]

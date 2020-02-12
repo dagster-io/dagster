@@ -1,18 +1,13 @@
-import collections
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import pytest
+from typing import Any, Dict, List, Optional, Tuple
 
 from dagster import (
-    DagsterInvalidDefinitionError,
     InputDefinition,
     Int,
-    as_dagster_type,
     composite_solid,
-    dagster_type,
     execute_solid,
     lambda_solid,
     solid,
+    usable_as_dagster_type,
 )
 
 
@@ -111,28 +106,8 @@ def test_wrapped_input_and_output_lambda():
     assert add_one.output_defs[0].runtime_type.inner_type.is_list
 
 
-def test_autowrapping_python_types():
-    class Foo(object):
-        pass
-
-    @lambda_solid
-    def _test_non_dagster_class_input(num: Foo):
-        return num
-
-    @lambda_solid
-    def _test_non_dagster_class_output() -> Foo:
-        return 1
-
-    # Optional[X] is represented as Union[X, NoneType] - test that we throw on other Unions
-    with pytest.raises(DagsterInvalidDefinitionError):
-
-        @lambda_solid
-        def _test_union_not_optional(num: Union[int, str]):
-            return num
-
-
 def test_kitchen_sink():
-    @dagster_type
+    @usable_as_dagster_type
     class Custom(object):
         pass
 
@@ -235,33 +210,6 @@ def test_python_tuple_output():
         return (4, 5)
 
     assert execute_solid(emit_tuple).output_value() == (4, 5)
-
-
-def test_python_built_in_output():
-    class MyOrderedDict(collections.OrderedDict):
-        pass
-
-    OrderedDict = as_dagster_type(MyOrderedDict)
-
-    @lambda_solid
-    def emit_ordered_dict() -> OrderedDict:
-        return OrderedDict([('foo', 'bar')])
-
-    output_value = execute_solid(emit_ordered_dict).output_value()
-    assert output_value == OrderedDict([('foo', 'bar')])
-    assert isinstance(output_value, OrderedDict)
-    assert isinstance(output_value, MyOrderedDict)
-    assert isinstance(output_value, collections.OrderedDict)
-
-
-def test_python_autowrap_built_in_output():
-    @lambda_solid
-    def emit_counter() -> collections.Counter:
-        return collections.Counter([1, 1, 2])
-
-    output_value = execute_solid(emit_counter).output_value()
-    assert output_value == collections.Counter([1, 1, 2])
-    assert isinstance(output_value, collections.Counter)
 
 
 def test_nested_kitchen_sink():

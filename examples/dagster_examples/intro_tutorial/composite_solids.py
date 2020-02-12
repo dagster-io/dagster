@@ -1,5 +1,6 @@
 # pylint:disable=unused-variable,no-member
 import csv
+import typing
 from copy import deepcopy
 from typing import Any
 
@@ -7,20 +8,18 @@ from dagster import (
     Bool,
     Field,
     Int,
+    PythonObjectDagsterType,
     String,
-    as_dagster_type,
     composite_solid,
     execute_pipeline,
     pipeline,
     solid,
 )
 
-
-class _DataFrame(list):
-    pass
-
-
-DataFrame = as_dagster_type(_DataFrame, name='DataFrame')  # type: Any
+if typing.TYPE_CHECKING:
+    DataFrame = list
+else:
+    DataFrame = PythonObjectDagsterType(list, name='DataFrame')  # type: Any
 
 
 @solid(
@@ -106,7 +105,7 @@ def read_csv(context, csv_path: str) -> DataFrame:
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
 
-    return DataFrame(lines)
+    return lines
 
 
 @solid
@@ -121,7 +120,7 @@ def join_cereal(
     for cereal in joined_cereals:
         cereal['mfr'] = manufacturers_lookup[cereal['mfr']]
 
-    return DataFrame(joined_cereals)
+    return joined_cereals
 
 
 @composite_solid

@@ -22,20 +22,20 @@ from dagster.utils import script_relative_path
 
 def test_type_check():
     for less_simple_data_frame_type_check in [lsdftc2, lsdftc3, lsdftc4, lsdftc5]:
-        res = less_simple_data_frame_type_check('foo')
+        res = less_simple_data_frame_type_check(None, 'foo')
         assert res is False or res.success is False
 
         res = less_simple_data_frame_type_check(
-            [OrderedDict([('foo', 1)]), OrderedDict([('foo', 2)])]
+            None, [OrderedDict([('foo', 1)]), OrderedDict([('foo', 2)])]
         )
         assert res is True or res.success is True
 
         res = less_simple_data_frame_type_check(
-            [OrderedDict([('foo', 1)]), OrderedDict([('bar', 2)])]
+            None, [OrderedDict([('foo', 1)]), OrderedDict([('bar', 2)])]
         )
         assert res is False or res.success is False
 
-        res = less_simple_data_frame_type_check([OrderedDict([('foo', 1)]), 2])
+        res = less_simple_data_frame_type_check(None, [OrderedDict([('foo', 1)]), 2])
         assert res is False or res.success is False
 
 

@@ -2,7 +2,6 @@ import datetime
 
 from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, daily_schedule, schedules
 from dagster.core.definitions.partition import last_empty_partition
-from dagster.utils.test import FilesytemTestScheduler
 
 integer_partition_set = PartitionSetDefinition(
     name='scheduled_integer_partitions',
@@ -13,7 +12,7 @@ integer_partition_set = PartitionSetDefinition(
 )
 
 
-@schedules(scheduler=FilesytemTestScheduler)
+@schedules
 def define_scheduler():
 
     no_config_pipeline_hourly_schedule = ScheduleDefinition(
@@ -28,14 +27,6 @@ def define_scheduler():
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
         environment_dict_fn=lambda _context: {"storage": {"filesystem": {}}},
-    )
-
-    no_config_pipeline_hourly_schedule_with_schedule_id_tag = ScheduleDefinition(
-        name="no_config_pipeline_hourly_schedule_with_schedule_id_tag",
-        cron_schedule="0 0 * * *",
-        pipeline_name="no_config_pipeline",
-        environment_dict={"storage": {"filesystem": {}}},
-        tags={"dagster/schedule_id": "1234"},
     )
 
     no_config_should_execute = ScheduleDefinition(
@@ -82,7 +73,6 @@ def define_scheduler():
 
     return [
         no_config_pipeline_hourly_schedule,
-        no_config_pipeline_hourly_schedule_with_schedule_id_tag,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
         dynamic_config,

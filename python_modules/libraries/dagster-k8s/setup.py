@@ -23,7 +23,7 @@ parser.add_argument('--nightly', action='store_true')
 
 def _do_setup(name='dagster-k8s'):
     setup(
-        name='dagster_k8s',
+        name=name,
         version=get_version(name),
         author='Elementl',
         license='Apache-2.0',
@@ -37,7 +37,7 @@ def _do_setup(name='dagster-k8s'):
             'Operating System :: OS Independent',
         ],
         packages=find_packages(exclude=['test']),
-        install_requires=['dagster', 'kubernetes'],
+        install_requires=['dagster', 'dagster_graphql', 'kubernetes'],
         tests_require=[],
         zip_safe=False,
     )

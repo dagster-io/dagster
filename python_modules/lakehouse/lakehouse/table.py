@@ -2,9 +2,9 @@ from dagster import (
     InputDefinition,
     Output,
     OutputDefinition,
+    PythonObjectDagsterType,
     SolidDefinition,
     check,
-    define_python_dagster_type,
 )
 from dagster.core.definitions.decorators import validate_solid_fn
 
@@ -67,7 +67,7 @@ def create_lakehouse_table_def(
         required_resource_keys, 'required_resource_keys', of_type=str
     )
 
-    table_type = define_python_dagster_type(
+    table_type = PythonObjectDagsterType(
         python_type=ITableHandle, name=name, description=description
     )
 

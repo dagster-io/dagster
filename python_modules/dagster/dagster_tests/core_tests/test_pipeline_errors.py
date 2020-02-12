@@ -1,13 +1,10 @@
-import sys
-
 import pytest
 
 from dagster import (
-    DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
+    DagsterTypeCheckDidNotPass,
     DependencyDefinition,
     EventMetadataEntry,
-    Failure,
     InputDefinition,
     Output,
     OutputDefinition,
@@ -246,29 +243,16 @@ def test_user_error_propogation():
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
 
-    with pytest.raises(DagsterExecutionStepExecutionError) as e_info:
+    with pytest.raises(UserError) as e_info:
         execute_pipeline(pipeline_def)
 
-    assert isinstance(e_info.value.__cause__, UserError)
-    # meta data on the exception
-    assert e_info.value.step_key == 'throws_user_error.compute'
-    assert e_info.value.solid_name == 'throws_user_error'
-    assert e_info.value.solid_def_name == 'throws_user_error'
-
-    # and in the message
-    assert 'step key: "throws_user_error.compute"' in str(e_info.value)
-    assert 'solid invocation: "throws_user_error"' in str(e_info.value)
-    assert 'solid definition: "throws_user_error"' in str(e_info.value)
-
-    # ensure that the inner exception shows up in the error message on python 2
-    if sys.version_info[0] == 2:
-        assert err_msg in str(e_info.value)
+    assert isinstance(e_info.value, UserError)
 
 
 def test_explicit_failure():
     @lambda_solid
     def throws_failure():
-        raise Failure(
+        raise DagsterTypeCheckDidNotPass(
             description='Always fails.',
             metadata_entries=[EventMetadataEntry.text('why', label='always_fails')],
         )
@@ -277,10 +261,8 @@ def test_explicit_failure():
     def pipe():
         throws_failure()
 
-    with pytest.raises(DagsterExecutionStepExecutionError) as exc_info:
+    with pytest.raises(DagsterTypeCheckDidNotPass) as exc_info:
         execute_pipeline(pipe)
 
-    assert exc_info.value.user_specified_failure.description == 'Always fails.'
-    assert exc_info.value.user_specified_failure.metadata_entries == [
-        EventMetadataEntry.text('why', label='always_fails')
-    ]
+    assert exc_info.value.description == 'Always fails.'
+    assert exc_info.value.metadata_entries == [EventMetadataEntry.text('why', label='always_fails')]

@@ -2,7 +2,6 @@ import pytest
 
 from dagster import (
     Bool,
-    DagsterExecutionStepExecutionError,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     ModeDefinition,
@@ -65,13 +64,13 @@ def test_presets():
 
     assert execute_pipeline_with_preset(pipeline, 'passing_direct_dict').success
 
-    with pytest.raises(DagsterExecutionStepExecutionError):
+    with pytest.raises(Exception):
         execute_pipeline_with_preset(pipeline, 'failing_1')
 
-    with pytest.raises(DagsterExecutionStepExecutionError):
+    with pytest.raises(Exception):
         execute_pipeline_with_preset(pipeline, 'failing_2')
 
-    with pytest.raises(DagsterInvariantViolationError, match="Could not find preset"):
+    with pytest.raises(Exception, match="Could not find preset"):
         execute_pipeline_with_preset(pipeline, 'not_failing')
 
 

@@ -227,6 +227,11 @@ type ExecutionPlan {
 
 union ExecutionPlanResult = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
 
+type ExecutionSelection {
+  name: String!
+  solidSubset: [String!]
+}
+
 input ExecutionSelector {
   name: String!
   solidSubset: [String!]
@@ -580,6 +585,7 @@ type Partition {
   solidSubset: [String!]
   mode: String!
   environmentConfigYaml: String!
+  tags: [PipelineTag!]!
 }
 
 type PartitionSet {
@@ -721,6 +727,7 @@ type PipelineRun {
   mode: String!
   tags: [PipelineTag!]!
   canCancel: Boolean!
+  executionSelection: ExecutionSelection!
 }
 
 union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
@@ -883,7 +890,6 @@ type RunLauncherNotDefinedError implements Error {
 }
 
 type RunningSchedule {
-  id: String!
   scheduleDefinition: ScheduleDefinition!
   pythonPath: String
   repositoryPath: String

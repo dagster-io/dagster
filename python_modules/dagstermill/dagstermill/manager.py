@@ -25,6 +25,7 @@ from dagster.core.execution.context_creation_pipeline import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import unpack_value
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 
 from .context import DagstermillExecutionContext
@@ -187,7 +188,7 @@ class Manager(object):
             [solid_def], mode_defs=[mode_def], name='ephemeral_dagstermill_pipeline'
         )
 
-        run_id = str(uuid.uuid4())
+        run_id = make_new_run_id()
 
         # construct stubbed PipelineRun for notebook exploration...
         # The actual pipeline run during pipeline execution will be serialized and reconstituted

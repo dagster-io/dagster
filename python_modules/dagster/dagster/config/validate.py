@@ -206,7 +206,6 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
 
             if field_evr.errors:
                 field_errors += field_evr.errors
-
     if field_errors:
         errors += field_errors
 
@@ -300,10 +299,8 @@ def validate_enum_config(context, config_value):
 
 
 def process_config(config_type, config_dict):
-    config_evr = validate_config(config_type, config_dict)
-    if not config_evr.success:
-        return config_evr
+    validate_evr = validate_config(config_type, config_dict)
+    if not validate_evr.success:
+        return validate_evr
 
-    processed = post_process_config(config_type, config_evr.value)
-
-    return EvaluateValueResult.for_value(processed)
+    return post_process_config(config_type, validate_evr.value)

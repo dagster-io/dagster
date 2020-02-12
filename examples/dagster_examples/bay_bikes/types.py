@@ -249,7 +249,7 @@ WeatherDataFrameSchema = [
         'visibility', min_value=0.0, max_value=10.0, expected_dtypes={'int64', 'float64'}
     ),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
-    PandasColumn.boolean_column('didRain', exists=True),
+    PandasColumn.boolean_column('didRain', non_nullable=True),
 ]
 
 
@@ -260,7 +260,7 @@ WeatherDataFrame = create_dagster_pandas_dataframe_type(
 )
 
 
-def validate_snapshot_timeseries(training_set_data):
+def validate_snapshot_timeseries(_, training_set_data):
     if not isinstance(training_set_data, tuple):
         return TypeCheck(False)
 

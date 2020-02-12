@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     CompositeSolidDefinition,
+    DagsterType,
     DagsterUnknownResourceError,
     InputDefinition,
     Materialization,
@@ -10,7 +11,6 @@ from dagster import (
     ResourceDefinition,
     RunConfig,
     String,
-    as_dagster_type,
     composite_solid,
     execute_pipeline,
     input_hydration_config,
@@ -18,6 +18,7 @@ from dagster import (
     pipeline,
     resource,
     solid,
+    usable_as_dagster_type,
 )
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
@@ -293,9 +294,6 @@ def test_custom_type_with_resource_dependent_hydration():
         def resource_a(_):
             yield 'A'
 
-        class CustomType(str):
-            pass
-
         @input_hydration_config(
             String, required_resource_keys={'a'} if should_require_resources else set()
         )
@@ -303,11 +301,11 @@ def test_custom_type_with_resource_dependent_hydration():
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        CustomDagsterType = as_dagster_type(
-            CustomType, name='CustomType', input_hydration_config=InputHydration
-        )
+        @usable_as_dagster_type(input_hydration_config=InputHydration)
+        class CustomType(str):
+            pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomDagsterType)])
+        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
@@ -338,23 +336,20 @@ def test_resource_dependent_hydration_with_selective_init():
             resources_initted['a'] = True
             yield 'A'
 
-        class CustomType(str):
-            pass
-
         @input_hydration_config(String, required_resource_keys={'a'})
         def InputHydration(context, hello):
             assert context.resources.a == 'A'
             return CustomType(hello)
 
-        CustomDagsterType = as_dagster_type(
-            CustomType, name='CustomType', input_hydration_config=InputHydration
-        )
+        @usable_as_dagster_type(input_hydration_config=InputHydration)
+        class CustomType(str):
+            pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomDagsterType)])
+        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
-        @solid(output_defs=[OutputDefinition(CustomDagsterType)])
+        @solid(output_defs=[OutputDefinition(CustomType)])
         def source_custom_type(_):
             return CustomType('from solid')
 
@@ -569,3 +564,36 @@ def test_custom_type_with_resource_dependent_composite_materialization():
         define_composite_materialization_pipeline(resources_initted=resources_initted),
     ).success
     assert set(resources_initted.keys()) == set()
+
+
+def test_custom_type_with_resource_dependent_type_check():
+    def define_type_check_pipeline(should_require_resources):
+        @resource
+        def resource_a(_):
+            yield 'A'
+
+        def resource_based_type_check(context, value):
+            return context.resources.a == value
+
+        CustomType = DagsterType(
+            name='NeedsA',
+            type_check_fn=resource_based_type_check,
+            required_resource_keys={'a'} if should_require_resources else None,
+        )
+
+        @solid(output_defs=[OutputDefinition(CustomType, 'custom_type')])
+        def custom_type_solid(_):
+            return 'A'
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+        def type_check_pipeline():
+            custom_type_solid()
+
+        return type_check_pipeline
+
+    under_required_pipeline = define_type_check_pipeline(should_require_resources=False)
+    with pytest.raises(DagsterUnknownResourceError):
+        execute_pipeline(under_required_pipeline)
+
+    sufficiently_required_pipeline = define_type_check_pipeline(should_require_resources=True)
+    assert execute_pipeline(sufficiently_required_pipeline).success
