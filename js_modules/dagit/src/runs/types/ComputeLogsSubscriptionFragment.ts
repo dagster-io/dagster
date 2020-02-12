@@ -9,8 +9,8 @@
 
 export interface ComputeLogsSubscriptionFragment {
   __typename: "ComputeLogFile";
-  data: string;
+  data: string | null;
   cursor: number;
   path: string;
-  downloadUrl: string;
+  downloadUrl: string | null;
 }

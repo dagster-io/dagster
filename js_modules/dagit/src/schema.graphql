@@ -46,10 +46,10 @@ enum ComputeIOType {
 
 type ComputeLogFile {
   path: String!
-  data: String!
+  data: String
   cursor: Int!
   size: Int!
-  downloadUrl: String!
+  downloadUrl: String
 }
 
 type ComputeLogs {

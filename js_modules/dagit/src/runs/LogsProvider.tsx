@@ -111,7 +111,8 @@ export class LogsProvider extends React.Component<
     >(
       PIPELINE_RUN_LOGS_SUBSCRIPTION,
       { runId: runId, after: null },
-      this.onHandleMessages
+      this.onHandleMessages,
+      () => {} // https://github.com/dagster-io/dagster/issues/2151
     );
   }
 
