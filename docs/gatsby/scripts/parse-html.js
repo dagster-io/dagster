@@ -104,5 +104,12 @@ exports.parseMarkdown = parseMarkdown;
 exports.toParseFive = body => {
   const html = parseHtml(body, getCurrentVersion());
   const parsed = parse5.parse(html, { sourceCodeLocationInfo: false });
+
+  return Flatted.stringify(parsed);
+};
+
+exports.parseToc = body => {
+  const html = parseHtml(body, getCurrentVersion());
+  const parsed = parse5.parse(html, { sourceCodeLocationInfo: false });
   return Flatted.stringify(parsed);
 };
