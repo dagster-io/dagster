@@ -2,10 +2,12 @@ Guides
 =======================
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
+
 
   dagster_types
   solid/solid
+  partitioning/index
   testing/testing
   testing/expectations
   logging/logging

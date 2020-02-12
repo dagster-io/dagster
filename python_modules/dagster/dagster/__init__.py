@@ -45,6 +45,7 @@ from dagster.core.definitions import (
     in_process_executor,
     lambda_solid,
     logger,
+    monthly_schedule,
     multiprocess_executor,
     pipeline,
     repository_partitions,

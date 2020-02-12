@@ -8,8 +8,8 @@ from dateutil.relativedelta import relativedelta
 from dagster import check
 from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.partition.utils import date_partition_range
 from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.partitions import date_partition_range
 
 from ..decorator_utils import (
     InvalidDecoratedFunctionInfo,

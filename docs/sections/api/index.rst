@@ -14,6 +14,7 @@ API Docs
   apidocs/errors
   apidocs/utilities
   apidocs/schedules
+  apidocs/partitions
   apidocs/cli
   apidocs/dagstermill
 

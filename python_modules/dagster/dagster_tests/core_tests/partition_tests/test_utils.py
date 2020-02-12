@@ -4,7 +4,7 @@ import pytest
 from dateutil.relativedelta import relativedelta
 
 from dagster import DagsterInvariantViolationError, Partition
-from dagster.core.partition.utils import date_partition_range
+from dagster.utils.partitions import date_partition_range
 
 
 def test_date_partition_range_out_of_order():

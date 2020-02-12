@@ -1,0 +1,9 @@
+repository:
+  module: dagster_examples.stocks.repository
+  fn: define_repo
+partitions:
+  module: dagster_examples.stocks.date_partitions
+  fn: define_partitions
+scheduler:
+  module: dagster_examples.stocks.schedules
+  fn: define_schedules

@@ -1,0 +1,45 @@
+Partitioning and Scheduling Guide
+=================================
+
+Tutorial
+^^^^^^^^
+
+.. toctree::
+  :maxdepth: 2
+
+  partition_pipeline
+  partition_set
+  backfill
+  date_partition_set
+  schedule_partitions
+
+You can find all of the code for this guide checked into the dagster repository at ``dagster/examples/dagster_examples/stocks``
+
+In this guide, we'll learn about why we partition data and how to write Dagster pipelines that can easily work with partitioned data. We'll also explore how to schedule partitioned work using Dagster's built-in scheduler functionalities.
+
+Partitioning and Scheduling in Dagster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Many data engineering pipelines need to be written so they operate on partitioned segments of data. These pipelines are also often schedules so that they execute partitions of data at some interval.
+
+For example, lets say we have a metrics pipeline that partitions data based on 24 hour time intervals. We will probably want to schedule this pipeline to run every day at midnight on the previous 24 hours' metrics data. With this setup, we'll have data continuously processed for every 24 hour segment.
+
+Traditional workflow systems tightly couple partitioning and scheduling and provide solutions to date partitioned schedules like this metrics pipeline. However, as we've seen, there are many other ways to partition data, and these two concepts do not need to be completely intertwined. Being able to partition data on axis other than time is especially useful when conducting backfills.
+
+Dagster aims to provides a flexible and generalized solution to partitioning, backfills, and scheduling that can extend beyond datetime partitioning, while also providing a set of easy to use tools for the common datetime partitioning use case.
+
+In the next part of the tutorial, we'll build a partitioned schedule.
+
+What is scheduling?
+^^^^^^^^^^^^^^^^^^^
+
+The term "scheduling" is often overloaded in the context of workflow engines like Dagster. In this case, scheduling pipeline runs specifically refers to triggering pipeline runs to happen at some interval. For example, I might want to schedule an email marketing pipeline once a day at 9AM.
+
+What is data partitioning?
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When working with small datasets, we can easily make queries or run calculations over the entire dataset at once. Even after updating the base dataset, it's not expensive to redo queries and calculations to get new answers.
+
+When datasets get extremely large it becomes difficult to work with the entire dataset in once piece. Queries become slower and inefficient and even fast data processing tools can take a long time to process extremely large quantities of data.
+
+When we partition data, we break it up into discrete chunks using some partitioning scheme. For example, if we're working with a large metrics dataset, we might want to partition the data by country or other customer segments. It's often easier to reason about data when segmented into such partitions. Also, with smaller units of the data, we can process the partitions with less effort and, if there is no dependence between partitions, we can process the partitions in parallel.

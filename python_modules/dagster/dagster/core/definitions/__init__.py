@@ -5,6 +5,7 @@ from .decorators import (
     daily_schedule,
     hourly_schedule,
     lambda_solid,
+    monthly_schedule,
     pipeline,
     schedule,
     schedules,
