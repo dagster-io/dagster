@@ -146,7 +146,7 @@ export class GaantChart extends React.Component<
 
     this.state = {
       query: "*",
-      options: Object.assign(DEFAULT_OPTIONS, props.options)
+      options: Object.assign({}, DEFAULT_OPTIONS, props.options)
     };
   }
 
