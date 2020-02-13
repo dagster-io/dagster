@@ -48,6 +48,11 @@ except ImportError:
     from urlparse import urljoin, urlparse, urlunparse
     from urllib import quote_plus
 
+if sys.version_info > (3,):
+    from pathlib import Path  # pylint: disable=import-error
+else:
+    from pathlib2 import Path  # pylint: disable=import-error
+
 IS_WINDOWS = os.name == 'nt'
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
@@ -59,9 +64,12 @@ def import_module_from_path(module_name, path_to_file):
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(module_name, path_to_file)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module
-        spec.loader.exec_module(module)
+        if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == spec.origin:
+            module = sys.modules[spec.name]
+        else:
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)
     elif version.major >= 3 and version.minor >= 3:
         from importlib.machinery import SourceFileLoader
 

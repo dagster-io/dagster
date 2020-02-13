@@ -1,4 +1,3 @@
-import imp
 import importlib
 import os
 import types
@@ -20,6 +19,7 @@ from dagster.core.definitions.handle import (
     _ExecutionTargetHandleData,
     _get_python_file_from_previous_stack_frame,
 )
+from dagster.seven import import_module_from_path
 from dagster.utils import script_relative_path
 
 NOPE = 'this is not a pipeline or repo or callable'
@@ -140,7 +140,7 @@ def test_repo_entrypoints():
     assert handle.entrypoint.fn_name == expected.fn_name
 
     python_file = script_relative_path('bar_repo.py')
-    module = imp.load_source('bar_repo', python_file)
+    module = import_module_from_path('bar_repo', python_file)
 
     expected = LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
     handle = ExecutionTargetHandle.for_repo_python_file(

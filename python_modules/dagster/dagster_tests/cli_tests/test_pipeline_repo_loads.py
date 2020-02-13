@@ -1,4 +1,3 @@
-import imp
 import importlib
 
 import pytest
@@ -12,12 +11,13 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.decorators import lambda_solid
 from dagster.core.definitions.handle import _ExecutionTargetMode
+from dagster.seven import import_module_from_path
 from dagster.utils import script_relative_path
 
 
 def test_repository_python_file():
     python_file = script_relative_path('bar_repo.py')
-    module = imp.load_source('bar_repo', python_file)
+    module = import_module_from_path('bar_repo', python_file)
 
     handle = handle_for_pipeline_cli_args(
         {'pipeline_name': 'foo', 'python_file': python_file, 'fn_name': 'define_bar_repo'}
@@ -73,7 +73,7 @@ def test_repository_module():
 
 def test_pipeline_python_file():
     python_file = script_relative_path('foo_pipeline.py')
-    module = imp.load_source('foo_pipeline', python_file)
+    module = import_module_from_path('foo_pipeline', python_file)
 
     handle = handle_for_pipeline_cli_args(
         {

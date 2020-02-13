@@ -1,4 +1,3 @@
-import imp
 import importlib
 import inspect
 import os
@@ -13,13 +12,8 @@ from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import SchedulerHandle
+from dagster.seven import Path, import_module_from_path
 from dagster.utils import load_yaml_from_path
-
-if sys.version_info > (3,):
-    from pathlib import Path  # pylint: disable=import-error
-else:
-    from pathlib2 import Path  # pylint: disable=import-error
-
 
 EPHEMERAL_NAME = '<<unnamed>>'
 
@@ -71,7 +65,7 @@ class PartitionLoaderEntrypoint(
             sys.path.append(file_directory)
 
         module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = imp.load_source(module_name, python_file)
+        module = import_module_from_path(module_name, python_file)
 
         return PartitionLoaderEntrypoint(module, module_name, fn_name, from_handle)
 
@@ -148,7 +142,7 @@ class SchedulerLoaderEntrypoint(
             sys.path.append(file_directory)
 
         module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = imp.load_source(module_name, python_file)
+        module = import_module_from_path(module_name, python_file)
 
         return SchedulerLoaderEntrypoint(module, module_name, fn_name, from_handle)
 
@@ -229,7 +223,7 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
             sys.path.append(file_directory)
 
         module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = imp.load_source(module_name, python_file)
+        module = import_module_from_path(module_name, python_file)
 
         return LoaderEntrypoint(module, module_name, fn_name, from_handle)
 
