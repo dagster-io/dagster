@@ -1,9 +1,8 @@
 Guides
-=======================
+======
 
 .. toctree::
   :maxdepth: 2
-
 
   dagster_types
   solid/solid

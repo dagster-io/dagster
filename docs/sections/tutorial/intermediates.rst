@@ -3,6 +3,10 @@
 Intermediates
 -------------
 
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+
 We've already seen how solids can describe their persistent artifacts to the system using
 `materializations <materializations>`_.
 

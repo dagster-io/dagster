@@ -7,6 +7,9 @@ Our pipelines wouldn't be very interesting if they were limited to solids acting
 from each other. Pipelines are useful because they let us connect solids into arbitrary DAGs
 (`directed acyclic graphs <https://en.wikipedia.org/wiki/Directed_acyclic_graph>`_) of computation.
 
+.. toctree::
+  :maxdepth: 1
+  :hidden:
 
 Let's get serial
 ^^^^^^^^^^^^^^^^

@@ -1,7 +1,7 @@
 .. title:: Home
 
 .. toctree::
-  :maxdepth: 5
+  :maxdepth: 3
   :includehidden:
   :name: Documentation
 

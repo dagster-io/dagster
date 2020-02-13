@@ -1,6 +1,10 @@
 Materializations
 ----------------
 
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+
 Steps in a data pipeline often produce persistent artifacts, for instance, graphs or tables
 describing the result of some computation. Typically these artifacts are saved to disk (or to
 cloud storage) with a `name <https://xkcd.com/1459/>`__ that has something to do with their origin.

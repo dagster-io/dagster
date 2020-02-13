@@ -3,6 +3,10 @@
 Scheduling pipeline runs
 ------------------------
 
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+
 Dagster includes a simple built-in scheduler that works with Dagit for control and monitoring.
 Suppose that we need to run our simple cereal pipeline every morning before breakfast, at 6:45 AM.
 
