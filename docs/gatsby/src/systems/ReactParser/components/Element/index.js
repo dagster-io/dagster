@@ -28,6 +28,10 @@ const isSphinxHeading = (Component, props) => {
   return Component === "p" && props.className && props.className === "rubric";
 };
 
+const isSphinxLineNumbers = (Component, props) => {
+  return Component === "td" && props.className && props.className === "linenos";
+};
+
 const isCode = (Component, _props) => {
   return Component && Component.tagName === "code";
 };
@@ -61,6 +65,8 @@ export const Element = node => {
 
   if (props.style && typeof props.style == "string") {
     props.style = styleToObj(props.style);
+  } else {
+    props.style = {};
   }
 
   if (nodeName === "#text") {
@@ -77,6 +83,10 @@ export const Element = node => {
         {children}
       </Heading>
     );
+  }
+
+  if (isSphinxLineNumbers(Component, props)) {
+    props.style.width = "1%";
   }
 
   if (Component === "div" && props.id && props.id.startsWith("id")) {
