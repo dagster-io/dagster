@@ -61,6 +61,7 @@ class ExecutionParams(
             'mode': self.mode,
             'executionMetadata': self.execution_metadata.to_graphql_input(),
             'stepKeys': self.step_keys,
+            'retryRunId': self.previous_run_id,
         }
 
 

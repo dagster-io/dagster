@@ -562,6 +562,10 @@ class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
             else check.list_param(solid_subset, 'solid_subset', of_type=str),
         )
 
+    @classmethod
+    def from_dict(cls, data):
+        return cls(name=data['name'], solid_subset=data.get('solidSubset'))
+
     def to_graphql_input(self):
         return {'name': self.name, 'solidSubset': self.solid_subset}
 

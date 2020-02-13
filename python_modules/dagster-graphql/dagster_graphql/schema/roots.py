@@ -448,13 +448,19 @@ def create_execution_params(graphene_info, graphql_execution_params):
             selector=ExecutionSelector(selector.name, preset.solid_subset),
             environment_dict=preset.environment_dict,
             mode=preset.mode,
-            execution_metadata=ExecutionMetadata(run_id=None, tags={}),
+            execution_metadata=create_execution_metadata(
+                graphql_execution_params.get('executionMetadata')
+            ),
             step_keys=graphql_execution_params.get('stepKeys'),
             previous_run_id=graphql_execution_params.get('retryRunId'),
         )
 
+    return execution_params_from_graphql(graphql_execution_params)
+
+
+def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
-        selector=graphql_execution_params['selector'].to_selector(),
+        selector=ExecutionSelector.from_dict(graphql_execution_params.get('selector')),
         environment_dict=graphql_execution_params.get('environmentConfigData') or {},
         mode=graphql_execution_params.get('mode'),
         execution_metadata=create_execution_metadata(
