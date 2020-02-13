@@ -1,8 +1,10 @@
 import { debounce } from "lodash";
 import { print } from "graphql/language/printer";
 import { WEBSOCKET_URI } from "./DomUtils";
+import { showGraphQLError, DagsterGraphQLError } from "./AppError";
 
 type FlushCallback<T> = (messages: T[], isFirstResponse: boolean) => void;
+type ErrorCallback = (error: DagsterGraphQLError) => void;
 
 /* DirectGraphQLSubscription opens a WebSocket and sends a single GraphQL subscription
 query to the Dagit process. When messages are received, it queues / debounces updates
@@ -20,12 +22,19 @@ export class DirectGraphQLSubscription<T> {
   private messageQueue: T[] = [];
   private messagesReceived = false;
   private onFlushMessages: FlushCallback<T>;
+  private onError: ErrorCallback;
   private closed = false;
   private query: any;
   private variables: any;
 
-  constructor(query: any, variables: any, onFlushMessages: FlushCallback<T>) {
+  constructor(
+    query: any,
+    variables: any,
+    onFlushMessages: FlushCallback<T>,
+    onError: ErrorCallback
+  ) {
     this.onFlushMessages = onFlushMessages;
+    this.onError = onError;
     this.query = query;
     this.variables = variables;
     this.open();
@@ -79,13 +88,21 @@ export class DirectGraphQLSubscription<T> {
 
   handleEvent = (msg: any) => {
     if (msg.type === "data") {
+      if (msg.payload.errors) {
+        const errors = msg.payload.errors as DagsterGraphQLError[];
+        errors.forEach(error => showGraphQLError(error));
+        this.onError(errors[0]);
+        return;
+      }
       this.messageQueue.push(msg.payload.data as T);
       this.flushUpdates();
     }
   };
 
   flushUpdates = debounce(() => {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.onFlushMessages(this.messageQueue, !this.messagesReceived);
     this.messagesReceived = true;
     this.messageQueue = [];

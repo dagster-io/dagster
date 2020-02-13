@@ -34,6 +34,11 @@ from .subscription_server import DagsterSubscriptionServer
 from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
 
+MISSING_SCHEDULER_WARNING = (
+    'You have defined ScheduleDefinitions for this repository, but have '
+    'not defined a scheduler on the instance'
+)
+
 
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
@@ -189,10 +194,7 @@ def create_app(handle, instance, reloader=None):
                 python_path, repository_path, repository=repository, instance=instance
             )
         else:
-            warnings.warn(
-                'You have defined ScheduleDefinitions for this repository, but have '
-                'not defined a scheduler on the instance'
-            )
+            warnings.warn(MISSING_SCHEDULER_WARNING)
 
     app.add_url_rule(
         '/graphql',

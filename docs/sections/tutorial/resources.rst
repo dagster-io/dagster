@@ -110,9 +110,9 @@ environment, we can test business logic independent of environments that may be 
 difficult to test against.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
-   :lines: 74-83
+   :lines: 75-84
    :linenos:
-   :lineno-start: 74
+   :lineno-start: 75
    :caption: modes.py
 
 Even if you're not familiar with SQLAlchemy, it's enough to note that this is a very different
@@ -120,9 +120,9 @@ implementation of the ``warehouse`` resource. To make this implementation availa
 attach it to a :py:class:`ModeDefinition <dagster.ModeDefinition>`.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
-   :lines: 126-141
+   :lines: 127-142
    :linenos:
-   :lineno-start: 126
+   :lineno-start: 127
    :caption: modes.py
 
 Each of the ways we can invoke a Dagster pipeline lets us select which mode we'd like to run it in.
@@ -136,9 +136,9 @@ From the command line, we can set ``-d`` or ``--mode`` and select the name of th
 From the Python API, we can use the :py:class:`RunConfig <dagster.RunConfig>`:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
-   :lines: 151-155
+   :lines: 152-156
    :linenos:
-   :lineno-start: 151
+   :lineno-start: 152
    :emphasize-lines: 4
    :dedent: 4
    :caption: modes.py
@@ -161,9 +161,9 @@ different environments, or want to pull database credentials from different envi
 Dagster calls this a config preset:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/presets.py
-   :lines: 127-166
+   :lines: 128-167
    :linenos:
-   :lineno-start: 127
+   :lineno-start: 128
    :caption: presets.py
    :emphasize-lines: 14-37
 

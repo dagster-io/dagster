@@ -272,12 +272,12 @@ def helm_chart(
         check_output('''kubectl create namespace dagster-test''', shell=True)
         try:
             image, tag = docker_image.split(':')
-            check_output(
-                '''helm install \\
+
+            helm_cmd = '''helm install \\
             --set dagit.image.repository="{image}" \\
             --set dagit.image.tag="{tag}" \\
-            --set job_image.image.repository="{image}" \\
-            --set job_image.image.tag="{tag}" \\
+            --set job_runner.image.repository="{image}" \\
+            --set job_runner.image.tag="{tag}" \\
             --set imagePullPolicy="{image_pull_policy}" \\
             --set serviceAccount.name="dagit-admin" \\
             --set postgresqlPassword="test", \\
@@ -286,11 +286,17 @@ def helm_chart(
             --namespace dagster-test \\
             dagster \\
             helm/dagster/'''.format(
-                    image=image, tag=tag, image_pull_policy=image_pull_policy,
-                ),
+                image=image, tag=tag, image_pull_policy=image_pull_policy,
+            )
+
+            print('Running Helm Install: \n', helm_cmd)
+
+            check_output(
+                helm_cmd,
                 shell=True,
                 cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
             )
+
             success, _ = wait_for_pod('dagit')
             assert success
             yield

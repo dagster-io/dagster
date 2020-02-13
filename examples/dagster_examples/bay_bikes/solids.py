@@ -19,6 +19,7 @@ from dagster_examples.bay_bikes.types import (
     TripDataFrame,
     WeatherDataFrame,
 )
+from dagster_pandas import DataFrame as DagsterPandasDataFrame
 from keras.layers import LSTM, Dense
 from keras.models import Sequential
 from numpy import array, ndarray, transpose
@@ -55,6 +56,8 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
 
 
 @solid(
+    input_defs=[InputDefinition('file_name', str), InputDefinition('base_url', str)],
+    output_defs=[OutputDefinition(str)],
     config={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
@@ -69,6 +72,11 @@ def download_zipfile_from_url(context, file_name: str, base_url: str) -> str:
 
 
 @solid(
+    input_defs=[
+        InputDefinition('input_file_path', str),
+        InputDefinition('target_csv_file_in_archive', str),
+    ],
+    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
     config={
         'delimiter': Field(
             str,
@@ -94,12 +102,19 @@ def load_compressed_csv_file(
     return dataset
 
 
-@solid(required_resource_keys={'transporter'})
+@solid(
+    input_defs=[InputDefinition('path_to_file', str), InputDefinition('key', str)],
+    required_resource_keys={'transporter'},
+)
 def upload_file_to_bucket(context, path_to_file: str, key: str):
     context.resources.transporter.upload_file_to_bucket(path_to_file, key)
 
 
-@solid(required_resource_keys={'transporter', 'volume'})
+@solid(
+    required_resource_keys={'transporter', 'volume'},
+    input_defs=[InputDefinition('key', str), InputDefinition('path_to_file', str)],
+    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
+)
 def download_csv_from_bucket_and_return_dataframe(
     context, key: str, path_to_file: str
 ) -> DataFrame:
@@ -108,7 +123,11 @@ def download_csv_from_bucket_and_return_dataframe(
     return read_csv(target_csv_location)
 
 
-@solid(config={'index_label': Field(str),}, required_resource_keys={'postgres_db'})
+@solid(
+    input_defs=[InputDefinition('row', DagsterPandasDataFrame), InputDefinition('table_name', str)],
+    config={'index_label': Field(str)},
+    required_resource_keys={'postgres_db'},
+)
 def insert_into_table(context, row: DataFrame, table_name: str):
     row.to_sql(
         table_name,
@@ -120,6 +139,8 @@ def insert_into_table(context, row: DataFrame, table_name: str):
 
 
 @solid(
+    input_defs=[InputDefinition('table_name', str)],
+    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
     config={
         'index_label': Field(str),
         'subsets': Field([str], is_required=False, default_value=[]),
@@ -140,6 +161,8 @@ def download_table_as_dataframe(context, table_name: str) -> DataFrame:
 
 
 @solid(
+    input_defs=[InputDefinition('epoch_date', int)],
+    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
     config={
         'latitude': Field(
             float,
@@ -199,7 +222,10 @@ def produce_trip_dataset():
     return preprocess_trip_dataset(load_entire_trip_table())
 
 
-@solid(output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],)
+@solid(
+    input_defs=[InputDefinition('dataframe', DagsterPandasDataFrame)],
+    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
+)
 def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     '''
     Steps:

@@ -55,6 +55,7 @@ def _do_setup(name='dagster'):
             name: [
                 'dagster/core/storage/event_log/sqlite/alembic/*',
                 'dagster/core/storage/runs/sqlite/alembic/*',
+                'dagster/core/storage/schedules/sqlite/alembic/*',
             ]
         },
         include_package_data=True,

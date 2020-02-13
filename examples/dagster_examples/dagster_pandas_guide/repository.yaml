@@ -1,0 +1,3 @@
+repository:
+  module: dagster_examples.dagster_pandas_guide.repository
+  fn: define_repo

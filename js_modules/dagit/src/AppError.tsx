@@ -4,7 +4,7 @@ import { ErrorResponse, onError } from "apollo-link-error";
 import { GraphQLError } from "graphql";
 import { showCustomAlert } from "./CustomAlertProvider";
 
-interface DagsterGraphQLError extends GraphQLError {
+export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
 }
 interface DagsterErrorResponse extends ErrorResponse {
@@ -13,24 +13,23 @@ interface DagsterErrorResponse extends ErrorResponse {
 
 const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
+export const showGraphQLError = (error: DagsterGraphQLError) => {
+  const message = error.path ? (
+    <div>
+      Unexpected GraphQL error
+      <AppStackTraceLink error={error} />
+    </div>
+  ) : (
+    `[GraphQL error] ${error.message}`
+  );
+  ErrorToaster.show({ message, intent: Intent.DANGER });
+  console.error("[GraphQL error]", error);
+};
+
 export const AppErrorLink = () => {
   return onError((response: DagsterErrorResponse) => {
     if (response.graphQLErrors) {
-      response.graphQLErrors.map(error => {
-        const message = error.path ? (
-          <div>
-            Unexpected GraphQL error
-            <AppStackTraceLink error={error} />
-          </div>
-        ) : (
-          `[GraphQL error] ${error.message}`
-        );
-        if (error.path) {
-        }
-        ErrorToaster.show({ message, intent: Intent.DANGER });
-        console.error("[GraphQL error]", error);
-        return null;
-      });
+      response.graphQLErrors.forEach(error => showGraphQLError(error));
     }
     if (response.networkError) {
       ErrorToaster.show({

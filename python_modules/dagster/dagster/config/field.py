@@ -57,10 +57,12 @@ def resolve_to_config_type(dagster_type):
             ),
         )
 
-    check.invariant(
-        not (isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType)),
-        'Cannot resolve a runtime type to a config type',
-    )
+    if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
+        raise DagsterInvariantViolationError(
+            'Cannot resolve a dagster type class {dagster_type} to a config type'.format(
+                dagster_type=repr(dagster_type)
+            )
+        )
 
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
@@ -73,24 +75,30 @@ def resolve_to_config_type(dagster_type):
         )
 
     if dagster_type is List or isinstance(dagster_type, ListType):
-        raise DagsterInvalidDefinitionError(
-            'Cannot use List in the context of a config file. ' + helpful_list_error_string()
+        raise DagsterInvariantViolationError(
+            'Cannot use List in the context of config. ' + helpful_list_error_string()
         )
 
     if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
-        raise DagsterInvalidDefinitionError(
+        raise DagsterInvariantViolationError(
             'Cannot use Set in the context of a config field. ' + helpful_list_error_string()
         )
 
     if dagster_type is Tuple or isinstance(dagster_type, _TypedPythonTuple):
-        raise DagsterInvalidDefinitionError(
+        raise DagsterInvariantViolationError(
             'Cannot use Tuple in the context of a config field. ' + helpful_list_error_string()
         )
 
-    check.invariant(
-        not (isinstance(dagster_type, DagsterType)),
-        'Cannot resolve a runtime type to a config type',
-    )
+    if isinstance(dagster_type, DagsterType):
+        raise DagsterInvariantViolationError(
+            (
+                'Cannot resolve Dagster Type {type_name} to a config type. '
+                'Repr of type: {dagster_type} '
+            ).format(
+                type_name=dagster_type.name if dagster_type.name else dagster_type.key,
+                dagster_type=repr(dagster_type),
+            ),
+        )
 
     # If we are passed here either:
     #  1) We have been passed a python builtin

@@ -2,9 +2,15 @@
 
 ## 0.7.0 (Upcoming)
 
-**Breaking**
+**Breaking Changes**
 
-- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules that have been running are no longer compatible with current storage. To migrate,
+There are a substantial number of breaking changes in the 0.7.0 release.
+Please see `070_MIGRATION.md` for instructions regarding migrating old code.
+
+**_Scheduler_**
+
+- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules 
+  that have been running are no longer compatible with current storage. To migrate,
   remove the `scheduler` argument on all `@schedules` decorators:
 
   instead of:
@@ -29,33 +35,24 @@
   scheduler:
     module: dagster_cron.cron_scheduler
     class: SystemCronScheduler
-    config:
-      artifacts_dir: /path/to/dagster_home/schedules
   ```
 
   Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules` directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.
 
-* `config_field` is no longer a valid argument on solid, SolidDefinition, ExecutorDefintion, executor, LoggerDefinition, logger, ResourceDefinition, resource, system_storage, and SystemStorageDefinition. Use `config` instead.
-* `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-* Dagster runtime types are now instances of `RuntimeType`, rather than a class than inherits from `RuntimeType`. Instead of dynamically generating a class to create a custom runtime type, just create an instance of a `RuntimeType`. The type checking function is now an argument to the `RuntimeType`, rather than an abstract method that has to be implemented in subclass.
-* The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument `context`, representing the `ScheduleExecutionContext`
-* For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To upgrade, remove the first argument to `config_fn`.
+- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument 
+  `context`, representing the `ScheduleExecutionContext`
 
-  So instead of
+**_Config System Changes_**
 
-  ```
-  @composite_solid(config={}, config_fn=lambda context, config: {})
-  ```
+- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and 
+  `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you 
+  are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe 
+  this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
 
-  one must instead write:
-
-  ```
-  @composite_solid(config={}, config_fn=lambda config: {})
-  ```
-
-* In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
-
-  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster equivalents. These result in dramatically less verbose config specs in most cases.
+  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. 
+  This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types 
+  instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster 
+  equivalents. These result in dramatically less verbose config specs in most cases.
 
   So instead of
 
@@ -76,36 +73,79 @@
 
   No imports and much simpler, cleaner syntax.
 
-* All solids that use a resource must explicitly list that resource using the argument
-  `required_resource_keys`. This is to enable efficient resource management during pipeline
-  execution, especially in a multiprocessing or remote execution environment.
-* The `@system_storage` decorator now requires argument `required_resource_keys`, which was
-  previously optional.
+- `config_field` is no longer a valid argument on `solid`, `SolidDefinition`, `ExecutorDefintion`, `executor`, 
+  `LoggerDefinition`, `logger`, `ResourceDefinition`, `resource`, `system_storage`, and `SystemStorageDefinition`. Use 
+  `config` instead.
+- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To 
+  upgrade, remove the first argument to `config_fn`.
 
-- `Field` takes a `is_required` rather than a `is_optional` argument. This is avoid confusion
+  So instead of
+
+  ```
+  @composite_solid(config={}, config_fn=lambda context, config: {})
+  ```
+
+  one must instead write:
+
+  ```
+  @composite_solid(config={}, config_fn=lambda config: {})
+  ```
+
+- `Field` takes a `is_required` rather than a `is_optional` argument. This is to avoid confusion
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
-- `step_metadata_fn` has been removed from `SolidDefinition` & `@solid`.
-- `SolidDefinition` & `@solid` now takes `tags` and enforces that values are strings or
-  are safetly encoded as JSON. `metadata` is deprecated and will be removed in a future version.
-- `resource_mapper_fn` has been removed from `SolidInvocation`.
-- Dagster Type System Changes
 
-  - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
-  - Core type check function of DagsterType can now return a naked `bool` in addition
-    to a `TypeCheck` object.
-  - `define_python_dagster_type` and `dagster_type` no longer take a `type_check` argument. If
-    a custom type_check is needed, use `DagsterType`.
-  - `define_python_dagster_type` has been deprecated in favor of `PythonObjectDagsterType` .
-  - `type_check_fn` on `DagsterType` (formerly `RunTimeType`) now takes a first argument `context` of type
-    `TypeCheckContext` in addition to the second argument of value.
+**_Required Resources_**
+
+- All solids, types, and config functions that use a resource must explicitly list that
+  resource using the argument `required_resource_keys`. This is to enable efficient
+  resource management during pipeline execution, especially in a multiprocessing or
+  remote execution environment.
+
+- The `@system_storage` decorator now requires argument `required_resource_keys`, which was
+  previously optional.
+
+**_Dagster Type System Changes_**
+
+- `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
+- Dagster types are now instances of `DagsterType`, rather than a class than inherits from `RuntimeType`. Instead of 
+  dynamically generating a class to create a custom runtime type, just create an instance of a `DagsterType`. The type 
+  checking function is now an argument to the `DagsterType`, rather than an abstract method that has to be implemented in 
+  a subclass.
+- `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
+- Core type check function of DagsterType can now return a naked `bool` in addition
+  to a `TypeCheck` object.
+- `type_check_fn` on `DagsterType` (formerly `type_check` and `RuntimeType`, respectively) now takes a first argument
+  `context` of type `TypeCheckContext` in addition to the second argument of `value`.
+- `define_python_dagster_type` has been eliminated in favor of `PythonObjectDagsterType` .
+- `dagster_type` has been renamed to `usable_as_dagster_type`.
+- `as_dagster_type` has been removed and similar capabilities added as `make_python_type_usable_as_dagster_type`.
+- `PythonObjectDagsterType` and `usable_as_dagster_type` no longer take a `type_check` argument. If
+  a custom type_check is needed, use `DagsterType`.
+- As a consequence of these changes, if you were previously using `dagster_pyspark` or `dagster_pandas` and expecting
+  Pyspark or Pandas types to work as Dagster types, e.g., in type annotations to functions decorated with `@solid` to
+  indicate that they are input or output types for a solid, you will need to call
+  `make_python_type_usable_as_dagster_type` from your code in order to map the Python types to the Dagster types, or just
+  use the Dagster types (`dagster_pandas.DataFrame` instead of `pandas.DataFrame`) directly.
+
+**_Other_**
 
 - We no longer publish base Docker images. Please see the updated deployment docs for an example
   Dockerfile off of which you can work.
+- `step_metadata_fn` has been removed from `SolidDefinition` & `@solid`.
+- `SolidDefinition` & `@solid` now takes `tags` and enforces that values are strings or
+  are safely encoded as JSON. `metadata` is deprecated and will be removed in a future version.
+- `resource_mapper_fn` has been removed from `SolidInvocation`.
 
 **New**
 
-- `dagster/priority` tags can now be used to prioritize the order of execution for the built in in process and multiprocess engines.
+- Dagit now includes a much richer execution view, with a Gantt-style visualization of step execution and a live timeline.
+- Early support for Python 3.8 is now available, and Dagster/Dagit along with many of our libraries
+  are now tested against 3.8. Note that several of our upstream dependencies have yet to publish
+  wheels for 3.8 on all platforms, so running on Python 3.8 likely still involves building some
+  dependencies from source.
+- `dagster/priority` tags can now be used to prioritize the order of execution for the built-in in-process and
+  multiprocess engines.
 - `dagster-postgres` storages can now be configured with separate arguments and environment variables, such as:
 
   ```
@@ -121,14 +161,53 @@
         db_name: test
   ```
 
-- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster process.
-  As one example, this is used by `dagster-k8s` to submit pipeline execution as a kubernetes batch job.
+- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster 
+  process. As one example, this is used by `dagster-k8s` to submit pipeline execution as a Kubernetes Job.
+- Added support for adding tags to runs initiated from the `Playground` view in dagit.
+- Added `@monthly_schedule` decorator.
+- Added `Enum.from_python_enum` helper to wrap Python enums for config. (Thanks @kdungs!)
+- **[dagster-bash]** The Dagster bash solid factory now passes along `kwargs` to the underlying
+  solid construction, and now has a single `Nothing` input by default to make it easier to create a
+  sequencing dependency. Also, logs are now buffered by default to make execution less noisy.
+- **[dagster-aws]** We've improved our EMR support substantially in this release. The
+  `dagster_aws.emr` library now provides an `EmrJobRunner` with various utilities for creating EMR
+  clusters, submitting jobs, and waiting for jobs/logs. We also now provide a
+  `emr_pyspark_resource`, which together with the new `@pyspark_solid` decorator makes moving
+  pyspark execution from your laptop to EMR as simple as changing modes.
+  **[dagster-pandas]** Added `create_dagster_pandas_dataframe_type`, `PandasColumn`, and `Constraint` API's in order for 
+  users to create custom types which perform column validation, dataframe validation, summary statistics emission, and 
+  dataframe serialization/deserialization.
+- **[dagster-gcp]** GCS is now supported for system storage, as well as being supported with the Dask executor. (Thanks
+  @habibutsu!) Bigquery solids have also been updated to support the new API.
 
 **Bugfix**
 
-- Ensured that all implementations of `RunStorage` clean up run tags when a run is deleted. May require a storage migration, using `dagster instance migrate`.
-- The multiprocess engine now handles solid subsets correctly.
-- The multiprocess engine will now correctly emit skip events for steps downstream of failures and other skips.
+- Ensured that all implementations of `RunStorage` clean up pipeline run tags when a run
+  is deleted. Requires a storage migration, using `dagster instance migrate`.
+- The multiprocess and Celery engines now handle solid subsets correctly.
+- The multiprocess and Celery engines will now correctly emit skip events for steps downstream of failures and other 
+  skips.
+- The `@solid` and `@lambda_solid` decorators now correctly wrap their decorated functions, in the sense of
+  `functools.wraps`.
+- Performance improvements in Dagit when working with runs with large configurations.
+- The Helm chart in `dagster_k8s` has been hardened against various failure modes and is now compatible with Helm 2.
+- SQLite run and event log storages are more robust to concurrent use.
+- Improvements to error messages and to handling of user code errors in input hydration and output materialization logic.
+- Fixed an issue where the Airflow scheduler could hang when attempting to load dagster-airflow pipelines.
+- We now handle our SQLAlchemy connections in a more canonical way (thanks @zzztimbo!).
+- Fixed an issue using S3 system storage with certain custom serialization strategies.
+- Fixed an issue leaking orphan processes from compute logging.
+- Fixed an issue leaking semaphores from Dagit.
+- Setting the `raise_error` flag in `execute_pipeline` now actually raises user exceptions instead of a wrapper type.
+
+**Documentation**
+
+- Our docs have been reorganized and expanded (thanks @habibutsu, @vatervonacht, @zzztimbo). We'd love feedback and
+  contributions!
+
+**Thank you**
+Thank you to all of the community contributors to this release!! In alphabetical order: @habibutsu, @kdungs,
+@vatervonacht, @zzztimbo.
 
 ## 0.6.9
 

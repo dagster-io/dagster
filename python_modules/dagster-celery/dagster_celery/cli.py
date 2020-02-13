@@ -9,7 +9,6 @@ from dagster import check
 from dagster.config.validate import validate_config
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_path, mkdir_p
-from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config import CeleryConfig
 from .executor import celery_executor
@@ -67,20 +66,20 @@ def get_config_dir(config_yaml=None):
     )
     validated_config = validate_config(config_type, config_value).value
     with open(config_path, 'w') as fd:
-        printer = IndentingPrinter(printer=fd.write)
         if 'broker' in validated_config:
-            printer.line(
-                'broker_url = \'{broker_url}\''.format(broker_url=str(validated_config['broker']))
+            fd.write(
+                'broker_url = \'{broker_url}\'\n'.format(broker_url=str(validated_config['broker']))
             )
         if 'backend' in validated_config:
-            printer.line(
-                'result_backend = \'{result_backend}\''.format(
+            fd.write(
+                'result_backend = \'{result_backend}\'\n'.format(
                     result_backend=str(validated_config['backend'])
                 )
             )
         if 'config_source' in validated_config:
             for key, value in validated_config['config_source'].items():
-                printer.line('{key} = {value}'.format(key=key, value=repr(value)))
+                fd.write('{key} = {value}\n'.format(key=key, value=repr(value)))
+
     # n.b. right now we don't attempt to clean up this cache, but it might make sense to delete
     # any files older than some time if there are more than some number of files present, etc.
     return config_dir

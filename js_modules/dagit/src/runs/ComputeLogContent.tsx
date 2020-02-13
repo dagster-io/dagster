@@ -13,8 +13,8 @@ import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFrag
 interface IComputeLogContentProps {
   runState: IStepState;
   onRequestClose: () => void;
-  stdout: ComputeLogContentFileFragment;
-  stderr: ComputeLogContentFileFragment;
+  stdout: ComputeLogContentFileFragment | null;
+  stderr: ComputeLogContentFileFragment | null;
   maxBytes: number;
 }
 
@@ -93,7 +93,10 @@ export class ComputeLogContent extends React.Component<
     const { stdout, stderr } = this.props;
     const { selected } = this.state;
     const logData = selected === "stdout" ? stdout : stderr;
-    const { downloadUrl } = logData;
+    const downloadUrl = logData?.downloadUrl;
+    if (!downloadUrl) {
+      return null;
+    }
     const isRelativeUrl = (x?: string) => x && x.startsWith("/");
     return isRelativeUrl(downloadUrl)
       ? ROOT_SERVER_URI + downloadUrl
@@ -134,17 +137,17 @@ export class ComputeLogContent extends React.Component<
     );
   }
 
-  renderContent(ioType: string, content: string) {
+  renderContent(ioType: string, content: string | null | undefined) {
     const isTruncated =
-      Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
+      content && Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
 
-    if (isTruncated) {
+    if (content && isTruncated) {
       const nextLine = content.indexOf("\n") + 1;
       const truncated =
         nextLine < content.length ? content.slice(nextLine) : content;
       content = TRUNCATE_PREFIX + truncated;
     }
-
+    const downloadUrl = this.getDownloadUrl();
     const warning = isTruncated ? (
       <FileWarning>
         <Icon
@@ -152,9 +155,11 @@ export class ComputeLogContent extends React.Component<
           style={{ marginRight: 10, color: Colors.ORANGE5 }}
         />
         This log has exceeded the 5MB limit.{" "}
-        <a href={this.getDownloadUrl()} download>
-          Download the full log file
-        </a>
+        {downloadUrl ? (
+          <a href={downloadUrl} download>
+            Download the full log file
+          </a>
+        ) : null}
         .
       </FileWarning>
     ) : null;
@@ -187,9 +192,7 @@ export class ComputeLogContent extends React.Component<
     const { selected } = this.state;
 
     const logData = selected === "stdout" ? stdout : stderr;
-    if (!logData) {
-      return null;
-    }
+    const downloadUrl = this.getDownloadUrl();
 
     return (
       <Container>
@@ -211,14 +214,16 @@ export class ComputeLogContent extends React.Component<
             </Row>
             <Row>
               {this.renderStatus()}
-              <Link
-                aria-label="Download link"
-                className="bp3-button bp3-minimal bp3-icon-download"
-                href={this.getDownloadUrl()}
-                download
-              >
-                <LinkText>Download {selected}</LinkText>
-              </Link>
+              {downloadUrl ? (
+                <Link
+                  aria-label="Download link"
+                  className="bp3-button bp3-minimal bp3-icon-download"
+                  href={downloadUrl}
+                  download
+                >
+                  <LinkText>Download {selected}</LinkText>
+                </Link>
+              ) : null}
               <button
                 onClick={this.close}
                 className="bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross"
@@ -226,9 +231,9 @@ export class ComputeLogContent extends React.Component<
             </Row>
           </FileHeader>
           {this.renderScrollToTop()}
-          {this.renderContent("stdout", (stdout && stdout.data) || "")}
-          {this.renderContent("stderr", (stderr && stderr.data) || "")}
-          <FileFooter>{logData.path}</FileFooter>
+          {this.renderContent("stdout", stdout?.data)}
+          {this.renderContent("stderr", stderr?.data)}
+          <FileFooter>{logData?.path}</FileFooter>
         </FileContainer>
       </Container>
     );
@@ -236,7 +241,7 @@ export class ComputeLogContent extends React.Component<
 }
 
 interface IScrollContainerProps {
-  content: string;
+  content: string | null | undefined;
   isSelected?: boolean;
   className?: string;
   onScrollUp?: (position: number) => void;
@@ -319,14 +324,13 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
 
   render() {
     const { content, className } = this.props;
-
     if (!content) {
       return (
         <div className={className} ref={this.container}>
           <ContentContainer
             style={{ justifyContent: "center", alignItems: "center" }}
           >
-            No output
+            {content == null ? "No log file available" : "No output"}
           </ContentContainer>
         </div>
       );

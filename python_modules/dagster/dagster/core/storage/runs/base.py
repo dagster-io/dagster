@@ -4,6 +4,17 @@ import six
 
 
 class RunStorage(six.with_metaclass(ABCMeta)):
+    '''Abstract base class for storing pipeline run history.
+    
+    Note that run storages using SQL databases as backing stores should implement
+    :py:class:`~dagster.core.storage.runs.SqlRunStorage`.
+
+    Users should not directly instantiate concrete subclasses of this class; they are instantiated
+    by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
+    ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
+    should be done by setting values in that file.    
+    '''
+
     @abstractmethod
     def add_run(self, pipeline_run):
         '''Add a run to storage.

@@ -30,7 +30,7 @@ def configurable_class_data_or_default(config_value, field_name, default):
         return ConfigurableClassData(
             config_value[field_name]['module'],
             config_value[field_name]['class'],
-            yaml.dump(config_value[field_name]['config'], default_flow_style=False),
+            yaml.dump(config_value[field_name].get('config') or {}, default_flow_style=False),
         )
     return default
 
@@ -44,7 +44,7 @@ class InstanceRef(
     )
 ):
     '''Serializable representation of a :py:class:`DagsterInstance`.
-    
+
     Users should not instantiate this class directly.
     '''
 

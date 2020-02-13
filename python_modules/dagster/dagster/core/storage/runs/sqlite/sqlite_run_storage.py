@@ -15,6 +15,28 @@ from ..sql_run_storage import SqlRunStorage
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
+    '''SQLite-backed run storage.
+
+    Users should not directly instantiate this class; it is instantiated by internal machinery when
+    ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
+    ``$DAGSTER_HOME``. Configuration of this class should be done by setting values in that file.
+
+    This is the default run storage when none is specified in the ``dagster.yaml``.
+
+    To explicitly specify SQLite for run storage, you can add a block such as the following to your
+    ``dagster.yaml``:
+
+    .. code-block:: YAML
+
+        run_storage:
+          module: dagster.core.storage.runs
+          class: SqliteRunStorage
+          config:
+            base_dir: /path/to/dir
+    
+    The ``base_dir`` param tells the run storage where on disk to store the database.
+    '''
+
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, 'conn_string')
         self._conn_string = conn_string

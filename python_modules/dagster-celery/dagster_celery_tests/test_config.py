@@ -8,9 +8,13 @@ CONFIG_YAML = '''
 execution:
   celery:
     broker: "pyampqp://foo@bar:1234//"
+    config_source:
+      foo: "bar"
 '''
 
-CONFIG_PY = '''broker_url = \'pyampqp://foo@bar:1234//\''''
+CONFIG_PY = '''broker_url = \'pyampqp://foo@bar:1234//\'
+foo = \'bar\'
+'''
 
 CONFIG_PYTHON_FILE = '{config_module_name}.py'.format(config_module_name='dagster_celery_config')
 

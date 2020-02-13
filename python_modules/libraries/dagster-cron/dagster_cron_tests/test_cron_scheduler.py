@@ -23,8 +23,8 @@ class MockSystemCronScheduler(SystemCronScheduler):
     def _start_cron_job(self, instance, repository, schedule):
         self._write_bash_script_to_file(instance, repository, schedule)
 
-    def _end_cron_job(self, repository, schedule):
-        script_file = self._get_bash_script_file_path(repository, schedule)
+    def _end_cron_job(self, instance, repository, schedule):
+        script_file = self._get_bash_script_file_path(instance, repository, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
 
@@ -124,13 +124,13 @@ def test_start_and_stop_schedule():
         assert 'schedules' in os.listdir(tempdir)
 
         assert "{}.{}.sh".format(repository.name, schedule_def.name) in os.listdir(
-            os.path.join(tempdir, 'schedules')
+            os.path.join(tempdir, 'schedules', 'scripts')
         )
 
         # End schedule
         instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
         assert "{}.{}.sh".format(repository.name, schedule_def.name) not in os.listdir(
-            os.path.join(tempdir, 'schedules')
+            os.path.join(tempdir, 'schedules', 'scripts')
         )
 
 

@@ -19,6 +19,9 @@ EMR_SPARK_HOME = '/usr/lib/spark/'
 
 
 class EmrPySparkResource(PySparkResourceDefinition):
+    '''See the docstring on `emr_pyspark_resource` for instructions on using this resource.
+    '''
+
     def __init__(self, config):
         self.config = config
         self.emr_job_runner = EmrJobRunner(region=self.config['region_name'])
@@ -230,6 +233,45 @@ class EmrPySparkResource(PySparkResourceDefinition):
     }
 )
 def emr_pyspark_resource(init_context):
+    '''EMR Pyspark Resource.
+
+    The EMR pyspark resource provides the capability to run pyspark code transparently, without any
+    code changes, across both your local machine and EMR. This is as straightforward as the
+    following:
+
+    .. code-block:: python
+
+        from dagster import ModeDefinition, pipeline
+        from dagster_aws.emr import emr_pyspark_resource
+        from dagster_pyspark import pyspark_resource, pyspark_solid
+
+        @pyspark_solid
+        def example_solid(context):
+            list_p = [('John', 19), ('Jennifer', 29), ('Adam', 35), ('Henry', 50)]
+            rdd = context.resources.pyspark.spark_context.parallelize(list_p)
+            res = rdd.take(2)
+            for name, age in res:
+                context.log.info('%s: %d' % (name, age))
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition('prod', resource_defs={'pyspark': emr_pyspark_resource}),
+                ModeDefinition('local', resource_defs={'pyspark': pyspark_resource}),
+            ]
+        )
+        def example_pipe():
+            example_solid()
+
+    When running locally, this will use the standard pyspark resource, which will bring up Spark
+    locally and execute your code. In "prod" mode, for each pyspark solid, the EMR resource will:
+
+    1. Sync your code to a zip file on S3, including a code-generated `main.py` to kickstart
+       execution;
+    2. If a requirements.txt file is present (or specified via resource configuration), Python
+       requirements will be installed on EMR prior to job execution;
+    3. An EMR job will be constructed for the solid and execution invoked. Job logs will be
+    retrieved and logged if configured via `wait_for_logs`.
+    '''
     emr_pyspark = EmrPySparkResource(init_context.resource_config)
     try:
         yield emr_pyspark

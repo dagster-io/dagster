@@ -4,11 +4,13 @@ import { Button, Intent, Tooltip, Position } from "@blueprintjs/core";
 import { useMutation } from "react-apollo";
 import ExecutionStartButton from "../execute/ExecutionStartButton";
 import { PipelineRunStatus } from "../types/globalTypes";
+import { ExecutionType } from "../LocalStorage";
 
 import { CANCEL_MUTATION } from "./RunUtils";
 import { SharedToaster } from "../DomUtils";
 import { IStepState } from "../RunMetadataProvider";
 import { formatStepKey } from "../Util";
+import { LaunchButtonGroup } from "../execute/PipelineExecutionButtonGroup";
 
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 
@@ -45,7 +47,8 @@ interface RunActionButtonsProps {
   selectedStep: string | null;
   selectedStepState: IStepState;
   artifactsPersisted: boolean;
-  onReexecute: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
+  onExecute: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
+  onLaunch: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
 }
 
 const CancelRunButton: React.FunctionComponent<{
@@ -82,11 +85,20 @@ interface ReexecuteButtonProps {
   stepName: string;
   stepState: IStepState;
   artifactsPersisted: boolean;
-  onClick: () => void;
+  onExecute: (stepKey?: string, resumeRetry?: boolean) => void;
+  onLaunch: (stepKey?: string, resumeRetry?: boolean) => void;
+  onChangeExecutionType?: (type: ExecutionType) => void;
 }
 
 export function ReexecuteSingleStepButton(props: ReexecuteButtonProps) {
-  const { onClick, stepState, artifactsPersisted, stepName } = props;
+  const {
+    onExecute,
+    onLaunch,
+    stepState,
+    artifactsPersisted,
+    stepName,
+    onChangeExecutionType
+  } = props;
   const stepLabel = formatStepKey(stepName);
   const stepInFlight = ![IStepState.FAILED, IStepState.SUCCEEDED].includes(
     stepState
@@ -106,21 +118,36 @@ export function ReexecuteSingleStepButton(props: ReexecuteButtonProps) {
           : REEXECUTE_SINGLE_STEP
       }
     >
-      <ExecutionStartButton
-        title={`Re-execute ${
-          stepLabel.length > 30 ? stepLabel.slice(0, 27) + "…" : stepLabel
-        }`}
-        icon={IconNames.REPEAT}
-        small={true}
-        disabled={stepInFlight || !artifactsPersisted}
-        onClick={onClick}
-      />
+      <LaunchButtonGroup small={true} onChange={onChangeExecutionType}>
+        <ExecutionStartButton
+          title={`Re-execute ${
+            stepLabel.length > 30 ? stepLabel.slice(0, 27) + "…" : stepLabel
+          }`}
+          icon={IconNames.REPEAT}
+          small={true}
+          disabled={stepInFlight || !artifactsPersisted}
+          onClick={onExecute}
+        />
+        <ExecutionStartButton
+          title={`Re-launch ${
+            stepLabel.length > 30 ? stepLabel.slice(0, 27) + "…" : stepLabel
+          }`}
+          icon={IconNames.REPEAT}
+          small={true}
+          disabled={stepInFlight || !artifactsPersisted}
+          onClick={onLaunch}
+        />
+      </LaunchButtonGroup>
     </Tooltip>
   );
 }
 
 export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = props => {
-  const { run, onReexecute } = props;
+  const { run, onExecute, onLaunch } = props;
+  // TODO: temporary hack to try to force rerender of the action buttons based on
+  // the local storage state.  Real solution is to push the LaunchButtonGroup to use
+  // context (https://github.com/dagster-io/dagster/issues/2153)
+  const [, updateState] = React.useState<ExecutionType>(ExecutionType.START);
   const isUnknown = run?.pipeline.__typename === "UnknownPipeline";
 
   return (
@@ -129,7 +156,9 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         <ReexecuteSingleStepButton
           stepName={props.selectedStep}
           stepState={props.selectedStepState}
-          onClick={() => props.selectedStep && onReexecute(props.selectedStep)}
+          onExecute={() => onExecute(props.selectedStep || undefined)}
+          onLaunch={() => onLaunch(props.selectedStep || undefined)}
+          onChangeExecutionType={updateState}
           artifactsPersisted={props.artifactsPersisted}
         />
       )}
@@ -139,13 +168,22 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         position={Position.BOTTOM}
         content={isUnknown ? REEXECUTE_PIPELINE_UNKNOWN : REEXECUTE_DESCRIPTION}
       >
-        <ExecutionStartButton
-          title="Re-execute"
-          icon={IconNames.REPEAT}
-          small={true}
-          disabled={isUnknown}
-          onClick={() => onReexecute()}
-        />
+        <LaunchButtonGroup small={true} onChange={updateState}>
+          <ExecutionStartButton
+            title="Re-execute"
+            icon={IconNames.REPEAT}
+            small={true}
+            disabled={isUnknown}
+            onClick={() => onExecute()}
+          />
+          <ExecutionStartButton
+            title="Launch Re-execution"
+            icon={IconNames.REPEAT}
+            small={true}
+            disabled={isUnknown}
+            onClick={() => onLaunch()}
+          />
+        </LaunchButtonGroup>
       </Tooltip>
 
       {run?.canCancel && (
@@ -163,13 +201,22 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
             content={isUnknown ? RETRY_PIPELINE_UNKNOWN : RETRY_DESCRIPTION}
             position={Position.BOTTOM}
           >
-            <ExecutionStartButton
-              title="Resume / Retry"
-              icon={IconNames.REPEAT}
-              small={true}
-              disabled={isUnknown}
-              onClick={() => onReexecute(undefined, true)}
-            />
+            <LaunchButtonGroup small={true} onChange={updateState}>
+              <ExecutionStartButton
+                title="Resume / Retry"
+                icon={IconNames.REPEAT}
+                small={true}
+                disabled={isUnknown}
+                onClick={() => onExecute(undefined, true)}
+              />
+              <ExecutionStartButton
+                title="Launch Resume / Retry"
+                icon={IconNames.REPEAT}
+                small={true}
+                disabled={isUnknown}
+                onClick={() => onLaunch(undefined, true)}
+              />
+            </LaunchButtonGroup>
           </Tooltip>
         ) : (
           <Tooltip

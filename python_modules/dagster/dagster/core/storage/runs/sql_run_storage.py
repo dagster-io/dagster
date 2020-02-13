@@ -21,6 +21,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def connect(self):
         '''Context manager yielding a sqlalchemy.engine.Connection.'''
 
+    @abstractmethod
+    def upgrade(self):
+        '''This method should perform any schema or data migrations necessary to bring an
+        out-of-date instance of the storage up to date.
+        '''
+
     def execute(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)

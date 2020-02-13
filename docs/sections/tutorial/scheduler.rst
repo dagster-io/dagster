@@ -41,9 +41,6 @@ to your ``$DAGSTER_HOME/dagster.yaml``:
     scheduler:
         module: dagster_cron.cron_scheduler
         class: SystemCronScheduler
-        config:
-            artifacts_dir: /path/to/dagster_home/schedule
-
 
 Defining schedules
 ^^^^^^^^^^^^^^^^^^

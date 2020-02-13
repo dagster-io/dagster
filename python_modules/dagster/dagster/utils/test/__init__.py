@@ -389,12 +389,12 @@ class FilesytemTestScheduler(Scheduler):
         instance.storage.delete_schedule(repository, schedule)
         return schedule
 
-    def get_log_path(self, repository, schedule_name):
+    def get_log_path(self, instance, repository, schedule_name):
         check.inst_param(repository, 'repository', RepositoryDefinition)
         check.str_param(schedule_name, 'schedule_name')
         return os.path.join(
             self._artifacts_dir, repository.name, 'logs', '{}'.format(schedule_name)
         )
 
-    def wipe(self):
+    def wipe(self, instance):
         pass

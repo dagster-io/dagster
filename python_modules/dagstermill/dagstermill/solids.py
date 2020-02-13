@@ -267,5 +267,5 @@ def define_dagstermill_solid(
         config=check_user_facing_opt_config_param(config, 'config'),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
-        metadata={'notebook_path': notebook_path, 'kind': 'ipynb'},
+        tags={'notebook_path': notebook_path, 'kind': 'ipynb'},
     )

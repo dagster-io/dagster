@@ -20,8 +20,8 @@ target as a whole. Repositories are declared using the
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/repos.py
    :linenos:
-   :lines: 10-24
-   :lineno-start: 10
+   :lines: 14-24
+   :lineno-start: 14
    :caption: repos.py
 
 Note that the name of the pipeline in the ``RepositoryDefinition`` must match the name we declared

@@ -20,7 +20,16 @@ class EventLogSequence(pyrsistent.CheckedPVector):
 
 
 class EventLogStorage(six.with_metaclass(ABCMeta)):
-    '''Abstract base class for storing structured event logs from pipeline runs.'''
+    '''Abstract base class for storing structured event logs from pipeline runs.
+    
+    Note that event log storages using SQL databases as backing stores should implement
+    :py:class:`~dagster.core.storage.event_log.SqlEventLogStorage`.
+
+    Users should not directly instantiate concrete subclasses of this class; they are instantiated
+    by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
+    ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
+    should be done by setting values in that file.    
+    '''
 
     @abstractmethod
     def get_logs_for_run(self, run_id, cursor=-1):

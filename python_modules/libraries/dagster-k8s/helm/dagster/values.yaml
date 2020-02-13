@@ -17,7 +17,7 @@ dagit:
     tag: "latest"
 
 # The Dagster K8sRunLauncher will invoke job executions in containers running this image
-job_image:
+job_runner:
   image:
     repository: "dagster-docker-buildkite"
     tag: "latest"

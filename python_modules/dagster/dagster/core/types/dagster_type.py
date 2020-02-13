@@ -220,7 +220,7 @@ def _validate_type_check_fn(fn, name):
         return True
 
     raise DagsterInvalidDefinitionError(
-        'type_check function on type "{name}" must take 2 arguments, '
+        'type_check_fn argument on type "{name}" must take 2 arguments, '
         'received {count}.'.format(name=name, count=len(args))
     )
 

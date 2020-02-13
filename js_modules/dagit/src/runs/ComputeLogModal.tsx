@@ -96,7 +96,7 @@ export const ComputeLogModal = ({
       maxBytes={MAX_STREAMING_LOG_BYTES}
     >
       {({ isLoading, stdout, stderr, maxBytes }) => {
-        if (isLoading || !stdout || !stderr) {
+        if (isLoading) {
           return (
             <LoadingContainer>
               <Spinner intent={Intent.NONE} size={32} />
@@ -182,12 +182,14 @@ export class ComputeLogsProvider extends React.Component<
     this._stdout = new DirectGraphQLSubscription<ComputeLogsSubscription>(
       COMPUTE_LOGS_SUBSCRIPTION,
       { runId, stepKey, ioType: ComputeIOType.STDOUT, cursor: null },
-      this.onStdout
+      this.onStdout,
+      this.onError
     );
     this._stderr = new DirectGraphQLSubscription<ComputeLogsSubscription>(
       COMPUTE_LOGS_SUBSCRIPTION,
       { runId, stepKey, ioType: ComputeIOType.STDERR, cursor: null },
-      this.onStderr
+      this.onStderr,
+      this.onError
     );
   }
 
@@ -221,16 +223,26 @@ export class ComputeLogsProvider extends React.Component<
     }
   };
 
+  onError = () => {
+    this.setState({ isLoading: false });
+  };
+
   merge(
     a: ComputeLogContentFileFragment | null,
     b: ComputeLogContentFileFragment | null
   ) {
     if (!b) return a;
+    let data = a?.data;
+    if (a?.data && b?.data) {
+      data = this.slice(a.data + b.data);
+    } else if (b?.data) {
+      data = this.slice(b.data);
+    }
     return {
       __typename: b.__typename,
       path: b.path,
       downloadUrl: b.downloadUrl,
-      data: this.slice((a ? a.data : "") + b.data),
+      data: data,
       cursor: b.cursor
     };
   }

@@ -40,13 +40,9 @@ import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
-import {
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags
-} from "./types/ConfigPartitionsQuery";
+import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
 
-type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions;
 type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags;
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
@@ -176,7 +172,9 @@ export default class ExecutionSessionContainer extends React.Component<
           solidSubset: currentSession.solidSubset
         },
         mode: currentSession.mode,
-        executionMetadata: { tags }
+        executionMetadata: {
+          tags: tags.map(tag => ({ key: tag.key, value: tag.value }))
+        }
       }
     };
   };

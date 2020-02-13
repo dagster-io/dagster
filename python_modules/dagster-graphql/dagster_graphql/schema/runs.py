@@ -215,12 +215,12 @@ class DauphinComputeLogFile(dauphin.ObjectType):
         name = 'ComputeLogFile'
 
     path = dauphin.NonNull(dauphin.String)
-    data = dauphin.NonNull(
+    data = dauphin.Field(
         dauphin.String, description="The data output captured from step computation at query time"
     )
     cursor = dauphin.NonNull(dauphin.Int)
     size = dauphin.NonNull(dauphin.Int)
-    download_url = dauphin.NonNull(dauphin.String)
+    download_url = dauphin.Field(dauphin.String)
 
 
 class DauphinMessageEvent(dauphin.Interface):
@@ -814,7 +814,7 @@ def construct_basic_params(graphene_info, event_record, execution_plan):
     return {
         'runId': event_record.run_id,
         'message': event_record.dagster_event.message
-        if event_record.dagster_event
+        if (event_record.dagster_event and event_record.dagster_event.message)
         else event_record.user_message,
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),

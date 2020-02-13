@@ -34,7 +34,7 @@ class ModeDefinition(
             and 'filesystem' system storages.
         executor_defs (Optional[List[ExecutorDefinition]]): The set of executors available when
             executing in this mode. By default, this will be the 'in_process' and 'multiprocess'
-            executors.
+            executors (:py:data:`~dagster.default_executors`).
         description (Optional[str]): A human-readable description of the mode.
     '''
 

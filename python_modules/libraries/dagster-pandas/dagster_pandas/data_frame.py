@@ -19,7 +19,6 @@ from dagster import (
 )
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
-from dagster.core.types.decorator import make_python_type_usable_as_dagster_type
 
 CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
 
@@ -104,8 +103,6 @@ DataFrame = DagsterType(
     type_check_fn=df_type_check,
 )
 
-make_python_type_usable_as_dagster_type(pd.DataFrame, DataFrame)
-
 
 def _construct_constraint_list(constraints):
     def add_bullet(constraint_list, constraint_description):
@@ -181,9 +178,13 @@ def create_dagster_pandas_dataframe_type(
             else None,
         )
 
-    # add input_hydration_confign and output_materialization_config
-    # https://github.com/dagster-io/dagster/issues/2027
-    return DagsterType(name=name, type_check_fn=_dagster_type_check, description=description)
+    return DagsterType(
+        name=name,
+        type_check_fn=_dagster_type_check,
+        input_hydration_config=dataframe_input_schema,
+        output_materialization_config=dataframe_output_schema,
+        description=description,
+    )
 
 
 def _execute_summary_stats(type_name, value, event_metadata_fn):
