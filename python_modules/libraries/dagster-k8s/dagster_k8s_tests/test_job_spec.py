@@ -4,6 +4,7 @@ import uuid
 import yaml
 from dagster_k8s.launcher import K8sRunLauncher
 
+from dagster import __version__ as dagster_version
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
@@ -17,7 +18,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: dagster
     app.kubernetes.io/name: dagster
-    app.kubernetes.io/version: 0.6.6
+    app.kubernetes.io/version: {dagster_version}
   name: dagster-job-{run_id}
 spec:
   backoff_limit: 4
@@ -26,7 +27,7 @@ spec:
       labels:
         app.kubernetes.io/instance: dagster
         app.kubernetes.io/name: dagster
-        app.kubernetes.io/version: 0.6.6
+        app.kubernetes.io/version: {dagster_version}
       name: dagster-job-pod-{run_id}
     spec:
       containers:
@@ -86,7 +87,10 @@ def test_valid_job_format(
     assert (
         yaml.dump(remove_none_recursively(job.to_dict()), default_flow_style=False).strip()
         == EXPECTED_JOB_SPEC.format(
-            run_id=run_id, job_image=docker_image, image_pull_policy=image_pull_policy
+            run_id=run_id,
+            job_image=docker_image,
+            image_pull_policy=image_pull_policy,
+            dagster_version=dagster_version,
         ).strip()
     )
 
