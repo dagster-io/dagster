@@ -1,7 +1,7 @@
 Types
 =========
 
-.. module:: dagster
+.. currentmodule:: dagster
 
 Dagster includes facilities for typing the input and output values of solids ("runtime" types).
 
@@ -229,7 +229,7 @@ Built-in primitives types
 
 .. attribute:: Optional
 
-    Use this type only for inputs and outputs, if the value can also be ``None``. For 
+    Use this type only for inputs and outputs, if the value can also be ``None``.
 
     **Examples:**
 
@@ -325,6 +325,7 @@ Built-in primitives types
     :py:class:`python:typing.Set`.
 
     You may optionally specify the inner type using the square brackets syntax for Python typing.
+
     **Examples:**
 
     .. code-block:: python
@@ -344,7 +345,7 @@ Built-in primitives types
 .. attribute:: Tuple
 
     Use this type for inputs or outputs that are tuples. Alias for
-    :py:class:`python:typing.Tuple`.
+    :py:data:`python:typing.Tuple`.
 
     You may optionally specify the inner types using the square brackets syntax for Python typing.
 

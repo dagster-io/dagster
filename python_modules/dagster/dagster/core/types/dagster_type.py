@@ -22,37 +22,37 @@ class DagsterType(object):
         type_check_fn (Callable[[TypeCheckContext, Any], [Union[bool, TypeCheck]]]):
             The function that defines the type check. It takes the value flowing
             through the input or output of the solid. If it passes, return either
-            `True` or a `TypeCheck` with `success` set to `True`. If it fails,
-            return either `False` or a `TypeCheck` with `success` set to `False`.
-            The first argument must be named context (or _, _context, context_).
-            Use `required_resource_keys` for access to resources.
+            ``True`` or a :py:class:`~dagster.TypeCheck` with ``success`` set to ``True``. If it fails,
+            return either ``False`` or a :py:class:`~dagster.TypeCheck` with ``success`` set to ``False``.
+            The first argument must be named ``context`` (or, if unused, ``_``, ``_context``, or ``context_``).
+            Use ``required_resource_keys`` for access to resources.
         key (Optional[str]): The unique key to identify types programatically.
             The key property always has a value. If you omit key to the argument
-            to the init function, it instead receives the value of `name`. If
-            neither `key` nor `name` is provided, a `CheckError` is thrown.
+            to the init function, it instead receives the value of ``name``. If
+            neither ``key`` nor ``name`` is provided, a ``CheckError`` is thrown.
 
-            In the case of a generic type such as `List` or `Optional`, this is
+            In the case of a generic type such as ``List`` or ``Optional``, this is
             generated programatically based on the type parameters.
 
             For most use cases, name should be set and the key argument should
             not be specified.
-        name (Optional[str]): A unique name given by a user. If key is None, key
+        name (Optional[str]): A unique name given by a user. If ``key`` is ``None``, ``key``
             becomes this value. Name is not given in a case where the user does
             not specify a unique name for this type, such as a generic class.
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            inherits from :py:class:`~dagster.InputHydrationConfig` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
             :py:func:`@input_hydration_config <dagster.input_hydration_config>` decorator to construct
             these arguments.
         output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            that inherits from :py:class:`~dagster.OutputMaterializationConfig` and can persist values of
             this type. As a rule, you should use the
             :py:func:`@output_materialization_config <dagster.output_materialization_config>`
             decorator to construct these arguments.
         serialization_strategy (Optional[SerializationStrategy]): An instance of a class that
-            inherits from :py:class:`SerializationStrategy`. The default strategy for serializing
+            inherits from :py:class:`~dagster.SerializationStrategy`. The default strategy for serializing
             this value when automatically persisting it between execution steps. You should set
             this value if the ordinary serialization machinery (e.g., pickle) will not be adequate
             for this type.
@@ -61,9 +61,9 @@ class DagsterType(object):
             argument. In these cases the serialization_strategy argument is not sufficient because
             serialization requires specialized API calls, e.g. to call an S3 API directly instead
             of using a generic file object. See ``dagster_pyspark.DataFrame`` for an example.
-        required_resource_keys (Optional[Set[str]]): Resource keys required by the type_check_fn.
+        required_resource_keys (Optional[Set[str]]): Resource keys required by the ``type_check_fn``.
         is_builtin (bool): Defaults to False. This is used by tools to display or
-            filter built-in types (such as String, Int) to visually distinguish
+            filter built-in types (such as :py:class:`~dagster.String`, :py:class:`~dagster.Int`) to visually distinguish
             them from user-defined types. Meant for internal use.
     '''
 
@@ -415,13 +415,13 @@ class PythonObjectDagsterType(DagsterType):
         key (Optional[str]): Key of the type. Defaults to name.
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
-            inherits from :py:class:`InputHydrationConfig` and can map config data to a value of
+            inherits from :py:class:`~dagster.InputHydrationConfig` and can map config data to a value of
             this type. Specify this argument if you will need to shim values of this type using the
             config machinery. As a rule, you should use the
             :py:func:`@input_hydration_config <dagster.InputHydrationConfig>` decorator to construct
             these arguments.
         output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
-            that inherits from :py:class:`OutputMaterializationConfig` and can persist values of
+            that inherits from :py:class:`~dagster.OutputMaterializationConfig` and can persist values of
             this type. As a rule, you should use the
             :py:func:`@output_materialization_config <dagster.output_materialization_config>`
             decorator to construct these arguments.
