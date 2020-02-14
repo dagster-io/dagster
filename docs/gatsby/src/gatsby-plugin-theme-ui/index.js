@@ -21,7 +21,8 @@ export default {
   fonts: {
     body: '"Source Sans Pro", system-ui, sans-serif',
     heading: '"Work Sans", system-ui, sans-serif',
-    mono: '"Fira Code"'
+    mono:
+      '"Fira Code", "SFMono-Regular", "Consolas", "Roboto Mono", "Droid Sand Mono", "Liberation Mono", "Menlo", "Courier", monospace'
   },
   radii: {
     square: 0,
