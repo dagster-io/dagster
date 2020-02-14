@@ -43,8 +43,12 @@ ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     JAVA_HOME=/docker-java-home \
-    JAVA_VERSION=8u222 \
-    JAVA_DEBIAN_VERSION=8u222-b10-1~deb9u1 \
+    # This Java version is obtained by running:
+    #   docker run -it python:3.8.1-slim-buster /bin/bash
+    #   echo "deb http://http.us.debian.org/debian stretch main contrib non-free" > /etc/apt/sources.list.d/91-debian-stretch.list
+    #   apt-get update -yqq
+    #   apt-cache policy openjdk-8-jdk-headless
+    JAVA_DEBIAN_VERSION=8u232-b09-1~deb9u1 \
     SBT_VERSION=1.2.8 \
     PYSPARK_VERSION=2.4.4 \
     KUBECTL_VERSION=v1.16.4 \
