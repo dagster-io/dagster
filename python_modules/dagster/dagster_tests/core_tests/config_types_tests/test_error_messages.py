@@ -2,21 +2,15 @@ import re
 
 import pytest
 
-from dagster import (
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    Dict,
-    List,
-    Noneable,
-    Optional,
-    solid,
-)
+from dagster import DagsterInvalidDefinitionError, Dict, List, Noneable, Optional, solid
 
 
 def test_invalid_optional_in_config():
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape('Cannot resolve Dagster Type Optional.Int to a config type.'),
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            'You have passed an instance of DagsterType Optional.Int to the config system'
+        ),
     ):
 
         @solid(config=Optional[int])
@@ -35,7 +29,7 @@ def test_invalid_dict_call():
 
 def test_list_in_config():
     with pytest.raises(
-        DagsterInvariantViolationError,
+        DagsterInvalidDefinitionError,
         match=re.escape(
             'Cannot use List in the context of config. Please use a python '
             'list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'

@@ -1,10 +1,6 @@
 from dagster import check
 from dagster.builtins import BuiltinEnum
-from dagster.core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-)
+from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
 
@@ -18,6 +14,21 @@ def _is_config_type_class(obj):
 
 def helpful_list_error_string():
     return 'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
+
+
+VALID_CONFIG_DESC = '''
+1. A Python primitive type that resolve to dagster config
+   types: int, float, bool, str.
+
+2. A dagster config type: Int, Float, Bool, Array, Noneable,
+   Selector, Shape, Permissive, etc
+
+3. A bare python dictionary, which is wrapped in Shape. Any
+   values in the dictionary get resolved by the same rules, recursively.
+
+4. A bare python list of length one which itself is config type.
+   Becomes Array with list element as an argument.
+'''
 
 
 def resolve_to_config_type(dagster_type):
@@ -58,16 +69,18 @@ def resolve_to_config_type(dagster_type):
         )
 
     if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
-        raise DagsterInvariantViolationError(
-            'Cannot resolve a dagster type class {dagster_type} to a config type'.format(
-                dagster_type=repr(dagster_type)
+        raise DagsterInvalidDefinitionError(
+            'You have passed a DagsterType class {dagster_type} to the config system. '
+            'The DagsterType and config schema systems are seperate. '
+            'Valid config values are:\n{desc}'.format(
+                dagster_type=repr(dagster_type), desc=VALID_CONFIG_DESC,
             )
         )
 
     if is_typing_type(dagster_type):
-        raise DagsterInvariantViolationError(
+        raise DagsterInvalidDefinitionError(
             (
-                'You have passed in {dagster_type} in the config system. Types from '
+                'You have passed in {dagster_type} to the config system. Types from '
                 'the typing module in python are not allowed in the config system. '
                 'You must use types that are imported from dagster or primitive types '
                 'such as bool, int, etc.'
@@ -75,28 +88,31 @@ def resolve_to_config_type(dagster_type):
         )
 
     if dagster_type is List or isinstance(dagster_type, ListType):
-        raise DagsterInvariantViolationError(
+        raise DagsterInvalidDefinitionError(
             'Cannot use List in the context of config. ' + helpful_list_error_string()
         )
 
     if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
-        raise DagsterInvariantViolationError(
+        raise DagsterInvalidDefinitionError(
             'Cannot use Set in the context of a config field. ' + helpful_list_error_string()
         )
 
     if dagster_type is Tuple or isinstance(dagster_type, _TypedPythonTuple):
-        raise DagsterInvariantViolationError(
+        raise DagsterInvalidDefinitionError(
             'Cannot use Tuple in the context of a config field. ' + helpful_list_error_string()
         )
 
     if isinstance(dagster_type, DagsterType):
-        raise DagsterInvariantViolationError(
+        raise DagsterInvalidDefinitionError(
             (
-                'Cannot resolve Dagster Type {type_name} to a config type. '
-                'Repr of type: {dagster_type} '
+                'You have passed an instance of DagsterType {type_name} to the config '
+                'system (Repr of type: {dagster_type}). '
+                'The DagsterType and config schema systems are seperate. '
+                'Valid config values are:\n{desc}'
             ).format(
                 type_name=dagster_type.name if dagster_type.name else dagster_type.key,
                 dagster_type=repr(dagster_type),
+                desc=VALID_CONFIG_DESC,
             ),
         )
 
