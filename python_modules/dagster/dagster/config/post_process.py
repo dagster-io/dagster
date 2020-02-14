@@ -135,9 +135,15 @@ def _recurse_in_to_shape(context, config_value):
         for extra_field in extra_fields:
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
-    errors = [result.error for result in processed_fields.values() if not result.success]
+    errors = []
+    for result in processed_fields.values():
+        if not result.success:
+            for error in result.errors:
+                errors.append(error)
+
     if errors:
         return EvaluateValueResult.for_errors(errors)
+
     return EvaluateValueResult.for_value(
         frozendict({key: result.value for key, result in processed_fields.items()})
     )
