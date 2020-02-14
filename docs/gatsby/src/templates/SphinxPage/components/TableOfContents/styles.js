@@ -10,9 +10,10 @@ export const wrapper = isMobile => ({
   bg: "lightGray.1",
 
   ul: {
-    listStyle: "none",
     p: 0,
-    m: 0
+    pl: 2,
+    m: 0,
+    ml: 2
   },
 
   li: {
