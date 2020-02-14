@@ -75,6 +75,6 @@ def test_port_collision():
     with mock.patch('gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)):
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(Exception) as exc_info:
-            host_dagit_ui(handle=handle, host=None, port=2343)
+            host_dagit_ui(handle=handle, host=None, port=2343, port_lookup=False)
 
-        assert 'Another process ' in str(exc_info.value)
+        assert 'another instance of dagit ' in str(exc_info.value)
