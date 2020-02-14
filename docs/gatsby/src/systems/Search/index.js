@@ -17,10 +17,8 @@ export const Search = React.forwardRef((props, ref) => {
   const [focus, setFocus] = useState(false);
 
   const searchClient = algoliasearch(
-    "LQB27MQQ0C",
-    "dd4592cb743937893b2360d5b0ddc15b"
-    // process.env.ALGOLIA_APP_ID,
-    // process.env.ALGOLIA_SEARCH_KEY
+    process.env.GATSBY_ALGOLIA_APP_ID,
+    process.env.GATSBY_ALGOLIA_SEARCH_KEY
   );
 
   useClickAway(ref, () => {

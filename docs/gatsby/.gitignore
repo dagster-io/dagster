@@ -66,3 +66,7 @@ versions/
 yarn-error.log
 .pnp/
 .pnp.js
+
+# Builded files
+versions/**
+!versions/.keep
