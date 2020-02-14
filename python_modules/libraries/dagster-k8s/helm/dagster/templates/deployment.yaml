@@ -47,8 +47,13 @@ spec:
               dagit -h 0.0.0.0 -p 80"
             ]
           env:
-          - name: DAGSTER_HOME
-            value: "{{ .Values.dagster_home }}"
+            - name: DAGSTER_HOME
+              value: "{{ .Values.dagster_home }}"
+            - name: DAGSTER_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dagster-postgresql
+                  key: postgresql-password
           volumeMounts:
             - name: dagster-instance
               mountPath: "{{ .Values.dagster_home }}/dagster.yaml"

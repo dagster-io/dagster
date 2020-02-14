@@ -40,8 +40,13 @@ spec:
           command: ["dagster-celery"]
           args: ["worker", "start", "-y", "{{ .Values.dagster_home }}/celery-config.yaml"]
           env:
-          - name: DAGSTER_HOME
-            value: "{{ .Values.dagster_home }}"
+            - name: DAGSTER_HOME
+              value: "{{ .Values.dagster_home }}"
+            - name: DAGSTER_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dagster-postgresql
+                  key: postgresql-password
           volumeMounts:
             - name: dagster-instance
               mountPath: "{{ .Values.dagster_home }}/dagster.yaml"

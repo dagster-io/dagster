@@ -158,7 +158,17 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 json.dumps({'executionParams': execution_params.to_graphql_input()}),
             ],
             image_pull_policy=self.image_pull_policy,
-            env=[client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home')],
+            env=[
+                client.V1EnvVar(name='DAGSTER_HOME', value='/opt/dagster/dagster_home'),
+                client.V1EnvVar(
+                    name='DAGSTER_PG_PASSWORD',
+                    value_from=client.V1EnvVarSource(
+                        secret_key_ref=client.V1SecretKeySelector(
+                            name='dagster-postgresql', key='postgresql-password'
+                        )
+                    ),
+                ),
+            ],
             env_from=self.env_froms,
             volume_mounts=[
                 client.V1VolumeMount(
