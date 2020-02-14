@@ -242,8 +242,6 @@ def k8s_tests():
         tests.append(
             StepBuilder("dagster-k8s ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pip install kubernetes",
-                "curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash",
                 "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
                 "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-k8s/",

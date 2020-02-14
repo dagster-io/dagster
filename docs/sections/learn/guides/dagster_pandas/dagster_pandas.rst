@@ -90,4 +90,4 @@ renders markdown syntax, an ``error_description`` for error logs, and a validati
 .. literalinclude:: ../../../../../examples/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
    :lines: 15-40
    :caption: custom_column_constraint_pipeline.py
-   :emphasize-lines: 36-38
+   :emphasize-lines: 22-24

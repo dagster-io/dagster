@@ -72,7 +72,7 @@ Our first solid will take the stock ticker symbol as config, and query the API t
    :lines: 5-20
    :language: python
    :caption: repository.py
-   :emphasize-lines: 8-20
+   :emphasize-lines: 4-16
 
 Our second solid will take the json response and total the volume amounts over all the days:
 

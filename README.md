@@ -33,7 +33,7 @@ This installs two modules:
 
 ### Learn
 
-Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
+Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
 
 <br />
 <p align="center">

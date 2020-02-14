@@ -28,7 +28,7 @@ Finally, using these two functions, we create a :py:class:`PartitionSetDefinitio
 
 .. literalinclude:: ../../../../../examples/dagster_examples/stocks/simple_partitions.py
    :linenos:
-   :lines: 19-39
+   :lines: 19-29
    :language: python
    :caption: repository.py
 
