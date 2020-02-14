@@ -72,7 +72,7 @@ def ui(host, port, storage_fallback, reload_trigger, **kwargs):
     host_dagit_ui(handle, host, port, storage_fallback, reload_trigger)
 
 
-def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None):
+def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None, port_lookup=True):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     instance = DagsterInstance.get(storage_fallback)
@@ -80,28 +80,46 @@ def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None
 
     app = create_app(handle, instance, reloader)
 
+    start_server(host, port, app, port_lookup)
+
+
+def start_server(host, port, app, port_lookup, port_lookup_attempts=0):
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
+
     print(
         'Serving on http://{host}:{port} in process {pid}'.format(
             host=host, port=port, pid=os.getpid()
         )
     )
+
     try:
         server.serve_forever()
     except OSError as os_error:
         if 'Address already in use' in str(os_error):
-            six.raise_from(
-                Exception(
+            if port_lookup and (
+                port_lookup_attempts > 0
+                or click.confirm(
                     (
                         'Another process on your machine is already listening on port {port}. '
-                        'It is possible that you have another instance of dagit '
-                        'running somewhere using the same port. Or it could be another '
-                        'random process. Either kill that process or use the -p option to '
-                        'select another port.'
+                        'Would you like to run the app at another port instead?'
                     ).format(port=port)
-                ),
-                os_error,
-            )
+                )
+            ):
+                port_lookup_attempts += 1
+                start_server(host, port + port_lookup_attempts, app, True, port_lookup_attempts)
+            else:
+                six.raise_from(
+                    Exception(
+                        (
+                            'Another process on your machine is already listening on port {port}. '
+                            'It is possible that you have another instance of dagit '
+                            'running somewhere using the same port. Or it could be another '
+                            'random process. Either kill that process or use the -p option to '
+                            'select another port.'
+                        ).format(port=port)
+                    ),
+                    os_error,
+                )
         else:
             raise os_error
 
