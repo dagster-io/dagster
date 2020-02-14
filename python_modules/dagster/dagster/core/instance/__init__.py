@@ -83,6 +83,7 @@ class DagsterInstance:
 
     .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
        :caption: dagster.yaml
+       :language: YAML
 
     Args:
         instance_type (InstanceType): Indicates whether the instance is ephemeral or persistent.

@@ -24,6 +24,7 @@ To turn intermediate storage on, just set another key in the pipeline config:
    :linenos:
    :emphasize-lines: 6-7
    :caption: intermediates.yaml
+   :language: YAML
 
 When you execute the pipeline using this config, you'll see new structured entries in the Dagit
 log viewer indicating that intermediates have been stored on the filesystem.
@@ -45,6 +46,7 @@ to store intermediates of this type.
    :linenos:
    :lineno-start: 12
    :caption: serialization_strategy.py
+   :language: python
 
 Now, when we set the ``storage`` key in pipeline config and run this pipeline, we'll see that our
 intermediate is automatically persisted as a human-readable .csv:

@@ -17,6 +17,7 @@ investigate, in detail, the success or failure of execution, the outputs produce
    :caption: hello_cereal.py
    :lineno-start: 31
    :lines: 31-40
+   :language: python
 
 Now you can use pytest, or your test runner of choice, to run unit tests as you develop your
 data applications.

@@ -43,6 +43,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
        :caption: dagster.yaml
        :lines: 12-21
+       :language: YAML
+
     '''
 
     def __init__(self, postgres_url, inst_data=None):

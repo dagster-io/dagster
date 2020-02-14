@@ -28,6 +28,7 @@ Let's transform our dataset and then store it in a normalized table in the wareh
     :lineno-start: 57
     :lines: 57-80
     :emphasize-lines: 24
+    :language: python
 
 Resources are another facility that Dagster makes available on the ``context`` object passed to
 solid logic. Note that we've completely encapsulated access to the database behind the call to
@@ -51,6 +52,7 @@ an instance of :py:class:`InitResourceContext <dagster.InitResourceContext>`.)
     :lineno-start: 16
     :lines: 16-45
     :emphasize-lines: 28-30
+    :language: python
 
 The last thing we need to do is to attach the resource to our pipeline, so that it's properly
 initialized when the pipeline run begins and made available to our solid logic as
@@ -62,6 +64,7 @@ initialized when the pipeline run begins and made available to our solid logic a
     :lineno-start: 83
     :lines: 83-91
     :emphasize-lines: 2-6
+    :language: python
 
 All resources are associated with a :py:class:`ModeDefinition <dagster.ModeDefinition>`. So far,
 all of our pipelines have had only a single, system default mode, so we haven't had to tell Dagster
@@ -95,6 +98,7 @@ provided for a pipeline.
     :lineno-start: 55
     :lines: 55-78
     :emphasize-lines: 1
+    :language: python
 
 Now, the Dagster machinery knows that this solid requires a resource called ``warehouse`` to be
 present on its mode definitions, and will complain if that resource is not present.

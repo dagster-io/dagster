@@ -89,6 +89,7 @@ this by setting blocks in your ``$DAGSTER_HOME/dagster.yaml`` appropriately.
 
 .. literalinclude:: dagster-pg.yaml
   :caption: dagster.yaml
+   :language: YAML
 
 In this case, you'll want to ensure you provide the right connection strings for your RDS instance,
 and ensure that the node or container hosting Dagit is able to connect to RDS.

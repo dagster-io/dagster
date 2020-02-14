@@ -20,6 +20,7 @@ of the same library solid:
    :lines: 54-71
    :emphasize-lines: 15-16
    :caption: reusable_solids.py
+   :language: python
 
 You'll see that Dagit distinguishes between the two invocations of the single library solid and the
 solid's definition. The invocation is named and bound via a dependency graph to other invocations
@@ -34,3 +35,4 @@ Configuring solids also uses the aliases, as in the following YAML:
    :linenos:
    :emphasize-lines: 6, 8
    :caption: reusable_solids.yaml
+   :language: YAML

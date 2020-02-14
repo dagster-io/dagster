@@ -20,6 +20,7 @@ Let's see how to use this to emit some summary statistics about our DataFrame ty
    :lineno-start: 17
    :emphasize-lines: 3-9, 33-53
    :caption: custom_types_4.py
+   :language: python
 
 A :py:class:`TypeCheck <dagster.TypeCheck>` must include a ``success`` argument describing whether
 the check passed or failed, and may include a description and/or a list of
@@ -61,6 +62,7 @@ data in solid logic.
    :lineno-start: 91
    :emphasize-lines: 1-3, 31
    :caption: custom_types_5.py
+   :language: python
 
 Until now, every solid we've encountered has returned its result value, or ``None``. But solids can
 also yield events of various types for side-channel communication about the results of their

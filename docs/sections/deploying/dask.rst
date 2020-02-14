@@ -39,11 +39,13 @@ Then, you'll need to add the dask executor to a :py:class:`ModeDefinition` on yo
 
 .. literalinclude:: dask_hello_world.py
   :caption: dask_hello_world.py
+  :language: python
 
 Now you can run this pipeline with a config block such as the following:
 
 .. literalinclude:: dask_hello_world.yaml
   :caption: dask_hello_world.yaml
+  :language: YAML
 
 Executing this pipeline will spin up local Dask execution, run the Dagster pipeline, and exit.
 
@@ -64,6 +66,7 @@ address/port of the Dask scheduler:
 
 .. literalinclude:: dask_remote.yaml
   :caption: dask_remote.yaml
+  :language: YAML
 
 Since Dask will invoke your pipeline code on the cluster workers, you must ensure that the latest
 version of your Python code is available to all of the Dask workers. Ideally, you'll package this as

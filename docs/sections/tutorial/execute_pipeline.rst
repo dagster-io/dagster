@@ -94,6 +94,7 @@ at all. Just add a few lines to ``hello_cereal.py``:
    :lineno-start: 26
    :lines: 26-28
    :caption: hello_cereal.py
+   :language: python
 
 Now you can just run:
 

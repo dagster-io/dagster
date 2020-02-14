@@ -16,6 +16,7 @@ difficult to test against.
    :linenos:
    :lineno-start: 75
    :caption: modes.py
+   :language: python
 
 Even if you're not familiar with SQLAlchemy, it's enough to note that this is a very different
 implementation of the ``warehouse`` resource. To make this implementation available to Dagster, we
@@ -26,6 +27,7 @@ attach it to a :py:class:`ModeDefinition <dagster.ModeDefinition>`.
    :linenos:
    :lineno-start: 127
    :caption: modes.py
+   :language: python
 
 Each of the ways we can invoke a Dagster pipeline lets us select which mode we'd like to run it in.
 
@@ -44,6 +46,7 @@ From the Python API, we can use the :py:class:`RunConfig <dagster.RunConfig>`:
    :emphasize-lines: 4
    :dedent: 4
    :caption: modes.py
+   :language: python
 
 And in Dagit, we can use the "Mode" selector to pick the mode in which we'd like to execute.
 

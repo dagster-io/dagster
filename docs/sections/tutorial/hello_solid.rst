@@ -19,6 +19,7 @@ and logs the number of rows it finds.
    :linenos:
    :lines: 1-18
    :caption: hello_cereal.py
+   :language: python
 
 In this simplest case, our solid takes no inputs except for the
 :py:class:`context <SystemComputeExecutionContext>` in which it executes

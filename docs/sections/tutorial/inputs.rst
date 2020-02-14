@@ -14,6 +14,7 @@ So far, we've only seen solids whose behavior is the same every time they're run
    :linenos:
    :lineno-start: 6
    :caption: serial_pipeline.py
+   :language: python
 
 In general, though, rather than relying on hardcoded values like ``dataset_path``, we'd like to be
 able to parametrize our solid logic. Appropriately parameterized solids are more testable, and
@@ -24,6 +25,7 @@ also more reusable. Consider the following more generic solid:
    :linenos:
    :lineno-start: 6
    :caption: inputs.py
+   :language: python
 
 Here, rather than hardcoding the value of ``dataset_path``, we use an input, ``csv_path``. It's
 easy to see why this is better. We can reuse the same solid in all the different places we
@@ -37,6 +39,7 @@ Let's rebuild a pipeline we've seen before, but this time using our newly parame
    :linenos:
    :emphasize-lines: 36
    :caption: inputs.py
+   :language: python
 
 As you can see above, what's missing from this setup is a way to specify the ``csv_path``
 input to our new ``read_csv`` solid in the absence of any upstream solids whose outputs we can
@@ -64,6 +67,7 @@ per-solid configuration, which is specified under the key ``solids``:
     :lines: 40-44
     :dedent: 4
     :caption: inputs.py
+    :language: python
 
 The ``solids`` dict is keyed by solid name, and each solid is configured by a dict that may itself
 have several sections. In this case we are only interested in the ``inputs`` section, so
@@ -77,6 +81,7 @@ Now you can pass this environment dict to :py:func:`execute_pipeline`:
     :dedent: 4
     :lineno-start: 45
     :caption: inputs.py
+    :language: python
 
 
 Specifying config using YAML fragments and the dagster CLI
@@ -120,6 +125,7 @@ solid implementing a data ingest process.
    :lineno-start: 9
    :linenos:
    :caption: test_inputs.py
+   :language: python
 
 When we execute this test (e.g., using pytest), we'll be reminded again of one of the reasons why
 it's always a good idea to write unit tests, even for the most seemingly trivial components.

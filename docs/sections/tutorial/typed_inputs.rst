@@ -40,6 +40,7 @@ we just want to type the input as the built-in ``str``.
    :linenos:
    :lineno-start: 6
    :caption: inputs_typed.py
+   :language: python
 
 By using typed input instead we can catch this error prior to execution, and reduce the surface
 area we need to test and guard against in user code.

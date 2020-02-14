@@ -14,6 +14,7 @@ Dagster calls this a config preset:
    :lineno-start: 128
    :caption: presets.py
    :emphasize-lines: 14-37
+   :language: python
 
 We illustrate two ways of defining a preset.
 
@@ -38,6 +39,7 @@ From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/presets.py
    :lines: 171
    :dedent: 4
+   :language: python
 
 And in Dagit, we can use the "Presets" selector.
 

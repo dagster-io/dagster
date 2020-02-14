@@ -16,10 +16,12 @@ But what about when you want to define your own types?
 Let's look back at our simple ``read_csv`` solid.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/inputs_typed.py
+   :language: python
    :lines: 6-12
    :caption: inputs_typed.py
    :linenos:
    :lineno-start: 6
+   :language: python
 
 The ``lines`` object returned by Python's built-in ``csv.DictReader`` is a list of
 ``collections.OrderedDict``, each of which represents one row of the dataset:
@@ -54,6 +56,7 @@ To do this, we'll use the :py:class:`DagsterType <dagster.dagster_type>` class:
    :linenos:
    :lineno-start: 5
    :caption: custom_types.py
+   :language: python
 
 Now we can annotate the rest of our pipeline with our new type:
 
@@ -63,7 +66,7 @@ Now we can annotate the rest of our pipeline with our new type:
    :linenos:
    :lineno-start: 13
    :caption: custom_types.py
-
+   :language: python
 
 The type metadata now appears in dagit and the system will ensure the input and output to this
 solid are indeed instances of SimpleDataFrame. As usual, run:
@@ -96,6 +99,7 @@ The type check function allows us to do this.
    :lineno-start: 6
    :emphasize-lines: 1, 21
    :caption: custom_types_2.py
+   :language: python
 
 Now, if our solid logic fails to return the right type, we'll see a type check failure. Let's
 replace our ``read_csv`` solid with the following bad logic:
@@ -105,6 +109,7 @@ replace our ``read_csv`` solid with the following bad logic:
    :linenos:
    :lineno-start: 30
    :caption: custom_types_2.py
+   :language: python
 
 When we run the pipeline with this solid, we'll see an error like:
 
@@ -157,6 +162,7 @@ input hydration config.
    :lineno-start: 31
    :caption: custom_types_3.py
    :emphasize-lines: 1
+   :language: python
 
 A function decorated with :py:func:`@input_hydration_config <dagster.input_hydration_config>` should
 take the context object, as usual, and a parameter representing the parsed config field. The schema
@@ -177,6 +183,7 @@ Then insert this into the original declaration:
    :linenos:
    :lineno-start: 45
    :caption: custom_types_3.py
+   :language: python
 
 Now if you run a pipeline with this solid from dagit you will be able to provide sources for
 these inputs via config:
@@ -186,6 +193,7 @@ these inputs via config:
    :linenos:
    :lineno-start: 69
    :caption: custom_types_3.py
+   :language: python
 
 Testing custom types
 ^^^^^^^^^^^^^^^^^^^^
@@ -200,6 +208,7 @@ type against any value.
    :linenos:
    :lineno-start: 100
    :caption: custom_types_test.py
+   :language: python
 
 Well tested library types can be reused across solids and pipelines to provide standardized type
 checking within your organization's data applications.
@@ -220,6 +229,7 @@ is explicit and clear.
    :lineno-start: 20
    :emphasize-lines: 1-5,13-14
    :caption: custom_types_mypy_verbose.py
+   :language: python
 
 If one wishes to use type annotations exclusively but still use dagster types without
 a 1:1 python type counterpart, the typechecking behavior must be modified. For this
@@ -234,3 +244,4 @@ have it on all places where the type is referenced.
    :lineno-start: 6 
    :emphasize-lines: 1-8
    :caption: custom_types_mypy_typing_trick.py
+   :language: python

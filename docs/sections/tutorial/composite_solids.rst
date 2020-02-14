@@ -19,6 +19,7 @@ lookup table providing human-readable names for the cereal manufacturers.
    :lines: 126-130
    :lineno-start: 126
    :caption: composite_solids.py
+   :language: python
 
 Defining a composite solid is similar to defining a pipeline, except that we use the
 :py:func:`@composite_solid <dagster.composite_solid>` decorator instead of

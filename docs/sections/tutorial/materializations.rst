@@ -25,6 +25,7 @@ disk.
    :linenos:
    :lineno-start: 23
    :caption: materializations.py
+   :language: python
 
 We've taken the basic precaution of ensuring that the saved csv file has a different filename for
 each run of the pipeline. But there's no way for Dagit to know about this persistent artifact.
@@ -36,6 +37,7 @@ So we'll add the following lines:
    :lineno-start: 23
    :emphasize-lines: 22-31
    :caption: materializations.py
+   :language: python
 
 Note that we've had to add the last line, yielding an :py:class:`Output <dagster.Output>`. Until
 now, all of our solids have relied on Dagster's implicit conversion of the return value of a solid's
@@ -65,6 +67,7 @@ of third party tools, while pickle is a binary format.)
    :linenos:
    :lineno-start: 28
    :caption: output_materialization.py
+   :language: python
 
 We set the output materialization config on the type:
 
@@ -74,6 +77,7 @@ We set the output materialization config on the type:
    :lineno-start: 64
    :emphasize-lines: 5
    :caption: output_materialization.py
+   :language: python
 
 Now we can tell Dagster to materialize intermediate outputs of this type by providing config:
 
@@ -82,6 +86,7 @@ Now we can tell Dagster to materialize intermediate outputs of this type by prov
    :lines: 6-10
    :lineno-start: 6
    :caption: output_materialization.yaml
+   :language: YAML
 
 When we run this pipeline, we'll see that materializations are yielded (and visible in the
 structured logs in Dagit), and that files are created on disk (with the semicolon separator we

@@ -15,6 +15,7 @@ You'll typically define pipelines by annotating ordinary Python functions with t
    :lineno-start: 21
    :lines: 21-23
    :caption: hello_cereal.py
+   :language: python
 
 
 Here you'll see that we call ``hello_cereal()``. This call doesn't actually execute the solid

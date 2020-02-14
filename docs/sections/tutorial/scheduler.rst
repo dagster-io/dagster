@@ -27,6 +27,7 @@ Pipeline
    :linenos:
    :lines: 1-34
    :caption: scheduler.py
+   :language: python
 
 As before, we've defined some solids, a pipeline, and a repository.
 
@@ -62,6 +63,7 @@ We wrap the schedule definition in a function decorated with
    :lines: 36-45
    :lineno-start: 38
    :caption: scheduler.py
+   :language: python
 
 To complete the picture, we'll need to extend the ``repository.yaml`` structure we've met before
 with a new key, ``scheduler``.
@@ -69,6 +71,7 @@ with a new key, ``scheduler``.
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/scheduler.yaml
    :linenos:
    :caption: scheduler.yaml
+   :language: YAML
 
 
 Starting schedules

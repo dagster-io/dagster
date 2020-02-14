@@ -24,6 +24,7 @@ disk, and in turn will sort the list of cereals by their calorie content per ser
    :lines: 1-37
    :emphasize-lines: 15, 19, 37
    :caption: serial_pipeline.py
+   :language: python
 
 You'll see that we've modified our existing ``load_cereals`` solid to return an output, in this
 case the list of dicts into which :py:class:``csv.DictReader <python:csv.DictReader>`` reads the
@@ -60,6 +61,7 @@ solid.
    :lineno-start: 6
    :emphasize-lines: 55-59
    :caption: complex_pipeline.py
+   :language: python
 
 First we introduce the intermediate variable ``cereals`` into our pipeline definition to
 represent the output of the ``load_cereals`` solid. Then we make both ``sort_by_calories`` and
@@ -89,3 +91,4 @@ executed successfully.
    :lines: 72-77
    :lineno-start: 72
    :caption: complex_pipeline.py
+   :language: python

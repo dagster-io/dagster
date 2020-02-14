@@ -118,7 +118,7 @@ that we use solid aliasing to reuse the ``s3_to_df`` solid for several ingest st
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/pipelines.py
    :lines: 96-103
-
+   :language: python
 
 In general, you won't want every data science user in your organization to have to roll their own
 implementation of common functionality like downloading and unzipping files. Instead, you'll want to
@@ -160,6 +160,7 @@ external environment. In YAML, an entry in the config for one of our solids alia
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/environments/local_fast_ingest.yaml
    :lines: 32-38
+   :language: python
 
 
 Because each of these values is strongly typed, we'll get rich error information in the dagit
@@ -226,6 +227,7 @@ essence; and remotely in production on live data.
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/pipelines.py
    :lines: 46-69
+   :language: python
 
 Here we've defined a ``db_info`` resource that exposes a unified API to our solid logic, but that
 wraps two very different underlying assets—in one case, a Postgres database, and in the other,
@@ -266,6 +268,7 @@ Finally, we bring it all together in the ``postgres_db_info_resource``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/common/resources.py
    :lines: 89-128
+   :language: python
 
 By providing strongly typed configuration fields to the ``@resource`` decorator, we now have typeahead
 support in dagit and rich error messages for the configuration of our external resources. This can
@@ -302,6 +305,7 @@ The terminal nodes of this pipeline are all aliased instances of
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 198-216
+   :language: python
 
 which abstracts the operation of loading a Spark data frame to a database—either our production
 Redshift cluster or our local Postgres in test.
@@ -352,6 +356,7 @@ metadata along with their SQL query:
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 403-429
+   :language: python
 
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but for
@@ -389,6 +394,7 @@ Let's start with the definition of our ``notebook_solid`` helper:
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 38-39
+   :language: python
 
 
 This is just a wrapper around Dagstermill's ``define_dagstermill_solid`` which tells Dagstermill
@@ -398,6 +404,7 @@ a notebook file:
 
 .. literalinclude:: ../../../../examples/dagster_examples/airline_demo/solids.py
    :lines: 431-453
+   :language: python
 
 
 As usual, we define the inputs and outputs of the new solid. Within the notebook itself, we only
