@@ -1,4 +1,5 @@
 /** @jsx jsx */
+import * as R from "ramda";
 import { jsx } from "theme-ui";
 import styleToObj from "style-to-object";
 
@@ -22,6 +23,19 @@ export const isText = ({ nodeName }) => {
 
 const isHeading = tag => {
   return ["h1", "h2", "h3", "h4", "h5", "h5"].indexOf(tag) !== -1;
+};
+
+const getLanguage = node => {
+  const attrs = R.path(["parentNode", "parentNode", "attrs"], node);
+  const classes =
+    attrs &&
+    attrs.length > 0 &&
+    attrs.find(
+      attr => attr && attr.name === "class" && attr.value.includes("highlight-")
+    );
+
+  const language = classes && classes.value.match(/highlight\-(\w+)/);
+  return language && language[1];
 };
 
 const isSphinxHeading = (Component, props) => {
@@ -126,7 +140,11 @@ export const Element = node => {
   }
 
   if (Component === "pre") {
-    return <Pre {...props}>{children}</Pre>;
+    return (
+      <Pre {...props} data-language={getLanguage(node)}>
+        {children}
+      </Pre>
+    );
   }
 
   if (isHeading(Component)) {
