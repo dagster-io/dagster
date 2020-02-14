@@ -64,7 +64,9 @@ def import_module_from_path(module_name, path_to_file):
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(module_name, path_to_file)
-        if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == spec.origin:
+        if sys.modules.get(spec.name) and sys.modules[spec.name].__file__ == os.path.abspath(
+            spec.origin
+        ):
             module = sys.modules[spec.name]
         else:
             module = importlib.util.module_from_spec(spec)
