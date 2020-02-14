@@ -14,7 +14,7 @@ hljs.registerLanguage("bash", bash);
 
 export const Pre = ({ children, ...props }) => {
   const ref = useRef();
-  const language = props["data-language"] || "bash";
+  const language = props["data-language"] || "python";
 
   useEffect(() => {
     hljs.highlightBlock(ref.current);
