@@ -38,7 +38,10 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
     case "ExecutionStepInputEvent":
       return (
         <DefaultContent
-          message={node.message}
+          message={
+            node.message +
+            (node.typeCheck.description ? " " + node.typeCheck.description : "")
+          }
           eventType="Input"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
         >
@@ -48,7 +51,10 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
     case "ExecutionStepOutputEvent":
       return (
         <DefaultContent
-          message={node.message}
+          message={
+            node.message +
+            (node.typeCheck.description ? " " + node.typeCheck.description : "")
+          }
           eventType="Output"
           eventIntent={node.typeCheck.success ? "success" : "warning"}
         >
