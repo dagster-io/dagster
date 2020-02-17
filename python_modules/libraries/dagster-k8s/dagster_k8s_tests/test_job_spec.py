@@ -2,7 +2,6 @@ import os
 import uuid
 
 import yaml
-from dagster_k8s.launcher import K8sRunLauncher
 
 from dagster import __version__ as dagster_version
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -43,14 +42,18 @@ spec:
         command:
         - dagster-graphql
         env:
-        - name: DAGSTER_HOME
-          value: /opt/dagster/dagster_home
         - name: DAGSTER_PG_PASSWORD
           value_from:
             secret_key_ref:
               key: postgresql-password
               name: dagster-postgresql
-        env_from: []
+        env_from:
+        - config_map_ref:
+            name: dagster-job-runner-env
+        - config_map_ref:
+            name: test-env-configmap
+        - secret_ref:
+            name: test-env-secret
         image: {job_image}
         image_pull_policy: {image_pull_policy}
         name: dagster-job-{run_id}
@@ -71,21 +74,12 @@ spec:
 
 
 def test_valid_job_format(
-    kubeconfig, docker_image, image_pull_policy
+    docker_image, image_pull_policy, run_launcher
 ):  # pylint: disable=redefined-outer-name
     run_id = uuid.uuid4().hex
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
-    run_launcher = K8sRunLauncher(
-        image_pull_policy=image_pull_policy,
-        image_pull_secrets=[{'name': 'element-dev-key'}],
-        service_account_name='dagit-admin',
-        instance_config_map='dagster-instance',
-        job_image=docker_image,
-        load_kubeconfig=True,
-        kubeconfig_file=kubeconfig,
-    )
 
     job = run_launcher.construct_job(run)
 

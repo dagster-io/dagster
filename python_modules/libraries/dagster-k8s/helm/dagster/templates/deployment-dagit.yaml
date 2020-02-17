@@ -47,13 +47,30 @@ spec:
               dagit -h 0.0.0.0 -p 80"
             ]
           env:
-            - name: DAGSTER_HOME
-              value: "{{ .Values.dagster_home }}"
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: dagster-postgresql
                   key: postgresql-password
+          envFrom:
+            - configMapRef:
+                name: {{ template "dagster.fullname" . }}-dagit-env
+            {{- if .Values.dagit.env_config_maps -}}
+            {{- range $name := .Values.dagit.env_config_maps }}
+            {{- if $name }}
+            - configMapRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.dagit.env_secrets -}}
+            {{- range $name := .Values.dagit.env_secrets }}
+            {{- if $name }}
+            - secretRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
           volumeMounts:
             - name: dagster-instance
               mountPath: "{{ .Values.dagster_home }}/dagster.yaml"

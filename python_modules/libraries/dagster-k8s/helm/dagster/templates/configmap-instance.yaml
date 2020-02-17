@@ -23,9 +23,27 @@ data:
         {{- end }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
         job_image: "{{ .Values.job_runner.image.repository }}:{{ .Values.job_runner.image.tag }}"
+        dagster_home: "{{ template "dagster.dagit.dagster_home" .}}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
         image_pull_policy: "{{ .Values.imagePullPolicy }}"
         job_namespace: "{{ .Release.Namespace }}"
+        {{- if .Values.job_runner.env_config_maps }}
+        env_config_maps:
+          {{- range $name := .Values.job_runner.env_config_maps }}
+          {{- if $name }}
+            - {{ $name | quote }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- if .Values.job_runner.env_secrets }}
+        env_secrets:
+          {{- range $name := .Values.job_runner.env_secrets }}
+          {{- if $name }}
+            - {{ $name | quote }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+
 
     run_storage:
       module: dagster_postgres.run_storage

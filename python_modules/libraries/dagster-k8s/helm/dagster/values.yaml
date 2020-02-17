@@ -7,20 +7,49 @@ fullnameOverride: ""
 
 rbacEnabled: true
 
-# The DAGSTER_HOME env var is set on all nodes from this value
+# The DAGSTER_HOME env var is set by default on all nodes from this value
 dagster_home: "/opt/dagster/dagster_home"
 
-# Dagit image repository and tag to deploy
 dagit:
+  # Dagit image repository and tag to deploy
   image:
     repository: "dagster-docker-buildkite"
     tag: "latest"
+  # Can be set to override the default dagster home on the dagit containers
+  dagster_home: ""
+  # Additional environment variables to set on the dagit container.
+  # A Kubernetes ConfigMap will be created with these environment variables.
+  env:
+    YOUR_ENV_VAR: ""
+  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
+  # list here
+  env_config_maps:
+    - ""
+  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
+  # as a list here
+  env_secrets:
+    - ""
 
-# The Dagster K8sRunLauncher will invoke job executions in containers running this image
+# Configuration for the celery/job containers, which together handle physical execution
 job_runner:
+  # The Dagster K8sRunLauncher will invoke job executions in containers running this image
   image:
     repository: "dagster-docker-buildkite"
     tag: "latest"
+  # Can be set to override the default dagster home on the celery/job containers
+  dagster_home: ""
+  # Additional environment variables to set on the celery/job containers
+  # A Kubernetes ConfigMap will be created with these environment variables.
+  env:
+    YOUR_ENV_VAR: ""
+  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
+  # list here
+  env_config_maps:
+    - ""
+  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
+  # as a list here
+  env_secrets:
+    - ""
 
 workers:
   nameOverride: ""
