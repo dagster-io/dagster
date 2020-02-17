@@ -523,3 +523,16 @@ def test_any_with_default_value():
     result = eval_config_value_from_dagster_type(dict_with_any, {})
     assert result.success
     assert result.value == {'any_field': 'foo'}
+
+
+def test_post_process_error():
+    from dagster.core.instance.source_types import StringSource
+
+    error_result = eval_config_value_from_dagster_type(
+        Shape({'foo': StringSource}), {'foo': {'env': 'THIS_ENV_VAR_DOES_NOT_EXIST'}}
+    )
+    assert not error_result.success
+    assert len(error_result.errors) == 1
+    error = error_result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.FAILED_POST_PROCESSING
+    assert len(error.stack.entries) == 1

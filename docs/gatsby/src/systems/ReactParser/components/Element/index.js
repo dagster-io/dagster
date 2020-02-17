@@ -1,4 +1,5 @@
 /** @jsx jsx */
+import * as R from "ramda";
 import { jsx } from "theme-ui";
 import styleToObj from "style-to-object";
 
@@ -24,8 +25,25 @@ const isHeading = tag => {
   return ["h1", "h2", "h3", "h4", "h5", "h5"].indexOf(tag) !== -1;
 };
 
+const getLanguage = node => {
+  const attrs = R.path(["parentNode", "parentNode", "attrs"], node);
+  const classes =
+    attrs &&
+    attrs.length > 0 &&
+    attrs.find(
+      attr => attr && attr.name === "class" && attr.value.includes("highlight-")
+    );
+
+  const language = classes && classes.value.match(/highlight\-(\w+)/);
+  return language && language[1];
+};
+
 const isSphinxHeading = (Component, props) => {
   return Component === "p" && props.className && props.className === "rubric";
+};
+
+const isSphinxLineNumbers = (Component, props) => {
+  return Component === "td" && props.className && props.className === "linenos";
 };
 
 const isCode = (Component, _props) => {
@@ -61,6 +79,8 @@ export const Element = node => {
 
   if (props.style && typeof props.style == "string") {
     props.style = styleToObj(props.style);
+  } else {
+    props.style = {};
   }
 
   if (nodeName === "#text") {
@@ -77,6 +97,10 @@ export const Element = node => {
         {children}
       </Heading>
     );
+  }
+
+  if (isSphinxLineNumbers(Component, props)) {
+    props.style.width = "1%";
   }
 
   if (Component === "div" && props.id && props.id.startsWith("id")) {
@@ -116,7 +140,11 @@ export const Element = node => {
   }
 
   if (Component === "pre") {
-    return <Pre {...props}>{children}</Pre>;
+    return (
+      <Pre {...props} data-language={getLanguage(node)}>
+        {children}
+      </Pre>
+    );
   }
 
   if (isHeading(Component)) {

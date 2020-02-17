@@ -8,11 +8,11 @@ export const main = {
 
 export const page = state => {
   const closed = !state.matches("showing");
-  const transform = `translate(${closed ? "-180px" : 0})`;
+  const transform = `translate(${closed ? "-250px" : 0})`;
 
   return {
     display: "flex",
-    width: "calc(100% + 180px)",
+    width: "calc(100% + 250px)",
     transform: [transform, transform, "none"],
     transition: "transform .3s",
     height: "100%"
@@ -26,9 +26,9 @@ export const content = state => {
     mt: t("header.gutter"),
 
     maxWidth: [
-      "calc(100% - 180px)",
-      "calc(100% - 180px)",
-      "calc(100% - 360px)"
+      "calc(100% - 250px)",
+      "calc(100% - 250px)",
+      "calc(100% - 500px)"
     ],
 
     "::before": {

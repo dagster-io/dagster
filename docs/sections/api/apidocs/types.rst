@@ -7,7 +7,7 @@ Dagster includes facilities for typing the input and output values of solids ("r
 
 .. _builtin:
 
-Built-in primitives types 
+Built-in primitive types 
 -------------------------
 
 .. attribute:: Any

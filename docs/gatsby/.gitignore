@@ -57,6 +57,7 @@ typings/
 # gatsby files
 .cache/
 public
+versions/
 
 # Mac files
 .DS_Store
@@ -65,3 +66,7 @@ public
 yarn-error.log
 .pnp/
 .pnp.js
+
+# Builded files
+versions/**
+!versions/.keep

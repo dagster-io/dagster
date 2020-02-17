@@ -11,6 +11,7 @@ more of the options available in the underlying Python API:
    :lineno-start: 6
    :emphasize-lines: 8-14
    :caption: config_bad_1.py
+   :language: python
 
 We obviously don't want to have to write a separate solid for each permutation of these parameters
 that we use in our pipelines -- especially because, in more realistic cases like configuring a
@@ -27,6 +28,7 @@ right answer either:
    :lineno-start: 6
    :emphasize-lines: 5-11
    :caption: config_bad_2.py
+   :language: python
 
 Defaults are often sufficient for configuation values like these, and sets of parameters are often
 reusable. And it's unlikely that values like this will be provided dynamically by the outputs of
@@ -45,6 +47,7 @@ The solution is to define a config schema for our solid:
    :lines: 1-102
    :emphasize-lines: 15, 33-41, 87
    :caption: config.py
+   :language: python
 
 First, we pass the ``config`` argument to the :py:func:`@solid <dagster.solid>` decorator.
 This tells Dagster to give our solid a config field structured as a dictionary, whose keys are the

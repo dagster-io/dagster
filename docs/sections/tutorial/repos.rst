@@ -23,6 +23,7 @@ target as a whole. Repositories are declared using the
    :lines: 14-24
    :lineno-start: 14
    :caption: repos.py
+   :language: python
 
 Note that the name of the pipeline in the ``RepositoryDefinition`` must match the name we declared
 for it in its ``pipeline`` (the default is the function name). Don't worry, if these names don't

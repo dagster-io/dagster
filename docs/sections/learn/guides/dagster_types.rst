@@ -50,6 +50,7 @@ The core API for creating dagster types is DagsterType.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 Once created, this type can be attached to solids via either an a)
 ``InputDefinition`` and ``OutputDefinition`` or b) type annotations. 
@@ -60,6 +61,7 @@ Once created, this type can be attached to solids via either an a)
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 Using python 3 and type annotations, the exact same declaration can be expressed:
 
@@ -69,6 +71,7 @@ Using python 3 and type annotations, the exact same declaration can be expressed
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 When raw DagsterTypes are passed, this is not compliant with mypy or other python
 static type-checking system (we will refer to just mypy throughout the remainder of this
@@ -108,6 +111,7 @@ just that.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 
 One can now declare the dagster type as the interface to the solid, and use the
@@ -119,6 +123,7 @@ corresponding python type in business logic.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 The examples above are contrived. The type system truly shines once the type check
 expresses richer behavior, such as column-level schema on a dataframe. The
@@ -143,6 +148,7 @@ as hydration.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 With this the input can be specified via config as below:
 
@@ -152,6 +158,7 @@ With this the input can be specified via config as below:
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 Output values can also be materialized to a user-controlled location using config in
 a similar fashion.
@@ -204,6 +211,7 @@ Here is an example usage of the ``Nothing`` type:
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 Note that the input with the ``Nothing`` type is not passed to the
 solid definition function. It is also not possible to use type
@@ -220,6 +228,7 @@ input with a ``Nothing`` type can depend on multiple outputs upstream.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 Python Types and Dagster Types
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -246,6 +255,7 @@ be altered and mapping them to dagster types.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 And make_python_type_usable_as_dagster_type
 
@@ -255,6 +265,7 @@ And make_python_type_usable_as_dagster_type
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 This approach does have downsides. Importing these types will causes a global side
 effect as there is an internal registry which manages these types. This can
@@ -290,6 +301,7 @@ pass. However there is a way to do this.
    :linenos:
    :lineno-start: 1
    :dedent: 4
+   :language: python
 
 While not particularly elegant, this does work. We recommend centralizing
 type definitions so that this style of definition is compartmentalized to

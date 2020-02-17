@@ -23,6 +23,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     .. literalinclude:: ../../../../docs/sections/deploying/postgres_dagster.yaml
        :caption: dagster.yaml
        :lines: 1-10
+       :language: YAML
     '''
 
     def __init__(self, postgres_url, inst_data=None):

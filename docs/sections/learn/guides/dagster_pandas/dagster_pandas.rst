@@ -21,12 +21,14 @@ a custom dataframe type to represent a set of e-bike trips in the following way:
 .. literalinclude:: ../../../../../examples/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
    :caption: core_trip_pipeline.py
    :lines: 9-22
+   :language: python
 
 Once our custom data type is defined, we can use it as the type declaration for the inputs / outputs of our solid:
 
 .. literalinclude:: ../../../../../examples/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
    :caption: core_trip_pipeline.py
    :lines: 25-31
+   :language: python
 
 By passing in these ``PandasColumn`` objects, we are expressing the schema and constraints we expect our dataframes
 to follow when dagster performs type checks for our solids. Moreover, if we go to the solid viewer, we can
@@ -51,6 +53,7 @@ This looks like:
 .. literalinclude:: ../../../../../examples/dagster_examples/dagster_pandas_guide/shape_constrained_pipeline.py
    :lines: 9-11
    :caption: shape_constrained_pipeline.py
+   :language: python
 
 If we rerun the above example with this dataframe, nothing should change. However, if we pass in 100 to the row
 count constraint, we can watch our pipeline fail that type check.
@@ -68,6 +71,7 @@ pipelines, this can help debug and monitor data drift over time. Let's illustrat
 .. literalinclude:: ../../../../../examples/dagster_examples/dagster_pandas_guide/summary_stats_pipeline.py
    :lines: 10-39
    :caption: summary_stats_pipeline.py
+   :language: python
 
 Now if we run this pipeline in the dagit playground:
 
@@ -91,3 +95,4 @@ renders markdown syntax, an ``error_description`` for error logs, and a validati
    :lines: 15-40
    :caption: custom_column_constraint_pipeline.py
    :emphasize-lines: 22-24
+   :language: python

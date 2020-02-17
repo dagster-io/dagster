@@ -1,4 +1,9 @@
-const { parseHtml, parseMarkdown, toParseFive } = require("./parse-html");
+const {
+  parseHtml,
+  parseMarkdown,
+  toParseFive,
+  parseToc
+} = require("./parse-html");
 
 const {
   getCurrentVersion,
@@ -40,7 +45,7 @@ module.exports = ({ createResolvers }) => {
       },
       tocParsed: {
         resolve(source) {
-          return source.toc && toParseFive(source.toc);
+          return source.toc && parseToc(source.toc);
         }
       },
       markdown: {

@@ -52,6 +52,7 @@ Once we turn our notebook into a solid, we can start to make its outputs more ac
 
 .. literalinclude:: iris_pipeline.py
    :caption: iris_pipeline.py
+   :language: python
 
 This is the simplest form of notebook integration -- we don't actually have to make any changes in
 the notebook itself to run it using the dagster tooling. Just run:
@@ -98,6 +99,7 @@ the task of fetching the data.
    :linenos:
    :caption: iris_pipeline_2.py
    :emphasize-lines: 3, 5, 11, 18-19
+   :language: python
 
 We'll configure the ``download_file`` solid with the URL to download the file from, and the local
 path at which to save it. This solid has one output, the path to the downloaded file. We'll want
@@ -174,6 +176,7 @@ We'll change our solid definition to include a config field:
    :lines: 8-15
    :caption: iris_pipeline_3.py
    :emphasize-lines: 5-7
+   :language: python
 
 In our notebook, we'll stub the context as follows (in the ``parameters`` cell):
 

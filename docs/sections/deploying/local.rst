@@ -52,6 +52,7 @@ script ensures that cron will run in the Docker container alongside Dagit:
 
 .. literalinclude:: docker/entrypoint.sh
   :caption: entrypoint.sh
+  :language: bash
 
 In practice, you may want to volume your pipeline code into your containers to enable deployment
 patterns such as git-sync sidecars that avoid the need to rebuild images and redeploy containers

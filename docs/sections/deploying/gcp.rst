@@ -18,6 +18,7 @@ Dagit to use Cloud SQL to run and events data by setting blocks in your
 
 .. literalinclude:: dagster-pg.yaml
   :caption: dagster.yaml
+  :language: YAML
 
 In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL
 instance, and that the node or container hosting Dagit is able to connect to Cloud SQL.

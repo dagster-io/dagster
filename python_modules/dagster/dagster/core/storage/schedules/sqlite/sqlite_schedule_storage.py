@@ -39,8 +39,9 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         engine = create_engine(conn_string, poolclass=NullPool)
         engine.execute('PRAGMA journal_mode=WAL;')
         ScheduleStorageSqlMetadata.create_all(engine)
+        connection = engine.connect()
         alembic_config = get_alembic_config(__file__)
-        db_revision, head_revision = check_alembic_revision(alembic_config, engine)
+        db_revision, head_revision = check_alembic_revision(alembic_config, connection)
         if not (db_revision and head_revision and db_revision == head_revision):
             stamp_alembic_rev(alembic_config, engine)
 

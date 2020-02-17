@@ -15,7 +15,7 @@ const ctx = createContext({
 
 export const VersionProvider = ({ children }) => {
   const storage = useLocalStorage("currentVersion");
-  const [current, setCurrentState] = useState(storage.get());
+  const storageCurrent = storage.get();
 
   const data = useStaticQuery(graphql`
     query VersionQuery {
@@ -26,28 +26,34 @@ export const VersionProvider = ({ children }) => {
 
   const setCurrent = version => {
     setCurrentState(version);
-    navigate(`${version}/install/install`);
+    // FIXME: This should navigate to the current page in the given version
+    navigate(`${version}/install`);
   };
+
+  const [current, setCurrentState] = useState(
+    storageCurrent === "null" ||
+      storageCurrent === "undefined" ||
+      storageCurrent === null ||
+      storageCurrent === undefined
+      ? data.version || version
+      : storageCurrent
+  );
 
   useEffect(() => {
     storage.set(current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
 
-  return (
-    <ctx.Provider
-      value={{
-        setCurrent,
-        version: {
-          current: current || data.version || version,
-          all: data.allVersions,
-          last: data.version
-        }
-      }}
-    >
-      {children}
-    </ctx.Provider>
-  );
+  const providerValue = {
+    setCurrent,
+    version: {
+      current: current,
+      all: data.allVersions,
+      last: data.version
+    }
+  };
+
+  return <ctx.Provider value={providerValue}>{children}</ctx.Provider>;
 };
 
 export const useVersion = () => {

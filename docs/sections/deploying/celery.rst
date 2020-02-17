@@ -25,6 +25,7 @@ Let's construct a very parallel toy pipeline and then execute it using the Celer
 
 .. literalinclude:: celery_pipeline.py
   :linenos:
+  :language: python
   :caption: celery_pipeline.py
 
 Save this pipeline as ``celery_pipeline.py``.
@@ -85,6 +86,7 @@ by adding a block such as the following to your ``dagster.yaml`` (by default, Da
 this file at ``$DAGSTER_HOME/dagster.yaml`` when the ``DAGSTER_HOME`` environment variable is set):
 
 .. literalinclude:: dagster-pg.yaml
+  :language: YAML
 
 **The same instance config must be present in Dagit's environment and in the
 workers' environments.** If you haven't already, please read about 

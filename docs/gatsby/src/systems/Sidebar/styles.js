@@ -4,7 +4,7 @@ export const wrapper = {
   zIndex: 9,
   position: "relative",
   px: 3,
-  width: 180,
+  width: 250,
   minHeight: "100vh",
   bg: "sidebar.bg",
   color: "sidebar.color",

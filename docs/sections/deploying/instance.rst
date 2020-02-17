@@ -85,6 +85,7 @@ To do this, you will simply alter the contents of the ``dagster.yaml`` file:
 
 .. literalinclude:: dagster.yaml
    :caption: dagster.yaml
+  :language: YAML
 
 Each of these config sections makes use of common plugin machinery, the
 :py:class:`~dagster.core.serdes.ConfigurableClass`. This lets you specify what class to instantiate
@@ -111,7 +112,7 @@ executor (taking advantage of the big box to which you've deployed Dagit), rathe
 single-process executor (which can be easier to reason about for test), you'll need to make sure
 your pipeline configuration YAML contains a block like the following:
 
-.. code-block:: yaml
+:: yaml
 
     :caption: execution_config.yaml
 

@@ -49,6 +49,7 @@ For this quickstart, we'll use our familiar, simple demo pipeline:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/airflow.py
    :linenos:
+   :language: python
    :caption: airflow.py
 
 To compile this existing pipeline to Airflow, we'll use the ``dagster-airflow`` CLI tool. By
@@ -65,6 +66,7 @@ Let's take a look at the generated file:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
    :linenos:
+   :language: python
    :caption: hello_cereal_pipeline.py
 
 This is a fairly straightforward file with four parts.
