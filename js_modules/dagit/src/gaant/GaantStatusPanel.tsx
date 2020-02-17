@@ -70,6 +70,7 @@ const StepItem: React.FunctionComponent<{
   onDoubleClick?: (name: string) => void;
 }> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
   const step = metadata.steps[name];
+  const endTime = step.finish ?? nowMs;
   return (
     <StepItemContainer
       key={name}
@@ -92,7 +93,7 @@ const StepItem: React.FunctionComponent<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      <Elapsed>{formatElapsedTime(nowMs - step.start!)}</Elapsed>
+      <Elapsed>{formatElapsedTime(endTime - step.start!)}</Elapsed>
     </StepItemContainer>
   );
 };
