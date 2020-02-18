@@ -16,7 +16,7 @@ export const wrapper = {
     fontSize: 2,
     opacity: 1
   },
-  "&.toctree-l2 a:hover": {
+  "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
     opacity: 1
   },
   "&.toctree-l2 > ul": {
