@@ -1,8 +1,16 @@
 import os
 import sys
+from collections import defaultdict
 
 from dagster import EventMetadataEntry, check
-from dagster.core.definitions import ExpectationResult, Failure, Materialization, Output, TypeCheck
+from dagster.core.definitions import (
+    ExpectationResult,
+    Failure,
+    Materialization,
+    Output,
+    RetryRequested,
+    TypeCheck,
+)
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
@@ -27,6 +35,7 @@ from dagster.core.execution.plan.objects import (
     StepInputData,
     StepOutputData,
     StepOutputHandle,
+    StepRetryData,
     StepSuccessData,
     TypeCheckData,
     UserFailureData,
@@ -34,7 +43,7 @@ from dagster.core.execution.plan.objects import (
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
 from .engine_base import Engine
@@ -52,6 +61,9 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
             if step_keys_to_execute and len(step_keys_to_execute) == 1
             else None
         )
+
+        attempts_map = defaultdict(int)
+
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
@@ -80,10 +92,14 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
             while not active_execution.is_complete:
 
                 steps = active_execution.get_steps_to_execute(limit=1)
+                if len(steps) != 1:
+                    steps = active_execution.get_steps_to_retry(limit=1)
+
                 check.invariant(
                     len(steps) == 1, 'Invariant Violation: expected step to be available to execute'
                 )
                 step = steps[0]
+
                 step_context = pipeline_context.for_step(step)
                 check.invariant(
                     all(
@@ -113,12 +129,13 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                         active_execution.mark_skipped(step.key)
                     else:
                         for step_event in check.generator(
-                            dagster_event_sequence_for_step(step_context)
+                            dagster_event_sequence_for_step(step_context, attempts_map[step.key])
                         ):
                             check.inst(step_event, DagsterEvent)
                             yield step_event
                             active_execution.handle_event(step_event)
 
+                    attempts_map[step.key] += 1
                     active_execution.verify_complete(pipeline_context, step.key)
 
                 # process skips from failures or uncovered inputs
@@ -223,33 +240,39 @@ def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=
     )
 
 
-def dagster_event_sequence_for_step(step_context):
+def dagster_event_sequence_for_step(step_context, attempts):
     '''
     Yield a sequence of dagster events for the given step with the step context.
 
     Thie function also processes errors. It handles a few error cases:
 
-        (1) User code fails successfully:
+        (1) User code requests to be retried:
+            A RetryRequested has been raised. We will either put the step in to
+            up_for_retry state or a failure state depending on the number of previous attempts
+            and the max_retries on the recieved RetryRequested.
+
+        (2) User code fails successfully:
             The user-space code has raised a Failure which may have
             explicit metadata attached.
 
-        (2) User code fails unexpectedly:
+        (3) User code fails unexpectedly:
             The user-space code has raised an Exception. It has been
             wrapped in an exception derived from DagsterUserCodeException. In that
             case the original user exc_info is stashed on the exception
             as the original_exc_info property.
 
-        (3) User error:
+        (4) User error:
             The framework raised a DagsterError that indicates a usage error
             or some other error not communicated by a user-thrown exception. For example,
             if the user yields an object out of a compute function that is not a
             proper event (not an Output, ExpectationResult, etc).
 
-        (4) Framework failure or interrupt:
+        (5) Framework failure or interrupt:
             An unexpected error occured. This is a framework error. Either there
             has been an internal error in the framework OR we have forgtten to put a
             user code error boundary around invoked user-space code. These terminate
             the computation immediately (by re-raising).
+
 
     The "raised_dagster_errors" context manager can be used to force these errors to be
     reraised and surfaced to the user. This is mostly to get sensible errors in test and
@@ -263,10 +286,31 @@ def dagster_event_sequence_for_step(step_context):
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
     try:
-        for step_event in check.generator(_core_dagster_event_sequence_for_step(step_context)):
+        for step_event in check.generator(
+            _core_dagster_event_sequence_for_step(step_context, attempts)
+        ):
             yield step_event
 
     # case (1) in top comment
+    except RetryRequested as e:
+        retry_err_info = serializable_error_info_from_exc_info(sys.exc_info())
+        if attempts >= e.max_retries:
+            fail_err = SerializableErrorInfo(
+                message='Exceeded max_retries of {}'.format(e.max_retries),
+                stack=retry_err_info.stack,
+                cls_name=retry_err_info.cls_name,
+                cause=retry_err_info.cause,
+            )
+            yield DagsterEvent.step_failure_event(
+                step_context=step_context,
+                step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+            )
+        else:
+            yield DagsterEvent.step_retry_event(
+                step_context, StepRetryData(error=retry_err_info),
+            )
+
+    # case (2) in top comment
     except Failure as failure:
         yield _step_failure_event_from_exc_info(
             step_context,
@@ -280,7 +324,7 @@ def dagster_event_sequence_for_step(step_context):
         if step_context.raise_on_error:
             raise failure
 
-    # case (2) in top comment
+    # case (3) in top comment
     except DagsterUserCodeExecutionError as dagster_user_error:
         yield _step_failure_event_from_exc_info(
             step_context, dagster_user_error.original_exc_info,
@@ -289,14 +333,14 @@ def dagster_event_sequence_for_step(step_context):
         if step_context.raise_on_error:
             raise dagster_user_error.user_exception
 
-    # case (3) in top comment
+    # case (4) in top comment
     except DagsterError as dagster_error:
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
         if step_context.raise_on_error:
             raise dagster_error
 
-    # case (4) in top comment
+    # case (5) in top comment
     except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
@@ -506,7 +550,7 @@ def _type_checked_step_output_event_sequence(step_context, output):
             )
 
 
-def _core_dagster_event_sequence_for_step(step_context):
+def _core_dagster_event_sequence_for_step(step_context, attempts):
     '''
     Execute the step within the step_context argument given the in-memory
     events. This function yields a sequence of DagsterEvents, but without
@@ -515,7 +559,10 @@ def _core_dagster_event_sequence_for_step(step_context):
     '''
     check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
 
-    yield DagsterEvent.step_start_event(step_context)
+    if attempts > 0:
+        yield DagsterEvent.step_restarted_event(step_context, attempts)
+    else:
+        yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
     for input_name, input_value in _input_values_from_intermediates_manager(step_context).items():
@@ -658,7 +705,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
 
     with user_code_error_boundary(
         DagsterExecutionStepExecutionError,
-        control_flow_exceptions=[Failure],
+        control_flow_exceptions=[Failure, RetryRequested],
         msg_fn=lambda: '''Error occured during the execution of step:
         step key: "{key}"
         solid invocation: "{solid}"

@@ -32,6 +32,10 @@ class DagsterEventType(Enum):
     STEP_START = 'STEP_START'
     STEP_SUCCESS = 'STEP_SUCCESS'
     STEP_SKIPPED = 'STEP_SKIPPED'
+
+    STEP_UP_FOR_RETRY = 'STEP_UP_FOR_RETRY'  # "failed" but want to retry
+    STEP_RESTARTED = 'STEP_RESTARTED'
+
     STEP_MATERIALIZATION = 'STEP_MATERIALIZATION'
     STEP_EXPECTATION_RESULT = 'STEP_EXPECTATION_RESULT'
 
@@ -287,6 +291,14 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.STEP_FAILURE
 
     @property
+    def is_step_up_for_retry(self):
+        return self.event_type == DagsterEventType.STEP_UP_FOR_RETRY
+
+    @property
+    def is_step_restarted(self):
+        return self.event_type == DagsterEventType.STEP_RESTARTED
+
+    @property
     def is_failure(self):
         return self.event_type in FAILURE_EVENTS
 
@@ -311,6 +323,11 @@ class DagsterEvent(
     @property
     def step_failure_data(self):
         _assert_type('step_failure_data', DagsterEventType.STEP_FAILURE, self.event_type)
+        return self.event_specific_data
+
+    @property
+    def step_retry_data(self):
+        _assert_type('step_retry_data', DagsterEventType.STEP_UP_FOR_RETRY, self.event_type)
         return self.event_specific_data
 
     @property
@@ -394,6 +411,17 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def step_retry_event(step_context, step_retry_data):
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_UP_FOR_RETRY,
+            step_context=step_context,
+            event_specific_data=step_retry_data,
+            message='Execution of step "{step_key}" failed and has requested a retry.'.format(
+                step_key=step_context.step.key
+            ),
+        )
+
+    @staticmethod
     def step_input_event(step_context, step_input_data):
         return DagsterEvent.from_step(
             event_type=DagsterEventType.STEP_INPUT,
@@ -421,6 +449,16 @@ class DagsterEvent(
             step_context=step_context,
             message='Started execution of step "{step_key}".'.format(
                 step_key=step_context.step.key
+            ),
+        )
+
+    @staticmethod
+    def step_restarted_event(step_context, previous_attempts):
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.STEP_RESTARTED,
+            step_context=step_context,
+            message='Started re-execution (attempt # {n}) of step "{step_key}".'.format(
+                step_key=step_context.step.key, n=previous_attempts + 1
             ),
         )
 

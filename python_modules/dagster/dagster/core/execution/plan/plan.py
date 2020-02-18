@@ -1,4 +1,4 @@
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
@@ -389,11 +389,13 @@ class ActiveExecution(object):
         self._success = set()
         self._failed = set()
         self._skipped = set()
+        self._retried = defaultdict(int)
 
         self._in_flight = set()
 
         self._executable = []
-        self._to_skip = []
+        self._pending_skip = []
+        self._pending_retry = []
 
         self._update()
 
@@ -413,7 +415,7 @@ class ActiveExecution(object):
             del self._pending[key]
 
         for key in new_steps_to_skip:
-            self._to_skip.append(key)
+            self._pending_skip.append(key)
             del self._pending[key]
 
     def get_steps_to_execute(self, limit=None):
@@ -434,13 +436,29 @@ class ActiveExecution(object):
 
     def get_steps_to_skip(self):
         steps = []
-        steps_to_skip = list(self._to_skip)
+        steps_to_skip = list(self._pending_skip)
         for key in steps_to_skip:
             steps.append(self._plan.get_step_by_key(key))
             self._in_flight.add(key)
-            self._to_skip.remove(key)
+            self._pending_skip.remove(key)
 
         return sorted(steps, key=self._sort_key_fn)
+
+    def get_steps_to_retry(self, limit=None):
+        check.opt_int_param(limit, 'limit')
+
+        steps = sorted(
+            [self._plan.get_step_by_key(key) for key in self._pending_retry], key=self._sort_key_fn
+        )
+
+        if limit:
+            steps = steps[:limit]
+
+        for step in steps:
+            self._in_flight.add(step.key)
+            self._pending_retry.remove(step.key)
+
+        return steps
 
     def skipped_step_events_iterator(self, pipeline_context):
         failed_or_skipped_steps = self._skipped.union(self._failed)
@@ -478,6 +496,9 @@ class ActiveExecution(object):
         self._skipped.add(step_key)
         self._mark_complete(step_key)
 
+    def mark_up_for_retry(self, step_key):
+        self._pending_retry.append(step_key)
+
     def _mark_complete(self, step_key):
         check.invariant(
             step_key not in self._completed,
@@ -500,9 +521,16 @@ class ActiveExecution(object):
             self.mark_failed(dagster_event.step_key)
         elif dagster_event.is_step_success:
             self.mark_success(dagster_event.step_key)
+        elif dagster_event.is_step_up_for_retry:
+            self.mark_up_for_retry(dagster_event.step_key)
+
+        # for when retries are being processed in a child ActiveExecution and
+        # we are consuming the event stream
+        elif dagster_event.is_step_restarted and dagster_event.step_key in self._pending_retry:
+            self._pending_retry.remove(dagster_event.step_key)
 
     def verify_complete(self, pipeline_context, step_key):
-        if step_key in self._in_flight:
+        if step_key in self._in_flight and not step_key in self._pending_retry:
             pipeline_context.log.error(
                 'Step {key} finished without success or failure event, assuming failure.'.format(
                     key=step_key
@@ -516,5 +544,6 @@ class ActiveExecution(object):
             len(self._pending) == 0
             and len(self._in_flight) == 0
             and len(self._executable) == 0
-            and len(self._to_skip) == 0
+            and len(self._pending_skip) == 0
+            and len(self._pending_retry) == 0
         )

@@ -28,6 +28,7 @@ from dagster.core.definitions import (
     PresetDefinition,
     RepositoryDefinition,
     ResourceDefinition,
+    RetryRequested,
     ScheduleDefinition,
     ScheduleExecutionContext,
     SolidDefinition,

@@ -113,7 +113,7 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
 @whitelist_for_serdes
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
     '''Container class for text metadata entry data.
-    
+
     Args:
         text (str): The text data.
     '''
@@ -125,7 +125,7 @@ class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
 @whitelist_for_serdes
 class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
     '''Container class for URL metadata entry data.
-    
+
     Args:
         url (str): The URL as a string.
     '''
@@ -137,7 +137,7 @@ class UrlMetadataEntryData(namedtuple('_UrlMetadataEntryData', 'url')):
 @whitelist_for_serdes
 class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
     '''Container class for path metadata entry data.
-    
+
     Args:
         path (str): The path as a string.
     '''
@@ -149,7 +149,7 @@ class PathMetadataEntryData(namedtuple('_PathMetadataEntryData', 'path')):
 @whitelist_for_serdes
 class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
     '''Container class for JSON metadata entry data.
-    
+
     Args:
         data (str): The JSON data.
     '''
@@ -163,7 +163,7 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
 @whitelist_for_serdes
 class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str')):
     '''Container class for markdown metadata entry data.
-    
+
     Args:
         md_str (str): The markdown as a string.
     '''
@@ -224,7 +224,7 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
     @staticmethod
     def file(path, description=None):
         '''Static constructor for standard materializations corresponding to files on disk.
-        
+
         Args:
             path (str): The path to the file.
             description (Optional[str]): A human-readable description of the materialization.
@@ -279,7 +279,7 @@ class ExpectationResult(
 @whitelist_for_serdes
 class TypeCheck(namedtuple('_TypeCheck', 'success description metadata_entries')):
     '''Event corresponding to a successful typecheck.
-    
+
     Events of this type should be returned by user-defined type checks when they need to encapsulate
     additional metadata about a type check's success or failure. (i.e., when using
     :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type>`, or the underlying
@@ -311,7 +311,7 @@ class Failure(Exception):
     Raise events of this type from within solid compute functions or custom type checks in order to
     indicate an unrecoverable failure in user code to the Dagster machinery and return
     structured metadata about the failure.
-    
+
     Args:
         description (Optional[str]): A human-readable description of the failure.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
@@ -324,6 +324,12 @@ class Failure(Exception):
         self.metadata_entries = check.opt_list_param(
             metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
         )
+
+
+class RetryRequested(Exception):  # base exception instead?
+    def __init__(self, max_retries=1):
+        super(RetryRequested, self).__init__()
+        self.max_retries = check.int_param(max_retries, 'max_retries')
 
 
 class ObjectStoreOperationType(Enum):
