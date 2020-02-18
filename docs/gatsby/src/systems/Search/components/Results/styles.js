@@ -7,9 +7,11 @@ export const wrapper = showing => ({
   overflow: "auto",
   zIndex: 2,
   position: "absolute",
-  top: "calc(100% + 0.5em)",
+  top: "calc(100% + 5px)",
+  left: 0,
+
   background: "white",
-  boxShadow: 5,
+  boxShadow: 2,
 
   header: {
     my: 3,

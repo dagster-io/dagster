@@ -23,7 +23,7 @@ export const content = state => {
   const closed = !state.matches("showing");
   return {
     flex: 1,
-    mt: t("header.gutter"),
+    mt: 0,
 
     maxWidth: [
       "calc(100% - 250px)",

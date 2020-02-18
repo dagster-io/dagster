@@ -15,7 +15,7 @@ export default connectSearchBox(({ refine, focus, collapse, ...rest }) => {
       focus={focus ? "true" : "false"}
       collapse={collapse ? "true" : "false"}
       type="text"
-      placeholder="Search"
+      placeholder="Search the docs (press / to focus)"
       aria-label="Search"
       onChange={e => refine(e.target.value)}
       {...omitNonInputProps(rest)}

@@ -10,6 +10,10 @@ import useWindowSize from "react-use/lib/useWindowSize";
 import { ExternalLink, Menu, Logo } from "systems/Core";
 import { Search } from "systems/Search";
 
+import githubIcon from "./images/github-icon.svg";
+import slackIcon from "./images/slack-icon.svg";
+import stackOverflowIcon from "./images/stack-overflow-icon.svg";
+
 import { MenuIcon } from "./components/MenuIcon";
 import { headerMachine } from "./machines/header";
 import * as styles from "./styles";
@@ -54,19 +58,30 @@ export const Header = forwardRef(({ onMenuClick, sidebarOpened }, ref) => {
           <MenuIcon opened={sidebarOpened} />
         </button>
         <Logo sx={styles.logo(showing)} />
-        <Search
-          ref={searchRef}
-          indices={indices}
-          onClick={handleToggle}
-          showing={showing}
-        />
+        <div sx={styles.search(showing)}>
+          <Search
+            ref={searchRef}
+            indices={indices}
+            onClick={handleToggle}
+            showing={showing}
+          />
+        </div>
       </div>
       <Menu sx={styles.socialIcons(showing)}>
-        <ExternalLink href="#">
-          <Slack sx={{ fill: "blue.3" }} />
+        <ExternalLink href="https://dagster.slack.com" sx={styles.externalLink}>
+          <img src={slackIcon} height={25} />
         </ExternalLink>
-        <ExternalLink href="#">
-          <GitHub />
+        <ExternalLink
+          href="https://github.com/dagster-io/dagster/"
+          sx={styles.externalLink}
+        >
+          <img src={githubIcon} height={25} />
+        </ExternalLink>
+        <ExternalLink
+          href="https://stackoverflow.com/questions/tagged/dagster"
+          sx={styles.externalLink}
+        >
+          <img src={stackOverflowIcon} height={25} />
         </ExternalLink>
       </Menu>
     </header>

@@ -32,8 +32,8 @@ export const Search = React.forwardRef((props, ref) => {
       onSearchStateChange={({ query }) => setQuery(query)}
       root={{ Root, props: { ref } }}
     >
-      <div ref={ref} sx={styles.search(showing)}>
-        <SearchIcon size={35} onClick={() => onClick()} />
+      <div ref={ref} sx={styles.search}>
+        <SearchIcon size={25} onClick={() => onClick()} />
         <Input onFocus={() => setFocus(true)} {...{ collapse: true, focus }} />
         <Results
           indices={indices}

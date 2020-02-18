@@ -1,9 +1,7 @@
-import { theme as t } from "utils/css";
-
 export const wrapper = {
-  zIndex: 9,
   position: "relative",
-  px: 3,
+  py: 3,
+  px: 4,
   width: 250,
   minHeight: "100vh",
   bg: "sidebar.bg",
@@ -30,10 +28,10 @@ export const active = (hasActive, top) => ({
   width: 4,
   height: 25,
   bg: "white",
-  borderRadius: "rounded",
+  borderRadius: "0 3px 3px 0",
   opacity: hasActive ? 1 : 0,
   top: 0,
-  right: "3px",
+  left: 0,
   transform: `translateY(${top - 3}px)`,
   transition: "transform .2s cubic-bezier(.25,.75,.5,1.25)"
 });
@@ -44,7 +42,7 @@ export const content = {
   alignItems: "flex-start",
   height: "100%",
   maxHeight: "100vh",
-  pt: t("header.gutter")
+  pt: 3
 };
 
 export const menu = {
