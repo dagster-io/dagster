@@ -94,14 +94,10 @@ def test_running():
     events = instance.all_logs(run_id)
     assert events
 
-    process_start_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_START)
-    assert len(process_start_events) == 1
-
-    process_started_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_STARTED)
-    assert len(process_started_events) == 1
-
-    process_exited_events = get_events_of_type(events, DagsterEventType.PIPELINE_PROCESS_EXITED)
-    assert len(process_exited_events) == 1
+    engine_events = get_events_of_type(events, DagsterEventType.ENGINE_EVENT)
+    assert (
+        len([ev for ev in engine_events if 'SubprocessExecutionManager' in ev.message]) == 3
+    )  # starting, started, exit
 
 
 def test_failing():
@@ -157,10 +153,12 @@ def test_execution_crash():
     execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.FAILURE
-    last_log = instance.all_logs(run_id)[-1]
+    crash_log = instance.all_logs(run_id)[
+        -2
+    ]  # last message is pipeline failure, second to last is...
 
-    assert last_log.message.startswith(
-        'Exception: Pipeline execution process for {run_id} unexpectedly exited\n'.format(
+    assert crash_log.message.startswith(
+        '[SubprocessExecutionManager] Pipeline execution process for {run_id} unexpectedly exited'.format(
             run_id=run_id
         )
     )

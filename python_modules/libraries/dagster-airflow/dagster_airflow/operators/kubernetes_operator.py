@@ -10,6 +10,7 @@ from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -149,9 +150,6 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
     def execute(self, context):
         try:
-            from dagster_graphql.implementation.pipeline_execution_manager import (
-                build_synthetic_pipeline_error_record,
-            )
             from dagster_graphql.client.mutations import (
                 DagsterGraphQLClientError,
                 handle_execution_errors,
@@ -207,20 +205,19 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             pod.security_context = self.security_context
 
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
+            pipeline_run = PipelineRun(
+                pipeline_name=self.pipeline_name,
+                run_id=self.run_id,
+                environment_dict=self.environment_dict,
+                mode=self.mode,
+                selector=ExecutionSelector(self.pipeline_name),
+                step_keys_to_execute=None,
+                tags=None,
+                status=PipelineRunStatus.MANAGED,
+            )
             try:
                 if self.instance:
-                    self.instance.get_or_create_run(
-                        PipelineRun(
-                            pipeline_name=self.pipeline_name,
-                            run_id=self.run_id,
-                            environment_dict=self.environment_dict,
-                            mode=self.mode,
-                            selector=ExecutionSelector(self.pipeline_name),
-                            step_keys_to_execute=None,
-                            tags=None,
-                            status=PipelineRunStatus.MANAGED,
-                        )
-                    )
+                    self.instance.get_or_create_run(pipeline_run)
 
                 # we won't use the "result", which is the pod's xcom json file
                 (final_state, _) = launcher.run_pod(
@@ -244,14 +241,15 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
                 try:
                     handle_execution_errors(res, 'executePlan')
-                except DagsterGraphQLClientError:
-                    event = build_synthetic_pipeline_error_record(
-                        self.run_id,
-                        serializable_error_info_from_exc_info(sys.exc_info()),
-                        self.pipeline_name,
+                except DagsterGraphQLClientError as err:
+                    self.instance.report_engine_event(
+                        self.__class__,
+                        str(err),
+                        pipeline_run,
+                        EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
                     )
-                    if self.instance:
-                        self.instance.handle_new_event(event)
                     raise
 
                 events = handle_execute_plan_result_raw(res)

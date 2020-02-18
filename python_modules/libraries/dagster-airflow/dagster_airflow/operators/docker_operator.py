@@ -11,6 +11,7 @@ from docker import APIClient, from_env
 
 from dagster import check, seven
 from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -133,9 +134,9 @@ class DagsterDockerOperator(ModifiedDockerOperator):
     def __init__(
         self,
         task_id,
+        pipeline_name,
+        mode,
         environment_dict=None,
-        pipeline_name=None,
-        mode=None,
         step_keys=None,
         dag=None,
         instance_ref=None,
@@ -293,9 +294,6 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
     def execute(self, context):
         try:
-            from dagster_graphql.implementation.pipeline_execution_manager import (
-                build_synthetic_pipeline_error_record,
-            )
             from dagster_graphql.client.mutations import (
                 DagsterGraphQLClientError,
                 handle_execution_errors,
@@ -313,20 +311,19 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         elif 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
 
+        pipeline_run = PipelineRun(
+            pipeline_name=self.pipeline_name,
+            run_id=self.run_id,
+            environment_dict=self.environment_dict,
+            mode=self.mode,
+            selector=ExecutionSelector(self.pipeline_name),
+            step_keys_to_execute=None,
+            tags=None,
+            status=PipelineRunStatus.MANAGED,
+        )
         try:
             if self.instance:
-                self.instance.get_or_create_run(
-                    PipelineRun(
-                        pipeline_name=self.pipeline_name,
-                        run_id=self.run_id,
-                        environment_dict=self.environment_dict,
-                        mode=self.mode,
-                        selector=ExecutionSelector(self.pipeline_name),
-                        step_keys_to_execute=None,
-                        tags=None,
-                        status=PipelineRunStatus.MANAGED,
-                    )
-                )
+                self.instance.get_or_create_run(pipeline_run)
 
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
@@ -335,14 +332,16 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
             try:
                 handle_execution_errors(res, 'executePlan')
-            except DagsterGraphQLClientError:
-                event = build_synthetic_pipeline_error_record(
-                    self.run_id,
-                    serializable_error_info_from_exc_info(sys.exc_info()),
-                    self.pipeline_name,
-                )
+            except DagsterGraphQLClientError as err:
                 if self.instance:
-                    self.instance.handle_new_event(event)
+                    self.instance.report_engine_event(
+                        self.__class__,
+                        str(err),
+                        pipeline_run,
+                        EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                    )
                 raise
 
             events = handle_execute_plan_result_raw(res)

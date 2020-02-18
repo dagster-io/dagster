@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
 from enum import Enum
@@ -433,6 +434,67 @@ class DagsterInstance:
 
     def add_event_listener(self, run_id, cb):
         self._subscribers[run_id].append(cb)
+
+    def report_engine_event(self, cls, message, pipeline_run, engine_event_data=None):
+        '''
+        Report a EngineEvent that occurred outside of a pipeline execution context.
+        '''
+        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events.log import DagsterEventRecord
+
+        check.class_param(cls, 'cls')
+        check.str_param(message, 'message')
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        engine_event_data = check.opt_inst_param(
+            engine_event_data, 'engine_event_data', EngineEventData, EngineEventData([]),
+        )
+
+        message = "[{}] {}".format(cls.__name__, message)
+
+        log_level = logging.INFO
+        if engine_event_data and engine_event_data.error:
+            log_level = logging.ERROR
+
+        event_record = DagsterEventRecord(
+            message=message,
+            user_message=message,
+            level=log_level,
+            pipeline_name=pipeline_run.pipeline_name,
+            run_id=pipeline_run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.ENGINE_EVENT.value,
+                pipeline_name=pipeline_run.pipeline_name,
+                message=message,
+                event_specific_data=engine_event_data,
+            ),
+        )
+
+        self.handle_new_event(event_record)
+
+    def report_run_failed(self, pipeline_run):
+        from dagster.core.events import DagsterEvent, DagsterEventType
+        from dagster.core.events.log import DagsterEventRecord
+
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        message = "This pipeline run has been marked as failed from outside the execution context"
+
+        event_record = DagsterEventRecord(
+            message=message,
+            user_message=message,
+            level=logging.ERROR,
+            pipeline_name=pipeline_run.pipeline_name,
+            run_id=pipeline_run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=DagsterEvent(
+                event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+                pipeline_name=pipeline_run.pipeline_name,
+                message=message,
+            ),
+        )
+        self.handle_new_event(event_record)
 
     # directories
 

@@ -53,8 +53,5 @@ def test_execute_hammer_through_dagit():
 
     messages = [x['__typename'] for x in subscribe_results[0].data['pipelineRunLogs']['messages']]
 
-    assert 'PipelineProcessStartEvent' in messages
-    assert 'PipelineProcessStartedEvent' in messages
     assert 'PipelineStartEvent' in messages
     assert 'PipelineSuccessEvent' in messages
-    assert 'PipelineProcessExitedEvent' in messages

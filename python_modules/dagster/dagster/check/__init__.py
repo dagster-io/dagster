@@ -727,3 +727,13 @@ def str_elem(ddict, key):
     if not is_str(value):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value
+
+
+def class_param(obj, param_name):
+    if not inspect.isclass(obj):
+        return ParameterCheckError(
+            'Param "{name}" is not a class. Got {obj} which is type {obj_type}.'.format(
+                name=param_name, obj=repr(obj), obj_type=type(obj),
+            )
+        )
+    return obj

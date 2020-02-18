@@ -1,4 +1,5 @@
 '''Structured representations of system events.'''
+import logging
 from collections import namedtuple
 from enum import Enum
 

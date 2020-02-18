@@ -17,6 +17,7 @@ def test_init_modified_docker_operator(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
+        mode='default',
     )
 
 
@@ -31,6 +32,7 @@ def test_modified_docker_operator_bad_docker_conn(
         command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
+        mode='default',
     )
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
@@ -45,6 +47,7 @@ def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=
         command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
+        mode='default',
     )
     with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
         operator.execute({})
@@ -60,6 +63,7 @@ def test_modified_docker_operator_bad_command(
         command='dagster-graphql gargle bargle',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
+        mode='default',
     )
     with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
         operator.execute({})
@@ -85,6 +89,7 @@ def test_modified_docker_operator_url(dagster_docker_image):  # pylint: disable=
             command='dagster-graphql --help',
             environment_dict={'storage': {'filesystem': {}}},
             pipeline_name='',
+            mode='default',
         )
 
         with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
