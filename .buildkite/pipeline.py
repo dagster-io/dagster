@@ -442,7 +442,9 @@ def library_tests():
         if library == 'dagster-k8s':
             tests += k8s_tests()
         elif library == 'dagster-gcp':
-            tests += gcp_tests()
+            # https://github.com/dagster-io/dagster/issues/2174
+            # tests += gcp_tests()
+            continue
         elif library == 'dagster-postgres':
             tests += dagster_postgres_tests()
         else:
@@ -692,7 +694,8 @@ if __name__ == "__main__":
 
     steps += airflow_tests()
     steps += celery_tests()
-    steps += dask_tests()
+    # https://github.com/dagster-io/dagster/issues/2175
+    # steps += dask_tests()
 
     steps += dagit_tests()
     steps += lakehouse_tests()
