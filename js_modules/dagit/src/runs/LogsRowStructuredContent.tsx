@@ -16,24 +16,36 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
 }) => {
   switch (node.__typename) {
     // Errors
-    case "ExecutionStepFailureEvent":
     case "PipelineInitFailureEvent":
-      return <FailureContent error={node.error} />;
-
-    // Default Behavior
+      return (
+        <FailureContent error={node.error} eventType="Pipeline Init Failed" />
+      );
+    case "ExecutionStepFailureEvent":
+      return <FailureContent eventType="Step Failed" error={node.error} />;
     case "PipelineProcessStartEvent":
       return <DefaultContent message={node.message} eventType="Starting" />;
     case "PipelineProcessStartedEvent":
       return <DefaultContent message={node.message} eventType="Started" />;
     case "PipelineProcessExitedEvent":
       return <DefaultContent message={node.message} eventType="Exited" />;
+
     case "ExecutionStepStartEvent":
       return <DefaultContent message={node.message} eventType="Step Start" />;
     case "ExecutionStepSkippedEvent":
-      return <DefaultContent message={node.message} eventType="Skipped" />;
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType="Step Skipped"
+          eventIntent="warning"
+        />
+      );
     case "ExecutionStepSuccessEvent":
       return (
-        <DefaultContent message={node.message} eventType="Step Finished" />
+        <DefaultContent
+          message={node.message}
+          eventType="Step Finished"
+          eventIntent="success"
+        />
       );
     case "ExecutionStepInputEvent":
       return (
@@ -93,20 +105,39 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
         </DefaultContent>
       );
     case "PipelineFailureEvent":
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType="Pipeline Failed"
+          eventIntent="danger"
+        />
+      );
     case "PipelineSuccessEvent":
-    case "LogMessageEvent":
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType="Pipeline Finished"
+          eventIntent="success"
+        />
+      );
+
     case "PipelineStartEvent":
-      return <DefaultContent message={node.message} />;
+      return (
+        <DefaultContent message={node.message} eventType="Pipeline Started" />
+      );
     case "EngineEvent":
       if (node.engineError) {
-        return <FailureContent error={node.engineError} />;
+        return (
+          <FailureContent error={node.engineError} eventType="Engine Event" />
+        );
       }
       return (
-        <DefaultContent message={node.message}>
+        <DefaultContent message={node.message} eventType="Engine Event">
           <MetadataEntries entries={node.metadataEntries} />
         </DefaultContent>
       );
-
+    case "LogMessageEvent":
+      return <DefaultContent message={node.message} />;
     default:
       // This allows us to check that the switch is exhaustive because the union type should
       // have been narrowed following each successive case to `never` at this point.
@@ -145,12 +176,13 @@ const DefaultContent: React.FunctionComponent<{
 };
 
 const FailureContent: React.FunctionComponent<{
+  eventType: string;
   error: PythonErrorFragment;
-}> = ({ error }) => (
+}> = ({ eventType, error }) => (
   <>
     <EventTypeColumn>
       <Tag minimal={true} intent="danger" style={{ fontSize: "0.9em" }}>
-        Failed
+        {eventType}
       </Tag>
     </EventTypeColumn>
     <span style={{ flex: 1, color: Colors.RED3 }}>
