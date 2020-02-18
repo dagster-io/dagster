@@ -84,7 +84,7 @@ S3 bucket.
 To do this, you will simply alter the contents of the ``dagster.yaml`` file:
 
 .. literalinclude:: dagster.yaml
-   :caption: dagster.yaml
+  :caption: dagster.yaml
   :language: YAML
 
 Each of these config sections makes use of common plugin machinery, the
