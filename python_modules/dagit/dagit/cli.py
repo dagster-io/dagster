@@ -25,6 +25,9 @@ REPO_TARGET_WARNING = (
     'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
 )
 
+DEFAULT_DAGIT_HOST = '127.0.0.1'
+DEFAULT_DAGIT_PORT = 3000
+
 
 @click.command(
     name='ui',
@@ -47,8 +50,19 @@ REPO_TARGET_WARNING = (
     ),
 )
 @repository_target_argument
-@click.option('--host', '-h', type=click.STRING, default='127.0.0.1', help="Host to run server on")
-@click.option('--port', '-p', type=click.INT, default=3000, help="Port to run server on")
+@click.option(
+    '--host',
+    '-h',
+    type=click.STRING,
+    default=DEFAULT_DAGIT_HOST,
+    help="Host to run server on, default is {default_host}".format(default_host=DEFAULT_DAGIT_HOST),
+)
+@click.option(
+    '--port',
+    '-p',
+    type=click.INT,
+    help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
+)
 @click.option(
     '--storage-fallback',
     help="Base directory for dagster storage if $DAGSTER_HOME is not set",
@@ -69,7 +83,13 @@ def ui(host, port, storage_fallback, reload_trigger, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
-    host_dagit_ui(handle, host, port, storage_fallback, reload_trigger)
+    if port is None:
+        port_lookup = True
+        port = DEFAULT_DAGIT_PORT
+    else:
+        port_lookup = False
+
+    host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
 
 
 def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None, port_lookup=True):

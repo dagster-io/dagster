@@ -6,7 +6,7 @@ import pytest
 from dagster import (
     Any,
     DagsterInvalidConfigError,
-    DagsterInvariantViolationError,
+    DagsterInvalidDefinitionError,
     Field,
     Int,
     List,
@@ -672,7 +672,7 @@ def test_list_in_config_error():
         'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
     )
 
-    with pytest.raises(DagsterInvariantViolationError, match=re.escape(error_msg)):
+    with pytest.raises(DagsterInvalidDefinitionError, match=re.escape(error_msg)):
 
         @solid(config=List[int])
         def _no_runtime_list_in_config(_):
@@ -781,37 +781,37 @@ def test_invalid_default_values():
 
 def test_typing_types_into_config():
     match_str = re.escape(
-        'You have passed in typing.List in the config system. '
+        'You have passed in typing.List to the config system. '
         'Types from the typing module in python are not allowed '
         'in the config system. You must use types that are imported '
         'from dagster or primitive types such as bool, int, etc.'
     )
-    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
         @solid(config=Field(typing.List))
         def _solid(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
         @solid(config=typing.List)
         def _solid(_):
             pass
 
     match_str = re.escape(
-        'You have passed in typing.List[int] in the config system. Types '
+        'You have passed in typing.List[int] to the config system. Types '
         'from the typing module in python are not allowed in the config system. '
         'You must use types that are imported from dagster or primitive types '
         'such as bool, int, etc.'
     )
 
-    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
         @solid(config=Field(typing.List[int]))
         def _solid(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=match_str):
+    with pytest.raises(DagsterInvalidDefinitionError, match=match_str):
 
         @solid(config=typing.List[int])
         def _solid(_):
@@ -826,7 +826,7 @@ def test_typing_types_into_config():
         typing.Tuple,
         typing.Tuple[int, int],
     ]:
-        with pytest.raises(DagsterInvariantViolationError):
+        with pytest.raises(DagsterInvalidDefinitionError):
 
             @solid(config=Field(ttype))
             def _solid(_):
@@ -835,25 +835,25 @@ def test_typing_types_into_config():
 
 def test_no_set_in_config_system():
     set_error_msg = re.escape('Cannot use Set in the context of a config field.')
-    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
         @solid(config=Field(Set))
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
         @solid(config=Set)
         def _bare_open_set(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
         @solid(config=Field(Set[int]))
         def _bare_closed_set(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=set_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=set_error_msg):
 
         @solid(config=Set[int])
         def _bare_closed_set(_):
@@ -862,13 +862,13 @@ def test_no_set_in_config_system():
 
 def test_no_tuple_in_config_system():
     tuple_error_msg = re.escape('Cannot use Tuple in the context of a config field.')
-    with pytest.raises(DagsterInvariantViolationError, match=tuple_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
         @solid(config=Field(Tuple))
         def _bare_open_tuple(_):
             pass
 
-    with pytest.raises(DagsterInvariantViolationError, match=tuple_error_msg):
+    with pytest.raises(DagsterInvalidDefinitionError, match=tuple_error_msg):
 
         @solid(config=Field(Tuple[int]))
         def _bare_closed_set(_):

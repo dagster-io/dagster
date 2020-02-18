@@ -21,7 +21,6 @@ Let's look back at our simple ``read_csv`` solid.
    :caption: inputs_typed.py
    :linenos:
    :lineno-start: 6
-   :language: python
 
 The ``lines`` object returned by Python's built-in ``csv.DictReader`` is a list of
 ``collections.OrderedDict``, each of which represents one row of the dataset:

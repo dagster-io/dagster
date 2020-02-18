@@ -13,6 +13,14 @@ data engineering and data science workflows
 
   guides/index
 
+The Principles are the fundamental underpinnings of Dagster's design.
+
+.. toctree::
+  :maxdepth: 2
+
+  principles
+
+
 The Concepts section is a reference and glossary for the fundamental principles
 underpinning the design of Dagster and the basic concepts of the system
 

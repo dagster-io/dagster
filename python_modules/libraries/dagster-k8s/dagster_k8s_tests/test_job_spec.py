@@ -45,6 +45,11 @@ spec:
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
+        - name: DAGSTER_PG_PASSWORD
+          value_from:
+            secret_key_ref:
+              key: postgresql-password
+              name: dagster-postgresql
         env_from: []
         image: {job_image}
         image_pull_policy: {image_pull_policy}

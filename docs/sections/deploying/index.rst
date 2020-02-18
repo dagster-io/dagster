@@ -29,7 +29,8 @@ take advantage of the environment in which they're deployed.
 
 .. toctree::
   :maxdepth: 2
-
+  :hidden:
+  
   instance
   local
   celery
