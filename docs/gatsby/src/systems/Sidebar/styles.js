@@ -8,11 +8,13 @@ export const wrapper = {
   minHeight: "100vh",
   bg: "sidebar.bg",
   color: "sidebar.color",
-  textAlign: "right",
+  textAlign: "left",
 
   ".toctree-wrapper": {
     fontFamily: "heading",
-    fontWeight: 500
+    fontWeight: 500,
+    marginRight: "16px",
+    marginLeft: "16px"
   },
 
   ".toctree-wrapper ul": {
@@ -39,7 +41,7 @@ export const active = (hasActive, top) => ({
 export const content = {
   display: "flex",
   flexDirection: "column",
-  alignItems: "flex-end",
+  alignItems: "flex-start",
   height: "100%",
   maxHeight: "100vh",
   pt: t("header.gutter")
