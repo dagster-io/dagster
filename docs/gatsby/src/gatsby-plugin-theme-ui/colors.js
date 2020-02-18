@@ -19,3 +19,8 @@ export default {
   gold: ["#A67908", "#BF8C0A", "#D99E0B", "#F2B824", "#FFC940"],
   sepia: ["#63411E", "#7D5125", "#96622D", "#B07B46", "#C99765"]
 };
+
+export const newColors = {
+  white: "#FFFFFF",
+  gray: "#A59898"
+};

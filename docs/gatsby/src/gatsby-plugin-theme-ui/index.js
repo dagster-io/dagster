@@ -1,5 +1,5 @@
 import { rem } from "utils/css";
-import colors from "./colors";
+import colors, { newColors } from "./colors";
 
 export default {
   breakpoints: ["600px", "1024px", "1366px"],
@@ -14,13 +14,13 @@ export default {
       bg: colors.white
     },
     sidebar: {
-      bg: colors.blue[3],
-      color: colors.white
+      bg: newColors.white,
+      color: newColors.gray
     }
   },
   fonts: {
-    body: '"Source Sans Pro", system-ui, sans-serif',
-    heading: '"Work Sans", system-ui, sans-serif',
+    body: 'Inter, "Source Sans Pro", system-ui, sans-serif',
+    heading: 'Inter, "Work Sans", system-ui, sans-serif',
     mono:
       '"Fira Code", "SFMono-Regular", "Consolas", "Roboto Mono", "Droid Sand Mono", "Liberation Mono", "Menlo", "Courier", monospace'
   },

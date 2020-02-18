@@ -9,8 +9,7 @@ export const wrapper = {
   display: "flex",
   alignItems: "center",
   minWidth: t => [minWidthCalc(t, 2), minWidthCalc(t, 3), minWidthCalc(t, 4)],
-  bg: "header.bg",
-  boxShadow: "0 2px 15px rgba(0,0,0,0.15)"
+  bg: "header.bg"
 };
 
 export const right = {

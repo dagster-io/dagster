@@ -7,7 +7,7 @@ export const wrapper = isMobile => ({
   mt: 0,
   width: 250,
   minWidth: 250,
-  bg: "lightGray.1",
+  bg: "white",
 
   ul: {
     p: 0,

@@ -19,7 +19,8 @@ export const search = {
   },
 
   input: {
-    flex: 1,
+    flex: 1, // Maybe remove
+    width: "100%",
     outline: "none",
     appearance: "none",
     border: 0,

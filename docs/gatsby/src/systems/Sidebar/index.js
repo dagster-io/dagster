@@ -28,6 +28,7 @@ export const renderElements = () => (renderedNodes, node, idx, _nodes) => {
   } else if (!Component) {
     renderedNodes.push(null);
   } else if (isSidebarList(node)) {
+    console.log(node);
     renderedNodes.push(
       <SidebarList key={idx} {...props}>
         {children}

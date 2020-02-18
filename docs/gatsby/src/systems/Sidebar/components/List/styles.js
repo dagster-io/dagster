@@ -5,6 +5,18 @@ export const wrapper = {
     mb: 2,
     fontSize: 3
   },
+  "&.toctree-l1 a": {
+    fontWeight: 800,
+    fontSize: "18px",
+    color: "#A59898 !important"
+  },
+  "&.active.toctree-l1 a": {
+    color: "black !important"
+  },
+  "&.active.toctree-l1 ul": {
+    borderLeft: "1px solid #A59898",
+    paddingLeft: "15px"
+  },
   "&:not(.active) > ul": {
     display: "none"
   },
@@ -13,8 +25,8 @@ export const wrapper = {
     whiteSpace: "normal"
   },
   "&.toctree-l2 a": {
-    fontSize: 2,
-    opacity: 1
+    fontSize: "16px",
+    fontWeight: 400
   },
   "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
     opacity: 1
