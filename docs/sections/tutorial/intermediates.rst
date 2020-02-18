@@ -8,7 +8,7 @@ Intermediates
   :hidden:
 
 We've already seen how solids can describe their persistent artifacts to the system using
-`materializations <materializations>`_.
+`materializations <materializations.html>`_.
 
 Dagster also has a facility for automatically materializing the intermediate values that actually
 pass between solids.

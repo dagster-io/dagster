@@ -2,8 +2,8 @@ Learn
 =====
 
 If you're brand new to the Dagster system, we recommend starting with the
-`tutorial <../intro_tutorial/>`_, which will walk you through the most important
-concepts in Dagster step by step.
+`tutorial <../tutorial/index.html>`_, which will walk you through the most
+important concepts in Dagster step by step.
 
 The Guides provide deep dives into major areas of the system, motivated by common
 data engineering and data science workflows

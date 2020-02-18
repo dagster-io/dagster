@@ -260,7 +260,7 @@ def solid(
 
     1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the compute function.
     2. Return an :py:class:`Output`. This output will be yielded by the compute function.
-    3. Yield :py:class:`Output` or other `event objects <events>`_. Same as default compute behaviour.
+    3. Yield :py:class:`Output` or other :ref:`event objects <events>`. Same as default compute behaviour.
 
     Note that options 1) and 2) are incompatible with yielding other events -- if you would like
     to decorate a function that yields events, it must also wrap its eventual output in an

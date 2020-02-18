@@ -2,7 +2,8 @@ Writing a partition ready pipeline
 ==================================
 
 
-To get a clearer understanding of how partitioning works in Dagster, we'll work through an example pipeline that calculates the total volume traded for a given stock. Volume is defined as the number of shares traded in a given time period.
+To get a clearer understanding of how partitioning works in Dagster, we'll work
+ through an example pipeline that calculates the total volume traded for a given stock. Volume is defined as the number of shares traded in a given time period.
 
 We'll use the `Financial Modeling Prep API <https://financialmodelingprep.com/developer/docs>`_ as our data source. The API has an endpoint that can give us historical price data for a given stock over a time range:
 
@@ -62,7 +63,7 @@ repository.yaml:
         file: repository.py
         fn: define_repo
 
-To make a pipline partitionable, we'll use solid config. This will allow us to simply change the config to run the pipeline for different partitions. If you haven't explored the dagster config system, take a look at  `intro tutorial <../../tutorial/config>`_.
+To make a pipline partitionable, we'll use solid config. This will allow us to simply change the config to run the pipeline for different partitions. If you haven't explored the dagster config system, take a look at the `tutorial <../../../tutorial/config.html>`_.
 
 Our first solid will take the stock ticker symbol as config, and query the API to return the volume traded from Jan 01 - Jan 31 2019. We pass the json response to the downstream solid.
 
