@@ -28,6 +28,9 @@ export const ReactParser = ({
               fluid(maxWidth: 1024) {
                 ...GatsbyImageSharpFluid_noBase64
               }
+              original {
+                src
+              }
             }
           }
         }

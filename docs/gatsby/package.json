@@ -43,6 +43,7 @@
     "react-dom": "^16.12.0",
     "react-feather": "^2.0.3",
     "react-helmet": "^5.2.1",
+    "react-modal-image": "^2.5.0",
     "react-stickynode": "^2.1.1",
     "react-typography": "^0.16.19",
     "react-use": "^13.26.1",
