@@ -101,11 +101,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
             key
           }
         }
-        ... on ExecutionStepFailureEvent {
-          error {
-            ...PythonErrorFragment
-          }
-        }
+
         ...LogsScrollingTableMessageFragment
         ...RunMetadataProviderMessageFragment
       }

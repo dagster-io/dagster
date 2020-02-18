@@ -22,33 +22,6 @@ export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
   step: RunPipelineRunEventFragment_ExecutionStepSkippedEvent_step | null;
 }
 
-export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause | null;
-}
-
-export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: RunPipelineRunEventFragment_ExecutionStepFailureEvent_step | null;
-  error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
-}
-
 export interface RunPipelineRunEventFragment_PipelineProcessStartedEvent_step {
   __typename: "ExecutionStep";
   key: string;
@@ -161,6 +134,76 @@ export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
   level: LogLevel;
   step: RunPipelineRunEventFragment_PipelineInitFailureEvent_step | null;
   error: RunPipelineRunEventFragment_PipelineInitFailureEvent_error;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause | null;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export type RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries = RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry | RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry | RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry | RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry | RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry;
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata {
+  __typename: "FailureMetadata";
+  metadataEntries: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries[];
+}
+
+export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent {
+  __typename: "ExecutionStepFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  step: RunPipelineRunEventFragment_ExecutionStepFailureEvent_step | null;
+  error: RunPipelineRunEventFragment_ExecutionStepFailureEvent_error;
+  failureMetadata: RunPipelineRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepInputEvent_step {
@@ -464,4 +507,4 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   engineError: RunPipelineRunEventFragment_EngineEvent_engineError | null;
 }
 
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_PipelineProcessStartedEvent | RunPipelineRunEventFragment_PipelineProcessStartEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_PipelineProcessStartedEvent | RunPipelineRunEventFragment_PipelineProcessStartEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;

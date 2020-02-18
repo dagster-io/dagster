@@ -1,5 +1,7 @@
 from dagster import (
-    Bool,
+    EventMetadataEntry,
+    Failure,
+    Field,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -25,21 +27,35 @@ def resource_init(init_context):
 
 
 def define_errorable_resource():
-    return ResourceDefinition(resource_fn=resource_init, config={'throw_on_resource_init': Bool})
+    return ResourceDefinition(
+        resource_fn=resource_init,
+        config={'throw_on_resource_init': Field(bool, is_required=False, default_value=False)},
+    )
 
 
-solid_throw_config = {'throw_in_solid': Bool, 'return_wrong_type': Bool}
+solid_throw_config = {
+    'throw_in_solid': Field(bool, is_required=False, default_value=False),
+    'return_wrong_type': Field(bool, is_required=False, default_value=False),
+}
 
 
 @solid(
-    name='emit_num',
     output_defs=[OutputDefinition(Int)],
     config=solid_throw_config,
     required_resource_keys={'errorable_resource'},
 )
 def emit_num(context):
     if context.solid_config['throw_in_solid']:
-        raise Exception('throwing from in the solid')
+        raise Failure(
+            description="I'm a Failure in emit_num",
+            metadata_entries=[
+                EventMetadataEntry.text(
+                    label='metadata_label',
+                    text='I am metadata text',
+                    description='metadata_description',
+                )
+            ],
+        )
 
     if context.solid_config['return_wrong_type']:
         return 'wow'
@@ -48,7 +64,6 @@ def emit_num(context):
 
 
 @solid(
-    name='num_to_str',
     input_defs=[InputDefinition('num', Int)],
     output_defs=[OutputDefinition(String)],
     config=solid_throw_config,
@@ -56,7 +71,16 @@ def emit_num(context):
 )
 def num_to_str(context, num):
     if context.solid_config['throw_in_solid']:
-        raise Exception('throwing from in the solid')
+        raise Failure(
+            description="I'm a Failure in num_to_str",
+            metadata_entries=[
+                EventMetadataEntry.text(
+                    label='metadata_label',
+                    text='I am metadata text',
+                    description='metadata_description',
+                )
+            ],
+        )
 
     if context.solid_config['return_wrong_type']:
         return num + num
@@ -65,7 +89,6 @@ def num_to_str(context, num):
 
 
 @solid(
-    name='str_to_num',
     input_defs=[InputDefinition('string', String)],
     output_defs=[OutputDefinition(Int)],
     config=solid_throw_config,
@@ -73,7 +96,16 @@ def num_to_str(context, num):
 )
 def str_to_num(context, string):
     if context.solid_config['throw_in_solid']:
-        raise Exception('throwing from in the solid')
+        raise Failure(
+            description="I'm a Failure in str_to_num",
+            metadata_entries=[
+                EventMetadataEntry.text(
+                    label='metadata_label',
+                    text='I am metadata text',
+                    description='metadata_description',
+                )
+            ],
+        )
 
     if context.solid_config['return_wrong_type']:
         return string + string

@@ -21,7 +21,14 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
         <FailureContent error={node.error} eventType="Pipeline Init Failed" />
       );
     case "ExecutionStepFailureEvent":
-      return <FailureContent eventType="Step Failed" error={node.error} />;
+      return (
+        <FailureContent
+          eventType="Step Failed"
+          error={node.error}
+          metadataEntries={node?.failureMetadata?.metadataEntries}
+        />
+      );
+
     case "PipelineProcessStartEvent":
       return <DefaultContent message={node.message} eventType="Starting" />;
     case "PipelineProcessStartedEvent":
@@ -178,15 +185,20 @@ const DefaultContent: React.FunctionComponent<{
 const FailureContent: React.FunctionComponent<{
   eventType: string;
   error: PythonErrorFragment;
-}> = ({ eventType, error }) => (
+  metadataEntries?: MetadataEntryFragment[];
+}> = ({ error, eventType, metadataEntries }) => (
   <>
     <EventTypeColumn>
       <Tag minimal={true} intent="danger" style={{ fontSize: "0.9em" }}>
         {eventType}
       </Tag>
     </EventTypeColumn>
-    <span style={{ flex: 1, color: Colors.RED3 }}>
-      {`${error.message}\n${error.stack}`}
+    <span style={{ flex: 1 }}>
+      <span style={{ color: Colors.RED3 }}>{`${error.message}`}</span>
+      <MetadataEntries entries={metadataEntries} />
+      <span style={{ color: Colors.RED3 }}>
+        {`\nStack Trace:\n${error.stack}`}
+      </span>
     </span>
   </>
 );
