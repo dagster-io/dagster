@@ -19,12 +19,22 @@ export const search = {
   },
 
   input: {
-    width: "400px",
+    flex: 1,
     outline: "none",
     appearance: "none",
     border: 0,
     bg: "transparent",
     transition: "width .3s",
     color: "blue.2"
+  }
+};
+
+export const searchMobile = {
+  display: "flex",
+  alignItems: "center",
+
+  svg: {
+    mr: 2,
+    stroke: "blue.4"
   }
 };

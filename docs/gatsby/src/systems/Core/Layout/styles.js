@@ -31,20 +31,6 @@ export const content = state => {
       "calc(100% - 500px)"
     ],
 
-    "::before": {
-      zIndex: 9,
-      position: "absolute",
-      display: ["block", "block", "none"],
-      content: '""',
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: t => t.header.gutter,
-      bg: "blue.3",
-      transform: `translate(${closed ? 0 : "-100%"})`,
-      transition: "transform .3s"
-    },
-
     ...(state.context.width < 1024 && {
       "::after": {
         display: "block",

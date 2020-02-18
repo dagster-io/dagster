@@ -39,13 +39,6 @@ export const Layout = ({ children }) => {
     if (showing) handleToggle();
   });
 
-  useClickAway(sidebarRef, ev => {
-    const { id } = ev.target;
-    if (id !== "menu-icon" && id !== "menu-icon-span" && showing) {
-      handleToggle();
-    }
-  });
-
   return (
     <Location>
       {({ location }) => (
@@ -61,8 +54,11 @@ export const Layout = ({ children }) => {
                 ref={sidebarRef}
                 location={location}
                 onLinkClick={handleToggle}
+                opened={showing}
               />
-              <div sx={styles.content(state)}>{children}</div>
+              <div id="main" sx={styles.content(state)}>
+                {children}
+              </div>
             </div>
           </main>
         </Styled.root>

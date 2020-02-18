@@ -1,4 +1,5 @@
-export const wrapper = {
+export const wrapper = opened => ({
+  zIndex: opened ? 99 : "auto",
   position: "relative",
   py: 3,
   px: 4,
@@ -21,7 +22,7 @@ export const wrapper = {
     listStyle: "none",
     color: "white"
   }
-};
+});
 
 export const active = (hasActive, top) => ({
   position: "absolute",
