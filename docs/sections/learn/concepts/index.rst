@@ -31,7 +31,7 @@ Solids are defined using the :func:`@lambda_solid <dagster.lambda_solid>` or
 :class:`SolidDefinition <dagster.SolidDefinition>` class. These APIs wrap an underlying
 `compute function`, making its metadata queryable by higher-level tools.
 
-You can check out `the solid guide <../learn/guides/solid/solid.html>`__ for a deeper dive on
+You can check out `the solid guide <../guides/solid/solid.html>`__ for a deeper dive on
 solids and how they can be used.
 
 Compute Function
@@ -111,7 +111,7 @@ Concretely, a pipeline might include mode definitions for local testing (where d
 other resources will be mocked, in-memory, or local) and for running in production (where resources
 will require different credentials and expose configuration options). When a pipeline is compiled
 with a config corresponding to one of these modes, it yields an execution plan suitable for the
-given environment. The `tutorial on Modes <../learn/tutorial/resources.html#modes>`__ showcases how
+given environment. The `tutorial <../../tutorial/modes.html>`__ showcases how
 you can combine resources and modes in pipeline execution.
 
 .. _dependency-definition:
@@ -132,7 +132,7 @@ merely ensuring that the order of execution is correct, dependencies in Dagster 
 compile- and run-time checks.
 
 Dependencies are expressed using Dagster's simple function invocation DSL; you can check out the
-`tutorial <../learn/tutorial/actual_dag.html>`__ for an example of composing solids with
+`tutorial <../../tutorial/hello_dag.html>`__ for an example of composing solids with
 dependencies.
 
 Resources
@@ -183,7 +183,7 @@ with functions.
 Defining a composite solid is similar to defining a pipeline, but can also provide mapping
 information to control how data and configuration flows in and out of its inner graph of solids. You
 can see an example of composition in action in the
-`tutorial <../learn/tutorial/composite_solids.html>`__.
+`tutorial <../../tutorial/composite_solids.html>`__.
 
 Dagster Types
 -------------

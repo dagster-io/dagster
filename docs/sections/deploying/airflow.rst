@@ -11,7 +11,7 @@ This is the approach we use to deploy Dagster pipelines to Airflow (using the
 package).
 
 We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. (We recommend
-the built-in `scheduler and partition system <../intro_tutorial/scheduler.html>`_ for scheduling
+the built-in `scheduler and partition system <../tutorial/scheduler.html>`_ for scheduling
 pipelines, and the `Celery-based executor <celery.html>`_ for large-scale deployments.) But if you
 have a large existing Airflow install, this integration will allow you to follow an incremental
 adoption path.
