@@ -1,17 +1,16 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
-import { forwardRef, useEffect, useRef } from "react";
-import { Slack, GitHub } from "react-feather";
-import { useMachine } from "@xstate/react";
-import useClickAway from "react-use/lib/useClickAway";
-import useKeyPressEvent from "react-use/lib/useKeyPressEvent";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import useWindowSize from "react-use/lib/useWindowSize";
 
 import { ExternalLink, Menu, Logo } from "systems/Core";
 import { Search } from "systems/Search";
 
+import githubIcon from "./images/github-icon.svg";
+import slackIcon from "./images/slack-icon.svg";
+import stackOverflowIcon from "./images/stack-overflow-icon.svg";
+
 import { MenuIcon } from "./components/MenuIcon";
-import { headerMachine } from "./machines/header";
 import * as styles from "./styles";
 
 const indices = [
@@ -22,51 +21,52 @@ const indices = [
 export const Header = forwardRef(({ onMenuClick, sidebarOpened }, ref) => {
   const searchRef = useRef(null);
   const { width } = useWindowSize();
-  const [state, send] = useMachine(headerMachine.withContext({ width }));
+  const [showingSearch, setShowingSearch] = useState(width >= 1024);
 
-  const showing = state.matches("opened");
-
-  function handleToggle() {
-    send("TOGGLE");
+  function handleToggleSearch() {
+    setShowingSearch(s => !s);
   }
 
   useEffect(() => {
-    send("SET_INITIAL_WIDTH", { data: width });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    send("SET_WIDTH", { data: width });
-  }, [width, send]);
-
-  useKeyPressEvent("Escape", () => {
-    if (showing) handleToggle();
-  });
-
-  useClickAway(searchRef, () => {
-    if (showing) handleToggle();
-  });
+    if (width < 1024) {
+      setShowingSearch(false);
+    }
+  }, [width]);
 
   return (
     <header ref={ref} sx={styles.wrapper}>
       <div sx={styles.right}>
-        <button sx={styles.menuBtn(showing)} onClick={onMenuClick}>
+        <button sx={styles.menuBtn(showingSearch)} onClick={onMenuClick}>
           <MenuIcon opened={sidebarOpened} />
         </button>
-        <Logo sx={styles.logo(showing)} />
-        <Search
-          ref={searchRef}
-          indices={indices}
-          onClick={handleToggle}
-          showing={showing}
-        />
+        <Logo sx={styles.logo(showingSearch)} />
+        <div sx={styles.search(showingSearch)}>
+          <Search
+            ref={searchRef}
+            indices={indices}
+            showing={showingSearch}
+            onClick={() => {
+              handleToggleSearch();
+              sidebarOpened && onMenuClick();
+            }}
+          />
+        </div>
       </div>
-      <Menu sx={styles.socialIcons(showing)}>
-        <ExternalLink href="#">
-          <Slack sx={{ fill: "blue.3" }} />
+      <Menu sx={styles.socialIcons(showingSearch)}>
+        <ExternalLink href="https://dagster.slack.com" sx={styles.externalLink}>
+          <img src={slackIcon} height={25} />
         </ExternalLink>
-        <ExternalLink href="#">
-          <GitHub />
+        <ExternalLink
+          href="https://github.com/dagster-io/dagster/"
+          sx={styles.externalLink}
+        >
+          <img src={githubIcon} height={25} />
+        </ExternalLink>
+        <ExternalLink
+          href="https://stackoverflow.com/questions/tagged/dagster"
+          sx={styles.externalLink}
+        >
+          <img src={stackOverflowIcon} height={25} />
         </ExternalLink>
       </Menu>
     </header>

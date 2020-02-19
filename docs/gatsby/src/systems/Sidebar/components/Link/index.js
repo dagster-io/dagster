@@ -1,6 +1,6 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 
 import { useVersion } from "systems/Version";
 import { Link as BaseLink } from "systems/Core";
@@ -27,10 +27,18 @@ const getLinkId = path => {
 export const Link = props => {
   const { href, children } = props;
   const { version } = useVersion();
+  const [isPartiallyActive, setPartiallyActive] = useState(true);
 
   const ref = useRef(null);
   const id = getLinkId(href);
   const commonProps = { id, sx: styles.link };
+
+  useEffect(() => {
+    if (ref && ref.current) {
+      const parent = ref.current.parentNode;
+      setPartiallyActive(!parent.classList.contains("toctree-l2"));
+    }
+  }, []);
 
   return href.startsWith("http") ? (
     <a
@@ -44,7 +52,12 @@ export const Link = props => {
     </a>
   ) : (
     // eslint-disable-next-line jsx-a11y/anchor-is-valid
-    <BaseLink {...commonProps} ref={ref} to={`/${version.current}/${href}`}>
+    <BaseLink
+      {...commonProps}
+      ref={ref}
+      to={`/${version.current}/${href}`}
+      partiallyActive={isPartiallyActive}
+    >
       {children}
     </BaseLink>
   );
