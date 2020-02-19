@@ -1,4 +1,6 @@
 import os
+import pickle
+import tempfile
 import uuid
 from datetime import timedelta
 from time import gmtime, strftime
@@ -37,6 +39,7 @@ from dagster import (
     composite_solid,
     solid,
 )
+from dagster.utils import PICKLE_PROTOCOL
 
 # Added this to silence tensorflow logs. They are insanely verbose.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -102,25 +105,27 @@ def load_compressed_csv_file(
     return dataset
 
 
-@solid(
-    input_defs=[InputDefinition('path_to_file', str), InputDefinition('key', str)],
-    required_resource_keys={'transporter'},
-)
-def upload_file_to_bucket(context, path_to_file: str, key: str):
-    context.resources.transporter.upload_file_to_bucket(path_to_file, key)
+@solid(required_resource_keys={'gcs_client'})
+def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, file_name: str):
+    gcs_bucket = context.resources.gcs_client.get_bucket(bucket_name)
+    key = '{}-{}'.format(file_name, uuid.uuid4())
+    with tempfile.TemporaryFile('w+b') as fp:
+        pickle.dump(value, fp, PICKLE_PROTOCOL)
+        # Done because you can't upload the contents of a file outside the context manager if it's a tempfile.
+        fp.seek(0)
+        gcs_bucket.blob(key).upload_from_file(fp)
 
-
-@solid(
-    required_resource_keys={'transporter', 'volume'},
-    input_defs=[InputDefinition('key', str), InputDefinition('path_to_file', str)],
-    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
-)
-def download_csv_from_bucket_and_return_dataframe(
-    context, key: str, path_to_file: str
-) -> DataFrame:
-    target_csv_location = os.path.join(context.resources.volume, path_to_file)
-    context.resources.transporter.download_file_from_bucket(key, target_csv_location)
-    return read_csv(target_csv_location)
+    yield Materialization(
+        description='Serialized object to Google Cloud Storage Bucket',
+        label='GCS Blob',
+        metadata_entries=[
+            EventMetadataEntry.text(
+                'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key),
+                'google cloud storage URI',
+            ),
+        ],
+    )
+    yield Output(None)
 
 
 @solid(
@@ -154,10 +159,8 @@ def download_table_as_dataframe(context, table_name: str) -> DataFrame:
         index_col=context.solid_config['index_label'],
     )
     # De-Duplicate Table
-    subsets = context.solid_config['subsets']
-    if subsets:
-        return dataframe.drop_duplicates(subset=subsets)
-    return dataframe.drop_duplicates()
+    subsets = context.solid_config.get('subsets', None)
+    return dataframe.drop_duplicates(subset=subsets if subsets else None)
 
 
 @solid(
@@ -472,8 +475,3 @@ def train_lstm_model(context, training_set: TrainingSet):
         ],
     )
     yield Output(model)
-
-
-@solid
-def do_nothing(_, df_a, df_b):
-    return (df_a, df_b)

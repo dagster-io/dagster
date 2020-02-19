@@ -6,86 +6,6 @@ from pandas import Timestamp
 from dagster import DagsterType, EventMetadataEntry, TypeCheck
 
 
-class ValidationTypes(object):
-    CATEGORIES = 'categories'
-    EXPECTED_DTYPES = 'expected_dtypes'
-    BOUNDS = 'bounds'
-    NO_DUPLICATES = 'no_duplicates'
-
-
-class DataFrameValidator(object):
-    def __init__(self, invariant_config):
-        self.invariant_config = invariant_config
-
-    def validate_columns_in_dataframe(self, dataframe):
-        for mandatory_column_name, mandatory_column_config in self.invariant_config.items():
-            if mandatory_column_name not in dataframe.columns:
-                return TypeCheck(
-                    success=False,
-                    description='Dataframe should have {} columns. Currently missing {}'.format(
-                        self.invariant_config.keys(), mandatory_column_name
-                    ),
-                )
-            if ValidationTypes.CATEGORIES in mandatory_column_config:
-                valid_column_mask = dataframe[mandatory_column_name].isin(
-                    mandatory_column_config[ValidationTypes.CATEGORIES]
-                )
-                valid_columns = dataframe.loc[valid_column_mask]
-                if len(dataframe) != len(valid_columns):
-                    return TypeCheck(
-                        success=False,
-                        description=(
-                            'Dataframe column {column} expects the following buckets {valid_buckets}. '
-                            'Found other values instead.'.format(
-                                column=mandatory_column_name,
-                                valid_buckets=mandatory_column_config[ValidationTypes.CATEGORIES],
-                            )
-                        ),
-                    )
-            if ValidationTypes.EXPECTED_DTYPES in mandatory_column_config:
-                if (
-                    str(dataframe[mandatory_column_name].dtype)
-                    not in mandatory_column_config[ValidationTypes.EXPECTED_DTYPES]
-                ):
-                    return TypeCheck(
-                        success=False,
-                        description='Dataframe column {column} expects {expected} dtypes. Got {received} instead'.format(
-                            column=mandatory_column_name,
-                            expected=str(mandatory_column_config[ValidationTypes.EXPECTED_DTYPES]),
-                            received=dataframe[mandatory_column_name].dtype,
-                        ),
-                    )
-            if ValidationTypes.BOUNDS in mandatory_column_config:
-                bounds_mask = dataframe[mandatory_column_name].between(
-                    mandatory_column_config[ValidationTypes.BOUNDS][0],
-                    mandatory_column_config[ValidationTypes.BOUNDS][1],
-                )
-                out_of_bounds_records = dataframe[mandatory_column_name][~bounds_mask]
-                if len(out_of_bounds_records) > 0:
-                    return TypeCheck(
-                        success=False,
-                        description=(
-                            'Dataframe column {column} expects values between {min_}-{max_}.'
-                            'The following (row number, value) pairs violate this: {errors}'
-                        ).format(
-                            column=mandatory_column_name,
-                            min_=mandatory_column_config['bounds'][0],
-                            max_=mandatory_column_config['bounds'][1],
-                            errors=out_of_bounds_records,
-                        ),
-                    )
-            if ValidationTypes.NO_DUPLICATES in mandatory_column_config:
-                if len(dataframe[mandatory_column_name]) != len(
-                    dataframe[mandatory_column_name].unique()
-                ):
-                    return TypeCheck(
-                        success=False,
-                        description='Trip Dataframe has duplicates for column {}. Please dedup'.format(
-                            mandatory_column_name
-                        ),
-                    )
-
-
 def compute_trip_dataframe_event_metadata(dataframe):
     return [
         EventMetadataEntry.text(
@@ -176,53 +96,7 @@ def compute_weather_dataframe_event_metadata(dataframe):
 
 WeatherDataFrameSchema = [
     PandasColumn.datetime_column('time', unique=True),
-    PandasColumn.categorical_column(
-        'summary',
-        categories={
-            'Partly cloudy throughout the day.',
-            'Mostly cloudy throughout the day.',
-            'Clear throughout the day.',
-            'Light rain in the morning and afternoon.',
-            'Light rain starting in the afternoon.',
-            'Rain throughout the day.',
-            'Overcast throughout the day.',
-            'Foggy in the morning and afternoon.',
-            'Light rain in the morning.',
-            'Possible drizzle in the morning.',
-            'Light rain throughout the day.',
-            'Possible drizzle in the evening and overnight.',
-            'Rain starting in the afternoon.',
-            'Light rain until morning, starting again in the evening.',
-            'Foggy starting in the afternoon.',
-            'Light rain in the morning and overnight.',
-            'Light rain overnight.',
-            'Light rain in the evening and overnight.',
-            'Drizzle in the morning and afternoon.',
-            'Rain overnight.',
-            'Light rain until evening.',
-            'Possible drizzle in the morning and afternoon.',
-            'Possible drizzle overnight.',
-            'Light rain in the afternoon and evening.',
-            'Drizzle in the afternoon and evening.',
-            'Rain until morning, starting again in the evening.',
-            'Drizzle until morning, starting again in the evening.',
-            'Possible drizzle in the afternoon and evening.',
-            'Foggy throughout the day.',
-            'Possible drizzle until morning, starting again in the evening.',
-            'Foggy until evening.',
-            'Possible light rain until evening.',
-            'Foggy in the morning.',
-            'Rain until evening.',
-            'Drizzle starting in the afternoon.',
-            'Rain in the morning and afternoon.',
-            'Possible drizzle throughout the day.',
-            'Possible light rain throughout the day.',
-            'Heavy rain until morning, starting again in the evening.',
-            'Foggy overnight.',
-            'Rain in the evening and overnight.',
-            'Rain in the morning.',
-        },
-    ),
+    PandasColumn.string_column('summary'),
     PandasColumn.categorical_column(
         'icon', categories={'clear-day', 'cloudy', 'fog', 'partly-cloudy-day', 'rain'}
     ),
@@ -238,10 +112,10 @@ WeatherDataFrameSchema = [
     PandasColumn.float_column('dewPoint', min_value=10.0, max_value=70.0),
     PandasColumn.float_column('humidity', min_value=0.0, max_value=1.0),
     PandasColumn.float_column('pressure', min_value=900.0, max_value=1200.0),
-    PandasColumn.float_column('windSpeed', min_value=0.0, max_value=17.0),
+    PandasColumn.float_column('windSpeed', min_value=0.0, max_value=100.0),
     PandasColumn.float_column('windGust', min_value=0.0, max_value=40.0),
     PandasColumn.integer_column('windGustTime', min_value=0),
-    PandasColumn.integer_column('windBearing', min_value=1, max_value=400),
+    PandasColumn.integer_column('windBearing', min_value=0),
     PandasColumn.float_column('cloudCover', min_value=0.0, max_value=1.0),
     PandasColumn.integer_column('uvIndex', min_value=0, max_value=12),
     PandasColumn.integer_column('uvIndexTime', min_value=0),
