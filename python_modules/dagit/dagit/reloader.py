@@ -9,6 +9,7 @@ class DagitReloader(Reloader):
     def __init__(self, reload_trigger):
         self.reload_trigger = check.opt_str_param(reload_trigger, 'reload_trigger')
 
+    @property
     def is_reload_supported(self):
         return self.reload_trigger != None
 

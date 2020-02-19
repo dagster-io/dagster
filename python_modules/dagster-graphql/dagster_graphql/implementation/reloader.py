@@ -4,7 +4,7 @@ import six
 
 
 class Reloader(six.with_metaclass(abc.ABCMeta)):
-    @abc.abstractmethod
+    @abc.abstractproperty
     def is_reload_supported(self):
         '''Return true if the reload() method will restart the dagit process.
 
