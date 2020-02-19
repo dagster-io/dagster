@@ -195,15 +195,17 @@ def test_gcs_intermediate_store_with_type_storage_plugin(gcs_bucket):
         ),
     )
 
+    obj_name = 'obj_name'
+
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_value('hello', context, RuntimeString, ['obj_name'])
+            intermediate_store.set_value('hello', context, RuntimeString, [obj_name])
 
-            assert intermediate_store.has_object(context, ['obj_name'])
-            assert intermediate_store.get_value(context, RuntimeString, ['obj_name']) == 'hello'
+            assert intermediate_store.has_object(context, [obj_name])
+            assert intermediate_store.get_value(context, RuntimeString, [obj_name]) == 'hello'
 
         finally:
-            intermediate_store.rm_object(context, ['obj_name'])
+            intermediate_store.rm_object(context, [obj_name])
 
 
 @nettest
@@ -218,10 +220,12 @@ def test_gcs_intermediate_store_with_composite_type_storage_plugin(gcs_bucket):
         ),
     )
 
+    obj_name = 'obj_name'
+
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_store.set_value(
-                ['hello'], context, resolve_dagster_type(List[String]), ['obj_name']
+                ['hello'], context, resolve_dagster_type(List[String]), [obj_name]
             )
 
 
@@ -230,18 +234,21 @@ def test_gcs_intermediate_store_composite_types_with_custom_serializer_for_inner
     run_id = make_new_run_id()
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
+
+    obj_name = 'list'
+
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_store.set_object(
-                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), ['list'],
+                ['foo', 'bar'], context, resolve_dagster_type(List[LowercaseString]), [obj_name],
             )
-            assert intermediate_store.has_object(context, ['list'])
+            assert intermediate_store.has_object(context, [obj_name])
             assert intermediate_store.get_object(
-                context, resolve_dagster_type(List[Bool]), ['list']
+                context, resolve_dagster_type(List[Bool]), [obj_name]
             ).obj == ['foo', 'bar']
 
         finally:
-            intermediate_store.rm_object(context, ['foo'])
+            intermediate_store.rm_object(context, [obj_name])
 
 
 @nettest
@@ -250,24 +257,26 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
 
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
 
+    obj_name = 'foo'
+
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
-            intermediate_store.set_object('foo', context, LowercaseString, ['foo'])
+            intermediate_store.set_object('foo', context, LowercaseString, [obj_name])
 
             bucket_obj = intermediate_store.object_store.client.get_bucket(
                 intermediate_store.object_store.bucket
             )
-            blob = bucket_obj.blob('/'.join([intermediate_store.root] + ['foo']))
+            blob = bucket_obj.blob('/'.join([intermediate_store.root] + [obj_name]))
             file_obj = BytesIO()
             blob.download_to_file(file_obj)
             file_obj.seek(0)
 
             assert file_obj.read().decode('utf-8') == 'FOO'
 
-            assert intermediate_store.has_object(context, ['foo'])
-            assert intermediate_store.get_object(context, LowercaseString, ['foo']).obj == 'foo'
+            assert intermediate_store.has_object(context, [obj_name])
+            assert intermediate_store.get_object(context, LowercaseString, [obj_name]).obj == 'foo'
         finally:
-            intermediate_store.rm_object(context, ['foo'])
+            intermediate_store.rm_object(context, [obj_name])
 
 
 @nettest
@@ -316,18 +325,20 @@ def test_gcs_intermediate_store_with_custom_prefix(gcs_bucket):
     )
     assert intermediate_store.root == '/'.join(['custom_prefix', 'storage', run_id])
 
+    obj_name = 'true'
+
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
+            intermediate_store.set_object(True, context, RuntimeBool, [obj_name])
 
-            assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.uri_for_paths(['true']).startswith(
+            assert intermediate_store.has_object(context, [obj_name])
+            assert intermediate_store.uri_for_paths([obj_name]).startswith(
                 'gs://%s/custom_prefix' % gcs_bucket
             )
 
     finally:
-        intermediate_store.rm_object(context, ['true'])
+        intermediate_store.rm_object(context, [obj_name])
 
 
 @nettest
@@ -341,21 +352,23 @@ def test_gcs_intermediate_store(gcs_bucket):
     intermediate_store_2 = GCSIntermediateStore(run_id=run_id_2, gcs_bucket=gcs_bucket)
     assert intermediate_store_2.root == '/'.join(['dagster', 'storage', run_id_2])
 
+    obj_name = 'true'
+
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
-            intermediate_store.set_object(True, context, RuntimeBool, ['true'])
+            intermediate_store.set_object(True, context, RuntimeBool, [obj_name])
 
-            assert intermediate_store.has_object(context, ['true'])
-            assert intermediate_store.get_object(context, RuntimeBool, ['true']).obj is True
-            assert intermediate_store.uri_for_paths(['true']).startswith('gs://')
+            assert intermediate_store.has_object(context, [obj_name])
+            assert intermediate_store.get_object(context, RuntimeBool, [obj_name]).obj is True
+            assert intermediate_store.uri_for_paths([obj_name]).startswith('gs://')
 
-            intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
-            assert intermediate_store_2.has_object(context, ['true'])
-            assert intermediate_store_2.get_object(context, RuntimeBool, ['true']).obj is True
+            intermediate_store_2.copy_object_from_prev_run(context, run_id, [obj_name])
+            assert intermediate_store_2.has_object(context, [obj_name])
+            assert intermediate_store_2.get_object(context, RuntimeBool, [obj_name]).obj is True
     finally:
-        intermediate_store.rm_object(context, ['true'])
-        intermediate_store_2.rm_object(context, ['true'])
+        intermediate_store.rm_object(context, [obj_name])
+        intermediate_store_2.rm_object(context, [obj_name])
 
 
 class CsvSerializationStrategy(SerializationStrategy):
@@ -388,20 +401,23 @@ def test_custom_read_write_mode(gcs_bucket):
     run_id = make_new_run_id()
     intermediate_store = GCSIntermediateStore(run_id=run_id, gcs_bucket=gcs_bucket)
     data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
+
+    obj_name = 'data_frame'
+
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
             intermediate_store.set_object(
-                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+                data_frame, context, resolve_dagster_type(LessSimpleDataFrame), [obj_name]
             )
 
-            assert intermediate_store.has_object(context, ['data_frame'])
+            assert intermediate_store.has_object(context, [obj_name])
             assert (
                 intermediate_store.get_object(
-                    context, resolve_dagster_type(LessSimpleDataFrame), ['data_frame']
+                    context, resolve_dagster_type(LessSimpleDataFrame), [obj_name]
                 ).obj
                 == data_frame
             )
-            assert intermediate_store.uri_for_paths(['data_frame']).startswith('gs://')
+            assert intermediate_store.uri_for_paths([obj_name]).startswith('gs://')
 
     finally:
-        intermediate_store.rm_object(context, ['data_frame'])
+        intermediate_store.rm_object(context, [obj_name])

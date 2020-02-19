@@ -2,12 +2,14 @@ import logging
 import sys
 from io import BytesIO, StringIO
 
+from google.api_core.exceptions import TooManyRequests
 from google.cloud import storage
 
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
+from dagster.utils.backoff import backoff
 
 
 class GCSObjectStore(ObjectStore):
@@ -30,7 +32,7 @@ class GCSObjectStore(ObjectStore):
 
         if self.has_object(key):
             logging.warning('Removing existing GCS key: {key}'.format(key=key))
-            self.rm_object(key)
+            backoff(self.rm_object, args=[key], retry_on=(TooManyRequests,))
 
         with (
             BytesIO()
@@ -39,7 +41,11 @@ class GCSObjectStore(ObjectStore):
         ) as file_like:
             serialization_strategy.serialize(obj, file_like)
             file_like.seek(0)
-            self.bucket_obj.blob(key).upload_from_file(file_like)
+            backoff(
+                self.bucket_obj.blob(key).upload_from_file,
+                args=[file_like],
+                retry_on=(TooManyRequests,),
+            )
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,
