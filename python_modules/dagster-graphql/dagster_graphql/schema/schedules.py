@@ -148,9 +148,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
                     ):
                         status = DauphinScheduleAttemptStatus.SUCCESS
                         run_id = json_result['run']['runId']
-                        run = graphene_info.schema.type_named('PipelineRun')(
-                            graphene_info.context.instance.get_run_by_id(run_id)
-                        )
+                        if graphene_info.context.instance.has_run(run_id):
+                            run = graphene_info.schema.type_named('PipelineRun')(
+                                graphene_info.context.instance.get_run_by_id(run_id)
+                            )
                     elif typename == 'ScheduleExecutionBlocked':
                         status = DauphinScheduleAttemptStatus.SKIPPED
                     else:
