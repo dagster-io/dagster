@@ -133,38 +133,59 @@ def test_event_log_storage_watch(event_storage_factory_cm_fn):
         watched = []
         watcher = lambda x: watched.append(x)  # pylint: disable=unnecessary-lambda
 
-        storage = InMemoryEventLogStorage()
         assert len(storage.get_logs_for_run('foo')) == 0
 
         storage.store_event(evt('Message1'))
         assert len(storage.get_logs_for_run('foo')) == 1
         assert len(watched) == 0
 
-        storage.watch('foo', None, watcher)
+        storage.watch('foo', 0, watcher)
+
         storage.store_event(evt('Message2'))
-        assert len(storage.get_logs_for_run('foo')) == 2
-        assert len(watched) == 1
-
-        storage.end_watch('foo', lambda event: None)
         storage.store_event(evt('Message3'))
-        assert len(storage.get_logs_for_run('foo')) == 3
-        assert len(watched) == 2
-
-        storage.end_watch('bar', lambda event: None)
         storage.store_event(evt('Message4'))
-        assert len(storage.get_logs_for_run('foo')) == 4
-        assert len(watched) == 3
 
         time.sleep(0.5)  # this value scientifically selected from a range of attractive values
         storage.end_watch('foo', watcher)
         time.sleep(0.5)
         storage.store_event(evt('Message5'))
+
         assert len(storage.get_logs_for_run('foo')) == 5
         assert len(watched) == 3
 
         storage.delete_events('foo')
+
         assert len(storage.get_logs_for_run('foo')) == 0
         assert len(watched) == 3
+
+
+@event_storage_test
+def test_event_log_storage_pagination(event_storage_factory_cm_fn):
+    def evt(name):
+        return DagsterEventRecord(
+            None,
+            name,
+            'debug',
+            '',
+            'foo',
+            time.time(),
+            dagster_event=DagsterEvent(
+                DagsterEventType.ENGINE_EVENT.value,
+                'nonce',
+                event_specific_data=EngineEventData.in_process(999),
+            ),
+        )
+
+    with event_storage_factory_cm_fn() as storage:
+        storage.store_event(evt('Message_0'))
+        storage.store_event(evt('Message_1'))
+        storage.store_event(evt('Message_2'))
+
+        assert len(storage.get_logs_for_run('foo')) == 3
+        assert len(storage.get_logs_for_run('foo', -1)) == 3
+        assert len(storage.get_logs_for_run('foo', 0)) == 2
+        assert len(storage.get_logs_for_run('foo', 1)) == 1
+        assert len(storage.get_logs_for_run('foo', 2)) == 0
 
 
 @event_storage_test
