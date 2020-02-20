@@ -3,8 +3,7 @@ export const link = {
   fontWeight: 500,
   opacity: 0.6,
   color: "white !important",
-  fontSize: 2,
-  pr: 3,
+  fontSize: 3,
 
   "&.active": {
     opacity: 1

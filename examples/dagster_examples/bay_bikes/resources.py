@@ -1,75 +1,11 @@
-import json
 import os
 import shutil
-from abc import ABCMeta, abstractmethod
+import tempfile
 
 from google.cloud import storage
-from six import with_metaclass
 
-from dagster import resource, seven
-
-
-class AbstractFileTransporter(with_metaclass(ABCMeta)):
-    """
-    This is a class that moves data between your filesystem and an existing bucket on a cloud platform.
-
-    The logic for doing so is left to the child classes which implement this interface for their respective
-    cloud platforms.
-
-    TODO: Implement the download logic once you need this functionality.
-    """
-
-    @abstractmethod
-    def upload_file_to_bucket(self, path_to_file, key):
-        pass
-
-
-class LocalFileTransporter(AbstractFileTransporter):
-    """Uses a directory to mimic an cloud storage bucket"""
-
-    def __init__(self, bucket_path):
-        self.bucket_object = bucket_path
-        self.key_storage_path = os.path.join(bucket_path, 'key_storage.json')
-        os.makedirs(bucket_path, exist_ok=True)
-        with open(self.key_storage_path, 'w+') as fp:
-            json.dump({}, fp)
-
-    def upload_file_to_bucket(self, path_to_file, key):
-        with open(self.key_storage_path, 'r') as key_storage_fp:
-            key_storage = json.load(key_storage_fp)
-        key_storage[key] = path_to_file
-        with open(self.key_storage_path, 'w') as key_storage_fp:
-            json.dump(key_storage, key_storage_fp)
-
-    def download_file_from_bucket(self, key, path_to_file):
-        with open(self.key_storage_path, 'r') as key_storage_fp:
-            key_storage = json.load(key_storage_fp)
-        if key not in key_storage:
-            raise ValueError("Key {} not found in bucket {}".format(key, self.bucket_object))
-
-        shutil.copyfile(key_storage[key], path_to_file)
-        return path_to_file
-
-
-class GoogleCloudStorageFileTransporter(AbstractFileTransporter):
-    """Uses google cloud storage sdk to upload/download objects"""
-
-    def __init__(self, bucket_name):
-        # TODO: Eventually support custom authentication so we aren't forcing people to setup their environments
-        self.client = storage.Client()
-        self.bucket_name = bucket_name
-        self.bucket_obj = self.client.get_bucket(self.bucket_name)
-
-    def upload_file_to_bucket(self, path_to_file, key):
-        blob = self.bucket_obj.blob(key)
-        with open(path_to_file, 'r') as fp_to_upload:
-            blob.upload_from_file(fp_to_upload)
-
-    def download_file_from_bucket(self, key, path_to_file):
-        blob = self.bucket_obj.blob(key)
-        with open(path_to_file, 'wb+') as path_to_file:
-            blob.download_to_file(path_to_file)
-        return path_to_file
+from dagster import check, resource, seven
+from dagster.utils import mkdir_p
 
 
 class CredentialsVault(object):
@@ -97,16 +33,6 @@ def credentials_vault(context):
     )
 
 
-@resource(config={'bucket_path': str})
-def local_transporter(context):
-    return LocalFileTransporter(context.resource_config['bucket_path'])
-
-
-@resource(config={'bucket_name': str})
-def production_transporter(context):
-    return GoogleCloudStorageFileTransporter(context.resource_config['bucket_name'])
-
-
 @resource
 def temporary_directory_mount(_):
     with seven.TemporaryDirectory() as tmpdir_path:
@@ -119,3 +45,60 @@ def mount(context):
     if os.path.exists(mount_location):
         return context.resource_config['mount_location']
     raise NotADirectoryError("Cant mount files on this resource. Make sure it exists!")
+
+
+@resource
+def gcs_client(_):
+    return storage.Client()
+
+
+class LocalBlob:
+    def __init__(self, key, bucket_location):
+        self.key = check.str_param(key, 'key')
+        self.location = os.path.join(check.str_param(bucket_location, 'bucket_location'), key)
+
+    def upload_from_file(self, file_buffer):
+        if os.path.exists(self.location):
+            os.remove(self.location)
+        with open(self.location, 'w+b') as fdest:
+            shutil.copyfileobj(file_buffer, fdest)
+
+
+class LocalBucket:
+    def __init__(self, bucket_name, volume):
+        self.bucket_name = check.str_param(bucket_name, 'bucket_name')
+        # Setup bucket
+        self.volume = os.path.join(tempfile.gettempdir(), check.str_param(volume, 'volume'))
+        bucket_location = os.path.join(self.volume, self.bucket_name)
+        if not os.path.exists(bucket_location):
+            mkdir_p(bucket_location)
+        self.location = bucket_location
+        self.blobs = {}
+
+    def blob(self, key):
+        check.str_param(key, 'key')
+        if key not in self.blobs:
+            self.blobs[key] = LocalBlob(key, self.location)
+        return self.blobs[key]
+
+
+class LocalClient:
+    def __init__(self, volume='storage'):
+        self.buckets = {}
+        self.volume = check.str_param(volume, 'volume')
+
+    def get_bucket(self, bucket_name):
+        check.str_param(bucket_name, 'bucket_name')
+        if bucket_name not in self.buckets:
+            self.buckets[bucket_name] = LocalBucket(bucket_name, self.volume)
+        return self.buckets[bucket_name]
+
+
+@resource
+def local_client(_):
+    return LocalClient()
+
+
+@resource
+def testing_client(_):
+    return LocalClient(volume='testing-storage')

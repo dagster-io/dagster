@@ -114,7 +114,6 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
             active_iters = {}
             errors = {}
             term_events = {}
-            step_results = {}
             stopping = False
 
             while (not stopping and not active_execution.is_complete) or active_iters:
@@ -144,10 +143,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
                                 continue
                             else:
                                 yield event_or_none
-                                if event_or_none.is_step_success:
-                                    step_results[key] = True
-                                if event_or_none.is_step_failure:
-                                    step_results[key] = False
+                                active_execution.handle_event(event_or_none)
 
                         except StopIteration:
                             empty_iters.append(key)
@@ -158,19 +154,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
                         if term_events[key].is_set():
                             stopping = True
                         del term_events[key]
-                        was_success = step_results.get(key)
-                        if was_success == True:
-                            active_execution.mark_success(key)
-                        elif was_success == False:
-                            active_execution.mark_failed(key)
-                        else:
-                            # check errors list?
-                            pipeline_context.log.error(
-                                'Step {key} finished without success or failure event, assuming failure.'.format(
-                                    key=key
-                                )
-                            )
-                            active_execution.mark_failed(key)
+                        active_execution.verify_complete(pipeline_context, key)
 
                     # process skips from failures or uncovered inputs
                     for event in active_execution.skipped_step_events_iterator(pipeline_context):

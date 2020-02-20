@@ -108,29 +108,14 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                         active_execution.mark_skipped(step.key)
                         continue
 
-                    step_success = None
                     for step_event in check.generator(
                         dagster_event_sequence_for_step(step_context)
                     ):
                         check.inst(step_event, DagsterEvent)
                         yield step_event
+                        active_execution.handle_event(step_event)
 
-                        if step_event.is_step_failure:
-                            step_success = False
-                        elif step_event.is_step_success:
-                            step_success = True
-
-                    if step_success == True:
-                        active_execution.mark_success(step.key)
-                    elif step_success == False:
-                        active_execution.mark_failed(step.key)
-                    else:
-                        pipeline_context.log.error(
-                            'Step {key} finished without success or failure event, assuming failure.'.format(
-                                key=step.key
-                            )
-                        )
-                        active_execution.mark_failed(step.key)
+                    active_execution.verify_complete(pipeline_context, step.key)
 
                 # process skips from failures or uncovered inputs
                 for event in active_execution.skipped_step_events_iterator(pipeline_context):

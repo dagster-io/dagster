@@ -442,8 +442,7 @@ def library_tests():
         if library == 'dagster-k8s':
             tests += k8s_tests()
         elif library == 'dagster-gcp':
-            # https://github.com/dagster-io/dagster/issues/2174
-            # tests += gcp_tests()
+            tests += gcp_tests()
             continue
         elif library == 'dagster-postgres':
             tests += dagster_postgres_tests()

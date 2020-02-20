@@ -1,0 +1,4 @@
+resources:
+  volume:
+    config:
+      mount_location: /tmp

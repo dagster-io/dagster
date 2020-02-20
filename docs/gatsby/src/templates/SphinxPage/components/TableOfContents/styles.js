@@ -4,9 +4,9 @@ export const wrapper = isMobile => ({
   py: 5,
   px: 4,
   ml: 4,
+  mt: 0,
   width: 250,
   minWidth: 250,
-  mt: "-50px",
   bg: "lightGray.1",
 
   ul: {

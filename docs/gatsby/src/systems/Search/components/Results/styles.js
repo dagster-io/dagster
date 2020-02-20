@@ -5,11 +5,13 @@ export const wrapper = showing => ({
   minWidth: ["90%", "90%", "600px"],
   maxHeight: "80vh",
   overflow: "auto",
-  zIndex: 2,
+  zIndex: 99,
   position: "absolute",
-  top: "calc(100% + 0.5em)",
+  top: "calc(100% + 5px)",
+  left: 0,
+
   background: "white",
-  boxShadow: 5,
+  boxShadow: 2,
 
   header: {
     my: 3,

@@ -5,6 +5,3 @@ resources:
       postgres_hostname: localhost
       postgres_password: test
       postgres_username: test
-  volume:
-    config:
-      mount_location: /tmp

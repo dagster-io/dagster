@@ -23,27 +23,13 @@ export const content = state => {
   const closed = !state.matches("showing");
   return {
     flex: 1,
-    mt: t("header.gutter"),
+    mt: 0,
 
     maxWidth: [
       "calc(100% - 250px)",
       "calc(100% - 250px)",
       "calc(100% - 500px)"
     ],
-
-    "::before": {
-      zIndex: 9,
-      position: "absolute",
-      display: ["block", "block", "none"],
-      content: '""',
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: t => t.header.gutter,
-      bg: "blue.3",
-      transform: `translate(${closed ? 0 : "-100%"})`,
-      transition: "transform .3s"
-    },
 
     ...(state.context.width < 1024 && {
       "::after": {

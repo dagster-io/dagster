@@ -3,6 +3,7 @@ import { jsx } from "theme-ui";
 import { forwardRef } from "react";
 import { useMachine } from "@xstate/react";
 import { useStaticQuery, graphql } from "gatsby";
+import useWindowSize from "react-use/lib/useWindowSize";
 import { useEffect } from "react";
 
 import { Link, Menu } from "systems/Core";
@@ -55,7 +56,8 @@ export const renderElements = () => (renderedNodes, node, idx, _nodes) => {
   return renderedNodes;
 };
 
-export const Sidebar = forwardRef(({ location, _onLinkClick }, ref) => {
+export const Sidebar = forwardRef(({ opened, location }, ref) => {
+  const { width } = useWindowSize();
   const data = useStaticQuery(graphql`
     query IndexPage {
       page: sphinxPage(current_page_name: { eq: "index" }) {
@@ -79,7 +81,7 @@ export const Sidebar = forwardRef(({ location, _onLinkClick }, ref) => {
   }, [location, send]);
 
   return (
-    <div ref={ref} sx={styles.wrapper}>
+    <div ref={ref} sx={styles.wrapper(opened && width < 1024)}>
       <div sx={styles.content}>
         <Menu vertical sx={styles.menu}>
           {Boolean(top) && <span sx={styles.active(active, top)} />}

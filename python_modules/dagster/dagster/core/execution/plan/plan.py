@@ -494,6 +494,23 @@ class ActiveExecution(object):
         self._completed.add(step_key)
         self._update()
 
+    def handle_event(self, dagster_event):
+        check.inst_param(dagster_event, 'dagster_event', DagsterEvent)
+
+        if dagster_event.is_step_failure:
+            self.mark_failed(dagster_event.step_key)
+        elif dagster_event.is_step_success:
+            self.mark_success(dagster_event.step_key)
+
+    def verify_complete(self, pipeline_context, step_key):
+        if step_key in self._in_flight:
+            pipeline_context.log.error(
+                'Step {key} finished without success or failure event, assuming failure.'.format(
+                    key=step_key
+                )
+            )
+            self.mark_failed(step_key)
+
     @property
     def is_complete(self):
         return (

@@ -4,7 +4,7 @@ export const wrapper = {
   px: "10px",
   mr: 2,
   mb: 3,
-  width: "80%",
+  width: "100%",
   height: 30,
   fontSize: 1,
   color: "primary",

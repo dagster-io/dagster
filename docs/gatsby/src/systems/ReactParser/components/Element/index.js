@@ -50,6 +50,10 @@ const isCode = (Component, _props) => {
   return Component && Component.tagName === "code";
 };
 
+const isImageLink = (node, props) => {
+  return props.className === "permalink" && props.href.includes("/_images");
+};
+
 export const renderElements = images => (
   renderedElements,
   node,
@@ -109,6 +113,10 @@ export const Element = node => {
 
   if (Component === "hr") {
     return <hr {...props} />;
+  }
+
+  if (isImageLink(node, props)) {
+    return children;
   }
 
   if (Component === "a") {
