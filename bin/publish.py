@@ -378,11 +378,11 @@ def check_new_version(new_version):
             should_continue = input(
                 'You appear to be releasing a new version, {new_version}, without having '
                 'previously run a prerelease.\n(Last version found was {previous_version})\n'
-                'Are you sure you know what you\'re doing? (Y/n)'.format(
+                'Are you sure you know what you\'re doing? (N/!)'.format(
                     new_version=new_version, previous_version=last_version['__version__']
                 )
             )
-            if not should_continue == 'Y':
+            if not should_continue == '!':
                 raise Exception('Bailing! Run a pre-release before continuing.')
     return True
 
@@ -424,11 +424,11 @@ def check_for_cruft(autoclean):
                 'Found potentially crufty directories:\n'
                 '    {found_cruft}\n'
                 '***We strongly recommend releasing from a fresh git clone!***\n'
-                'Automatically remove these directories and continue? (y/N)'.format(
+                'Automatically remove these directories and continue? (N/!)'.format(
                     found_cruft='\n    '.join(found_cruft)
                 )
             )
-        if wipeout == 'y' or wipeout == 'Y':
+        if wipeout == '!':
             for cruft_dir in found_cruft:
                 subprocess.check_output(['rm', '-rfv', cruft_dir])
         else:
@@ -451,11 +451,11 @@ def check_for_cruft(autoclean):
             wipeout = input(
                 'Found {n_files} .pyc files.\n'
                 'We strongly recommend releasing from a fresh git clone!\n'
-                'Automatically remove these files and continue? (y/N)'.format(
+                'Automatically remove these files and continue? (N/!)'.format(
                     n_files=len(found_pyc_files)
                 )
             )
-        if wipeout == 'y' or wipeout == 'Y':
+        if wipeout == '!':
             for file_ in found_pyc_files:
                 os.unlink(file_)
         else:
