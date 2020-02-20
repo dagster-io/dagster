@@ -1,6 +1,37 @@
 # Changelog
 
-## 0.7.0 (Upcoming)
+## 0.7.1
+
+**Dagit**
+
+- Dagit now looks up an available port on which to run when the default port is
+  not available. (Thanks @rparrapy!)
+
+**dagster_pandas**
+
+- Hydration and materialization are now configurable on `dagster_pandas` dataframes.
+
+**dagster_aws**
+
+- The `s3_resource` no longer uses an unsigned session by default.
+
+**Bugfixes**
+
+- Type check messages are now displayed in Dagit.
+- Failure metadata is now surfaced in Dagit.
+- Dagit now correctly displays the execution time of steps that error.
+- Error messages now appear correctly in console logging.
+- GCS storage is now more robust to transient failures.
+- Fixed an issue where some event logs could be duplicated in Dagit.
+- Fixed an issue when reading config from an environment variable that wasn't set.
+- Fixed an issue when loading a repository or pipeline from a file target on Windows.
+- Fixed an issue where deleted runs could cause the scheduler page to crash in Dagit.
+
+**Documentation**
+
+- Expanded and improved docs and error messages.
+
+## 0.7.0
 
 **Breaking Changes**
 
@@ -9,7 +40,7 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
 **_Scheduler_**
 
-- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules 
+- The scheduler configuration has been moved from the `@schedules` decorator to `DagsterInstance`. Existing schedules
   that have been running are no longer compatible with current storage. To migrate,
   remove the `scheduler` argument on all `@schedules` decorators:
 
@@ -39,19 +70,19 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
   Finally, if you had any existing schedules running, delete the existing `$DAGSTER_HOME/schedules` directory and run `dagster schedule wipe && dagster schedule up` to re-instatiate schedules in a valid state.
 
-- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument 
+- The `should_execute` and `environment_dict_fn` argument to `ScheduleDefinition` now have a required first argument
   `context`, representing the `ScheduleExecutionContext`
 
 **_Config System Changes_**
 
-- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and 
-  `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you 
-  are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe 
+- In the config system, `Dict` has been renamed to `Shape`; `List` to `Array`; `Optional` to `Noneable`; and
+  `PermissiveDict` to `Permissive`. The motivation here is to clearly delineate config use cases versus cases where you
+  are using types as the inputs and outputs of solids as well as python typing types (for mypy and friends). We believe
   this will be clearer to users in addition to simplifying our own implementation and internal abstractions.
 
-  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API. 
-  This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types 
-  instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster 
+  Our recommended fix is _not_ to used Shape and Array, but instead to use our new condensed config specification API.
+  This allow one to use bare dictionaries instead of `Shape`, lists with one member instead of `Array`, bare types
+  instead of `Field` with a single argument, and python primitive types (`int`, `bool` etc) instead of the dagster
   equivalents. These result in dramatically less verbose config specs in most cases.
 
   So instead of
@@ -73,10 +104,10 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 
   No imports and much simpler, cleaner syntax.
 
-- `config_field` is no longer a valid argument on `solid`, `SolidDefinition`, `ExecutorDefintion`, `executor`, 
-  `LoggerDefinition`, `logger`, `ResourceDefinition`, `resource`, `system_storage`, and `SystemStorageDefinition`. Use 
+- `config_field` is no longer a valid argument on `solid`, `SolidDefinition`, `ExecutorDefintion`, `executor`,
+  `LoggerDefinition`, `logger`, `ResourceDefinition`, `resource`, `system_storage`, and `SystemStorageDefinition`. Use
   `config` instead.
-- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To 
+- For composite solids, the `config_fn` no longer takes a `ConfigMappingContext`, and the context has been deleted. To
   upgrade, remove the first argument to `config_fn`.
 
   So instead of
@@ -108,9 +139,9 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 **_Dagster Type System Changes_**
 
 - `dagster.Set` and `dagster.Tuple` can no longer be used within the config system.
-- Dagster types are now instances of `DagsterType`, rather than a class than inherits from `RuntimeType`. Instead of 
-  dynamically generating a class to create a custom runtime type, just create an instance of a `DagsterType`. The type 
-  checking function is now an argument to the `DagsterType`, rather than an abstract method that has to be implemented in 
+- Dagster types are now instances of `DagsterType`, rather than a class than inherits from `RuntimeType`. Instead of
+  dynamically generating a class to create a custom runtime type, just create an instance of a `DagsterType`. The type
+  checking function is now an argument to the `DagsterType`, rather than an abstract method that has to be implemented in
   a subclass.
 - `RuntimeType` has been renamed to `DagsterType` is now an encouraged API for type creation.
 - Core type check function of DagsterType can now return a naked `bool` in addition
@@ -161,7 +192,7 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
         db_name: test
   ```
 
-- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster 
+- Support for `RunLauncher`s on `DagsterInstance` allows for execution to be "launched" outside of the Dagit/Dagster
   process. As one example, this is used by `dagster-k8s` to submit pipeline execution as a Kubernetes Job.
 - Added support for adding tags to runs initiated from the `Playground` view in dagit.
 - Added `@monthly_schedule` decorator.
@@ -174,8 +205,8 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
   clusters, submitting jobs, and waiting for jobs/logs. We also now provide a
   `emr_pyspark_resource`, which together with the new `@pyspark_solid` decorator makes moving
   pyspark execution from your laptop to EMR as simple as changing modes.
-  **[dagster-pandas]** Added `create_dagster_pandas_dataframe_type`, `PandasColumn`, and `Constraint` API's in order for 
-  users to create custom types which perform column validation, dataframe validation, summary statistics emission, and 
+  **[dagster-pandas]** Added `create_dagster_pandas_dataframe_type`, `PandasColumn`, and `Constraint` API's in order for
+  users to create custom types which perform column validation, dataframe validation, summary statistics emission, and
   dataframe serialization/deserialization.
 - **[dagster-gcp]** GCS is now supported for system storage, as well as being supported with the Dask executor. (Thanks
   @habibutsu!) Bigquery solids have also been updated to support the new API.
@@ -185,7 +216,7 @@ Please see `070_MIGRATION.md` for instructions regarding migrating old code.
 - Ensured that all implementations of `RunStorage` clean up pipeline run tags when a run
   is deleted. Requires a storage migration, using `dagster instance migrate`.
 - The multiprocess and Celery engines now handle solid subsets correctly.
-- The multiprocess and Celery engines will now correctly emit skip events for steps downstream of failures and other 
+- The multiprocess and Celery engines will now correctly emit skip events for steps downstream of failures and other
   skips.
 - The `@solid` and `@lambda_solid` decorators now correctly wrap their decorated functions, in the sense of
   `functools.wraps`.
