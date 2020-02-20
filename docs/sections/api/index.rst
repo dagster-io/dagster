@@ -9,6 +9,8 @@ are attempting to isolate breaking changes to the public APIs to minor versions
 (on a roughly 8-week cadence) and will announce deprecations in Slack and in
 the release notes to patch versions (on a roughly weekly cadence).
 
+.. rubric:: Core
+
 APIs from the core ``dagster`` package are divided roughly by topic:
 
 `Solids <apidocs/solids.html>`_
@@ -55,6 +57,8 @@ APIs from the core ``dagster`` package are divided roughly by topic:
   Core internal APIs that are important if you are interested in understanding
   how Dagster works with an eye towards extending it: logging, executors,
   system storage, the Dagster instance & plugin machinery, storage, schedulers.
+
+.. rubric:: Libraries
 
 .. include:: libraries.rst
 
