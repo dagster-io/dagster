@@ -12,15 +12,19 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterType,
     EventMetadataEntry,
+    Field,
     InputDefinition,
+    Materialization,
     Output,
     OutputDefinition,
+    Selector,
     check_dagster_type,
     execute_pipeline,
     execute_solid,
     pipeline,
     solid,
 )
+from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 from dagster.utils import safe_tempfile_path
 
 
@@ -189,3 +193,56 @@ def test_custom_dagster_dataframe_hydration_ok():
         assert solid_result.success
         solid_output_df = read_csv(output_csv_fp)
         assert all(solid_output_df['bar'] == [2, 4, 6])
+
+
+def test_custom_dagster_dataframe_parametrizable_input():
+    @input_selector_schema(
+        Selector({'door_a': Field(str), 'door_b': Field(str), 'door_c': Field(str),})
+    )
+    def silly_hydrator(_, which_door, _field):
+        if which_door == 'door_a':
+            return DataFrame({'foo': ['goat']})
+        elif which_door == 'door_b':
+            return DataFrame({'foo': ['car']})
+        elif which_door == 'door_c':
+            return DataFrame({'foo': ['goat']})
+        raise DagsterInvariantViolationError(
+            'You did not pick a door. You chose: {which_door}'.format(which_door=which_door)
+        )
+
+    @output_selector_schema(Selector({'devnull': Field(str), 'nothing': Field(str)}))
+    def silly_materializer(_, _location, _field, _value):
+        return Materialization(label='did nothing', description='just one of those days')
+
+    TestDataFrame = create_dagster_pandas_dataframe_type(
+        name='TestDataFrame',
+        columns=[PandasColumn.exists('foo'),],
+        input_hydration_config=silly_hydrator,
+        output_materialization_config=silly_materializer,
+    )
+
+    @solid(
+        input_defs=[InputDefinition('df', TestDataFrame)],
+        output_defs=[OutputDefinition(TestDataFrame)],
+    )
+    def did_i_win(_, df):
+        return df
+
+    solid_result = execute_solid(
+        did_i_win,
+        environment_dict={
+            'solids': {
+                'did_i_win': {
+                    'inputs': {'df': {'door_a': 'bar'}},
+                    'outputs': [{'result': {'devnull': 'baz'}}],
+                }
+            }
+        },
+    )
+    assert solid_result.success
+    output_df = solid_result.output_value()
+    assert isinstance(output_df, DataFrame)
+    assert output_df['foo'].tolist() == ['goat']
+    materialization_events = solid_result.materialization_events_during_compute
+    assert len(materialization_events) == 1
+    assert materialization_events[0].event_specific_data.materialization.label == 'did nothing'

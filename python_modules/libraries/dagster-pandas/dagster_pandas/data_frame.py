@@ -147,8 +147,37 @@ def create_dagster_pandas_dataframe_description(description, columns):
 
 
 def create_dagster_pandas_dataframe_type(
-    name=None, description=None, columns=None, event_metadata_fn=None, dataframe_constraints=None
+    name,
+    description=None,
+    columns=None,
+    event_metadata_fn=None,
+    dataframe_constraints=None,
+    input_hydration_config=None,
+    output_materialization_config=None,
 ):
+    """
+    Constructs a custom pandas dataframe dagster type.
+
+    Args:
+        name (str): Name of the dagster pandas type.
+        description (Optional[str]): A markdown-formatted string, displayed in tooling.
+        columns (Optional[List[PandasColumn]]): A list of :py:class:`~dagster.PandasColumn` objects
+            which express dataframe column schemas and constraints.
+        event_metadata_fn (Optional[func]): A callable which takes your dataframe and returns a list of EventMetadata
+            which allow you to express things like summary statistics during runtime.
+        dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
+            :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
+        input_hydration_config (Optional[InputHydrationConfig]): An instance of a class that
+            inherits from :py:class:`~dagster.InputHydrationConfig`. If None, we will default
+            to using the `dataframe_input_schema` input_hydration_config.
+        output_materialization_config (Optional[OutputMaterializationConfig]): An instance of a class
+            that inherits from :py:class:`~dagster.OutputMaterializationConfig`. If None, we will
+            default to using the `dataframe_output_schema` output_materialization_config.
+    """
+    # We allow for the plugging in of input_hydration_config/output_materialization_configs so that
+    # Users can hydrate and persist their custom dataframes via configuration their own way if the default
+    # configs don't suffice. This is purely optional.
+    check.str_param(name, 'name')
     event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
     description = create_dagster_pandas_dataframe_description(
         check.opt_str_param(description, 'description', default=''),
@@ -181,8 +210,12 @@ def create_dagster_pandas_dataframe_type(
     return DagsterType(
         name=name,
         type_check_fn=_dagster_type_check,
-        input_hydration_config=dataframe_input_schema,
-        output_materialization_config=dataframe_output_schema,
+        input_hydration_config=input_hydration_config
+        if input_hydration_config
+        else dataframe_input_schema,
+        output_materialization_config=output_materialization_config
+        if output_materialization_config
+        else dataframe_output_schema,
         description=description,
     )
 
