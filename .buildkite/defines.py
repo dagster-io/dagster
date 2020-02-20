@@ -17,3 +17,5 @@ SupportedPythons = [
 
 # See: https://github.com/dagster-io/dagster/issues/1960
 SupportedPython3s = [SupportedPython.V3_7, SupportedPython.V3_6, SupportedPython.V3_5]
+
+SupportPython3sEx35 = [SupportedPython.V3_7, SupportedPython.V3_6]

@@ -2,6 +2,11 @@
 
 Check out the docs for `dagster-dask` [here](https://dagster.readthedocs.io/en/latest/sections/deploying/other/dask.html). Also checkout other deployment options in the [deployment section](https://dagster.readthedocs.io/en/latest/sections/deploying/index.html) of Dagster's docs.
 
+### Python version support
+
+Because Dask has dropped support for Python versions < 3.6, we do not test dagster-dask on
+Python 2.7 or 3.5.
+
 ### Running tests
 
 You will need a running Dask cluster:

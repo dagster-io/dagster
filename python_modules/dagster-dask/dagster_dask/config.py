@@ -51,7 +51,17 @@ class DaskConfig(
             << use client here >>
 
         '''
-        dask_cfg = {'name': pipeline_name}
+        dask_cfg = {
+            'name': pipeline_name,
+            # We set threads_per_worker because Dagster is not thread-safe. Even though
+            # processes=True by default, there is a clever piece of machinery
+            # (dask.distributed.deploy.local.nprocesses_nthreads) that automagically makes execution
+            # multithreaded by default when the number of available cores is greater than 4.
+            # See: https://github.com/dagster-io/dagster/issues/2181
+            # We may want to try to figure out a way to enforce this on remote Dask clusters against
+            # which users run Dagster workloads.
+            'threads_per_worker': 1,
+        }
         for cfg_param in [
             'address',
             'timeout',

@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 import yaml
-from defines import SupportedPython, SupportedPython3s, SupportedPythons
+from defines import SupportPython3sEx35, SupportedPython, SupportedPython3s, SupportedPythons
 from step_builder import StepBuilder, wait_step
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -408,7 +408,9 @@ def gcp_tests():
 
 def dask_tests():
     tests = []
-    for version in SupportedPython3s:
+    # We don't test dagster-dask against Python 3.5 because Dask dropped support
+    # for 3.5 with Dask 2.7.0 (2019-11-08)
+    for version in SupportPython3sEx35:
         coverage = ".coverage.dagster-dask.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("dagster-dask tests ({ver})".format(ver=TOX_MAP[version]))
@@ -693,8 +695,7 @@ if __name__ == "__main__":
 
     steps += airflow_tests()
     steps += celery_tests()
-    # https://github.com/dagster-io/dagster/issues/2175
-    # steps += dask_tests()
+    steps += dask_tests()
 
     steps += dagit_tests()
     steps += lakehouse_tests()

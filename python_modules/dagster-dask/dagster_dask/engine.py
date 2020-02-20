@@ -29,7 +29,6 @@ def get_dask_resource_requirements(tags):
     check.inst_param(tags, 'tags', frozentags)
     req_str = tags.get(DASK_RESOURCE_REQUIREMENTS_KEY)
     if req_str is not None:
-        print(req_str)
         return seven.json.loads(req_str)
 
     return {}
