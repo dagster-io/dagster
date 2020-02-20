@@ -43,7 +43,6 @@ spec:
               "-c",
               "service cron start && \
               /usr/local/bin/dagster schedule up && \
-              /usr/local/bin/dagster schedule restart --restart-all-running && \
               dagit -h 0.0.0.0 -p 80"
             ]
           env:
