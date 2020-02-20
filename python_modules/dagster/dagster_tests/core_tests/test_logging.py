@@ -142,9 +142,13 @@ def test_multiline_logging_complex():
         'error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step '
         'start.materialization.output.result.0',
         '            cls_name = "FileNotFoundError"',
+        '       error_message = "FileNotFoundError: [Errno 2] No such file or directory:'
+        ' \'/path/to/file\'\\n"',
         '               solid = "start"',
         '    solid_definition = "emit_num"',
         '            step_key = "start.materialization.output.result.0"',
+        '',
+        "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'",
         '',
         'a stack message',
     ]
