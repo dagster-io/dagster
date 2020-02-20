@@ -62,8 +62,9 @@ def test_enum_in_pipeline_execution():
             {'solids': {'config_me': {'config': {'int_field': 2, 'enum_field': 'NOPE'}}}},
         )
 
-    assert 'Error 1: Type failure at path "root:solids:config_me:config:enum_field"' in str(
-        exc_info.value
+    assert (
+        'Value at path root:solids:config_me:config:enum_field not in enum type AnEnum got NOPE'
+        in str(exc_info.value)
     )
 
 

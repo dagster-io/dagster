@@ -156,10 +156,7 @@ def test_bad_override():
     message = str(exc_info.value)
 
     assert 'Solid "do_stuff" with definition "bad_wrap" has a configuration error.' in message
-    assert (
-        'Error 1: Type failure at path "root:scalar_config_solid:config" on type "String". '
-        'Invalid scalar at path root:scalar_config_solid:config' in message
-    )
+    assert 'Error 1: Invalid scalar at path root:scalar_config_solid:config' in message
 
 
 def test_config_mapper_throws():
@@ -679,7 +676,7 @@ def test_wrap_all_config_and_inputs():
 
     assert len(exc_info.value.errors) == 2
     assert exc_info.value.errors[0].message == (
-        'Field "this_key_doesnt_exist" is not defined at path root:solids:wrap_all:config '
+        'Undefined field "this_key_doesnt_exist" at path root:solids:wrap_all:config '
         'Expected: "{ config_field_a: String config_field_b: String }"'
     )
 
