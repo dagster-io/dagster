@@ -1,16 +1,22 @@
 # pylint: disable=redefined-outer-name, W0613
 import os
+import shutil
+import tempfile
+from datetime import date
 
 import pytest
-from dagster_examples.bay_bikes.resources import credentials_vault
+from dagster_examples.bay_bikes.resources import credentials_vault, testing_client
 from dagster_examples.bay_bikes.solids import (
     MultivariateTimeseries,
     Timeseries,
+    compose_training_data,
     download_weather_report_from_weather_api,
 )
-from numpy import array
+from dagster_examples.common.resources import postgres_db_info_resource
+from dagster_examples_tests.bay_bikes_tests.test_data import FAKE_TRIP_DATA, FAKE_WEATHER_DATA
+from numpy import array, array_equal
 from numpy.testing import assert_array_equal
-from pandas import DataFrame
+from pandas import DataFrame, Timestamp
 from requests import HTTPError
 
 from dagster import ModeDefinition, execute_solid
@@ -125,3 +131,232 @@ def test_download_weather_report_from_weather_api_200(mocker, setup_dark_sky, mo
     assert isinstance(solid_result, DataFrame)
     assert solid_result['time'][0] == START_TIME
     assert 'uuid' in solid_result.columns
+
+
+# pylint: disable=unused-argument
+def mock_read_sql(table_name, _engine, index_col=None):
+    if table_name == 'weather':
+        return DataFrame(FAKE_WEATHER_DATA)
+    elif table_name == 'trips':
+        return DataFrame(FAKE_TRIP_DATA)
+    return DataFrame()
+
+
+def compose_training_data_env_dict():
+    return {
+        "resources": {
+            "postgres_db": {
+                "config": {
+                    "postgres_db_name": "test",
+                    "postgres_hostname": "localhost",
+                    "postgres_password": "test",
+                    "postgres_username": "test",
+                }
+            }
+        },
+        "solids": {
+            "compose_training_data": {
+                "solids": {
+                    "produce_training_set": {"config": {"memory_length": 1}},
+                    "produce_trip_dataset": {
+                        "solids": {
+                            "load_entire_trip_table": {
+                                "config": {"index_label": "uuid"},
+                                "inputs": {"table_name": "trips"},
+                            }
+                        }
+                    },
+                    "produce_weather_dataset": {
+                        "solids": {
+                            "load_entire_weather_table": {
+                                "config": {"index_label": "uuid", "subsets": ["time"]},
+                                "inputs": {"table_name": "weather"},
+                            }
+                        }
+                    },
+                    "upload_training_set_to_gcs": {
+                        "inputs": {
+                            "bucket_name": "dagster-scratch-ccdfe1e",
+                            "file_name": "training_data",
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+
+def test_generate_training_set(mocker):
+    mocker.patch('dagster_examples.bay_bikes.solids.read_sql_table', side_effect=mock_read_sql)
+
+    # Execute Pipeline
+    composite_solid_result = execute_solid(
+        compose_training_data,
+        mode_def=ModeDefinition(
+            name='testing',
+            resource_defs={'postgres_db': postgres_db_info_resource, 'gcs_client': testing_client},
+            description='Mode to be used during testing. Allows us to clean up test artifacts without interfearing with local artifacts.',
+        ),
+        environment_dict=compose_training_data_env_dict(),
+    )
+    assert composite_solid_result.success
+
+    # Check solids
+    EXPECTED_TRAFFIC_RECORDS = [
+        {
+            'interval_date': date(2019, 7, 31),
+            'peak_traffic_load': 1,
+            'time': Timestamp('2019-07-31 00:00:00'),
+        },
+        {
+            'interval_date': date(2019, 8, 31),
+            'peak_traffic_load': 1,
+            'time': Timestamp('2019-08-31 00:00:00'),
+        },
+    ]
+    traffic_dataset = composite_solid_result.output_values_for_solid(
+        'transform_into_traffic_dataset'
+    )['traffic_dataframe'].to_dict('records')
+    assert all(record in EXPECTED_TRAFFIC_RECORDS for record in traffic_dataset)
+
+    EXPECTED_WEATHER_RECORDS = [
+        {
+            'time': Timestamp('2019-08-31 00:00:00'),
+            'summary': 'Clear throughout the day.',
+            'icon': 'clear-day',
+            'sunriseTime': 1546269960,
+            'sunsetTime': 1546304520,
+            'precipIntensity': 0.0007,
+            'precipIntensityMax': 0.0019,
+            'precipProbability': 0.05,
+            'temperatureHigh': 56.71,
+            'temperatureHighTime': 1546294020,
+            'temperatureLow': 44.75,
+            'temperatureLowTime': 1546358040,
+            'dewPoint': 28.34,
+            'humidity': 0.43,
+            'pressure': 1017.7,
+            'windSpeed': 12.46,
+            'windGust': 26.85,
+            'windGustTime': 1546289220,
+            'windBearing': 0,
+            'cloudCover': 0.11,
+            'uvIndex': 2,
+            'uvIndexTime': 1546287180,
+            'visibility': 10,
+            'ozone': 314.4,
+            'didRain': True,
+        },
+        {
+            'time': Timestamp('2019-07-31 00:00:00'),
+            'summary': 'Clear throughout the day.',
+            'icon': 'clear-day',
+            'sunriseTime': 1546356420,
+            'sunsetTime': 1546390920,
+            'precipIntensity': 0.0005,
+            'precipIntensityMax': 0.0016,
+            'precipProbability': 0.02,
+            'temperatureHigh': 55.91,
+            'temperatureHighTime': 1546382040,
+            'temperatureLow': 41.18,
+            'temperatureLowTime': 1546437660,
+            'dewPoint': 20.95,
+            'humidity': 0.33,
+            'pressure': 1023.3,
+            'windSpeed': 6.77,
+            'windGust': 22.08,
+            'windGustTime': 1546343340,
+            'windBearing': 22,
+            'cloudCover': 0.1,
+            'uvIndex': 2,
+            'uvIndexTime': 1546373580,
+            'visibility': 10,
+            'ozone': 305.3,
+            'didRain': False,
+        },
+    ]
+    weather_dataset = composite_solid_result.output_values_for_solid('produce_weather_dataset')[
+        'weather_dataframe'
+    ].to_dict('records')
+    assert all(record in EXPECTED_WEATHER_RECORDS for record in weather_dataset)
+
+    # Ensure we are generating the expected training set
+    training_set, labels = composite_solid_result.output_values_for_solid('produce_training_set')[
+        'result'
+    ]
+    assert len(labels) == 1 and labels[0] == 1
+    assert array_equal(
+        training_set,
+        [
+            [
+                [
+                    1546356420.0,
+                    1546390920.0,
+                    0.0005,
+                    0.0016,
+                    0.02,
+                    55.91,
+                    1546382040.0,
+                    41.18,
+                    1546437660.0,
+                    20.95,
+                    0.33,
+                    1023.3,
+                    6.77,
+                    22.08,
+                    1546343340.0,
+                    22.0,
+                    0.1,
+                    2.0,
+                    1546373580.0,
+                    10.0,
+                    305.3,
+                    1.0,
+                    0.0,
+                ],
+                [
+                    1546269960.0,
+                    1546304520.0,
+                    0.0007,
+                    0.0019,
+                    0.05,
+                    56.71,
+                    1546294020.0,
+                    44.75,
+                    1546358040.0,
+                    28.34,
+                    0.43,
+                    1017.7,
+                    12.46,
+                    26.85,
+                    1546289220.0,
+                    0.0,
+                    0.11,
+                    2.0,
+                    1546287180.0,
+                    10.0,
+                    314.4,
+                    0.0,
+                    1.0,
+                ],
+            ]
+        ],
+    )
+    materialization_events = [
+        event
+        for event in composite_solid_result.step_event_list
+        if event.solid_name == 'upload_training_set_to_gcs'
+        and event.event_type_value == 'STEP_MATERIALIZATION'
+    ]
+    assert len(materialization_events) == 1
+    materialization = materialization_events[0].event_specific_data.materialization
+    assert materialization.label == 'GCS Blob'
+    materialization_event_metadata = materialization.metadata_entries
+    assert len(materialization_event_metadata) == 1
+    assert materialization_event_metadata[0].label == 'google cloud storage URI'
+    assert materialization_event_metadata[0].entry_data.text.startswith(
+        'gs://dagster-scratch-ccdfe1e/training_data'
+    )
+
+    # Clean up
+    shutil.rmtree(os.path.join(tempfile.gettempdir(), 'testing-storage'), ignore_errors=True)
