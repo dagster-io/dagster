@@ -191,9 +191,7 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
 
     def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
-        from dagster.core.execution.context_creation_pipeline import (
-            get_required_resource_keys_for_step,
-        )
+        from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
         self._step = check.inst_param(step, 'step', ExecutionStep)
         super(SystemStepExecutionContext, self).__init__(pipeline_context_data, log_manager)

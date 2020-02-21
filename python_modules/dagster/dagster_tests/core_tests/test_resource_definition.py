@@ -1,3 +1,5 @@
+import pytest
+
 from dagster import (
     DagsterResourceFunctionError,
     Field,
@@ -475,3 +477,155 @@ def test_dagster_type_resource_decorator_config():
         raise Exception('not called')
 
     assert python_type_resource_config.config_field.config_type.given_name == 'Int'
+
+
+def test_resource_init_failure_with_teardown():
+    called = []
+    cleaned = []
+
+    @resource
+    def resource_a(_):
+        try:
+            called.append('A')
+            yield 'A'
+        finally:
+            cleaned.append('A')
+
+    @resource
+    def resource_b(_):
+        try:
+            called.append('B')
+            raise Exception('uh oh')
+            yield 'B'  # pylint: disable=unreachable
+        finally:
+            cleaned.append('B')
+
+    @solid(required_resource_keys={'a', 'b'})
+    def resource_solid(_):
+        pass
+
+    pipeline = PipelineDefinition(
+        name='test_resource_init_failure_with_cleanup',
+        solid_defs=[resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+    )
+
+    res = execute_pipeline(pipeline, raise_on_error=False)
+    assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    assert called == ['A', 'B']
+    assert cleaned == ['B', 'A']
+
+    called = []
+    cleaned = []
+
+    events = []
+    try:
+        for event in execute_pipeline_iterator(pipeline):
+            events.append(event)
+    except DagsterResourceFunctionError:
+        pass
+
+    assert len(events) == 1
+    assert events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    assert called == ['A', 'B']
+    assert cleaned == ['B', 'A']
+
+
+def test_solid_failure_resource_teardown():
+    called = []
+    cleaned = []
+
+    @resource
+    def resource_a(_):
+        try:
+            called.append('A')
+            yield 'A'
+        finally:
+            cleaned.append('A')
+
+    @resource
+    def resource_b(_):
+        try:
+            called.append('B')
+            yield 'B'
+        finally:
+            cleaned.append('B')
+
+    @solid(required_resource_keys={'a', 'b'})
+    def resource_solid(_):
+        raise Exception('uh oh')
+
+    pipeline = PipelineDefinition(
+        name='test_solid_failure_resource_teardown',
+        solid_defs=[resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+    )
+
+    res = execute_pipeline(pipeline, raise_on_error=False)
+    assert res.event_list[-1].event_type_value == 'PIPELINE_FAILURE'
+    assert called == ['A', 'B']
+    assert cleaned == ['B', 'A']
+
+    called = []
+    cleaned = []
+
+    events = []
+    try:
+        for event in execute_pipeline_iterator(pipeline):
+            events.append(event)
+    except DagsterResourceFunctionError:
+        pass
+
+    assert len(events) > 1
+    assert events[-1].event_type_value == 'PIPELINE_FAILURE'
+    assert called == ['A', 'B']
+    assert cleaned == ['B', 'A']
+
+
+def test_resource_teardown_failure():
+    called = []
+    cleaned = []
+
+    @resource
+    def resource_a(_):
+        try:
+            called.append('A')
+            yield 'A'
+        finally:
+            cleaned.append('A')
+
+    @resource
+    def resource_b(_):
+        try:
+            called.append('B')
+            yield 'B'
+        finally:
+            raise Exception('uh oh')
+            cleaned.append('B')  # pylint: disable=unreachable
+
+    @solid(required_resource_keys={'a', 'b'})
+    def resource_solid(_):
+        pass
+
+    pipeline = PipelineDefinition(
+        name='test_resource_teardown_failure',
+        solid_defs=[resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+    )
+
+    with pytest.raises(DagsterResourceFunctionError):
+        execute_pipeline(pipeline, raise_on_error=False)
+    assert called == ['A', 'B']
+    assert cleaned == ['A']
+
+    called = []
+    cleaned = []
+    events = []
+    try:
+        for event in execute_pipeline_iterator(pipeline):
+            events.append(event)
+    except DagsterResourceFunctionError:
+        pass
+
+    assert called == ['A', 'B']
+    assert cleaned == ['A']

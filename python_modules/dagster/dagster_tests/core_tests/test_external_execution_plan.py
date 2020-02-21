@@ -1,6 +1,7 @@
 import pytest
 
 from dagster import (
+    DagsterEventType,
     DagsterExecutionStepNotFoundError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
@@ -11,7 +12,7 @@ from dagster import (
     PipelineDefinition,
     lambda_solid,
 )
-from dagster.core.execution.api import DagsterEventType, create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.pipeline_run import PipelineRun

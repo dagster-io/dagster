@@ -348,3 +348,53 @@ class frozentags(frozendict):
             updated[key] = value
 
         return frozentags(updated)
+
+
+class EventGenerationManager(object):
+    ''' Utility class that wraps an event generator function, that also yields a single instance of
+    a typed object.  All events yielded before the typed object are yielded through the method
+    `generate_setup_events` and all events yielded after the typed object are yielded through the
+    method `generate_teardown_events`.
+
+    This is used to help replace the context managers used in pipeline initialization with
+    generators so that we can begin emitting initialization events AND construct a pipeline context
+    object, while managing explicit setup/teardown.
+
+    This does require calling `generate_setup_events` AND `generate_teardown_events` in order to
+    get the typed object.
+    '''
+
+    def __init__(self, generator, object_cls, require_object=True):
+        self.generator = check.generator(generator)
+        self.object_cls = check.type_param(object_cls, 'object_cls')
+        self.require_object = check.bool_param(require_object, 'require_object')
+        self.object = None
+        self.has_setup = False
+
+    def generate_setup_events(self):
+        self.has_setup = True
+        try:
+            while self.object is None:
+                obj = next(self.generator)
+                if isinstance(obj, self.object_cls):
+                    self.object = obj
+                else:
+                    yield obj
+        except StopIteration:
+            if self.require_object:
+                check.inst_param(
+                    self.object,
+                    'self.object',
+                    self.object_cls,
+                    'generator never yielded object of type {}'.format(self.object_cls.__name__),
+                )
+
+    def get_object(self):
+        if not self.has_setup:
+            check.failed('Called `get_object` before `generate_setup_events`')
+        return self.object
+
+    def generate_teardown_events(self):
+        if self.object:
+            for event in self.generator:
+                yield event
