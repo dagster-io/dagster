@@ -25,7 +25,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Field "nope" is not defined at document config root. Expected: "{ execution?: { in_process?: { } multiprocess?: { config?: { max_concurrent?: Int } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
+                    'message': 'Undefined field "nope" at document config root. Expected: "{ execution?: { in_process?: { } multiprocess?: { config?: { max_concurrent?: Int } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [

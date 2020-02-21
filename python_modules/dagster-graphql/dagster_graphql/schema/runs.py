@@ -701,6 +701,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             error=graphene_info.schema.type_named('PythonError')(
                 dagster_event.step_failure_data.error
             ),
+            failureMetadata=dagster_event.step_failure_data.user_failure_data,
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:

@@ -63,9 +63,15 @@ def construct_log_string(synth_props, logging_tags, message_props):
     event_specific_data = log_props.get('event_specific_data')
     stack = ''
     if isinstance(event_specific_data, StepFailureData):
-        log_props['message'] = event_specific_data.error.message
+        log_props['error_message'] = event_specific_data.error.message
         log_props['cls_name'] = event_specific_data.error.cls_name
-        stack = '\n' + '\n' + ''.join(event_specific_data.error.stack)
+        stack = (
+            '\n'
+            + '\n'
+            + event_specific_data.error.message
+            + '\n'
+            + ''.join(event_specific_data.error.stack)
+        )
         log_props['user_failure_data'] = event_specific_data.user_failure_data
         del log_props['event_specific_data']
 

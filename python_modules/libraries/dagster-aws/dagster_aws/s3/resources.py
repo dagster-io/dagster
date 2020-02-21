@@ -29,7 +29,7 @@ class S3Resource(object):
             bool,
             description='Specifies whether to use an unsigned S3 session',
             is_required=False,
-            default_value=True,
+            default_value=False,
         ),
         'region_name': Field(
             str, description='Specifies a custom region for the S3 session', is_required=False

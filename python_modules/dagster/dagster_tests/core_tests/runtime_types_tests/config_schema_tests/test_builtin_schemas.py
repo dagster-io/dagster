@@ -136,9 +136,8 @@ def test_int_input_schema_failure_wrong_value_type():
             environment_dict=single_input_env('take_int', 'num', {'value': 'dkjdfkdj'}),
             solid_subset=['take_int'],
         )
-    assert (
-        'Error 1: Type failure at path "root:solids:take_int:inputs:num:value" on type "Int". Invalid scalar at path '
-        'root:solids:take_int:inputs:num:value' in str(exc_info.value)
+    assert 'Error 1: Invalid scalar at path root:solids:take_int:inputs:num:value' in str(
+        exc_info.value
     )
 
 
@@ -149,7 +148,7 @@ def test_int_input_schema_failure_wrong_key():
             environment_dict=single_input_env('take_int', 'num', {'wrong_key': 'dkjdfkdj'}),
             solid_subset=['take_int'],
         )
-    assert 'Error 1: Undefined field "wrong_key" at path root:solids:take_int:inputs:num.' in str(
+    assert 'Error 1: Undefined field "wrong_key" at path root:solids:take_int:inputs:num' in str(
         exc_info.value
     )
 
@@ -161,10 +160,7 @@ def test_int_input_schema_failure_raw_string():
             environment_dict=single_input_env('take_int', 'num', 'dkjdfkdj'),
             solid_subset=['take_int'],
         )
-    assert (
-        'Error 1: Type failure at path "root:solids:take_int:inputs:num". Invalid scalar at path root:solids:take_int:inputs:num'
-        in str(exc_info.value)
-    )
+    assert 'Error 1: Invalid scalar at path root:solids:take_int:inputs:num' in str(exc_info.value)
 
 
 def single_output_env(solid_name, output_spec):
@@ -228,9 +224,8 @@ def test_string_input_schema_failure():
             solid_subset=['take_string'],
         )
 
-    assert (
-        'Type failure at path "root:solids:take_string:inputs:string:value" on type "String"'
-        in str(exc_info.value)
+    assert 'Invalid scalar at path root:solids:take_string:inputs:string:value' in str(
+        exc_info.value
     )
 
 
@@ -253,9 +248,8 @@ def test_float_input_schema_failure():
             solid_subset=['take_float'],
         )
 
-    assert (
-        'Type failure at path "root:solids:take_float:inputs:float_number:value" on type "Float"'
-        in str(exc_info.value)
+    assert 'Invalid scalar at path root:solids:take_float:inputs:float_number:value' in str(
+        exc_info.value
     )
 
 
@@ -278,9 +272,8 @@ def test_bool_input_schema_failure():
             solid_subset=['take_bool'],
         )
 
-    assert (
-        'Type failure at path "root:solids:take_bool:inputs:bool_value:value" on type "Bool".'
-        in str(exc_info.value)
+    assert 'Invalid scalar at path root:solids:take_bool:inputs:bool_value:value' in str(
+        exc_info.value
     )
 
 
@@ -329,9 +322,8 @@ def test_value_none_string_input_schema_failure():
             solid_subset=['take_string'],
         )
 
-    assert (
-        'Type failure at path "root:solids:take_string:inputs:string:value" on type "String"'
-        in str(exc_info.value)
+    assert 'Value at path root:solids:take_string:inputs:string:value must be not be None' in str(
+        exc_info.value
     )
 
 
@@ -396,9 +388,7 @@ def test_path_input_schema_failure():
             solid_subset=['take_path'],
         )
 
-    assert 'Type failure at path "root:solids:take_path:inputs:path" on type "Path"' in str(
-        exc_info.value
-    )
+    assert 'Invalid scalar at path root:solids:take_path:inputs:path' in str(exc_info.value)
 
 
 def test_string_list_input():
@@ -440,8 +430,7 @@ def test_nullable_string_input_with_none_value():
         )
 
     assert (
-        'Type failure at path "root:solids:take_nullable_string:inputs:nullable_string:value" '
-        'on type "String"'
+        'Value at path root:solids:take_nullable_string:inputs:nullable_string:value must be not be None'
     ) in str(exc_info.value)
 
 

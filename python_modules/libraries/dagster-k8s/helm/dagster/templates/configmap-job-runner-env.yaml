@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "dagster.fullname" . }}-job-runner-env
+  labels:
+    app: {{ template "dagster.name" . }}
+    chart: {{ template "dagster.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  DAGSTER_HOME: "{{ template "dagster.job_runner.dagster_home" .}}"
+{{- if .Values.job_runner.env -}}
+{{- range $name, $value := .Values.job_runner.env }}
+{{- if not (empty $value) }}
+  {{ $name }}: {{ $value | quote }}
+{{- end }}
+{{- end }}
+{{- end }}

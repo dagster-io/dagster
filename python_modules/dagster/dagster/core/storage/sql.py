@@ -1,13 +1,11 @@
 from contextlib import contextmanager
 
 # pylint chokes on the perfectly ok import from alembic.migration
-import alembic
 import six
 import sqlalchemy as db
 from alembic.command import stamp, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
-from alembic.runtime.environment import EnvironmentContext
 from alembic.script import ScriptDirectory
 
 from dagster.core.errors import DagsterInstanceMigrationRequired
@@ -39,10 +37,7 @@ def check_alembic_revision(alembic_config, conn):
     migration_context = MigrationContext.configure(conn)
     db_revision = migration_context.get_current_revision()
     script = ScriptDirectory.from_config(alembic_config)
-    with EnvironmentContext(alembic_config, script):
-        # alembic dynamically populates the contents of alembic.context based on this context
-        # manager, so pylint can't figure out what members are available
-        head_revision = alembic.context.get_head_revision()  # pylint: disable=no-member
+    head_revision = script.as_revision_number("head")
 
     return (db_revision, head_revision)
 

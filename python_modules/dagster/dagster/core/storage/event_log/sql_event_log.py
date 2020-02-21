@@ -71,10 +71,13 @@ class SqlEventLogStorage(EventLogStorage):
             'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
         )
 
+        # cursor starts at 0 & auto-increment column starts at 1 so adjust
+        cursor = cursor + 1
+
         query = (
             db.select([SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.id >= cursor)
+            .where(SqlEventLogStorageTable.c.id > cursor)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
 
@@ -82,7 +85,6 @@ class SqlEventLogStorage(EventLogStorage):
             results = conn.execute(query).fetchall()
 
         events = []
-
         try:
             for (json_str,) in results:
                 events.append(

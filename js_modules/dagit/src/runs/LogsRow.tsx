@@ -77,6 +77,11 @@ export class Structured extends React.Component<
           error {
             ...PythonErrorFragment
           }
+          failureMetadata {
+            metadataEntries {
+              ...MetadataEntryFragment
+            }
+          }
         }
         ... on ExecutionStepInputEvent {
           inputName

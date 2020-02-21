@@ -125,7 +125,7 @@ def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, f
             ),
         ],
     )
-    yield Output(None)
+    yield Output(value)
 
 
 @solid(
@@ -475,3 +475,15 @@ def train_lstm_model(context, training_set: TrainingSet):
         ],
     )
     yield Output(model)
+
+
+@composite_solid
+def compose_training_data():
+    upload_training_set_to_gcs = upload_pickled_object_to_gcs_bucket.alias(
+        'upload_training_set_to_gcs'
+    )
+    return upload_training_set_to_gcs(
+        produce_training_set(
+            transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset()
+        )
+    )

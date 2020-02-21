@@ -29,6 +29,22 @@ If release name contains chart name it will be used as a full name.
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "dagster.dagit.dagster_home" -}}
+{{- if .Values.dagit.dagster_home -}}
+{{ .Values.dagit.dagster_home }}
+{{- else -}}
+{{ .Values.dagster_home }}
+{{- end -}}
+{{- end -}}
+
+{{- define "dagster.job_runner.dagster_home" -}}
+{{- if .Values.job_runner.dagster_home -}}
+{{ .Values.job_runner.dagster_home }}
+{{- else -}}
+{{ .Values.dagster_home }}
+{{- end -}}
+{{- end -}}
+
 {{- define "dagster.workers.fullname" -}}
 {{- $name := default "dagster-celery-workers" .Values.workers.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}

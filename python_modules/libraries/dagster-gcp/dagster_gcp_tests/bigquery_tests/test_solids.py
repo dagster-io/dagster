@@ -102,7 +102,7 @@ def test_bad_config():
         (
             # Create disposition must match enum values
             {'create_disposition': 'this is not a valid create disposition'},
-            'Value not in enum type BQCreateDisposition',
+            'Value at path root:solids:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition',
         ),
         (
             # Dataset must be of form project_name.dataset_name
@@ -117,7 +117,7 @@ def test_bad_config():
         (
             # Priority must match enum values
             {'priority': 'this is not a valid priority'},
-            'Value not in enum type BQPriority',
+            'Value at path root:solids:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority',
         ),
         (
             # Schema update options must be a list
@@ -126,11 +126,11 @@ def test_bad_config():
         ),
         (
             {'schema_update_options': ['this is not valid schema update options']},
-            'Value not in enum type BQSchemaUpdateOption',
+            'alue at path root:solids:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption',
         ),
         (
             {'write_disposition': 'this is not a valid write disposition'},
-            'Value not in enum type BQWriteDisposition',
+            'Value at path root:solids:test:config:query_job_config:write_disposition not in enum type BQWriteDisposition',
         ),
     ]
 

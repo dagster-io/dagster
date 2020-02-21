@@ -260,7 +260,7 @@ def test_solid_config_error():
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type
 
-    with pytest.raises(DagsterEvaluateConfigValueError, match='Field "notconfig" is not defined'):
+    with pytest.raises(DagsterEvaluateConfigValueError, match='Undefined field "notconfig"'):
         throwing_validate_config_value(int_solid_config_type, {'notconfig': 1})
 
     with pytest.raises(DagsterEvaluateConfigValueError):

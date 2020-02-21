@@ -126,7 +126,7 @@ def test_undefined_field_error():
     with pytest.raises(
         DagsterEvaluateConfigValueError,
         match=(
-            'Field "extra" is not defined at document config root. Expected: "{ string_field: '
+            'Undefined field "extra" at document config root. Expected: "{ string_field: '
             'String }"'
         ),
     ):
@@ -295,8 +295,7 @@ def test_single_nested_config_undefined_errors():
     with pytest.raises(
         DagsterEvaluateConfigValueError,
         match=(
-            'Field "not_a_field" is not defined at path root:nested Expected: '
-            '"{ int_field: Int }"'
+            'Undefined field "not_a_field" at path root:nested Expected: ' '"{ int_field: Int }"'
         ),
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 2, 'not_a_field': 1}})
@@ -663,7 +662,7 @@ def test_item_error_list_path():
     rtm = pe.errors[0]
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
-    assert 'Type failure at path "root:solids:required_list_int_solid:config[1]"' in str(pe)
+    assert 'Invalid scalar at path root:solids:required_list_int_solid:config[1]' in str(pe)
 
 
 def test_list_in_config_error():

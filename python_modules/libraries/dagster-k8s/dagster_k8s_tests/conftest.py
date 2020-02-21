@@ -1,3 +1,4 @@
+import base64
 import os
 import socket
 import subprocess
@@ -61,6 +62,15 @@ def test_repo_path():
 
 def environments_path():
     return os.path.join(test_repo_path(), 'test_pipelines', 'environments')
+
+
+@pytest.fixture(scope='session', autouse=True)
+def dagster_home():
+    old_env = os.getenv('DAGSTER_HOME')
+    os.environ['DAGSTER_HOME'] = '/opt/dagster/dagster_home'
+    yield
+    if old_env is not None:
+        os.environ['DAGSTER_HOME'] = old_env
 
 
 @pytest.fixture(scope='session')
@@ -219,7 +229,7 @@ def cluster(
         check_output('aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True)
 
     # see https://kind.sigs.k8s.io/docs/user/private-registries/#use-an-access-token
-    print('Syncing to nodes...')
+    print('Syncing kubeconfig to nodes...')
     config.load_kube_config(config_file=kubeconfig)
 
     if not IS_BUILDKITE:
@@ -236,6 +246,14 @@ def cluster(
         check_output(
             ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/postgresql:latest']
         )
+
+    # https://github.com/kubernetes-client/python/issues/895#issuecomment-515025300
+    from kubernetes.client.models.v1_container_image import V1ContainerImage
+
+    def names(self, names):
+        self._names = names  # pylint: disable=protected-access
+
+    V1ContainerImage.names = V1ContainerImage.names.setter(names)  # pylint: disable=no-member
 
     nodes = client.CoreV1Api().list_node().items
     for node in nodes:
@@ -263,21 +281,51 @@ def cluster(
 
 @pytest.fixture(scope='session')
 def helm_chart(
-    cluster, docker_image, image_pull_policy,
+    kubeconfig, cluster, docker_image, image_pull_policy
 ):  # pylint: disable=redefined-outer-name,unused-argument
-    print('--- \033[32m:helm: Installing Helm chart\033[0m"')
+    print('--- \033[32m:helm: Installing Helm chart\033[0m')
 
     # Install helm chart
     try:
         check_output('''kubectl create namespace dagster-test''', shell=True)
+
+        print('Creating k8s test objects ConfigMap test-env-configmap and Secret test-env-secret')
+        config.load_kube_config(config_file=kubeconfig)
+        kube_api = client.CoreV1Api()
+
+        configmap = client.V1ConfigMap(
+            api_version='v1',
+            kind='ConfigMap',
+            data={'TEST_ENV_VAR': 'foobar'},
+            metadata=client.V1ObjectMeta(name='test-env-configmap'),
+        )
+        kube_api.create_namespaced_config_map(namespace='dagster-test', body=configmap)
+
+        # Secret values are expected to be base64 encoded
+        secret_val = six.ensure_str(base64.b64encode(six.ensure_binary('foobar')))
+        secret = client.V1Secret(
+            api_version='v1',
+            kind='Secret',
+            data={'TEST_SECRET_ENV_VAR': secret_val},
+            metadata=client.V1ObjectMeta(name='test-env-secret'),
+        )
+        kube_api.create_namespaced_secret(namespace='dagster-test', body=secret)
+
         try:
             image, tag = docker_image.split(':')
 
+            # See: https://github.com/helm/helm/issues/1987#issuecomment-280497496
             helm_cmd = '''helm install \\
             --set dagit.image.repository="{image}" \\
             --set dagit.image.tag="{tag}" \\
+            --set dagit.env.TEST_SET_ENV_VAR="test_dagit_env_var" \\
+            --set dagit.env_config_maps={{test-env-configmap}} \\
+            --set dagit.env_secrets={{test-env-secret}} \\
             --set job_runner.image.repository="{image}" \\
             --set job_runner.image.tag="{tag}" \\
+            --set job_runner.env.TEST_SET_ENV_VAR="test_job_runner_env_var" \\
+            --set job_runner.env_config_maps={{test-env-configmap}} \\
+            --set job_runner.env_secrets={{test-env-secret}} \\
             --set imagePullPolicy="{image_pull_policy}" \\
             --set serviceAccount.name="dagit-admin" \\
             --set postgresqlPassword="test", \\
@@ -324,11 +372,14 @@ def run_launcher(
         image_pull_secrets=[{'name': 'element-dev-key'}],
         service_account_name='dagit-admin',
         instance_config_map='dagster-instance',
+        dagster_home='/opt/dagster/dagster_home',
         job_image=docker_image,
         load_kubeconfig=True,
         kubeconfig_file=kubeconfig_file,
         image_pull_policy=image_pull_policy,
         job_namespace='dagster-test',
+        env_config_maps=['test-env-configmap'],
+        env_secrets=['test-env-secret'],
     )
 
 

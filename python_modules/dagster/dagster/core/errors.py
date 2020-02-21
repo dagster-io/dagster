@@ -285,10 +285,7 @@ class DagsterInvalidConfigError(DagsterError):
     schema).'''
 
     def __init__(self, preamble, errors, config_value, *args, **kwargs):
-        from dagster.config.errors import (
-            friendly_string_for_error,
-            EvaluationError,
-        )
+        from dagster.config.errors import EvaluationError
 
         check.str_param(preamble, 'preamble')
         self.errors = check.list_param(errors, 'errors', of_type=EvaluationError)
@@ -298,10 +295,9 @@ class DagsterInvalidConfigError(DagsterError):
         error_messages = []
 
         for i_error, error in enumerate(self.errors):
-            error_message = friendly_string_for_error(error)
-            error_messages.append(error_message)
+            error_messages.append(error.message)
             error_msg += '\n    Error {i_error}: {error_message}'.format(
-                i_error=i_error + 1, error_message=error_message
+                i_error=i_error + 1, error_message=error.message
             )
 
         self.message = error_msg

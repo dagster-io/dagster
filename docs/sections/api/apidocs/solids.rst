@@ -47,6 +47,7 @@ Composing solids
 
 
 .. _events:
+
 Events
 ------
 

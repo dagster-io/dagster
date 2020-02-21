@@ -251,7 +251,9 @@ class DagsterInstance:
     def info_str(self):
         def _info(component):
             prefix = '     '
-            if isinstance(component, ConfigurableClass):
+            # ConfigurableClass may not have inst_data if it's a direct instantiation
+            # which happens for ephemeral instances
+            if isinstance(component, ConfigurableClass) and component.inst_data:
                 return component.inst_data.info_str(prefix)
             if type(component) is dict:
                 return prefix + yaml.dump(component, default_flow_style=False).replace(
