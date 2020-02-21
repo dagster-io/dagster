@@ -9,7 +9,6 @@ from dagster.core.definitions import (
     SolidDefinition,
     SolidHandle,
     SolidOutputHandle,
-    solids_in_topological_order,
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
@@ -83,7 +82,7 @@ class _PlanBuilder(object):
 
         # Recursively build the exeuction plan starting at the root pipeline
         self._build_from_sorted_solids(
-            solids_in_topological_order(self.pipeline_def), self.pipeline_def.dependency_structure
+            self.pipeline_def.solids_in_topological_order, self.pipeline_def.dependency_structure
         )
 
         # Construct dependency dictionary
@@ -153,7 +152,7 @@ class _PlanBuilder(object):
             # Recurse over the solids contained in an instance of CompositeSolidDefinition
             elif isinstance(solid.definition, CompositeSolidDefinition):
                 self._build_from_sorted_solids(
-                    solids_in_topological_order(solid.definition),
+                    solid.definition.solids_in_topological_order,
                     solid.definition.dependency_structure,
                     parent_handle=handle,
                     parent_step_inputs=step_inputs,

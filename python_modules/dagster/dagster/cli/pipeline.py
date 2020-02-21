@@ -20,7 +20,7 @@ from dagster import (
     execute_pipeline_with_preset,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
-from dagster.core.definitions import ExecutionTargetHandle, Solid, solids_in_topological_order
+from dagster.core.definitions import ExecutionTargetHandle, Solid
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
@@ -135,7 +135,7 @@ def execute_list_command(cli_args, print_fn):
             print_fn('Description:')
             print_fn(format_description(pipeline.description, indent=' ' * 4))
         print_fn('Solids: (Execution Order)')
-        for solid in solids_in_topological_order(pipeline):
+        for solid in pipeline.solids_in_topological_order:
             print_fn('    ' + solid.name)
 
 

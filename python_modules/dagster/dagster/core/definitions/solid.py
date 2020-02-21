@@ -360,6 +360,9 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
+        # eager computation to detect cycles
+        self.solids_in_topological_order = self._solids_in_topological_order()
+
         output_defs = [output_mapping.definition for output_mapping in self._output_mappings]
 
         super(CompositeSolidDefinition, self).__init__(

@@ -167,6 +167,9 @@ class PipelineDefinition(IContainSolids, object):
         self._solid_dict = solid_dict
         self._dependency_structure = dependency_structure
 
+        # eager toposort solids to detect cycles
+        self.solids_in_topological_order = self._solids_in_topological_order()
+
         self._runtime_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)

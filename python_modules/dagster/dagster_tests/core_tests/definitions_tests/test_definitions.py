@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     Any,
+    CompositeSolidDefinition,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -219,3 +220,44 @@ def test_rehydrate_solid_handle():
     assert h.parent.parent.name == 'baz'
     assert h.parent.parent.definition_name == 'baz'
     assert h.parent.parent.parent is None
+
+
+def test_cycle_detect():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add(a, b):
+        return a + b
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
+        PipelineDefinition(
+            solid_defs=[return_one, add],
+            dependencies={
+                SolidInvocation('add', alias='first'): {
+                    'a': DependencyDefinition('return_one'),
+                    'b': DependencyDefinition('second'),
+                },
+                SolidInvocation('add', alias='second'): {
+                    'a': DependencyDefinition('first'),
+                    'b': DependencyDefinition('return_one'),
+                },
+            },
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="Circular dependencies exist"):
+        CompositeSolidDefinition(
+            name='circletron',
+            solid_defs=[return_one, add],
+            dependencies={
+                SolidInvocation('add', alias='first'): {
+                    'a': DependencyDefinition('return_one'),
+                    'b': DependencyDefinition('second'),
+                },
+                SolidInvocation('add', alias='second'): {
+                    'a': DependencyDefinition('first'),
+                    'b': DependencyDefinition('return_one'),
+                },
+            },
+        )

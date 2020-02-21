@@ -1,5 +1,5 @@
 from .config import ConfigMapping
-from .container import IContainSolids, create_execution_structure, solids_in_topological_order
+from .container import IContainSolids, create_execution_structure
 from .decorators import (
     composite_solid,
     daily_schedule,

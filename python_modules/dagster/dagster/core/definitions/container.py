@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import defaultdict
 
 import six
+from toposort import CircularDependencyError
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -23,15 +24,19 @@ class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     def solid_named(self, name):
         pass
 
+    def _solids_in_topological_order(self):
+        _forward_edges, backward_edges = _create_adjacency_lists(
+            self.solids, self.dependency_structure
+        )
 
-def solids_in_topological_order(container):
-    check.inst_param(container, 'container', IContainSolids)
-    _forward_edges, backward_edges = _create_adjacency_lists(
-        container.solids, container.dependency_structure
-    )
+        try:
+            order = toposort_flatten(backward_edges)
+        except CircularDependencyError as err:
+            six.raise_from(
+                DagsterInvalidDefinitionError(str(err)), err,
+            )
 
-    order = toposort_flatten(backward_edges)
-    return [container.solid_named(solid_name) for solid_name in order]
+        return [self.solid_named(solid_name) for solid_name in order]
 
 
 def _create_adjacency_lists(solids, dep_structure):

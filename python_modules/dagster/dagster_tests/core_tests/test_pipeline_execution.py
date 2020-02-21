@@ -20,7 +20,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions import Solid, solids_in_topological_order
+from dagster.core.definitions import Solid
 from dagster.core.definitions.container import _create_adjacency_lists
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.execution.api import step_output_event_filter
@@ -147,7 +147,7 @@ def create_diamond_pipeline():
 
 
 def test_diamond_toposort():
-    assert [s.name for s in solids_in_topological_order(create_diamond_pipeline())] == [
+    assert [s.name for s in create_diamond_pipeline().solids_in_topological_order] == [
         'A_source',
         'A',
         'B',
