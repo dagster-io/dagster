@@ -1,6 +1,7 @@
 # dagster-snowflake
 
-##Introduction
+## Introduction
+
 This library provides an integration with the [Snowflake](https://www.snowflake.com/) data warehouse.
 
 Presently, it provides two solids for interacting with Snowflake, `SnowflakeSolidDefinition` for issuing SQL queries, and `SnowflakeLoadSolidDefinition` for loading Parquet files into Snowflake.
@@ -8,6 +9,7 @@ Presently, it provides two solids for interacting with Snowflake, `SnowflakeSoli
 Both of these solids depend on `snowflake_resource`, which is a Dagster resource for configuring Snowflake connections.
 
 ## Getting Started
+
 To use this library, you should first ensure that you have an appropriate [Snowflake user](https://docs.snowflake.net/manuals/user-guide/admin-user-management.html) configured to access your data warehouse.
 
 A simple example of loading data into Snowflake and subsequently querying that data is shown below:
@@ -49,4 +51,25 @@ result = execute_pipeline(
         }
     },
 )
+```
+
+You can also configure your pipeline to read values from environment variables:
+
+```python
+result = execute_pipeline(
+    snowflake_pipeline,
+    {
+        'resources': {
+            'snowflake': {
+                'config': {
+                    'account': {'env': 'SNOWFLAKE_ACCOUNT' },
+                    'user': {'env': 'SNOWFLAKE_USER'},
+                    'password': {'env': 'SNOWFLAKE_PASSWORD'},
+                    'database': {'env': 'SNOWFLAKE_DATABASE'},
+                    'schema': {'env': 'SNOWFLAKE_SCHEMA'},
+                    'warehouse': {'env': 'SNOWFLAKE_WAREHOUSE'},
+                }
+            }
+        }
+    },
 ```

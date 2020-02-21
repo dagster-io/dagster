@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Int, Path, String
+from dagster import Bool, Field, Int, Path, String, StringSource
 
 
 def define_snowflake_config():
@@ -9,38 +9,38 @@ def define_snowflake_config():
     '''
 
     account = Field(
-        String,
+        StringSource,
         description='Your Snowflake account name. For more details, see  https://bit.ly/2FBL320.',
         is_required=False,
     )
 
-    user = Field(String, description='User login name.', is_required=True)
+    user = Field(StringSource, description='User login name.', is_required=True)
 
-    password = Field(String, description='User password.', is_required=True)
+    password = Field(StringSource, description='User password.', is_required=True)
 
     database = Field(
-        String,
+        StringSource,
         description='''Name of the default database to use. After login, you can use USE DATABASE
          to change the database.''',
         is_required=False,
     )
 
     schema = Field(
-        String,
+        StringSource,
         description='''Name of the default schema to use. After login, you can use USE SCHEMA to
          change the schema.''',
         is_required=False,
     )
 
     role = Field(
-        String,
+        StringSource,
         description='''Name of the default role to use. After login, you can use USE ROLE to change
          the role.''',
         is_required=False,
     )
 
     warehouse = Field(
-        String,
+        StringSource,
         description='''Name of the default warehouse to use. After login, you can use USE WAREHOUSE
          to change the role.''',
         is_required=False,
