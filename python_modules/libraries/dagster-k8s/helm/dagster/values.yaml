@@ -13,8 +13,13 @@ dagster_home: "/opt/dagster/dagster_home"
 dagit:
   # Dagit image repository and tag to deploy
   image:
-    repository: "dagster-docker-buildkite"
-    tag: "latest"
+    repository: "dagster.io/dagster-docker-buildkite"
+    tag: "py37-latest"
+
+  service:
+    type: ClusterIP
+    port: 80
+
   # Can be set to override the default dagster home on the dagit containers
   dagster_home: ""
   # Additional environment variables to set on the dagit container.
@@ -34,8 +39,9 @@ dagit:
 job_runner:
   # The Dagster K8sRunLauncher will invoke job executions in containers running this image
   image:
-    repository: "dagster-docker-buildkite"
-    tag: "latest"
+    repository: "dagster.io/dagster-docker-buildkite"
+    tag: "py37-latest"
+
   # Can be set to override the default dagster home on the celery/job containers
   dagster_home: ""
   # Additional environment variables to set on the celery/job containers
@@ -69,7 +75,7 @@ postgresql:
   service:
     port: 5432
 
-# Configuration values for rabbitmq and celery
+# Configuration values for celery
 celery:
   # set celery.enabled to be false to disable deploy of the celery workers & rabbitmq
   enabled: true
@@ -86,16 +92,19 @@ rabbitmq:
   volumePermissions:
     enabled: true
 
+# The flower web interface
+flower:
+  enabled: true
+  service:
+    annotations:
+
+
 serviceAccount:
   create: true
 
 podSecurityContext: {}
 
 securityContext: {}
-
-service:
-  type: ClusterIP
-  port: 80
 
 resources:
   {}

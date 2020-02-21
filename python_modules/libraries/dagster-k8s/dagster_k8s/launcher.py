@@ -1,7 +1,7 @@
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from kubernetes import client, config
 
-from dagster import Field
+from dagster import Field, Noneable
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.instance import DagsterInstance
@@ -127,11 +127,11 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'job_image': str,
             'instance_config_map': str,
             'dagster_home': str,
-            'image_pull_secrets': Field(list, is_required=False),
+            'image_pull_secrets': Field(Noneable(list), is_required=False),
             'image_pull_policy': Field(str, is_required=False, default_value='Always'),
             'job_namespace': str,
-            'env_config_maps': Field(list, is_required=False),
-            'env_secrets': Field(list, is_required=False),
+            'env_config_maps': Field(Noneable(list), is_required=False),
+            'env_secrets': Field(Noneable(list), is_required=False),
         }
 
     @classmethod

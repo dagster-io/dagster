@@ -1,5 +1,13 @@
 Launched. You can access Dagit by running the following commands:
 
-export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dagster.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+export DAGIT_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dagster.name" . }},app.kubernetes.io/instance={{ .Release.Name }},component=dagit" -o jsonpath="{.items[0].metadata.name}")
 echo "Visit http://127.0.0.1:8080 to open Dagit"
-kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:80
+kubectl --namespace {{ .Release.Namespace }} port-forward $DAGIT_POD_NAME 8080:80
+
+{{- if .Values.flower.enabled -}}
+And to access the Flower interface for monitoring Celery tasks:
+
+export FLOWER_POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "dagster.name" . }},app.kubernetes.io/instance={{ .Release.Name }},component=flower" -o jsonpath="{.items[0].metadata.name}")
+echo "Visit http://127.0.0.1:5555 to open Dagit"
+kubectl --namespace {{ .Release.Namespace }} port-forward $FLOWER_POD_NAME 5555:5555
+{{- end -}}

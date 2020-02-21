@@ -12,7 +12,7 @@ RUN apt-get update -yqq && \
     pip install \
     -e dagster \
     -e dagster-graphql \
-    -e dagster-celery \
+    -e dagster-celery[flower] \
     -e dagster-cron \
     -e dagit \
     -e dagster-postgres \

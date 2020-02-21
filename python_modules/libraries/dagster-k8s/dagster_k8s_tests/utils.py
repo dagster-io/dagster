@@ -63,6 +63,23 @@ def parse_raw_res(raw_res):
     return res
 
 
+def retrieve_pod_logs(pod_name):
+    '''Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
+    '''
+    # We set _preload_content to False here to prevent the k8 python api from processing the response.
+    # If the logs happen to be JSON - it will parse in to a dict and then coerce back to a str
+    # leaving us with invalid JSON as the quotes have been switched to '
+    #
+    # https://github.com/kubernetes-client/python/issues/811
+    raw_logs = (
+        client.CoreV1Api()
+        .read_namespaced_pod_log(name=pod_name, namespace='dagster-test', _preload_content=False,)
+        .data
+    ).decode('utf-8')
+
+    return raw_logs
+
+
 def wait_for_job_success(job_name):
     '''Poll the job for successful completion
     '''
@@ -76,18 +93,7 @@ def wait_for_job_success(job_name):
 
     success, job_pod_name = wait_for_pod(job.metadata.name, wait_for_termination=True)
 
-    # We set _preload_content to False here to prevent the k8 python api from processing the response.
-    # If the logs happen to be JSON - it will parse in to a dict and then coerce back to a str
-    # leaving us with invalid JSON as the quotes have been switched to '
-    #
-    # https://github.com/kubernetes-client/python/issues/811
-    raw_logs = (
-        client.CoreV1Api()
-        .read_namespaced_pod_log(
-            name=job_pod_name, namespace='dagster-test', _preload_content=False,
-        )
-        .data
-    ).decode('utf-8')
+    raw_logs = retrieve_pod_logs(job_pod_name)
 
     return success, raw_logs
 
@@ -160,6 +166,8 @@ def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False):
                     % state.terminated.message
                 )
                 success = False
+                raw_logs = retrieve_pod_logs(name)
+                print('Pod logs: ', raw_logs)
             break
 
         else:

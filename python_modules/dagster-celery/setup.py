@@ -39,6 +39,7 @@ def _do_setup(name='dagster-celery'):
         packages=find_packages(exclude=['test']),
         entry_points={'console_scripts': ['dagster-celery = dagster_celery.cli:main']},
         install_requires=['dagster', 'dagster_graphql', 'celery>=4.3.0', 'click>=5.0',],
+        extras_require={'flower': ['flower']},
         zip_safe=False,
     )
 

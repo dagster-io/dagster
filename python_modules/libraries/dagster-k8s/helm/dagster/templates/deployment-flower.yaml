@@ -1,0 +1,68 @@
+{{- if .Values.flower.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dagster.flower.fullname" . }}
+  labels:
+  {{- include "dagster.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" . | nindent 6 }}
+      component: flower
+  template:
+    metadata:
+      labels:
+        {{- include "dagster.selectorLabels" . | nindent 8 }}
+        component: flower
+      annotations:
+        checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dagster.serviceAccountName" . }}
+      securityContext:
+      {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-db-ready
+          image: postgres:9.6.16
+          command: ['sh', '-c',
+            "until pg_isready -h {{ template "dagster.postgresql.fullname" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;",
+            ]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
+          # command: ["flower"]
+          args: ["flower", "-A", "dagster_celery.tasks"]
+          env:
+            - name: CELERY_BROKER_URL
+              value: "pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ template "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
+          volumeMounts: []
+          ports:
+            - name: flower
+              containerPort: 5555
+              protocol: TCP
+          resources:
+      {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes: []
+      {{- with .Values.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+  {{- toYaml . | nindent 8 }}
+  {{- end }}
+  {{- end }}

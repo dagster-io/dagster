@@ -11,5 +11,5 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args:  ['{{ include "dagster.dagit.fullname" . }}:{{ .Values.service.port }}']
+      args:  ['{{ include "dagster.dagit.fullname" . }}:{{ .Values.dagit.service.port }}']
   restartPolicy: Never
