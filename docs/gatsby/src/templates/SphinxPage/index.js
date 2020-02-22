@@ -35,7 +35,8 @@ const SphinxPage = ({ pageContext: ctx }) => {
                 <Home size={17} />
               </Link>
             </li>
-            {Boolean(page.parents.length) &&
+            {page.parents &&
+              Boolean(page.parents.length) &&
               page.parents.map((item, idx) => {
                 return (
                   <li>
@@ -55,14 +56,18 @@ const SphinxPage = ({ pageContext: ctx }) => {
           )}
           <ReactParser tree={page.parsed} />
           <div sx={styles.pageLinks}>
-            <Link to={page.prev.link} isNav>
-              <ArrowLeft className="left" size={20} />
-              {page.prev.title}
-            </Link>
-            <Link to={page.next.link} isNav>
-              {page.next.title}
-              <ArrowRight className="right" size={20} />
-            </Link>
+            {page.prev && (
+              <Link to={page.prev.link} isNav>
+                <ArrowLeft className="left" size={20} />
+                {page.prev.title}
+              </Link>
+            )}
+            {page.next && (
+              <Link to={page.next.link} isNav>
+                {page.next.title}
+                <ArrowRight className="right" size={20} />
+              </Link>
+            )}
           </div>
         </div>
         <TableOfContents
