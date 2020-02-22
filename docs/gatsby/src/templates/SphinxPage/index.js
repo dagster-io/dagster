@@ -1,10 +1,10 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
 import { useState } from "react";
-import { FileText } from "react-feather";
+import { FileText, ArrowLeft, ArrowRight } from "react-feather";
 import useWindowSize from "react-use/lib/useWindowSize";
 
-import { Layout, SEO } from "systems/Core";
+import { Layout, SEO, Link } from "systems/Core";
 
 import { ReactParser } from "../../systems/ReactParser";
 import { TableOfContents } from "./components/TableOfContents";
@@ -36,6 +36,16 @@ const SphinxPage = ({ pageContext: ctx }) => {
             </button>
           )}
           <ReactParser tree={page.parsed} />
+          <div sx={styles.pageLinks}>
+            <Link to={page.prev.link} isNav sx={styles.prevLink}>
+              <ArrowLeft className="left" size={20} />
+              {page.prev.title}
+            </Link>
+            <Link to={page.next.link} isNav sx={styles.nextLink}>
+              {page.next.title}
+              <ArrowRight className="right" size={20} />
+            </Link>
+          </div>
         </div>
         <TableOfContents
           isMobile={isMobile}

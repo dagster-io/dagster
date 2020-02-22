@@ -18,6 +18,14 @@ module.exports = async ({ graphql, actions }) => {
             tocParsed
             toc
             slug
+            prev {
+              title
+              link
+            }
+            next {
+              title
+              link
+            }
           }
         }
       }

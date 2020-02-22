@@ -29,3 +29,27 @@ export const btnShowToc = {
   fontWeight: "bold",
   color: "gray.1"
 };
+
+export const pageLinks = {
+  display: "flex",
+  justifyContent: "space-between",
+  pt: [2, 3, 3],
+  mt: [2, 3, 3],
+  borderTop: t => `1px solid ${t.colors.lightGray[1]}`,
+
+  a: {
+    display: "inline-flex",
+    alignItems: "center"
+  },
+
+  svg: {
+    stroke: "gray.1"
+  },
+
+  "svg.left": {
+    mr: 2
+  },
+  "svg.right": {
+    ml: 2
+  }
+};
