@@ -42,21 +42,22 @@ You can also open a shell on your dagster-aws instance with:
 
 For full details, see dagster-aws --help'''
 
-
-def get_dagster_home():
-    '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
-    '''
-
-    dagster_home = os.path.expanduser(os.getenv('DAGSTER_HOME'))
-    if dagster_home is None:
-        Term.fatal(
-            '''DAGSTER_HOME is not set! Before continuing, set with e.g.:
+DAGSTER_HOME_ERROR = '''DAGSTER_HOME is not set! Before continuing, set with e.g.:
 
 export DAGSTER_HOME=~/.dagster
 
 You may want to add this line to your .bashrc or .zshrc file.
 '''
-        )
+
+
+def get_dagster_home():
+    '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
+    '''
+    dagster_home_env = os.getenv('DAGSTER_HOME')
+    if dagster_home_env is None:
+        Term.fatal(DAGSTER_HOME_ERROR)
+
+    dagster_home = os.path.expanduser(dagster_home_env)
 
     Term.info('Found DAGSTER_HOME in environment at: %s' % dagster_home)
 

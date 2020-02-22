@@ -1,9 +1,19 @@
 import os
+import re
 import subprocess
 
 import click
+import pytest
 from click.testing import CliRunner
-from dagster_aws.cli.cli import ensure_requirements, remove_ssh_key
+from dagster_aws.cli.cli import (
+    DAGSTER_HOME_ERROR,
+    ensure_requirements,
+    exit_gracefully,
+    get_dagster_home,
+    init,
+    remove_ssh_key,
+)
+from moto import mock_ec2, mock_rds, mock_secretsmanager
 
 from dagster import seven
 
@@ -88,3 +98,88 @@ def test_remove_ssh_key():
     subprocess.call(['ssh-add', test_key_path])
     assert not remove_ssh_key('/key/does/not/exist.pem')
     assert remove_ssh_key(test_key_path)
+
+
+def test_get_dagster_home(capsys, tmp_path):
+    old_env = os.getenv('DAGSTER_HOME')
+    if old_env is not None:
+        del os.environ['DAGSTER_HOME']
+
+    with pytest.raises(SystemExit) as exc_info:
+        get_dagster_home()
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 1
+    assert DAGSTER_HOME_ERROR in captured.err
+
+    path = str(tmp_path)
+    os.environ['DAGSTER_HOME'] = path
+    assert get_dagster_home() == path
+
+    captured = capsys.readouterr()
+    assert ('Found DAGSTER_HOME in environment at: {path}'.format(path=path)) in captured.out
+
+    if old_env is not None:
+        os.environ['DAGSTER_HOME'] = old_env
+
+
+def test_exit_gracefully(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        exit_gracefully(None, None)
+
+    captured = capsys.readouterr()
+
+    assert exc_info.value.code == 1
+    assert 'Command killed by keyboard interrupt, quitting' in captured.out
+
+
+@mock_ec2
+@mock_rds
+@mock_secretsmanager
+def test_init(tmp_path):
+    region = 'us-east-1'
+    ami_id = 'ami-03cf127a'
+    keypair_name = 'foobar-keypair'
+    instance_type = 't3.large'
+    instance_name = 'foobar'
+    use_rds = 'N'
+
+    stdin = '\n'.join(
+        [
+            region,
+            '',  # VPC ID
+            '',  # security group
+            ami_id,
+            keypair_name,
+            instance_type,
+            instance_name,
+            use_rds,
+        ]
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(init, [], env={'DAGSTER_HOME': str(tmp_path)}, input=stdin)
+    assert result.exit_code == 0
+
+    assert (
+        'Found DAGSTER_HOME in environment at: {tmp_path}'.format(tmp_path=str(tmp_path))
+        in result.output
+    )
+    assert 'Security group created' in result.output
+    assert (
+        'Key pair {keypair_name} created and saved to local file {tmp_path}/keys/foobar-keypair.pem!'.format(
+            keypair_name=keypair_name, tmp_path=str(tmp_path)
+        )
+        in result.output
+    )
+    assert re.search(r'dagit EC2 instance i\-.*? launched!', result.output)
+
+    assert (
+        'Saved EC2 Configuration configuration to {tmp_path}/dagster-aws-config.yaml'.format(
+            tmp_path=str(tmp_path)
+        )
+        in result.output
+    )
+    assert region in result.output
+    assert ami_id in result.output
