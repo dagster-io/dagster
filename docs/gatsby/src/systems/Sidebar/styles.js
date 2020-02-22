@@ -1,6 +1,7 @@
 export const wrapper = opened => ({
   zIndex: opened ? 99 : "auto",
   position: "relative",
+  overflowY: "auto",
   py: 3,
   px: 4,
   width: 250,

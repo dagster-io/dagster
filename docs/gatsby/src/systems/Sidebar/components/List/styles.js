@@ -3,7 +3,7 @@ export const wrapper = {
 
   "&.active.toctree-l1": {
     mb: 2,
-    fontSize: 3
+    fontSize: 2
   },
   "&.toctree-l1 a": {
     fontWeight: 800,
@@ -21,12 +21,13 @@ export const wrapper = {
     display: "none"
   },
   "&.toctree-l2": {
-    fontSize: 0,
+    lineHeight: 1.3,
     whiteSpace: "normal"
   },
   "&.toctree-l2 a": {
-    fontSize: "16px",
     fontWeight: 400
+    fontSize: 1,
+    opacity: 0.6
   },
   "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
     opacity: 1
