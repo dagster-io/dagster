@@ -7,6 +7,10 @@ import path from "path-browserify";
 
 import * as styles from "./styles";
 
+const parseHrefLink = href => {
+  return href.endsWith(".html") ? href.slice(0, href.length - 5) : href;
+};
+
 export const Link = forwardRef(({ href, to, isNav, ...props }, ref) => {
   const isExternal = href && href.startsWith("http");
   return isExternal ? (
@@ -25,7 +29,7 @@ export const Link = forwardRef(({ href, to, isNav, ...props }, ref) => {
             sx={styles.wrapper}
             to={
               href && !isExternal
-                ? `${path.resolve(location.pathname, href)}`
+                ? `${path.resolve(location.pathname, parseHrefLink(href))}`
                 : `/${toLink}/`
             }
             {...props}
