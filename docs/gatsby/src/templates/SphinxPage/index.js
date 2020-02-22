@@ -1,7 +1,7 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
 import { useState } from "react";
-import { FileText, ArrowLeft, ArrowRight } from "react-feather";
+import { FileText, ArrowLeft, ArrowRight, Home } from "react-feather";
 import useWindowSize from "react-use/lib/useWindowSize";
 
 import { Layout, SEO, Link } from "systems/Core";
@@ -29,6 +29,24 @@ const SphinxPage = ({ pageContext: ctx }) => {
       <SEO title={page.title} />
       <main sx={styles.wrapper}>
         <div sx={styles.content}>
+          <ul sx={styles.breadcrumb}>
+            <li>
+              <Link to="/">
+                <Home size={17} />
+              </Link>
+            </li>
+            {Boolean(page.parents.length) &&
+              page.parents.map((item, idx) => {
+                return (
+                  <li>
+                    <Link key={idx} to={item.link} isNav>
+                      {item.title}
+                    </Link>
+                  </li>
+                );
+              })}
+            <li className="current">{page.title}</li>
+          </ul>
           {isMobile && (
             <button sx={styles.btnShowToc} onClick={handleShowToc}>
               <FileText sx={styles.icon} size={14} />
@@ -37,11 +55,11 @@ const SphinxPage = ({ pageContext: ctx }) => {
           )}
           <ReactParser tree={page.parsed} />
           <div sx={styles.pageLinks}>
-            <Link to={page.prev.link} isNav sx={styles.prevLink}>
+            <Link to={page.prev.link} isNav>
               <ArrowLeft className="left" size={20} />
               {page.prev.title}
             </Link>
-            <Link to={page.next.link} isNav sx={styles.nextLink}>
+            <Link to={page.next.link} isNav>
               {page.next.title}
               <ArrowRight className="right" size={20} />
             </Link>

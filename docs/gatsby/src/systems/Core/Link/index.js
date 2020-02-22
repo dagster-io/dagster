@@ -26,7 +26,7 @@ export const Link = forwardRef(({ href, to, isNav, ...props }, ref) => {
             to={
               href && !isExternal
                 ? `${path.resolve(location.pathname, href)}`
-                : toLink
+                : `/${toLink}/`
             }
             {...props}
           />

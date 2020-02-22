@@ -26,6 +26,10 @@ module.exports = async ({ graphql, actions }) => {
               title
               link
             }
+            parents {
+              title
+              link
+            }
           }
         }
       }
