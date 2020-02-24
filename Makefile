@@ -64,7 +64,7 @@ install_dev_python_modules:
 				-r bin/requirements.txt \
 				-r scala_modules/scripts/requirements.txt $(QUIET)
 
-	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/dagster-airflow $(QUIET)
+	SLUGIFY_USES_TEXT_UNIDECODE=yes pip install -e python_modules/libraries/dagster-airflow $(QUIET)
 
 	# This fails on Python 3.8 because TensorFlow is missing
 	-pip install -e examples[full] $(QUIET)

@@ -32,13 +32,13 @@ cp -R $ROOT/python_modules/dagster \
       $ROOT/python_modules/dagit \
       $ROOT/python_modules/dagster-graphql \
       $ROOT/python_modules/dagster-celery \
+      $ROOT/python_modules/libraries/dagster-airflow \
       $ROOT/python_modules/libraries/dagster-aws \
       $ROOT/python_modules/libraries/dagster-cron \
       $ROOT/python_modules/libraries/dagster-pandas \
       $ROOT/python_modules/libraries/dagster-postgres \
       $ROOT/python_modules/libraries/dagster-gcp \
       $ROOT/python_modules/libraries/dagster-k8s \
-      $ROOT/python_modules/dagster-airflow \
       $ROOT/examples \
       build_cache/
 

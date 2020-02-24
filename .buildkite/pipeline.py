@@ -212,7 +212,7 @@ def airflow_tests():
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
                 "./.buildkite/scripts/dagster_airflow.sh %s %s" % (version, TOX_MAP[version]),
-                "pushd python_modules/dagster-airflow/",
+                "pushd python_modules/libraries/dagster-airflow/",
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",
@@ -443,9 +443,10 @@ def library_tests():
 
     # Some libraries have more involved tests, which must be explicitly defined here
     extra_test_libraries = {
+        'dagster-airflow': airflow_tests(),
         'dagster-dask': dask_tests(),
-        'dagster-k8s': k8s_tests(),
         'dagster-gcp': gcp_tests(),
+        'dagster-k8s': k8s_tests(),
         'dagster-postgres': dagster_postgres_tests(),
     }
 
@@ -697,7 +698,6 @@ if __name__ == "__main__":
     steps += events_demo_tests()
     steps += examples_tests()
 
-    steps += airflow_tests()
     steps += celery_tests()
 
     steps += dagit_tests()

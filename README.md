@@ -59,7 +59,7 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987547-a7e36b80-7a37-11e9-95ae-4c4de2618e87.png"></td>
 			<td style="border-left: 0px"> <b>Apache Airflow</b></td>
-			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow" />dagster-airflow</a><br />Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as <a href="https://github.com/apache/airflow">Apache Airflow DAGs</a>.</td>
+			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airflow" />dagster-airflow</a><br />Allows Dagster pipelines to be scheduled and executed, either containerized or uncontainerized, as <a href="https://github.com/apache/airflow">Apache Airflow DAGs</a>.</td>
 		</tr>
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/57987976-5ccc5700-7a3d-11e9-9fa5-1a51299b1ccb.png"></td>

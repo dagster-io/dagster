@@ -20,7 +20,7 @@ deps =
   -e ../python_modules/dagstermill
   -e ../python_modules/dagster-graphql
   -e ../python_modules/dagit
-  -e ../python_modules/dagster-airflow
+  -e ../python_modules/libraries/dagster-airflow
   -e .[full]
   -r ./dev-requirements.txt
 

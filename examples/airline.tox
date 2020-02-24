@@ -17,7 +17,7 @@ deps =
   -e ../python_modules/libraries/dagster-pyspark
   -e ../python_modules/libraries/dagster-snowflake
   -e ../python_modules/libraries/dagster-slack
-  -e ../python_modules/dagster-airflow
+  -e ../python_modules/libraries/dagster-airflow
   -e .[full,airflow]
   -r ../python_modules/dagster/dev-requirements.txt
   -r ./dev-requirements.txt

@@ -7,7 +7,7 @@ It's also possible to schedule pipelines for execution by compiling them to a fo
 understood by a third-party scheduling system, and then defining schedules within that system.
 
 This is the approach we use to deploy Dagster pipelines to Airflow (using the
-`dagster-airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-airflow>`__
+`dagster-airflow <https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airflow>`__
 package).
 
 We don't recommend deploying Dagster pipelines to Airflow in greenfield installations. (We recommend

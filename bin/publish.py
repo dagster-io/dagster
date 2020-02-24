@@ -90,13 +90,12 @@ def construct_publish_comands(additional_steps=None, nightly=False):
     return publish_commands
 
 
-# The modules managed by this script
+# The root modules managed by this script
 MODULE_NAMES = [
     'dagster',
     'dagit',
     'dagster-graphql',
     'dagstermill',
-    'dagster-airflow',
     'dagster-celery',
 ]
 

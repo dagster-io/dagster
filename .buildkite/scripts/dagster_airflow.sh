@@ -36,5 +36,5 @@ mkdir -p ${AIRFLOW_HOME}
 echo -e "--- \033[32m:python: Running tox tests\033[0m"
 
 # Finally, run tests
-cd python_modules/dagster-airflow/
+cd python_modules/libraries/dagster-airflow/
 tox -e $TOX_PYTHON_VERSION
