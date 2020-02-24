@@ -1,7 +1,7 @@
 Executing on Dask
 -----------------
 
-The `dagster-dask <https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask>`__
+The `dagster-dask <https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dask>`__
 module makes a :py:data:`~dagster_dask.dask_executor` available, which can target either a local
 Dask cluster or a distributed cluster. Computation is distributed across the cluster at the
 execution step level -- that is, we use Dask to orchestrate execution of the steps in a pipeline,

@@ -5,7 +5,7 @@ docker-compose stop
 docker-compose rm -f
 popd
 
-pushd python_modules/dagster-dask/dagster_dask_tests/dask-docker
+pushd python_modules/libraries/dagster-dask/dagster_dask_tests/dask-docker
 docker-compose stop
 docker-compose rm -f
 popd

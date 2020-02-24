@@ -9,7 +9,7 @@
 set -eux
 
 ROOT=$(git rev-parse --show-toplevel)
-pushd $ROOT/python_modules/dagster-dask/dagster_dask_tests/dask-docker/
+pushd $ROOT/python_modules/libraries/dagster-dask/dagster_dask_tests/dask-docker/
 
 function cleanup {
     rm -rf dagster
@@ -22,12 +22,12 @@ function cleanup {
 # ensure cleanup happens on error or normal exit
 trap cleanup EXIT
 
-cp -R ../../../dagster .
-cp -R ../../../dagster-graphql .
+cp -R ../../../../dagster .
+cp -R ../../../../dagster-graphql .
 rsync -av --progress ../../../dagster-dask . --exclude dagster_dask_tests
-cp -R ../../../libraries/dagster-aws .
-cp -R ../../../libraries/dagster-cron .
-cp -R ../../../../examples .
+cp -R ../../../dagster-aws .
+cp -R ../../../dagster-cron .
+cp -R ../../../../../examples .
 
 
 rm -rf \

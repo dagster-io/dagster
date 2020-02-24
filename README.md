@@ -71,7 +71,7 @@ Dagster works with the tools and systems that you're already using with your dat
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle"  src="https://user-images.githubusercontent.com/609349/58348728-48f66b80-7e16-11e9-9e9f-1a0fea9a49b4.png"></td>
 			<td style="border-left: 0px"> <b>Dask</b></td>
-			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-dask" />dagster-dask</a>
+			<td><a href="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dask" />dagster-dask</a>
 			<br />Provides a Dagster integration with Dask / Dask.Distributed.
 			</td>
 		</tr>

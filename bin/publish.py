@@ -98,7 +98,6 @@ MODULE_NAMES = [
     'dagstermill',
     'dagster-airflow',
     'dagster-celery',
-    'dagster-dask',
 ]
 
 # Removed hard-coded list in favor of automatic scan of libraries folder

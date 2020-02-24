@@ -13,7 +13,8 @@ from dagster.utils import script_relative_path
 
 def test_execute_hammer_through_dagit():
     handle = ExecutionTargetHandle.for_pipeline_python_file(
-        script_relative_path('../../../examples/dagster_examples/toys/hammer.py'), 'hammer_pipeline'
+        script_relative_path('../../../../examples/dagster_examples/toys/hammer.py'),
+        'hammer_pipeline',
     )
     instance = DagsterInstance.local_temp()
 
