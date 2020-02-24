@@ -2,7 +2,7 @@ import pytest
 from dagit.app import create_app
 from dagit.cli import host_dagit_ui
 
-from dagster import ExecutionTargetHandle
+from dagster import ExecutionTargetHandle, seven
 from dagster.core.instance import DagsterInstance
 from dagster.seven import mock
 from dagster.utils import script_relative_path
@@ -39,9 +39,9 @@ def test_index_view():
 
 
 def test_successful_host_dagit_ui():
-    with mock.patch('gevent.pywsgi.WSGIServer'):
+    with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
-        host_dagit_ui(handle=handle, host=None, port=2343)
+        host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
 
 
 def _define_mock_server(fn):
@@ -62,19 +62,25 @@ def test_unknown_error():
     def _raise_custom_error():
         raise AnException('foobar')
 
-    with mock.patch('gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)):
+    with mock.patch(
+        'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)
+    ), seven.TemporaryDirectory() as temp_dir:
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(AnException):
-            host_dagit_ui(handle=handle, host=None, port=2343)
+            host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
 
 
 def test_port_collision():
     def _raise_os_error():
         raise OSError('Address already in use')
 
-    with mock.patch('gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)):
+    with mock.patch(
+        'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)
+    ), seven.TemporaryDirectory() as temp_dir:
         handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
         with pytest.raises(Exception) as exc_info:
-            host_dagit_ui(handle=handle, host=None, port=2343, port_lookup=False)
+            host_dagit_ui(
+                storage_fallback=temp_dir, handle=handle, host=None, port=2343, port_lookup=False
+            )
 
         assert 'another instance of dagit ' in str(exc_info.value)

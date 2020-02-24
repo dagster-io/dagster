@@ -6,7 +6,7 @@ import six
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
 
-from dagster import ExecutionTargetHandle, check
+from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
@@ -89,10 +89,15 @@ def ui(host, port, storage_fallback, reload_trigger, **kwargs):
     else:
         port_lookup = False
 
+    # The dagit entrypoint always sets this but if someone launches dagit-cli
+    # directly make sure things still works by providing a temp directory
+    if storage_fallback is None:
+        storage_fallback = seven.TemporaryDirectory().name
+
     host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
 
 
-def host_dagit_ui(handle, host, port, storage_fallback=None, reload_trigger=None, port_lookup=True):
+def host_dagit_ui(handle, host, port, storage_fallback, reload_trigger=None, port_lookup=True):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     instance = DagsterInstance.get(storage_fallback)
