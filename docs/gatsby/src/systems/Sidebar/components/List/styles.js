@@ -21,8 +21,9 @@ export const wrapper = {
     display: "none"
   },
   "&.toctree-l2": {
-    lineHeight: 1.3,
-    whiteSpace: "normal"
+    lineHeight: 1.1,
+    whiteSpace: "normal",
+    paddingTop: ".3em"
   },
   "&.toctree-l2 a": {
     fontWeight: 400
