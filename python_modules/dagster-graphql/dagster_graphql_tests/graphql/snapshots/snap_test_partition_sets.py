@@ -47,6 +47,30 @@ snapshots['test_get_all_partition_sets 1'] = {
                 'name': 'multi_mode_with_loggers_daily',
                 'pipelineName': 'multi_mode_with_loggers',
                 'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_chain_pipeline_hourly',
+                'pipelineName': 'no_config_chain_pipeline',
+                'solidSubset': [
+                    'return_foo'
+                ]
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_chain_pipeline_daily',
+                'pipelineName': 'no_config_chain_pipeline',
+                'solidSubset': [
+                    'return_foo'
+                ]
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_chain_pipeline_monthly',
+                'pipelineName': 'no_config_chain_pipeline',
+                'solidSubset': [
+                    'return_foo'
+                ]
             }
         ]
     }

@@ -129,7 +129,7 @@ class ScheduleDefinition(object):
         self._should_execute = should_execute
         self._execution_params = {
             'environmentConfigData': {},
-            'selector': {'name': pipeline_name},
+            'selector': {'name': pipeline_name, 'solidSubset': solid_subset},
             'executionMetadata': {"tags": []},
             'mode': mode,
         }

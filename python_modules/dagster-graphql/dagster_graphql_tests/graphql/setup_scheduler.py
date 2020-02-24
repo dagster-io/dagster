@@ -1,6 +1,14 @@
 import datetime
 
-from dagster import Partition, PartitionSetDefinition, ScheduleDefinition, daily_schedule, schedules
+from dagster import (
+    Partition,
+    PartitionSetDefinition,
+    ScheduleDefinition,
+    daily_schedule,
+    hourly_schedule,
+    monthly_schedule,
+    schedules,
+)
 from dagster.core.definitions.partition import last_empty_partition
 
 integer_partition_set = PartitionSetDefinition(
@@ -71,6 +79,33 @@ def define_scheduler():
     def partition_based_multi_mode_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
+    @hourly_schedule(
+        pipeline_name='no_config_chain_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+        solid_subset=['return_foo'],
+    )
+    def solid_subset_hourly_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
+    @daily_schedule(
+        pipeline_name='no_config_chain_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=2),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
+        solid_subset=['return_foo'],
+    )
+    def solid_subset_daily_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
+    @monthly_schedule(
+        pipeline_name='no_config_chain_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=100),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
+        solid_subset=['return_foo'],
+    )
+    def solid_subset_monthly_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
@@ -80,4 +115,7 @@ def define_scheduler():
         partition_based_custom_selector,
         partition_based_decorator,
         partition_based_multi_mode_decorator,
+        solid_subset_hourly_decorator,
+        solid_subset_daily_decorator,
+        solid_subset_monthly_decorator,
     ]

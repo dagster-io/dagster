@@ -902,7 +902,6 @@ def monthly_schedule(
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
     check.int_param(execution_day_of_month, 'execution_day')
     check.inst_param(execution_time, 'execution_time', datetime.time)
 
@@ -933,6 +932,7 @@ def monthly_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            solid_subset=solid_subset,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
@@ -966,7 +966,6 @@ def daily_schedule(
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
     check.inst_param(execution_time, 'execution_time', datetime.time)
 
     cron_schedule = '{minute} {hour} * * *'.format(
@@ -989,6 +988,7 @@ def daily_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            solid_subset=solid_subset,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )
@@ -1022,7 +1022,6 @@ def hourly_schedule(
     check.opt_callable_param(should_execute, 'should_execute')
     check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
     check.inst_param(execution_time, 'execution_time', datetime.time)
 
     if execution_time.hour != 0:
@@ -1055,6 +1054,7 @@ def hourly_schedule(
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            solid_subset=solid_subset,
             tags_fn_for_partition=tags_fn_for_partition_value,
             mode=mode,
         )

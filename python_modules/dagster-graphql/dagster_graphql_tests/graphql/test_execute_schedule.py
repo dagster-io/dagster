@@ -1,5 +1,6 @@
 import uuid
 
+import pytest
 from dagster_graphql.test.utils import define_context_for_repository_yaml, execute_dagster_graphql
 
 from dagster import seven
@@ -254,6 +255,38 @@ def test_partition_based_decorator():
         assert (
             result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
         )
+
+
+@pytest.mark.parametrize(
+    'schedule_name',
+    [
+        'solid_subset_hourly_decorator',
+        'solid_subset_daily_decorator',
+        'solid_subset_monthly_decorator',
+    ],
+)
+def test_solid_subset_schedule_decorator(schedule_name):
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        result = execute_dagster_graphql(
+            context, START_SCHEDULED_EXECUTION_QUERY, variables={'scheduleName': schedule_name},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+        execution_step_names = [
+            log['step']['key']
+            for log in result.data['startScheduledExecution']['run']['logs']['nodes']
+            if log['__typename'] == 'ExecutionStepStartEvent'
+        ]
+        assert execution_step_names == ['return_foo.compute']
 
 
 def test_partition_based_multi_mode_decorator():

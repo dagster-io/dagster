@@ -162,6 +162,7 @@ def define_repository():
             multi_mode_with_resources,
             naughty_programmer_pipeline,
             no_config_pipeline,
+            no_config_chain_pipeline,
             pipeline_with_enum_config,
             pipeline_with_expectations,
             pipeline_with_list,
@@ -310,6 +311,19 @@ def no_config_pipeline():
         return 'Hello'
 
     return return_hello()
+
+
+@pipeline
+def no_config_chain_pipeline():
+    @lambda_solid
+    def return_foo():
+        return 'foo'
+
+    @lambda_solid
+    def return_hello_world(_):
+        return 'Hello World'
+
+    return return_hello_world(return_foo())
 
 
 @pipeline

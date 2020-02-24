@@ -371,6 +371,22 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'return_foo'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'no_config_chain_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_foo'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'return_hello'
             },
             'invocations': [
@@ -380,6 +396,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'return_hello'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'return_hello_world'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'no_config_chain_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_hello_world'
                     }
                 }
             ]
