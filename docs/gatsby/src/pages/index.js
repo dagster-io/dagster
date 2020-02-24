@@ -8,7 +8,7 @@ const IndexPage = () => {
   const { version } = useVersion();
   return (
     <Layout>
-      <Redirect from="/" to={`/${version.current}/install`} noThrow />
+      <Redirect from="/" to={`/${version.current}/install/`} noThrow />
       <SEO title="Home" />
     </Layout>
   );

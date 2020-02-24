@@ -1,6 +1,7 @@
 export const wrapper = opened => ({
   zIndex: opened ? 99 : "auto",
   position: "relative",
+  overflowY: "auto",
   py: 3,
   px: 4,
   width: 250,
@@ -21,6 +22,10 @@ export const wrapper = opened => ({
     p: 0,
     listStyle: "none",
     color: "white"
+  },
+
+  ".version-wrapper": {
+    marginLeft: "16px"
   }
 });
 
