@@ -50,12 +50,7 @@ module.exports = ({ createResolvers }) => {
       },
       markdown: {
         resolve(source) {
-          try {
-            const md = parseMarkdown(source.body, getCurrentVersion());
-            return md.slice(0, 5000);
-          } catch (err) {
-            return source.body;
-          }
+          return parseMarkdown(source.body, getCurrentVersion());
         }
       },
       slug: {

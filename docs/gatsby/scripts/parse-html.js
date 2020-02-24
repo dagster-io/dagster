@@ -93,7 +93,7 @@ const parseMarkdown = (body, version) => {
     .use(parse)
     .use(rehype2remark)
     .use(markdown)
-    .use(strip)
+    .use(strip, { keep: ["code"] })
     .processSync(html)
     .toString();
 };
