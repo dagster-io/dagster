@@ -22,6 +22,10 @@ export const wrapper = opened => ({
     p: 0,
     listStyle: "none",
     color: "white"
+  },
+
+  ".version-wrapper": {
+    marginLeft: "16px"
   }
 });
 

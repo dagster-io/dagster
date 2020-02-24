@@ -90,8 +90,10 @@ export const Sidebar = forwardRef(({ opened, location }, ref) => {
             tree={data.page.parsed}
             renderElements={renderElements}
           />
+          <h6 class="version-wrapper">
+            Version: <VersionSelector />
+          </h6>
         </Menu>
-        <VersionSelector />
       </div>
     </div>
   );

@@ -23,15 +23,20 @@ export const wrapper = {
   "&.toctree-l2": {
     lineHeight: 1.1,
     whiteSpace: "normal",
-    paddingTop: ".3em"
+    marginTop: ".4em",
+    padding: "0.05em"
   },
   "&.toctree-l2 a": {
-    fontWeight: 400
+    fontWeight: 400,
     fontSize: 1,
     opacity: 0.6
   },
   "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
     opacity: 1
+  },
+
+  "&.toctree-l2 a.active": {
+    fontWeight: 600
   },
   "&.toctree-l2 > ul": {
     display: "none"
