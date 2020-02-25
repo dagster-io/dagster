@@ -247,7 +247,7 @@ type GaantChartInnerProps = GaantChartProps &
   };
 
 const GaantChartInner = (props: GaantChartInnerProps) => {
-  const { viewport, containerProps } = useViewport();
+  const { viewport, containerProps, onMoveToViewport } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
   const { options, metadata } = props;
@@ -311,6 +311,17 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     width: Math.max(0, ...layout.boxes.map(b => b.x + b.width)),
     height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
   };
+
+  React.useEffect(() => {
+    const node = layout.boxes.find(b => b.node.name === props.selectedStep);
+    if (!node) {
+      return;
+    }
+    const bounds = boundsForBox(node);
+    const x = (bounds.maxX + bounds.minX) / 2 - viewport.width / 2;
+    const y = (bounds.maxY + bounds.minY) / 2 - viewport.height / 2;
+    onMoveToViewport({ left: x, top: y }, true);
+  }, [props.selectedStep]); // eslint-disable-line
 
   const content = (
     <>
