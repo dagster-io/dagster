@@ -31,7 +31,6 @@ export interface PipelineRunTag {
 export interface IExecutionSession {
   key: string;
   name: string;
-  pipeline: string;
   environmentConfigYaml: string;
   mode: string | null;
   solidSubset: string[] | null;
@@ -97,7 +96,6 @@ export function applyCreateSession(
         mode: null,
         solidSubset: null,
         solidSubsetQuery: "*",
-        pipeline: "",
         tags: [],
         runId: undefined,
         ...initial,

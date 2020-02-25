@@ -6,6 +6,7 @@ import {
   IStorageData,
   applySelectSession,
   applyChangesToSession,
+  applyCreateSession,
   applyRemoveSession
 } from "../LocalStorage";
 
@@ -83,7 +84,6 @@ class ExecutionTab extends React.Component<
 interface ExecutionTabsProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
-  onAdd: () => void;
 }
 
 function sessionNamesAndKeysHash(data: IStorageData) {
@@ -102,7 +102,7 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   }
 
   render() {
-    const { data, onAdd } = this.props;
+    const { data } = this.props;
 
     const onApply = (mutator: any, ...args: any[]) => {
       // note: this function /cannot/ use props bound to local vars above
@@ -127,7 +127,10 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
             }
           />
         ))}
-        <ExecutionTab title={"Add..."} onClick={onAdd} />
+        <ExecutionTab
+          title="Add..."
+          onClick={() => onApply(applyCreateSession)}
+        />
       </ExecutionTabsContainer>
     );
   }

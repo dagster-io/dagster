@@ -19,9 +19,9 @@ import { RouteComponentProps } from "react-router-dom";
 import { PipelineJumpBar } from "../PipelineJumpComponents";
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineName: string;
+  pipelineSelector: string;
 }>> = ({ match, history }) => {
-  const pipelineName = match.params.pipelineName;
+  const pipelineName = match.params.pipelineSelector.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
 
   const vars = {
@@ -45,13 +45,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
           onChange={name => history.push(`/playground/${name}`)}
         />
 
-        <ExecutionTabs
-          data={data}
-          onSave={onSave}
-          onAdd={() =>
-            onSave(applyCreateSession(data, { pipeline: pipelineName }))
-          }
-        />
+        <ExecutionTabs data={data} onSave={onSave} />
         <div style={{ flex: 1 }} />
       </TabBarContainer>
       <Query
@@ -111,6 +105,15 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                   description={pipelineOrError.message}
                 />
               </ExecutionSessionContainerError>
+            );
+          }
+
+          if (!pipelineOrError) {
+            return (
+              <ExecutionSessionContainerError
+                currentSession={data.sessions[data.current]}
+                onSaveSession={changes => onSaveSession(data.current, changes)}
+              ></ExecutionSessionContainerError>
             );
           }
 

@@ -50,7 +50,7 @@ interface IExecutionSessionContainerProps {
   data: IStorageData;
   onSaveSession: (changes: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
-  pipelineOrError: ExecutionSessionContainerFragment | undefined;
+  pipelineOrError: ExecutionSessionContainerFragment;
   environmentSchemaOrError:
     | ExecutionSessionContainerEnvironmentSchemaFragment
     | undefined;
@@ -178,11 +178,9 @@ export default class ExecutionSessionContainer extends React.Component<
     };
   };
 
-  getPipeline = (): PipelineDetailsFragment | undefined => {
+  getPipeline = (): PipelineDetailsFragment => {
     const obj = this.props.pipelineOrError;
-    if (obj === undefined) {
-      return undefined;
-    } else if (obj.__typename === "Pipeline") {
+    if (obj.__typename === "Pipeline") {
       return obj;
     } else if (obj.__typename === "InvalidSubsetError") {
       return obj.pipeline;
@@ -258,22 +256,18 @@ export default class ExecutionSessionContainer extends React.Component<
             <SessionSettingsBar>
               <SolidSelector
                 subsetError={subsetError}
-                pipelineName={currentSession.pipeline}
+                pipelineName={pipeline.name}
                 value={currentSession.solidSubset || null}
                 query={currentSession.solidSubsetQuery || null}
                 onChange={this.onSolidSubsetChange}
               />
               <div style={{ width: 5 }} />
-              {pipeline ? (
-                <ConfigEditorModePicker
-                  modes={pipeline.modes}
-                  modeError={modeError}
-                  onModeChange={this.onModeChange}
-                  modeName={currentSession.mode}
-                />
-              ) : (
-                <Spinner size={20} />
-              )}
+              <ConfigEditorModePicker
+                modes={pipeline.modes}
+                modeError={modeError}
+                onModeChange={this.onModeChange}
+                modeName={currentSession.mode}
+              />
               {tags.length || tagEditorOpen ? null : (
                 <ShortcutHandler
                   shortcutLabel={"⌥T"}
@@ -285,22 +279,20 @@ export default class ExecutionSessionContainer extends React.Component<
                   </TagEditorLink>
                 </ShortcutHandler>
               )}
-              {!pipeline ? null : (
-                <TagEditor
-                  tags={tags}
-                  onChange={this.saveTags}
-                  open={tagEditorOpen}
-                  onRequestClose={this.closeTagEditor}
-                />
-              )}
+              <TagEditor
+                tags={tags}
+                onChange={this.saveTags}
+                open={tagEditorOpen}
+                onRequestClose={this.closeTagEditor}
+              />
             </SessionSettingsBar>
-            {pipeline && tags.length ? (
+            {tags.length ? (
               <TagContainer tags={tags} onRequestEdit={this.openTagEditor} />
             ) : null}
             <ConfigEditorPresetInsertionContainer>
               {pipeline && (
                 <ConfigEditorConfigPicker
-                  pipelineName={currentSession.pipeline}
+                  pipelineName={pipeline.name}
                   solidSubset={currentSession.solidSubset}
                   onCreateSession={onCreateSession}
                 />
@@ -359,7 +351,7 @@ export default class ExecutionSessionContainer extends React.Component<
                         variables: {
                           environmentConfigData,
                           pipeline: {
-                            name: currentSession.pipeline,
+                            name: pipeline.name,
                             solidSubset: currentSession.solidSubset
                           },
                           mode: currentSession.mode || "default"
@@ -386,12 +378,10 @@ export default class ExecutionSessionContainer extends React.Component<
             plan={preview?.executionPlan}
             validation={preview?.isPipelineConfigValid}
             toolbarActions={
-              pipeline && (
-                <PipelineExecutionButtonGroup
-                  pipelineName={pipeline.name}
-                  getVariables={this.buildExecutionVariables}
-                />
-              )
+              <PipelineExecutionButtonGroup
+                pipelineName={pipeline.name}
+                getVariables={this.buildExecutionVariables}
+              />
             }
           />
         }
@@ -412,7 +402,14 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
       identifier={"execution"}
       firstInitialPercent={75}
       firstMinSize={100}
-      first={<>{props.children}</>}
+      first={
+        <>
+          <SessionSettingsBar>
+            <Spinner size={20} />
+          </SessionSettingsBar>
+          {props.children}
+        </>
+      }
       second={<RunPreview />}
     />
   );

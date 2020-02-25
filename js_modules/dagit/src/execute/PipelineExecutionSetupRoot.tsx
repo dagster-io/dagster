@@ -9,17 +9,15 @@ import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router-dom";
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelineName: string;
+  pipelineSelector: string;
 }>> = ({ match }) => {
-  const pipelineName = match.params.pipelineName;
+  const pipelineName = match.params.pipelineSelector.split(":")[0];
   const [data, onSave] = useStorage(pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
     if (qs.config || qs.mode || qs.solidSubset) {
-      const newSession: Partial<IExecutionSession> = {
-        pipeline: pipelineName
-      };
+      const newSession: Partial<IExecutionSession> = {};
       if (typeof qs.config === "string") {
         newSession.environmentConfigYaml = qs.config;
       }

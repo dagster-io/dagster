@@ -25,7 +25,7 @@ export const LeftNav = () => {
 
         // When you click the Pipeline tab, navigate to the last pipeline you've
         // viewed by storing a small amount of state in localStorage.
-        if (tab === "pipeline") {
+        if (tab === "pipeline" || tab === "playground") {
           localStorage.setItem(LAST_PIPELINE, params.pipelineSelector);
         }
 
