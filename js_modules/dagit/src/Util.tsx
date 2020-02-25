@@ -80,11 +80,21 @@ export function breakOnUnderscores(str: string) {
 
 export function patchCopyToRemoveZeroWidthUnderscores() {
   document.addEventListener("copy", event => {
-    event.preventDefault();
-    if (event.clipboardData) {
-      const text = (window.getSelection() || "")
-        .toString()
-        .replace(/_\u200b/g, "_");
+    if (!event.clipboardData) {
+      // afaik this is always defined, but the TS field is optional
+      return;
+    }
+
+    // Note: This returns the text of the current selection if DOM
+    // nodes are selected. If the selection on the page is text within
+    // codemirror or an input or textarea, this returns "" and we fall
+    // through to the default pasteboard content.
+    const text = (window.getSelection() || "")
+      .toString()
+      .replace(/_\u200b/g, "_");
+
+    if (text.length) {
+      event.preventDefault();
       event.clipboardData.setData("Text", text);
     }
   });
