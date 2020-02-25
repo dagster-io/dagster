@@ -1,24 +1,24 @@
 Dagster includes a number of non-core libraries that provide integrations
 and additional functionality:
 
-  `Airflow </sections/api/apidocs/libraries/dagster_airflow.html>`_ (``dagster_airflow``)
+  `Airflow <../api/apidocs/libraries/dagster_airflow.html>`_ (``dagster_airflow``)
     Tools for compiling Dagster pipelines to Airflow DAGs.
-  `AWS </sections/api/apidocs/libraries/dagster_aws.html>`_ (``dagster_aws``)
+  `AWS <../api/apidocs/libraries/dagster_aws.html>`_ (``dagster_aws``)
     Tools for working with AWS, including using S3 for intermediates storage.
-  `Celery </sections/api/apidocs/libraries/dagster_celery.html>`_ (``dagster_celery``)
+  `Celery <../api/apidocs/libraries/dagster_celery.html>`_ (``dagster_celery``)
     Provides an executor built on top of the popular
-    `Celery task queue <http://www.celeryproject.org/>`_.
-  `Cron </sections/api/apidocs/libraries/dagster_cron.html>`_ (``dagster_cron``)
+    `Celery task queue <http:/www.celeryproject.org/>`_.
+  `Cron <../api/apidocs/libraries/dagster_cron.html>`_ (``dagster_cron``)
     Provides a simple scheduler implementation built on system cron.
-  `Dask </sections/api/apidocs/libraries/dagster_dask.html>`_ (``dagster_dask``)
+  `Dask <../api/apidocs/libraries/dagster_dask.html>`_ (``dagster_dask``)
     Provides an executor built on top of
-    `dask.distributed <https://distributed.dask.org/en/latest/>`_. 
-  `GCP </sections/api/apidocs/libraries/dagster_gcp.html>`_ (``dagster_gcp``)
+    `dask.distributed <https:/distributed.dask.org/en/latest/>`_. 
+  `GCP <../api/apidocs/libraries/dagster_gcp.html>`_ (``dagster_gcp``)
     Tools for working with GCP, including using GCS for intermediates storage.
-  `Jupyter </sections/api/apidocs/libraries/dagstermill.html>`_ (``dagstermill``)
+  `Jupyter <../api/apidocs/libraries/dagstermill.html>`_ (``dagstermill``)
     Wraps Jupyter notebooks as solids for integrated execution within pipeline
     runs.
-  `Kubernetes </sections/api/apidocs/libraries/dagster_k8s.html>`_ (``dagster_k8s``)
+  `Kubernetes <../api/apidocs/libraries/dagster_k8s.html>`_ (``dagster_k8s``)
     Tools for deploying Dagster to Kubernetes.
-  `Postgres </sections/api/apidocs/libraries/dagster_postgres.html>`_ (``dagster_postgres``) 
+  `Postgres <../api/apidocs/libraries/dagster_postgres.html>`_ (``dagster_postgres``) 
     Includes implementations of run and event log storage built on Postgres.

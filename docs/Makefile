@@ -135,3 +135,6 @@ livehtml:
 
 gatsby:
 	cd gatsby && yarn install && yarn sphinx -v latest && yarn build && cd ..
+
+livegatsby:
+	cd gatsby && yarn install && yarn sphinx -v latest && yarn develop
