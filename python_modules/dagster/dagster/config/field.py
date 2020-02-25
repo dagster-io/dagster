@@ -234,7 +234,7 @@ class Field(object):
             old_val=is_optional,
             old_arg='is_optional',
             coerce_old_to_new=lambda val: not val,
-            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0.',
+            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0. Users should use "is_required" instead.',
         )
 
         if canonical_is_required is True:

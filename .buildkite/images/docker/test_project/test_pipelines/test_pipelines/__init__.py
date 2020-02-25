@@ -73,9 +73,9 @@ def demo_error_pipeline():
 
 @solid(
     output_defs=[
-        OutputDefinition(Int, 'out_1', is_optional=True),
-        OutputDefinition(Int, 'out_2', is_optional=True),
-        OutputDefinition(Int, 'out_3', is_optional=True),
+        OutputDefinition(Int, 'out_1', is_required=False),
+        OutputDefinition(Int, 'out_2', is_required=False),
+        OutputDefinition(Int, 'out_3', is_required=False),
     ]
 )
 def foo(_):

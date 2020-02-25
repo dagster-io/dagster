@@ -17,8 +17,8 @@ def test_retries():
 
     @solid(
         output_defs=[
-            OutputDefinition(bool, 'start_fail', is_optional=True),
-            OutputDefinition(bool, 'start_skip', is_optional=True),
+            OutputDefinition(bool, 'start_fail', is_required=False),
+            OutputDefinition(bool, 'start_skip', is_required=False),
         ]
     )
     def two_outputs(_):

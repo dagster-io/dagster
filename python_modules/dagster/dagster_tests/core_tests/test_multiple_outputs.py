@@ -81,7 +81,7 @@ def define_multi_out():
         input_defs=[],
         output_defs=[
             OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two', is_optional=True),
+            OutputDefinition(name='output_two', is_required=False),
         ],
     )
     def multiple_outputs(_):

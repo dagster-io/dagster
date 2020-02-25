@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.2 (Upcoming)
+
+- `OutputDefinition` takes a `is_required` rather than a `is_optional` argument. This is to
+  remain consistent with changes to `Field` in 0.7.1 and to avoid confusion
+  with python's typing and dagster's definition of `Optional`, which indicates None-ability,
+  rather than existence. `is_optional` is deprecated and will be removed in a future version.
+
 ## 0.7.1
 
 **Dagit**

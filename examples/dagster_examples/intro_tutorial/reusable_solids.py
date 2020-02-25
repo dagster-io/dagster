@@ -35,10 +35,10 @@ def read_csv(context, csv_path):
     },
     output_defs=[
         OutputDefinition(
-            name='hot_cereals', dagster_type=DataFrame, is_optional=True
+            name='hot_cereals', dagster_type=DataFrame, is_required=False
         ),
         OutputDefinition(
-            name='cold_cereals', dagster_type=DataFrame, is_optional=True
+            name='cold_cereals', dagster_type=DataFrame, is_required=False
         ),
     ],
 )

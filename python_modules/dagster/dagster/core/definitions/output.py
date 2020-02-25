@@ -2,15 +2,16 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import resolve_dagster_type
+from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 
 class OutputDefinition(object):
     '''Defines an output from a solid's compute function.
-    
+
     Solids can have multiple outputs, in which case outputs cannot be anonymous.
-    
+
     Many solids have only one output, in which case the user can provide a single output definition
     that will be given the default name, "result".
 
@@ -20,17 +21,32 @@ class OutputDefinition(object):
         dagster_type (Optional[Any]): The type of this output. Users should provide one of the
             :ref:`built-in types <builtin>`, a dagster type explicitly constructed with
             :py:func:`as_dagster_type`, :py:func:`@usable_as_dagster_type <dagster_type`, or
-            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`. 
+            :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
-        is_optional (Optional[bool]): Set if this output is optional. (default: False)
+        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        is_optional (Optional[bool]) (deprecated): Whether the presence of this field is optional.
+            Use ``is_required`` instead.
     '''
 
-    def __init__(self, dagster_type=None, name=None, description=None, is_optional=False):
+    def __init__(
+        self, dagster_type=None, name=None, description=None, is_optional=None, is_required=None
+    ):
         self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
         self._runtime_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, 'description')
-        self._optional = check.bool_param(is_optional, 'is_optional')
+        check.opt_bool_param(is_optional, 'is_optional')
+        check.opt_bool_param(is_required, 'is_required')
+
+        canonical_is_required = canonicalize_backcompat_args(
+            new_val=is_required,
+            new_arg='is_required',
+            old_val=is_optional,
+            old_arg='is_optional',
+            coerce_old_to_new=lambda val: not val,
+            additional_warn_txt='"is_optional" deprecated in 0.7.0 and will be removed in 0.8.0. Users should use "is_required" instead.',
+        )
+        self._optional = False if (canonical_is_required is None) else not canonical_is_required
 
     @property
     def name(self):

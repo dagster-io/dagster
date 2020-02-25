@@ -54,7 +54,7 @@ def define_test_events_pipeline():
     @solid(
         output_defs=[
             OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two', is_optional=True),
+            OutputDefinition(name='output_two', is_required=False),
         ]
     )
     def optional_only_one(_context):  # pylint: disable=unused-argument

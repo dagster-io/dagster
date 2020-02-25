@@ -656,7 +656,7 @@ def test_two_step_reexecution():
 
 
 def test_optional():
-    @solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y', is_optional=True)])
+    @solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y', is_required=False)])
     def return_optional(_context):
         yield Output(1, 'x')
 
