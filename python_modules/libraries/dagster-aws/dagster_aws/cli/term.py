@@ -95,7 +95,7 @@ class Term(object):
 
 
 def run_remote_cmd(key_file_path, host, cmd, quiet=False):
-    ssh_cmd = 'ssh -i %s ubuntu@%s -t "%s"' % (key_file_path, host, cmd)
+    ssh_cmd = 'ssh -o StrictHostKeyChecking=no -i %s ubuntu@%s -t "%s"' % (key_file_path, host, cmd)
     if quiet:
         return subprocess.check_output(ssh_cmd, shell=True)
     else:
@@ -119,7 +119,7 @@ def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
         '--exclude',
         '\'*.pyc\'',
         '-e',
-        '"ssh -i %s"' % key_file_path,
+        '"ssh -o StrictHostKeyChecking=no -i %s"' % key_file_path,
         local_path,
         '%s@%s:%s' % (remote_user, remote_host, remote_path),
     ]

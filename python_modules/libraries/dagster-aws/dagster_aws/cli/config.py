@@ -110,7 +110,7 @@ class RDSConfig(
         instance_type=None,
         storage_size_gb=20,
         db_engine='postgres',
-        db_engine_version='11.5',
+        db_engine_version='11.6',
         instance_uri=None,
         db_name='dagster',
         username='dagster',

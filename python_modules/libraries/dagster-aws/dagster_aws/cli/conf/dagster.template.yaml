@@ -6,7 +6,7 @@ run_storage:
       username: {username}
       password: {password}
       hostname: {hostname}
-      db_name: {database}
+      db_name: {db_name}
       port: {port}
 
 event_log_storage:
@@ -17,5 +17,5 @@ event_log_storage:
       username: {username}
       password: {password}
       hostname: {hostname}
-      db_name: {database}
+      db_name: {db_name}
       port: {port}

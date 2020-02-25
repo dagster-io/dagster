@@ -46,7 +46,7 @@ def test_write_configs():
     assert rds_config_dict['instance_uri'] == 'foo-bar.amazonaws.com'
     assert rds_config_dict['storage_size_gb'] == 20
     assert rds_config_dict['db_engine'] == 'postgres'
-    assert rds_config_dict['db_engine_version'] == '11.5'
+    assert rds_config_dict['db_engine_version'] == '11.6'
     assert RDSConfig.load(tmp_dir) == RDSConfig(**rds_config_dict)
 
     # Delete both configs

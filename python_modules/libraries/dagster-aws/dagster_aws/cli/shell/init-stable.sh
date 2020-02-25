@@ -23,7 +23,7 @@ sudo -u ubuntu virtualenv --python=/usr/bin/python3 $INSTALL_PATH/venv
 
 sudo -u ubuntu /bin/bash -c 'source /opt/dagster/venv/bin/activate && \
     pip install -U pip && \
-    pip install dagster dagit dagster-aws'
+    pip install dagster dagit dagster-postgres dagster-aws'
 
 # user code will go here
 mkdir -p $INSTALL_PATH/app

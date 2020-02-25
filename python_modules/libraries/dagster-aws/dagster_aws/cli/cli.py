@@ -49,6 +49,9 @@ export DAGSTER_HOME=~/.dagster
 You may want to add this line to your .bashrc or .zshrc file.
 '''
 
+# We use the default PG port for the RDS instance
+DEFAULT_RDS_PORT = 5432
+
 
 def get_dagster_home():
     '''Ensures that the user has set a valid DAGSTER_HOME in environment and that it exists
@@ -78,14 +81,13 @@ def sync_dagster_yaml(ec2_config, rds_config):
     DAGSTER_HOME directory
     '''
     with open(os.path.join(os.path.dirname(__file__), 'conf', 'dagster.template.yaml'), 'rb') as f:
-        dagster_yaml = six.ensure_str(f.read())
-
-    dagster_yaml = (
-        dagster_yaml.replace('{username}', rds_config.username)
-        .replace('{password}', rds_config.password)
-        .replace('{host}', rds_config.instance_uri)
-        .replace('{database}', rds_config.db_name)
-    )
+        dagster_yaml = six.ensure_str(f.read()).format(
+            username=rds_config.username,
+            password=rds_config.password,
+            hostname=rds_config.instance_uri,
+            db_name=rds_config.db_name,
+            port=DEFAULT_RDS_PORT,
+        )
 
     tmp_file = os.path.join(seven.get_system_temp_directory(), 'dagster.yaml')
 
@@ -182,7 +184,7 @@ def shell():
     cfg = EC2Config.load(dagster_home)
 
     # Lands us directly in /opt/dagster (app dir may not exist yet)
-    run_remote_cmd(cfg.key_file_path, cfg.remote_host, 'cd /opt/dagster; $SHELL -l')
+    run_remote_cmd(cfg.key_file_path, cfg.remote_host, r'cd /opt/dagster; \$SHELL -l')
 
 
 @main.command()
@@ -201,7 +203,7 @@ def up(post_up_script):
     dagster_home = get_dagster_home()
     cfg = EC2Config.load(dagster_home)
 
-    if not cfg:
+    if not cfg or not cfg.remote_host:
         Term.fatal('No EC2 config found; run dagster-aws init first!')
 
     if RDSConfig.exists(dagster_home):
