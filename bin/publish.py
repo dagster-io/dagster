@@ -95,7 +95,6 @@ MODULE_NAMES = [
     'dagster',
     'dagit',
     'dagster-graphql',
-    'dagstermill',
 ]
 
 # Removed hard-coded list in favor of automatic scan of libraries folder

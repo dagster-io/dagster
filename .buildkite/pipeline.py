@@ -456,7 +456,19 @@ def library_tests():
         if library in extra_test_libraries:
             tests += extra_test_libraries[library]
         else:
-            tests += python_modules_tox_tests("libraries/{library}".format(library=library))
+            supported_pythons = None
+
+            # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
+            if library == 'dagstermill':
+                supported_pythons = [
+                    SupportedPython.V2_7,
+                    SupportedPython.V3_6,
+                    SupportedPython.V3_7,
+                    SupportedPython.V3_8,
+                ]
+            tests += python_modules_tox_tests(
+                "libraries/{library}".format(library=library), supported_pythons=supported_pythons
+            )
 
     return tests
 
@@ -654,7 +666,7 @@ if __name__ == "__main__":
             "pip install -r .read-the-docs-requirements.txt -qqq",
             "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
             "pip install -e python_modules/dagster -qqq",
-            "pip install -e python_modules/dagstermill -qqq",
+            "pip install -e python_modules/libraries/dagstermill -qqq",
             "pytest -vv docs",
         )
         .on_integration_image(SupportedPython.V3_7)
@@ -705,16 +717,7 @@ if __name__ == "__main__":
 
     steps += python_modules_tox_tests("dagster")
     steps += python_modules_tox_tests("dagster-graphql")
-    steps += python_modules_tox_tests(
-        "dagstermill",
-        # Disabled 3.5 https://github.com/dagster-io/dagster/issues/2034
-        supported_pythons=[
-            SupportedPython.V2_7,
-            SupportedPython.V3_6,
-            SupportedPython.V3_7,
-            SupportedPython.V3_8,
-        ],
-    )
+
     steps += library_tests()
 
     steps += releasability_tests()

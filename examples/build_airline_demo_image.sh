@@ -26,7 +26,7 @@ trap cleanup EXIT
 cp -R ../python_modules/dagster .
 cp -R ../python_modules/dagster-graphql .
 cp -R ../python_modules/libraries/dagster-pandas .
-cp -R ../python_modules/dagstermill .
+cp -R ../python_modules/libraries/dagstermill .
 cp -R ../python_modules/libraries/dagster-aws .
 cp -R ../python_modules/libraries/dagster-spark .
 cp -R ../python_modules/libraries/dagster-pyspark .
