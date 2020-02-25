@@ -125,3 +125,6 @@ dask-worker-space
 
 # PyCharm IDE Config files
 .idea
+
+# Codemod bookmarks
+.codemod.bookmark
