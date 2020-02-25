@@ -507,8 +507,13 @@ const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
   const minIdx = Math.min(a.y, b.y);
   const maxIdx = Math.max(a.y, b.y);
 
-  const maxY = maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
-  const minY = minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
+  const straight = maxIdx === minIdx;
+  const maxY = straight
+    ? maxIdx * BOX_HEIGHT + BOX_HEIGHT / 2
+    : maxIdx * BOX_HEIGHT + BOX_MARGIN_Y;
+  const minY = straight
+    ? minIdx * BOX_HEIGHT + BOX_HEIGHT / 2
+    : minIdx * BOX_HEIGHT + BOX_HEIGHT / 2;
 
   const minX = Math.min(a.x + a.width, b.x + b.width);
   const maxX =
