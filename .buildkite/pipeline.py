@@ -274,7 +274,7 @@ def celery_tests():
             StepBuilder("[dagster-celery] ({ver})".format(ver=TOX_MAP[version]))
             .on_integration_image(version)
             .run(
-                "pushd python_modules/dagster-celery",
+                "pushd python_modules/libraries/dagster-celery",
                 # Run the rabbitmq db. We are in docker running docker
                 # so this will be a sibling container.
                 "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
@@ -444,6 +444,7 @@ def library_tests():
     # Some libraries have more involved tests, which must be explicitly defined here
     extra_test_libraries = {
         'dagster-airflow': airflow_tests(),
+        'dagster-celery': celery_tests(),
         'dagster-dask': dask_tests(),
         'dagster-gcp': gcp_tests(),
         'dagster-k8s': k8s_tests(),
@@ -697,8 +698,6 @@ if __name__ == "__main__":
     steps += automation_tests()
     steps += events_demo_tests()
     steps += examples_tests()
-
-    steps += celery_tests()
 
     steps += dagit_tests()
     steps += lakehouse_tests()

@@ -28,7 +28,7 @@ def _do_setup(name='dagster-celery'):
         author='Elementl',
         license='Apache-2.0',
         description='Package for using Celery as Dagster\'s execution engine.',
-        url='https://github.com/dagster-io/dagster/tree/master/python_modules/dagster-celery',
+        url='https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-celery',
         classifiers=[
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.5',

@@ -36,12 +36,12 @@ install_dev_python_modules:
 	pip install apache-airflow \
 				-e python_modules/dagster \
 				-e python_modules/dagster-graphql \
-				-e python_modules/dagster-celery \
 				-e python_modules/dagit \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/dagstermill \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-bash \
+				-e python_modules/libraries/dagster-celery \
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-dbt \
