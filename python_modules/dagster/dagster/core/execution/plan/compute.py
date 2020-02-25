@@ -67,9 +67,15 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
         else:
             raise DagsterInvariantViolationError(
                 (
-                    'Compute function for solid {solid_name} yielded {event} rather than '
-                    'an instance of the Output or Materialization class.'
-                ).format(event=repr(event), solid_name=str(step.solid_handle))
+                    'Compute function for solid {solid_name} yielded a value of type {type_} '
+                    'rather than an instance of Output, Materialization, or ExpectationResult. '
+                    'Values yielded by solids must be wrapped in one of these types. If your '
+                    'solid has a single output and yields no other events, you may want to use '
+                    '`return` instead of `yield` in the body of your solid compute function. If '
+                    'you are already using `return`, and you expected to return a value of type '
+                    '{type_}, you may be inadvertently returning a generator rather than the value '
+                    'you expected.'
+                ).format(solid_name=str(step.solid_handle), type_=type(event))
             )
 
 

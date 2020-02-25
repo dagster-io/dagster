@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -202,7 +204,11 @@ def test_yield_non_result():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Compute function for solid yield_wrong_thing yielded 'foo'",
+        match=re.escape('Compute function for solid yield_wrong_thing yielded a value of type <')
+        + r'(class|type)'
+        + re.escape(
+            ' \'str\'> rather than an instance of Output, Materialization, or ExpectationResult.'
+        ),
     ):
         execute_solid(yield_wrong_thing)
 

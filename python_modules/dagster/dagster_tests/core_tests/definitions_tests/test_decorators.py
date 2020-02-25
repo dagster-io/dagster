@@ -9,6 +9,7 @@ import pytest
 from dagster import (
     Any,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     DependencyDefinition,
     Field,
     InputDefinition,
@@ -24,7 +25,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.decorators import daily_schedule, hourly_schedule, monthly_schedule
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -304,21 +304,6 @@ def test_scheduler():
         ]
 
 
-def test_solid_bad_output_type():
-    @solid
-    def bad_output_solid(_):
-        yield 'foo'
-
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape(
-            'Compute function for solid bad_output_solid yielded \'foo\' rather than an instance '
-            'of the Output or Materialization class.'
-        ),
-    ):
-        execute_solid(bad_output_solid)
-
-
 def test_schedule_decorators_sanity():
     @solid
     def do_nothing(_):
@@ -404,3 +389,83 @@ def test_solid_docstring():
     assert bar_solid.__doc__ == 'BAR_DOCSTRING'
     assert baz_solid.__doc__ == 'BAZ_DOCSTRING'
     assert quux_solid.__doc__ == 'QUUX_DOCSTRING'
+
+
+def test_solid_yields_single_bare_value():
+    @solid
+    def return_iterator(_):
+        yield 1
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape('Compute function for solid return_iterator yielded a value of type <')
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            'Values yielded by solids must be wrapped in one of these types. If your solid has a '
+            'single output and yields no other events, you may want to use `return` instead of '
+            '`yield` in the body of your solid compute function. If you are already using '
+            '`return`, and you expected to return a value of type <'
+        )
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'>, you may be inadvertently returning a generator rather than the value you '
+            'expected.'
+        ),
+    ):
+        result = execute_solid(return_iterator)
+
+
+def test_solid_yields_multiple_bare_values():
+    @solid
+    def return_iterator(_):
+        yield 1
+        yield 2
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape('Compute function for solid return_iterator yielded a value of type <')
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            'Values yielded by solids must be wrapped in one of these types. If your solid has a '
+            'single output and yields no other events, you may want to use `return` instead of '
+            '`yield` in the body of your solid compute function. If you are already using '
+            '`return`, and you expected to return a value of type <'
+        )
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'>, you may be inadvertently returning a generator rather than the value you '
+            'expected.'
+        ),
+    ):
+        result = execute_solid(return_iterator)
+
+
+def test_solid_returns_iterator():
+    def iterator():
+        for i in range(3):
+            yield i
+
+    @solid
+    def return_iterator(_):
+        return iterator()
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape('Compute function for solid return_iterator yielded a value of type <')
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'> rather than an instance of Output, Materialization, or ExpectationResult. '
+            'Values yielded by solids must be wrapped in one of these types. If your solid has a '
+            'single output and yields no other events, you may want to use `return` instead of '
+            '`yield` in the body of your solid compute function. If you are already using '
+            '`return`, and you expected to return a value of type <'
+        )
+        + r'(class|type)'
+        + re.escape(
+            ' \'int\'>, you may be inadvertently returning a generator rather than the value you '
+            'expected.'
+        ),
+    ):
+        result = execute_solid(return_iterator)
