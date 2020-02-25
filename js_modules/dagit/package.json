@@ -89,7 +89,7 @@
     "eslint-plugin-react-hooks": "^2.2.0",
     "prettier": "^1.18.2",
     "pretty": "^2.0.0",
-    "react-scripts": "3.3.0",
+    "react-scripts": "3.4.0",
     "react-test-renderer": "^16.11.0",
     "ts-node": "^8.4.1",
     "typescript": "^3.7.2"
