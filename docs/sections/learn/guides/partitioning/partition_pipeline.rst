@@ -16,8 +16,8 @@ If we query this URL, we'll recieve a JSON response containing historical data (
 .. code-block:: JSON
 
     {
-    "symbol" : "AAPL",
-    "historical" : [ {
+      "symbol" : "AAPL",
+      "historical" : [ {
         "date" : "2019-01-02",
         "open" : 154.89,
         "high" : 158.85,
@@ -31,7 +31,7 @@ If we query this URL, we'll recieve a JSON response containing historical data (
         "vwap" : 157.0,
         "label" : "January 02, 19",
         "changeOverTime" : -0.01956
-    }, {
+      }, {
         "date" : "2019-01-03",
         "open" : 143.98,
         "high" : 145.72,
@@ -41,7 +41,9 @@ If we query this URL, we'll recieve a JSON response containing historical data (
         "volume" : 9.13122E7,
         "unadjustedVolume" : 9.13122E7,
         "change" : 1.79,
-        ...
+        "etc.": "..."
+      }]
+    }
 
 Let's write our first pipeline to query this URL and calculate the total volume traded during January 2019.
 

@@ -1,242 +1,153 @@
 # Solid Guide
 
-The core abstraction of Dagster is the _Solid_. A Solid is a functional unit of computation that
+The core abstraction of Dagster is the _solid_. A solid is a functional unit of computation that
 consumes and produces data assets. It has a number of properties:
 
 - Coarse-grained and for use in batch computations.
 - Defines inputs and outputs, optionally typed within the Dagster type system.
-- Embeddable in a dependency graph that is constructed by connecting inputs and outputs, rather
-  than just the Solids themselves.
-- Emits a stream of typed, structured events -- such as expectations and materializations -- that
-  define the semantics of their computation.
-- Defines self-describing, strongly typed configuration.
-- Designed for testability and reuse.
-
-This guide will cover these properties in detail, and then compare the Solid to the most analogous
-abstraction in Airflow, the "operator."
+- Embeddable in a dependency graph that is constructed by connecting the inputs and outputs of
+  multiple solids.
+- Emits a stream of typed, structured events -- such as expectations and materializations --
+  corresponding to the semantics of its computation.
+- Exposes self-describing, strongly typed configuration.
+- Testable and reusable.
 
 ## Solid Concepts
 
 ### Data Dependencies
 
-Solids are specialized functions, and as such have inputs and outputs. Solids are meant to be
-embedded in a graph of dependencies, and within that graph, dependencies exist between those inputs
-and outputs rather than between the Solids themselves. In this way, the dependency graph in Dagster
-encodes not only execution ordering, but also the data or metadata needed by a Solid to execute.
-
-Inputs and outputs can be optionally annotated with a type (defaults to the `Any` type). The type
-system of Dagster is simple and flexible. The core of a type is a function that takes a value and
-indicates whether the type check passed or failed. An input to a Solid is guaranteed to have passed
-that type check, and an output is similariy checked before flowing it to a downstream computation.
-
-Through this dependency system Solids -- and graphs of Solids -- can describe their capabilities in
-a much richer format than in purely task-based systems. At a glance, a consumer or operator of a
-Solid can understand the data flowing their system. This parameterization also one of the reasons
-why these computations are more amenable to testing than in traditional task-based systems
+Solids are functions, and as such have inputs and outputs. Solids are meant to be embedded in a
+graph of dependencies constructed by connecting the inputs and outputs of multiple solids. This
+dependency graph, or _pipeline_, explicitly encodes the data or metadata required by a solid in
+order to execute, and implicitly encodes the order in which solids will execute.
 
 #### Type System
 
-The type system attached to these inputs and outputs is designed to augment rather than replace
-the existing type system in your target language or runtime. Data application authors are highly
-encouraged to use their native type system to maximum effect. The Dagster type is primarily
-concerned with:
+A solid's inputs and outputs can be optionally annotated with a type (defaults to `Any`). The
+Dagster type system is simple and flexible. Dagster types are primarily concerned with:
 
-- Communicating metadata to within code and to tooling.
-- Providing guarantees at runtime and halting computation when those guarantees are violated.
-- Defining config-driven hydration (i.e. reading values into memory) and materialization (i.e.
-  writing values to a durable store.)
-- Controlling serialization behavior.
+- Providing guarantees ("type checks") at runtime and halting computation when those guarantees
+  are violated.
+- Providing a configuration schema that allows values to be stubbed in from and written out to
+  durable storage (the "input hydration config" and "output materialization config").
+- Communicating metadata about type checks, hydration, and materializations to framework code and
+  to tooling.
 
-We may introduce more formal semantics in the future, for pre-execution verification and more
-complicated semantic relationships between types, but that is not on our near-term roadmap.
+The core of a type is a type check function that takes a value, checks that the value satisfies
+some condition, and communicates success or failure. Inputs to a solid are guaranteed to have
+passed their corresponding type checks, and outputs are checked in turn before they flow to
+downstream solids.
+
+This type system is designed to augment rather than replace the existing type systems of Dagster's
+target language or runtime (for now, Python). Data application authors are highly
+encouraged to use their native type system to maximum effect.
+We may introduce more formal semantics in the future, to enable pre-execution verification and more
+complicated semantic relationships between types.
 
 #### Modeling Task Dependencies
 
-Note that data dependencies are a strict superset of pure task dependencies, meaning dependencies
-at the task- or Solid-level rather than the input- or output-level. Task-level dependencies (e.g.
-those supported the Airflow) can be precisely modeled in Dagster by having a single input or output
-with the type `Nothing`. Sometimes it is difficult to model computations functionally, and
-sometimes one is moving code from a system that did not encode data dependencies. Dagster is
-flexible enough to account for these practical realities.
+Note that data dependencies are a strict superset of the "task" dependencies that drive many related
+graph execution systems, such as Airflow or Azkaban. Dependencies between solids that don't depend
+on any semantically specified outputs can be modeled in Dagster using inputs and outputs with the
+type `Nothing`. This facility acknowledges that it can sometimes be difficult to model computations
+functionally, for instance when interfacing with or migrating code from a system that does not
+encode data dependencies. Dagster is flexible enough to account for these practical realities.
 
 ### The Event Stream
 
-Solids interact with the host runtime by emitting an event stream representing the semantics of
-computation and structured metadata attached to those events. These are designed to both
-communicate high quality information to authors and operators of data applications, and to be a
-foundation for tools that can operate on those semantic events. Tools can subscribe to these
-events via our GraphQL API.
+Solids interact with the host runtime by emitting a stream of events that represent the semantics of
+computation, as well as structured metadata attached to those events. These are designed to
+communicate high quality, human-readable information to the authors and operators of data
+applications, as well as to support tools that can operate on the event streams. Tools can subscribe
+to these events via our GraphQL API.
 
-Currently the body of a Solids can emit four event types: `Output`, `Materialization`,
-`ExpectationResult`, or `Failure` (failures are raised).
-
-Let us define these in detail.
+Currently the body of a solid can emit four event types: `Output`, `Materialization`,
+`ExpectationResult`, or `Failure` (failures are emitted using `raise` rather than `yield`). In the
+simplest case, where a solid has a single output, the framework provides sugar allowing the solid
+to simply `return` a single value.
 
 #### Outputs
 
-Outputs emitted during Solid execution should be thought of as signals to follow-on computations
-within a graph, with optional metadata or data attached. The potential outputs of a Solid are
-known before execution, and are part of the signature of a Solid definition. These outputs have a
-name and a type.
+Outputs emitted during solid execution should be thought of as signals to downstream computations
+within a graph, with optional metadata or data attached. The potential outputs of a solid are
+known before execution, and are part of the signature of a solid definition. Each output has a name
+and a type.
 
-Once all upstream outputs have been emitted for all of a particular Solids inputs, the Solid is
-free to proceed with execution. At this point, execution happens at the discretion of the physical
-orchestrator or engine, which is free to parallelize or schedule as it wants, provided it respects
-the semantics of the dependency graph.
+Once all the upstream outputs on which all of a solid's inputs depend have been emitted, the solid
+is available for execution. The execution of solids proceeds at the discretion of the executor,
+which is free to parallelize or schedule computation as it wants, provided it respects the semantics
+of the pipeline's dependency graph.
 
-Any output emitted by a Solid must conform to the type associated with the output. As noted before,
-the type check is an arbitrary function. If the type check fails, any Solid depending on that
-output does _not_ execute, and the overall computation will report as failed.
+Any output emitted by a solid must conform to the type associated with the output. As noted before,
+the type check is an arbitrary function. If the type check for an output fails, any solid depending
+on that output will _not_ execute, and the overall pipeline will report as failed.
 
-Solids can define more than one output, and they can also be marked as optional, thus allowing
-branch-like behavior within computational graphs, where only the Solids downstream of the fired
-output are executed.
+Solids can define more than one output, and outputs may also be marked as optional. This enables
+branch-like behavior within pipelines, where solids that are downstream of optional outputs are
+skipped.
 
 #### Materializations
 
-A materialization is an event that indicates that the Solid has produced a data asset -- e.g. a
-file in an object store, a table in a data warehouse -- in an external system that will outlive
-the duration of the current execution.
+A materialization indicates that a solid has produced a data asset -- e.g. a file in an object
+store, a table in a data warehouse -- in an external system that will outlive the current
+computation.
 
-The set of materializations produced by a Solid is _not_ known prior to execution. A Solid is free
+The set of materializations produced by a solid is _not_ known prior to execution. A solid is free
 to emit any materialization that it wants, for any reason. Materializations, like any event in the
 system, can have structured metadata attached. We expect this to be used for cases as varied as
-rendering links to internal tools in dagit (or other viewers), to infrastructure consuming those
+rendering links to internal tools in Dagit (or other viewers), to infrastructure consuming those
 materializations and registering the creation of assets in a metastore.
 
 A frequent pattern is to informally link outputs and materializations (this link may be formalized
-in the future). Take for example the common case of a Solid computing a table or a partition within
+in the future). Take for example the common case of a solid computing a table or a partition within
 a data warehouse. The author will likely want to both create a durable data asset as well as
-communicate metadata information about that asset to downstream Solids. In this case the natural
-thing to do emit both a materialization and an output, and ensure that the computation is
-idempotent with respect to the materialization.
+communicate metadata about that asset to downstream solids so they can operate on it. In this case
+the natural thing to do emit both a materialization and an output, and ensure that computation
+is idempotent with respect to the materialized data asset.
 
 #### Expectation Results
 
 Expectation results indicate that an expectation (our name for a data quality test) has been
-executed. Expectations are an important concept in data applications, because typically an author
-does not have any control over the inputs to that computation. As a result, there are usually a
-large number of unexpressed, implicit assumptions about that incoming data in that computation.
+executed. Expectations are an important concept in data applications, since data typically flows
+into a computation from processes over which the author of an application has no control. As a
+result, data applications usually contain a large number of unexpressed, implicit assumptions about
+the structure of their inputs.
 
 Expectations are a mechanism by which data application author can make those _implicit_ assumptions
-_explicit_. They can be an arbitrary computation, from a simple type check, to an existence of a
-file, all the way to a distributional analysis of an entire data set. The semantics are up to the
-author, as these expectations are user-defined.
+_explicit_. Expectations can encapsulate arbitrary computation: perhaps a simple type check, or
+asserting the existence of a file on disk, or a distributional analysis of an entire data set.
 
-Similar to materializations, Dagster provides the mechanism to communicate -- both to the runtime
+As with materializations, Dagster provides the mechanism to communicate -- to the runtime
 and by extension to tools -- structured metadata about these expectations, for visualization,
-tracking, or whatever purpose.
+tracking, or whatever purpose. In future, we intend to expand the tooling built on top of structured
+expectation metadata.
 
 #### Failures
 
-Solids can also communicate explicit failure conditions by throwing a Failure. While any arbitrary
-exception will also terminate computation, the Failure exception allows the user to communicate
-this very explicitly and attach structured metadata to that Failure.
+Solids can also communicate explicit failure conditions by throwing a Failure, which lets user code
+terminate computation explicitly and with structured metadata attached.
 
 ### Environment vs. Business Logic
 
-Solids are meant to be executed within a variety of environment contexts. Executing in multiple
-environments is a requirement both for testing and for reusability.
+Solids are meant to be executed within a variety of environments. Executability in multiple
+environments is a requirement both for testing and for reuse.
 
-Every Solid is passed a context object representing the environment in which the Solid is
-executing. This provides a layer of abstraction that allows a data application author or
-infrastructure provider to separate the operating environment from business logic.
+Every solid execution is passed a context object which represents the environment in which the solid
+is currently being executed. This provides a layer of abstraction that allows a data application
+author or infrastructure provider to separate the operating environment from business logic.
 
-Dagster manages the construction of that context and attaches resources (such as a Spark context,
-a database connection, or a custom API for specific use cases) to it. It also provides a
-first-class facility (modes; see `ModeDefintion`) to switch out the implementation of those
-resources based on configuration. This means one has the means to execute a Solid in the context
-of, for example, a unit test mode, an integration test mode, and a production mode with multiple
-configurations within each mode, which leaving the core of the business logic unchanged.
+Dagster manages the construction of that context and provides facilities to inject values into and
+attach resources (such as a Spark context, a database connection, or a custom API for specific use
+cases) to it. It also provides a first-class facility (the `ModeDefintion`) that lets users swap
+out the implementation of those resources based on configuration. This lets the same solid code
+execute in the context of, for example, a unit test mode, an integration test mode, and a production
+mode, while leaving the business logic encoded in the solid unchanged.
 
 Please see our testing guide for more detail.
 
-## Relationship to Airflow
-
-As of this writing, Airflow is the most widely adopted workflow engine in the open source
-ecosystem. It's useful to understand the relationship of this tool to Airflow.
-
-Dagster is envisioned as separate, higher-level abstraction that can optionally be run _on top of
-Airflow itself_.
-
-At first blush, The most analogous abstraction in Airflow is the operator. Airflow defines an
-operator as "a task within a workflow." Note there is also separate concept of Task.
-
-### Dependencies
-
-Airflow operators are purely concerned with the physical execution of their computation and their
-order of execution relative to other operators within a given DAG. Once instantiated, they
-communicate nothing about the semantics and behavior the computations within them.
-
-Dagster’s primary concern is both (a) expressing the semantic meaning of these data computations
-in a first-class way and (b) having an opinionated structure of those computations to make them
-more reusable, testable, etc. The direct value is for the user or tool author leveraging the
-programming model, and by the array of tools made possible by a layer of self-describing data
-computations.
-
-As noted before in this guide, Solids within Dagster encode their dependencies not just in terms
-of execution order, but in terms of data.
-
-By constrast, Airflow made a very explicit decision to not encode data dependencies in their core
-abstractions.
-
-The documentation is very clear:
-
-> This is a subtle but very important point: in general, if two operators need to share
-> information, like a filename or small amount of data, you should consider combining them into
-> a single operator.
-
-Dagster takes a different view. We believe that data computation should be constructed to be as
-functional as is feasible. In reality, there _are_ data dependencies between stages in a pipeline:
-tasks almost always consume the materializations of upstream tasks. Airflow simply makes the
-decision to not express them.
-
-By contrast Dagster seeks to encode those directly both by linking depending between inputs and
-outputs, rather than at the Solid-level, and by introducing a type system to describe those inputs
-and outputs. This has a number of advantages: self-describing data computations, more reusability
-and testability, more reliable re-execution semantics, and, in the future, fully incremental
-computation.
-
-Airflow actually ended up implementing a system to communicate out-of-band data between tasks --
-called XCom -- but its use is actively discouraged by both the documentation and its original
-author.
-
-### Signalling
-
-Airflows tasks communicate the _final state_ of their computation at runtime: success, failure,
-up-for-retry, etc. Dagster’s communication with its runtime is far richer. It does not just
-communicate the state of execution, but the semantics of the data during the computation.
-
-As a result, tooling built on top of Dagster provides an entire new layer of monitoring,
-communicating expectations (data quality tests), materializations (information regarding data that
-will outlive the scope of the computation), and outputs (the signal for the follow on computations
-to execute, along with data or metadata to be passed to those computations).
-
-### Context, Reusability, and Testability:
-
-Instantiated Airflow DAGs have no parameters and no data-sharing between their task instances.
-Configuration is hard-coded for a particular DAG instantiation, and that instantiation is manually
-constructed by the DAG author. In traditional programming terms, airflow task instances -- and by
-extension their composition primitive, the DAG -- are functions without parameters. That makes them
-bound to a specific parameterization and execution environment, and inherently untestable.
-
-By constrast Dagster is a layered system, where computation and dependency structure is written by
-the data application author abstractly, with a separate step to configure that computation and bind
-it to an execution environment. This machine-generated dependency graph, the execution plan, is
-the artifact bound to an execution environment.
-
-In Dagster's airflow integration it is actually this execution plan, and not the graph of Solids --
-from which the DAG of airflow operators is dynamically generated. This is the concrete ramification
-of this fact: The Solid is actually a distinct and higher order abstraction than an Airflow
-operator.
-
-In this model the Airflow DAG is the output of compilation process, so that the testing (and other
-software constructs) can be expressed in the higher level API concerned with the semantics of data
-applications, and not just their execution order.
-
 ## FAQ
 
-### Why is it called a "Solid"?
+### Why is it called a "solid"?
 
 It is a long and meandering journey, from a novel concept, to a familiar acronym, and back to a
 word.
@@ -246,5 +157,5 @@ directly inputted by a user, gathered from an uncontrolled external system, or g
 by a sensor -- and computed data -- meaning data that is either created by computing on source data
 or on other computed data. Management of computed data is the primary concern of Dagster. Another
 name for computed data would be software-structured data. Or SSD. Given that SSD is already a
-well-known acronym for Solid State Drives we named our core concept for software-structured data a
-Solid.
+well-known acronym for Solid State Drives we named our core concept for software-structured data
+a solid.
