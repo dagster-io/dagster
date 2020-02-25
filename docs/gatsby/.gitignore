@@ -70,3 +70,5 @@ yarn-error.log
 # Builded files
 versions/**
 !versions/.keep
+
+dagster-info.json
