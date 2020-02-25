@@ -27,4 +27,7 @@ def format_error_with_stack_trace(error):
     else:
         formatted_error['stack_trace'] = get_stack_trace_array(error)
 
+    if hasattr(error, '__cause__') and error.__cause__:
+        formatted_error['cause'] = format_error_with_stack_trace(error.__cause__)
+
     return formatted_error

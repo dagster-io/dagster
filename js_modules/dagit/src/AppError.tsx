@@ -6,6 +6,7 @@ import { showCustomAlert } from "./CustomAlertProvider";
 
 export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
+  cause?: DagsterGraphQLError;
 }
 interface DagsterErrorResponse extends ErrorResponse {
   graphQLErrors?: ReadonlyArray<DagsterGraphQLError>;
@@ -14,13 +15,11 @@ interface DagsterErrorResponse extends ErrorResponse {
 const ErrorToaster = Toaster.create({ position: Position.TOP_RIGHT });
 
 export const showGraphQLError = (error: DagsterGraphQLError) => {
-  const message = error.path ? (
+  const message = (
     <div>
       Unexpected GraphQL error
       <AppStackTraceLink error={error} />
     </div>
-  ) : (
-    `[GraphQL error] ${error.message}`
   );
   ErrorToaster.show({ message, intent: Intent.DANGER });
   console.error("[GraphQL error]", error);
@@ -49,6 +48,18 @@ const AppStackTraceLink = ({ error }: { error: DagsterGraphQLError }) => {
       Stack Trace:
       {"\n"}
       {error.stack_trace.join("")}
+    </>
+  ) : null;
+  const causeContent = error.cause ? (
+    <>
+      {"\n"}
+      The above exception was the direct cause of the following exception:
+      {"\n\n"}
+      Message: {error.cause.message}
+      {"\n\n"}
+      Stack Trace:
+      {"\n"}
+      {error.cause.stack_trace.join("")}
     </>
   ) : null;
   const instructions = (
@@ -110,6 +121,7 @@ const AppStackTraceLink = ({ error }: { error: DagsterGraphQLError }) => {
         {"\n\n"}
         Locations: {JSON.stringify(error.locations)}
         {stackTraceContent}
+        {causeContent}
       </div>
     </div>
   );
