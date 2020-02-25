@@ -7,6 +7,18 @@ class S3Resource(object):
     def __init__(self, s3_session):
         self.session = s3_session
 
+    def download_file(self, bucket, key, filename, **kwargs):
+        '''This mirrors the download_file boto3 API:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.download_file
+        '''
+        return self.session.download_file(bucket, key, filename, **kwargs)
+
+    def download_fileobj(self, bucket, key, fileobj, **kwargs):
+        '''This mirrors the download_fileobj boto3 API:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.download_fileobj
+        '''
+        return self.session.download_fileobj(bucket, key, fileobj, **kwargs)
+
     def put_object(self, **kwargs):
         '''This mirrors the put_object boto3 API:
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Bucket.put_object
@@ -59,7 +71,7 @@ def s3_resource(context):
     You may configure this resource as follows:
 
     .. code-block:: YAML
-    
+
         resources:
           s3:
             config:
@@ -67,10 +79,10 @@ def s3_resource(context):
               # Optional[bool]: Specifies whether to use an unsigned S3 session. Default: True
               region_name: "us-west-1"
               # Optional[str]: Specifies a custom region for the S3 session. Default is chosen
-              # through the ordinary boto credential chain. 
+              # through the ordinary boto credential chain.
               endpoint_url: "http://localhost"
               # Optional[str]: Specifies a custom endpoint for the S3 session. Default is None.
-    
+
     '''
     use_unsigned_session = context.resource_config['use_unsigned_session']
     region_name = context.resource_config.get('region_name')
