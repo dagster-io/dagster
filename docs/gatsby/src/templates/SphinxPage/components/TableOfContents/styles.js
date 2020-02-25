@@ -1,7 +1,6 @@
 import { theme as t } from "utils/css";
 
 export const wrapper = isMobile => ({
-  py: 5,
   px: 4,
   ml: 4,
   mt: 0,

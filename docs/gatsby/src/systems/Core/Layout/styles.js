@@ -1,11 +1,5 @@
 import { theme as t } from "utils/css";
 
-export const main = {
-  position: "relative",
-  maxWidth: "100vw",
-  overflowX: "hidden"
-};
-
 export const page = state => {
   const closed = !state.matches("showing");
   const transform = `translate(${closed ? "-250px" : 0})`;
@@ -15,7 +9,8 @@ export const page = state => {
     width: "calc(100% + 250px)",
     transform: [transform, transform, "none"],
     transition: "transform .3s",
-    height: "100%"
+    height: "100%",
+    pt: 4
   };
 };
 

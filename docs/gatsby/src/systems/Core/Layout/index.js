@@ -16,6 +16,8 @@ import { Header } from "systems/Header";
 import { responsiveMachine } from "./machines/responsive";
 import * as styles from "./styles";
 
+import styled from "@emotion/styled";
+
 export const Layout = ({ children }) => {
   const sidebarRef = useRef(null);
   const { width } = useWindowSize();
@@ -43,7 +45,7 @@ export const Layout = ({ children }) => {
     <Location>
       {({ location }) => (
         <Styled.root>
-          <main sx={styles.main}>
+          <Container>
             <Header
               ref={sidebarRef}
               onMenuClick={handleToggle}
@@ -60,12 +62,18 @@ export const Layout = ({ children }) => {
                 {children}
               </div>
             </div>
-          </main>
+          </Container>
         </Styled.root>
       )}
     </Location>
   );
 };
+
+const Container = styled.main`
+  position: relative;
+  maxwidth: 100vh;
+  overflowx: hidden;
+`;
 
 Layout.propTypes = {
   children: PropTypes.node.isRequired
