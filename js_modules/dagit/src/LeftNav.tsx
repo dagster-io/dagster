@@ -60,7 +60,7 @@ export const LeftNav = () => {
             label: "Runs"
           },
           {
-            to: `/playground`,
+            to: `/playground/${pipelineSelector}/`,
             tab: `playground`,
             icon: <Icon icon="manually-entered-data" iconSize={30} />,
             label: "Playground"

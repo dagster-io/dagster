@@ -42,8 +42,11 @@ const AppRoutes = () => (
     <Route path="/runs" component={RunsRoot} exact={true} />
     <Route path="/solids/:name?" component={SolidsRoot} />
 
-    <Route path="/playground/setup" component={PipelineExecutionSetupRoot} />
-    <Route path="/playground" component={PipelineExecutionRoot} />
+    <Route
+      path="/playground/:pipelineName/setup"
+      component={PipelineExecutionSetupRoot}
+    />
+    <Route path="/playground/:pipelineName" component={PipelineExecutionRoot} />
     {/* Capture solid subpath in a regex match */}
     <Route path="/pipeline/(/?.*)" component={PipelineExplorerRoot} />
 

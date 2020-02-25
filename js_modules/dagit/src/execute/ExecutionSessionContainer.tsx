@@ -37,7 +37,6 @@ import {
 } from "./types/ExecutionSessionContainerEnvironmentSchemaFragment";
 import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
-import { PipelineJumpBar } from "../PipelineJumpComponents";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
 import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags } from "./types/ConfigPartitionsQuery";
@@ -235,7 +234,7 @@ export default class ExecutionSessionContainer extends React.Component<
   closeTagEditor = () => this.setState({ tagEditorOpen: false });
 
   render() {
-    const { currentSession, onCreateSession, onSaveSession } = this.props;
+    const { currentSession, onCreateSession } = this.props;
     const {
       preview,
       editorHelpContext,
@@ -257,17 +256,6 @@ export default class ExecutionSessionContainer extends React.Component<
         first={
           <>
             <SessionSettingsBar>
-              <PipelineJumpBar
-                selectedPipelineName={currentSession.pipeline}
-                onChange={name =>
-                  onSaveSession({
-                    pipeline: name,
-                    mode: null,
-                    solidSubset: null
-                  })
-                }
-              />
-              <div style={{ width: 5 }} />
               <SolidSelector
                 subsetError={subsetError}
                 pipelineName={currentSession.pipeline}
@@ -424,17 +412,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
       identifier={"execution"}
       firstInitialPercent={75}
       firstMinSize={100}
-      first={
-        <>
-          <SessionSettingsBar>
-            <PipelineJumpBar
-              selectedPipelineName={props.currentSession.pipeline}
-              onChange={name => props.onSaveSession({ pipeline: name })}
-            />
-          </SessionSettingsBar>
-          {props.children}
-        </>
-      }
+      first={<>{props.children}</>}
       second={<RunPreview />}
     />
   );
@@ -474,14 +452,14 @@ const SessionSettingsBar = styled.div`
   background: ${Colors.WHITE};
   align-items: center;
   height: 47px;
-  padding: 8px;
+  padding: 8px 10px;
 `;
 
 const ConfigEditorPresetInsertionContainer = styled.div`
   display: inline-block;
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 12px;
   z-index: 10;
 `;
 

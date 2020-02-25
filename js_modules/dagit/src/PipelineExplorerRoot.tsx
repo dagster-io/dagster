@@ -1,8 +1,7 @@
 import * as React from "react";
-import { match } from "react-router";
 import gql from "graphql-tag";
-import { History, Location } from "history";
 import { useQuery } from "react-apollo";
+import { RouteComponentProps } from "react-router-dom";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "./Loading";
@@ -12,12 +11,6 @@ import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables
 } from "./types/PipelineExplorerRootQuery";
-
-interface PipelineExplorerRootProps {
-  location: Location;
-  match: match<{ 0: string }>;
-  history: History<any>;
-}
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -124,7 +117,7 @@ function explodeCompositesInHandleGraph(
   return results;
 }
 
-const PipelineExplorerRoot: React.FunctionComponent<PipelineExplorerRootProps> = props => {
+const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
   const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
   const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({

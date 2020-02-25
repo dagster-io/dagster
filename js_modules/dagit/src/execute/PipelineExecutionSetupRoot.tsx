@@ -6,19 +6,20 @@ import {
   IExecutionSession
 } from "../LocalStorage";
 import * as querystring from "query-string";
+import { RouteComponentProps } from "react-router-dom";
 
-interface PipelineExecutionSetupRootProps {}
-
-export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = () => {
-  const [data, onSave] = useStorage();
+export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
+  pipelineName: string;
+}>> = ({ match }) => {
+  const pipelineName = match.params.pipelineName;
+  const [data, onSave] = useStorage(pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
-    if (qs.pipeline && (qs.config || qs.mode || qs.solidSubset)) {
-      const newSession: Partial<IExecutionSession> = {};
-      if (typeof qs.pipeline === "string") {
-        newSession.pipeline = qs.pipeline;
-      }
+    if (qs.config || qs.mode || qs.solidSubset) {
+      const newSession: Partial<IExecutionSession> = {
+        pipeline: pipelineName
+      };
       if (typeof qs.config === "string") {
         newSession.environmentConfigYaml = qs.config;
       }
