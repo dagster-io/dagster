@@ -22,7 +22,7 @@ def _is_selector_field_optional(config_type):
         return False
     else:
         _name, field = ensure_single_item(config_type.fields)
-        return field.is_optional
+        return not field.is_required
 
 
 def define_resource_dictionary_cls(resource_defs):

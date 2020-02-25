@@ -12,7 +12,7 @@ def all_optional_type(config_type):
 
     if ConfigTypeKind.is_shape(config_type.kind):
         for field in config_type.fields.values():
-            if not field.is_optional:
+            if field.is_required:
                 return False
         return True
 
@@ -82,7 +82,7 @@ def _compute_fields_hash(fields, description):
         _add_hash(m, ':fieldname:' + field_name)
         if field.default_provided:
             _add_hash(m, ':default_value: ' + field.default_value_as_str)
-        _add_hash(m, ':is_optional: ' + str(field.is_optional))
+        _add_hash(m, ':is_required: ' + str(field.is_required))
         _add_hash(m, ':type_key: ' + field.config_type.key)
         if field.description:
             _add_hash(m, ':description: ' + field.description)

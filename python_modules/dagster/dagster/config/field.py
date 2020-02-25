@@ -268,12 +268,11 @@ class Field(object):
                         'Unable to resolve implicit default_value for Field.', evr.errors, None,
                     )
                 self._default_value = evr.value
-
-        self.is_optional = not canonical_is_required
+        self._is_required = canonical_is_required
 
     @property
     def is_required(self):
-        return not self.is_optional
+        return self._is_required
 
     @property
     def default_provided(self):
@@ -303,12 +302,12 @@ class Field(object):
         return str(self._default_value)
 
     def __repr__(self):
-        return ('Field({config_type}, default={default}, is_optional={is_optional})').format(
+        return ('Field({config_type}, default={default}, is_required={is_required})').format(
             config_type=self.config_type,
             default='@'
             if self._default_value == FIELD_NO_DEFAULT_PROVIDED
             else self._default_value,
-            is_optional=self.is_optional,
+            is_required=self.is_required,
         )
 
 

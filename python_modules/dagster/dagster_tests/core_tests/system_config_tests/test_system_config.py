@@ -97,10 +97,10 @@ def test_provided_default_on_resources_config():
 
     env_type = create_environment_type(pipeline_def)
     some_resource_field = env_type.fields['resources'].config_type.fields['some_resource']
-    assert some_resource_field.is_optional
+    assert some_resource_field.is_required is False
 
     some_resource_config_field = some_resource_field.config_type.fields['config']
-    assert some_resource_config_field.is_optional
+    assert some_resource_config_field.is_required is False
     assert some_resource_config_field.default_value == {'with_default_int': 23434}
 
     assert some_resource_field.default_value == {'config': {'with_default_int': 23434}}
@@ -181,7 +181,7 @@ def test_solid_configs_defaults():
 
     int_solid_field = solids_field.config_type.fields['int_config_solid']
 
-    assert int_solid_field.is_optional
+    assert int_solid_field.is_required is False
     # TODO: this is the test case the exposes the default dodginess
     # https://github.com/dagster-io/dagster/issues/1990
     assert int_solid_field.default_provided
@@ -190,7 +190,7 @@ def test_solid_configs_defaults():
 
     int_solid_config_field = int_solid_field.config_type.fields['config']
 
-    assert int_solid_config_field.is_optional
+    assert int_solid_config_field.is_required is False
     assert not int_solid_config_field.default_provided
 
 
@@ -312,11 +312,11 @@ def test_optional_solid_with_optional_scalar_config():
 
     env_type = create_environment_type(pipeline_def)
 
-    assert env_type.fields['solids'].is_optional is True
+    assert env_type.fields['solids'].is_required is False
 
     solids_type = env_type.fields['solids'].config_type
 
-    assert solids_type.fields['int_config_solid'].is_optional is True
+    assert solids_type.fields['int_config_solid'].is_required is False
 
     env_obj = EnvironmentConfig.build(pipeline_def, {})
 
@@ -342,11 +342,11 @@ def test_optional_solid_with_required_scalar_config():
 
     env_type = create_environment_type(pipeline_def)
 
-    assert env_type.fields['solids'].is_optional is False
+    assert env_type.fields['solids'].is_required is True
 
     solids_type = env_type.fields['solids'].config_type
 
-    assert solids_type.fields['int_config_solid'].is_optional is False
+    assert solids_type.fields['int_config_solid'].is_required is True
 
     int_config_solid_type = solids_type.fields['int_config_solid'].config_type
 
@@ -354,7 +354,7 @@ def test_optional_solid_with_required_scalar_config():
 
     int_config_solid_config_field = int_config_solid_type.fields['config']
 
-    assert int_config_solid_config_field.is_optional is False
+    assert int_config_solid_config_field.is_required is True
 
     execute_pipeline(pipeline_def, {'solids': {'int_config_solid': {'config': 234}}})
 
@@ -375,15 +375,15 @@ def test_required_solid_with_required_subfield():
 
     env_type = create_environment_type(pipeline_def)
 
-    assert env_type.fields['solids'].is_optional is False
+    assert env_type.fields['solids'].is_required is True
     assert env_type.fields['solids'].config_type
 
     solids_type = env_type.fields['solids'].config_type
-    assert solids_type.fields['int_config_solid'].is_optional is False
+    assert solids_type.fields['int_config_solid'].is_required is True
     int_config_solid_type = solids_type.fields['int_config_solid'].config_type
-    assert int_config_solid_type.fields['config'].is_optional is False
+    assert int_config_solid_type.fields['config'].is_required is True
 
-    assert env_type.fields['execution'].is_optional
+    assert env_type.fields['execution'].is_required is False
 
     env_obj = EnvironmentConfig.build(
         pipeline_def, {'solids': {'int_config_solid': {'config': {'required_field': 'foobar'}}}},
@@ -415,8 +415,8 @@ def test_optional_solid_with_optional_subfield():
     )
 
     env_type = create_environment_type(pipeline_def)
-    assert env_type.fields['solids'].is_optional
-    assert env_type.fields['execution'].is_optional
+    assert env_type.fields['solids'].is_required is False
+    assert env_type.fields['execution'].is_required is False
 
 
 def nested_field(config_type, *field_names):
@@ -446,8 +446,8 @@ def test_required_resource_with_required_subfield():
     )
 
     env_type = create_environment_type(pipeline_def)
-    assert env_type.fields['solids'].is_optional
-    assert env_type.fields['execution'].is_optional
+    assert env_type.fields['solids'].is_required is False
+    assert env_type.fields['execution'].is_required is False
     assert env_type.fields['resources'].is_required
     assert nested_field(env_type, 'resources', 'with_required').is_required
     assert nested_field(env_type, 'resources', 'with_required', 'config').is_required
@@ -473,14 +473,15 @@ def test_all_optional_field_on_single_resource():
     )
 
     env_type = create_environment_type(pipeline_def)
-    assert env_type.fields['solids'].is_optional
-    assert env_type.fields['execution'].is_optional
-    assert env_type.fields['resources'].is_optional
-    assert nested_field(env_type, 'resources', 'with_optional').is_optional
-    assert nested_field(env_type, 'resources', 'with_optional', 'config').is_optional
-    assert nested_field(
-        env_type, 'resources', 'with_optional', 'config', 'optional_field'
-    ).is_optional
+    assert env_type.fields['solids'].is_required is False
+    assert env_type.fields['execution'].is_required is False
+    assert env_type.fields['resources'].is_required is False
+    assert nested_field(env_type, 'resources', 'with_optional').is_required is False
+    assert nested_field(env_type, 'resources', 'with_optional', 'config').is_required is False
+    assert (
+        nested_field(env_type, 'resources', 'with_optional', 'config', 'optional_field').is_required
+        is False
+    )
 
 
 def test_optional_and_required_context():
@@ -503,16 +504,19 @@ def test_optional_and_required_context():
     )
 
     env_type = create_environment_type(pipeline_def)
-    assert env_type.fields['solids'].is_optional
+    assert env_type.fields['solids'].is_required is False
 
-    assert env_type.fields['execution'].is_optional
+    assert env_type.fields['execution'].is_required is False
 
     assert nested_field(env_type, 'resources').is_required
-    assert nested_field(env_type, 'resources', 'optional_resource').is_optional
-    assert nested_field(env_type, 'resources', 'optional_resource', 'config').is_optional
-    assert nested_field(
-        env_type, 'resources', 'optional_resource', 'config', 'optional_field'
-    ).is_optional
+    assert nested_field(env_type, 'resources', 'optional_resource').is_required is False
+    assert nested_field(env_type, 'resources', 'optional_resource', 'config').is_required is False
+    assert (
+        nested_field(
+            env_type, 'resources', 'optional_resource', 'config', 'optional_field'
+        ).is_required
+        is False
+    )
 
     assert nested_field(env_type, 'resources', 'required_resource').is_required
     assert nested_field(env_type, 'resources', 'required_resource', 'config').is_required

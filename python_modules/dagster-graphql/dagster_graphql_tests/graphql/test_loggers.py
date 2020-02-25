@@ -14,12 +14,12 @@ LOGGER_QUERY = '''
           description
           configField {
             configType {
-              key 
+              key
               ... on CompositeConfigType {
                 fields {
                   name
                   configType {
-                    key 
+                    key
                   }
                 }
               }
@@ -32,7 +32,8 @@ LOGGER_QUERY = '''
 }
 '''
 
-
+# Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
+# as the existing snapshot and then run update snapshot
 def test_mode_fetch_loggers(snapshot):
     result = execute_dagster_graphql(define_test_context(), LOGGER_QUERY)
 

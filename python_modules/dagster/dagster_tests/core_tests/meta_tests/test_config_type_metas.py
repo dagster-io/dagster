@@ -52,14 +52,14 @@ def test_field_things():
 
     field_meta_dict = {field_meta.name: field_meta for field_meta in dict_meta.fields}
 
-    assert field_meta_dict['req'].is_optional is False
+    assert field_meta_dict['req'].is_required is True
     assert field_meta_dict['req'].description is None
-    assert field_meta_dict['opt'].is_optional is True
-    assert field_meta_dict['opt_with_default'].is_optional is True
+    assert field_meta_dict['opt'].is_required is False
+    assert field_meta_dict['opt_with_default'].is_required is False
     assert field_meta_dict['opt_with_default'].default_provided is True
     assert field_meta_dict['opt_with_default'].default_value_as_str == '2'
 
-    assert field_meta_dict['req_with_desc'].is_optional is False
+    assert field_meta_dict['req_with_desc'].is_required is True
     assert field_meta_dict['req_with_desc'].description == 'A desc'
 
 

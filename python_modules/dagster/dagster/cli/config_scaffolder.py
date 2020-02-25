@@ -3,41 +3,41 @@ from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions import create_environment_type
 
 
-def scaffold_pipeline_config(pipeline_def, skip_optional=True, mode=None):
+def scaffold_pipeline_config(pipeline_def, skip_non_required=True, mode=None):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.bool_param(skip_optional, 'skip_optional')
+    check.bool_param(skip_non_required, 'skip_non_required')
 
     env_config_type = create_environment_type(pipeline_def, mode=mode)
 
     env_dict = {}
 
     for env_field_name, env_field in env_config_type.fields.items():
-        if skip_optional and env_field.is_optional:
+        if skip_non_required and not env_field.is_required:
             continue
 
         # unfortunately we have to treat this special for now
         if env_field_name == 'context':
-            if skip_optional and env_config_type.fields['context'].is_optional:
+            if skip_non_required and not env_config_type.fields['context'].is_required:
                 continue
 
-        env_dict[env_field_name] = scaffold_type(env_field.config_type, skip_optional)
+        env_dict[env_field_name] = scaffold_type(env_field.config_type, skip_non_required)
 
     return env_dict
 
 
-def scaffold_type(config_type, skip_optional=True):
+def scaffold_type(config_type, skip_non_required=True):
     check.inst_param(config_type, 'config_type', ConfigType)
-    check.bool_param(skip_optional, 'skip_optional')
+    check.bool_param(skip_non_required, 'skip_non_required')
 
     # Right now selectors and composites have the same
     # scaffolding logic, which might not be wise.
     if ConfigTypeKind.has_fields(config_type.kind):
         default_dict = {}
         for field_name, field in config_type.fields.items():
-            if skip_optional and field.is_optional:
+            if skip_non_required and not field.is_required:
                 continue
 
-            default_dict[field_name] = scaffold_type(field.config_type, skip_optional)
+            default_dict[field_name] = scaffold_type(field.config_type, skip_non_required)
         return default_dict
     elif config_type.kind == ConfigTypeKind.ANY:
         return 'AnyType'

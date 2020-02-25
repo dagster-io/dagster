@@ -252,7 +252,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
             name=name,
             description=field.description,
             default_value=field.default_value_as_str if field.default_provided else None,
-            is_optional=field.is_optional,
+            is_optional=not field.is_required,
         )
         self._field = field
 

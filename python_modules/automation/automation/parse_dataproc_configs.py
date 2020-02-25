@@ -51,15 +51,15 @@ class Field(object):
     we've pre-processed all custom types
     '''
 
-    def __init__(self, fields, is_optional, description):
+    def __init__(self, fields, is_required, description):
         self.fields = fields
-        self.is_optional = is_optional
+        self.is_required = is_required
         self.description = description
 
     def __repr__(self):
         return 'Field(%s, %s, %s)' % (
             pprint.pformat(self.fields),
-            str(self.is_optional),
+            str(self.is_required),
             self.description,
         )
 
@@ -119,8 +119,7 @@ class Field(object):
 
             # Print is_required=True/False if defined; if not defined, default to True
             printer.line(
-                'is_required=%s,'
-                % str(not (self.is_optional if self.is_optional is not None else True))
+                'is_required=%s,' % str(self.is_required if self.is_required is not None else True)
             )
         printer.line(')')
         return printer.read()
@@ -231,7 +230,7 @@ class ConfigParser(object):
         else:
             raise Exception('unknown type: ', obj)
 
-        return Field(fields, is_optional=None, description=obj.get('description'))
+        return Field(fields, is_required=None, description=obj.get('description'))
 
     def extract_schema_for_object(self, object_name, name):
         # Reset enums for this object

@@ -114,7 +114,7 @@ def _validate_empty_selector_config(context):
 
     _, defined_field_def = ensure_single_item(context.config_type.fields)
 
-    if not defined_field_def.is_optional:
+    if defined_field_def.is_required:
         return EvaluateValueResult.for_error(create_selector_unspecified_value_error(context))
 
     return EvaluateValueResult.for_value({})
@@ -250,7 +250,7 @@ def _compute_missing_fields_error(context, field_defs, incoming_fields):
     missing_fields = []
 
     for field_name, field_def in field_defs.items():
-        if not field_def.is_optional and field_name not in incoming_fields:
+        if field_def.is_required and field_name not in incoming_fields:
             missing_fields.append(field_name)
 
     if missing_fields:

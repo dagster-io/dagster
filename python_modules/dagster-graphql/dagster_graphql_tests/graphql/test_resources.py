@@ -14,12 +14,12 @@ RESOURCE_QUERY = '''
           description
           configField {
             configType {
-              key 
+              key
               ... on CompositeConfigType {
                 fields {
                   name
                   configType {
-                    key 
+                    key
                   }
                 }
               }
@@ -60,6 +60,8 @@ def test_mode_fetch_resources(snapshot):
     snapshot.assert_match(result.data)
 
 
+# Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
+# as the existing snapshot and then run update snapshot
 def test_required_resources(snapshot):
     result = execute_dagster_graphql(define_test_context(), REQUIRED_RESOURCE_QUERY)
 

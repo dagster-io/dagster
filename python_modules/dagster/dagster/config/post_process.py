@@ -123,8 +123,8 @@ def _recurse_in_to_shape(context, config_value):
                 context.for_field(field_def, expected_field), field_def.default_value
             )
 
-        elif not field_def.is_optional:
-            check.failed('Missing non-optional composite member not caught in validation')
+        elif field_def.is_required:
+            check.failed('Missing required composite member not caught in validation')
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us

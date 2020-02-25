@@ -116,17 +116,17 @@ class ConfigEnumValueMeta(namedtuple('_ConfigEnumValueMeta', 'value description'
 class ConfigFieldMeta(
     namedtuple(
         '_ConfigFieldMeta',
-        'name type_ref is_optional default_provided default_value_as_str description',
+        'name type_ref is_required default_provided default_value_as_str description',
     )
 ):
     def __new__(
-        cls, name, type_ref, is_optional, default_provided, default_value_as_str, description
+        cls, name, type_ref, is_required, default_provided, default_value_as_str, description
     ):
         return super(ConfigFieldMeta, cls).__new__(
             cls,
             name=check.opt_str_param(name, 'name'),
             type_ref=check.inst_param(type_ref, 'type_ref', TypeRef),
-            is_optional=check.bool_param(is_optional, 'is_optional'),
+            is_required=check.bool_param(is_required, 'is_required'),
             default_provided=check.bool_param(default_provided, 'default_provided'),
             default_value_as_str=check.opt_str_param(default_value_as_str, 'default_value_as_str'),
             description=check.opt_str_param(description, 'description'),
@@ -139,7 +139,7 @@ def meta_from_field(name, field):
     return ConfigFieldMeta(
         name=name,
         type_ref=type_ref_of(field.config_type),
-        is_optional=field.is_optional,
+        is_required=field.is_required,
         default_provided=field.default_provided,
         default_value_as_str=field.default_value_as_str if field.default_provided else None,
         description=field.description,

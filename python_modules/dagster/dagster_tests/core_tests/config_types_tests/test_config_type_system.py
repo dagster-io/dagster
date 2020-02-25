@@ -413,8 +413,8 @@ def test_build_optionality():
         {'required': {'value': String}, 'optional': {'value': Field(String, is_required=False)},}
     ).config_type
 
-    assert optional_test_type.fields['required'].is_optional is False
-    assert optional_test_type.fields['optional'].is_optional is True
+    assert optional_test_type.fields['required'].is_required
+    assert optional_test_type.fields['optional'].is_required is False
 
 
 def test_wrong_solid_name():

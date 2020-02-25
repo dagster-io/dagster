@@ -360,16 +360,16 @@ def pipeline_scaffold_command(**kwargs):
 
 def execute_scaffold_command(cli_args, print_fn):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    skip_optional = cli_args['print_only_required']
-    do_scaffold_command(pipeline, print_fn, skip_optional)
+    skip_non_required = cli_args['print_only_required']
+    do_scaffold_command(pipeline, print_fn, skip_non_required)
 
 
-def do_scaffold_command(pipeline, printer, skip_optional):
+def do_scaffold_command(pipeline, printer, skip_non_required):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     check.callable_param(printer, 'printer')
-    check.bool_param(skip_optional, 'skip_optional')
+    check.bool_param(skip_non_required, 'skip_non_required')
 
-    config_dict = scaffold_pipeline_config(pipeline, skip_optional=skip_optional)
+    config_dict = scaffold_pipeline_config(pipeline, skip_non_required=skip_non_required)
     yaml_string = yaml.dump(config_dict, default_flow_style=False)
     printer(yaml_string)
 

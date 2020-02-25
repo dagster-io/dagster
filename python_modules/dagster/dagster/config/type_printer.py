@@ -41,10 +41,10 @@ def _do_print(config_type, printer, with_lines=True):
         line_break_fn('{')
         with printer.with_indent():
             for name, field in sorted(config_type.fields.items()):
-                if field.is_optional:
-                    printer.append(name + '?: ')
-                else:
+                if field.is_required:
                     printer.append(name + ': ')
+                else:
+                    printer.append(name + '?: ')
                 _do_print(
                     field.config_type, printer, with_lines=with_lines,
                 )

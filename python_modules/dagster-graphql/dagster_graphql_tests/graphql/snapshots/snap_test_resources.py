@@ -44,7 +44,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                                         'name': 'num_two'
                                     }
                                 ],
-                                'key': 'Shape.46ed531fb407db3450eaf305b9b22d72e404a01f'
+                                'key': 'Shape.fc3adbbf54d7ee8b03e7f0116e13d34e253c5bcf'
                             }
                         },
                         'description': None,

@@ -48,14 +48,13 @@ def test_post_process_config():
             'quiggle': Field(str, is_required=False),
         }
     )
-
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(composite_config_type, {})
 
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(composite_config_type, {'bar': {'baz': ['giraffe']}, 'quux': 'nimble'})
 
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(composite_config_type, {'foo': 'zowie', 'quux': 'nimble'})
 
     assert post_process_config(
@@ -80,10 +79,10 @@ def test_post_process_config():
         }
     )
 
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(nested_composite_config_type, {'fruts': None})
 
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(
             nested_composite_config_type, {'fruts': {'banana': 'good', 'potato': 'bad'}}
         )
@@ -148,7 +147,7 @@ def test_post_process_config():
         )
     )
 
-    with pytest.raises(CheckError, match='Missing non-optional composite member'):
+    with pytest.raises(CheckError, match='Missing required composite member'):
         post_process_config(permissive_dict_config_type, None)
 
     assert post_process_config(permissive_dict_config_type, {'foo': 'wow', 'mau': 'mau'}).value == {

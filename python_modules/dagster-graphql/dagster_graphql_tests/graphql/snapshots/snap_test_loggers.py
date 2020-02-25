@@ -29,7 +29,7 @@ snapshots['test_mode_fetch_loggers 1'] = {
                                         'name': 'prefix'
                                     }
                                 ],
-                                'key': 'Shape.830132920aced99409ce9e96e39a9ec019f9c803'
+                                'key': 'Shape.37a85e53844c27abff7868c5c2e6a32d7fd1c308'
                             }
                         },
                         'description': None,
@@ -71,7 +71,7 @@ snapshots['test_mode_fetch_loggers 1'] = {
                                         'name': 'prefix'
                                     }
                                 ],
-                                'key': 'Shape.830132920aced99409ce9e96e39a9ec019f9c803'
+                                'key': 'Shape.37a85e53844c27abff7868c5c2e6a32d7fd1c308'
                             }
                         },
                         'description': None,

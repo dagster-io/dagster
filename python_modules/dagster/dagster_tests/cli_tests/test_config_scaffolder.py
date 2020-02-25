@@ -40,11 +40,11 @@ def test_basic_solids_config(snapshot):
 
     env_config_type = create_environment_type(pipeline_def)
 
-    assert env_config_type.fields['solids'].is_optional is False
+    assert env_config_type.fields['solids'].is_required
     solids_config_type = env_config_type.fields['solids'].config_type
-    assert solids_config_type.fields['required_field_solid'].is_optional is False
+    assert solids_config_type.fields['required_field_solid'].is_required
     required_solid_config_type = solids_config_type.fields['required_field_solid'].config_type
-    assert required_solid_config_type.fields['config'].is_optional is False
+    assert required_solid_config_type.fields['config'].is_required
 
     assert set(env_config_type.fields['loggers'].config_type.fields.keys()) == set(['console'])
 
@@ -52,7 +52,7 @@ def test_basic_solids_config(snapshot):
 
     assert set(console_logger_config_type.config_type.fields.keys()) == set(['config'])
 
-    assert console_logger_config_type.config_type.fields['config'].is_optional
+    assert console_logger_config_type.config_type.fields['config'].is_required is False
 
     console_logger_config_config_type = console_logger_config_type.config_type.fields[
         'config'
@@ -60,7 +60,7 @@ def test_basic_solids_config(snapshot):
 
     assert set(console_logger_config_config_type.fields.keys()) == set(['log_level', 'name'])
 
-    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, skip_optional=False))
+    snapshot.assert_match(scaffold_pipeline_config(pipeline_def, skip_non_required=False))
 
 
 def dummy_resource(config_field):
@@ -84,11 +84,11 @@ def test_two_modes(snapshot):
     snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode='mode_one'))
 
     snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_optional=False)
+        scaffold_pipeline_config(pipeline_def, mode='mode_one', skip_non_required=False)
     )
 
     snapshot.assert_match(scaffold_pipeline_config(pipeline_def, mode='mode_two'))
 
     snapshot.assert_match(
-        scaffold_pipeline_config(pipeline_def, mode='mode_two', skip_optional=False)
+        scaffold_pipeline_config(pipeline_def, mode='mode_two', skip_non_required=False)
     )
