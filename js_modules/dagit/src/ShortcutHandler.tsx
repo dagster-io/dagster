@@ -3,7 +3,7 @@ import styled from "styled-components/macro";
 import { Colors } from "@blueprintjs/core";
 import ReactDOM from "react-dom";
 
-const MODIFIER_KEYCODES = [1];
+const MODIFIER_KEYCODES = [17, 18, 91, 224];
 const SHORTCUT_VISIBILITY_EVENT_TYPE = "shortcut-visibility";
 
 // Global page state / handling of "shortcut mode". Press any modifier key
