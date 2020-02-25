@@ -449,6 +449,7 @@ def library_tests():
         'dagster-gcp': gcp_tests(),
         'dagster-k8s': k8s_tests(),
         'dagster-postgres': dagster_postgres_tests(),
+        'lakehouse': lakehouse_tests(),
     }
 
     for library in library_modules:
@@ -490,7 +491,7 @@ def lakehouse_tests():
         tests.append(
             StepBuilder("lakehouse tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "cd python_modules/lakehouse",
+                "cd python_modules/libraries/lakehouse",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
@@ -700,7 +701,6 @@ if __name__ == "__main__":
     steps += examples_tests()
 
     steps += dagit_tests()
-    steps += lakehouse_tests()
     steps += pipenv_smoke_tests()
 
     steps += python_modules_tox_tests("dagster")

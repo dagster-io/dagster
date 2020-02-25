@@ -102,7 +102,7 @@ MODULE_NAMES = [
 # List of subdirectories in directory: https://stackoverflow.com/a/973488
 LIBRARY_MODULES = next(os.walk(os.path.join(BASE_PATH, '..', 'python_modules', 'libraries')))[1]
 
-EXPECTED_PYTHON_MODULES = ['automation', 'lakehouse', 'libraries'] + MODULE_NAMES
+EXPECTED_PYTHON_MODULES = ['automation', 'libraries'] + MODULE_NAMES
 
 EXPECTED_LIBRARIES = LIBRARY_MODULES
 
