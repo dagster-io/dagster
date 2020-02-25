@@ -13,6 +13,13 @@ data engineering and data science workflows
 
   guides/index
 
+The How-Tos provide easily digestable short answers to common questions about Dagster
+
+.. toctree::
+  :maxdepth: 2
+
+  how-tos/index
+
 The Principles are the fundamental underpinnings of Dagster's design.
 
 .. toctree::
