@@ -368,7 +368,7 @@ const RunActionsMenu: React.FunctionComponent<{
             disabled={!infoReady}
             icon="edit"
             target="_blank"
-            href={`/playground/setup?${qs.stringify({
+            href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
               mode: run.mode,
               pipeline: run.pipeline.name,
               config: envYaml,

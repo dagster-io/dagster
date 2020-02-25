@@ -114,28 +114,29 @@ function filterSolidsWithSearch(
   });
 }
 
-export const SolidsRoot: React.FunctionComponent<RouteComponentProps> = route => {
+type SolidsRootProps = RouteComponentProps<{ name: string }>;
+
+export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY);
   return (
     <Loading queryResult={queryResult}>
       {({ usedSolids }) => (
-        <SolidsRootWithData usedSolids={usedSolids} route={route} />
+        <SolidsRootWithData usedSolids={usedSolids} {...props} />
       )}
     </Loading>
   );
 };
 
-const SolidsRootWithData: React.FunctionComponent<{
-  route: RouteComponentProps;
+const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
   usedSolids: Solid[];
-}> = ({ route: { location, match, history }, usedSolids }) => {
+}> = ({ location, match, history, usedSolids }) => {
   const { q, typeExplorer } = querystring.parse(location.search);
   const suggestions = searchSuggestionsForSolids(usedSolids);
   const search = tokenizedValuesFromString((q as string) || "", suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
   const selected = usedSolids.find(
-    s => s.definition.name === match.params["name"]
+    s => s.definition.name === match.params.name
   );
 
   const onSearch = (search: TokenizingFieldValue[]) => {

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { match } from "react-router";
+import { RouteComponentProps } from "react-router";
 import { useApolloClient, useQuery } from "react-apollo";
 
 import { IconNames } from "@blueprintjs/icons";
@@ -9,11 +9,10 @@ import { Run } from "./Run";
 import { RunRootQuery } from "./types/RunRootQuery";
 import gql from "graphql-tag";
 
-interface IRunRootProps {
-  match: match<{ runId: string; pipelineName?: string }>;
-}
-
-export const RunRoot: React.FunctionComponent<IRunRootProps> = props => {
+export const RunRoot: React.FunctionComponent<RouteComponentProps<{
+  runId: string;
+  pipelineName?: string;
+}>> = props => {
   const { runId } = props.match.params;
   const client = useApolloClient();
   const { data } = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {

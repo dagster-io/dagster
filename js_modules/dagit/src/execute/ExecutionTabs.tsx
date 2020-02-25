@@ -6,7 +6,6 @@ import {
   IStorageData,
   applySelectSession,
   applyChangesToSession,
-  applyCreateSession,
   applyRemoveSession
 } from "../LocalStorage";
 
@@ -84,6 +83,7 @@ class ExecutionTab extends React.Component<
 interface ExecutionTabsProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
+  onAdd: () => void;
 }
 
 function sessionNamesAndKeysHash(data: IStorageData) {
@@ -102,7 +102,7 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   }
 
   render() {
-    const { data } = this.props;
+    const { data, onAdd } = this.props;
 
     const onApply = (mutator: any, ...args: any[]) => {
       // note: this function /cannot/ use props bound to local vars above
@@ -127,33 +127,32 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
             }
           />
         ))}
-        <ExecutionTab
-          title={"Add..."}
-          onClick={() => onApply(applyCreateSession, {})}
-        />
+        <ExecutionTab title={"Add..."} onClick={onAdd} />
       </ExecutionTabsContainer>
     );
   }
 }
 
 export const ExecutionTabsContainer = styled.div`
+  margin-left: 10px;
   display; flex;
   z-index: 1;
   flex-direction: row;
   position: relative;
-  top: 6px;
-  `;
+  top: 3px;
+`;
 
 const TabContainer = styled.div<{ active: boolean }>`
   color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
-  padding: 6px 9px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
+
+  padding: 0 9px 3px 9px;
+  display: inline-block;
   border-left: 1px solid ${Colors.GRAY4};
   user-select: none;
-  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
-  border-top: 2px solid ${({ active }) => (active ? "#2965CC" : "transparent")};
+  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY1)};
+  border-top: 2px solid ${({ active }) => (active ? "#2965CC" : Colors.GRAY5)};
+  line-height: 33px;
+  height: 40px;
 
   &:hover {
     background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};

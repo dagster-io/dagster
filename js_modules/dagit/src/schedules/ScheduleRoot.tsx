@@ -13,7 +13,7 @@ import {
 } from "./types/ScheduleRootQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
-import { match } from "react-router";
+import { RouteComponentProps } from "react-router";
 import { Link } from "react-router-dom";
 import { ScheduleRow, ScheduleRowFragment, AttemptStatus } from "./ScheduleRow";
 
@@ -26,11 +26,9 @@ import styled from "styled-components/macro";
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
 
-interface IScheduleRootProps {
-  match: match<{ scheduleName: string }>;
-}
-
-export class ScheduleRoot extends React.Component<IScheduleRootProps> {
+export class ScheduleRoot extends React.Component<
+  RouteComponentProps<{ scheduleName: string }>
+> {
   render() {
     const { scheduleName } = this.props.match.params;
 
