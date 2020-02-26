@@ -6,7 +6,7 @@ export const wrapper = {
     fontSize: 2
   },
   "&.toctree-l1 a": {
-    fontWeight: 800,
+    fontWeight: 600,
     fontSize: "18px",
     color: "#A59898 !important"
   },
@@ -14,7 +14,9 @@ export const wrapper = {
     color: "black !important"
   },
   "&.active.toctree-l1 ul": {
-    borderLeft: "1px solid #A59898",
+    borderLeft: "1px solid #C4C4C4",
+    marginLeft: "3px",
+    marginTop: "8px",
     paddingLeft: "15px"
   },
   "&:not(.active) > ul": {
@@ -24,7 +26,11 @@ export const wrapper = {
     lineHeight: 1.1,
     whiteSpace: "normal",
     marginTop: ".4em",
-    padding: "0.05em"
+    padding: ".1em"
+  },
+  "&.toctree-l2.active": {
+    color: "#2491EB !important",
+    position: "relative"
   },
   "&.toctree-l2 a": {
     fontWeight: 400,
@@ -32,10 +38,12 @@ export const wrapper = {
     opacity: 0.6
   },
   "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
-    opacity: 1
+    opacity: 1,
+    fontWeight: 400
   },
 
   "&.toctree-l2 a.active": {
+    color: "#2491EB !important",
     fontWeight: 600
   },
   "&.toctree-l2 > ul": {

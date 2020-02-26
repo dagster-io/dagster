@@ -5,7 +5,7 @@ export const wrapper = {
 
 export const content = {
   flex: 1,
-  px: [3, 4, 5],
+  px: [3, 4, 6],
   maxWidth: ["100%", "100%", "calc(100% - 280px)"]
 };
 
@@ -34,11 +34,14 @@ export const pageLinks = {
   justifyContent: "space-between",
   pt: [2, 3, 3],
   mt: [2, 3, 3],
+  mb: 2,
   borderTop: t => `1px solid ${t.colors.lightGray[1]}`,
 
   a: {
     display: "inline-flex",
-    alignItems: "center"
+    alignItems: "center",
+    border: "1px solid",
+    padding: "10px 20px"
   },
 
   svg: {

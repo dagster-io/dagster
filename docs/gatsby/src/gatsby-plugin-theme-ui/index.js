@@ -43,7 +43,7 @@ export default {
       lineHeight: 1.55,
       minHeight: "100vh",
       fontFamily: "body",
-      fontSize: 3,
+      fontSize: 2,
       color: "text",
       bg: "bodyBg"
     },

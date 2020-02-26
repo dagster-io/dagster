@@ -1,5 +1,5 @@
 const headingColor = {
-  h1: "blue.3",
+  h1: "dark",
   h2: "dark",
   h3: "dark",
   h4: "dark",

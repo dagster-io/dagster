@@ -1,8 +1,8 @@
 import { theme as t } from "utils/css";
 
 export const wrapper = isMobile => ({
-  px: 4,
-  ml: 4,
+  pr: 4,
+  // ml: 4,
   mt: 0,
   width: 250,
   minWidth: 250,
