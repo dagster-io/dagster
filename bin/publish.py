@@ -97,13 +97,18 @@ MODULE_NAMES = [
     'dagster-graphql',
 ]
 
+# Some libraries under development may not be ready to publish to PyPI; those are listed here
+UNPUBLISHED_LIBRARY_MODULES = {'lakehouse'}
+
 # Removed hard-coded list in favor of automatic scan of libraries folder
 # List of subdirectories in directory: https://stackoverflow.com/a/973488
-LIBRARY_MODULES = next(os.walk(os.path.join(BASE_PATH, '..', 'python_modules', 'libraries')))[1]
+LIBRARY_MODULES = (
+    set(next(os.walk(os.path.join(BASE_PATH, '..', 'python_modules', 'libraries')))[1])
+    - UNPUBLISHED_LIBRARY_MODULES
+)
+
 
 EXPECTED_PYTHON_MODULES = ['automation', 'libraries'] + MODULE_NAMES
-
-EXPECTED_LIBRARIES = LIBRARY_MODULES
 
 
 def normalize_module_name(name):
@@ -490,10 +495,10 @@ def check_directory_structure():
     ]
 
     for library_dir in library_directories:
-        if library_dir.name not in EXPECTED_LIBRARIES:
+        if library_dir.name not in (LIBRARY_MODULES | UNPUBLISHED_LIBRARY_MODULES):
             unexpected_libraries.append(library_dir.path)
 
-    for library_dir_name in EXPECTED_LIBRARIES:
+    for library_dir_name in LIBRARY_MODULES | UNPUBLISHED_LIBRARY_MODULES:
         if library_dir_name not in [library_dir.name for library_dir in library_directories]:
             expected_libraries_not_found.append(library_dir_name)
 
