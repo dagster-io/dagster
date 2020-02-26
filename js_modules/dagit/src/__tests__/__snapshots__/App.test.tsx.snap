@@ -217,6 +217,7 @@ exports[`renders execution 1`] = `
           >
             <button
               className="bp3-button"
+              id="playground-select-pipeline"
               onKeyDown={[Function]}
               onKeyUp={[Function]}
               type="button"
@@ -636,6 +637,7 @@ exports[`renders pipeline page 1`] = `
             >
               <button
                 className="bp3-button"
+                id="playground-select-pipeline"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 type="button"
@@ -797,6 +799,7 @@ exports[`renders pipeline page 1`] = `
                     "paddingRight": 10,
                   }
                 }
+                title="graph-query-input"
                 type="text"
                 value=""
               />
@@ -4406,6 +4409,7 @@ load_q2_sfo_weather:data_frame
           <span
             className="bp3-icon bp3-icon-zoom-in"
             icon="zoom-in"
+            onClick={[Function]}
             style={
               Object {
                 "color": "#CED9E0",
@@ -4484,6 +4488,32 @@ load_q2_sfo_weather:data_frame
               tabIndex={0}
             />
           </div>
+          <span
+            className="bp3-icon bp3-icon-zoom-out"
+            icon="zoom-out"
+            onClick={[Function]}
+            style={
+              Object {
+                "color": "#CED9E0",
+                "marginTop": 12,
+              }
+            }
+          >
+            <svg
+              data-icon="zoom-out"
+              height={17}
+              viewBox="0 0 16 16"
+              width={17}
+            >
+              <desc>
+                zoom-out
+              </desc>
+              <path
+                d="M3.99 5.99c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-6zm11.56 7.44l-2.67-2.68a6.94 6.94 0 001.11-3.76c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.39 0 2.68-.42 3.76-1.11l2.68 2.67a1.498 1.498 0 102.12-2.12zm-8.56-1.44c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
       </div>
     </div>
@@ -4933,6 +4963,7 @@ exports[`renders pipeline solid page 1`] = `
             >
               <button
                 className="bp3-button"
+                id="playground-select-pipeline"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 type="button"
@@ -5094,6 +5125,7 @@ exports[`renders pipeline solid page 1`] = `
                     "paddingRight": 10,
                   }
                 }
+                title="graph-query-input"
                 type="text"
                 value=""
               />
@@ -8703,6 +8735,7 @@ load_q2_sfo_weather:data_frame
           <span
             className="bp3-icon bp3-icon-zoom-in"
             icon="zoom-in"
+            onClick={[Function]}
             style={
               Object {
                 "color": "#CED9E0",
@@ -8781,6 +8814,32 @@ load_q2_sfo_weather:data_frame
               tabIndex={0}
             />
           </div>
+          <span
+            className="bp3-icon bp3-icon-zoom-out"
+            icon="zoom-out"
+            onClick={[Function]}
+            style={
+              Object {
+                "color": "#CED9E0",
+                "marginTop": 12,
+              }
+            }
+          >
+            <svg
+              data-icon="zoom-out"
+              height={17}
+              viewBox="0 0 16 16"
+              width={17}
+            >
+              <desc>
+                zoom-out
+              </desc>
+              <path
+                d="M3.99 5.99c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-6zm11.56 7.44l-2.67-2.68a6.94 6.94 0 001.11-3.76c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.39 0 2.68-.42 3.76-1.11l2.68 2.67a1.498 1.498 0 102.12-2.12zm-8.56-1.44c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
       </div>
     </div>
@@ -10694,6 +10753,7 @@ exports[`renders type page 1`] = `
             >
               <button
                 className="bp3-button"
+                id="playground-select-pipeline"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 type="button"
@@ -10855,6 +10915,7 @@ exports[`renders type page 1`] = `
                     "paddingRight": 10,
                   }
                 }
+                title="graph-query-input"
                 type="text"
                 value=""
               />
@@ -14464,6 +14525,7 @@ load_q2_sfo_weather:data_frame
           <span
             className="bp3-icon bp3-icon-zoom-in"
             icon="zoom-in"
+            onClick={[Function]}
             style={
               Object {
                 "color": "#CED9E0",
@@ -14542,6 +14604,32 @@ load_q2_sfo_weather:data_frame
               tabIndex={0}
             />
           </div>
+          <span
+            className="bp3-icon bp3-icon-zoom-out"
+            icon="zoom-out"
+            onClick={[Function]}
+            style={
+              Object {
+                "color": "#CED9E0",
+                "marginTop": 12,
+              }
+            }
+          >
+            <svg
+              data-icon="zoom-out"
+              height={17}
+              viewBox="0 0 16 16"
+              width={17}
+            >
+              <desc>
+                zoom-out
+              </desc>
+              <path
+                d="M3.99 5.99c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-6zm11.56 7.44l-2.67-2.68a6.94 6.94 0 001.11-3.76c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.39 0 2.68-.42 3.76-1.11l2.68 2.67a1.498 1.498 0 102.12-2.12zm-8.56-1.44c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
       </div>
     </div>
@@ -14991,6 +15079,7 @@ exports[`renders type page 2`] = `
             >
               <button
                 className="bp3-button"
+                id="playground-select-pipeline"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 type="button"
@@ -15152,6 +15241,7 @@ exports[`renders type page 2`] = `
                     "paddingRight": 10,
                   }
                 }
+                title="graph-query-input"
                 type="text"
                 value=""
               />
@@ -18761,6 +18851,7 @@ load_q2_sfo_weather:data_frame
           <span
             className="bp3-icon bp3-icon-zoom-in"
             icon="zoom-in"
+            onClick={[Function]}
             style={
               Object {
                 "color": "#CED9E0",
@@ -18839,6 +18930,32 @@ load_q2_sfo_weather:data_frame
               tabIndex={0}
             />
           </div>
+          <span
+            className="bp3-icon bp3-icon-zoom-out"
+            icon="zoom-out"
+            onClick={[Function]}
+            style={
+              Object {
+                "color": "#CED9E0",
+                "marginTop": 12,
+              }
+            }
+          >
+            <svg
+              data-icon="zoom-out"
+              height={17}
+              viewBox="0 0 16 16"
+              width={17}
+            >
+              <desc>
+                zoom-out
+              </desc>
+              <path
+                d="M3.99 5.99c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-6zm11.56 7.44l-2.67-2.68a6.94 6.94 0 001.11-3.76c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.39 0 2.68-.42 3.76-1.11l2.68 2.67a1.498 1.498 0 102.12-2.12zm-8.56-1.44c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
       </div>
     </div>
@@ -19288,6 +19405,7 @@ exports[`renders without error 1`] = `
             >
               <button
                 className="bp3-button"
+                id="playground-select-pipeline"
                 onKeyDown={[Function]}
                 onKeyUp={[Function]}
                 type="button"
@@ -19449,6 +19567,7 @@ exports[`renders without error 1`] = `
                     "paddingRight": 10,
                   }
                 }
+                title="graph-query-input"
                 type="text"
                 value=""
               />
@@ -23058,6 +23177,7 @@ load_q2_sfo_weather:data_frame
           <span
             className="bp3-icon bp3-icon-zoom-in"
             icon="zoom-in"
+            onClick={[Function]}
             style={
               Object {
                 "color": "#CED9E0",
@@ -23136,6 +23256,32 @@ load_q2_sfo_weather:data_frame
               tabIndex={0}
             />
           </div>
+          <span
+            className="bp3-icon bp3-icon-zoom-out"
+            icon="zoom-out"
+            onClick={[Function]}
+            style={
+              Object {
+                "color": "#CED9E0",
+                "marginTop": 12,
+              }
+            }
+          >
+            <svg
+              data-icon="zoom-out"
+              height={17}
+              viewBox="0 0 16 16"
+              width={17}
+            >
+              <desc>
+                zoom-out
+              </desc>
+              <path
+                d="M3.99 5.99c-.55 0-1 .45-1 1s.45 1 1 1h6c.55 0 1-.45 1-1s-.45-1-1-1h-6zm11.56 7.44l-2.67-2.68a6.94 6.94 0 001.11-3.76c0-3.87-3.13-7-7-7s-7 3.13-7 7 3.13 7 7 7c1.39 0 2.68-.42 3.76-1.11l2.68 2.67a1.498 1.498 0 102.12-2.12zm-8.56-1.44c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
+                fillRule="evenodd"
+              />
+            </svg>
+          </span>
         </div>
       </div>
     </div>

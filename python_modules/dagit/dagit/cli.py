@@ -10,7 +10,7 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
-from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
+from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
 from .app import create_app
 from .reloader import DagitReloader
@@ -71,13 +71,26 @@ DEFAULT_DAGIT_PORT = 3000
 )
 @click.option(
     '--reload-trigger',
-    help="Optional file path being monitored by a parent process that dagit-cli can touch to re-launch itself.",
+    help=(
+        "Optional file path being monitored by a parent process that dagit-cli can touch to "
+        "re-launch itself."
+    ),
+    default=None,
+    hidden=True,
+    type=click.Path(),
+)
+@click.option(
+    '--workdir',
+    help=(
+        "Set this to change the working directory before invoking dagit. Intended to support "
+        "test cases"
+    ),
     default=None,
     hidden=True,
     type=click.Path(),
 )
 @click.version_option(version=__version__, prog_name='dagit')
-def ui(host, port, storage_fallback, reload_trigger, **kwargs):
+def ui(host, port, storage_fallback, reload_trigger, workdir, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
     # add the path for the cwd so imports in dynamically loaded code work correctly
@@ -94,7 +107,11 @@ def ui(host, port, storage_fallback, reload_trigger, **kwargs):
     if storage_fallback is None:
         storage_fallback = seven.TemporaryDirectory().name
 
-    host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
+    if workdir is not None:
+        with pushd(workdir):
+            host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
+    else:
+        host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
 
 
 def host_dagit_ui(handle, host, port, storage_fallback, reload_trigger=None, port_lookup=True):

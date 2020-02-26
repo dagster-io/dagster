@@ -83,8 +83,7 @@ Now we can tell Dagster to materialize intermediate outputs of this type by prov
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/output_materialization.yaml
    :linenos:
-   :lines: 6-10
-   :lineno-start: 6
+   :emphasize-lines: 6-10
    :caption: output_materialization.yaml
    :language: YAML
 

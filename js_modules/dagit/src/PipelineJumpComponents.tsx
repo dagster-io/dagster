@@ -94,6 +94,7 @@ export class PipelineJumpBar extends React.Component<PipelineJumpBarProps> {
             >
               <Button
                 text={selectedPipelineName || "Select a pipeline..."}
+                id="playground-select-pipeline"
                 disabled={pipelineNames.length === 0}
                 rightIcon="double-caret-vertical"
                 icon="send-to-graph"

@@ -171,6 +171,7 @@ export const GraphQueryInput = React.memo(
           content={menu}
         >
           <GraphQueryInputField
+            title="graph-query-input"
             type="text"
             value={pendingValue}
             leftIcon={"send-to-graph"}

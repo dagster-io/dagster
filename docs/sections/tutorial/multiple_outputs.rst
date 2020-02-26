@@ -47,6 +47,11 @@ downstream dependencies.
 
 When we execute this pipeline with the following config, we'll see that the cold cereals output is
 omitted and that the execution step corresponding to the downstream solid is marked skipped in the
-right hand pane.
+right hand pane:
+
+.. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.yaml
+   :linenos:
+   :caption: multiple_outputs.yaml
+   :language: YAML
 
 .. thumbnail:: conditional_outputs.png

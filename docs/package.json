@@ -1,0 +1,15 @@
+{
+  "name": "docs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "jest": "^25.1.0",
+    "jest-image-snapshot": "2.12.0",
+    "puppeteer": "^2.1.1",
+    "system-sleep": "^1.3.6"
+  },
+  "scripts": {
+    "screenshots": "jest generate_screenshots.test.js"
+  }
+}

@@ -45,7 +45,7 @@ To get the flavor of this dataset, let's look at the header and the first five r
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/cereal.csv
    :linenos:
    :lines: 1-6
-   :caption: cereals.csv
+   :caption: cereal.csv
    :language: text
 
 You can find all of the tutorial code checked into the dagster repository at

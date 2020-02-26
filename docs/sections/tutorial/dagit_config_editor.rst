@@ -8,7 +8,7 @@ experimentation with and debugging of parameterized pipeline executions. As alwa
 
    $ dagit -f inputs.py -n inputs_pipeline
 
-Notice the error in the right hand pane of the **Execute** tab.
+Notice that no execution plan appears in the bottom pane of the Playground.
 
 .. thumbnail:: inputs_figure_one.png
 

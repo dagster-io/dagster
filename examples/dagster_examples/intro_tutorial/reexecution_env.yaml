@@ -1,6 +1,6 @@
 solids:
-  read_csv:
+  sort_by_calories:
     inputs:
-      csv_path:
+      cereals:
         pickle:
           path: "/dagster_home/storage/2584d954-a30f-4be6-bbfc-c919e4bee84b/intermediates/read_csv.compute/result"

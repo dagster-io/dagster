@@ -48,4 +48,4 @@ Config for the individual solids making up the composite is nested, as follows:
 When we execute this pipeline, Dagit includes information about the nesting of individual execution
 steps within the composite:
 
-.. thumbnail:: composite_solids_expanded.png
+.. thumbnail:: composite_solids_results.png

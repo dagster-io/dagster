@@ -26,8 +26,8 @@ data applications.
 
     $ pytest hello_cereal.py
 
-Note: pytest tests are typically in files prefixed with `test_`. However in order to simplify
-the tutorial we have them in the same file.
+Note: by convention, pytest tests are typically kept in separate files prefixed with ``test_``.
+We've put them in the same file just to simplify the tutorial code.
 
 Obviously, in production we'll often execute pipelines in a parallel, streaming way that doesn't
 admit this kind of API, which is intended to enable local tests like this.

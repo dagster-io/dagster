@@ -94,6 +94,11 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           iconSize={17}
           icon="zoom-in"
           style={{ color: Colors.LIGHT_GRAY1, marginBottom: 12 }}
+          onClick={() => {
+            const x = viewport.element.current!.clientWidth / 2;
+            const y = viewport.element.current!.clientHeight / 2;
+            viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, { x, y });
+          }}
         />
         <Slider
           vertical
@@ -106,6 +111,16 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
             const x = viewport.element.current!.clientWidth / 2;
             const y = viewport.element.current!.clientHeight / 2;
             viewport.adjustZoomRelativeToScreenPoint(scale, { x, y });
+          }}
+        />
+        <Icon
+          iconSize={17}
+          icon="zoom-out"
+          style={{ color: Colors.LIGHT_GRAY1, marginTop: 12 }}
+          onClick={() => {
+            const x = viewport.element.current!.clientWidth / 2;
+            const y = viewport.element.current!.clientHeight / 2;
+            viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, { x, y });
           }}
         />
       </ZoomSliderContainer>

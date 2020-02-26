@@ -55,21 +55,20 @@ You'll see output like
     Loading repository...
     Serving on http://127.0.0.1:3000
 
-You should be able to navigate to http://127.0.0.1:3000/p/hello_cereal_pipeline/explore in
+You should be able to navigate to http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/ in
 your web browser and view your pipeline. It isn't very interesting yet, because it only has one
 node.
 
 .. thumbnail:: hello_cereal_figure_one.png
 
-Clicking on the "Execute" tab (http://127.0.0.1:3000/p/hello_world_pipeline/execute) and you'll
-see the two-paned view below.
+Click on the "Playground" tab and you'll see the two-paned view below.
 
 .. thumbnail:: hello_cereal_figure_two.png
 
-The left hand pane is empty here, but in more complicated pipelines, this is where you'll be able
+The top pane is empty here, but in more complicated pipelines, this is where you'll be able
 to edit pipeline configuration on the fly.
 
-The right hand pane shows the concrete execution plan corresponding to the logical structure of
+The bottom pane shows the concrete execution plan corresponding to the logical structure of
 the pipeline -- which also only has one node, ``hello_cereal.compute``.
 
 Click the "Start Execution" button to execute this plan directly from dagit. A new window should

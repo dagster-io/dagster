@@ -101,6 +101,7 @@ export default class ExecutionStartButton extends React.Component<
             return (
               <ExecutionStartButtonContainer
                 role="button"
+                id="start-execution"
                 style={style}
                 state={ExecutionButtonStatus.Starting}
                 title={"Pipeline execution is in progress..."}

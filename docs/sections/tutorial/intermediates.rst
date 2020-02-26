@@ -57,11 +57,15 @@ Reexecution
 ^^^^^^^^^^^
 
 Once intermediates are being stored, Dagit makes it possible to individually execute solids
-whose outputs are satisfied by previously materialized intermediates. Click the small run button
-to the right of the ``sort_by_calories.compute`` execution step to reexecute only this step,
-using the automatically materialized intermediate output of the previous solid.
+whose outputs are satisfied by previously materialized intermediates.
+
+Click on the ``sort_by_calories.compute`` execution step, and you'll see the option appear to
+reexecute only this step, using the automatically materialized intermediate output of the
+previous solid.
 
 .. thumbnail:: reexecution.png
+
+.. thumbnail:: reexecution_results.png
 
 Reexecuting individual solids can be very helpful while you're writing solids, or while you're
 actively debugging them.
@@ -90,8 +94,9 @@ expects the input to ``sort_by_calories`` to be satisfied by the output from ``r
 .. thumbnail:: reexecution_errors.png
 
 To make this config valid, we'll need to tell Dagit to execute only a subset of the pipeline --
-just the ``sort_by_calories`` solid. Click on the subset-selector button in the bottom left of
-the config editor screen (which, when no subset has been specified, will read "All Solids"):
+just the ``sort_by_calories`` solid. Click on the subset-selector button in the top left of
+the playground, to the left of the Mode selector (which, when no subset has been specified, will
+read "*"):
 
 .. thumbnail:: subset_selection.png
 

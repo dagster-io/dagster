@@ -297,6 +297,7 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
                 ? props.selectedConfigGenerator.name
                 : ""
             }
+            title="preset-selector-button"
             icon="insert"
             rightIcon="caret-down"
           />

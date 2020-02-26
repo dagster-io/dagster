@@ -43,7 +43,7 @@ Let's visualize the DAG we've just defined in dagit.
 
    $ dagit -f serial_pipeline.py -n serial_pipeline
 
-Navigate to http://127.0.0.1:3000/p/serial_pipeline/explore or choose "serial_pipeline"
+Navigate to http://127.0.0.1:3000/pipeline/serial_pipeline/ or choose "serial_pipeline"
 from the dropdown:
 
 .. thumbnail:: serial_pipeline_figure_one.png

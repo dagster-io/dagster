@@ -249,6 +249,7 @@ export default (props: ISolidSelectorProps) => {
           icon={subsetError ? IconNames.WARNING_SIGN : undefined}
           intent={subsetError ? Intent.WARNING : Intent.NONE}
           onClick={() => setOpen(true)}
+          title="solid-subset-selector"
         >
           {buttonText}
         </Button>

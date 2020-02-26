@@ -74,6 +74,7 @@ export class ConfigEditorModePicker extends React.PureComponent<
         <Button
           icon={valid ? "insert" : IconNames.WARNING_SIGN}
           intent={valid ? Intent.NONE : Intent.WARNING}
+          title="mode-picker-button"
           text={
             valid
               ? currentMode
