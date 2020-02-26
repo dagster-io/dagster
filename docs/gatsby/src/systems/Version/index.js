@@ -27,7 +27,7 @@ export const VersionProvider = ({ children }) => {
   const setCurrent = version => {
     setCurrentState(version);
     // FIXME: This should navigate to the current page in the given version
-    navigate(`${version}/install`);
+    navigate(`${version}/install/`);
   };
 
   const [current, setCurrentState] = useState(

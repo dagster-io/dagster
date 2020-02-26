@@ -51,11 +51,9 @@ export default {
       p: 0
     },
     code: {
-      p: 1,
+      p: 2,
       mx: 1,
-      fontFamily: "mono",
-      color: "red.0",
-      border: t => `1px solid ${t.colors.lightGray[1]}`
+      fontFamily: "mono"
     }
   },
   header: {

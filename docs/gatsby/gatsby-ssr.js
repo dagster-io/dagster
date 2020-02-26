@@ -1,1 +1,1 @@
-import "highlight.js/styles/github.css";
+import "./src/dracula.css";

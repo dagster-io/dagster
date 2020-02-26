@@ -83,15 +83,15 @@ export const Sidebar = forwardRef(({ opened, location }, ref) => {
   return (
     <div ref={ref} sx={styles.wrapper(opened && width < 1024)}>
       <div sx={styles.content}>
+        <h6 className="version-wrapper">
+          Version: <VersionSelector />
+        </h6>
         <Menu vertical sx={styles.menu}>
           {Boolean(top) && <span sx={styles.active(active, top)} />}
           <ReactParser
             tree={data.page.parsed}
             renderElements={renderElements}
           />
-          <h6 class="version-wrapper">
-            Version: <VersionSelector />
-          </h6>
         </Menu>
       </div>
     </div>

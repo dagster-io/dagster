@@ -14,12 +14,16 @@ export const wrapper = {
   // Code file
   // --------------------------------
   ".code-file": {
-    bg: "gray.1",
+    display: "table",
+    bg: "rgb(40, 42, 54)",
     fontFamily: "mono",
     fontSize: 1,
+    color: "white",
     p: 3,
     py: 2,
-    color: "lightGray.1"
+    border: "none",
+    borderRadius: "5px 5px 0 0",
+    fontWeight: "bold"
   },
 
   ".code-file .permalink": {
