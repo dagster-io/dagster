@@ -117,6 +117,10 @@ export type StorageHook = [
 let _data: IStorageData | null = null;
 let _dataNamespace = "";
 
+function getKey(namespace: string) {
+  return `dagit.v2.${namespace}`;
+}
+
 function getStorageDataForNamespace(namespace: string) {
   if (_data && _dataNamespace === namespace) {
     return _data;
@@ -127,7 +131,7 @@ function getStorageDataForNamespace(namespace: string) {
     current: ""
   };
   try {
-    const jsonString = window.localStorage.getItem(`dagit.${namespace}`);
+    const jsonString = window.localStorage.getItem(getKey(namespace));
     if (jsonString) {
       data = Object.assign(data, JSON.parse(jsonString));
     }
@@ -150,7 +154,7 @@ function getStorageDataForNamespace(namespace: string) {
 function writeStorageDataForNamespace(namespace: string, data: IStorageData) {
   _data = data;
   _dataNamespace = namespace;
-  window.localStorage.setItem(`dagit.${namespace}`, JSON.stringify(data));
+  window.localStorage.setItem(getKey(namespace), JSON.stringify(data));
 }
 
 /* React hook that provides local storage to the caller. A previous version of this
