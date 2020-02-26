@@ -47,7 +47,12 @@ export const buildLayout = (params: BuildLayoutParams) => {
   // Step 3: Assign X values (pixels) to each box by traversing the graph from the
   // roots onward and pushing things to the right as we go.
   const deepen = (box: GaantChartBox, x: number) => {
-    box.x = Math.max(x, box.x);
+    if (box.x >= x) {
+      // If this box is already further to the right than required by it's parent,
+      // we can safely stop traversing this branch of the graph.
+      return;
+    }
+    box.x = x;
     box.children.forEach(child =>
       deepen(child, box.x + box.width + BOX_SPACING_X)
     );
@@ -137,7 +142,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
   return { boxes } as GaantChartLayout;
 };
 
-const ensureSubtreeBelow = (
+const ensureChildrenAfterParentInArray = (
   boxes: GaantChartBox[],
   childIdx: number,
   parentIdx: number
@@ -149,7 +154,7 @@ const ensureSubtreeBelow = (
   boxes.push(child);
   const newIdx = boxes.length - 1;
   for (const subchild of child.children) {
-    ensureSubtreeBelow(boxes, boxes.indexOf(subchild), newIdx);
+    ensureChildrenAfterParentInArray(boxes, boxes.indexOf(subchild), newIdx);
   }
 };
 
@@ -160,6 +165,7 @@ const addChildren = (
 ) => {
   const idx = boxes.indexOf(box);
   const seen: string[] = [];
+  const added: GaantChartBox[] = [];
 
   for (const out of box.node.outputs) {
     for (const dep of out.dependedBy) {
@@ -182,14 +188,21 @@ const addChildren = (
           y: -1
         };
         boxes.push(depBox);
-        addChildren(boxes, depBox, params);
+        added.push(depBox);
       } else {
         depBox = boxes[depBoxIdx];
-        ensureSubtreeBelow(boxes, depBoxIdx, idx);
+        ensureChildrenAfterParentInArray(boxes, depBoxIdx, idx);
       }
 
       box.children.push(depBox);
     }
+  }
+
+  // Note: To limit the amount of time we spend shifting elements of our `boxes` array to keep it
+  // ordered (knowing that parents appear before children gives us more opportunities for early
+  // returns, etc. elsewhere), we add all of our immediate children and THEN proceed in to the next layer.
+  for (const depBox of added) {
+    addChildren(boxes, depBox, params);
   }
 };
 
