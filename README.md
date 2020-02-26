@@ -4,7 +4,7 @@
 <a href="https://badge.fury.io/py/dagster"><img src="https://badge.fury.io/py/dagster.svg"></>
 <a href="https://coveralls.io/github/dagster-io/dagster?branch=master"><img src="https://coveralls.io/repos/github/dagster-io/dagster/badge.svg?branch=master"></a>
 <a href="https://buildkite.com/dagster/dagster"><img src="https://badge.buildkite.com/888545beab829e41e5d7303db15525a2bc3b0f0e33a72759ac.svg?branch=master"></a>
-<a href="https://dagster.readthedocs.io/en/master/"><img src="https://readthedocs.org/projects/dagster/badge/?version=master"></a>
+<a href="https://docs.dagster.io/"></a>
 </p>
 
 # Introduction
@@ -33,7 +33,7 @@ This installs two modules:
 
 ### Learn
 
-Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/sections/tutorial/index.html), or read our [complete documentation](https://dagster.readthedocs.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
+Next, jump right into our [tutorial](https://docs.dagster.io/latest/tutorial/), or read our [complete documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
 
 <br />
 <p align="center">
@@ -42,7 +42,7 @@ Next, jump right into our [tutorial](https://dagster.readthedocs.io/en/stable/se
 
 ### Contributing
 
-For details on contributing or running the project for development, check out our [contributing guide](https://dagster.readthedocs.io/en/stable/sections/community/contributing.html).
+For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/latest/community/contributing/).
 
 # Integrations
 
