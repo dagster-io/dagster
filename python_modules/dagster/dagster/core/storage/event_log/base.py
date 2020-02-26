@@ -10,9 +10,11 @@ from dagster.core.execution.stats import build_stats_from_events
 
 
 class DagsterEventLogInvalidForRun(DagsterError):
-    def __init__(self, *args, **kwargs):
-        self.run_id = check.str_param(kwargs.pop('run_id', None), 'run_id')
-        super(DagsterEventLogInvalidForRun, self).__init__(*args, **kwargs)
+    def __init__(self, run_id):
+        self.run_id = check.str_param(run_id, 'run_id')
+        super(DagsterEventLogInvalidForRun, self).__init__(
+            'Event logs invalid for run id {}'.format(run_id)
+        )
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
@@ -21,14 +23,14 @@ class EventLogSequence(pyrsistent.CheckedPVector):
 
 class EventLogStorage(six.with_metaclass(ABCMeta)):
     '''Abstract base class for storing structured event logs from pipeline runs.
-    
+
     Note that event log storages using SQL databases as backing stores should implement
     :py:class:`~dagster.core.storage.event_log.SqlEventLogStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
     by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
     ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
-    should be done by setting values in that file.    
+    should be done by setting values in that file.
     '''
 
     @abstractmethod

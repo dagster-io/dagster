@@ -27,6 +27,11 @@ _WHITELISTED_TUPLE_MAP = {}
 _WHITELISTED_ENUM_MAP = {}
 
 
+def register_serdes_tuple_fallbacks(fallback_map):
+    for class_name, klass in fallback_map.items():
+        _WHITELISTED_TUPLE_MAP[class_name] = klass
+
+
 def _whitelist_for_serdes(enum_map, tuple_map):
     def __whitelist_for_serdes(klass):
         if issubclass(klass, Enum):
@@ -96,7 +101,17 @@ def _unpack_value(val, enum_map, tuple_map):
         return [_unpack_value(i, enum_map, tuple_map) for i in val]
     if isinstance(val, dict) and val.get('__class__'):
         klass_name = val.pop('__class__')
+        if klass_name not in tuple_map:
+            check.failed(
+                'Attempted to deserialize class "{}" which is not in the serdes whitelist.'.format(
+                    klass_name
+                )
+            )
+
         klass = tuple_map[klass_name]
+        if klass is None:
+            return None
+
         unpacked_val = {
             key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()
         }
@@ -138,8 +153,8 @@ class ConfigurableClassData(
     be used to instantiate it.
 
     Users should not instantiate this class directly.
-    
-    Classes intended to be serialized in this way should implement the 
+
+    Classes intended to be serialized in this way should implement the
     :py:class:`dagster.serdes.ConfigurableClass` mixin.
     '''
 

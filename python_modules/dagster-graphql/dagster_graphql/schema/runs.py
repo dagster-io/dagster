@@ -357,31 +357,6 @@ class DauphinPipelineFailureEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
-class DauphinPipelineProcessStartEvent(dauphin.ObjectType):
-    class Meta(object):
-        name = 'PipelineProcessStartEvent'
-        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
-
-    pipeline_name = dauphin.NonNull(dauphin.String)
-    run_id = dauphin.NonNull(dauphin.String)
-
-
-class DauphinPipelineProcessStartedEvent(dauphin.ObjectType):
-    class Meta(object):
-        name = 'PipelineProcessStartedEvent'
-        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
-
-    process_id = dauphin.NonNull(dauphin.Int)
-
-
-class DauphinPipelineProcessExitedEvent(dauphin.ObjectType):
-    class Meta(object):
-        name = 'PipelineProcessExitedEvent'
-        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
-
-    process_id = dauphin.NonNull(dauphin.Int)
-
-
 class DauphinPipelineInitFailureEvent(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineInitFailureEvent'
@@ -665,9 +640,6 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinLogMessageEvent,
             DauphinPipelineFailureEvent,
             DauphinPipelineInitFailureEvent,
-            DauphinPipelineProcessExitedEvent,
-            DauphinPipelineProcessStartedEvent,
-            DauphinPipelineProcessStartEvent,
             DauphinPipelineStartEvent,
             DauphinPipelineSuccessEvent,
             DauphinObjectStoreOperationEvent,
@@ -758,24 +730,7 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         return graphene_info.schema.type_named('PipelineFailureEvent')(
             pipeline=dauphin_pipeline, **basic_params
         )
-    elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_START:
-        process_data = dagster_event.pipeline_process_start_data
-        return graphene_info.schema.type_named('PipelineProcessStartEvent')(
-            pipeline=dauphin_pipeline,
-            pipeline_name=process_data.pipeline_name,
-            run_id=process_data.run_id,
-            **basic_params
-        )
-    elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
-        process_data = dagster_event.pipeline_process_started_data
-        return graphene_info.schema.type_named('PipelineProcessStartedEvent')(
-            pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
-        )
-    elif dagster_event.event_type == DagsterEventType.PIPELINE_PROCESS_EXITED:
-        process_data = dagster_event.pipeline_process_exited_data
-        return graphene_info.schema.type_named('PipelineProcessExitedEvent')(
-            pipeline=dauphin_pipeline, process_id=process_data.process_id, **basic_params
-        )
+
     elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
         return graphene_info.schema.type_named('PipelineInitFailureEvent')(
             pipeline=dauphin_pipeline,

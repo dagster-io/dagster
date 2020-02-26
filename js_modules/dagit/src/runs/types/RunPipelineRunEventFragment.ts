@@ -15,7 +15,7 @@ export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent_step {
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineProcessExitedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -536,33 +536,4 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   markerEnd: string | null;
 }
 
-export interface RunPipelineRunEventFragment_PipelineProcessStartedEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface RunPipelineRunEventFragment_PipelineProcessStartedEvent {
-  __typename: "PipelineProcessStartedEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: RunPipelineRunEventFragment_PipelineProcessStartedEvent_step | null;
-  processId: number;
-}
-
-export interface RunPipelineRunEventFragment_PipelineProcessStartEvent_step {
-  __typename: "ExecutionStep";
-  key: string;
-}
-
-export interface RunPipelineRunEventFragment_PipelineProcessStartEvent {
-  __typename: "PipelineProcessStartEvent";
-  message: string;
-  timestamp: string;
-  level: LogLevel;
-  step: RunPipelineRunEventFragment_PipelineProcessStartEvent_step | null;
-  pipelineName: string;
-  runId: string;
-}
-
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_PipelineProcessStartedEvent | RunPipelineRunEventFragment_PipelineProcessStartEvent;
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;

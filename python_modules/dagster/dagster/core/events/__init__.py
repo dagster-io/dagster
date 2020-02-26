@@ -18,7 +18,7 @@ from dagster.core.execution.context.system import (
 )
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.core.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
 
@@ -44,10 +44,6 @@ class DagsterEventType(Enum):
     PIPELINE_START = 'PIPELINE_START'
     PIPELINE_SUCCESS = 'PIPELINE_SUCCESS'
     PIPELINE_FAILURE = 'PIPELINE_FAILURE'
-
-    PIPELINE_PROCESS_START = 'PIPELINE_PROCESS_START'
-    PIPELINE_PROCESS_STARTED = 'PIPELINE_PROCESS_STARTED'
-    PIPELINE_PROCESS_EXITED = 'PIPELINE_PROCESS_EXITED'
 
     OBJECT_STORE_OPERATION = 'OBJECT_STORE_OPERATION'
 
@@ -101,10 +97,6 @@ def _validate_event_specific_data(event_type, event_specific_data):
         check.inst_param(event_specific_data, 'event_specific_data', StepMaterializationData)
     elif event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         check.inst_param(event_specific_data, 'event_specific_data', StepExpectationResultData)
-    elif event_type == DagsterEventType.PIPELINE_PROCESS_STARTED:
-        check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessStartedData)
-    elif event_type == DagsterEventType.PIPELINE_PROCESS_EXITED:
-        check.inst_param(event_specific_data, 'event_specific_data', PipelineProcessExitedData)
     elif event_type == DagsterEventType.STEP_INPUT:
         check.inst_param(event_specific_data, 'event_specific_data', StepInputData)
     elif event_type == DagsterEventType.ENGINE_EVENT:
@@ -243,6 +235,10 @@ class DagsterEvent(
         event_specific_data=None,
         message=None,
     ):
+        event_type_value, event_specific_data = _handle_back_compat(
+            event_type_value, event_specific_data
+        )
+
         return super(DagsterEvent, cls).__new__(
             cls,
             check.str_param(event_type_value, 'event_type_value'),
@@ -336,27 +332,6 @@ class DagsterEvent(
     @property
     def step_retry_data(self):
         _assert_type('step_retry_data', DagsterEventType.STEP_UP_FOR_RETRY, self.event_type)
-        return self.event_specific_data
-
-    @property
-    def pipeline_process_started_data(self):
-        _assert_type(
-            'pipeline_process_started', DagsterEventType.PIPELINE_PROCESS_STARTED, self.event_type
-        )
-        return self.event_specific_data
-
-    @property
-    def pipeline_process_exited_data(self):
-        _assert_type(
-            'pipeline_process_exited', DagsterEventType.PIPELINE_PROCESS_EXITED, self.event_type
-        )
-        return self.event_specific_data
-
-    @property
-    def pipeline_process_start_data(self):
-        _assert_type(
-            'pipeline_process_start', DagsterEventType.PIPELINE_PROCESS_START, self.event_type
-        )
         return self.event_specific_data
 
     @property
@@ -825,27 +800,44 @@ class EngineEventData(
 
 
 @whitelist_for_serdes
-class PipelineProcessStartedData(
-    namedtuple('_PipelineProcessStartedData', 'process_id pipeline_name run_id')
-):
-    pass
-
-
-@whitelist_for_serdes
-class PipelineProcessExitedData(
-    namedtuple('_PipelineProcessExitedData', 'process_id pipeline_name run_id')
-):
-    pass
-
-
-@whitelist_for_serdes
-class PipelineProcessStartData(namedtuple('_PipelineProcessStartData', 'pipeline_name run_id')):
-    pass
-
-
-@whitelist_for_serdes
 class PipelineInitFailureData(namedtuple('_PipelineInitFailureData', 'error')):
     def __new__(cls, error):
         return super(PipelineInitFailureData, cls).__new__(
             cls, error=check.inst_param(error, 'error', SerializableErrorInfo)
         )
+
+
+###################################################################################################
+# THE GRAVEYARD
+#
+#            -|-
+#             |
+#        _-'~~~~~`-_
+#      .'           '.
+#      |    R I P    |
+#      |             |
+#      |  Synthetic  |
+#      |   Process   |
+#      |   Events    |
+#      |             |
+###################################################################################################
+
+
+def _handle_back_compat(event_type_value, event_specific_data):
+    if event_type_value == 'PIPELINE_PROCESS_START':
+        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    elif event_type_value == 'PIPELINE_PROCESS_STARTED':
+        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    elif event_type_value == 'PIPELINE_PROCESS_EXITED':
+        return DagsterEventType.ENGINE_EVENT.value, EngineEventData([])
+    else:
+        return event_type_value, event_specific_data
+
+
+register_serdes_tuple_fallbacks(
+    {
+        'PipelineProcessStartedData': None,
+        'PipelineProcessExitedData': None,
+        'PipelineProcessStartData': None,
+    }
+)

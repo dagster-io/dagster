@@ -149,7 +149,7 @@ export class LogsProvider extends React.Component<
 
       // look for changes to the pipeline's overall run status and sync that to apollo
       for (const { __typename } of msg.pipelineRunLogs.messages) {
-        if (__typename === "PipelineProcessStartEvent") {
+        if (__typename === "PipelineStartEvent") {
           nextPipelineStatus = PipelineRunStatus.STARTED;
         } else if (__typename === "PipelineSuccessEvent") {
           nextPipelineStatus = PipelineRunStatus.SUCCESS;

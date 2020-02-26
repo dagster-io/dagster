@@ -163,13 +163,6 @@ export function extractMetadataFromLogs(
 
     metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
 
-    if (log.__typename === "PipelineProcessStartEvent") {
-      metadata.startingProcessAt = timestamp;
-    }
-    if (log.__typename === "PipelineProcessStartedEvent") {
-      metadata.startedProcessAt = timestamp;
-      metadata.processId = log.processId;
-    }
     if (log.__typename === "PipelineStartEvent") {
       metadata.startedPipelineAt = timestamp;
     }
@@ -290,13 +283,6 @@ export class RunMetadataProvider extends React.Component<
           step {
             key
           }
-        }
-        ... on PipelineProcessStartedEvent {
-          processId
-        }
-        ... on PipelineProcessStartEvent {
-          pipelineName
-          runId
         }
         ... on EngineEvent {
           markerStart

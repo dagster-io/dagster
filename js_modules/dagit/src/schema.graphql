@@ -706,36 +706,6 @@ type PipelinePreset {
   mode: String!
 }
 
-type PipelineProcessExitedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  step: ExecutionStep
-  pipeline: Pipeline!
-  processId: Int!
-}
-
-type PipelineProcessStartedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  step: ExecutionStep
-  pipeline: Pipeline!
-  processId: Int!
-}
-
-type PipelineProcessStartEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  step: ExecutionStep
-  pipeline: Pipeline!
-  pipelineName: String!
-}
-
 interface PipelineReference {
   name: String!
 }
@@ -756,7 +726,7 @@ type PipelineRun {
   executionSelection: ExecutionSelection!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
 
 type PipelineRunLogsSubscriptionFailure {
   message: String!
