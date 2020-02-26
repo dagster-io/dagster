@@ -37,7 +37,7 @@ def test_retries():
     def pipe():
         start_fail, start_skip = two_outputs()
         downstream_of_failed(fail_first_times(start_fail))
-        will_be_skipped(start_skip)
+        will_be_skipped(will_be_skipped(start_skip))
 
     env = {'storage': {'filesystem': {}}}
 
@@ -57,6 +57,7 @@ def test_retries():
     assert downstream_of_failed == 'okay perfect'
 
     will_be_skipped = [
-        e for e in second_result.event_list if str(e.solid_handle) == 'will_be_skipped'
-    ][0]
-    assert str(will_be_skipped.event_type_value) == 'STEP_SKIPPED'
+        e for e in second_result.event_list if 'will_be_skipped' in str(e.solid_handle)
+    ]
+    assert str(will_be_skipped[0].event_type_value) == 'STEP_SKIPPED'
+    assert str(will_be_skipped[1].event_type_value) == 'STEP_SKIPPED'

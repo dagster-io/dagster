@@ -106,14 +106,13 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                         )
                         yield DagsterEvent.step_skipped_event(step_context)
                         active_execution.mark_skipped(step.key)
-                        continue
-
-                    for step_event in check.generator(
-                        dagster_event_sequence_for_step(step_context)
-                    ):
-                        check.inst(step_event, DagsterEvent)
-                        yield step_event
-                        active_execution.handle_event(step_event)
+                    else:
+                        for step_event in check.generator(
+                            dagster_event_sequence_for_step(step_context)
+                        ):
+                            check.inst(step_event, DagsterEvent)
+                            yield step_event
+                            active_execution.handle_event(step_event)
 
                     active_execution.verify_complete(pipeline_context, step.key)
 
