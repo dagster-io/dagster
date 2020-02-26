@@ -15,7 +15,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster_graphql.implementation.reloader import Reloader
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
-from flask import Flask, jsonify, request, send_file, send_from_directory
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_sockets import Sockets
@@ -59,23 +59,6 @@ def dagster_graphql_subscription_view(subscription_server, context):
         return []
 
     return view
-
-
-def static_view(path, file):
-    return send_from_directory(
-        os.path.join(os.path.dirname(__file__), './webapp/build/static/', path), file
-    )
-
-
-def worker_view(worker_name):
-    filename = '{}.worker.js'.format(worker_name)
-    return send_from_directory(os.path.join(os.path.dirname(__file__), './webapp/build/'), filename)
-
-
-def vendor_view(path, file):
-    return send_from_directory(
-        os.path.join(os.path.dirname(__file__), './webapp/build/vendor/', path), file
-    )
 
 
 def info_view():
@@ -154,7 +137,11 @@ def create_app(handle, instance, reloader=None):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.opt_inst_param(reloader, 'reloader', Reloader)
 
-    app = Flask('dagster-ui')
+    app = Flask(
+        'dagster-ui',
+        static_url_path='',
+        static_folder=os.path.join(os.path.dirname(__file__), './webapp/build'),
+    )
     sockets = Sockets(app)
     app.app_protocol = lambda environ_path_info: 'graphql-ws'
 
@@ -225,13 +212,8 @@ def create_app(handle, instance, reloader=None):
     # Also grabbing the magic global request args dict so that notebook_view is testable
     app.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
 
-    app.add_url_rule('/static/<path:path>/<string:file>', 'static_view', static_view)
-    app.add_url_rule('/vendor/<path:path>/<string:file>', 'vendor_view', vendor_view)
-    app.add_url_rule('/<string:worker_name>.worker.js', 'worker_view', worker_view)
     app.add_url_rule('/dagit_info', 'sanity_view', info_view)
-    app.add_url_rule('/<path:_path>', 'index_catchall', index_view)
-    app.add_url_rule('/', 'index', index_view, defaults={'_path': ''})
-
+    app.register_error_handler(404, index_view)
     CORS(app)
 
     return app
