@@ -87,6 +87,14 @@ def df_type_check(_, value):
         success=True,
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
+            EventMetadataEntry.text(str(value.shape), "shape", "The shape of the DataFrame."),
+            EventMetadataEntry.md(value.dtypes.to_markdown(), "dtypes", "The dtypes within the DataFrame."),
+            EventMetadataEntry.md(
+                dataframe.head().to_markdown(), "head", "A preview of the first 5 rows."
+            ),
+            EventMetadataEntry.md(
+                dataframe.tail().to_markdown(), "tail", "A preview of the last 5 rows."
+            ),
             # string cast columns since they may be things like datetime
             EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
         ],
