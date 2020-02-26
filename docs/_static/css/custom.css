@@ -91,6 +91,11 @@ div.body #reference a.image-reference {
 .bodywrapper {
   padding-top: 21px;
   max-width: 950px;
+  margin: 0 auto;
+}
+
+.document {
+  max-width: 1200px;
 }
 
 #documentation {
@@ -175,7 +180,6 @@ div.sphinxsidebar li.toctree-l3::before {
 @media screen and (max-width: 875px) {
   body {
     margin: 0;
-    padding: 20px 30px;
   }
 
   div.sphinxsidebar ul li.toctree-l1 > a {
@@ -203,6 +207,10 @@ div.sphinxsidebar li.toctree-l3::before {
 
   body .value_prop_block {
     flex: 0 0 90%;
+  }
+
+  .bodywrapper {
+    margin: 0 0 0 220px;
   }
 }
 
@@ -348,4 +356,15 @@ div.section > dl.attribute > dt {
 
 div.sphinxsidebar input {
   font-family: "Source Sans Pro", sans-serif;
+}
+
+.top-bar {
+  background-color: #1b70bb;
+  text-align: center;
+  color: white;
+  padding: 8px;
+}
+
+.top-bar a {
+  color: white;
 }
