@@ -1,18 +1,21 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, ArrowLeft, ArrowRight, Home } from "react-feather";
+import { Redirect } from "@reach/router";
 import useWindowSize from "react-use/lib/useWindowSize";
 
 import { Layout, SEO, Link } from "systems/Core";
+import { useVersion } from "systems/Version";
 
-import { ReactParser } from "../../systems/ReactParser";
+import { ReactParser } from "systems/ReactParser";
 import { TableOfContents } from "./components/TableOfContents";
 import * as styles from "./styles";
 
 const SphinxPage = ({ pageContext: ctx }) => {
   const { page } = ctx;
   const { width } = useWindowSize();
+  const { version } = useVersion();
   const [showToc, setShowToc] = useState(false);
   const isMobile = width < 1024;
 
@@ -24,6 +27,15 @@ const SphinxPage = ({ pageContext: ctx }) => {
     setShowToc(false);
   }
 
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.location &&
+      window.location.pathname === `/${version.current}/install`
+    ) {
+      window.location.href = `/${version.current}/install/`;
+    }
+  }, []);
   return (
     <Layout>
       <SEO title={page.title} />
