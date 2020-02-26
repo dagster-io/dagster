@@ -42,7 +42,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
       <TabBarContainer>
         <PipelineJumpBar
           selectedPipelineName={pipelineName}
-          onChange={name => history.push(`/playground/${name}`)}
+          onChange={pipelineName => history.push(`/playground/${pipelineName}`)}
         />
 
         <ExecutionTabs data={data} onSave={onSave} />

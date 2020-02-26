@@ -370,7 +370,6 @@ const RunActionsMenu: React.FunctionComponent<{
             target="_blank"
             href={`/playground/${run.pipeline.name}/setup?${qs.stringify({
               mode: run.mode,
-              pipeline: run.pipeline.name,
               config: envYaml,
               solidSubset:
                 run.pipeline.__typename === "Pipeline"
