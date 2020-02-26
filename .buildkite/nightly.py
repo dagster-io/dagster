@@ -33,6 +33,7 @@ if __name__ == "__main__":
             # Create ~/.pypirc
             '.buildkite/scripts/pypi.sh',
             # Publish
+            'export PYTHONDONTWRITEBYTECODE=1',
             'python bin/publish.py publish --nightly --autoclean',
         )
         .build(),
