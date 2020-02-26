@@ -88,7 +88,9 @@ def df_type_check(_, value):
         metadata_entries=[
             EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
             EventMetadataEntry.text(str(value.shape), "shape", "The shape of the DataFrame."),
-            EventMetadataEntry.md(value.dtypes.to_markdown(), "dtypes", "The dtypes within the DataFrame."),
+            EventMetadataEntry.md(
+                value.dtypes.to_markdown(), "dtypes", "The dtypes within the DataFrame."
+            ),
             EventMetadataEntry.md(
                 dataframe.head().to_markdown(), "head", "A preview of the first 5 rows."
             ),
