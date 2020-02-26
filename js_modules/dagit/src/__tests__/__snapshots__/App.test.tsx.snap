@@ -131,7 +131,7 @@ exports[`renders execution 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv active"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -202,20 +202,84 @@ exports[`renders execution 1`] = `
     className="sc-htpNat iwJDzi"
   >
     <div
-      className="sc-bxivhb dgyOAv"
+      className="sc-bxivhb kqOucM"
     >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-send-to-graph"
+                icon="send-to-graph"
+              >
+                <svg
+                  data-icon="send-to-graph"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    send-to-graph
+                  </desc>
+                  <path
+                    d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                airline_demo_ingest_pipeline
+              </span>
+              <span
+                className="bp3-icon bp3-icon-double-caret-vertical"
+                icon="double-caret-vertical"
+              >
+                <svg
+                  data-icon="double-caret-vertical"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    double-caret-vertical
+                  </desc>
+                  <path
+                    d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
       <div
-        className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 bcqdVG"
+        className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 cKVAOT"
       >
         <div
-          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 hVQDaI"
+          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 evxttF"
           onClick={[Function]}
           onDoubleClick={[Function]}
         >
           Workspace
         </div>
         <div
-          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 fbyYAE"
+          className="ExecutionTabs__TabContainer-sc-1e2gc9p-1 idqSMM"
           onClick={[Function]}
           onDoubleClick={[Function]}
         >
@@ -245,101 +309,8 @@ exports[`renders execution 1`] = `
         }
       >
         <div
-          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 eBitZF"
+          className="ExecutionSessionContainer__SessionSettingsBar-sc-13rxma3-0 foKuVj"
         >
-          <span
-            className="bp3-popover-wrapper"
-          >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
-              >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
-                >
-                  <span
-                    className="bp3-icon bp3-icon-send-to-graph"
-                    icon="send-to-graph"
-                  >
-                    <svg
-                      data-icon="send-to-graph"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        send-to-graph
-                      </desc>
-                      <path
-                        d="M6 9H2c-.55 0-1 .45-1 1s.45 1 1 1h1.59L.3 14.29c-.19.18-.3.43-.3.71a1.003 1.003 0 001.71.71L5 12.41V14c0 .55.45 1 1 1s1-.45 1-1v-4c0-.55-.45-1-1-1zm8 .5c-.56 0-1.06.23-1.42.59l-2.13-1.24L8.99 8l3.59-2.09A2.002 2.002 0 0016 4.5c0-1.1-.9-2-2-2s-2 .9-2 2c0 .19.03.37.08.54L8.5 7.13v-3.2c.86-.22 1.5-1 1.5-1.93 0-1.1-.9-2-2-2S6 .9 6 2c0 .93.64 1.71 1.5 1.93v3.2l-.88-.52-2.7-1.57c.05-.17.08-.35.08-.54 0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2c.56 0 1.06-.23 1.42-.59l2.13 1.24 3.84 2.24 2.7 1.57c-.06.17-.09.35-.09.54 0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                  <span
-                    className="bp3-button-text"
-                  >
-                    Select a pipeline...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
-                    >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
-          <div
-            style={
-              Object {
-                "width": 5,
-              }
-            }
-          />
-          <div>
-            <button
-              className="bp3-button"
-              onClick={[Function]}
-              onKeyDown={[Function]}
-              onKeyUp={[Function]}
-              type="button"
-            >
-              <span
-                className="bp3-button-text"
-              >
-                *
-              </span>
-            </button>
-          </div>
-          <div
-            style={
-              Object {
-                "width": 5,
-              }
-            }
-          />
           <div
             className="bp3-spinner"
           >
@@ -366,57 +337,6 @@ exports[`renders execution 1`] = `
               </svg>
             </div>
           </div>
-          <div
-            className="ExecutionSessionContainer__TagEditorLink-sc-13rxma3-4 eEdRpB"
-            onClick={[Function]}
-          >
-            + Add tags
-          </div>
-        </div>
-        <div
-          className="ExecutionSessionContainer__ConfigEditorPresetInsertionContainer-sc-13rxma3-1 gQbmPS"
-        />
-        <div
-          className="ExecutionSessionContainer__ConfigEditorDisplayOptionsContainer-sc-13rxma3-2 hWTxaW"
-        >
-          <button
-            className="bp3-button bp3-active bp3-small"
-            onClick={[Function]}
-            onKeyDown={[Function]}
-            onKeyUp={[Function]}
-            style={
-              Object {
-                "marginLeft": "auto",
-              }
-            }
-            type="button"
-          >
-            <span
-              className="bp3-icon bp3-icon-paragraph"
-              icon="paragraph"
-            >
-              <svg
-                data-icon="paragraph"
-                height={16}
-                viewBox="0 0 16 16"
-                width={16}
-              >
-                <desc>
-                  paragraph
-                </desc>
-                <path
-                  d="M13 1H6C3.8 1 2 2.8 2 5s1.8 4 4 4v5c0 .6.4 1 1 1s1-.5 1-1V3h2v11c0 .6.4 1 1 1s1-.5 1-1V3h1c.5 0 1-.4 1-1s-.4-1-1-1z"
-                  fillRule="evenodd"
-                />
-              </svg>
-            </span>
-          </button>
-        </div>
-        <div
-          className="ExecutionSessionContainer__ConfigEditorContainer-sc-13rxma3-3 cfyltO"
-        >
-          <span />
-          <span />
         </div>
       </div>
       <div
@@ -614,7 +534,7 @@ exports[`renders pipeline page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -4911,7 +4831,7 @@ exports[`renders pipeline solid page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -9208,7 +9128,7 @@ exports[`renders solids explorer 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -10672,7 +10592,7 @@ exports[`renders type page 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -14969,7 +14889,7 @@ exports[`renders type page 2`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span
@@ -19266,7 +19186,7 @@ exports[`renders without error 1`] = `
     </a>
     <a
       className="LeftNav__Tab-tqwrge-2 jMsogv"
-      href="/playground"
+      href="/playground/airline_demo_ingest_pipeline/"
       onClick={[Function]}
     >
       <span

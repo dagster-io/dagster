@@ -4,59 +4,28 @@ import styled from "styled-components";
 import ExecutionSessionContainer, {
   ExecutionSessionContainerError
 } from "./ExecutionSessionContainer";
-import { PipelineNamesContext } from "../PipelineNamesContext";
 import { QueryResult, Query } from "react-apollo";
 import { NonIdealState, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import {
   useStorage,
   IExecutionSessionChanges,
-  StorageHook,
   applyChangesToSession,
   applyCreateSession
 } from "../LocalStorage";
 import { PipelineExecutionRootQuery } from "./types/PipelineExecutionRootQuery";
 import { ExecutionTabs } from "./ExecutionTabs";
+import { RouteComponentProps } from "react-router-dom";
+import { PipelineJumpBar } from "../PipelineJumpComponents";
 
-export function useStorageForCurrentPipelines(
-  namespace = "shared"
-): StorageHook {
-  // Uses session storage in the current repo context, filtering out any sessions that do not
-  // have pipelines that belong to the current repository
-  const [localStorageData, onLocalStorageSave] = useStorage(namespace);
-  const pipelineNames = React.useContext(PipelineNamesContext);
-  if (!pipelineNames || !pipelineNames.length) {
-    // may be still loading, skip filtering
-    return [localStorageData, onLocalStorageSave];
-  }
-
-  const { sessions } = localStorageData;
-  const filteredSessions = {};
-  Object.values(sessions).forEach(session => {
-    if (!session.pipeline || pipelineNames.includes(session.pipeline)) {
-      filteredSessions[session.key] = session;
-    }
-  });
-  if (Object.keys(filteredSessions).length !== Object.keys(sessions).length) {
-    const updatedData = {
-      ...localStorageData,
-      sessions: filteredSessions
-    };
-    if (Object.keys(filteredSessions).length) {
-      onLocalStorageSave(updatedData);
-    } else {
-      onLocalStorageSave(applyCreateSession(updatedData));
-    }
-    return [updatedData, onLocalStorageSave];
-  }
-  return [localStorageData, onLocalStorageSave];
-}
-
-export const PipelineExecutionRoot: React.FunctionComponent<{}> = () => {
-  const [data, onSave] = useStorageForCurrentPipelines();
+export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
+  pipelineSelector: string;
+}>> = ({ match, history }) => {
+  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const [data, onSave] = useStorage(pipelineName);
 
   const vars = {
-    name: data.sessions[data.current]?.pipeline || "",
+    name: pipelineName,
     mode: data.sessions[data.current]?.mode,
     solidSubset: data.sessions[data.current]?.solidSubset
   };
@@ -71,6 +40,11 @@ export const PipelineExecutionRoot: React.FunctionComponent<{}> = () => {
   return (
     <PipelineExecutionWrapper>
       <TabBarContainer>
+        <PipelineJumpBar
+          selectedPipelineName={pipelineName}
+          onChange={pipelineName => history.push(`/playground/${pipelineName}`)}
+        />
+
         <ExecutionTabs data={data} onSave={onSave} />
         <div style={{ flex: 1 }} />
       </TabBarContainer>
@@ -134,6 +108,15 @@ export const PipelineExecutionRoot: React.FunctionComponent<{}> = () => {
             );
           }
 
+          if (!pipelineOrError) {
+            return (
+              <ExecutionSessionContainerError
+                currentSession={data.sessions[data.current]}
+                onSaveSession={changes => onSaveSession(data.current, changes)}
+              ></ExecutionSessionContainerError>
+            );
+          }
+
           return (
             <ExecutionSessionContainer
               data={data}
@@ -189,12 +172,12 @@ const PipelineExecutionWrapper = styled.div`
 `;
 
 const TabBarContainer = styled.div`
-  height: 50px;
+  height: 45px;
   display: flex;
   flex-direction: row;
   align-items: center;
   border-bottom: 1px solid ${Colors.GRAY5};
   background: ${Colors.LIGHT_GRAY3};
-  padding: 8px;
+  padding: 2px 10px;
   z-index: 3;
 `;

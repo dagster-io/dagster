@@ -6,19 +6,18 @@ import {
   IExecutionSession
 } from "../LocalStorage";
 import * as querystring from "query-string";
+import { RouteComponentProps } from "react-router-dom";
 
-interface PipelineExecutionSetupRootProps {}
-
-export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecutionSetupRootProps> = () => {
-  const [data, onSave] = useStorage();
+export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
+  pipelineSelector: string;
+}>> = ({ match }) => {
+  const pipelineName = match.params.pipelineSelector.split(":")[0];
+  const [data, onSave] = useStorage(pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
-    if (qs.pipeline && (qs.config || qs.mode || qs.solidSubset)) {
+    if (qs.config || qs.mode || qs.solidSubset) {
       const newSession: Partial<IExecutionSession> = {};
-      if (typeof qs.pipeline === "string") {
-        newSession.pipeline = qs.pipeline;
-      }
       if (typeof qs.config === "string") {
         newSession.environmentConfigYaml = qs.config;
       }
@@ -37,5 +36,5 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<PipelineExecuti
       onSave(applyCreateSession(data, newSession));
     }
   });
-  return <Redirect to={{ pathname: `/playground` }} />;
+  return <Redirect to={{ pathname: `/playground/${pipelineName}` }} />;
 };
