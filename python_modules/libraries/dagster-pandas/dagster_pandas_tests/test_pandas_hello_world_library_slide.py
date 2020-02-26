@@ -2,14 +2,14 @@ from dagster_pandas import DataFrame
 
 from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid
 from dagster.core.test_utils import single_output_solid
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def create_num_csv_environment():
     return {
         'solids': {
             'hello_world': {
-                'inputs': {'num_csv': {'csv': {'path': script_relative_path('num.csv')}}}
+                'inputs': {'num_csv': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
             }
         }
     }

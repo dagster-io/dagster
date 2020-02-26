@@ -4,7 +4,7 @@ import zipfile
 
 import six
 
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def subset_environment_dict(environment_dict, solid_name):
@@ -20,7 +20,7 @@ def subset_environment_dict(environment_dict, solid_name):
 def build_main_file(
     main_file, mode_name, pipeline_file, solid_name, environment_dict, pipeline_fn_name
 ):
-    with open(script_relative_path('main.py.template'), 'rb') as f:
+    with open(file_relative_path(__file__, 'main.py.template'), 'rb') as f:
         main_template_str = six.ensure_str(f.read())
 
     with open(main_file, 'wb') as f:

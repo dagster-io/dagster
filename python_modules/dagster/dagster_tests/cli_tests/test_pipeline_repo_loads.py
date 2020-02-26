@@ -12,11 +12,11 @@ from dagster.core.definitions import (
 from dagster.core.definitions.decorators import lambda_solid
 from dagster.core.definitions.handle import _ExecutionTargetMode
 from dagster.seven import import_module_from_path
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_repository_python_file():
-    python_file = script_relative_path('bar_repo.py')
+    python_file = file_relative_path(__file__, 'bar_repo.py')
     module = import_module_from_path('bar_repo', python_file)
 
     handle = handle_for_pipeline_cli_args(
@@ -32,7 +32,7 @@ def test_repository_python_file():
             {
                 'module_name': 'kdjfkd',
                 'pipeline_name': 'foo',
-                'python_file': script_relative_path('bar_repo.py'),
+                'python_file': file_relative_path(__file__, 'bar_repo.py'),
                 'fn_name': 'define_bar_repo',
                 'repository_yaml': None,
             }
@@ -43,7 +43,7 @@ def test_repository_python_file():
             {
                 'module_name': None,
                 'pipeline_name': 'foo',
-                'python_file': script_relative_path('bar_repo.py'),
+                'python_file': file_relative_path(__file__, 'bar_repo.py'),
                 'fn_name': 'define_bar_repo',
                 'repository_yaml': 'kjdfkdjf',
             }
@@ -72,7 +72,7 @@ def test_repository_module():
 
 
 def test_pipeline_python_file():
-    python_file = script_relative_path('foo_pipeline.py')
+    python_file = file_relative_path(__file__, 'foo_pipeline.py')
     module = import_module_from_path('foo_pipeline', python_file)
 
     handle = handle_for_pipeline_cli_args(
@@ -119,7 +119,7 @@ def test_yaml_file():
             'pipeline_name': 'foobar',
             'python_file': None,
             'fn_name': None,
-            'repository_yaml': script_relative_path('repository_module.yaml'),
+            'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
         }
     )
     assert handle.mode == _ExecutionTargetMode.PIPELINE
@@ -196,7 +196,7 @@ def test_loader_from_default_repository_module_yaml():
     handle = handle_for_pipeline_cli_args(
         {
             'pipeline_name': 'hello_cereal_pipeline',
-            'repository_yaml': script_relative_path('repository_module.yaml'),
+            'repository_yaml': file_relative_path(__file__, 'repository_module.yaml'),
         }
     )
     pipeline = handle.build_pipeline_definition()
@@ -208,7 +208,10 @@ def test_loader_from_default_repository_module_yaml():
 
 def test_loader_from_default_repository_file_yaml():
     handle = handle_for_pipeline_cli_args(
-        {'pipeline_name': 'foo', 'repository_yaml': script_relative_path('repository_file.yaml')}
+        {
+            'pipeline_name': 'foo',
+            'repository_yaml': file_relative_path(__file__, 'repository_file.yaml'),
+        }
     )
     pipeline = handle.build_pipeline_definition()
 

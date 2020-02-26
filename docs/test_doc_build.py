@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 @pytest.mark.docs
@@ -12,7 +12,7 @@ from dagster.utils import script_relative_path
 def test_build_all_docs():
     pwd = os.getcwd()
     try:
-        os.chdir(script_relative_path('.'))
+        os.chdir(file_relative_path(__file__, '.'))
         subprocess.check_output(['make', 'clean'])
         subprocess.check_output(['make', 'html'])
     finally:

@@ -5,19 +5,19 @@ from dagit.cli import host_dagit_ui
 from dagster import ExecutionTargetHandle, seven
 from dagster.core.instance import DagsterInstance
 from dagster.seven import mock
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_create_app():
-    handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
+    handle = ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml'))
     assert create_app(handle, DagsterInstance.ephemeral())
 
 
 def test_notebook_view():
-    notebook_path = script_relative_path('render_uuid_notebook.ipynb')
+    notebook_path = file_relative_path(__file__, 'render_uuid_notebook.ipynb')
 
     with create_app(
-        ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
+        ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml')),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/dagit/notebook?path={}'.format(notebook_path))
@@ -29,7 +29,7 @@ def test_notebook_view():
 
 def test_index_view():
     with create_app(
-        ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml')),
+        ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml')),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
         res = client.get('/')
@@ -40,7 +40,9 @@ def test_index_view():
 
 def test_successful_host_dagit_ui():
     with mock.patch('gevent.pywsgi.WSGIServer'), seven.TemporaryDirectory() as temp_dir:
-        handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
+        handle = ExecutionTargetHandle.for_repo_yaml(
+            file_relative_path(__file__, './repository.yaml')
+        )
         host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
 
 
@@ -65,7 +67,9 @@ def test_unknown_error():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_custom_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
+        handle = ExecutionTargetHandle.for_repo_yaml(
+            file_relative_path(__file__, './repository.yaml')
+        )
         with pytest.raises(AnException):
             host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
 
@@ -77,7 +81,9 @@ def test_port_collision():
     with mock.patch(
         'gevent.pywsgi.WSGIServer', new=_define_mock_server(_raise_os_error)
     ), seven.TemporaryDirectory() as temp_dir:
-        handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('./repository.yaml'))
+        handle = ExecutionTargetHandle.for_repo_yaml(
+            file_relative_path(__file__, './repository.yaml')
+        )
         with pytest.raises(Exception) as exc_info:
             host_dagit_ui(
                 storage_fallback=temp_dir, handle=handle, host=None, port=2343, port_lookup=False

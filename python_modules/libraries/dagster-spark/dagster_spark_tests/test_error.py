@@ -5,7 +5,7 @@ import yaml
 from dagster_spark import SparkSolidDefinition
 
 from dagster import execute_solid
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 CONFIG_FILE = '''
 solids:
@@ -65,7 +65,7 @@ def test_no_spark_home():
         'spark_solid', main_class='something', spark_outputs=["/tmp/dagster/events/data"]
     )
     environment_dict = yaml.safe_load(
-        NO_SPARK_HOME_CONFIG_FILE.format(path=script_relative_path('.'))
+        NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, '.'))
     )
 
     result = execute_solid(spark_solid, environment_dict=environment_dict, raise_on_error=False)

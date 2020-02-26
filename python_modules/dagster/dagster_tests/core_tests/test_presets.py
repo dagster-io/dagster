@@ -1,5 +1,5 @@
 from dagster import PresetDefinition
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 from ..test_repository import define_multi_mode_with_resources_pipeline
 
@@ -10,7 +10,7 @@ def test_preset_yaml_roundtrip():
     preset_def = pipeline.get_preset('add')
 
     with open(
-        script_relative_path('../environments/multi_mode_with_resources/add_mode.yaml'), 'r'
+        file_relative_path(__file__, '../environments/multi_mode_with_resources/add_mode.yaml'), 'r'
     ) as fd:
         assert preset_def.get_environment_yaml() == fd.read()
 

@@ -13,12 +13,13 @@ from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
 from dagster.core.utils import make_new_run_id
-from dagster.utils import load_yaml_from_glob_list, script_relative_path
+from dagster.utils import file_relative_path, load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution
 
 # TODO (Nate): Will remove in follow-up diff
-ENVIRONMENTS_PATH = script_relative_path(
+ENVIRONMENTS_PATH = file_relative_path(
+    __file__,
     os.path.join(
         '..',
         '..',
@@ -30,7 +31,7 @@ ENVIRONMENTS_PATH = script_relative_path(
         'test_project',
         'test_pipelines',
         'environments',
-    )
+    ),
 )
 
 

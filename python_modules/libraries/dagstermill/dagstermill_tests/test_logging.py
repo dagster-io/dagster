@@ -7,7 +7,7 @@ from dagstermill.examples.repository import define_hello_logging_solid
 from dagster import ModeDefinition, PipelineDefinition, String, execute_pipeline, logger, seven
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.instance import DagsterInstance
-from dagster.utils import safe_tempfile_path, script_relative_path
+from dagster.utils import file_relative_path, safe_tempfile_path
 
 
 class LogTestFileHandler(logging.Handler):
@@ -49,7 +49,7 @@ def test_logging():
 
     handle = handle_for_pipeline_cli_args(
         {
-            'python_file': script_relative_path('./test_logging.py'),
+            'python_file': file_relative_path(__file__, './test_logging.py'),
             'fn_name': 'define_hello_logging_pipeline',
         }
     )

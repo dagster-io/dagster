@@ -8,7 +8,7 @@ import sys
 from click.testing import CliRunner
 from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
-from dagster.utils import pushd, script_relative_path
+from dagster.utils import file_relative_path, pushd
 
 EXPECTED_OUTPUT = '''
     {
@@ -72,7 +72,7 @@ def scaffold(notebook_name=None):
 
 
 def test_scaffold():
-    with pushd(script_relative_path('.')):
+    with pushd(file_relative_path(__file__, '.')):
         with scaffold(notebook_name='notebooks/cli_test_scaffold') as notebook_path:
             check_notebook_expected_output(
                 notebook_path + '.ipynb', expected_output=EXPECTED_OUTPUT
@@ -89,7 +89,7 @@ def test_invalid_filename_example():
 
 
 def test_retroactive_scaffold():
-    notebook_path = script_relative_path('notebooks/retroactive.ipynb')
+    notebook_path = file_relative_path(__file__, 'notebooks/retroactive.ipynb')
     with open(notebook_path, 'r') as fd:
         retroactive_notebook = fd.read()
     try:
@@ -110,7 +110,7 @@ def test_retroactive_scaffold():
 
 def test_double_scaffold():
     try:
-        notebook_path = script_relative_path('notebooks/overwrite.ipynb')
+        notebook_path = file_relative_path(__file__, 'notebooks/overwrite.ipynb')
         with open(notebook_path, 'w') as fd:
             fd.write('print(\'Hello, world!\')')
 

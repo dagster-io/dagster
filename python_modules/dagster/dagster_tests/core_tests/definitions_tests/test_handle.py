@@ -20,7 +20,7 @@ from dagster.core.definitions.handle import (
     _get_python_file_from_previous_stack_frame,
 )
 from dagster.seven import import_module_from_path
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 NOPE = 'this is not a pipeline or repo or callable'
 
@@ -102,7 +102,7 @@ def test_loader_entrypoint():
     )
 
     # YAML
-    le = LoaderEntrypoint.from_yaml(script_relative_path('repository.yaml'))
+    le = LoaderEntrypoint.from_yaml(file_relative_path(__file__, 'repository.yaml'))
     assert isinstance(le.module, types.ModuleType)
     assert le.module.__name__ == 'dagster_examples.intro_tutorial.repos'
     assert le.module_name == 'dagster_examples.intro_tutorial.repos'
@@ -115,7 +115,7 @@ def test_repo_entrypoints():
     module = importlib.import_module('dagster_examples.intro_tutorial.repos')
 
     expected = LoaderEntrypoint(module, 'dagster_examples.intro_tutorial.repos', 'define_repo')
-    handle = ExecutionTargetHandle.for_repo_yaml(script_relative_path('repository.yaml'))
+    handle = ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, 'repository.yaml'))
     assert handle.entrypoint.module == expected.module
     assert handle.entrypoint.module_name == expected.module_name
     assert handle.entrypoint.fn_name == expected.fn_name
@@ -139,7 +139,7 @@ def test_repo_entrypoints():
     assert handle.entrypoint.module_name == expected.module_name
     assert handle.entrypoint.fn_name == expected.fn_name
 
-    python_file = script_relative_path('bar_repo.py')
+    python_file = file_relative_path(__file__, 'bar_repo.py')
     module = import_module_from_path('bar_repo', python_file)
 
     expected = LoaderEntrypoint(module, 'bar_repo', 'define_bar_repo')
@@ -221,7 +221,7 @@ def test_exc_target_handle_data():
 
 def test_repo_yaml_module_dynamic_load():
     handle = ExecutionTargetHandle.for_repo_yaml(
-        repository_yaml=script_relative_path('repository_module.yaml')
+        repository_yaml=file_relative_path(__file__, 'repository_module.yaml')
     )
     handle = ExecutionTargetHandle.from_dict(handle.to_dict())
     repository = handle.build_repository_definition()
@@ -233,7 +233,7 @@ def test_repo_yaml_module_dynamic_load():
 
 def test_repo_yaml_file_dynamic_load():
     handle = ExecutionTargetHandle.for_repo_yaml(
-        repository_yaml=script_relative_path('repository_file.yaml')
+        repository_yaml=file_relative_path(__file__, 'repository_file.yaml')
     )
     handle = ExecutionTargetHandle.from_dict(handle.to_dict())
     repository = handle.build_repository_definition()
@@ -257,7 +257,7 @@ def test_repo_module_dynamic_load():
 
 def test_repo_file_dynamic_load():
     handle = ExecutionTargetHandle.for_repo_python_file(
-        python_file=script_relative_path('test_handle.py'), fn_name='define_bar_repo'
+        python_file=file_relative_path(__file__, 'test_handle.py'), fn_name='define_bar_repo'
     )
     handle = ExecutionTargetHandle.from_dict(handle.to_dict())
     repository = handle.build_repository_definition()
@@ -282,7 +282,7 @@ def test_repo_module_dynamic_load_from_pipeline():
 
 def test_repo_file_dynamic_load_from_pipeline():
     handle = ExecutionTargetHandle.for_pipeline_python_file(
-        python_file=script_relative_path('test_handle.py'), fn_name='foo_pipeline'
+        python_file=file_relative_path(__file__, 'test_handle.py'), fn_name='foo_pipeline'
     )
     handle = ExecutionTargetHandle.from_dict(handle.to_dict())
     repository = handle.build_repository_definition()

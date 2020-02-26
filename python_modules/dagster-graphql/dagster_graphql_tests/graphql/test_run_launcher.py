@@ -7,7 +7,7 @@ from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 from .utils import InMemoryRunLauncher
 
@@ -24,7 +24,9 @@ query RunQuery($runId: ID!) {
 
 
 def test_missing():
-    context = define_context_for_repository_yaml(path=script_relative_path('../repository.yaml'))
+    context = define_context_for_repository_yaml(
+        path=file_relative_path(__file__, '../repository.yaml')
+    )
 
     result = execute_dagster_graphql(
         context=context,
@@ -51,7 +53,7 @@ def test_run_launcher():
         )
 
     context = define_context_for_repository_yaml(
-        path=script_relative_path('../repository.yaml'), instance=instance
+        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
     )
 
     result = execute_dagster_graphql(

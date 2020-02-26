@@ -5,7 +5,7 @@ import pytest
 from dagster_postgres.run_storage import PostgresRunStorage
 from dagster_postgres.utils import get_conn_string, wait_for_connection
 
-from dagster.utils import pushd, script_relative_path
+from dagster.utils import file_relative_path, pushd
 
 BUILDKITE = bool(os.getenv('BUILDKITE'))
 
@@ -32,7 +32,7 @@ def postgres():
         return
 
     if not is_postgres_running():
-        with pushd(script_relative_path('.')):
+        with pushd(file_relative_path(__file__, '.')):
             try:
                 subprocess.check_output(['docker-compose', 'stop', 'test-postgres-db'])
                 subprocess.check_output(['docker-compose', 'rm', '-f', 'test-postgres-db'])
@@ -68,7 +68,7 @@ def multi_postgres():  # pylint: disable=redefined-outer-name
         # yield (run_storage_conn_string, event_log_storage_conn_string)
         # return
 
-    with pushd(script_relative_path('.')):
+    with pushd(file_relative_path(__file__, '.')):
         try:
             subprocess.check_output(['docker-compose', '-f', 'docker-compose-multi.yml', 'stop'])
             subprocess.check_output(['docker-compose', '-f', 'docker-compose-multi.yml', 'rm'])

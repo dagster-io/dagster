@@ -7,13 +7,15 @@ from dagster_pandas.examples.pandas_hello_world.pipeline import (
 
 from dagster import execute_pipeline
 from dagster.cli.pipeline import do_execute_command
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_execute_pipeline():
     environment = {
         'solids': {
-            'sum_solid': {'inputs': {'num': {'csv': {'path': script_relative_path('num.csv')}}}}
+            'sum_solid': {
+                'inputs': {'num': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+            }
         }
     }
 
@@ -42,12 +44,14 @@ def test_cli_execute():
     cwd = os.getcwd()
     try:
 
-        os.chdir(script_relative_path('../..'))
+        os.chdir(file_relative_path(__file__, '../..'))
 
         do_execute_command(
             pipeline=pandas_hello_world,
             env_file_list=[
-                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
+                file_relative_path(
+                    __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
+                )
             ],
         )
     finally:
@@ -63,12 +67,14 @@ def test_cli_execute_failure():
     cwd = os.getcwd()
     try:
 
-        os.chdir(script_relative_path('../..'))
+        os.chdir(file_relative_path(__file__, '../..'))
 
         result = do_execute_command(
             pipeline=pandas_hello_world_fails,
             env_file_list=[
-                script_relative_path('../../dagster_pandas/examples/pandas_hello_world/*.yaml')
+                file_relative_path(
+                    __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
+                )
             ],
         )
         failures = [event for event in result.step_event_list if event.is_failure]

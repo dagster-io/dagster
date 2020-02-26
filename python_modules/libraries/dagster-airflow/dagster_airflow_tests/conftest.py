@@ -16,7 +16,7 @@ import pytest
 import six
 
 from dagster import check
-from dagster.utils import load_yaml_from_path, mkdir_p, pushd, script_relative_path
+from dagster.utils import file_relative_path, load_yaml_from_path, mkdir_p, pushd
 
 
 @pytest.fixture(scope='session')
@@ -26,8 +26,9 @@ def git_repository_root():
 
 @pytest.fixture(scope='session')
 def test_repo_path(git_repository_root):  # pylint: disable=redefined-outer-name
-    return script_relative_path(
-        os.path.join(git_repository_root, '.buildkite', 'images', 'docker', 'test_project')
+    return file_relative_path(
+        __file__,
+        os.path.join(git_repository_root, '.buildkite', 'images', 'docker', 'test_project'),
     )
 
 
@@ -131,7 +132,8 @@ def docker_image(docker_client, build_docker_image):
         check.failed(
             'Couldn\'t find docker image {image} required for test: please run the script at '
             '{script_path}'.format(
-                image=build_docker_image, script_path=script_relative_path('test_project/build.sh')
+                image=build_docker_image,
+                script_path=file_relative_path(__file__, 'test_project/build.sh'),
             )
         )
 

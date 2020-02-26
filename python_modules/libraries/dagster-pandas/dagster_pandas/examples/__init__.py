@@ -15,14 +15,13 @@ from dagster import (
     pipeline,
 )
 from dagster.core.utility_solids import define_stub_solid
-from dagster.utils import script_relative_path
 
 from ..data_frame import DataFrame
 from .pandas_hello_world.pipeline import pandas_hello_world
 
 
 def nb_test_path(name):
-    return script_relative_path('notebooks/{name}.ipynb'.format(name=name))
+    return file_relative_path(__file__, 'notebooks/{name}.ipynb'.format(name=name))
 
 
 def define_papermill_pandas_hello_world_solid():

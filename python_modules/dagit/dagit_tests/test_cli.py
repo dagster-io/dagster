@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagit.cli import ui
 from gevent import pywsgi
 
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_invoke_ui():
@@ -21,12 +21,16 @@ def test_invoke_ui_with_port_taken(monkeypatch):
     monkeypatch.setattr(pywsgi.WSGIServer, 'serve_forever', serve_forever)
     runner = CliRunner()
     result = runner.invoke(
-        ui, ['-f', script_relative_path('./pipeline.py'), '-n', 'define_repository'], input="n\n"
+        ui,
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        input="n\n",
     )
     assert result.exception
 
     result = runner.invoke(
-        ui, ['-f', script_relative_path('./pipeline.py'), '-n', 'define_repository'], input="y\n"
+        ui,
+        ['-f', file_relative_path(__file__, './pipeline.py'), '-n', 'define_repository'],
+        input="y\n",
     )
     assert ':3001' in result.output
 

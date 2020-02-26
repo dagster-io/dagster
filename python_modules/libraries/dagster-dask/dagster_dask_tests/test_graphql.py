@@ -8,12 +8,12 @@ from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import ExecutionTargetHandle
 from dagster.core.instance import DagsterInstance
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_execute_hammer_through_dagit():
     handle = ExecutionTargetHandle.for_pipeline_python_file(
-        script_relative_path('../../../../examples/dagster_examples/toys/hammer.py'),
+        file_relative_path(__file__, '../../../../examples/dagster_examples/toys/hammer.py'),
         'hammer_pipeline',
     )
     instance = DagsterInstance.local_temp()

@@ -11,7 +11,7 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def define_empty_pipeline():
@@ -79,7 +79,9 @@ def define_multi_mode_with_resources_pipeline():
                 'add',
                 mode='add_mode',
                 environment_files=[
-                    script_relative_path('./environments/multi_mode_with_resources/add_mode.yaml')
+                    file_relative_path(
+                        __file__, './environments/multi_mode_with_resources/add_mode.yaml'
+                    )
                 ],
             ),
             PresetDefinition(

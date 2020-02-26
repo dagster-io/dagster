@@ -12,7 +12,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 
 
@@ -49,7 +49,7 @@ def test_dataframe_csv_from_inputs():
         {
             'solids': {
                 'df_as_config': {
-                    'inputs': {'df': {'csv': {'path': script_relative_path('num.csv')}}}
+                    'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
                 }
             }
         },
@@ -77,7 +77,9 @@ def test_dataframe_wrong_sep_from_inputs():
         {
             'solids': {
                 'df_as_config': {
-                    'inputs': {'df': {'csv': {'path': script_relative_path('num.csv'), 'sep': '|'}}}
+                    'inputs': {
+                        'df': {'csv': {'path': file_relative_path(__file__, 'num.csv'), 'sep': '|'}}
+                    }
                 }
             }
         },
@@ -105,7 +107,12 @@ def test_dataframe_pipe_sep_csv_from_inputs():
             'solids': {
                 'df_as_config': {
                     'inputs': {
-                        'df': {'csv': {'path': script_relative_path('num_pipes.csv'), 'sep': '|'}}
+                        'df': {
+                            'csv': {
+                                'path': file_relative_path(__file__, 'num_pipes.csv'),
+                                'sep': '|',
+                            }
+                        }
                     }
                 }
             }
@@ -162,7 +169,7 @@ def test_dataframe_csv_missing_input_collision():
             {
                 'solids': {
                     'df_as_input': {
-                        'inputs': {'df': {'csv': {'path': script_relative_path('num.csv')}}}
+                        'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
                     }
                 }
             },
@@ -194,7 +201,9 @@ def test_dataframe_parquet_from_inputs():
         {
             'solids': {
                 'df_as_config': {
-                    'inputs': {'df': {'parquet': {'path': script_relative_path('num.parquet')}}}
+                    'inputs': {
+                        'df': {'parquet': {'path': file_relative_path(__file__, 'num.parquet')}}
+                    }
                 }
             }
         },
@@ -221,7 +230,9 @@ def test_dataframe_table_from_inputs():
         {
             'solids': {
                 'df_as_config': {
-                    'inputs': {'df': {'table': {'path': script_relative_path('num_table.txt')}}}
+                    'inputs': {
+                        'df': {'table': {'path': file_relative_path(__file__, 'num_table.txt')}}
+                    }
                 }
             }
         },

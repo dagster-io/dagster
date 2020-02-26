@@ -8,7 +8,7 @@ import tempfile
 import pytest
 
 from dagster import seven
-from dagster.utils import script_relative_path
+from dagster.utils import file_relative_path
 
 
 def test_is_ascii():
@@ -17,7 +17,9 @@ def test_is_ascii():
 
 
 def test_import_module_from_path():
-    foo_module = seven.import_module_from_path('foo_module', script_relative_path('foo_module.py'))
+    foo_module = seven.import_module_from_path(
+        'foo_module', file_relative_path(__file__, 'foo_module.py')
+    )
     assert foo_module.FOO == 7
 
 
