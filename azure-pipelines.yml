@@ -5,16 +5,16 @@ jobs:
     strategy:
       matrix:
         py27:
-          TOXENV: "py27"
+          TOXENV: "py27-windows"
           python.version: "2.7"
         py35:
-          TOXENV: "py35"
+          TOXENV: "py35-windows"
           python.version: "3.5"
         py36:
-          TOXENV: "py36"
+          TOXENV: "py36-windows"
           python.version: "3.6"
         py37:
-          TOXENV: "py37"
+          TOXENV: "py37-windows"
           python.version: "3.7"
     variables:
       PYTHONLEGACYWINDOWSSTDIO: "1"

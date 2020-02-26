@@ -1,11 +1,7 @@
 [tox]
-envlist = py36,py35
+envlist = py{36,35}-{unix,windows}
 
 [testenv]
-platform =
-  linux: linux
-  osx: darwin
-  win: win32
 deps =
   -e ../python_modules/dagster
   -e ../python_modules/libraries/dagster-pandas
@@ -27,7 +23,7 @@ whitelist_externals =
   /bin/bash
   echo
 commands =
-  linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
+  !windows: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   ipython kernel install --name "dagster" --user
   echo -e "--- \033[0;32m:pytest: Running tox tests\033[0m"
@@ -42,7 +38,7 @@ whitelist_externals =
   /bin/bash
   echo
 commands =
-  linux,osx: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
+  !windows: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
   coverage erase
   echo -e "--- \033[0;32m:pytest: Running tox tests\033[0m"
   pytest dagster_examples_tests/airline_demo_tests/ -v --cov=dagster_examples --cov=../python_modules --cov-append --cov-report= -s -W ignore:::psycopg2 -m "not slow and not airflow"
