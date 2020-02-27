@@ -1,11 +1,30 @@
 # Changelog
 
-## 0.7.2 (Upcoming)
+## 0.7.2
 
-- `OutputDefinition` takes a `is_required` rather than a `is_optional` argument. This is to
+**Docs**
+- New docs site at docs.dagster.io.
+- dagster.readthedocs.io is currently stale due to availability issues.
+
+**New**
+
+- Improvements to S3 Resource. (Thanks @dwallace0723!)
+- Better error messages in Dagit.
+- Better font/styling support in Dagit.
+- Changed `OutputDefinition` to take `is_required` rather than `is_optional` argument. This is to
   remain consistent with changes to `Field` in 0.7.1 and to avoid confusion
   with python's typing and dagster's definition of `Optional`, which indicates None-ability,
   rather than existence. `is_optional` is deprecated and will be removed in a future version.
+- Added support for Flower in dagster-k8s.
+- Added support for environment variable config in dagster-snowflake.
+
+**Bugfixes**
+- Improved performance in Dagit waterfall view.
+- Fixed bug when executing solids downstream of a skipped solid.
+- Improved navigation experience for pipelines in Dagit.
+- Fixed for the dagster-aws CLI tool.
+- Fixed issue starting Dagit without DAGSTER_HOME set on windows.
+- Fixed pipeline subset execution in partition-based schedules.
 
 ## 0.7.1
 
