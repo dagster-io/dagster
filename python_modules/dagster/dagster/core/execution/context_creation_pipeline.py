@@ -162,7 +162,7 @@ def pipeline_initialization_event_generator(
         executor_config = create_executor_config(context_creation_data)
         log_manager = create_log_manager(context_creation_data)
         resources_manager = scoped_resources_builder_cm(
-            context_creation_data.pipeline_def,
+            execution_plan,
             context_creation_data.environment_config,
             context_creation_data.pipeline_run,
             log_manager,
@@ -203,14 +203,9 @@ def pipeline_initialization_event_generator(
                 failure_data=PipelineInitFailureData(error=error_info),
                 log_manager=_create_context_free_log_manager(instance, pipeline_run, pipeline_def),
             )
-            try:
-                if resources_manager:
-                    for event in resources_manager.generate_teardown_events():
-                        yield event
-            except DagsterError as dagster_teardown_error:
-                # we will fail/reraise based on the original error, so for now just do a best-effort
-                # teardown and swallow any errors
-                pass
+            if resources_manager:
+                for event in resources_manager.generate_teardown_events():
+                    yield event
         else:
             # pipeline teardown failure
             raise dagster_error

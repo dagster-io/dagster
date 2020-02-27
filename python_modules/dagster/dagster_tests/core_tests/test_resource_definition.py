@@ -1,7 +1,7 @@
-import pytest
-
 from dagster import (
+    DagsterEventType,
     DagsterResourceFunctionError,
+    ExecutionTargetHandle,
     Field,
     Int,
     ModeDefinition,
@@ -441,7 +441,8 @@ def test_resource_init_failure():
 
     res = execute_pipeline(pipeline, raise_on_error=False)
 
-    assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    event_types = [event.event_type_value for event in res.event_list]
+    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
 
     execution_plan = create_execution_plan(pipeline)
     run_id = make_new_run_id()
@@ -451,7 +452,8 @@ def test_resource_init_failure():
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
 
-    assert step_events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    event_types = [event.event_type_value for event in step_events]
+    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
 
     # Test the pipeline init failure event fires even if we are raising errors
     events = []
@@ -461,8 +463,8 @@ def test_resource_init_failure():
     except DagsterResourceFunctionError:
         pass
 
-    assert len(events) == 1
-    assert events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    event_types = [event.event_type_value for event in events]
+    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
 
 
 def test_dagster_type_resource_decorator_config():
@@ -511,7 +513,9 @@ def test_resource_init_failure_with_teardown():
     )
 
     res = execute_pipeline(pipeline, raise_on_error=False)
-    assert res.event_list[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    event_types = [event.event_type_value for event in res.event_list]
+    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
+
     assert called == ['A', 'B']
     assert cleaned == ['B', 'A']
 
@@ -525,8 +529,8 @@ def test_resource_init_failure_with_teardown():
     except DagsterResourceFunctionError:
         pass
 
-    assert len(events) == 1
-    assert events[0].event_type_value == 'PIPELINE_INIT_FAILURE'
+    event_types = [event.event_type_value for event in events]
+    assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
     assert called == ['A', 'B']
     assert cleaned == ['B', 'A']
 
@@ -613,8 +617,14 @@ def test_resource_teardown_failure():
         mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
     )
 
-    with pytest.raises(DagsterResourceFunctionError):
-        execute_pipeline(pipeline, raise_on_error=False)
+    result = execute_pipeline(pipeline, raise_on_error=False)
+    assert result.success
+    error_events = [
+        event
+        for event in result.event_list
+        if event.is_engine_event and event.event_specific_data.error
+    ]
+    assert len(error_events) == 1
     assert called == ['A', 'B']
     assert cleaned == ['A']
 
@@ -629,3 +639,48 @@ def test_resource_teardown_failure():
 
     assert called == ['A', 'B']
     assert cleaned == ['A']
+
+
+def define_resource_teardown_failure_pipeline():
+    @resource
+    def resource_a(_):
+        try:
+            yield 'A'
+        finally:
+            pass
+
+    @resource
+    def resource_b(_):
+        try:
+            yield 'B'
+        finally:
+            raise Exception('uh oh')
+
+    @solid(required_resource_keys={'a', 'b'})
+    def resource_solid(_):
+        pass
+
+    return PipelineDefinition(
+        name='resource_teardown_failure',
+        solid_defs=[resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+    )
+
+
+def test_multiprocessing_resource_teardown_failure():
+    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
+        __file__, 'define_resource_teardown_failure_pipeline'
+    ).build_pipeline_definition()
+    result = execute_pipeline(
+        pipeline,
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=DagsterInstance.local_temp(),
+        raise_on_error=False,
+    )
+    assert result.success
+    error_events = [
+        event
+        for event in result.event_list
+        if event.is_engine_event and event.event_specific_data.error
+    ]
+    assert len(error_events) > 1

@@ -1,46 +1,56 @@
 from collections import deque
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.errors import (
     DagsterResourceFunctionError,
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
 )
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepInputSourceType
+from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.utils import EventGenerationManager, ensure_gen
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.timing import format_duration, time_execution_scope
 
 from .context.init import InitResourceContext
 
 
 def resource_initialization_manager(
-    pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init,
+    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init,
 ):
     generator = resource_initialization_event_generator(
-        pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init,
+        execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
 
 def resource_initialization_event_generator(
-    pipeline_def, environment_config, pipeline_run, log_manager, resource_keys_to_init
+    execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
 ):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
     check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
 
     resource_instances = {}
+    pipeline_def = execution_plan.pipeline_def
     mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
     resource_managers = deque()
     generator_closed = False
+    resource_init_times = {}
 
     try:
+        if resource_keys_to_init:
+            yield DagsterEvent.resource_init_start(
+                execution_plan, log_manager, resource_keys_to_init,
+            )
+
         for resource_name, resource_def in sorted(mode_definition.resource_defs.items()):
             if not resource_name in resource_keys_to_init:
                 continue
@@ -59,14 +69,27 @@ def resource_initialization_event_generator(
                     yield event
             initialized_resource = check.inst(manager.get_object(), InitializedResource)
             resource_instances[resource_name] = initialized_resource.resource
+            resource_init_times[resource_name] = initialized_resource.duration
             resource_managers.append(manager)
 
+        if resource_keys_to_init:
+            yield DagsterEvent.resource_init_success(
+                execution_plan, log_manager, resource_init_times
+            )
         yield ScopedResourcesBuilder(resource_instances)
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
         raise
+    except DagsterUserCodeExecutionError as dagster_user_error:
+        yield DagsterEvent.resource_init_failure(
+            execution_plan,
+            log_manager,
+            resource_keys_to_init,
+            serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
+        )
+        raise dagster_user_error
     finally:
         if not generator_closed:
             error = None
@@ -78,7 +101,12 @@ def resource_initialization_event_generator(
                 except DagsterUserCodeExecutionError as dagster_user_error:
                     error = dagster_user_error
             if error:
-                raise error
+                yield DagsterEvent.resource_teardown_failure(
+                    execution_plan,
+                    log_manager,
+                    resource_keys_to_init,
+                    serializable_error_info_from_exc_info(error.original_exc_info),
+                )
 
 
 class InitializedResource(object):
@@ -87,8 +115,9 @@ class InitializedResource(object):
     `EventGenerationManager`-wrapped event stream.
     '''
 
-    def __init__(self, obj):
+    def __init__(self, obj, duration):
         self.resource = obj
+        self.duration = duration
 
 
 def single_resource_generation_manager(context, resource_name, resource_def):
@@ -103,26 +132,27 @@ def single_resource_event_generator(context, resource_name, resource_def):
         )
         with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
             try:
-                resource_or_gen = resource_def.resource_fn(context)
+                with time_execution_scope() as timer_result:
+                    resource_or_gen = resource_def.resource_fn(context)
                 gen = ensure_gen(resource_or_gen)
                 resource = next(gen)
-                yield InitializedResource(resource)
+                yield InitializedResource(resource, format_duration(timer_result.millis))
             except StopIteration:
                 check.failed(
                     'Resource generator {name} must yield one item.'.format(name=resource_name)
                 )
-            try:
-                next(gen)
-            except StopIteration:
-                pass
-            else:
-                check.failed(
-                    'Resource generator {name} yielded more than one item.'.format(
-                        name=resource_name
-                    )
-                )
     except DagsterUserCodeExecutionError as dagster_user_error:
         raise dagster_user_error
+
+    with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        else:
+            check.failed(
+                'Resource generator {name} yielded more than one item.'.format(name=resource_name)
+            )
 
 
 def get_required_resource_keys_to_init(execution_plan, system_storage_def):

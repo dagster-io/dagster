@@ -146,9 +146,9 @@ def test_error_resource(snapshot):
     )
 
     assert not result.success
-    assert len(result.event_list) == 1
+    assert len(result.event_list) >= 1
 
-    init_failure_event = result.event_list[0]
+    init_failure_event = result.event_list[-1]
     assert init_failure_event.event_type_value == 'PIPELINE_INIT_FAILURE'
     snapshot.assert_match(init_failure_event.message)
 

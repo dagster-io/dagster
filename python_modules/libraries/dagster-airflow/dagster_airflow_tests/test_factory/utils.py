@@ -5,12 +5,13 @@ from dagster.core.events.log import DagsterEventRecord
 
 def validate_pipeline_execution(pipeline_exc_result):
     expected_airflow_demo_events = {
-        ('ENGINE_EVENT', None),
+        ('ENGINE_EVENT', 'multiply_the_word.compute'),
         ('STEP_START', 'multiply_the_word.compute'),
         ('STEP_INPUT', 'multiply_the_word.compute'),
         ('STEP_OUTPUT', 'multiply_the_word.compute'),
         ('OBJECT_STORE_OPERATION', 'multiply_the_word.compute'),
         ('STEP_SUCCESS', 'multiply_the_word.compute'),
+        ('ENGINE_EVENT', 'count_letters.compute'),
         ('STEP_START', 'count_letters.compute'),
         ('OBJECT_STORE_OPERATION', 'count_letters.compute'),
         ('STEP_INPUT', 'count_letters.compute'),

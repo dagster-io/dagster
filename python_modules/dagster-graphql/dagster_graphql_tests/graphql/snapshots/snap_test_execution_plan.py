@@ -359,7 +359,11 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Executing steps in process (pid: {N})',
-                'step': None
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
@@ -410,7 +414,11 @@ snapshots['test_successful_one_part_execute_plan 1'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Finished steps in process (pid: {N}) in {N}ms',
-                'step': None
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
             }
         ]
     }
@@ -427,7 +435,11 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Executing steps in process (pid: {N})',
-                'step': None
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
@@ -478,7 +490,11 @@ snapshots['test_successful_two_part_execute_plan 1'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Finished steps in process (pid: {N}) in {N}ms',
-                'step': None
+                'step': {
+                    'key': 'sum_solid.compute',
+                    'metadata': [
+                    ]
+                }
             }
         ]
     }
@@ -495,7 +511,11 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Executing steps in process (pid: {N})',
-                'step': None
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
             },
             {
                 '__typename': 'ExecutionStepStartEvent',
@@ -555,7 +575,11 @@ snapshots['test_successful_two_part_execute_plan 2'] = {
             {
                 '__typename': 'EngineEvent',
                 'message': 'Finished steps in process (pid: {N}) in {N}ms',
-                'step': None
+                'step': {
+                    'key': 'sum_sq_solid.compute',
+                    'metadata': [
+                    ]
+                }
             }
         ]
     }

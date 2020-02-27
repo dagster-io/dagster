@@ -546,8 +546,7 @@ def test_pipeline_init_failure():
     )
 
     assert result.success is False
-    assert len(result.event_list) == 1
-    event = result.event_list[0]
+    event = result.event_list[-1]
     assert event.event_type_value == 'PIPELINE_INIT_FAILURE'
     assert event.pipeline_init_failure_data
 

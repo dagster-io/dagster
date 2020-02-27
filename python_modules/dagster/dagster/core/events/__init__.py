@@ -125,7 +125,7 @@ def log_step_event(step_context, event):
     )
 
 
-def log_pipeline_event(pipeline_context, event):
+def log_pipeline_event(pipeline_context, event, step_key):
     event_type = DagsterEventType(event.event_type_value)
 
     log_fn = (
@@ -139,7 +139,17 @@ def log_pipeline_event(pipeline_context, event):
         ),
         dagster_event=event,
         pipeline_name=pipeline_context.pipeline_def.name,
+        step_key=step_key,
     )
+
+
+def log_resource_event(log_manager, pipeline_name, event):
+    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
+    check.inst_param(event, 'event', DagsterEvent)
+    check.inst(event.event_specific_data, EngineEventData)
+
+    log_fn = log_manager.error if event.event_specific_data.error else log_manager.debug
+    log_fn(event.message, dagster_event=event, pipeline_name=pipeline_name, step_key=event.step_key)
 
 
 @whitelist_for_serdes
@@ -175,7 +185,9 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def from_pipeline(event_type, pipeline_context, message=None, event_specific_data=None):
+    def from_pipeline(
+        event_type, pipeline_context, message=None, event_specific_data=None, step_key=None
+    ):
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
 
         pipeline_name = pipeline_context.pipeline_def.name
@@ -185,10 +197,34 @@ class DagsterEvent(
             check.str_param(pipeline_name, 'pipeline_name'),
             message=check.opt_str_param(message, 'message'),
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
+            step_key=step_key,
         )
 
-        log_pipeline_event(pipeline_context, event)
+        log_pipeline_event(pipeline_context, event, step_key)
 
+        return event
+
+    @staticmethod
+    def from_resource(execution_plan, log_manager, message=None, event_specific_data=None):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        pipeline_name = execution_plan.pipeline_def.name
+        step_key = (
+            execution_plan.step_keys_to_execute[0]
+            if execution_plan.step_keys_to_execute and len(execution_plan.step_keys_to_execute) == 1
+            else None
+        )
+        event = DagsterEvent(
+            DagsterEventType.ENGINE_EVENT.value,
+            pipeline_name=pipeline_name,
+            message=check.opt_str_param(message, 'message'),
+            event_specific_data=_validate_event_specific_data(
+                DagsterEventType.ENGINE_EVENT, event_specific_data
+            ),
+            step_key=step_key,
+        )
+        log_resource_event(log_manager, pipeline_name, event)
         return event
 
     def __new__(
@@ -478,6 +514,60 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def resource_init_start(execution_plan, log_manager, resource_keys):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        return DagsterEvent.from_resource(
+            execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
+            log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
+            message='Starting initialization of resources [{}].'.format(', '.join(resource_keys)),
+            event_specific_data=EngineEventData(metadata_entries=[], marker_start=None),
+        )
+
+    @staticmethod
+    def resource_init_success(execution_plan, log_manager, resource_init_times):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        metadata_entries = [
+            EventMetadataEntry.text('Initialized in {}.'.format(resource_time), resource_name)
+            for resource_name, resource_time in resource_init_times.items()
+        ]
+        return DagsterEvent.from_resource(
+            execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
+            log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
+            message='Finished initialization of resources [{}].'.format(
+                ', '.join(resource_init_times.keys())
+            ),
+            event_specific_data=EngineEventData(
+                metadata_entries=metadata_entries, marker_end=None,
+            ),
+        )
+
+    @staticmethod
+    def resource_init_failure(execution_plan, log_manager, resource_keys, error):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        return DagsterEvent.from_resource(
+            execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
+            log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
+            message='Initialization of resources [{}] failed.'.format(', '.join(resource_keys)),
+            event_specific_data=EngineEventData(metadata_entries=[], marker_end=None, error=error,),
+        )
+
+    @staticmethod
+    def resource_teardown_failure(execution_plan, log_manager, resource_keys, error):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        return DagsterEvent.from_resource(
+            execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
+            log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
+            message='Teardown of resources [{}] failed.'.format(', '.join(resource_keys)),
+            event_specific_data=EngineEventData(
+                metadata_entries=[], marker_start=None, marker_end=None, error=error,
+            ),
+        )
+
+    @staticmethod
     def pipeline_init_failure(pipeline_name, failure_data, log_manager):
         check.inst_param(failure_data, 'failure_data', PipelineInitFailureData)
         check.inst_param(log_manager, 'log_manager', DagsterLogManager)
@@ -488,8 +578,8 @@ class DagsterEvent(
             pipeline_name=pipeline_name,
             event_specific_data=failure_data,
             message=(
-                'Pipeline failure during initialization of pipeline "{pipeline_name}. '
-                'This may be due to a failure in initializing a resource or logger".'
+                'Pipeline failure during initialization of pipeline "{pipeline_name}". '
+                'This may be due to a failure in initializing a resource or logger.'
             ).format(pipeline_name=pipeline_name),
         )
         log_manager.error(
@@ -503,12 +593,13 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    def engine_event(pipeline_context, message, event_specific_data=None):
+    def engine_event(pipeline_context, message, event_specific_data=None, step_key=None):
         return DagsterEvent.from_pipeline(
             DagsterEventType.ENGINE_EVENT,
             pipeline_context,
             message,
             event_specific_data=event_specific_data,
+            step_key=step_key,
         )
 
     @staticmethod
@@ -615,17 +706,22 @@ class ObjectStoreOperationResultData(
 
 
 @whitelist_for_serdes
-class EngineEventData(namedtuple('_EngineEventData', 'metadata_entries error')):
+class EngineEventData(
+    namedtuple('_EngineEventData', 'metadata_entries error marker_start marker_end')
+):
     # serdes log
     # * added optional error
+    # * added marker_start / marker_end
     #
-    def __new__(cls, metadata_entries, error=None):
+    def __new__(cls, metadata_entries, error=None, marker_start=None, marker_end=None):
         return super(EngineEventData, cls).__new__(
             cls,
             metadata_entries=check.list_param(
                 metadata_entries, 'metadata_entries', EventMetadataEntry
             ),
             error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            marker_start=check.opt_str_param(marker_start, 'marker_start'),
+            marker_end=check.opt_str_param(marker_end, 'marker_end'),
         )
 
     @staticmethod

@@ -46,12 +46,17 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
+        step_keys_to_execute = execution_plan.step_keys_to_execute
+        for_step_key = (
+            step_keys_to_execute[0]
+            if step_keys_to_execute and len(step_keys_to_execute) == 1
+            else None
+        )
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
-            event_specific_data=EngineEventData.in_process(
-                os.getpid(), execution_plan.step_keys_to_execute
-            ),
+            event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
+            step_key=for_step_key,
         )
 
         with time_execution_scope() as timer_result:
@@ -125,9 +130,8 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
             'Finished steps in process (pid: {pid}) in {duration_ms}'.format(
                 pid=os.getpid(), duration_ms=format_duration(timer_result.millis)
             ),
-            event_specific_data=EngineEventData.in_process(
-                os.getpid(), execution_plan.step_keys_to_execute
-            ),
+            event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
+            step_key=for_step_key,
         )
 
 

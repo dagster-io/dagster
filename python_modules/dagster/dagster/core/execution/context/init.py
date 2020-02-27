@@ -33,3 +33,7 @@ class InitResourceContext(
             check.str_param(run_id, 'run_id'),
             check.opt_inst_param(log_manager, 'log_manager', DagsterLogManager),
         )
+
+    @property
+    def log(self):
+        return self.log_manager

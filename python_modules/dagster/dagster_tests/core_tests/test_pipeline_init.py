@@ -86,7 +86,7 @@ def test_clean_event_generator_exit():
     generator.close()
 
     generator = resource_initialization_event_generator(
-        pipeline, environment_config, pipeline_run, log_manager, {'a'}
+        execution_plan, environment_config, pipeline_run, log_manager, {'a'}
     )
     next(generator)
     generator.close()
