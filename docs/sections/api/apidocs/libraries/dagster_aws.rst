@@ -56,7 +56,7 @@ CLI
 ---
 
 The ``dagster_aws`` package includes a CLI tool intended to help you get a demo Dagster
-up and running as quickly as possible. Please see the `docs <../../deploying/aws.html>`_ for details.
+up and running as quickly as possible. Please see the `docs <../../../deploying/aws.html>`_ for details.
 
 **NOTE: The dagster-aws CLI is not intended to provide a secure configuration, and the instance
 it sets up will be launched into an existing VPC and publicly accessible. In production settings,
