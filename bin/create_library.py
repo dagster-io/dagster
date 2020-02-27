@@ -8,9 +8,14 @@ from __future__ import absolute_import
 
 import os
 import shutil
+import sys
 
 import click
-from git_tag import get_most_recent_git_tag
+
+BASE_PATH = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, BASE_PATH)
+
+from git_utils import get_most_recent_git_tag  # isort:skip
 
 
 def copy_directory(src, dest):
