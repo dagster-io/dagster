@@ -1,6 +1,6 @@
 import os
 
-from dagster import check
+from dagster import Bool, Int, check
 from dagster.config import Field, Permissive
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import validate_config
@@ -41,7 +41,15 @@ def define_dagster_config_cls():
         'scheduler': config_field_for_configurable_class(),
         'run_launcher': config_field_for_configurable_class(),
         'dagit': Field(
-            {'execution_manager': Field({'max_concurrent_runs': int}, is_required=False)},
+            {
+                'execution_manager': Field(
+                    {
+                        'disabled': Field(Bool, is_required=False),
+                        'max_concurrent_runs': Field(Int, is_required=False),
+                    },
+                    is_required=False,
+                ),
+            },
             is_required=False,
         ),
     }

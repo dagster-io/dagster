@@ -129,6 +129,10 @@ def start_pipeline_execution(graphene_info, execution_params):
 
     instance = graphene_info.context.instance
 
+    execution_manager_settings = instance.dagit_settings.get('execution_manager')
+    if execution_manager_settings and execution_manager_settings.get('disabled'):
+        return graphene_info.schema.type_named('StartPipelineExecutionDisabledError')()
+
     dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(
         graphene_info, execution_params.selector
     )

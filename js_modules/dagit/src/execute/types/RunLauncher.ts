@@ -15,6 +15,7 @@ export interface RunLauncher_instance_runLauncher {
 export interface RunLauncher_instance {
   __typename: "Instance";
   runLauncher: RunLauncher_instance_runLauncher | null;
+  disableRunStart: boolean;
 }
 
 export interface RunLauncher {

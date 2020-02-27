@@ -368,6 +368,7 @@ type InputMapping {
 type Instance {
   info: String!
   runLauncher: RunLauncher
+  disableRunStart: Boolean!
 }
 
 type InvalidOutputError {
@@ -1037,13 +1038,17 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
-union StartPipelineExecutionResult = StartPipelineExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+type StartPipelineExecutionDisabledError implements Error {
+  message: String!
+}
+
+union StartPipelineExecutionResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 type StartPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 interface StepEvent {
   step: ExecutionStep

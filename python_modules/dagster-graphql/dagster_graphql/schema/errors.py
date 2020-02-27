@@ -156,6 +156,19 @@ class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
         self.message = 'RunLauncher is not defined for the current instance.'
 
 
+class DauphinStartPipelineExecutionDisabledError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'StartPipelineExecutionDisabledError'
+        interfaces = (DauphinError,)
+
+    def __init__(self):
+        super(DauphinStartPipelineExecutionDisabledError, self).__init__()
+        self.message = (
+            'Starting pipeline execution is disabled on this instance.  Runs can only be initiated '
+            'using the configured run launcher.'
+        )
+
+
 class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineConfigValidationValid'
@@ -440,7 +453,10 @@ pipeline_execution_error_types = (
     DauphinPythonError,
 )
 
-start_pipeline_execution_result_types = (DauphinStartPipelineExecutionSuccess,)
+start_pipeline_execution_result_types = (
+    DauphinStartPipelineExecutionSuccess,
+    DauphinStartPipelineExecutionDisabledError,
+)
 
 launch_pipeline_execution_result_types = (
     DauphinLaunchPipelineExecutionSuccess,

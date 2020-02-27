@@ -604,3 +604,26 @@ def test_basic_start_pipeline_execution_with_materialization():
         assert step_mat_event
         assert len(step_mat_event['materialization']['metadataEntries']) == 1
         assert step_mat_event['materialization']['metadataEntries'][0]['path'] == out_csv_path
+
+
+def test_start_pipeline_execution_with_start_disabled():
+    instance = DagsterInstance.local_temp(
+        overrides={'dagit': {'execution_manager': {'disabled': True}}}
+    )
+    result = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
+                'executionMetadata': {'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]},
+                'mode': 'default',
+            }
+        },
+    )
+
+    assert result.data
+    assert (
+        result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionDisabledError'
+    )

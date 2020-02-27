@@ -28,6 +28,7 @@ const RUN_LAUNCHER_QUERY = gql`
       runLauncher {
         name
       }
+      disableRunStart
     }
   }
 `;
@@ -159,6 +160,10 @@ export const LaunchButtonGroup = ({
 
   if (!data?.instance?.runLauncher?.name) {
     return startButton;
+  }
+
+  if (data?.instance?.disableRunStart) {
+    return launchButton;
   }
 
   const selectedButton =

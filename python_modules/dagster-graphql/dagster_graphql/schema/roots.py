@@ -738,6 +738,7 @@ class DauhphinInstance(dauphin.ObjectType):
 
     info = dauphin.NonNull(dauphin.String)
     runLauncher = dauphin.Field('RunLauncher')
+    disableRunStart = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, instance):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
@@ -751,3 +752,9 @@ class DauhphinInstance(dauphin.ObjectType):
             if self._instance.run_launcher
             else None
         )
+
+    def resolve_disableRunStart(self, _graphene_info):
+        execution_manager_settings = self._instance.dagit_settings.get('execution_manager')
+        if not execution_manager_settings:
+            return False
+        return execution_manager_settings.get('disabled', False)
