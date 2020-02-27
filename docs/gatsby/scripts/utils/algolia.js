@@ -18,12 +18,13 @@ const settings = {
 };
 
 // We are operating under an Algolia record size limit (currently 10KB). Before this changeset,
-// we were just truncating records at 5000 chars. Now we chunk each document into 10000 char
+// we were just truncating records at 5000 chars. Now we chunk each document into 8000 char
 // records with the same name -- Algolia dedupes based on the values of
 // distinct/attributeForDistinct set on the index. A further improvement here would be to chunk at
 // word boundaries.
+const CHUNK_SIZE = 8000;
 const recordChunker = (accumulator, currentValue) => {
-  if (currentValue.markdown.length <= 10000) {
+  if (currentValue.markdown.length <= CHUNK_SIZE) {
     accumulator.push(currentValue);
     return accumulator;
   } else {
@@ -37,11 +38,11 @@ const recordChunker = (accumulator, currentValue) => {
         markdown: currentValue.markdown,
         slug: currentValue.slug
       };
-      nextValue.markdown = markdown.slice(0, 10000);
+      nextValue.markdown = markdown.slice(0, CHUNK_SIZE);
       nextValue.objectID = objectID + "_" + i.toString();
       i = i + 1;
       accumulator.push(nextValue);
-      markdown = markdown.slice(10000);
+      markdown = markdown.slice(CHUNK_SIZE);
     }
     return accumulator;
   }
