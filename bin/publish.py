@@ -718,7 +718,7 @@ def version():
 def audit(version):  # pylint: disable=redefined-outer-name
     """Checks that the given version is installable from PyPI in a new virtualenv."""
 
-    for module in MODULE_NAMES + LIBRARY_MODULES:
+    for module in MODULE_NAMES + list(LIBRARY_MODULES):
         res = requests.get(
             urllib.parse.urlunparse(
                 ('https', 'pypi.org', '/'.join(['pypi', module, 'json']), None, None, None)
