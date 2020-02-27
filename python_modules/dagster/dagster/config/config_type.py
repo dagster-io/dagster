@@ -242,6 +242,9 @@ class Enum(ConfigType):
         return config_value in self._valid_config_values
 
     def post_process(self, value):
+        if isinstance(value, PythonEnum):
+            value = value.name
+
         for ev in self.enum_values:
             if ev.config_value == value:
                 return ev.python_value

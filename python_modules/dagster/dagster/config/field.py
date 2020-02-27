@@ -173,6 +173,9 @@ class Field(object):
             A default value for this field, conformant to the schema set by the
             ``dagster_type`` argument. If a default value is provided, ``is_optional`` should be
             ``True``.
+
+            Note: for config types that do post processing such as Enum, this value must be
+            the pre processed version, ie use ``ExampleEnum.VALUE.name`` instead of ``ExampleEnum.VALUE``
         is_required (bool):
             Whether the presence of this field is required. Defaults to true. If ``is_required``
             is ``True``, no default value should be provided.

@@ -6,9 +6,11 @@ from dagster import (
     DagsterInvalidConfigError,
     Enum,
     EnumValue,
+    Field,
     Int,
     PipelineDefinition,
     execute_pipeline,
+    pipeline,
     solid,
 )
 from dagster.config import Enum as ConfigEnum
@@ -114,6 +116,31 @@ def test_native_enum_dagster_enum_from_classmethod():
     result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
     assert result.success
     assert called['yup']
+
+
+def test_native_enum_dagster_enum_from_classmethod_default_value():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+    called = {}
+
+    @solid(config=Field(dagster_enum, is_required=False, default_value='BAR'))
+    def enum_name_as_str(context):
+        assert context.solid_config == NativeEnum.BAR
+        called['str'] = True
+
+    @solid(config=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
+    def enum_direct(context):
+        assert context.solid_config == NativeEnum.BAR
+        called['enum'] = True
+
+    @pipeline
+    def test():
+        enum_direct()
+        enum_name_as_str()
+
+    result = execute_pipeline(test)
+    assert result.success
+    assert called['str']
+    assert called['enum']
 
 
 def test_native_enum_classmethod_creates_all_values():
