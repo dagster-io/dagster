@@ -744,7 +744,7 @@ def after_install(options, home_dir):
         module_names=', '.join(
             [
                 '\'{module_name}\''.format(module_name=module_name)
-                for module_name in MODULE_NAMES + LIBRARY_MODULES
+                for module_name in MODULE_NAMES + list(LIBRARY_MODULES)
             ]
         ),
         version=version,
