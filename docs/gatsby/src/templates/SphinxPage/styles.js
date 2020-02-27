@@ -34,7 +34,7 @@ export const pageLinks = {
   justifyContent: "space-between",
   pt: [2, 3, 3],
   mt: [2, 3, 3],
-  mb: 2,
+  mb: 4,
   borderTop: t => `1px solid ${t.colors.lightGray[1]}`,
 
   a: {

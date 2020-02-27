@@ -58,7 +58,7 @@ export const menuBtn = showing => ({
 
 export const logo = showing => ({
   ...toggleVisiblity(showing),
-  width: [showing ? 0 : 120, showing ? 0 : 120, 120]
+  width: [showing ? 0 : 140, showing ? 0 : 140, 140]
 });
 
 export const socialIcons = showing => ({

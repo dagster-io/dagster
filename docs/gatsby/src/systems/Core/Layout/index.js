@@ -45,7 +45,7 @@ export const Layout = ({ children }) => {
     <Location>
       {({ location }) => (
         <Styled.root>
-          <Container>
+          <main sx={{ maxWidth: "100vw", overflowX: "hidden" }}>
             <Header
               ref={sidebarRef}
               onMenuClick={handleToggle}
@@ -62,18 +62,12 @@ export const Layout = ({ children }) => {
                 {children}
               </div>
             </div>
-          </Container>
+          </main>
         </Styled.root>
       )}
     </Location>
   );
 };
-
-const Container = styled.main`
-  position: relative;
-  maxwidth: 100vh;
-  overflowx: hidden;
-`;
 
 Layout.propTypes = {
   children: PropTypes.node.isRequired

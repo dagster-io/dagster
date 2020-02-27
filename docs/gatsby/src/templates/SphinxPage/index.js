@@ -2,7 +2,6 @@
 import { jsx } from "theme-ui";
 import { useState, useEffect } from "react";
 import { FileText, ArrowLeft, ArrowRight, Home } from "react-feather";
-import { Redirect } from "@reach/router";
 import useWindowSize from "react-use/lib/useWindowSize";
 
 import { Layout, SEO, Link } from "systems/Core";
