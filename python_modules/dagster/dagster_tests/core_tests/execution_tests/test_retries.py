@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 
 import pytest
@@ -12,6 +13,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
+    seven,
     solid,
 )
 from dagster.core.instance import DagsterInstance
@@ -94,16 +96,14 @@ def test_retries(environment):
 
 
 def define_step_retry_pipeline():
-    # this works since we handle step retries in the same single subprocess
-    fail = {'count': 0}
-
-    @lambda_solid
-    def fail_first_time():
-        if fail['count'] < 1:
-            fail['count'] += 1
+    @solid(config=str)
+    def fail_first_time(context):
+        file = os.path.join(context.solid_config, 'i_threw_up')
+        if os.path.exists(file):
+            return 'okay perfect'
+        else:
+            open(file, 'a').close()
             raise RetryRequested()
-
-        return 'okay perfect'
 
     @pipeline
     def step_retry():
@@ -114,14 +114,16 @@ def define_step_retry_pipeline():
 
 @executors
 def test_step_retry(environment):
-
-    result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, 'define_step_retry_pipeline'
-        ).build_pipeline_definition(),
-        environment_dict=environment,
-        instance=DagsterInstance.local_temp(),
-    )
+    with seven.TemporaryDirectory() as tempdir:
+        env = dict(environment)
+        env['solids'] = {'fail_first_time': {'config': tempdir}}
+        result = execute_pipeline(
+            ExecutionTargetHandle.for_pipeline_python_file(
+                __file__, 'define_step_retry_pipeline'
+            ).build_pipeline_definition(),
+            environment_dict=env,
+            instance=DagsterInstance.local_temp(),
+        )
     assert result.success
     events = defaultdict(list)
     for ev in result.event_list:
@@ -179,3 +181,19 @@ def test_step_retry_limit(environment):
     assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 3
     assert len(events[DagsterEventType.STEP_RESTARTED]) == 3
     assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+
+
+def test_retry_deferral():
+    result = execute_pipeline(
+        define_retry_limit_pipeline(),
+        environment_dict={'execution': {'in_process': {'config': {'retries': {'deferred': {}}}}}},
+        instance=DagsterInstance.local_temp(),
+    )
+    events = defaultdict(list)
+    for ev in result.event_list:
+        events[ev.event_type].append(ev)
+
+    assert len(events[DagsterEventType.STEP_START]) == 2
+    assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
+    assert DagsterEventType.STEP_RESTARTED not in events
+    assert DagsterEventType.STEP_SUCCESS not in events

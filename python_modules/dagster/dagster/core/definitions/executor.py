@@ -6,6 +6,7 @@ from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
+from dagster.core.execution.retries import Retries, get_retries_config
 
 
 class ExecutorDefinition(object):
@@ -129,7 +130,9 @@ class _ExecutorDecoratorCallable(object):
         return executor_def
 
 
-@executor(name='in_process')
+@executor(
+    name='in_process', config={'retries': get_retries_config()},
+)
 def in_process_executor(init_context):
     '''The default in-process executor.
 
@@ -150,11 +153,18 @@ def in_process_executor(init_context):
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 
-    return InProcessExecutorConfig()
+    return InProcessExecutorConfig(
+        # shouldn't need to .get() here - issue with defaults in config setup
+        retries=Retries.from_config(init_context.executor_config.get('retries', {'enabled': {}}))
+    )
 
 
 @executor(
-    name='multiprocess', config={'max_concurrent': Field(Int, is_required=False, default_value=0)}
+    name='multiprocess',
+    config={
+        'max_concurrent': Field(Int, is_required=False, default_value=0),
+        'retries': get_retries_config(),
+    },
 )
 def multiprocess_executor(init_context):
     '''The default multiprocess executor.
@@ -186,7 +196,9 @@ def multiprocess_executor(init_context):
 
     handle, _ = ExecutionTargetHandle.get_handle(init_context.pipeline_def)
     return MultiprocessExecutorConfig(
-        handle=handle, max_concurrent=init_context.executor_config['max_concurrent']
+        handle=handle,
+        max_concurrent=init_context.executor_config['max_concurrent'],
+        retries=Retries.from_config(init_context.executor_config['retries']),
     )
 
 

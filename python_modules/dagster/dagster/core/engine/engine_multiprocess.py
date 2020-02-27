@@ -18,7 +18,7 @@ from .child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from .engine_base import Engine
+from .engine_base import Engine, override_env_for_inner_executor
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
@@ -35,18 +35,19 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
         pipeline_def = self.executor_config.load_pipeline(self.pipeline_run)
-        environment_dict = dict(self.environment_dict, execution={'in_process': {}})
 
         start_termination_thread(self.term_event)
 
         execution_plan = create_execution_plan(
-            pipeline_def, environment_dict, self.pipeline_run
+            pipeline_def, self.environment_dict, self.pipeline_run
         ).build_subset_plan([self.step_key])
 
         for step_event in execute_plan_iterator(
             execution_plan,
             self.pipeline_run,
-            environment_dict=environment_dict,
+            environment_dict=override_env_for_inner_executor(
+                self.environment_dict, self.executor_config.retries, self.step_key
+            ),
             instance=DagsterInstance.from_ref(self.instance_ref),
         ):
             yield step_event
@@ -110,7 +111,9 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
             ):
                 yield event
 
-            active_execution = execution_plan.start()
+            active_execution = execution_plan.start(
+                retries=pipeline_context.executor_config.retries
+            )
             active_iters = {}
             errors = {}
             term_events = {}

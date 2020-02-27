@@ -1,8 +1,9 @@
 import pytest
 
-from dagster import pipeline, solid
+from dagster import check, pipeline, solid
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.retries import Retries, RetryMode
 
 from ..engine_tests.test_multiprocessing import define_diamond_pipeline
 
@@ -29,7 +30,7 @@ def test_create_execution_plan_with_bad_inputs():
 def test_active_execution_plan():
     plan = create_execution_plan(define_diamond_pipeline())
 
-    active_execution = plan.start()
+    active_execution = plan.start(retries=Retries(RetryMode.DISABLED))
 
     steps = active_execution.get_steps_to_execute()
     assert len(steps) == 1
@@ -78,7 +79,7 @@ def test_failing_execution_plan():
     pipeline_def = define_diamond_pipeline()
     plan = create_execution_plan(pipeline_def)
 
-    active_execution = plan.start()
+    active_execution = plan.start(retries=Retries(RetryMode.DISABLED))
 
     steps = active_execution.get_steps_to_execute()
     assert len(steps) == 1
@@ -124,6 +125,122 @@ def test_failing_execution_plan():
     assert active_execution.is_complete
 
 
+def test_retries_active_execution():
+    pipeline_def = define_diamond_pipeline()
+    plan = create_execution_plan(pipeline_def)
+
+    active_execution = plan.start(retries=Retries(RetryMode.ENABLED))
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    step_1 = steps[0]
+    assert step_1.key == 'return_two.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_up_for_retry(step_1.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    assert steps[0].key == 'return_two.compute'
+
+    active_execution.mark_up_for_retry(step_1.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    assert steps[0].key == 'return_two.compute'
+
+    active_execution.mark_success(step_1.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 2
+    step_2 = steps[0]
+    step_3 = steps[1]
+    assert step_2.key == 'add_three.compute'
+    assert step_3.key == 'mult_three.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_success(step_2.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    # uh oh failure
+    active_execution.mark_failed(step_3.key)
+
+    # cant progres to 4th step
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0
+
+    assert not active_execution.is_complete
+
+    steps = active_execution.get_steps_to_skip()
+    assert len(steps) == 1
+    step_4 = steps[0]
+
+    assert step_4.key == 'adder.compute'
+    active_execution.mark_skipped(step_4.key)
+
+    assert active_execution.is_complete
+
+
+def test_retries_disabled_active_execution():
+    pipeline_def = define_diamond_pipeline()
+    plan = create_execution_plan(pipeline_def)
+
+    active_execution = plan.start(retries=Retries(RetryMode.DISABLED))
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    step_1 = steps[0]
+    assert step_1.key == 'return_two.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    with pytest.raises(check.CheckError):
+        active_execution.mark_up_for_retry(step_1.key)
+
+
+def test_retries_deferred_active_execution():
+    pipeline_def = define_diamond_pipeline()
+    plan = create_execution_plan(pipeline_def)
+
+    active_execution = plan.start(retries=Retries(RetryMode.DEFERRED))
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 1
+    step_1 = steps[0]
+    assert step_1.key == 'return_two.compute'
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress
+
+    active_execution.mark_up_for_retry(step_1.key)
+
+    steps = active_execution.get_steps_to_execute()
+    assert len(steps) == 0  # cant progress, retries are deferred
+
+    assert not active_execution.is_complete
+
+    steps = active_execution.get_steps_to_skip()
+    # skip split of diamond
+    assert len(steps) == 2
+    _ = [active_execution.mark_skipped(step.key) for step in steps]
+
+    assert not active_execution.is_complete
+
+    steps = active_execution.get_steps_to_skip()
+    # skip end of diamond
+    assert len(steps) == 1
+    active_execution.mark_skipped(steps[0].key)
+
+    assert active_execution.is_complete
+
+
 def test_priorities():
     @solid(tags={'priority': 5})
     def pri_5(_):
@@ -161,7 +278,7 @@ def test_priorities():
     sort_key_fn = lambda step: int(step.tags.get('priority', 0)) * -1
 
     plan = create_execution_plan(priorities)
-    active_execution = plan.start(sort_key_fn)
+    active_execution = plan.start(Retries(RetryMode.DISABLED), sort_key_fn)
     steps = active_execution.get_steps_to_execute()
     assert steps[0].key == 'pri_5.compute'
     assert steps[1].key == 'pri_4.compute'

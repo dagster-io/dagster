@@ -1,9 +1,8 @@
 import sys
 import time
-from collections import defaultdict
 
 from dagster import check
-from dagster.core.engine.engine_base import Engine
+from dagster.core.engine.engine_base import Engine, override_env_for_inner_executor
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -53,55 +52,22 @@ class CeleryEngine(Engine):
                 'Cannot use in-memory storage with Celery, use filesystem, S3, or GCS',
             )
 
-        pipeline_name = pipeline_context.pipeline_def.name
-
-        handle_dict = pipeline_context.execution_target_handle.to_dict()
-
-        instance_ref_dict = pipeline_context.instance.get_ref().to_dict()
-
-        environment_dict = dict(pipeline_context.environment_dict, execution={'in_process': {}})
-
-        mode = pipeline_context.mode_def.name
-
-        run_id = pipeline_context.pipeline_run.run_id
-
         app = make_app(celery_config)
-
-        task_signatures = {}  # Dict[step_key, celery.Signature]
-        apply_kwargs = defaultdict(dict)  # Dict[step_key, Dict[str, Any]]
 
         priority_for_step = lambda step: (
             -1 * int(step.tags.get('dagster-celery/priority', task_default_priority))
         )
-        priority_for_key = lambda step_key: (-1 * apply_kwargs[step_key]['priority'])
+        priority_for_key = lambda step_key: (
+            priority_for_step(execution_plan.get_step_by_key(step_key))
+        )
         _warn_on_priority_misuse(pipeline_context, execution_plan)
-
-        for step_key in execution_plan.step_keys_to_execute:
-            step = execution_plan.get_step_by_key(step_key)
-            priority = int(step.tags.get('dagster-celery/priority', task_default_priority))
-            queue = step.tags.get('dagster-celery/queue', task_default_queue)
-            task = create_task(app)
-
-            variables = {
-                'executionParams': {
-                    'selector': {'name': pipeline_name},
-                    'environmentConfigData': environment_dict,
-                    'mode': mode,
-                    'executionMetadata': {'runId': run_id},
-                    'stepKeys': [step_key],
-                }
-            }
-            task_signatures[step_key] = task.si(handle_dict, variables, instance_ref_dict)
-            apply_kwargs[step_key] = {
-                'priority': priority,
-                'queue': queue,
-                'routing_key': '{queue}.execute_query'.format(queue=queue),
-            }
 
         step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
         step_errors = {}
         completed_steps = set({})  # Set[step_key]
-        active_execution = execution_plan.start(sort_key_fn=priority_for_step)
+        active_execution = execution_plan.start(
+            retries=pipeline_context.executor_config.retries, sort_key_fn=priority_for_step
+        )
         stopping = False
 
         while (not active_execution.is_complete and not stopping) or step_results:
@@ -149,9 +115,7 @@ class CeleryEngine(Engine):
             # case has m >> n to exhibit this behavior in the absence of this sort step.
             for step in active_execution.get_steps_to_execute():
                 try:
-                    step_results[step.key] = task_signatures[step.key].apply_async(
-                        **apply_kwargs[step.key]
-                    )
+                    step_results[step.key] = _submit_task(app, pipeline_context, step)
                 except Exception:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
@@ -176,6 +140,37 @@ class CeleryEngine(Engine):
                 ),
                 subprocess_error_infos=list(step_errors.values()),
             )
+
+
+def _submit_task(app, pipeline_context, step):
+    priority = int(step.tags.get('dagster-celery/priority', task_default_priority))
+    queue = step.tags.get('dagster-celery/queue', task_default_queue)
+    task = create_task(app)
+
+    handle_dict = pipeline_context.execution_target_handle.to_dict()
+    instance_ref_dict = pipeline_context.instance.get_ref().to_dict()
+
+    pipeline_name = pipeline_context.pipeline_def.name
+    mode = pipeline_context.mode_def.name
+    run_id = pipeline_context.pipeline_run.run_id
+
+    variables = {
+        'executionParams': {
+            'selector': {'name': pipeline_name},
+            'environmentConfigData': override_env_for_inner_executor(
+                pipeline_context.environment_dict,
+                pipeline_context.executor_config.retries,
+                step.key,
+            ),
+            'mode': mode,
+            'executionMetadata': {'runId': run_id},
+            'stepKeys': [step.key],
+        }
+    }
+    task_signature = task.si(handle_dict, variables, instance_ref_dict)
+    return task_signature.apply_async(
+        priority=priority, queue=queue, routing_key='{queue}.execute_query'.format(queue=queue),
+    )
 
 
 def _warn_on_priority_misuse(context, execution_plan):

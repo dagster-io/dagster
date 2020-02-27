@@ -9,10 +9,32 @@ snapshots = Snapshot()
 snapshots['test_basic_solids_config 1'] = {
     'execution': {
         'in_process': {
+            'config': {
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
+            }
         },
         'multiprocess': {
             'config': {
-                'max_concurrent': 0
+                'max_concurrent': 0,
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
             }
         }
     },
@@ -57,10 +79,32 @@ snapshots['test_two_modes 1'] = {
 snapshots['test_two_modes 2'] = {
     'execution': {
         'in_process': {
+            'config': {
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
+            }
         },
         'multiprocess': {
             'config': {
-                'max_concurrent': 0
+                'max_concurrent': 0,
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
             }
         }
     },
@@ -105,10 +149,32 @@ snapshots['test_two_modes 3'] = {
 snapshots['test_two_modes 4'] = {
     'execution': {
         'in_process': {
+            'config': {
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
+            }
         },
         'multiprocess': {
             'config': {
-                'max_concurrent': 0
+                'max_concurrent': 0,
+                'retries': {
+                    'deferred': {
+                        'previous_attempts': {
+                        }
+                    },
+                    'disabled': {
+                    },
+                    'enabled': {
+                    }
+                }
             }
         }
     },

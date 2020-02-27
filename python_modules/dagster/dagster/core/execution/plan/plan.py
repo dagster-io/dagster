@@ -1,4 +1,4 @@
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import OrderedDict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
@@ -14,6 +14,7 @@ from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.config import IRunConfig
+from dagster.core.execution.retries import Retries
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
@@ -352,8 +353,10 @@ class ExecutionPlan(
             step_keys_to_execute,
         )
 
-    def start(self, sort_key_fn=None):
-        return ActiveExecution(self, sort_key_fn)
+    def start(
+        self, retries, sort_key_fn=None,
+    ):
+        return ActiveExecution(self, retries, sort_key_fn)
 
     @staticmethod
     def build(pipeline_def, environment_config, run_config):
@@ -380,8 +383,9 @@ def _default_sort_key(step):
 
 
 class ActiveExecution(object):
-    def __init__(self, execution_plan, sort_key_fn=None):
+    def __init__(self, execution_plan, retries, sort_key_fn=None):
         self._plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._retries = check.inst_param(retries, 'retries', Retries)
         self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', _default_sort_key)
 
         self._pending = self._plan.execution_deps()
@@ -390,7 +394,6 @@ class ActiveExecution(object):
         self._success = set()
         self._failed = set()
         self._skipped = set()
-        self._retried = defaultdict(int)
 
         self._in_flight = set()
 
@@ -445,22 +448,6 @@ class ActiveExecution(object):
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def get_steps_to_retry(self, limit=None):
-        check.opt_int_param(limit, 'limit')
-
-        steps = sorted(
-            [self._plan.get_step_by_key(key) for key in self._pending_retry], key=self._sort_key_fn
-        )
-
-        if limit:
-            steps = steps[:limit]
-
-        for step in steps:
-            self._in_flight.add(step.key)
-            self._pending_retry.remove(step.key)
-
-        return steps
-
     def skipped_step_events_iterator(self, pipeline_context):
         failed_or_skipped_steps = self._skipped.union(self._failed)
 
@@ -498,7 +485,20 @@ class ActiveExecution(object):
         self._mark_complete(step_key)
 
     def mark_up_for_retry(self, step_key):
-        self._pending_retry.append(step_key)
+        check.invariant(
+            not self._retries.disabled,
+            'Attempted to mark {} as up for retry but retries are disabled'.format(step_key),
+        )
+
+        # if retries are enabled - queue this back up
+        if self._retries.enabled:
+            self._pending[step_key] = self._plan.execution_deps()[step_key]
+        elif self._retries.deferred:
+            self._completed.add(step_key)
+
+        self._retries.mark_attempt(step_key)
+        self._in_flight.remove(step_key)
+        self._update()
 
     def _mark_complete(self, step_key):
         check.invariant(
@@ -525,13 +525,8 @@ class ActiveExecution(object):
         elif dagster_event.is_step_up_for_retry:
             self.mark_up_for_retry(dagster_event.step_key)
 
-        # for when retries are being processed in a child ActiveExecution and
-        # we are consuming the event stream
-        elif dagster_event.is_step_restarted and dagster_event.step_key in self._pending_retry:
-            self._pending_retry.remove(dagster_event.step_key)
-
     def verify_complete(self, pipeline_context, step_key):
-        if step_key in self._in_flight and not step_key in self._pending_retry:
+        if step_key in self._in_flight:
             pipeline_context.log.error(
                 'Step {key} finished without success or failure event, assuming failure.'.format(
                     key=step_key

@@ -33,9 +33,9 @@ def get_config_value_from_yaml(yaml_path):
 
 def get_app(config_yaml=None):
     if config_yaml:
-        celery_config = CeleryConfig(**get_config_value_from_yaml(config_yaml))
+        celery_config = CeleryConfig.for_cli(**get_config_value_from_yaml(config_yaml))
     else:
-        celery_config = CeleryConfig()
+        celery_config = CeleryConfig.for_cli()
 
     app = make_app(celery_config)
 

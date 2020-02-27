@@ -1,5 +1,6 @@
 from dagster import Field, Permissive, String
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
+from dagster.core.execution.retries import Retries, get_retries_config
 
 from .config import CeleryConfig
 
@@ -28,6 +29,7 @@ from .config import CeleryConfig
         'config_source': Field(
             Permissive(), is_required=False, description='Additional settings for the Celery app.'
         ),
+        'retries': get_retries_config(),
     },
 )
 def celery_executor(init_context):
@@ -82,4 +84,10 @@ def celery_executor(init_context):
     '''
     check_cross_process_constraints(init_context)
 
-    return CeleryConfig(**init_context.executor_config)
+    return CeleryConfig(
+        broker=init_context.executor_config.get('broker'),
+        backend=init_context.executor_config.get('backend'),
+        config_source=init_context.executor_config.get('config_source'),
+        include=init_context.executor_config.get('include'),
+        retries=Retries.from_config(init_context.executor_config['retries']),
+    )

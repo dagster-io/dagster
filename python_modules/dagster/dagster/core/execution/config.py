@@ -5,6 +5,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
+from dagster.core.execution.retries import Retries
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 
@@ -115,6 +116,9 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class InProcessExecutorConfig(ExecutorConfig):
+    def __init__(self, retries):
+        self.retries = retries
+
     def get_engine(self):
         from dagster.core.engine.engine_inprocess import InProcessEngine
 
@@ -122,10 +126,11 @@ class InProcessExecutorConfig(ExecutorConfig):
 
 
 class MultiprocessExecutorConfig(ExecutorConfig):
-    def __init__(self, handle, max_concurrent=None):
+    def __init__(self, handle, retries, max_concurrent=None):
         from dagster import ExecutionTargetHandle
 
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle,)
+        self.retries = check.inst_param(retries, 'retries', Retries)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
 

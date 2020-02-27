@@ -2,6 +2,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.execution.config import ExecutorConfig
+from dagster.core.execution.retries import Retries, RetryMode
 
 from .defaults import (
     broker_transport_options,
@@ -28,7 +29,7 @@ class dict_wrapper(object):
 
 
 class CeleryConfig(
-    namedtuple('CeleryConfig', 'broker backend include config_source'), ExecutorConfig,
+    namedtuple('CeleryConfig', 'broker backend include config_source retries'), ExecutorConfig,
 ):
     '''Configuration class for the Celery execution engine.
 
@@ -37,11 +38,11 @@ class CeleryConfig(
         backend (Optional[str]): The URL of the Celery backend.
         include (Optional[List[str]]): List of modules every worker should import.
         config_source (Optional[Dict]): Config settings for the Celery app.
-
+        retries (Retries): Controls retry behavior
     '''
 
     def __new__(
-        cls, broker=None, backend=None, include=None, config_source=None,
+        cls, retries, broker=None, backend=None, include=None, config_source=None,
     ):
 
         return super(CeleryConfig, cls).__new__(
@@ -52,6 +53,17 @@ class CeleryConfig(
             config_source=dict_wrapper(
                 dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
             ),
+            retries=check.inst_param(retries, 'retries', Retries),
+        )
+
+    @staticmethod
+    def for_cli(broker=None, backend=None, include=None, config_source=None):
+        return CeleryConfig(
+            retries=Retries(RetryMode.DISABLED),
+            broker=broker,
+            backend=backend,
+            include=include,
+            config_source=config_source,
         )
 
     @staticmethod
