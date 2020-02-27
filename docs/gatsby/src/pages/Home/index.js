@@ -2,7 +2,7 @@
 import { jsx, Grid } from "theme-ui";
 
 import { Layout } from "systems/Core";
-import logo from "../../images/symbol.png";
+import logo from "../../images/logo.png";
 import photoIcon from "./images/photo-icon.svg";
 import graphIcon from "./images/graph-icon.svg";
 import shieldIcon from "./images/shield-icon.svg";
