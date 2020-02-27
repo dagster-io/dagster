@@ -95,6 +95,17 @@ async function main() {
   sh.ls("-R", `${SPHINX_BUILD_JSON}/**/*.json`).forEach(file => {
     const filename = file.replace(SPHINX_BUILD_JSON, "");
     const newFilepath = path.join(buildDir, filename);
+
+    // Postprocess file
+    const fileContent = fs.readFileSync(file, "utf8");
+    const result = fileContent.replace(
+      /href=\\"(?!http)[^>]*?html\\">/g,
+      function(match) {
+        return match.replace(".html", "");
+      }
+    );
+    fs.writeFileSync(file, result, "utf8");
+
     fs.copySync(file, newFilepath);
     console.log(ch.cyan(`Copying ${filename}`));
   });
