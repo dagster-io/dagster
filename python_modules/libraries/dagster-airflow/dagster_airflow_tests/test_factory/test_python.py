@@ -30,7 +30,7 @@ def test_fs_storage_no_explicit_base_dir(
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
@@ -45,7 +45,7 @@ def test_fs_storage(
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem.yaml'),
@@ -61,7 +61,7 @@ def test_s3_storage(
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_s3.yaml'),
@@ -77,7 +77,7 @@ def test_gcs_storage(
     pipeline_name = 'demo_pipeline_gcs'
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_gcs.yaml'),
@@ -92,7 +92,7 @@ def test_skip_operator(
     pipeline_name = 'optional_outputs'
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name),
+        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[os.path.join(environments_path, 'env_filesystem.yaml')],
     )
     validate_skip_pipeline_execution(results)
@@ -116,7 +116,7 @@ def test_rename_for_airflow():
 
 def test_error_dag_python(environments_path):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines', pipeline_name)
+    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)
     environment_yaml = [
         os.path.join(environments_path, 'env_filesystem.yaml'),
     ]

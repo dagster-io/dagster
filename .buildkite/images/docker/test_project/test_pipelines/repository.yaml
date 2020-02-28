@@ -1,3 +1,7 @@
 repository:
-  module: test_pipelines
+  module: test_pipelines.repo
   fn: define_demo_execution_repo
+
+scheduler:
+  module: test_pipelines.schedules
+  fn: define_schedules
