@@ -134,8 +134,8 @@ def single_resource_event_generator(context, resource_name, resource_def):
             try:
                 with time_execution_scope() as timer_result:
                     resource_or_gen = resource_def.resource_fn(context)
-                gen = ensure_gen(resource_or_gen)
-                resource = next(gen)
+                    gen = ensure_gen(resource_or_gen)
+                    resource = next(gen)
                 yield InitializedResource(resource, format_duration(timer_result.millis))
             except StopIteration:
                 check.failed(
