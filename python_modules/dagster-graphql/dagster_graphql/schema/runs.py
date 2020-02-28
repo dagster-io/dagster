@@ -608,6 +608,8 @@ class DauphinEngineEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinDisplayableEvent, DauphinStepEvent)
 
     error = dauphin.Field('PythonError')
+    marker_start = dauphin.Field(dauphin.String)
+    marker_end = dauphin.Field(dauphin.String)
 
 
 class DauphinStepExpectationResultEvent(dauphin.ObjectType):
@@ -757,6 +759,8 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             )
             if dagster_event.engine_event_data.error
             else None,
+            marker_start=dagster_event.engine_event_data.marker_start,
+            marker_end=dagster_event.engine_event_data.marker_end,
             **basic_params
         )
     else:

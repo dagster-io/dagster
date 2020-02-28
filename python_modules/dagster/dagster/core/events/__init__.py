@@ -522,7 +522,7 @@ class DagsterEvent(
             execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
             log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
             message='Starting initialization of resources [{}].'.format(', '.join(resource_keys)),
-            event_specific_data=EngineEventData(metadata_entries=[], marker_start=None),
+            event_specific_data=EngineEventData(metadata_entries=[], marker_start='resources'),
         )
 
     @staticmethod
@@ -540,7 +540,7 @@ class DagsterEvent(
                 ', '.join(resource_init_times.keys())
             ),
             event_specific_data=EngineEventData(
-                metadata_entries=metadata_entries, marker_end=None,
+                metadata_entries=metadata_entries, marker_end='resources',
             ),
         )
 
@@ -552,7 +552,9 @@ class DagsterEvent(
             execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
             log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),
             message='Initialization of resources [{}] failed.'.format(', '.join(resource_keys)),
-            event_specific_data=EngineEventData(metadata_entries=[], marker_end=None, error=error,),
+            event_specific_data=EngineEventData(
+                metadata_entries=[], marker_end='resources', error=error,
+            ),
         )
 
     @staticmethod
@@ -714,10 +716,10 @@ class EngineEventData(
     # * added optional error
     # * added marker_start / marker_end
     #
-    def __new__(cls, metadata_entries, error=None, marker_start=None, marker_end=None):
+    def __new__(cls, metadata_entries=None, error=None, marker_start=None, marker_end=None):
         return super(EngineEventData, cls).__new__(
             cls,
-            metadata_entries=check.list_param(
+            metadata_entries=check.opt_list_param(
                 metadata_entries, 'metadata_entries', EventMetadataEntry
             ),
             error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
@@ -726,7 +728,7 @@ class EngineEventData(
         )
 
     @staticmethod
-    def in_process(pid, step_keys_to_execute=None):
+    def in_process(pid, step_keys_to_execute=None, marker_end=None):
         check.int_param(pid, 'pid')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
@@ -735,7 +737,8 @@ class EngineEventData(
                 [EventMetadataEntry.text(str(step_keys_to_execute), 'step_keys')]
                 if step_keys_to_execute
                 else []
-            )
+            ),
+            marker_end=marker_end,
         )
 
     @staticmethod

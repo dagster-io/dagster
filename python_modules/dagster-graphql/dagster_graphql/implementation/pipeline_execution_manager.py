@@ -174,6 +174,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
                 pipeline_name=pipeline_run.pipeline_name, run_id=pipeline_run.run_id
             ),
             pipeline_run,
+            engine_event_data=EngineEventData(marker_start='dagit_subprocess_init'),
         )
         mp_process.start()
 
@@ -251,7 +252,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
             cls,
             'Started process for pipeline (pid: {pid}).'.format(pid=pid),
             pipeline_run,
-            EngineEventData.in_process(pid),
+            EngineEventData.in_process(pid, marker_end='dagit_subprocess_init'),
         )
 
         start_termination_thread(term_event)

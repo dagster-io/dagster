@@ -505,6 +505,8 @@ export interface RunPipelineRunEventFragment_EngineEvent {
   step: RunPipelineRunEventFragment_EngineEvent_step | null;
   metadataEntries: RunPipelineRunEventFragment_EngineEvent_metadataEntries[];
   engineError: RunPipelineRunEventFragment_EngineEvent_engineError | null;
+  markerStart: string | null;
+  markerEnd: string | null;
 }
 
 export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_PipelineProcessStartedEvent | RunPipelineRunEventFragment_PipelineProcessStartEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent;

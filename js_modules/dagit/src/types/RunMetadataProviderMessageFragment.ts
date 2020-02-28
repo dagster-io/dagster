@@ -13,7 +13,7 @@ export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_st
 }
 
 export interface RunMetadataProviderMessageFragment_ExecutionStepFailureEvent {
-  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent" | "EngineEvent";
+  __typename: "ExecutionStepFailureEvent" | "ExecutionStepInputEvent" | "ExecutionStepOutputEvent" | "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineInitFailureEvent" | "PipelineProcessExitedEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "ObjectStoreOperationEvent";
   message: string;
   timestamp: string;
   step: RunMetadataProviderMessageFragment_ExecutionStepFailureEvent_step | null;
@@ -44,6 +44,20 @@ export interface RunMetadataProviderMessageFragment_PipelineProcessStartEvent {
   step: RunMetadataProviderMessageFragment_PipelineProcessStartEvent_step | null;
   pipelineName: string;
   runId: string;
+}
+
+export interface RunMetadataProviderMessageFragment_EngineEvent_step {
+  __typename: "ExecutionStep";
+  key: string;
+}
+
+export interface RunMetadataProviderMessageFragment_EngineEvent {
+  __typename: "EngineEvent";
+  message: string;
+  timestamp: string;
+  step: RunMetadataProviderMessageFragment_EngineEvent_step | null;
+  markerStart: string | null;
+  markerEnd: string | null;
 }
 
 export interface RunMetadataProviderMessageFragment_StepMaterializationEvent_step {
@@ -161,4 +175,4 @@ export interface RunMetadataProviderMessageFragment_StepExpectationResultEvent {
   expectationResult: RunMetadataProviderMessageFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_PipelineProcessStartEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent;
+export type RunMetadataProviderMessageFragment = RunMetadataProviderMessageFragment_ExecutionStepFailureEvent | RunMetadataProviderMessageFragment_PipelineProcessStartedEvent | RunMetadataProviderMessageFragment_PipelineProcessStartEvent | RunMetadataProviderMessageFragment_EngineEvent | RunMetadataProviderMessageFragment_StepMaterializationEvent | RunMetadataProviderMessageFragment_StepExpectationResultEvent;

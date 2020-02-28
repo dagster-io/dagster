@@ -285,6 +285,10 @@ export class RunMetadataProvider extends React.Component<
           pipelineName
           runId
         }
+        ... on EngineEvent {
+          markerStart
+          markerEnd
+        }
         ... on StepMaterializationEvent {
           step {
             key
