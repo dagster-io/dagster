@@ -53,7 +53,10 @@ export const Header = forwardRef(({ onMenuClick, sidebarOpened }, ref) => {
         </div>
       </div>
       <Menu sx={styles.socialIcons(showingSearch)}>
-        <ExternalLink href="https://dagster.slack.com" sx={styles.externalLink}>
+        <ExternalLink
+          href="https://dagster-slackin.herokuapp.com/"
+          sx={styles.externalLink}
+        >
           <img src={slackIcon} height={25} />
         </ExternalLink>
         <ExternalLink
