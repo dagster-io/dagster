@@ -1,3 +1,4 @@
+from enum import Enum as PythonEnum
 from functools import partial
 
 import six
@@ -13,6 +14,15 @@ from dagster.core.storage.type_storage import TypeStoragePlugin
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import InputHydrationConfig, OutputMaterializationConfig
 from .marshal import PickleSerializationStrategy, SerializationStrategy
+
+
+class DagsterTypeKind(PythonEnum):
+    ANY = 'ANY'
+    SCALAR = 'SCALAR'
+    LIST = 'LIST'
+    NOTHING = 'NOTHING'
+    NULLABLE = 'NULLABLE'
+    REGULAR = 'REGULAR'
 
 
 class DagsterType(object):
@@ -65,6 +75,8 @@ class DagsterType(object):
         is_builtin (bool): Defaults to False. This is used by tools to display or
             filter built-in types (such as :py:class:`~dagster.String`, :py:class:`~dagster.Int`) to visually distinguish
             them from user-defined types. Meant for internal use.
+        kind (DagsterTypeKind): Defaults to None. This is used to determine the kind of runtime type
+            for InputDefinition and OutputDefinition type checking.
     '''
 
     def __init__(
@@ -79,6 +91,7 @@ class DagsterType(object):
         serialization_strategy=None,
         auto_plugins=None,
         required_resource_keys=None,
+        kind=DagsterTypeKind.REGULAR,
     ):
         check.opt_str_param(key, 'key')
         check.opt_str_param(name, 'name')
@@ -138,6 +151,8 @@ class DagsterType(object):
             'All types must have a valid display name, got None for key {}'.format(key),
         )
 
+        self.kind = check.inst_param(kind, 'kind', DagsterTypeKind)
+
     def type_check(self, context, value):
         retval = self._type_check_fn(context, value)
 
@@ -172,28 +187,8 @@ class DagsterType(object):
         return self.name
 
     @property
-    def is_any(self):
-        return False
-
-    @property
-    def is_scalar(self):
-        return False
-
-    @property
-    def is_list(self):
-        return False
-
-    @property
-    def is_nullable(self):
-        return False
-
-    @property
     def inner_types(self):
         return []
-
-    @property
-    def is_nothing(self):
-        return False
 
 
 def _validate_type_check_fn(fn, name):
@@ -228,12 +223,14 @@ def _validate_type_check_fn(fn, name):
 class BuiltinScalarDagsterType(DagsterType):
     def __init__(self, name, type_check_fn, *args, **kwargs):
         super(BuiltinScalarDagsterType, self).__init__(
-            key=name, name=name, type_check_fn=type_check_fn, is_builtin=True, *args, **kwargs
+            key=name,
+            name=name,
+            kind=DagsterTypeKind.SCALAR,
+            type_check_fn=type_check_fn,
+            is_builtin=True,
+            *args,
+            **kwargs
         )
-
-    @property
-    def is_scalar(self):
-        return True
 
     def type_check_method(self, _context, _value):
         raise NotImplementedError()
@@ -333,6 +330,7 @@ class Anyish(DagsterType):
         super(Anyish, self).__init__(
             key=key,
             name=name,
+            kind=DagsterTypeKind.ANY,
             input_hydration_config=input_hydration_config,
             output_materialization_config=output_materialization_config,
             serialization_strategy=serialization_strategy,
@@ -344,10 +342,6 @@ class Anyish(DagsterType):
 
     def type_check_method(self, _context, _value):
         return TypeCheck(success=True)
-
-    @property
-    def is_any(self):
-        return True
 
 
 class _Any(Anyish):
@@ -385,15 +379,12 @@ class _Nothing(DagsterType):
         super(_Nothing, self).__init__(
             key='Nothing',
             name='Nothing',
+            kind=DagsterTypeKind.NOTHING,
             input_hydration_config=None,
             output_materialization_config=None,
             type_check_fn=self.type_check_method,
             is_builtin=True,
         )
-
-    @property
-    def is_nothing(self):
-        return True
 
     def type_check_method(self, _context, value):
         if value is not None:
@@ -504,6 +495,7 @@ class OptionalType(DagsterType):
         super(OptionalType, self).__init__(
             key=key,
             name=None,
+            kind=DagsterTypeKind.NULLABLE,
             type_check_fn=self.type_check_method,
             input_hydration_config=_create_nullable_input_schema(inner_type),
         )
@@ -516,10 +508,6 @@ class OptionalType(DagsterType):
         return (
             TypeCheck(success=True) if value is None else self.inner_type.type_check(context, value)
         )
-
-    @property
-    def is_nullable(self):
-        return True
 
     @property
     def inner_types(self):
@@ -559,6 +547,7 @@ class ListType(DagsterType):
         super(ListType, self).__init__(
             key=key,
             name=None,
+            kind=DagsterTypeKind.LIST,
             type_check_fn=self.type_check_method,
             input_hydration_config=_create_list_input_schema(inner_type),
         )
@@ -578,10 +567,6 @@ class ListType(DagsterType):
                 return item_check
 
         return TypeCheck(success=True)
-
-    @property
-    def is_list(self):
-        return True
 
     @property
     def inner_types(self):
@@ -615,15 +600,12 @@ class Stringish(DagsterType):
         super(Stringish, self).__init__(
             key=key,
             name=name,
+            kind=DagsterTypeKind.SCALAR,
             type_check_fn=self.type_check_method,
             input_hydration_config=BuiltinSchemas.STRING_INPUT,
             output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
             **kwargs
         )
-
-    @property
-    def is_scalar(self):
-        return True
 
     def type_check_method(self, _context, value):
         return _fail_if_not_of_type(value, six.string_types, 'string')

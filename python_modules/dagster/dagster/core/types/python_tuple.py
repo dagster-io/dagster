@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.config.config_type import Array, ConfigAnyInstance
+from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .config_schema import InputHydrationConfig
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
@@ -82,7 +83,7 @@ def create_typed_tuple(*dagster_type_args):
     runtime_types = list(map(resolve_dagster_type, dagster_type_args))
 
     check.invariant(
-        not any((runtime_type.is_nothing for runtime_type in runtime_types)),
+        not any((runtime_type.kind == DagsterTypeKind.NOTHING for runtime_type in runtime_types)),
         'Cannot create a runtime tuple containing inner type Nothing. Use List for fan-in',
     )
 

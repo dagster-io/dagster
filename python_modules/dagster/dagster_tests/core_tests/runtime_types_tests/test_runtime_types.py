@@ -20,7 +20,12 @@ from dagster import (
     lambda_solid,
     pipeline,
 )
-from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, DagsterType, resolve_dagster_type
+from dagster.core.types.dagster_type import (
+    ALL_RUNTIME_BUILTINS,
+    DagsterType,
+    DagsterTypeKind,
+    resolve_dagster_type,
+)
 
 
 def inner_type_key_set(runtime_type):
@@ -38,12 +43,12 @@ def test_inner_types():
 
     list_nullable_int_runtime = resolve_dagster_type(List[Optional[Int]])
     assert inner_type_key_set(list_nullable_int_runtime) == set(['Int', 'Optional.Int'])
-    assert not list_nullable_int_runtime.is_scalar
+    assert not list_nullable_int_runtime.kind == DagsterTypeKind.SCALAR
 
 
 def test_is_any():
-    assert not resolve_dagster_type(Int).is_any
-    assert resolve_dagster_type(Int).is_scalar
+    assert not resolve_dagster_type(Int).kind == DagsterTypeKind.ANY
+    assert resolve_dagster_type(Int).kind == DagsterTypeKind.SCALAR
 
 
 def test_display_name():

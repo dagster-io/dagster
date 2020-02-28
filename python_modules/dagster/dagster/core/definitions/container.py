@@ -6,6 +6,7 @@ from toposort import CircularDependencyError
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort_flatten
 
 from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
@@ -301,7 +302,10 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
     # Currently, we opt to be overly permissive with input/output type mismatches.
 
     # Here we check for the case where no value will be provided where one is expected.
-    if output_def.runtime_type.is_nothing and not input_def.runtime_type.is_nothing:
+    if (
+        output_def.runtime_type.kind == DagsterTypeKind.NOTHING
+        and not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
+    ):
         raise DagsterInvalidDefinitionError(
             (
                 'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
@@ -314,6 +318,8 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
                 dep=dep,
                 output_def=output_def,
                 input_def=input_def,
-                extra=' (which produces no value)' if output_def.runtime_type.is_nothing else '',
+                extra=' (which produces no value)'
+                if output_def.runtime_type.kind == DagsterTypeKind.NOTHING
+                else '',
             )
         )

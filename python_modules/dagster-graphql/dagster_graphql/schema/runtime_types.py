@@ -1,7 +1,7 @@
 from dagster_graphql import dauphin
 
-from dagster import check
-from dagster.core.types.dagster_type import DagsterType
+from dagster import DagsterType, check
+from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .config_types import DauphinConfigType, to_dauphin_config_type
 
@@ -19,18 +19,18 @@ def to_dauphin_runtime_type(runtime_type):
         display_name=runtime_type.display_name,
         description=runtime_type.description,
         is_builtin=runtime_type.is_builtin,
-        is_nullable=runtime_type.is_nullable,
-        is_list=runtime_type.is_list,
-        is_nothing=runtime_type.is_nothing,
+        is_nullable=runtime_type.kind == DagsterTypeKind.NULLABLE,
+        is_list=runtime_type.kind == DagsterTypeKind.LIST,
+        is_nothing=runtime_type.kind == DagsterTypeKind.NOTHING,
         input_schema_type=config_type_for_schema(runtime_type.input_hydration_config),
         output_schema_type=config_type_for_schema(runtime_type.output_materialization_config),
         inner_types=_resolve_inner_types(runtime_type),
     )
 
-    if runtime_type.is_list:
+    if runtime_type.kind == DagsterTypeKind.LIST:
         base_args['of_type'] = runtime_type.inner_type
         return DauphinListRuntimeType(**base_args)
-    elif runtime_type.is_nullable:
+    elif runtime_type.kind == DagsterTypeKind.NULLABLE:
         base_args['of_type'] = runtime_type.inner_type
         return DauphinNullableRuntimeType(**base_args)
     else:

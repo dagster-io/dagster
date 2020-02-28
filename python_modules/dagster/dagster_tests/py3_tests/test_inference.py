@@ -9,6 +9,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.types.dagster_type import DagsterTypeKind
 
 
 def test_single_typed_input():
@@ -98,12 +99,12 @@ def test_wrapped_input_and_output_lambda():
     assert add_one
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == 'nums'
-    assert add_one.input_defs[0].runtime_type.is_list
+    assert add_one.input_defs[0].runtime_type.kind == DagsterTypeKind.LIST
     assert add_one.input_defs[0].runtime_type.inner_type.name == 'Int'
 
     assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].runtime_type.is_nullable
-    assert add_one.output_defs[0].runtime_type.inner_type.is_list
+    assert add_one.output_defs[0].runtime_type.kind == DagsterTypeKind.NULLABLE
+    assert add_one.output_defs[0].runtime_type.inner_type.kind == DagsterTypeKind.LIST
 
 
 def test_kitchen_sink():
@@ -133,10 +134,10 @@ def test_kitchen_sink():
     assert sink.input_defs[4].runtime_type.name == 'Any'
 
     assert sink.input_defs[5].name == 'o'
-    assert sink.input_defs[5].runtime_type.is_nullable
+    assert sink.input_defs[5].runtime_type.kind == DagsterTypeKind.NULLABLE
 
     assert sink.input_defs[6].name == 'l'
-    assert sink.input_defs[6].runtime_type.is_list
+    assert sink.input_defs[6].runtime_type.kind == DagsterTypeKind.LIST
 
     assert sink.input_defs[7].name == 'c'
     assert sink.input_defs[7].runtime_type.name == 'Custom'

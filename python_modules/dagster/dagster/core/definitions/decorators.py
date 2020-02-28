@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from dagster import check
 from dagster.core.definitions.partition import PartitionSetDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.partitions import date_partition_range
 
@@ -377,7 +378,9 @@ def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
     check.inst_param(output_def, 'output_def', OutputDefinition)
 
     input_names = [
-        input_def.name for input_def in input_defs if not input_def.runtime_type.is_nothing
+        input_def.name
+        for input_def in input_defs
+        if not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
     ]
 
     @wraps(fn)
@@ -398,7 +401,9 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
     check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
 
     input_names = [
-        input_def.name for input_def in input_defs if not input_def.runtime_type.is_nothing
+        input_def.name
+        for input_def in input_defs
+        if not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
     ]
 
     @wraps(fn)
@@ -475,8 +480,12 @@ def validate_solid_fn(
         expected_positionals, 'expected_positionals', of_type=str
     )
     if exclude_nothing:
-        names = set(inp.name for inp in input_defs if not inp.runtime_type.is_nothing)
-        nothing_names = set(inp.name for inp in input_defs if inp.runtime_type.is_nothing)
+        names = set(
+            inp.name for inp in input_defs if not inp.runtime_type.kind == DagsterTypeKind.NOTHING
+        )
+        nothing_names = set(
+            inp.name for inp in input_defs if inp.runtime_type.kind == DagsterTypeKind.NOTHING
+        )
     else:
         names = set(inp.name for inp in input_defs)
         nothing_names = set()

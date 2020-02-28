@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.dagster_type import construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -521,7 +521,7 @@ def _validate_inputs(dependency_structure, solid_dict):
             if not dependency_structure.has_deps(handle):
                 if (
                     not handle.input_def.runtime_type.input_hydration_config
-                    and not handle.input_def.runtime_type.is_nothing
+                    and not handle.input_def.runtime_type.kind == DagsterTypeKind.NOTHING
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '

@@ -15,6 +15,7 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvari
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.config import IRunConfig
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
 from .compute import create_compute_step
@@ -242,7 +243,7 @@ def get_step_input(
     # the output of another solid or provided via environment config.
 
     # We will allow this for "Nothing" type inputs and continue.
-    if input_def.runtime_type.is_nothing:
+    if input_def.runtime_type.kind == DagsterTypeKind.NOTHING:
         return None
 
     # Otherwise we throw an error.

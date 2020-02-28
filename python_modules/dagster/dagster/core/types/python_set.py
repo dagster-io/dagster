@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.config.config_type import Array
+from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .config_schema import InputHydrationConfig
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
@@ -75,7 +76,7 @@ def create_typed_runtime_set(item_dagster_type):
     item_runtime_type = resolve_dagster_type(item_dagster_type)
 
     check.invariant(
-        not item_runtime_type.is_nothing,
+        not item_runtime_type.kind == DagsterTypeKind.NOTHING,
         'Cannot create the runtime type Set[Nothing]. Use List type for fan-in.',
     )
 

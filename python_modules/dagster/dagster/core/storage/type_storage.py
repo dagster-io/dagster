@@ -63,15 +63,17 @@ class TypeStoragePluginRegistry(object):
         return self._registry.get(name)
 
     def check_for_unsupported_composite_overrides(self, runtime_type):
+        from dagster.core.types.dagster_type import DagsterTypeKind
+
         composite_overrides = {t.name for t in runtime_type.inner_types if t.name in self._registry}
         if composite_overrides:
             outer_type = 'composite type'
-            if runtime_type.is_list:
-                if runtime_type.is_nullable:
+            if runtime_type.kind == DagsterTypeKind.LIST:
+                if runtime_type.kind == DagsterTypeKind.NULLABLE:
                     outer_type = 'Optional List'
                 else:
                     outer_type = 'List'
-            elif runtime_type.is_nullable:
+            elif runtime_type.kind == DagsterTypeKind.NULLABLE:
                 outer_type = 'Optional'
 
             if len(composite_overrides) > 1:

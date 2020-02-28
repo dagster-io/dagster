@@ -42,7 +42,7 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.object_store import ObjectStoreOperation
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
@@ -176,7 +176,7 @@ def _input_values_from_intermediates_manager(step_context):
 
     input_values = {}
     for step_input in step.step_inputs:
-        if step_input.runtime_type.is_nothing:
+        if step_input.runtime_type.kind == DagsterTypeKind.NOTHING:
             continue
 
         if step_input.is_from_multiple_outputs:
@@ -390,7 +390,7 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
 
     for step_output_def in step.step_outputs:
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
-            if step_output_def.runtime_type.is_nothing:
+            if step_output_def.runtime_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
                     'Emitting implicit Nothing for output "{output}" on solid {solid}'.format(
                         output=step_output_def.name, solid={str(step.solid_handle)}
