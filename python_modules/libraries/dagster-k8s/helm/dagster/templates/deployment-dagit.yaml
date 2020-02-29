@@ -29,7 +29,7 @@ spec:
         - name: check-db-ready
           image: postgres:9.6.16
           command: ['sh', '-c',
-            "until pg_isready -h {{ template "dagster.postgresql.fullname" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;",
+            'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -39,14 +39,13 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
-          # Restart cron schedules and launch dagit
           command: [
-              "/bin/bash",
-              "-c",
-              "service cron start && \
-              /usr/local/bin/dagster schedule up && \
-              dagit -h 0.0.0.0 -p 80"
-            ]
+            "/bin/bash",
+            "-c",
+            "service cron start && \
+            /usr/local/bin/dagster schedule up && \
+            dagit -h 0.0.0.0 -p 80"
+          ]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:

@@ -9,10 +9,10 @@ metadata:
     heritage: {{ .Release.Service }}
 data:
   DAGSTER_HOME: "{{ template "dagster.job_runner.dagster_home" .}}"
-{{- if .Values.job_runner.env -}}
-{{- range $name, $value := .Values.job_runner.env }}
-{{- if not (empty $value) }}
+  {{- if .Values.job_runner.env -}}
+  {{- range $name, $value := .Values.job_runner.env }}
+  {{- if not (empty $value) }}
   {{ $name }}: {{ $value | quote }}
-{{- end }}
-{{- end }}
-{{- end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}

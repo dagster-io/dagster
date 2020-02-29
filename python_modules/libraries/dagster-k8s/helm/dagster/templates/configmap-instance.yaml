@@ -50,10 +50,10 @@ data:
       class: PostgresRunStorage
       config:
         postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername}}
+          username: {{ .Values.postgresql.postgresqlUsername }}
           password:
             env: DAGSTER_PG_PASSWORD
-          hostname: {{ template "dagster.postgresql.fullname" . }}
+          hostname: {{ include "dagster.postgresql.host" . }}
           db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
           port: {{ .Values.postgresql.service.port }}
 
@@ -62,9 +62,9 @@ data:
       class: PostgresEventLogStorage
       config:
         postgres_db:
-          username: {{ .Values.postgresql.postgresqlUsername}}
+          username: {{ .Values.postgresql.postgresqlUsername }}
           password:
             env: DAGSTER_PG_PASSWORD
-          hostname: {{ template "dagster.postgresql.fullname" . }}
+          hostname: {{ include "dagster.postgresql.host" . }}
           db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
           port: {{ .Values.postgresql.service.port }}
