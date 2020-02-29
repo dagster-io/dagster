@@ -114,7 +114,7 @@ def publish(nightly, autoclean, dry_run):
     click.echo('Publishing packages to PyPI...')
 
     if nightly:
-        new_nightly_version = dmp.increment_nightly_versions(dry_run)
+        new_nightly_version = dmp.set_version_info(dry_run=dry_run)
         dmp.commit_new_version(
             'nightly: {nightly}'.format(nightly=new_nightly_version), dry_run=dry_run
         )
@@ -149,7 +149,7 @@ def release(ver, dry_run):
     '''
     dmp = DagsterModulePublisher()
     dmp.check_new_version(ver)
-    dmp.set_new_version(ver, dry_run=dry_run)
+    dmp.set_version_info(new_version=ver, dry_run=dry_run)
     dmp.commit_new_version(ver, dry_run=dry_run)
     set_git_tag(ver, dry_run=dry_run)
     click.echo(

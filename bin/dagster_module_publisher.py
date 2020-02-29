@@ -10,7 +10,6 @@ import packaging.version
 from publish_utils import (  # isort:skip
     all_equal,
     check_output,
-    file_relative_path,
     format_module_versions,
 )
 
@@ -135,16 +134,9 @@ class DagsterModulePublisher:
 
         unexpected_modules = []
         expected_modules_not_found = []
-        unexpected_libraries = []
-        expected_libraries_not_found = []
 
-        module_directories = [
-            dir_
-            for dir_ in os.scandir(
-                file_relative_path(__file__, os.path.join('..', 'python_modules'))
-            )
-            if dir_.is_dir() and not dir_.name.startswith('.')
-        ]
+        module_directories = get_core_module_directories()
+        library_directories = get_library_module_directories()
 
         for module_dir in module_directories:
             if module_dir.name not in expected_python_modules_subdirectories:
@@ -154,37 +146,12 @@ class DagsterModulePublisher:
             if module_dir_name not in [module_dir.name for module_dir in module_directories]:
                 expected_modules_not_found.append(module_dir_name)
 
-        expected_library_subdirectories = [module.name for module in self.library_modules]
-
-        library_directories = [
-            dir_
-            for dir_ in os.scandir(
-                file_relative_path(__file__, os.path.join('..', 'python_modules', 'libraries'))
-            )
-            if dir_.is_dir() and not dir_.name.startswith('.')
-        ]
-
-        for library_dir in library_directories:
-            if library_dir.name not in expected_library_subdirectories:
-                unexpected_libraries.append(library_dir.path)
-
-        for library_dir_name in expected_library_subdirectories:
-            if library_dir_name not in [library_dir.name for library_dir in library_directories]:
-                expected_libraries_not_found.append(library_dir_name)
-
-        if (
-            unexpected_modules
-            or unexpected_libraries
-            or expected_modules_not_found
-            or expected_libraries_not_found
-        ):
+        if unexpected_modules or expected_modules_not_found:
             raise Exception(
                 'Bailing: something looks wrong. We\'re either missing modules we expected or modules '
                 'are present that we don\'t know about:\n'
                 '{expected_modules_not_found_msg}'
-                '{unexpected_modules_msg}'
-                '{expected_libraries_not_found_msg}'
-                '{unexpected_libraries_msg}'.format(
+                '{unexpected_modules_msg}'.format(
                     expected_modules_not_found_msg=(
                         (
                             '\nDidn\'t find expected modules:\n    {expected_modules_not_found}'
@@ -201,24 +168,6 @@ class DagsterModulePublisher:
                             unexpected_modules='\n    '.join(sorted(unexpected_modules))
                         )
                         if unexpected_modules
-                        else ''
-                    ),
-                    expected_libraries_not_found_msg=(
-                        (
-                            '\nDidn\'t find expected libraries:\n    {expected_libraries_not_found}'
-                        ).format(
-                            expected_libraries_not_found='\n    '.join(
-                                sorted(expected_libraries_not_found)
-                            )
-                        )
-                        if expected_libraries_not_found
-                        else ''
-                    ),
-                    unexpected_libraries_msg=(
-                        '\nFound unexpected libraries:\n    {unexpected_libraries}'.format(
-                            unexpected_libraries='\n    '.join(sorted(unexpected_libraries))
-                        )
-                        if unexpected_libraries
                         else ''
                     ),
                 )
@@ -319,25 +268,27 @@ class DagsterModulePublisher:
                 if not should_continue == '!':
                     raise Exception('Bailing! Run a pre-release before continuing.')
 
-    def increment_nightly_versions(self, dry_run=True):
-        '''Updates the nightly version in version.py files for all modules we manage/release.
+    def set_version_info(self, new_version=None, dry_run=True):
+        '''Updates the version in version.py files for all modules we manage/release.
 
         Args:
+            new_version (str, optional): A new module version. If not set, we only update the
+                nightly version. Defaults to None.
             dry_run (bool, optional): Whether this operation should be a dry run. Defaults to True.
 
         Returns:
-            str: The new nightly version string.
+            List[dict]: The new versions of all modules.
         '''
-        versions = self.all_module_versions
         new_nightly = get_nightly_version()
-        for module in self.all_publishable_modules:
-            module.set_version_info(module, versions[module.name]['__version__'], dry_run=dry_run)
 
-        return new_nightly
-
-    def set_new_version(self, new_version, dry_run=True):
+        versions = []
         for module in self.all_publishable_modules:
-            module.set_version_info(new_version, get_nightly_version(), dry_run=dry_run)
+            new_version = new_version or module.get_version_info()['__version__']
+            res = module.set_version_info(new_version, new_nightly, dry_run=dry_run)
+
+            versions.append(res)
+
+        return versions
 
     def commit_new_version(self, new_version, dry_run=True):
         try:
@@ -368,3 +319,33 @@ class DagsterModulePublisher:
 
 def get_nightly_version():
     return datetime.datetime.utcnow().strftime('%Y.%m.%d')
+
+
+def get_core_module_directories():
+    '''List core module directories (not including libraries) under python_modules.
+
+    Returns:
+        List(os.DirEntry): List of core module directories
+    '''
+    core_module_root_dir = os.path.join(git_repo_root(), 'python_modules')
+    module_directories = [
+        dir_
+        for dir_ in os.scandir(core_module_root_dir)
+        if dir_.is_dir() and not dir_.name.startswith('.')
+    ]
+    return module_directories
+
+
+def get_library_module_directories():
+    '''List library module directories under python_modules/libraries.
+
+    Returns:
+        List(os.DirEntry): List of core module directories
+    '''
+    library_module_root_dir = os.path.join(git_repo_root(), 'python_modules', 'libraries')
+    library_directories = [
+        dir_
+        for dir_ in os.scandir(library_module_root_dir)
+        if dir_.is_dir() and not dir_.name.startswith('.')
+    ]
+    return library_directories

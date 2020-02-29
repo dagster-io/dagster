@@ -6,6 +6,7 @@ import sys
 from collections import namedtuple
 
 import click
+import six
 
 BASE_PATH = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, BASE_PATH)
@@ -109,6 +110,9 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
         Returns:
             Dict[str, str]: Dictionary of version information.
         '''
+        assert isinstance(new_version, six.string_types)
+        assert isinstance(new_nightly, six.string_types)
+
         output = (
             '__version__ = \'{new_version}\'\n'
             '\n'
@@ -121,8 +125,9 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
 
         if dry_run:
             click.echo(
-                click.style('Dry run; not running.', fg='red')
-                + ' Would write: %s to %s' % (output, version_file)
+                click.style('Dry run; not running. Would write to: %s\n' % version_file, fg='red')
+                + output
+                + '\n'
             )
         else:
             with open(version_file, 'w') as fd:
@@ -154,6 +159,9 @@ class DagsterModule(namedtuple('_DagsterModule', 'name is_library additional_ste
                         command, stderr=subprocess.PIPE, cwd=cwd, shell=True, stdout=subprocess.PIPE
                     )
                     for line in iter(process.stdout.readline, b''):
+                        click.echo(line.decode('utf-8'))
+
+                    for line in iter(process.stderr.readline, b''):
                         click.echo(line.decode('utf-8'))
 
                     process.wait()

@@ -23,11 +23,10 @@ if __name__ == "__main__":
             'git branch -D master',
             'git checkout --track origin/master',
             'git reset --hard origin/master',
-            'git checkout --track origin/nightly',
-            'git checkout nightly',
-            'git reset --hard origin/nightly',
-            'GIT_MERGE_AUTOEDIT=no git merge --strategy recursive --strategy-option theirs master',
-            'git push',
+            # Reset nightly branch
+            'git push --delete origin nightly',
+            'git checkout -b nightly',
+            'git push --set-upstream origin nightly',
             # Install reqs
             'pip install -r bin/requirements.txt',
             # Create ~/.pypirc
