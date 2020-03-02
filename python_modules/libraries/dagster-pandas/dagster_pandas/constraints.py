@@ -119,6 +119,10 @@ class RowCountConstraint(DataFrameConstraint):
             )
 
 
+def apply_ignore_missing_data_to_mask(mask, column):
+    return mask & ~column.isnull()
+
+
 class ColumnConstraint(Constraint):
     def __init__(self, error_description=None, markdown_description=None):
         super(ColumnConstraint, self).__init__(
@@ -137,7 +141,7 @@ class ColumnExistsConstraint(ColumnConstraint):
     def __init__(self):
         description = "Column Name must exist in dataframe"
         super(ColumnExistsConstraint, self).__init__(
-            error_description=description, markdown_description=description,
+            error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
@@ -161,7 +165,7 @@ class ColumnTypeConstraint(ColumnConstraint):
         )
         description = "Column dtype must be {}".format(self.expected_pandas_dtypes)
         super(ColumnTypeConstraint, self).__init__(
-            error_description=description, markdown_description=description,
+            error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
@@ -192,14 +196,18 @@ class NonNullableColumnConstraint(ColumnConstraint):
 
 
 class UniqueColumnConstraint(ColumnConstraint):
-    def __init__(self):
+    def __init__(self, ignore_missing_vals=False):
         description = "Column must be unique."
+        self.ignore_missing_vals = ignore_missing_vals
         super(UniqueColumnConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
-        rows_with_duplicated_values = dataframe[dataframe[column_name].duplicated()]
+        invalid = dataframe[column_name].duplicated()
+        if self.ignore_missing_vals:
+            invalid = apply_ignore_missing_data_to_mask(invalid, dataframe[column_name])
+        rows_with_duplicated_values = dataframe[invalid]
         if not rows_with_duplicated_values.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -210,16 +218,19 @@ class UniqueColumnConstraint(ColumnConstraint):
 
 
 class CategoricalColumnConstraint(ColumnConstraint):
-    def __init__(self, categories):
+    def __init__(self, categories, ignore_missing_vals=False):
         self.categories = list(check.set_param(categories, 'categories', of_type=str))
-
+        self.ignore_missing_vals = ignore_missing_vals
         super(CategoricalColumnConstraint, self).__init__(
             error_description="Expected Categories are {}".format(self.categories),
             markdown_description="Category examples are {}...".format(self.categories[:5]),
         )
 
     def validate(self, dataframe, column_name):
-        rows_with_unexpected_buckets = dataframe[~dataframe[column_name].isin(self.categories)]
+        invalid = ~dataframe[column_name].isin(self.categories)
+        if self.ignore_missing_vals:
+            invalid = apply_ignore_missing_data_to_mask(invalid, dataframe[column_name])
+        rows_with_unexpected_buckets = dataframe[invalid]
         if not rows_with_unexpected_buckets.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -230,15 +241,19 @@ class CategoricalColumnConstraint(ColumnConstraint):
 
 
 class MinValueColumnConstraint(ColumnConstraint):
-    def __init__(self, min_value):
+    def __init__(self, min_value, ignore_missing_vals=False):
         self.min_value = min_value
+        self.ignore_missing_vals = ignore_missing_vals
         super(MinValueColumnConstraint, self).__init__(
             markdown_description="values > {}".format(self.min_value),
             error_description="Column must have values > {}".format(self.min_value),
         )
 
     def validate(self, dataframe, column_name):
-        out_of_bounds_rows = dataframe[dataframe[column_name] < self.min_value]
+        invalid = dataframe[column_name] < self.min_value
+        if self.ignore_missing_vals:
+            invalid = apply_ignore_missing_data_to_mask(invalid, dataframe[column_name])
+        out_of_bounds_rows = dataframe[invalid]
         if not out_of_bounds_rows.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -249,15 +264,19 @@ class MinValueColumnConstraint(ColumnConstraint):
 
 
 class MaxValueColumnConstraint(ColumnConstraint):
-    def __init__(self, max_value):
+    def __init__(self, max_value, ignore_missing_vals=False):
         self.max_value = max_value
+        self.ignore_missing_vals = ignore_missing_vals
         super(MaxValueColumnConstraint, self).__init__(
             markdown_description="values < {}".format(self.max_value),
             error_description="Column must have values < {}".format(self.max_value),
         )
 
     def validate(self, dataframe, column_name):
-        out_of_bounds_rows = dataframe[dataframe[column_name] > self.max_value]
+        invalid = dataframe[column_name] > self.max_value
+        if self.ignore_missing_vals:
+            invalid = apply_ignore_missing_data_to_mask(invalid, dataframe[column_name])
+        out_of_bounds_rows = dataframe[invalid]
         if not out_of_bounds_rows.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -268,9 +287,10 @@ class MaxValueColumnConstraint(ColumnConstraint):
 
 
 class InRangeColumnConstraint(ColumnConstraint):
-    def __init__(self, min_value, max_value):
+    def __init__(self, min_value, max_value, ignore_missing_vals=False):
         self.min_value = min_value
         self.max_value = max_value
+        self.ignore_missing_vals = ignore_missing_vals
         super(InRangeColumnConstraint, self).__init__(
             markdown_description="{} < values < {}".format(self.min_value, self.max_value),
             error_description="Column must have values between {} and {} inclusive.".format(
@@ -279,9 +299,10 @@ class InRangeColumnConstraint(ColumnConstraint):
         )
 
     def validate(self, dataframe, column_name):
-        out_of_bounds_rows = dataframe[
-            ~dataframe[column_name].between(self.min_value, self.max_value)
-        ]
+        invalid = ~dataframe[column_name].between(self.min_value, self.max_value)
+        if self.ignore_missing_vals:
+            invalid = apply_ignore_missing_data_to_mask(invalid, dataframe[column_name])
+        out_of_bounds_rows = dataframe[invalid]
         if not out_of_bounds_rows.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,

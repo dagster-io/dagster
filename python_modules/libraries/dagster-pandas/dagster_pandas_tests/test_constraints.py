@@ -12,7 +12,13 @@ from dagster_pandas.constraints import (
     StrictColumnsConstraint,
     UniqueColumnConstraint,
 )
+from numpy import NaN
 from pandas import DataFrame
+
+NAN_VALUES = [
+    NaN,
+    None,
+]
 
 
 def test_column_exists_constraint():
@@ -30,6 +36,27 @@ def test_column_unique_constraint():
     bad_test_dataframe = DataFrame({'foo': ['foo', 'foo', 'baz']})
     with pytest.raises(ConstraintViolationException):
         UniqueColumnConstraint().validate(bad_test_dataframe, 'foo')
+
+
+def test_column_unique_constraint_ignore_nan():
+    for nullable_value in NAN_VALUES:
+        test_dataframe = DataFrame({'foo': [nullable_value, 'bar', 'baz']})
+        assert (
+            UniqueColumnConstraint(ignore_missing_vals=True).validate(test_dataframe, 'foo') is None
+        )
+
+        test_dataframe = DataFrame({'foo': [nullable_value, nullable_value, 'baz']})
+        assert (
+            UniqueColumnConstraint(ignore_missing_vals=True).validate(test_dataframe, 'foo') is None
+        )
+
+        test_dataframe = DataFrame({'foo': ['bar', 'bar', nullable_value]})
+        with pytest.raises(ConstraintViolationException):
+            UniqueColumnConstraint(ignore_missing_vals=False).validate(test_dataframe, 'foo')
+
+        test_dataframe = DataFrame({'foo': [nullable_value, nullable_value, 'baz']})
+        with pytest.raises(ConstraintViolationException):
+            UniqueColumnConstraint(ignore_missing_vals=False).validate(test_dataframe, 'foo')
 
 
 def test_column_type_constraint():
@@ -58,25 +85,78 @@ def test_categorical_column_constraint():
         CategoricalColumnConstraint({'bar', 'baz'}).validate(bad_test_dataframe, 'foo')
 
 
+def test_categorical_column_constraint_ignore_nan():
+    for nullable in NAN_VALUES:
+        test_dataframe = DataFrame({'foo': ['red', 'blue', 'green', nullable]})
+        assert (
+            CategoricalColumnConstraint(
+                {'red', 'blue', 'green'}, ignore_missing_vals=True
+            ).validate(test_dataframe, 'foo')
+            is None
+        )
+
+        test_dataframe = DataFrame({'foo': ['red', 'yellow', 'green', nullable, nullable]})
+        with pytest.raises(ConstraintViolationException):
+            CategoricalColumnConstraint(
+                {'red', 'blue', 'green'}, ignore_missing_vals=True
+            ).validate(test_dataframe, 'foo')
+
+
 def test_min_value_column_constraint():
     test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
     assert MinValueColumnConstraint(0).validate(test_dataframe, 'foo') is None
     with pytest.raises(ConstraintViolationException):
-        assert MinValueColumnConstraint(2).validate(test_dataframe, 'foo')
+        MinValueColumnConstraint(2).validate(test_dataframe, 'foo')
+
+
+def test_min_valid_column_constraint_ignore_nan():
+    for nullable in NAN_VALUES:
+        test_dataframe = DataFrame({'foo': [1, 1, 2, 3, nullable]})
+        assert (
+            MinValueColumnConstraint(0, ignore_missing_vals=True).validate(test_dataframe, 'foo')
+            is None
+        )
+
+        with pytest.raises(ConstraintViolationException):
+            MinValueColumnConstraint(3, ignore_missing_vals=True).validate(test_dataframe, 'foo')
 
 
 def test_max_value_column_constraint():
     test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
     assert MaxValueColumnConstraint(5).validate(test_dataframe, 'foo') is None
     with pytest.raises(ConstraintViolationException):
-        assert MinValueColumnConstraint(2).validate(test_dataframe, 'foo')
+        MaxValueColumnConstraint(2).validate(test_dataframe, 'foo')
+
+
+def test_max_valid_column_constraint_ignore_nan():
+    for nullable in NAN_VALUES:
+        test_dataframe = DataFrame({'foo': [1, 1, 2, 3, nullable]})
+        assert (
+            MaxValueColumnConstraint(5, ignore_missing_vals=True).validate(test_dataframe, 'foo')
+            is None
+        )
+
+        with pytest.raises(ConstraintViolationException):
+            MaxValueColumnConstraint(2, ignore_missing_vals=True).validate(test_dataframe, 'foo')
 
 
 def test_in_range_value_column_constraint():
     test_dataframe = DataFrame({'foo': [1, 1, 2, 3]})
     assert InRangeColumnConstraint(1, 4).validate(test_dataframe, 'foo') is None
     with pytest.raises(ConstraintViolationException):
-        assert InRangeColumnConstraint(2, 3).validate(test_dataframe, 'foo')
+        InRangeColumnConstraint(2, 3).validate(test_dataframe, 'foo')
+
+
+def test_in_range_value_column_constraint_ignore_nan():
+    for nullable in NAN_VALUES:
+        test_dataframe = DataFrame({'foo': [1, 1, 2, 3, nullable]})
+        assert (
+            InRangeColumnConstraint(1, 4, ignore_missing_vals=True).validate(test_dataframe, 'foo')
+            is None
+        )
+
+        with pytest.raises(ConstraintViolationException):
+            InRangeColumnConstraint(2, 3, ignore_missing_vals=True).validate(test_dataframe, 'foo')
 
 
 def test_strict_columns_constraint():
