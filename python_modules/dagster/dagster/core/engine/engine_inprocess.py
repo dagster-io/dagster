@@ -2,7 +2,7 @@ import os
 import sys
 
 from dagster import EventMetadataEntry, check
-from dagster.core.definitions import ExpectationResult, Materialization, Output, TypeCheck
+from dagster.core.definitions import ExpectationResult, Failure, Materialization, Output, TypeCheck
 from dagster.core.errors import (
     DagsterError,
     DagsterExecutionStepExecutionError,
@@ -229,23 +229,27 @@ def dagster_event_sequence_for_step(step_context):
 
     Thie function also processes errors. It handles a few error cases:
 
-        (1) The user-space code has raised an Exception. It has been
-        wrapped in an exception derived from DagsterUserCodeException. In that
-        case the original user exc_info is stashed on the exception
-        as the original_exc_info property. Examples of this are computations
-        with the compute_fn, and type checks. If the user has raised an
-        intentional error via throwing Failure, they can also optionally
-        pass along explicit metadata attached to that Failure.
+        (1) User code fails successfully:
+            The user-space code has raised a Failure which may have
+            explicit metadata attached.
 
-        (2) The framework raised a DagsterError that indicates a usage error
-        or some other error not communicated by a user-thrown exception. For example,
-        if the user yields an object out of a compute function that is not a
-        proper event (not an Output, ExpectationResult, etc).
+        (2) User code fails unexpectedly:
+            The user-space code has raised an Exception. It has been
+            wrapped in an exception derived from DagsterUserCodeException. In that
+            case the original user exc_info is stashed on the exception
+            as the original_exc_info property.
 
-        (3) An unexpected error occured. This is a framework error. Either there
-        has been an internal error in the framewore OR we have forgtten to put a
-        user code error boundary around invoked user-space code. These terminate
-        the computation immediately (by re-raising).
+        (3) User error:
+            The framework raised a DagsterError that indicates a usage error
+            or some other error not communicated by a user-thrown exception. For example,
+            if the user yields an object out of a compute function that is not a
+            proper event (not an Output, ExpectationResult, etc).
+
+        (4) Framework failure or interrupt:
+            An unexpected error occured. This is a framework error. Either there
+            has been an internal error in the framework OR we have forgtten to put a
+            user code error boundary around invoked user-space code. These terminate
+            the computation immediately (by re-raising).
 
     The "raised_dagster_errors" context manager can be used to force these errors to be
     reraised and surfaced to the user. This is mostly to get sensible errors in test and
@@ -263,30 +267,36 @@ def dagster_event_sequence_for_step(step_context):
             yield step_event
 
     # case (1) in top comment
-    except DagsterUserCodeExecutionError as dagster_user_error:  # case (1) above
+    except Failure as failure:
         yield _step_failure_event_from_exc_info(
             step_context,
-            dagster_user_error.original_exc_info,
+            sys.exc_info(),
             UserFailureData(
                 label='intentional-failure',
-                description=dagster_user_error.user_specified_failure.description,
-                metadata_entries=dagster_user_error.user_specified_failure.metadata_entries,
-            )
-            if dagster_user_error.is_user_specified_failure
-            else None,
+                description=failure.description,
+                metadata_entries=failure.metadata_entries,
+            ),
+        )
+        if step_context.raise_on_error:
+            raise failure
+
+    # case (2) in top comment
+    except DagsterUserCodeExecutionError as dagster_user_error:
+        yield _step_failure_event_from_exc_info(
+            step_context, dagster_user_error.original_exc_info,
         )
 
         if step_context.raise_on_error:
             raise dagster_user_error.user_exception
 
-    # case (2) in top comment
+    # case (3) in top comment
     except DagsterError as dagster_error:
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
         if step_context.raise_on_error:
             raise dagster_error
 
-    # case (3) in top comment
+    # case (4) in top comment
     except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
 
@@ -648,6 +658,7 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
 
     with user_code_error_boundary(
         DagsterExecutionStepExecutionError,
+        control_flow_exceptions=[Failure],
         msg_fn=lambda: '''Error occured during the execution of step:
         step key: "{key}"
         solid invocation: "{solid}"

@@ -125,7 +125,7 @@ def _add_inner_exception_for_py2(msg, exc_info):
 
 
 @contextmanager
-def user_code_error_boundary(error_cls, msg_fn, **kwargs):
+def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **kwargs):
     '''
     Wraps the execution of user-space code in an error boundary. This places a uniform
     policy around an user code invoked by the framework. This ensures that all user
@@ -154,9 +154,14 @@ def user_code_error_boundary(error_cls, msg_fn, **kwargs):
     '''
     check.callable_param(msg_fn, 'msg_fn')
     check.subclass_param(error_cls, 'error_cls', DagsterUserCodeExecutionError)
-
+    control_flow_exceptions = tuple(
+        check.opt_list_param(control_flow_exceptions, 'control_flow_exceptions')
+    )
     try:
         yield
+    except control_flow_exceptions as cf:
+        # A control flow exception has occurred and should be propogated
+        raise cf
     except DagsterError as de:
         # The system has thrown an error that is part of the user-framework contract
         raise de
@@ -192,23 +197,6 @@ class DagsterUserCodeExecutionError(DagsterError):
 
         self.user_exception = check.opt_inst_param(user_exception, 'user_exception', Exception)
         self.original_exc_info = original_exc_info
-
-    @property
-    def is_user_specified_failure(self):
-        from dagster.core.definitions.events import Failure
-
-        return isinstance(self.user_exception, Failure)
-
-    @property
-    def user_specified_failure(self):
-        check.invariant(
-            self.is_user_specified_failure,
-            (
-                'Can only call if user-specified failure (i.e. the user threw '
-                'an explicit Failure event in user-code'
-            ),
-        )
-        return self.user_exception
 
     @property
     def is_user_code_error(self):
