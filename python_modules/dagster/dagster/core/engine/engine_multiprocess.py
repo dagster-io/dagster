@@ -168,6 +168,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
                         'Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes',
                         EngineEventData.interrupted(list(term_events.keys())),
                     )
+                    stopping = True
                     for event in term_events.values():
                         event.set()
 
