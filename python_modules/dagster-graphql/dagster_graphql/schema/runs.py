@@ -680,7 +680,12 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
     check.opt_inst_param(
-        dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+        dauphin_pipeline,
+        'dauphin_pipeline',
+        (
+            graphene_info.schema.type_named('Pipeline'),
+            graphene_info.schema.type_named('UnknownPipeline'),
+        ),
     )
     check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -804,7 +809,12 @@ def from_compute_log_file(graphene_info, file):
 def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.opt_inst_param(
-        dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+        dauphin_pipeline,
+        'dauphin_pipeline',
+        (
+            graphene_info.schema.type_named('Pipeline'),
+            graphene_info.schema.type_named('UnknownPipeline'),
+        ),
     )
     check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 

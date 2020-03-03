@@ -254,12 +254,11 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     from ..schema.pipelines import DauphinPipeline
 
-    if not isinstance(pipeline, DauphinPipeline):
-        return Observable.empty()  # pylint: disable=no-member
-
-    execution_plan = create_execution_plan(
-        pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
-    )
+    execution_plan = None
+    if isinstance(pipeline, DauphinPipeline):
+        execution_plan = create_execution_plan(
+            pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
+        )
 
     # pylint: disable=E1101
     return Observable.create(
