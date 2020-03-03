@@ -21,7 +21,7 @@ Suppose that we rewrite our ``sort_calories`` solid so that it saves the newly s
 disk.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/materializations.py
-   :lines: 23-43
+   :lines: 23-45
    :linenos:
    :lineno-start: 23
    :caption: materializations.py
@@ -32,10 +32,10 @@ each run of the pipeline. But there's no way for Dagit to know about this persis
 So we'll add the following lines:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/materializations.py
-   :lines: 23-53
+   :lines: 23-55
    :linenos:
    :lineno-start: 23
-   :emphasize-lines: 22-31
+   :emphasize-lines: 24-33
    :caption: materializations.py
    :language: python
 

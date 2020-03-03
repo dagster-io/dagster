@@ -53,7 +53,9 @@ def split_cereals(context, cereals):
 
 @solid(config=String)
 def sort_cereals_by_calories(context, cereals):
-    sorted_cereals = sorted(cereals, key=lambda cereal: cereal['calories'])
+    sorted_cereals = sorted(
+        cereals, key=lambda cereal: int(cereal['calories'])
+    )
     context.log.info(
         'Least caloric {cereal_type} cereal: {least_caloric}'.format(
             cereal_type=context.solid_config,

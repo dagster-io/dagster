@@ -6,7 +6,7 @@ they're invoked. For example, consider an extended version of our csv-reading so
 more of the options available in the underlying Python API:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config_bad_1.py
-   :lines: 6-26
+   :lines: 6-25
    :linenos:
    :lineno-start: 6
    :emphasize-lines: 8-14
@@ -17,13 +17,13 @@ We obviously don't want to have to write a separate solid for each permutation o
 that we use in our pipelines -- especially because, in more realistic cases like configuring a
 Spark job or even parametrizing the ``read_csv`` function from a popular package like
 `Pandas <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv>`__,
-we might have dozens or hundreds of parameters like these. 
+we might have dozens or hundreds of parameters like these.
 
 But hoisting all of these parameters into the signature of the solid function as inputs isn't the
 right answer either:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/config_bad_2.py
-   :lines: 6-36
+   :lines: 6-35
    :linenos:
    :lineno-start: 6
    :emphasize-lines: 5-11
@@ -35,7 +35,7 @@ reusable. And it's unlikely that values like this will be provided dynamically b
 other solids in a pipeline.
 
 Inputs, on the other hand, will usually be provided by the outputs of other solids in a pipeline,
-even though we might sometimes want to stub them using the config facility. 
+even though we might sometimes want to stub them using the config facility.
 
 For all these reasons, it's bad practice to mix configuration values like these with true input
 values.
@@ -51,7 +51,7 @@ The solution is to define a config schema for our solid:
 
 First, we pass the ``config`` argument to the :py:func:`@solid <dagster.solid>` decorator.
 This tells Dagster to give our solid a config field structured as a dictionary, whose keys are the
-keys of this argument, and the types of whose values are defined by the values of this argument 
+keys of this argument, and the types of whose values are defined by the values of this argument
 (instances of :py:func:`Field <dagster.Field>`).
 
 Then, we define one of these fields, ``escapechar``, to be a string, setting a default value,

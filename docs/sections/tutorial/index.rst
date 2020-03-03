@@ -18,6 +18,7 @@ Hello, cereal!
   config
   types
   metadata
+  expectations
   multiple_outputs
   reusable
   composite_solids

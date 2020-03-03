@@ -20,8 +20,11 @@ else:
 
 @solid
 def read_csv(context, csv_path):
+    lines = []
     with open(csv_path, 'r') as fd:
-        lines = [row for row in csv.DictReader(fd)]
+        for row in csv.DictReader(fd):
+            row['calories'] = int(row['calories'])
+            lines.append(row)
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
     return lines

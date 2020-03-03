@@ -11,10 +11,10 @@ them separately, based on config.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
-   :lineno-start: 31
+   :lineno-start: 33
    :caption: multiple_outputs.py
-   :lines: 31-55
-   :emphasize-lines: 6-11, 20, 25
+   :lines: 33-58
+   :emphasize-lines: 7-12, 21, 26
    :language: python
 
 Solids that yield multiple outputs must declare, and name, their outputs (passing ``output_defs``
@@ -26,9 +26,9 @@ We'll define two downstream solids and hook them up to the multiple outputs from
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/multiple_outputs.py
    :linenos:
-   :lineno-start: 53
+   :lineno-start: 56
    :caption: multiple_outputs.py
-   :lines: 53-77
+   :lines: 56-80
    :emphasize-lines: 23-25
    :language: python
 

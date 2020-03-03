@@ -2,7 +2,7 @@ Reusable solids
 ---------------
 
 Solids are intended to abstract chunks of business logic, but abstractions aren't very meaningful
-unless they can be reused. 
+unless they can be reused.
 
 Our conditional outputs pipeline included a lot of repeated code -- ``sort_hot_cereals_by_calories``
 and ``sort_cold_cereals_by_calories``, for instance. In general, it's preferable to build pipelines
@@ -17,8 +17,8 @@ of the same library solid:
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/reusable_solids.py
    :linenos:
    :lineno-start: 54
-   :lines: 54-71
-   :emphasize-lines: 15-16
+   :lines: 54-73
+   :emphasize-lines: 17-18
    :caption: reusable_solids.py
    :language: python
 

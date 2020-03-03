@@ -157,3 +157,6 @@ It looks as though we've forgotten to coerce our calorie counts to integers befo
 (Alternatively, we could modify our ``load_cereals`` logic to extend the basic functionality
 provided by :py:class:`python:csv.DictReader` and add a facility to specify column-wise datatype
 conversion.)
+
+In :ref:`Expectations <expectations>`, we will introduce adding data quality checks to detect bad
+data at runtime.

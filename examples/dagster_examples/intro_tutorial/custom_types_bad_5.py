@@ -73,11 +73,8 @@ def less_simple_data_frame_type_check(_, value):
 
 @input_hydration_config(Selector({'csv': Field(String)}))
 def less_simple_data_frame_input_hydration_config(context, selector):
-    lines = []
     with open(selector['csv'], 'r') as fd:
-        for row in csv.DictReader(fd):
-            row['calories'] = int(row['calories'])
-            lines.append(row)
+        lines = [row for row in csv.DictReader(fd)]
 
     context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
     return lines
