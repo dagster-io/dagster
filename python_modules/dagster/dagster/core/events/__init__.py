@@ -564,13 +564,19 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def resource_init_success(execution_plan, log_manager, resource_init_times):
+    def resource_init_success(execution_plan, log_manager, resource_instances, resource_init_times):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
-        metadata_entries = [
-            EventMetadataEntry.text('Initialized in {}.'.format(resource_time), resource_name)
-            for resource_name, resource_time in resource_init_times.items()
-        ]
+        metadata_entries = []
+        for resource_key in resource_instances.keys():
+            resource_obj = resource_instances[resource_key]
+            resource_time = resource_init_times[resource_key]
+            metadata_entries.append(
+                EventMetadataEntry.python_artifact(
+                    resource_obj.__class__, resource_key, 'Initialized in {}'.format(resource_time)
+                )
+            )
+
         return DagsterEvent.from_resource(
             execution_plan=check.inst_param(execution_plan, 'execution_plan', ExecutionPlan),
             log_manager=check.inst_param(log_manager, 'log_manager', DagsterLogManager),

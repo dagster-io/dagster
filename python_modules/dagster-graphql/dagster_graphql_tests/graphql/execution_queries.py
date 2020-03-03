@@ -14,6 +14,10 @@ fragment metadataEntryFragment on EventMetadataEntry {
     ... on EventUrlMetadataEntry {
         url
     }
+    ... on EventPythonArtifactMetadataEntry {
+        module
+        name
+    }
 }
 
 fragment stepEventFragment on StepEvent {

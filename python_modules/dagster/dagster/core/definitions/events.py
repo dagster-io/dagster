@@ -109,6 +109,15 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
         '''
         return EventMetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
 
+    @staticmethod
+    def python_artifact(python_artifact, label, description=None):
+        check.callable_param(python_artifact, 'python_artifact')
+        return EventMetadataEntry(
+            label,
+            description,
+            PythonArtifactMetadataEntryData(python_artifact.__module__, python_artifact.__name__),
+        )
+
 
 @whitelist_for_serdes
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
@@ -172,12 +181,23 @@ class MarkdownMetadataEntryData(namedtuple('_MarkdownMetadataEntryData', 'md_str
         return super(MarkdownMetadataEntryData, cls).__new__(cls, check.str_param(md_str, 'md_str'))
 
 
+@whitelist_for_serdes
+class PythonArtifactMetadataEntryData(
+    namedtuple('_PythonArtifactMetadataEntryData', 'module name')
+):
+    def __new__(cls, module, name):
+        return super(PythonArtifactMetadataEntryData, cls).__new__(
+            cls, check.str_param(module, 'module'), check.str_param(name, 'name')
+        )
+
+
 EntryDataUnion = (
     TextMetadataEntryData,
     UrlMetadataEntryData,
     PathMetadataEntryData,
     JsonMetadataEntryData,
     MarkdownMetadataEntryData,
+    PythonArtifactMetadataEntryData,
 )
 
 

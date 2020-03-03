@@ -74,7 +74,7 @@ def resource_initialization_event_generator(
 
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                execution_plan, log_manager, resource_init_times
+                execution_plan, log_manager, resource_instances, resource_init_times
             )
         yield ScopedResourcesBuilder(resource_instances)
     except GeneratorExit:

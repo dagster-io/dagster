@@ -126,6 +126,15 @@ function itemsForMetadataEntries(
         });
 
         break;
+      case "EventPythonArtifactMetadataEntry":
+        items.push({
+          text: metadataEntry.label,
+          actionText: `${metadataEntry.module}:${metadataEntry.name} - ${metadataEntry.description}`,
+          action: IStepDisplayActionType.NONE,
+          actionValue: ""
+        });
+
+        break;
       case "EventMarkdownMetadataEntry":
         items.push({
           text: metadataEntry.label,
@@ -266,6 +275,10 @@ export class RunMetadataProvider extends React.Component<
         }
         ... on EventMarkdownMetadataEntry {
           mdStr
+        }
+        ... on EventPythonArtifactMetadataEntry {
+          module
+          name
         }
       }
 

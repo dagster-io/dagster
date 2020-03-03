@@ -185,6 +185,13 @@ type EventPathMetadataEntry implements EventMetadataEntry {
   path: String!
 }
 
+type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
 type EventTextMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String

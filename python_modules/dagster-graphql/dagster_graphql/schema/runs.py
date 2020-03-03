@@ -13,6 +13,7 @@ from dagster.core.definitions.events import (
     JsonMetadataEntryData,
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
+    PythonArtifactMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
@@ -448,6 +449,15 @@ class DauphinEventMarkdownMetadataEntry(dauphin.ObjectType):
     md_str = dauphin.NonNull(dauphin.String)
 
 
+class DauphinEventPythonArtifactMetadataEntry(dauphin.ObjectType):
+    class Meta(object):
+        name = 'EventPythonArtifactMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    module = dauphin.NonNull(dauphin.String)
+    name = dauphin.NonNull(dauphin.String)
+
+
 def iterate_metadata_entries(metadata_entries):
     check.list_param(metadata_entries, 'metadata_entries', of_type=EventMetadataEntry)
     for metadata_entry in metadata_entries:
@@ -480,6 +490,13 @@ def iterate_metadata_entries(metadata_entries):
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 md_str=metadata_entry.entry_data.md_str,
+            )
+        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataEntryData):
+            yield DauphinEventPythonArtifactMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                module=metadata_entry.entry_data.module,
+                name=metadata_entry.entry_data.name,
             )
         else:
             # skip rest for now

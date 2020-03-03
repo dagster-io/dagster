@@ -55,4 +55,14 @@ def test_materializations(snapshot):
     assert text_entry['__typename'] == 'EventJsonMetadataEntry'
     assert text_entry['jsonString']
 
+    text_entry = mat['metadataEntries'][4]
+    assert text_entry['__typename'] == 'EventPythonArtifactMetadataEntry'
+    assert text_entry['module']
+    assert text_entry['name']
+
+    text_entry = mat['metadataEntries'][5]
+    assert text_entry['__typename'] == 'EventPythonArtifactMetadataEntry'
+    assert text_entry['module']
+    assert text_entry['name']
+
     snapshot.assert_match(logs)

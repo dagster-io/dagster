@@ -62,6 +62,20 @@ snapshots['test_materializations 1'] = [
                     'description': None,
                     'jsonString': '{"is_dope": true}',
                     'label': 'json'
+                },
+                {
+                    '__typename': 'EventPythonArtifactMetadataEntry',
+                    'description': None,
+                    'label': 'python class',
+                    'module': 'dagster.core.definitions.events',
+                    'name': 'EventMetadataEntry'
+                },
+                {
+                    '__typename': 'EventPythonArtifactMetadataEntry',
+                    'description': None,
+                    'label': 'python function',
+                    'module': 'dagster.utils',
+                    'name': 'file_relative_path'
                 }
             ]
         },

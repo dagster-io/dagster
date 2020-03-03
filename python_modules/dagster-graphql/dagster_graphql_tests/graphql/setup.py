@@ -521,6 +521,8 @@ def materialization_pipeline():
                 EventMetadataEntry.url('https://bigty.pe/neato', 'url'),
                 EventMetadataEntry.fspath('/tmp/awesome', 'path'),
                 EventMetadataEntry.json({'is_dope': True}, 'json'),
+                EventMetadataEntry.python_artifact(EventMetadataEntry, 'python class'),
+                EventMetadataEntry.python_artifact(file_relative_path, 'python function'),
             ],
         )
         yield Output(None)

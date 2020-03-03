@@ -5,7 +5,15 @@ import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { assertUnreachable } from "../Util";
 import { copyValue } from "../DomUtils";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { Button, Dialog, Classes, Colors, Icon } from "@blueprintjs/core";
+import {
+  Button,
+  Dialog,
+  Classes,
+  Colors,
+  Icon,
+  Position,
+  Tooltip
+} from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";
 
 export const MetadataEntries: React.FunctionComponent<{
@@ -62,6 +70,10 @@ export class MetadataEntry extends React.Component<{
         }
         ... on EventMarkdownMetadataEntry {
           mdStr
+        }
+        ... on EventPythonArtifactMetadataEntry {
+          module
+          name
         }
       }
     `
@@ -126,11 +138,42 @@ export class MetadataEntry extends React.Component<{
         return entry.text;
       case "EventMarkdownMetadataEntry":
         return <MarkdownMetadataLink title={entry.label} mdStr={entry.mdStr} />;
+      case "EventPythonArtifactMetadataEntry":
+        return (
+          <PythonArtifactLink
+            name={entry.name}
+            module={entry.module}
+            description={entry.description || ""}
+          />
+        );
       default:
         return assertUnreachable(entry);
     }
   }
 }
+
+const PythonArtifactLink = ({
+  name,
+  module,
+  description
+}: {
+  name: string;
+  module: string;
+  description: string;
+}) => (
+  <>
+    <Tooltip
+      hoverOpenDelay={100}
+      position={Position.TOP}
+      content={`${module}.${name}`}
+    >
+      <span style={{ cursor: "pointer", textDecoration: "underline" }}>
+        {name}
+      </span>
+    </Tooltip>{" "}
+    - {description}
+  </>
+);
 
 class MarkdownMetadataLink extends React.Component<{
   title: string;
