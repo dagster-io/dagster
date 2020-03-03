@@ -43,7 +43,7 @@ spec:
           args: ["flower", "-A", "dagster_celery.tasks"]
           env:
             - name: CELERY_BROKER_URL
-              value: "pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ template "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
+              value: {{ include "dagster.celery.broker_url" . }}
           volumeMounts: []
           ports:
             - name: flower
@@ -62,6 +62,6 @@ spec:
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:
-  {{- toYaml . | nindent 8 }}
-  {{- end }}
-  {{- end }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

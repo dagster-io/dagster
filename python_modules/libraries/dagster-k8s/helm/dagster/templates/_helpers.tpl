@@ -122,3 +122,20 @@ See: https://github.com/helm/charts/blob/61c2cc0db49b06b948f90c8e44e9143d7bab430
 {{- .Values.postgresql.postgresqlHost | quote -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Celery options
+*/}}
+{{- define "dagster.celery.broker_url" -}}
+{{- if .Values.rabbitmq.enabled -}}
+"pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
+{{- else if .Values.redis.enabled -}}
+"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/0"
+{{- end -}}
+{{- end -}}
+
+{{- define "dagster.celery.backend_url" -}}
+{{- if .Values.redis.enabled -}}
+"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/0"
+{{- end -}}
+{{- end -}}

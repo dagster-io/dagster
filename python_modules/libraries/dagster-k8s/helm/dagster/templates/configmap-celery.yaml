@@ -11,4 +11,9 @@ data:
   celery.yaml: |
     execution:
       celery:
-        broker: "pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ template "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
+        broker:  {{ template "dagster.celery.broker_url" . }}
+        backend: {{ template "dagster.celery.backend_url" . }}
+        config_source:
+{{- if .Values.celery.configSource }}
+{{ toYaml .Values.celery.configSource | indent 10 }}
+{{- end -}}

@@ -137,3 +137,18 @@ Claims, which will outlive test invocations and calls to `helm uninstall`. These
 you want to change credentials. To view your pvcs, run:
 
     kubectl get pvc
+
+## Testing Redis
+
+The Redis Helm chart installs w/ a randomly-generated password by default; turn this off:
+
+```
+helm install dagredis stable/redis --set usePassword=false
+```
+
+Then, to connect to your database from outside the cluster execute the following commands:
+
+```
+kubectl port-forward --namespace default svc/dagredis-master 6379:6379
+redis-cli -h 127.0.0.1 -p 6379
+```

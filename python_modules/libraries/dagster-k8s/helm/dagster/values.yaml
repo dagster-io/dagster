@@ -78,11 +78,12 @@ postgresql:
 
 # Configuration values for celery
 celery:
-  # set celery.enabled to be false to disable deploy of the celery workers & rabbitmq
   enabled: true
   replicaCount: 5
+  # additional config options for Celery
+  configSource:
 
-# Configuration values for rabbitmq
+# Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
 rabbitmq:
   enabled: true
   rabbitmq:
@@ -93,6 +94,15 @@ rabbitmq:
   # https://github.com/helm/charts/issues/17250#issuecomment-533444837
   volumePermissions:
     enabled: true
+
+# Configuration values for Redis. Can be used instead of RabbitMQ.
+redis:
+  # if enabled, external redis will be used instead of rabbitmq
+  enabled: false
+  # Redis host URL
+  host: ""
+  # Redis port
+  port: 6379
 
 # The flower web interface
 flower:
