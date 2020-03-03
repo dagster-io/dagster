@@ -45,16 +45,7 @@ export class Structured extends React.Component<
             key
           }
         }
-        ... on PipelineProcessStartedEvent {
-          message
-        }
-        ... on PipelineProcessStartEvent {
-          message
-        }
         ... on StepMaterializationEvent {
-          step {
-            key
-          }
           materialization {
             label
             description
@@ -69,11 +60,6 @@ export class Structured extends React.Component<
           }
         }
         ... on ExecutionStepFailureEvent {
-          message
-          level
-          step {
-            key
-          }
           error {
             ...PythonErrorFragment
           }
@@ -116,9 +102,6 @@ export class Structured extends React.Component<
           }
         }
         ... on ObjectStoreOperationEvent {
-          step {
-            key
-          }
           operationResult {
             op
             metadataEntries {

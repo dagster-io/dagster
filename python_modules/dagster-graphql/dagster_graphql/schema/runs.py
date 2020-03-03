@@ -403,6 +403,18 @@ class DauphinExecutionStepStartEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
 
+class DauphinExecutionStepRestartEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ExecutionStepRestartEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+
+class DauphinExecutionStepUpForRetryEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ExecutionStepUpForRetryEvent'
+        interfaces = (DauphinMessageEvent, DauphinStepEvent)
+
+
 class DauphinExecutionStepSkippedEvent(dauphin.ObjectType):
     class Meta(object):
         name = 'ExecutionStepSkippedEvent'
@@ -648,6 +660,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinExecutionStepSkippedEvent,
             DauphinExecutionStepStartEvent,
             DauphinExecutionStepSuccessEvent,
+            DauphinExecutionStepUpForRetryEvent,
+            DauphinExecutionStepRestartEvent,
             DauphinLogMessageEvent,
             DauphinPipelineFailureEvent,
             DauphinPipelineInitFailureEvent,
@@ -695,6 +709,10 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
         return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
         return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
+        return graphene_info.schema.type_named('ExecutionStepUpForRetryEvent')(**basic_params)
+    elif dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
+        return graphene_info.schema.type_named('ExecutionStepRestartEvent')(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
         return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:

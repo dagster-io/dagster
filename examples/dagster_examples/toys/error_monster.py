@@ -8,6 +8,7 @@ from dagster import (
     OutputDefinition,
     PresetDefinition,
     ResourceDefinition,
+    RetryRequested,
     String,
     execute_pipeline,
     file_relative_path,
@@ -36,18 +37,14 @@ def define_errorable_resource():
 solid_throw_config = {
     'throw_in_solid': Field(bool, is_required=False, default_value=False),
     'return_wrong_type': Field(bool, is_required=False, default_value=False),
+    'request_retry': Field(bool, is_required=False, default_value=False),
 }
 
 
-@solid(
-    output_defs=[OutputDefinition(Int)],
-    config=solid_throw_config,
-    required_resource_keys={'errorable_resource'},
-)
-def emit_num(context):
-    if context.solid_config['throw_in_solid']:
+def _act_on_config(solid_config):
+    if solid_config['throw_in_solid']:
         raise Failure(
-            description="I'm a Failure in emit_num",
+            description="I'm a Failure",
             metadata_entries=[
                 EventMetadataEntry.text(
                     label='metadata_label',
@@ -56,6 +53,17 @@ def emit_num(context):
                 )
             ],
         )
+    elif solid_config['request_retry']:
+        raise RetryRequested()
+
+
+@solid(
+    output_defs=[OutputDefinition(Int)],
+    config=solid_throw_config,
+    required_resource_keys={'errorable_resource'},
+)
+def emit_num(context):
+    _act_on_config(context.solid_config)
 
     if context.solid_config['return_wrong_type']:
         return 'wow'
@@ -70,17 +78,7 @@ def emit_num(context):
     required_resource_keys={'errorable_resource'},
 )
 def num_to_str(context, num):
-    if context.solid_config['throw_in_solid']:
-        raise Failure(
-            description="I'm a Failure in num_to_str",
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    label='metadata_label',
-                    text='I am metadata text',
-                    description='metadata_description',
-                )
-            ],
-        )
+    _act_on_config(context.solid_config)
 
     if context.solid_config['return_wrong_type']:
         return num + num
@@ -95,17 +93,7 @@ def num_to_str(context, num):
     required_resource_keys={'errorable_resource'},
 )
 def str_to_num(context, string):
-    if context.solid_config['throw_in_solid']:
-        raise Failure(
-            description="I'm a Failure in str_to_num",
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    label='metadata_label',
-                    text='I am metadata text',
-                    description='metadata_description',
-                )
-            ],
-        )
+    _act_on_config(context.solid_config)
 
     if context.solid_config['return_wrong_type']:
         return string + string

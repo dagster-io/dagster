@@ -296,6 +296,14 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   typeCheck: TypeCheck!
 }
 
+type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
@@ -313,6 +321,14 @@ type ExecutionStepStartEvent implements MessageEvent & StepEvent {
 }
 
 type ExecutionStepSuccessEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  step: ExecutionStep
+}
+
+type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -740,7 +756,7 @@ type PipelineRun {
   executionSelection: ExecutionSelection!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineProcessExitedEvent | PipelineProcessStartedEvent | PipelineProcessStartEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent
 
 type PipelineRunLogsSubscriptionFailure {
   message: String!

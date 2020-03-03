@@ -28,7 +28,14 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
           metadataEntries={node?.failureMetadata?.metadataEntries}
         />
       );
-
+    case "ExecutionStepUpForRetryEvent":
+      return (
+        <DefaultContent
+          eventType="Step Requested Retry"
+          message={node.message}
+          eventIntent="warning"
+        />
+      );
     case "PipelineProcessStartEvent":
       return <DefaultContent message={node.message} eventType="Starting" />;
     case "PipelineProcessStartedEvent":
@@ -46,6 +53,10 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
           eventIntent="warning"
         />
       );
+
+    case "ExecutionStepRestartEvent":
+      return <DefaultContent message={node.message} eventType="Step Restart" />;
+
     case "ExecutionStepSuccessEvent":
       return (
         <DefaultContent
