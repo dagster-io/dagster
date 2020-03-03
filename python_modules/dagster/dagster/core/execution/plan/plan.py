@@ -12,9 +12,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent
 from dagster.core.execution.config import IRunConfig
-from dagster.core.execution.retries import Retries
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
@@ -356,6 +354,8 @@ class ExecutionPlan(
     def start(
         self, retries, sort_key_fn=None,
     ):
+        from .active import ActiveExecution
+
         return ActiveExecution(self, retries, sort_key_fn)
 
     @staticmethod
@@ -376,170 +376,3 @@ class ExecutionPlan(
 
         # Finally, we build and return the execution plan
         return plan_builder.build()
-
-
-def _default_sort_key(step):
-    return int(step.tags.get('dagster/priority', 0)) * -1
-
-
-class ActiveExecution(object):
-    def __init__(self, execution_plan, retries, sort_key_fn=None):
-        self._plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        self._retries = check.inst_param(retries, 'retries', Retries)
-        self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', _default_sort_key)
-
-        self._pending = self._plan.execution_deps()
-
-        self._completed = set()
-        self._success = set()
-        self._failed = set()
-        self._skipped = set()
-
-        self._in_flight = set()
-
-        self._executable = []
-        self._pending_skip = []
-        self._pending_retry = []
-
-        self._update()
-
-    def _update(self):
-        new_steps_to_execute = []
-        new_steps_to_skip = []
-        for step_key, requirements in self._pending.items():
-
-            if requirements.issubset(self._completed):
-                if requirements.issubset(self._success):
-                    new_steps_to_execute.append(step_key)
-                else:
-                    new_steps_to_skip.append(step_key)
-
-        for key in new_steps_to_execute:
-            self._executable.append(key)
-            del self._pending[key]
-
-        for key in new_steps_to_skip:
-            self._pending_skip.append(key)
-            del self._pending[key]
-
-    def get_steps_to_execute(self, limit=None):
-        check.opt_int_param(limit, 'limit')
-
-        steps = sorted(
-            [self._plan.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
-        )
-
-        if limit:
-            steps = steps[:limit]
-
-        for step in steps:
-            self._in_flight.add(step.key)
-            self._executable.remove(step.key)
-
-        return steps
-
-    def get_steps_to_skip(self):
-        steps = []
-        steps_to_skip = list(self._pending_skip)
-        for key in steps_to_skip:
-            steps.append(self._plan.get_step_by_key(key))
-            self._in_flight.add(key)
-            self._pending_skip.remove(key)
-
-        return sorted(steps, key=self._sort_key_fn)
-
-    def skipped_step_events_iterator(self, pipeline_context):
-        failed_or_skipped_steps = self._skipped.union(self._failed)
-
-        steps_to_skip = self.get_steps_to_skip()
-        while steps_to_skip:
-            for step in steps_to_skip:
-                step_context = pipeline_context.for_step(step)
-                failed_inputs = []
-                for step_input in step.step_inputs:
-                    failed_inputs.extend(
-                        failed_or_skipped_steps.intersection(step_input.dependency_keys)
-                    )
-
-                step_context.log.info(
-                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
-                        step=step.key, failed_inputs=failed_inputs
-                    )
-                )
-                yield DagsterEvent.step_skipped_event(step_context)
-
-                self.mark_skipped(step.key)
-
-            steps_to_skip = self.get_steps_to_skip()
-
-    def mark_failed(self, step_key):
-        self._failed.add(step_key)
-        self._mark_complete(step_key)
-
-    def mark_success(self, step_key):
-        self._success.add(step_key)
-        self._mark_complete(step_key)
-
-    def mark_skipped(self, step_key):
-        self._skipped.add(step_key)
-        self._mark_complete(step_key)
-
-    def mark_up_for_retry(self, step_key):
-        check.invariant(
-            not self._retries.disabled,
-            'Attempted to mark {} as up for retry but retries are disabled'.format(step_key),
-        )
-
-        # if retries are enabled - queue this back up
-        if self._retries.enabled:
-            self._pending[step_key] = self._plan.execution_deps()[step_key]
-        elif self._retries.deferred:
-            self._completed.add(step_key)
-
-        self._retries.mark_attempt(step_key)
-        self._in_flight.remove(step_key)
-        self._update()
-
-    def _mark_complete(self, step_key):
-        check.invariant(
-            step_key not in self._completed,
-            'Attempted to mark step {} as complete that was already completed'.format(step_key),
-        )
-        check.invariant(
-            step_key in self._in_flight,
-            'Attempted to mark step {} as complete that was not known to be in flight'.format(
-                step_key
-            ),
-        )
-        self._in_flight.remove(step_key)
-        self._completed.add(step_key)
-        self._update()
-
-    def handle_event(self, dagster_event):
-        check.inst_param(dagster_event, 'dagster_event', DagsterEvent)
-
-        if dagster_event.is_step_failure:
-            self.mark_failed(dagster_event.step_key)
-        elif dagster_event.is_step_success:
-            self.mark_success(dagster_event.step_key)
-        elif dagster_event.is_step_up_for_retry:
-            self.mark_up_for_retry(dagster_event.step_key)
-
-    def verify_complete(self, pipeline_context, step_key):
-        if step_key in self._in_flight:
-            pipeline_context.log.error(
-                'Step {key} finished without success or failure event, assuming failure.'.format(
-                    key=step_key
-                )
-            )
-            self.mark_failed(step_key)
-
-    @property
-    def is_complete(self):
-        return (
-            len(self._pending) == 0
-            and len(self._in_flight) == 0
-            and len(self._executable) == 0
-            and len(self._pending_skip) == 0
-            and len(self._pending_retry) == 0
-        )
