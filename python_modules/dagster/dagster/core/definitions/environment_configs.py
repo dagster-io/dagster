@@ -261,8 +261,8 @@ def iterate_solid_def_types(solid_def):
 
     if isinstance(solid_def, SolidDefinition):
         if solid_def.config_field:
-            for runtime_type in iterate_config_types(solid_def.config_field.config_type):
-                yield runtime_type
+            for dagster_type in iterate_config_types(solid_def.config_field.config_type):
+                yield dagster_type
     elif isinstance(solid_def, CompositeSolidDefinition):
         for solid in solid_def.solids:
             for def_type in iterate_solid_def_types(solid.definition):
@@ -273,8 +273,8 @@ def iterate_solid_def_types(solid_def):
 
 
 def _gather_all_schemas(solid_defs):
-    runtime_types = construct_dagster_type_dictionary(solid_defs)
-    for rtt in runtime_types.values():
+    dagster_types = construct_dagster_type_dictionary(solid_defs)
+    for rtt in dagster_types.values():
         if rtt.input_hydration_config:
             for ct in iterate_config_types(rtt.input_hydration_config.schema_type):
                 yield ct
@@ -288,8 +288,8 @@ def _gather_all_config_types(solid_defs, environment_type):
     check.inst_param(environment_type, 'environment_type', ConfigType)
 
     for solid_def in solid_defs:
-        for runtime_type in iterate_solid_def_types(solid_def):
-            yield runtime_type
+        for dagster_type in iterate_solid_def_types(solid_def):
+            yield dagster_type
 
     for config_type in iterate_config_types(environment_type):
         yield config_type

@@ -69,7 +69,7 @@ class DauphinPipeline(dauphin.ObjectType):
             list(
                 map(
                     to_dauphin_runtime_type,
-                    [t for t in self._pipeline.all_runtime_types() if t.name],
+                    [t for t in self._pipeline.all_dagster_types() if t.name],
                 )
             ),
             key=lambda config_type: config_type.name,
@@ -89,8 +89,8 @@ class DauphinPipeline(dauphin.ObjectType):
     def get_type(self, _graphene_info, typeName):
         if self._pipeline.has_config_type(typeName):
             return to_dauphin_config_type(self._pipeline.config_type_named(typeName))
-        elif self._pipeline.has_runtime_type(typeName):
-            return to_dauphin_runtime_type(self._pipeline.runtime_type_named(typeName))
+        elif self._pipeline.has_dagster_type(typeName):
+            return to_dauphin_runtime_type(self._pipeline.dagster_type_named(typeName))
 
         else:
             check.failed('Not a config type or runtime type')

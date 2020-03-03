@@ -109,7 +109,7 @@ def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
     check.inst_param(system_storage_def, 'system_storage_def', SystemStorageDefinition)
 
     type_plugins = []
-    for type_obj in pipeline_def.all_runtime_types():
+    for type_obj in pipeline_def.all_dagster_types():
         for auto_plugin in type_obj.auto_plugins:
             if auto_plugin.compatible_with_storage_def(system_storage_def):
                 type_plugins.append((type_obj, auto_plugin))

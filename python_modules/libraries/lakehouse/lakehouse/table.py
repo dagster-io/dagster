@@ -45,7 +45,7 @@ class LakehouseTableDefinition(SolidDefinition):
 
     @property
     def table_type(self):
-        return self.output_defs[0].runtime_type
+        return self.output_defs[0].dagster_type
 
 
 def create_lakehouse_table_def(
@@ -104,7 +104,7 @@ def create_lakehouse_table_def(
             )
             if input_name in table_input_dict:
                 table_handle = value
-                input_type = table_input_dict[input_name].runtime_type
+                input_type = table_input_dict[input_name].dagster_type
                 hydrated_tables[input_name] = context.resources.lakehouse.hydrate(
                     context,
                     input_type,

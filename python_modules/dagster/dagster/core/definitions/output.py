@@ -1,9 +1,8 @@
-import warnings
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -55,9 +54,7 @@ class OutputDefinition(object):
 
     @property
     def runtime_type(self):
-        warnings.warn(
-            '"runtime_type" is deprecated and will be removed in 0.8.0, use "dagster_type" instead.'
-        )
+        rename_warning(new_name='dagster_type', old_name='runtime_type', breaking_version='0.8.0')
         return self._dagster_type
 
     @property

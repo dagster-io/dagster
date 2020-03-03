@@ -20,7 +20,7 @@ def construct_lakehouse_pipeline(name, lakehouse_tables, resources, preset_defs=
 
     type_to_solid = {}
     for lakehouse_table in lakehouse_tables:
-        output_type_name = lakehouse_table.output_defs[0].runtime_type.name
+        output_type_name = lakehouse_table.output_defs[0].dagster_type.name
         check.invariant(
             output_type_name not in type_to_solid,
             'Duplicate Lakehouse output names "{}"'.format(output_type_name),
@@ -31,7 +31,7 @@ def construct_lakehouse_pipeline(name, lakehouse_tables, resources, preset_defs=
 
     for lakehouse_table in lakehouse_tables:
         for input_def in lakehouse_table.input_tables:
-            input_type_name = input_def.runtime_type.name
+            input_type_name = input_def.dagster_type.name
             check.invariant(input_type_name in type_to_solid)
             dependencies[lakehouse_table.name][input_def.name] = DependencyDefinition(
                 type_to_solid[input_type_name].name

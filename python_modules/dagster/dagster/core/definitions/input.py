@@ -1,8 +1,8 @@
-import warnings
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster.utils.backcompat import rename_warning
 
 from .utils import check_valid_name
 
@@ -36,9 +36,7 @@ class InputDefinition(object):
 
     @property
     def runtime_type(self):
-        warnings.warn(
-            '"runtime_type" is deprecated and will be removed in 0.8.0, use "dagster_type" instead.'
-        )
+        rename_warning(new_name='dagster_type', old_name='runtime_type', breaking_version='0.8.0')
         return self._dagster_type
 
     @property

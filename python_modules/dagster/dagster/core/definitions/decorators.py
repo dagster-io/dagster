@@ -456,9 +456,9 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
                         n_results=len(output_defs),
                         expected_results=', '.join(
                             [
-                                '\'{result_name}\': {runtime_type}'.format(
+                                '\'{result_name}\': {dagster_type}'.format(
                                     result_name=output_def.name,
-                                    runtime_type=output_def.dagster_type,
+                                    dagster_type=output_def.dagster_type,
                                 )
                                 for output_def in output_defs
                             ]

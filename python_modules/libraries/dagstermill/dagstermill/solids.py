@@ -126,9 +126,9 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
         assert (
             input_name not in RESERVED_INPUT_NAMES
         ), 'Dagstermill solids cannot have inputs named {input_name}'.format(input_name=input_name)
-        runtime_type = input_def_dict[input_name].runtime_type
+        dagster_type = input_def_dict[input_name].dagster_type
         parameter_value = write_value(
-            runtime_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
+            dagster_type, input_value, os.path.join(marshal_dir, 'input-{}'.format(input_name))
         )
         parameters[input_name] = parameter_value
 
@@ -219,7 +219,7 @@ def _dm_solid_compute(name, notebook_path):
             for (output_name, output_def) in system_compute_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
                 if output_name in data_dict:
-                    value = read_value(output_def.runtime_type, data_dict[output_name])
+                    value = read_value(output_def.dagster_type, data_dict[output_name])
 
                     yield Output(value, output_name)
 

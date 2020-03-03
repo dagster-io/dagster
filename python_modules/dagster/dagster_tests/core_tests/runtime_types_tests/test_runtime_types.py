@@ -66,8 +66,8 @@ def test_display_name():
 def test_builtins_available():
     pipeline_def = PipelineDefinition(name='test_builting_available', solid_defs=[])
     for builtin_type in ALL_RUNTIME_BUILTINS:
-        assert pipeline_def.has_runtime_type(builtin_type.name)
-        assert pipeline_def.runtime_type_named(builtin_type.name).is_builtin
+        assert pipeline_def.has_dagster_type(builtin_type.name)
+        assert pipeline_def.dagster_type_named(builtin_type.name).is_builtin
 
 
 def test_python_mapping():

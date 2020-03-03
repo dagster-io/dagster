@@ -205,7 +205,7 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
             )
 
     # add all the storage-compatible plugin resource keys
-    for runtime_type in solid_def.all_runtime_types():
+    for runtime_type in solid_def.all_dagster_types():
         for auto_plugin in runtime_type.auto_plugins:
             if auto_plugin.compatible_with_storage_def(system_storage_def):
                 resource_keys = resource_keys.union(auto_plugin.required_resource_keys())

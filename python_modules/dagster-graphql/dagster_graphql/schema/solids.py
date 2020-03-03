@@ -236,7 +236,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._input_definition.runtime_type)
+        return to_dauphin_runtime_type(self._input_definition.dagster_type)
 
 
 class DauphinOutputDefinition(dauphin.ObjectType):
@@ -261,7 +261,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._output_definition.runtime_type)
+        return to_dauphin_runtime_type(self._output_definition.dagster_type)
 
 
 class DauphinInput(dauphin.ObjectType):

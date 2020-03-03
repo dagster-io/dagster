@@ -750,7 +750,7 @@ ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 def construct_dagster_type_dictionary(solid_defs):
     type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
-        for runtime_type in solid_def.all_runtime_types():
+        for runtime_type in solid_def.all_dagster_types():
             if not runtime_type.name:
                 continue
             if runtime_type.name not in type_dict:

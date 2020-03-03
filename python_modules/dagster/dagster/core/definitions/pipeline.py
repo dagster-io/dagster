@@ -3,7 +3,8 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.serdes import whitelist_for_serdes
-from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import construct_dagster_type_dictionary
+from dagster.utils.backcompat import rename_warning
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
@@ -170,7 +171,7 @@ class PipelineDefinition(IContainSolids, object):
         # eager toposort solids to detect cycles
         self.solids_in_topological_order = self._solids_in_topological_order()
 
-        self._runtime_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
+        self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
         self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self._preset_dict = {}
@@ -361,15 +362,35 @@ class PipelineDefinition(IContainSolids, object):
         return ExecutionSelector(self.name, list(self._solid_dict.keys()))
 
     def has_runtime_type(self, name):
+        rename_warning(
+            new_name='has_dagster_type', old_name='has_runtime_type', breaking_version='0.8.0'
+        )
         check.str_param(name, 'name')
-        return name in self._runtime_type_dict
+        return name in self._dagster_type_dict
 
     def runtime_type_named(self, name):
+        rename_warning(
+            new_name='dagster_type_named', old_name='runtime_type_named', breaking_version='0.8.0'
+        )
         check.str_param(name, 'name')
-        return self._runtime_type_dict[name]
+        return self._dagster_type_dict[name]
 
     def all_runtime_types(self):
-        return self._runtime_type_dict.values()
+        rename_warning(
+            new_name='all_dagster_types', old_name='all_runtime_types', breaking_version='0.8.0'
+        )
+        return self._dagster_type_dict.values()
+
+    def has_dagster_type(self, name):
+        check.str_param(name, 'name')
+        return name in self._dagster_type_dict
+
+    def dagster_type_named(self, name):
+        check.str_param(name, 'name')
+        return self._dagster_type_dict[name]
+
+    def all_dagster_types(self):
+        return self._dagster_type_dict.values()
 
     @property
     def all_solid_defs(self):
@@ -528,11 +549,11 @@ def _validate_inputs(dependency_structure, solid_dict):
                         'the output of a previous solid and can not be hydrated from configuration, '
                         'creating an impossible to execute pipeline. '
                         'Possible solutions are:\n'
-                        '  * add a input_hydration_config for the type "{runtime_type}"\n'
+                        '  * add a input_hydration_config for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
                             input_name=handle.input_def.name,
-                            runtime_type=handle.input_def.dagster_type.display_name,
+                            dagster_type=handle.input_def.dagster_type.display_name,
                         )
                     )
 

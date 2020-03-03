@@ -248,7 +248,7 @@ def test_types_descent():
     def layered_types():
         outer_solid()
 
-    assert layered_types.has_runtime_type('Foo')
+    assert layered_types.has_dagster_type('Foo')
 
 
 def test_deep_mapping():

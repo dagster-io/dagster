@@ -64,3 +64,17 @@ def canonicalize_backcompat_args(
         return coerce_old_to_new(old_val) if coerce_old_to_new else old_val
 
     return new_val
+
+
+def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=None):
+    '''
+    Common utility for managing backwards compatibility of renaming.
+    '''
+    warnings.warn(
+        '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}" instead.'.format(
+            old_name=old_name, new_name=new_name, breaking_version=breaking_version,
+        )
+        + (' ' + additional_warn_txt)
+        if additional_warn_txt
+        else '',
+    )

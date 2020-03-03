@@ -265,10 +265,10 @@ class Manager(object):
                 )
             )
 
-        runtime_type = self.solid_def.output_def_named(output_name).runtime_type
+        dagster_type = self.solid_def.output_def_named(output_name).dagster_type
 
         out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
-        scrapbook.glue(output_name, write_value(runtime_type, value, out_file))
+        scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
 
     def yield_event(self, dagster_event):
         '''Yield a dagster event directly from notebook code.
@@ -302,7 +302,7 @@ class Manager(object):
 
     def load_parameter(self, input_name, input_value):
         input_def = self.solid_def.input_def_named(input_name)
-        return read_value(input_def.runtime_type, input_value)
+        return read_value(input_def.dagster_type, input_value)
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()
