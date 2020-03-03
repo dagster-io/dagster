@@ -299,6 +299,14 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.STEP_RESTARTED
 
     @property
+    def is_pipeline_success(self):
+        return self.event_type == DagsterEventType.PIPELINE_SUCCESS
+
+    @property
+    def is_pipeline_failure(self):
+        return self.event_type == DagsterEventType.PIPELINE_FAILURE
+
+    @property
     def is_failure(self):
         return self.event_type in FAILURE_EVENTS
 
@@ -416,8 +424,11 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_UP_FOR_RETRY,
             step_context=step_context,
             event_specific_data=step_retry_data,
-            message='Execution of step "{step_key}" failed and has requested a retry.'.format(
-                step_key=step_context.step.key
+            message='Execution of step "{step_key}" failed and has requested a retry{wait_str}.'.format(
+                step_key=step_context.step.key,
+                wait_str=' in {n} seconds'.format(n=step_retry_data.seconds_to_wait)
+                if step_retry_data.seconds_to_wait
+                else '',
             ),
         )
 

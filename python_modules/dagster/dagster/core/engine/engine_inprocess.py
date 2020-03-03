@@ -89,11 +89,7 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
                 retries=pipeline_context.executor_config.retries
             )
             while not active_execution.is_complete:
-                steps = active_execution.get_steps_to_execute(limit=1)
-                check.invariant(
-                    len(steps) == 1, 'Invariant Violation: expected step to be available to execute'
-                )
-                step = steps[0]
+                step = active_execution.get_next_step()
 
                 step_context = pipeline_context.for_step(step)
                 check.invariant(
@@ -284,7 +280,7 @@ def dagster_event_sequence_for_step(step_context):
             yield step_event
 
     # case (1) in top comment
-    except RetryRequested as e:
+    except RetryRequested as retry_request:
         retries = step_context.executor_config.retries
         retry_err_info = serializable_error_info_from_exc_info(sys.exc_info())
 
@@ -300,10 +296,10 @@ def dagster_event_sequence_for_step(step_context):
                 step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
             )
         else:  # retries.enabled or retries.deferred
-            attempts = retries.get_attempt_count(step_context.step.key)
-            if attempts >= e.max_retries:
+            prev_attempts = retries.get_attempt_count(step_context.step.key)
+            if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
-                    message='Exceeded max_retries of {}'.format(e.max_retries),
+                    message='Exceeded max_retries of {}'.format(retry_request.max_retries),
                     stack=retry_err_info.stack,
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
@@ -313,8 +309,12 @@ def dagster_event_sequence_for_step(step_context):
                     step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
                 )
             else:
+                attempt_num = prev_attempts + 1
                 yield DagsterEvent.step_retry_event(
-                    step_context, StepRetryData(error=retry_err_info),
+                    step_context,
+                    StepRetryData(
+                        error=retry_err_info, seconds_to_wait=retry_request.seconds_to_wait,
+                    ),
                 )
 
     # case (2) in top comment

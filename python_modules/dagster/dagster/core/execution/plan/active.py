@@ -1,3 +1,5 @@
+import time
+
 from dagster import check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.retries import Retries
@@ -25,6 +27,7 @@ class ActiveExecution(object):
         self._executable = []
         self._pending_skip = []
         self._pending_retry = []
+        self._waiting_to_retry = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight = set()
@@ -60,8 +63,40 @@ class ActiveExecution(object):
             self._pending_skip.append(key)
             del self._pending[key]
 
+        ready_to_retry = []
+        tick_time = time.time()
+        for key, at_time in self._waiting_to_retry.items():
+            if tick_time >= at_time:
+                ready_to_retry.append(key)
+
+        for key in ready_to_retry:
+            self._executable.append(key)
+            del self._waiting_to_retry[key]
+
+    def sleep_til_ready(self):
+        now = time.time()
+        sleep_amt = min([ready_at - now for ready_at in self._waiting_to_retry.values()])
+        if sleep_amt > 0:
+            time.sleep(sleep_amt)
+
+    def get_next_step(self):
+        check.invariant(not self.is_complete, 'Can not call get_next_step when is_complete is True')
+
+        steps = self.get_steps_to_execute(limit=1)
+        step = None
+
+        if steps:
+            step = steps[0]
+        elif self._waiting_to_retry:
+            self.sleep_til_ready()
+            step = self.get_next_step()
+
+        check.invariant(step is not None, 'Unexpected ActiveExecution state')
+        return step
+
     def get_steps_to_execute(self, limit=None):
         check.opt_int_param(limit, 'limit')
+        self._update()
 
         steps = sorted(
             [self._plan.get_step_by_key(key) for key in self._executable], key=self._sort_key_fn
@@ -77,6 +112,8 @@ class ActiveExecution(object):
         return steps
 
     def get_steps_to_skip(self):
+        self._update()
+
         steps = []
         steps_to_skip = list(self._pending_skip)
         for key in steps_to_skip:
@@ -125,21 +162,25 @@ class ActiveExecution(object):
         self._skipped.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_up_for_retry(self, step_key):
+    def mark_up_for_retry(self, step_key, at_time=None):
         check.invariant(
             not self._retries.disabled,
             'Attempted to mark {} as up for retry but retries are disabled'.format(step_key),
         )
+        check.opt_float_param(at_time, 'at_time')
 
         # if retries are enabled - queue this back up
         if self._retries.enabled:
-            self._pending[step_key] = self._plan.execution_deps()[step_key]
+            if at_time:
+                self._waiting_to_retry[step_key] = at_time
+            else:
+                self._pending[step_key] = self._plan.execution_deps()[step_key]
+
         elif self._retries.deferred:
             self._completed.add(step_key)
 
         self._retries.mark_attempt(step_key)
         self._in_flight.remove(step_key)
-        self._update()
 
     def _mark_complete(self, step_key):
         check.invariant(
@@ -154,7 +195,6 @@ class ActiveExecution(object):
         )
         self._in_flight.remove(step_key)
         self._completed.add(step_key)
-        self._update()
 
     def handle_event(self, dagster_event):
         check.inst_param(dagster_event, 'dagster_event', DagsterEvent)
@@ -164,7 +204,12 @@ class ActiveExecution(object):
         elif dagster_event.is_step_success:
             self.mark_success(dagster_event.step_key)
         elif dagster_event.is_step_up_for_retry:
-            self.mark_up_for_retry(dagster_event.step_key)
+            self.mark_up_for_retry(
+                dagster_event.step_key,
+                time.time() + dagster_event.step_retry_data.seconds_to_wait
+                if dagster_event.step_retry_data.seconds_to_wait
+                else None,
+            )
 
     def verify_complete(self, pipeline_context, step_key):
         '''Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
@@ -185,4 +230,5 @@ class ActiveExecution(object):
             and len(self._executable) == 0
             and len(self._pending_skip) == 0
             and len(self._pending_retry) == 0
+            and len(self._waiting_to_retry) == 0
         )

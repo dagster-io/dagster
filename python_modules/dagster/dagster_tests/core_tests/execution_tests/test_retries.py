@@ -1,4 +1,5 @@
 import os
+import time
 from collections import defaultdict
 
 import pytest
@@ -11,6 +12,7 @@ from dagster import (
     RetryRequested,
     RunConfig,
     execute_pipeline,
+    execute_pipeline_iterator,
     lambda_solid,
     pipeline,
     seven,
@@ -197,3 +199,54 @@ def test_retry_deferral():
     assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
     assert DagsterEventType.STEP_RESTARTED not in events
     assert DagsterEventType.STEP_SUCCESS not in events
+
+
+DELAY = 2
+
+
+def define_retry_wait_fixed_pipeline():
+    @solid(config=str)
+    def fail_first_and_wait(context):
+        file = os.path.join(context.solid_config, 'i_threw_up')
+        if os.path.exists(file):
+            return 'okay perfect'
+        else:
+            open(file, 'a').close()
+            raise RetryRequested(seconds_to_wait=DELAY)
+
+    @pipeline
+    def step_retry():
+        fail_first_and_wait()
+
+    return step_retry
+
+
+@executors
+def test_step_retry_fixed_wait(environment):
+    with seven.TemporaryDirectory() as tempdir:
+        env = dict(environment)
+        env['solids'] = {'fail_first_and_wait': {'config': tempdir}}
+
+        event_iter = execute_pipeline_iterator(
+            ExecutionTargetHandle.for_pipeline_python_file(
+                __file__, 'define_retry_wait_fixed_pipeline'
+            ).build_pipeline_definition(),
+            environment_dict=env,
+            instance=DagsterInstance.local_temp(),
+        )
+        start_wait = None
+        end_wait = None
+        success = None
+        for event in event_iter:
+            if event.is_step_up_for_retry:
+                start_wait = time.time()
+            if event.is_step_restarted:
+                end_wait = time.time()
+            if event.is_pipeline_success:
+                success = True
+
+        assert success
+        assert start_wait is not None
+        assert end_wait is not None
+        delay = end_wait - start_wait
+        assert delay > DELAY

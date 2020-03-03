@@ -97,10 +97,12 @@ class StepFailureData(namedtuple('_StepFailureData', 'error user_failure_data'))
 
 
 @whitelist_for_serdes
-class StepRetryData(namedtuple('_StepRetryData', 'error')):
-    def __new__(cls, error):
+class StepRetryData(namedtuple('_StepRetryData', 'error seconds_to_wait')):
+    def __new__(cls, error, seconds_to_wait=None):
         return super(StepRetryData, cls).__new__(
-            cls, error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            cls,
+            error=check.opt_inst_param(error, 'error', SerializableErrorInfo),
+            seconds_to_wait=check.opt_int_param(seconds_to_wait, 'seconds_to_wait'),
         )
 
 
