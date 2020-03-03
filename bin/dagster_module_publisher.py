@@ -288,7 +288,8 @@ class DagsterModulePublisher:
 
             versions.append(res)
 
-        return versions
+        assert all_equal(versions)
+        return versions[0]
 
     def commit_new_version(self, new_version, dry_run=True):
         try:

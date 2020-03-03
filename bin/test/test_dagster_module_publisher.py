@@ -3,10 +3,12 @@ import re
 
 import pytest
 
+from ..dagster_module import DagsterModule
 from ..dagster_module_publisher import (
     DagsterModulePublisher,
     get_core_module_directories,
     get_library_module_directories,
+    get_nightly_version,
 )
 
 
@@ -53,3 +55,19 @@ def test_bad_core_module(bad_core_module):  # pylint: disable=unused-argument
     assert exc_info.match(
         re.compile(r'Found unexpected modules:.*bad_core_module', re.MULTILINE | re.DOTALL)
     )
+
+
+def test_set_version_info():
+    new_version = '100.100.0'
+    new_nightly_version = get_nightly_version()
+    dmp = DagsterModulePublisher()
+
+    # Test setting both version and nightly
+    version = dmp.set_version_info(new_version=new_version, dry_run=True)
+    assert version == {'__version__': new_version, '__nightly__': new_nightly_version}
+
+    # Test only setting nightly
+    version = dmp.set_version_info(dry_run=True)
+    dm = DagsterModule('dagster', is_library=False)
+    existing_version = dm.get_version_info()['__version__']
+    assert version == {'__version__': existing_version, '__nightly__': new_nightly_version}
