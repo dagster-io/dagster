@@ -151,7 +151,7 @@ def get_inputs_field(solid, handle, dependency_structure):
 
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
-        if inp.runtime_type.input_hydration_config:
+        if inp.dagster_type.input_hydration_config:
             inp_handle = SolidInputHandle(solid, inp)
             # If this input is not satisfied by a dependency you must
             # provide it via config
@@ -159,7 +159,7 @@ def get_inputs_field(solid, handle, dependency_structure):
                 name
             ):
                 inputs_field_fields[name] = Field(
-                    inp.runtime_type.input_hydration_config.schema_type
+                    inp.dagster_type.input_hydration_config.schema_type
                 )
 
     if not inputs_field_fields:
@@ -179,9 +179,9 @@ def get_outputs_field(solid, handle):
 
     output_dict_fields = {}
     for name, out in solid_def.output_dict.items():
-        if out.runtime_type.output_materialization_config:
+        if out.dagster_type.output_materialization_config:
             output_dict_fields[name] = Field(
-                out.runtime_type.output_materialization_config.schema_type, is_required=False
+                out.dagster_type.output_materialization_config.schema_type, is_required=False
             )
 
     output_entry_dict = Shape(output_dict_fields)

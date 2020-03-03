@@ -92,13 +92,13 @@ def assert_type_check(type_check):
     assert isinstance(type_check, TypeCheck) and type_check.success
 
 
-def assert_success(runtime_type, value):
-    type_check_result = runtime_type.type_check(None, value)
+def assert_success(dagster_type, value):
+    type_check_result = dagster_type.type_check(None, value)
     assert_type_check(type_check_result)
 
 
-def assert_failure(runtime_type, value):
-    res = runtime_type.type_check(None, value)
+def assert_failure(dagster_type, value):
+    res = dagster_type.type_check(None, value)
     assert not res.success
 
 

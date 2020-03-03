@@ -198,7 +198,7 @@ def get_step_input(
     if solid_config and input_name in solid_config.inputs:
         return StepInput(
             input_name,
-            input_def.runtime_type,
+            input_def.dagster_type,
             StepInputSourceType.CONFIG,
             config_data=solid_config.inputs[input_name],
         )
@@ -208,7 +208,7 @@ def get_step_input(
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
         return StepInput(
             input_name,
-            input_def.runtime_type,
+            input_def.dagster_type,
             StepInputSourceType.SINGLE_OUTPUT,
             [plan_builder.get_output_handle(solid_output_handle)],
         )
@@ -217,7 +217,7 @@ def get_step_input(
         solid_output_handles = dependency_structure.get_multi_deps(input_handle)
         return StepInput(
             input_name,
-            input_def.runtime_type,
+            input_def.dagster_type,
             StepInputSourceType.MULTIPLE_OUTPUTS,
             [
                 plan_builder.get_output_handle(solid_output_handle)
@@ -232,7 +232,7 @@ def get_step_input(
             parent_input = parent_inputs[parent_name]
             return StepInput(
                 input_name,
-                input_def.runtime_type,
+                input_def.dagster_type,
                 parent_input.source_type,
                 parent_input.source_handles,
                 parent_input.config_data,
@@ -242,7 +242,7 @@ def get_step_input(
     # the output of another solid or provided via environment config.
 
     # We will allow this for "Nothing" type inputs and continue.
-    if input_def.runtime_type.kind == DagsterTypeKind.NOTHING:
+    if input_def.dagster_type.kind == DagsterTypeKind.NOTHING:
         return None
 
     # Otherwise we throw an error.

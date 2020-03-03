@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 
 from dagster import check
@@ -8,7 +9,7 @@ from .utils import check_valid_name
 
 class InputDefinition(object):
     '''Defines an argument to a solid's compute function.
-    
+
     Inputs may flow from previous solids' outputs, or be stubbed using config. They may optionally
     be typed using the Dagster type system.
 
@@ -25,7 +26,7 @@ class InputDefinition(object):
         ''
         self._name = check_valid_name(name)
 
-        self._runtime_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
+        self._dagster_type = check.inst(resolve_dagster_type(dagster_type), DagsterType)
 
         self._description = check.opt_str_param(description, 'description')
 
@@ -35,7 +36,14 @@ class InputDefinition(object):
 
     @property
     def runtime_type(self):
-        return self._runtime_type
+        warnings.warn(
+            '"runtime_type" is deprecated and will be removed in 0.8.0, use "dagster_type" instead.'
+        )
+        return self._dagster_type
+
+    @property
+    def dagster_type(self):
+        return self._dagster_type
 
     @property
     def description(self):

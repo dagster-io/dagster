@@ -28,8 +28,8 @@ from dagster.core.types.dagster_type import (
 )
 
 
-def inner_type_key_set(runtime_type):
-    return {t.key for t in runtime_type.inner_types}
+def inner_type_key_set(dagster_type):
+    return {t.key for t in dagster_type.inner_types}
 
 
 def test_inner_types():
@@ -84,7 +84,7 @@ def test_python_mapping():
     def add_one(num):
         return num + 1
 
-    assert add_one.input_defs[0].runtime_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.name == 'Int'
 
     runtime = resolve_dagster_type(float)
     runtime.type_check(None, 1.0)
@@ -97,7 +97,7 @@ def test_python_mapping():
     assert not res.success
 
 
-def test_double_runtime_type():
+def test_double_dagster_type():
 
     AlwaysSucceedsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: True)
     AlwaysFailsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: False)

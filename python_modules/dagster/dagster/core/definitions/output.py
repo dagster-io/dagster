@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 
 from dagster import check
@@ -33,7 +34,7 @@ class OutputDefinition(object):
         self, dagster_type=None, name=None, description=None, is_optional=None, is_required=None
     ):
         self._name = check_valid_name(check.opt_str_param(name, 'name', DEFAULT_OUTPUT))
-        self._runtime_type = resolve_dagster_type(dagster_type)
+        self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, 'description')
         check.opt_bool_param(is_optional, 'is_optional')
         check.opt_bool_param(is_required, 'is_required')
@@ -54,7 +55,14 @@ class OutputDefinition(object):
 
     @property
     def runtime_type(self):
-        return self._runtime_type
+        warnings.warn(
+            '"runtime_type" is deprecated and will be removed in 0.8.0, use "dagster_type" instead.'
+        )
+        return self._dagster_type
+
+    @property
+    def dagster_type(self):
+        return self._dagster_type
 
     @property
     def description(self):

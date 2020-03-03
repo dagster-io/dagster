@@ -102,11 +102,11 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     @property
     def has_configurable_inputs(self):
-        return any([inp.runtime_type.input_hydration_config for inp in self._input_defs])
+        return any([inp.dagster_type.input_hydration_config for inp in self._input_defs])
 
     @property
     def has_configurable_outputs(self):
-        return any([out.runtime_type.output_materialization_config for out in self._output_defs])
+        return any([out.dagster_type.output_materialization_config for out in self._output_defs])
 
     @abstractproperty
     def has_config_entry(self):
@@ -122,13 +122,13 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
     def all_input_output_types(self):
         for input_def in self._input_defs:
-            yield input_def.runtime_type
-            for inner_type in input_def.runtime_type.inner_types:
+            yield input_def.dagster_type
+            for inner_type in input_def.dagster_type.inner_types:
                 yield inner_type
 
         for output_def in self._output_defs:
-            yield output_def.runtime_type
-            for inner_type in output_def.runtime_type.inner_types:
+            yield output_def.dagster_type
+            for inner_type in output_def.dagster_type.inner_types:
                 yield inner_type
 
     def __call__(self, *args, **kwargs):
@@ -518,12 +518,12 @@ def _validate_in_mappings(input_mappings, solid_dict, name):
 
             target_input = target_solid.input_def_named(mapping.input_name)
 
-            if target_input.runtime_type != mapping.definition.runtime_type:
+            if target_input.dagster_type != mapping.definition.dagster_type:
                 raise DagsterInvalidDefinitionError(
                     "In CompositeSolid '{name}' input "
-                    "'{mapping.definition.name}' of type {mapping.definition.runtime_type.display_name} maps to "
+                    "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
                     "{mapping.solid_name}.{mapping.input_name} of different type "
-                    "{target_input.runtime_type.display_name}. InputMapping source and "
+                    "{target_input.dagster_type.display_name}. InputMapping source and "
                     "destination must have the same type.".format(
                         mapping=mapping, name=name, target_input=target_input
                     )
@@ -570,12 +570,12 @@ def _validate_out_mappings(output_mappings, solid_dict, name):
 
             target_output = target_solid.output_def_named(mapping.output_name)
 
-            if target_output.runtime_type != mapping.definition.runtime_type:
+            if target_output.dagster_type != mapping.definition.dagster_type:
                 raise DagsterInvalidDefinitionError(
                     "In CompositeSolid '{name}' output "
-                    "'{mapping.definition.name}' of type {mapping.definition.runtime_type.display_name} "
+                    "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} "
                     "maps from {mapping.solid_name}.{mapping.output_name} of different type "
-                    "{target_output.runtime_type.display_name}. OutputMapping source "
+                    "{target_output.dagster_type.display_name}. OutputMapping source "
                     "and destination must have the same type.".format(
                         mapping=mapping, name=name, target_output=target_output
                     )

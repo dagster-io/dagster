@@ -27,18 +27,18 @@ def test_dagster_type_decorator_name_desc():
     class Something(object):
         pass
 
-    runtime_type = resolve_dagster_type(Something)
-    assert runtime_type.name == 'DifferentName'
-    assert runtime_type.description == 'desc'
+    dagster_type = resolve_dagster_type(Something)
+    assert dagster_type.name == 'DifferentName'
+    assert dagster_type.description == 'desc'
 
 
 def test_make_dagster_type():
     SomeNamedTuple = collections.namedtuple('SomeNamedTuple', 'prop')
     DagsterSomeNamedTuple = PythonObjectDagsterType(SomeNamedTuple)
-    runtime_type = resolve_dagster_type(DagsterSomeNamedTuple)
-    assert runtime_type.name == 'SomeNamedTuple'
+    dagster_type = resolve_dagster_type(DagsterSomeNamedTuple)
+    assert dagster_type.name == 'SomeNamedTuple'
     assert SomeNamedTuple(prop='foo').prop == 'foo'
 
     DagsterNewNameNamedTuple = PythonObjectDagsterType(SomeNamedTuple, name='OverwriteName')
-    runtime_type = resolve_dagster_type(DagsterNewNameNamedTuple)
-    assert runtime_type.name == 'OverwriteName'
+    dagster_type = resolve_dagster_type(DagsterNewNameNamedTuple)
+    assert dagster_type.name == 'OverwriteName'

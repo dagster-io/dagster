@@ -25,7 +25,7 @@ def test_single_typed_input():
 
     assert add_one_ex.input_defs[0].name == add_one_infer.input_defs[0].name
     assert (
-        add_one_ex.input_defs[0].runtime_type.name == add_one_infer.input_defs[0].runtime_type.name
+        add_one_ex.input_defs[0].dagster_type.name == add_one_infer.input_defs[0].dagster_type.name
     )
 
 
@@ -34,7 +34,7 @@ def test_precedence():
     def add_one(_context, num: Any):
         return num + 1
 
-    assert add_one.input_defs[0].runtime_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.name == 'Int'
 
 
 def test_double_typed_input():
@@ -45,10 +45,10 @@ def test_double_typed_input():
     assert subtract
     assert len(subtract.input_defs) == 2
     assert subtract.input_defs[0].name == 'num_one'
-    assert subtract.input_defs[0].runtime_type.name == 'Int'
+    assert subtract.input_defs[0].dagster_type.name == 'Int'
 
     assert subtract.input_defs[1].name == 'num_two'
-    assert subtract.input_defs[1].runtime_type.name == 'Int'
+    assert subtract.input_defs[1].dagster_type.name == 'Int'
 
 
 def test_one_arg_typed_lambda_solid():
@@ -59,7 +59,7 @@ def test_one_arg_typed_lambda_solid():
     assert one_arg
     assert len(one_arg.input_defs) == 1
     assert one_arg.input_defs[0].name == 'num'
-    assert one_arg.input_defs[0].runtime_type.name == 'Int'
+    assert one_arg.input_defs[0].dagster_type.name == 'Int'
     assert len(one_arg.output_defs) == 1
 
 
@@ -71,10 +71,10 @@ def test_single_typed_input_and_output():
     assert add_one
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == 'num'
-    assert add_one.input_defs[0].runtime_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.name == 'Int'
 
     assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].runtime_type.name == 'Int'
+    assert add_one.output_defs[0].dagster_type.name == 'Int'
 
 
 def test_single_typed_input_and_output_lambda():
@@ -85,10 +85,10 @@ def test_single_typed_input_and_output_lambda():
     assert add_one
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == 'num'
-    assert add_one.input_defs[0].runtime_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.name == 'Int'
 
     assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].runtime_type.name == 'Int'
+    assert add_one.output_defs[0].dagster_type.name == 'Int'
 
 
 def test_wrapped_input_and_output_lambda():
@@ -99,12 +99,12 @@ def test_wrapped_input_and_output_lambda():
     assert add_one
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == 'nums'
-    assert add_one.input_defs[0].runtime_type.kind == DagsterTypeKind.LIST
-    assert add_one.input_defs[0].runtime_type.inner_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.kind == DagsterTypeKind.LIST
+    assert add_one.input_defs[0].dagster_type.inner_type.name == 'Int'
 
     assert len(add_one.output_defs) == 1
-    assert add_one.output_defs[0].runtime_type.kind == DagsterTypeKind.NULLABLE
-    assert add_one.output_defs[0].runtime_type.inner_type.kind == DagsterTypeKind.LIST
+    assert add_one.output_defs[0].dagster_type.kind == DagsterTypeKind.NULLABLE
+    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST
 
 
 def test_kitchen_sink():
@@ -119,28 +119,28 @@ def test_kitchen_sink():
         pass
 
     assert sink.input_defs[0].name == 'n'
-    assert sink.input_defs[0].runtime_type.name == 'Int'
+    assert sink.input_defs[0].dagster_type.name == 'Int'
 
     assert sink.input_defs[1].name == 'f'
-    assert sink.input_defs[1].runtime_type.name == 'Float'
+    assert sink.input_defs[1].dagster_type.name == 'Float'
 
     assert sink.input_defs[2].name == 'b'
-    assert sink.input_defs[2].runtime_type.name == 'Bool'
+    assert sink.input_defs[2].dagster_type.name == 'Bool'
 
     assert sink.input_defs[3].name == 's'
-    assert sink.input_defs[3].runtime_type.name == 'String'
+    assert sink.input_defs[3].dagster_type.name == 'String'
 
     assert sink.input_defs[4].name == 'x'
-    assert sink.input_defs[4].runtime_type.name == 'Any'
+    assert sink.input_defs[4].dagster_type.name == 'Any'
 
     assert sink.input_defs[5].name == 'o'
-    assert sink.input_defs[5].runtime_type.kind == DagsterTypeKind.NULLABLE
+    assert sink.input_defs[5].dagster_type.kind == DagsterTypeKind.NULLABLE
 
     assert sink.input_defs[6].name == 'l'
-    assert sink.input_defs[6].runtime_type.kind == DagsterTypeKind.LIST
+    assert sink.input_defs[6].dagster_type.kind == DagsterTypeKind.LIST
 
     assert sink.input_defs[7].name == 'c'
-    assert sink.input_defs[7].runtime_type.name == 'Custom'
+    assert sink.input_defs[7].dagster_type.name == 'Custom'
 
 
 def test_composites():
@@ -219,6 +219,6 @@ def test_nested_kitchen_sink():
         pass
 
     assert (
-        no_execute.output_defs[0].runtime_type.display_name
+        no_execute.output_defs[0].dagster_type.display_name
         == '[Tuple[[Int],String,Dict[String,[String]?]]]?'
     )

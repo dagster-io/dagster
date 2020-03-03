@@ -303,23 +303,23 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
 
     # Here we check for the case where no value will be provided where one is expected.
     if (
-        output_def.runtime_type.kind == DagsterTypeKind.NOTHING
-        and not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
+        output_def.dagster_type.kind == DagsterTypeKind.NOTHING
+        and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
     ):
         raise DagsterInvalidDefinitionError(
             (
                 'Input "{input_def.name}" to solid "{from_solid}" can not depend on the output '
                 '"{output_def.name}" from solid "{dep.solid}". '
                 'Input "{input_def.name}" expects a value of type '
-                '{input_def.runtime_type.display_name} and output "{output_def.name}" returns '
-                'type {output_def.runtime_type.display_name}{extra}.'
+                '{input_def.dagster_type.display_name} and output "{output_def.name}" returns '
+                'type {output_def.dagster_type.display_name}{extra}.'
             ).format(
                 from_solid=from_solid,
                 dep=dep,
                 output_def=output_def,
                 input_def=input_def,
                 extra=' (which produces no value)'
-                if output_def.runtime_type.kind == DagsterTypeKind.NOTHING
+                if output_def.dagster_type.kind == DagsterTypeKind.NOTHING
                 else '',
             )
         )

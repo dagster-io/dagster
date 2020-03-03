@@ -115,9 +115,9 @@ def test_basic_closed_typing_dictionary_output():
         return {'key': 'value'}
 
     assert execute_solid(emit_dict).output_value() == {'key': 'value'}
-    assert emit_dict.output_defs[0].runtime_type.key == 'TypedPythonDict.String.String'
-    assert emit_dict.output_defs[0].runtime_type.key_type.name == 'String'
-    assert emit_dict.output_defs[0].runtime_type.value_type.name == 'String'
+    assert emit_dict.output_defs[0].dagster_type.key == 'TypedPythonDict.String.String'
+    assert emit_dict.output_defs[0].dagster_type.key_type.name == 'String'
+    assert emit_dict.output_defs[0].dagster_type.value_type.name == 'String'
 
 
 def test_basic_closed_typing_dictionary_input():

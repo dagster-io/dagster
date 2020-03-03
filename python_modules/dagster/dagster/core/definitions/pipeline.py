@@ -520,8 +520,8 @@ def _validate_inputs(dependency_structure, solid_dict):
         for handle in solid.input_handles():
             if not dependency_structure.has_deps(handle):
                 if (
-                    not handle.input_def.runtime_type.input_hydration_config
-                    and not handle.input_def.runtime_type.kind == DagsterTypeKind.NOTHING
+                    not handle.input_def.dagster_type.input_hydration_config
+                    and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
@@ -532,7 +532,7 @@ def _validate_inputs(dependency_structure, solid_dict):
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,
                             input_name=handle.input_def.name,
-                            runtime_type=handle.input_def.runtime_type.display_name,
+                            runtime_type=handle.input_def.dagster_type.display_name,
                         )
                     )
 

@@ -380,7 +380,7 @@ def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
     input_names = [
         input_def.name
         for input_def in input_defs
-        if not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
+        if not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
     ]
 
     @wraps(fn)
@@ -403,7 +403,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
     input_names = [
         input_def.name
         for input_def in input_defs
-        if not input_def.runtime_type.kind == DagsterTypeKind.NOTHING
+        if not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
     ]
 
     @wraps(fn)
@@ -458,7 +458,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
                             [
                                 '\'{result_name}\': {runtime_type}'.format(
                                     result_name=output_def.name,
-                                    runtime_type=output_def.runtime_type,
+                                    runtime_type=output_def.dagster_type,
                                 )
                                 for output_def in output_defs
                             ]
@@ -481,10 +481,10 @@ def validate_solid_fn(
     )
     if exclude_nothing:
         names = set(
-            inp.name for inp in input_defs if not inp.runtime_type.kind == DagsterTypeKind.NOTHING
+            inp.name for inp in input_defs if not inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
         nothing_names = set(
-            inp.name for inp in input_defs if inp.runtime_type.kind == DagsterTypeKind.NOTHING
+            inp.name for inp in input_defs if inp.dagster_type.kind == DagsterTypeKind.NOTHING
         )
     else:
         names = set(inp.name for inp in input_defs)
