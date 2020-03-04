@@ -1,8 +1,59 @@
 # Changelog
 
+## 0.7.3
+
+**New**
+
+- It is now possible to configure a dagit instance to disable executing pipeline runs in a local
+  subprocess.
+- Resource initialization, teardown, and associated failure states now emit structured events
+  visible in Dagit. Structured events for pipeline errors and multiprocess execution have been
+  consolidated and rationalized.
+- Support Redis queue provider in `dagster-k8s` Helm chart.
+- Support external postgresql in `dagster-k8s` Helm chart.
+
+
+**Bugfix**
+
+- Fixed an issue with inaccurate timings on some resource initializations.
+- Fixed an issue that could cause the multiprocess engine to spin forever.
+- Fixed an issue with default value resolution when a config value was set using `SourceString`.
+- Fixed an issue when loading logs from a pipeline belonging to a different repository in Dagit.
+- Fixed an issue with where the CLI command `dagster schedule up` would fail in certain scenarios
+  with the `SystemCronScheduler`.
+
+**Pandas**
+
+- Column constraints can now be configured to permit NaN values.
+
+**Dagstermill**
+
+- Removed a spurious dependency on sklearn.
+
+**Docs**
+
+- Improvements and fixes to docs.
+- Restored dagster.readthedocs.io.
+
+**Experimental**
+- An initial implementation of solid retries, throwing a `RetryRequested` exception, was added.
+  This API is experimental and likely to change.
+
+**Other**
+- Renamed property `runtime_type` to `dagster_type` in definitions. The following are deprecated
+  and will be removed in a future version.
+  * `InputDefinition.runtime_type` is deprecated. Use `InputDefinition.dagster_type` instead.
+  * `OutputDefinition.runtime_type` is deprecated. Use `OutputDefinition.dagster_type` instead.
+  * `CompositeSolidDefinition.all_runtime_types` is deprecated. Use `CompositeSolidDefinition.all_dagster_types` instead.
+  * `SolidDefinition.all_runtime_types` is deprecated. Use `SolidDefinition.all_dagster_types` instead.
+  * `PipelineDefinition.has_runtime_type` is deprecated. Use `PipelineDefinition.has_dagster_type` instead.
+  * `PipelineDefinition.runtime_type_named` is deprecated. Use `PipelineDefinition.dagster_type_named` instead.
+  * `PipelineDefinition.all_runtime_types` is deprecated. Use `PipelineDefinition.all_dagster_types` instead.
+
 ## 0.7.2
 
 **Docs**
+
 - New docs site at docs.dagster.io.
 - dagster.readthedocs.io is currently stale due to availability issues.
 
@@ -19,6 +70,7 @@
 - Added support for environment variable config in dagster-snowflake.
 
 **Bugfixes**
+
 - Improved performance in Dagit waterfall view.
 - Fixed bug when executing solids downstream of a skipped solid.
 - Improved navigation experience for pipelines in Dagit.
