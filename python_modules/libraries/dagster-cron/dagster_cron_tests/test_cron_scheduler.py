@@ -59,10 +59,23 @@ def define_scheduler():
     )
 
 
+def define_scheduler_instance(tempdir):
+    return DagsterInstance(
+        instance_type=InstanceType.EPHEMERAL,
+        local_artifact_storage=LocalArtifactStorage(tempdir),
+        run_storage=InMemoryRunStorage(),
+        event_storage=InMemoryEventLogStorage(),
+        compute_log_manager=NoOpComputeLogManager(tempdir),
+        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
+        scheduler=SystemCronScheduler(os.path.join(tempdir, 'schedules')),
+    )
+
+
 def test_init():
     with TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
         repository = RepositoryDefinition(name="test_repository")
+        instance = define_scheduler_instance(tempdir)
+        scheduler_handle = define_scheduler()
 
         scheduler_handle = define_scheduler()
         assert scheduler_handle
@@ -84,16 +97,41 @@ def test_init():
             assert "/bin/python" in schedule.python_path
 
 
-def define_scheduler_instance(tempdir):
-    return DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=InMemoryRunStorage(),
-        event_storage=InMemoryEventLogStorage(),
-        compute_log_manager=NoOpComputeLogManager(tempdir),
-        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
-        scheduler=SystemCronScheduler(os.path.join(tempdir, 'schedules')),
-    )
+def test_re_init():
+    with TemporaryDirectory() as tempdir:
+        repository = RepositoryDefinition(name="test_repository")
+        instance = define_scheduler_instance(tempdir)
+        scheduler_handle = define_scheduler()
+
+        scheduler_handle = define_scheduler()
+        assert scheduler_handle
+
+        # Initialize scheduler
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            repository=repository,
+            instance=instance,
+        )
+
+        # Start schedule
+        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+
+        # Re-initialize scheduler
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            repository=repository,
+            instance=instance,
+        )
+
+        # Check schedules are saved to disk
+        assert 'schedules' in os.listdir(tempdir)
+
+        schedules = instance.all_schedules(repository)
+
+        for schedule in schedules:
+            assert "/bin/python" in schedule.python_path
 
 
 def test_start_and_stop_schedule():

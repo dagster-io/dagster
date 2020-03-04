@@ -87,7 +87,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
                 )
             )
 
-        instance.delete_schedule(schedule)
+        instance.delete_schedule(repository, schedule)
         self._end_cron_job(instance, repository, schedule)
 
         return schedule
