@@ -112,9 +112,8 @@ executor (taking advantage of the big box to which you've deployed Dagit), rathe
 single-process executor (which can be easier to reason about for test), you'll need to make sure
 your pipeline configuration YAML contains a block like the following:
 
-:: yaml
-
-    :caption: execution_config.yaml
+.. code-block:: yaml
+   :caption: execution_config.yaml
 
     execution:
       multiprocess:
