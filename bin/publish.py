@@ -114,7 +114,7 @@ def publish(nightly, autoclean, dry_run):
     click.echo('Publishing packages to PyPI...')
 
     if nightly:
-        new_nightly_version = dmp.set_version_info(dry_run=dry_run)
+        new_nightly_version = dmp.set_version_info(dry_run=dry_run)['__nightly__']
         dmp.commit_new_version(
             'nightly: {nightly}'.format(nightly=new_nightly_version), dry_run=dry_run
         )
