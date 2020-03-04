@@ -25,6 +25,10 @@ GET_SCHEDULES_QUERY = '''
             executionParamsString
             environmentConfigYaml
           }
+          runs {
+              runId
+          }
+          runsCount
           status
           pythonPath
           repositoryPath
