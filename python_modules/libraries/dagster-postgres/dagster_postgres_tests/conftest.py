@@ -3,6 +3,7 @@ import subprocess
 
 import pytest
 from dagster_postgres.run_storage import PostgresRunStorage
+from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 from dagster.utils import file_relative_path, pushd
@@ -113,5 +114,12 @@ def conn_string(postgres):  # pylint: disable=redefined-outer-name, unused-argum
 @pytest.fixture(scope='function')
 def clean_storage(conn_string):  # pylint: disable=redefined-outer-name
     storage = PostgresRunStorage.create_clean_storage(conn_string)
+    assert storage
+    return storage
+
+
+@pytest.fixture(scope='function')
+def clean_schedule_storage(conn_string):  # pylint: disable=redefined-outer-name
+    storage = PostgresScheduleStorage.create_clean_storage(conn_string)
     assert storage
     return storage

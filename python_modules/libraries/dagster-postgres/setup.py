@@ -41,6 +41,7 @@ def _do_setup(name='dagster-postgres'):
             name: [
                 'dagster_postgres/event_log/alembic/*',
                 'dagster_postgres/run_storage/alembic/*',
+                'dagster_postgres/schedule_storage/alembic/*',
             ]
         },
         include_package_data=True,

@@ -319,6 +319,11 @@ def dagster_postgres_tests():
                     'test-event-log-storage-db',
                     'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
                 ),
+                connect_sibling_docker_container(
+                    'postgres_multi',
+                    'test-schedule-storage-db',
+                    'POSTGRES_TEST_SCHEDULE_STORAGE_DB_HOST',
+                ),
                 "pushd ../",
                 "tox -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),

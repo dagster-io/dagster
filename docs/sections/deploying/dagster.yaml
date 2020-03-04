@@ -20,6 +20,17 @@ event_log_storage:
       db_name: test_event_log_storage
       port: 5432
 
+schedule_storage:
+  module: dagster_postgres.schedule_storage
+  class: PostgresScheduleStorage
+  config:
+    postgres_db:
+      username: test
+      password: test
+      hostname: localhost
+      db_name: test_schedule_storage
+      port: 5432
+
 local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
