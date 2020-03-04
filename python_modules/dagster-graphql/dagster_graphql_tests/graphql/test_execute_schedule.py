@@ -1,3 +1,4 @@
+import time
 import uuid
 
 import pytest
@@ -5,19 +6,46 @@ from dagster_graphql.test.utils import define_context_for_repository_yaml, execu
 
 from dagster import seven
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.scheduler.scheduler import ScheduleTickStatus
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.storage.schedules.sqlite import SqliteScheduleStorage
 from dagster.utils import file_relative_path
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
 from .utils import InMemoryRunLauncher
 
 
+def get_instance(temp_dir):
+    return DagsterInstance(
+        instance_type=InstanceType.EPHEMERAL,
+        local_artifact_storage=LocalArtifactStorage(temp_dir),
+        run_storage=InMemoryRunStorage(),
+        event_storage=InMemoryEventLogStorage(),
+        schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+        compute_log_manager=NoOpComputeLogManager(temp_dir),
+    )
+
+
+def get_instance_with_launcher(temp_dir):
+    test_queue = InMemoryRunLauncher()
+
+    return DagsterInstance(
+        instance_type=InstanceType.EPHEMERAL,
+        local_artifact_storage=LocalArtifactStorage(temp_dir),
+        run_storage=InMemoryRunStorage(),
+        event_storage=InMemoryEventLogStorage(),
+        schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+        compute_log_manager=NoOpComputeLogManager(temp_dir),
+        run_launcher=test_queue,
+    )
+
+
 def test_basic_start_scheduled_execution():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -50,18 +78,8 @@ def test_basic_start_scheduled_execution():
 
 
 def test_basic_start_scheduled_execution_with_run_launcher():
-    test_queue = InMemoryRunLauncher()
-
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.EPHEMERAL,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
-            compute_log_manager=NoOpComputeLogManager(temp_dir),
-            run_launcher=test_queue,
-        )
-
+        instance = get_instance_with_launcher(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -95,7 +113,7 @@ def test_basic_start_scheduled_execution_with_run_launcher():
 
 def test_basic_start_scheduled_execution_with_environment_dict_fn():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -129,7 +147,7 @@ def test_basic_start_scheduled_execution_with_environment_dict_fn():
 
 def test_start_scheduled_execution_with_should_execute():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -148,7 +166,7 @@ def test_start_scheduled_execution_with_should_execute():
 
 def test_partition_based_execution():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -194,7 +212,7 @@ def test_partition_based_execution():
 
 def test_partition_based_custom_selector():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -239,7 +257,7 @@ def test_partition_based_custom_selector():
 
 def test_partition_based_decorator():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -268,7 +286,7 @@ def test_partition_based_decorator():
 )
 def test_solid_subset_schedule_decorator(schedule_name):
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -292,7 +310,7 @@ def test_solid_subset_schedule_decorator(schedule_name):
 
 def test_partition_based_multi_mode_decorator():
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
@@ -307,4 +325,135 @@ def test_partition_based_multi_mode_decorator():
         assert result.data
         assert (
             result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+
+
+# Tests for ticks and execution user error boundary
+def test_tick_success():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+
+        schedule_handle = context.scheduler_handle
+        schedule_def = schedule_handle.get_schedule_def_by_name(
+            "no_config_pipeline_hourly_schedule"
+        )
+
+        start_time = time.time()
+        execute_dagster_graphql(
+            context, START_SCHEDULED_EXECUTION_QUERY, variables={'scheduleName': schedule_def.name},
+        )
+
+        ticks = instance.get_schedule_ticks_by_schedule(repository, schedule_def.name)
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.schedule_name == schedule_def.name
+        assert tick.cron_schedule == schedule_def.cron_schedule
+        assert tick.timestamp > start_time and tick.timestamp < time.time()
+        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.run_id
+
+
+def test_tick_skip():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+
+        execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'no_config_should_execute'},
+        )
+
+        ticks = instance.get_schedule_ticks_by_schedule(repository, 'no_config_should_execute')
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.status == ScheduleTickStatus.SKIPPED
+
+
+def test_should_execute_scheduler_error():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+
+        execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'should_execute_error_schedule'},
+        )
+
+        ticks = instance.get_schedule_ticks_by_schedule(repository, 'should_execute_error_schedule')
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.status == ScheduleTickStatus.FAILURE
+        assert tick.error
+        assert (
+            "Error occurred during the execution should_execute for schedule "
+            "should_execute_error_schedule" in tick.error.message
+        )
+
+
+def test_tags_scheduler_error():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+
+        execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'tags_error_schedule'},
+        )
+
+        ticks = instance.get_schedule_ticks_by_schedule(repository, 'tags_error_schedule')
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.status == ScheduleTickStatus.FAILURE
+        assert tick.error
+        assert (
+            "Error occurred during the execution of tags_fn for schedule tags_error_schedule"
+            in tick.error.message
+        )
+
+
+def test_enviornment_dict_scheduler_error():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+
+        execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'environment_dict_error_schedule'},
+        )
+
+        ticks = instance.get_schedule_ticks_by_schedule(
+            repository, 'environment_dict_error_schedule'
+        )
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.status == ScheduleTickStatus.FAILURE
+        assert tick.error
+        assert (
+            "Error occurred during the execution of environment_dict_fn for schedule "
+            "environment_dict_error_schedule" in tick.error.message
         )

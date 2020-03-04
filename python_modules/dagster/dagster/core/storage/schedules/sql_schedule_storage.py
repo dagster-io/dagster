@@ -6,11 +6,12 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler import Schedule
+from dagster.core.scheduler import Schedule, ScheduleTick
+from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from .base import ScheduleStorage
-from .schema import ScheduleTable
+from .schema import ScheduleTable, ScheduleTickTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -29,7 +30,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return res
 
-    def _rows_to_schedules(self, rows):
+    def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
     def all_schedules(self, repository=None):
@@ -41,7 +42,7 @@ class SqlScheduleStorage(ScheduleStorage):
             query = base_query.where(ScheduleTable.c.repository_name == repository.name)
 
         rows = self.execute(query)
-        return self._rows_to_schedules(rows)
+        return self._deserialize_rows(rows)
 
     def get_schedule_by_name(self, repository, schedule_name):
         check.inst_param(repository, 'repository', RepositoryDefinition)
@@ -56,6 +57,63 @@ class SqlScheduleStorage(ScheduleStorage):
 
         rows = self.execute(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
+
+    def get_schedule_ticks_by_schedule(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+
+        query = (
+            db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
+            .select_from(ScheduleTickTable)
+            .where(ScheduleTickTable.c.repository_name == repository.name)
+            .where(ScheduleTickTable.c.schedule_name == schedule_name)
+        )
+
+        rows = self.execute(query)
+        return list(
+            map(lambda r: ScheduleTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+        )
+
+    def create_schedule_tick(self, repository, schedule_tick_data):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData)
+
+        with self.connect() as conn:
+            try:
+                tick_insert = ScheduleTickTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    repository_name=repository.name,
+                    schedule_name=schedule_tick_data.schedule_name,
+                    status=schedule_tick_data.status.value,
+                    tick_body=serialize_dagster_namedtuple(schedule_tick_data),
+                )
+                result = conn.execute(tick_insert)
+                tick_id = result.inserted_primary_key[0]
+                return ScheduleTick(tick_id, schedule_tick_data)
+            except db.exc.IntegrityError as exc:
+                six.raise_from(
+                    DagsterInvariantViolationError(
+                        'Unable to insert ScheduleTick for schedule {schedule_name} in storage'.format(
+                            schedule_name=schedule_tick_data.schedule_name,
+                        )
+                    ),
+                    exc,
+                )
+
+    def update_schedule_tick(self, repository, tick):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.inst_param(tick, 'tick', ScheduleTick)
+
+        with self.connect() as conn:
+            conn.execute(
+                ScheduleTickTable.update()  # pylint: disable=no-value-for-parameter
+                .where(ScheduleTickTable.c.id == tick.tick_id)
+                .values(
+                    status=tick.status.value,
+                    tick_body=serialize_dagster_namedtuple(tick.schedule_tick_data),
+                )
+            )
+
+        return tick
 
     def add_schedule(self, repository, schedule):
         check.inst_param(repository, 'repository', RepositoryDefinition)

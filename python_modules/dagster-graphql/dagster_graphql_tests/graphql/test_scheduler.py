@@ -88,7 +88,7 @@ def test_get_all_schedules():
         assert scheduler_result.data
         assert scheduler_result.data['scheduler']
         assert scheduler_result.data['scheduler']['runningSchedules']
-        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 13
+        assert len(scheduler_result.data['scheduler']['runningSchedules']) == 15
 
         for schedule in scheduler_result.data['scheduler']['runningSchedules']:
             if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':

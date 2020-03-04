@@ -525,6 +525,15 @@ class DagsterInstance:
 
     # Schedule Storage
 
+    def create_schedule_tick(self, repository, schedule_tick_data):
+        return self._schedule_storage.create_schedule_tick(repository, schedule_tick_data)
+
+    def update_schedule_tick(self, repository, tick):
+        return self._schedule_storage.update_schedule_tick(repository, tick)
+
+    def get_schedule_ticks_by_schedule(self, repository, schedule_name):
+        return self._schedule_storage.get_schedule_ticks_by_schedule(repository, schedule_name)
+
     def all_schedules(self, repository):
         return self._schedule_storage.all_schedules(repository)
 

@@ -872,9 +872,9 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
 
 
 def schedule(
-    name,
     cron_schedule,
     pipeline_name,
+    name=None,
     tags=None,
     tags_fn=None,
     solid_subset=None,

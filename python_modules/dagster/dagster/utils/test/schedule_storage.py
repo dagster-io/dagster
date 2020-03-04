@@ -1,7 +1,11 @@
+import time
+
 import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster.core.scheduler import Schedule, ScheduleDefinitionData, ScheduleStatus
+from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
+from dagster.utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:
@@ -140,3 +144,99 @@ class TestScheduleStorage:
 
         with pytest.raises(DagsterInvariantViolationError):
             storage.add_schedule(repository, schedule)
+
+    def build_tick(self, current_time):
+        return ScheduleTickData(
+            "my_schedule", "* * * * *", current_time, ScheduleTickStatus.STARTED
+        )
+
+    def test_create_tick(self, storage):
+        assert storage
+
+        repository = RepositoryDefinition("repository_name")
+        current_time = time.time()
+        tick = storage.create_schedule_tick(repository, self.build_tick(current_time))
+        assert tick.tick_id == 1
+
+        ticks = storage.get_schedule_ticks_by_schedule(repository, "my_schedule")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.schedule_name == "my_schedule"
+        assert tick.cron_schedule == "* * * * *"
+        assert tick.timestamp == current_time
+        assert tick.status == ScheduleTickStatus.STARTED
+        assert tick.run_id == None
+        assert tick.error == None
+
+    def test_update_tick_to_success(self, storage):
+        assert storage
+
+        repository = RepositoryDefinition("repository_name")
+        current_time = time.time()
+        tick = storage.create_schedule_tick(repository, self.build_tick(current_time))
+
+        updated_tick = tick.with_status(ScheduleTickStatus.SUCCESS, run_id="1234")
+        assert updated_tick.status == ScheduleTickStatus.SUCCESS
+
+        storage.update_schedule_tick(repository, updated_tick)
+
+        ticks = storage.get_schedule_ticks_by_schedule(repository, "my_schedule")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.schedule_name == "my_schedule"
+        assert tick.cron_schedule == "* * * * *"
+        assert tick.timestamp == current_time
+        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.run_id == "1234"
+        assert tick.error == None
+
+    def test_update_tick_to_skip(self, storage):
+        assert storage
+
+        repository = RepositoryDefinition("repository_name")
+        current_time = time.time()
+        tick = storage.create_schedule_tick(repository, self.build_tick(current_time))
+
+        updated_tick = tick.with_status(ScheduleTickStatus.SKIPPED)
+        assert updated_tick.status == ScheduleTickStatus.SKIPPED
+
+        storage.update_schedule_tick(repository, updated_tick)
+
+        ticks = storage.get_schedule_ticks_by_schedule(repository, "my_schedule")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.schedule_name == "my_schedule"
+        assert tick.cron_schedule == "* * * * *"
+        assert tick.timestamp == current_time
+        assert tick.status == ScheduleTickStatus.SKIPPED
+        assert tick.run_id == None
+        assert tick.error == None
+
+    def test_update_tick_to_failure(self, storage):
+        assert storage
+
+        repository = RepositoryDefinition("repository_name")
+        current_time = time.time()
+        tick = storage.create_schedule_tick(repository, self.build_tick(current_time))
+
+        updated_tick = tick.with_status(
+            ScheduleTickStatus.FAILURE,
+            error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
+        )
+        assert updated_tick.status == ScheduleTickStatus.FAILURE
+
+        storage.update_schedule_tick(repository, updated_tick)
+
+        ticks = storage.get_schedule_ticks_by_schedule(repository, "my_schedule")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.schedule_name == "my_schedule"
+        assert tick.cron_schedule == "* * * * *"
+        assert tick.timestamp == current_time
+        assert tick.status == ScheduleTickStatus.FAILURE
+        assert tick.run_id == None
+        assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")

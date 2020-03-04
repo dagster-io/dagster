@@ -7,6 +7,7 @@ import six
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleDefinitionData
 from dagster.core.serdes import whitelist_for_serdes
+from dagster.utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes
@@ -206,3 +207,135 @@ class Schedule(
             python_path=self.python_path,
             repository_path=self.repository_path,
         )
+
+
+@whitelist_for_serdes
+class ScheduleTickStatus(Enum):
+    STARTED = 'STARTED'
+    SKIPPED = 'SKIPPED'
+    SUCCESS = 'SUCCESS'
+    FAILURE = 'FAILURE'
+
+
+def _validate_schedule_tick_args(status, run_id=None, error=None):
+    check.inst_param(status, 'status', ScheduleTickStatus)
+
+    if status == ScheduleTickStatus.SUCCESS:
+        check.str_param(run_id, 'run_id')
+        check.invariant(
+            error is None, desc="Schedule tick status is SUCCESS, but error was provided"
+        )
+    elif status == ScheduleTickStatus.FAILURE:
+        check.invariant(run_id is None, "Schdule tick status is FAILURE but run_id was provided")
+        check.inst_param(error, 'error', SerializableErrorInfo)
+    else:
+        check.invariant(
+            run_id is None, "Schedule tick status was not SUCCESS, but run_id was provided"
+        )
+        check.invariant(
+            error is None, "Schedule tick status was not FAILURE but error was provided"
+        )
+
+
+@whitelist_for_serdes
+class ScheduleTickData(
+    namedtuple('Schedule', 'schedule_name cron_schedule timestamp status run_id error')
+):
+    def __new__(cls, schedule_name, cron_schedule, timestamp, status, run_id=None, error=None):
+        '''
+        This class defines the data that is serialized and stored in ``ScheduleStorage``. We depend
+        on the schedule storage implementation to provide schedule tick ids, and therefore
+        seperate all other data into this serializable class that can be stored independently of the
+        id
+
+        Arguments:
+            schedule_name (str): The name of the schedule for this tick
+            cron_schedule (str): The cron schedule of the ``ScheduleDefinition`` for tracking
+                purposes. This is helpful when debugging changes in the cron schedule.
+            timestamp (float): The timestamp at which this schedule execution started
+            status (ScheduleTickStatus): The status of the tick, which can be updated
+
+        Keyword Arguments:
+            run_id (str): The run created by the tick. This is set only when the status is
+                ``ScheduleTickStatus.SUCCESS``
+            error (SerializableErrorInfo): The error caught during schedule execution. This is set
+                onle when the status is ``ScheduleTickStatus.Failure``
+        '''
+
+        _validate_schedule_tick_args(status, run_id, error)
+        return super(ScheduleTickData, cls).__new__(
+            cls,
+            check.str_param(schedule_name, 'schedule_name'),
+            check.str_param(cron_schedule, 'cron_schedule'),
+            check.float_param(timestamp, 'timestamp'),
+            status,
+            run_id,
+            error,
+        )
+
+    def with_status(self, status, run_id=None, error=None):
+        check.inst_param(status, 'status', ScheduleTickStatus)
+        return self._replace(status=status, run_id=run_id, error=error)
+
+
+class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
+    '''
+    A scheduler is configured to run at an multiple intervals set by the `cron_schedule`
+    properies on ``ScheduleDefinition``. We define a schedule tick as each time the scheduler
+    runs for a specific schedule.
+
+    When the schedule is being executed to create a pipeline run, we create a``ScheduleTick``
+    object and store it in ``ScheduleStorage``. This is needed because not every tick results
+    in creating a run, due to skips or errors.
+
+    At the beginning of schedule execution, we create a ``ScheduleTick`` object in the
+    ``ScheduleTickStatus.STARTED`` state.
+
+    A schedule definition has a `should_execute` argument, where users can define a function
+    which defines whether to create a run for the current tick. In the case where
+    ``should_execute`` returns false, schedule execution is short-circuted, a run is not created,
+    and the status of the schedule tick is updated to be ``ScheduleTickStatus.SKIPPED``.
+
+    There are also several errors that can occur during schedule execution, which are important
+    to track for observability and alerting. There are several user defined functions that
+    are run during schedule execution, which are each wrapped with a ``user_error_boundary``.
+    There is also the possibility of a framework error. These errors are caught,
+    serialized, and stored on the ``ScheduleTick``.
+    '''
+
+    def __new__(cls, tick_id, schedule_tick_data):
+        return super(ScheduleTick, cls).__new__(
+            cls,
+            check.int_param(tick_id, 'tick_id'),
+            check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData),
+        )
+
+    def with_status(self, status, run_id=None, error=None):
+        check.inst_param(status, 'status', ScheduleTickStatus)
+        return self._replace(
+            schedule_tick_data=self.schedule_tick_data.with_status(status, run_id, error)
+        )
+
+    @property
+    def schedule_name(self):
+        return self.schedule_tick_data.schedule_name
+
+    @property
+    def cron_schedule(self):
+        return self.schedule_tick_data.cron_schedule
+
+    @property
+    def timestamp(self):
+        return self.schedule_tick_data.timestamp
+
+    @property
+    def status(self):
+        return self.schedule_tick_data.status
+
+    @property
+    def run_id(self):
+        return self.schedule_tick_data.run_id
+
+    @property
+    def error(self):
+        return self.schedule_tick_data.error

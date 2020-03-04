@@ -116,6 +116,23 @@ def define_scheduler():
     def solid_subset_weekly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
+    # Schedules for testing the user error boundary
+    @daily_schedule(
+        pipeline_name='no_config_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
+    )
+    def should_execute_error_schedule(_date):
+        return {"storage": {"filesystem": {}}}
+
+    @daily_schedule(
+        pipeline_name='no_config_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
+    )
+    def tags_error_schedule(_date):
+        return {"storage": {"filesystem": {}}}
+
     @daily_schedule(
         pipeline_name='no_config_pipeline',
         start_date=datetime.datetime.now() - datetime.timedelta(days=1),
@@ -136,5 +153,7 @@ def define_scheduler():
         solid_subset_daily_decorator,
         solid_subset_monthly_decorator,
         solid_subset_weekly_decorator,
+        should_execute_error_schedule,
+        tags_error_schedule,
         environment_dict_error_schedule,
     ]
