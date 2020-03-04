@@ -9,7 +9,7 @@ import shieldIcon from "./images/shield-icon.svg";
 
 import * as styles from "./styles";
 
-export const Home = () => {
+const Home = () => {
   return (
     <Layout>
       <div sx={styles.firstBlock}>
@@ -52,3 +52,5 @@ export const Home = () => {
     </Layout>
   );
 };
+
+export default Home;
