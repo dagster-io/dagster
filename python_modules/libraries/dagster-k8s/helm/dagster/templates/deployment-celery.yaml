@@ -4,6 +4,7 @@ metadata:
   name: {{ include "dagster.workers.fullname" . }}
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
+    component: celery
 spec:
   replicas: {{ .Values.celery.replicaCount }}
   selector:

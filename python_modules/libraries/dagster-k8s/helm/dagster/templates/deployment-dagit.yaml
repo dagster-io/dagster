@@ -4,6 +4,7 @@ metadata:
   name: {{ include "dagster.dagit.fullname" . }}
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
+    component: dagit
 spec:
   replicas: {{ .Values.dagit.replicaCount }}
   selector:

@@ -4,7 +4,8 @@ kind: Deployment
 metadata:
   name: {{ include "dagster.flower.fullname" . }}
   labels:
-  {{- include "dagster.labels" . | nindent 4 }}
+    {{- include "dagster.labels" . | nindent 4 }}
+    component: flower
 spec:
   replicas: 1
   selector:

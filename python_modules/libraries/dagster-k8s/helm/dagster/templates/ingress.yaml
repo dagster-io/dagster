@@ -1,0 +1,53 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ include "dagster.fullname" . }}-ingress
+  labels:
+    {{- include "dagster.labels" . | nindent 4 }}
+  annotations:
+    {{- range $key, $value := .Values.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  rules:
+    - host: {{ .Values.ingress.dagit.host }}
+      http:
+        paths:
+          {{- range .Values.ingress.dagit.precedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+          - path: "/*"
+            backend:
+              serviceName: {{ include "dagster.dagit.fullname" . }}
+              servicePort: {{ .Values.dagit.service.port | default 80 }}
+          {{- range .Values.ingress.dagit.succeedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+    - host: {{ .Values.ingress.flower.host }}
+      http:
+        paths:
+          {{- range .Values.ingress.flower.precedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+          - path: {{ .Values.ingress.flower.path | default "/*" }}
+            backend:
+              serviceName: {{ template "dagster.fullname" . }}-flower-service
+              servicePort: {{ .Values.flower.service.port | default 5555 }}
+          {{- range .Values.ingress.flower.succeedingPaths }}
+          - path: {{ .path }}
+            backend:
+              serviceName: {{ .serviceName }}
+              servicePort: {{ .servicePort }}
+          {{- end }}
+{{end}}
