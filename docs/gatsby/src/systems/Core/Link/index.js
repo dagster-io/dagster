@@ -9,7 +9,7 @@ import * as styles from "./styles";
 
 const parseHrefLink = href => {
   const link = href.endsWith(".html") ? href.slice(0, href.length - 5) : href;
-  return link.startsWith("/") ? `..${link}` : link;
+  return link;
 };
 
 export const Link = forwardRef(({ href, to, isNav, ...props }, ref) => {

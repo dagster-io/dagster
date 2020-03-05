@@ -17,7 +17,7 @@ linkchecker http://127.0.0.1:8000
 
 To deploy to Netlify, copy `versions/`, `*.js`, `*.json`, `scripts/`, and `src/`
 over to the dagster-docs repo, then commit and push. Assuming your repos live
-under `~/docs`:
+under `~/dev`:
 
     pushd ~/dev/dagster/docs/gatsby
     yarn sphinx -v latest

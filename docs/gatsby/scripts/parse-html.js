@@ -14,7 +14,8 @@ const Flatted = require("flatted");
 const { getCurrentVersion } = require("./utils/get-version");
 
 const rewriteLinks = (node, version) => {
-  const modulesRegex = /^(..\/)+_modules\//g;
+  const modulesRegex = /^(\.\.\/)+_modules\//g;
+
   var url = node.properties.href
     .replace(modulesRegex, `/${version}/_modules/`)
     .replace("/sections/", "/");
