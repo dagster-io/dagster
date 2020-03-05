@@ -166,7 +166,7 @@ def schedules(name=None):
         def define_scheduler():
             hello_world_schedule = ScheduleDefinition(
                 name='hello_world_schedule',
-                cron_string='* * * * *'
+                cron_schedule='* * * * *'
             )
 
             return [hello_world_schedule]
