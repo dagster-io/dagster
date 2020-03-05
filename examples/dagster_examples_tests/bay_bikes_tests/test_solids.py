@@ -3,14 +3,20 @@ import os
 import shutil
 import tempfile
 from datetime import date
+from functools import partial
 
 import pytest
-from dagster_examples.bay_bikes.resources import credentials_vault, testing_client
+from dagster_examples.bay_bikes.resources import credentials_vault, mount, testing_client
 from dagster_examples.bay_bikes.solids import (
     MultivariateTimeseries,
     Timeseries,
-    compose_training_data,
     download_weather_report_from_weather_api,
+    produce_training_set,
+    produce_trip_dataset,
+    produce_weather_dataset,
+    transform_into_traffic_dataset,
+    trip_etl,
+    upload_pickled_object_to_gcs_bucket,
 )
 from dagster_examples.common.resources import postgres_db_info_resource
 from dagster_examples_tests.bay_bikes_tests.test_data import FAKE_TRIP_DATA, FAKE_WEATHER_DATA
@@ -19,10 +25,11 @@ from numpy.testing import assert_array_equal
 from pandas import DataFrame, Timestamp
 from requests import HTTPError
 
-from dagster import ModeDefinition, execute_solid
+from dagster import ModeDefinition, RunConfig, execute_pipeline, execute_solid, pipeline, seven
 
 START_TIME = 1514793600
 VOLUME_TARGET_DIRECTORY = '/tmp/bar'
+FAKE_ZIPFILE_NAME = 'data.csv.zip'
 
 
 class MockResponse:
@@ -152,54 +159,64 @@ def compose_training_data_env_dict():
                     "postgres_password": "test",
                     "postgres_username": "test",
                 }
-            }
+            },
+            'volume': {'config': {'mount_location': '/tmp'}},
         },
         "solids": {
-            "compose_training_data": {
+            "produce_training_set": {"config": {"memory_length": 1}},
+            "produce_trip_dataset": {
+                "solids": {"load_entire_trip_table": {"config": {"index_label": "uuid"},}},
+                "inputs": {"table_name": "trips"},
+            },
+            "produce_weather_dataset": {
                 "solids": {
-                    "produce_training_set": {"config": {"memory_length": 1}},
-                    "produce_trip_dataset": {
-                        "solids": {
-                            "load_entire_trip_table": {
-                                "config": {"index_label": "uuid"},
-                                "inputs": {"table_name": "trips"},
-                            }
-                        }
-                    },
-                    "produce_weather_dataset": {
-                        "solids": {
-                            "load_entire_weather_table": {
-                                "config": {"index_label": "uuid", "subsets": ["time"]},
-                                "inputs": {"table_name": "weather"},
-                            }
-                        }
-                    },
-                    "upload_training_set_to_gcs": {
-                        "inputs": {
-                            "bucket_name": "dagster-scratch-ccdfe1e",
-                            "file_name": "training_data",
-                        }
-                    },
-                }
-            }
+                    "load_entire_weather_table": {
+                        "config": {"index_label": "uuid", "subsets": ["time"]},
+                    }
+                },
+                "inputs": {"table_name": "weather"},
+            },
+            "upload_training_set_to_gcs": {
+                "inputs": {"bucket_name": "dagster-scratch-ccdfe1e", "file_name": "training_data",}
+            },
         },
     }
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            name='testing',
+            resource_defs={
+                'postgres_db': postgres_db_info_resource,
+                'gcs_client': testing_client,
+                'volume': mount,
+            },
+            description='Mode to be used during testing. Allows us to clean up test artifacts without interfearing with local artifacts.',
+        ),
+    ],
+)
+def generate_test_training_set_pipeline():
+    upload_training_set_to_gcs = upload_pickled_object_to_gcs_bucket.alias(
+        'upload_training_set_to_gcs'
+    )
+    return upload_training_set_to_gcs(
+        produce_training_set(
+            transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset(),
+        )
+    )
 
 
 def test_generate_training_set(mocker):
     mocker.patch('dagster_examples.bay_bikes.solids.read_sql_table', side_effect=mock_read_sql)
 
     # Execute Pipeline
-    composite_solid_result = execute_solid(
-        compose_training_data,
-        mode_def=ModeDefinition(
-            name='testing',
-            resource_defs={'postgres_db': postgres_db_info_resource, 'gcs_client': testing_client},
-            description='Mode to be used during testing. Allows us to clean up test artifacts without interfearing with local artifacts.',
-        ),
+    test_pipeline_result = execute_pipeline(
+        generate_test_training_set_pipeline,
         environment_dict=compose_training_data_env_dict(),
+        run_config=RunConfig(mode='testing'),
     )
-    assert composite_solid_result.success
+    assert test_pipeline_result.success
 
     # Check solids
     EXPECTED_TRAFFIC_RECORDS = [
@@ -214,9 +231,9 @@ def test_generate_training_set(mocker):
             'time': Timestamp('2019-08-31 00:00:00'),
         },
     ]
-    traffic_dataset = composite_solid_result.output_values_for_solid(
-        'transform_into_traffic_dataset'
-    )['traffic_dataframe'].to_dict('records')
+    traffic_dataset = test_pipeline_result.output_for_solid(
+        'transform_into_traffic_dataset', output_name='traffic_dataframe'
+    ).to_dict('records')
     assert all(record in EXPECTED_TRAFFIC_RECORDS for record in traffic_dataset)
 
     EXPECTED_WEATHER_RECORDS = [
@@ -275,15 +292,13 @@ def test_generate_training_set(mocker):
             'didRain': False,
         },
     ]
-    weather_dataset = composite_solid_result.output_values_for_solid('produce_weather_dataset')[
-        'weather_dataframe'
-    ].to_dict('records')
+    weather_dataset = test_pipeline_result.output_for_solid(
+        'produce_weather_dataset', output_name='weather_dataframe'
+    ).to_dict('records')
     assert all(record in EXPECTED_WEATHER_RECORDS for record in weather_dataset)
 
     # Ensure we are generating the expected training set
-    training_set, labels = composite_solid_result.output_values_for_solid('produce_training_set')[
-        'result'
-    ]
+    training_set, labels = test_pipeline_result.output_for_solid('produce_training_set')
     assert len(labels) == 1 and labels[0] == 1
     assert array_equal(
         training_set,
@@ -344,7 +359,7 @@ def test_generate_training_set(mocker):
     )
     materialization_events = [
         event
-        for event in composite_solid_result.step_event_list
+        for event in test_pipeline_result.step_event_list
         if event.solid_name == 'upload_training_set_to_gcs'
         and event.event_type_value == 'STEP_MATERIALIZATION'
     ]
@@ -360,3 +375,75 @@ def test_generate_training_set(mocker):
 
     # Clean up
     shutil.rmtree(os.path.join(tempfile.gettempdir(), 'testing-storage'), ignore_errors=True)
+
+
+def environment_dictionary():
+    return {
+        'resources': {
+            'postgres_db': {
+                'config': {
+                    'postgres_db_name': 'test',
+                    'postgres_hostname': 'localhost',
+                    'postgres_password': 'test',
+                    'postgres_username': 'test',
+                }
+            },
+            'volume': {'config': {'mount_location': ''}},
+        },
+        'solids': {
+            'trip_etl': {
+                'solids': {
+                    'download_baybike_zipfile_from_url': {
+                        'inputs': {
+                            'file_name': {'value': FAKE_ZIPFILE_NAME},
+                            'base_url': {'value': 'https://foo.com'},
+                        }
+                    },
+                    'load_baybike_data_into_dataframe': {
+                        'inputs': {'target_csv_file_in_archive': {'value': '',}}
+                    },
+                    'insert_trip_data_into_table': {
+                        'config': {'index_label': 'uuid'},
+                        'inputs': {'table_name': 'test_trips'},
+                    },
+                }
+            }
+        },
+    }
+
+
+def mock_download_zipfile(tmp_dir, fake_trip_data, _url, _target, _chunk_size):
+    data_zip_file_path = os.path.join(tmp_dir, FAKE_ZIPFILE_NAME)
+    DataFrame(fake_trip_data).to_csv(data_zip_file_path, compression='zip')
+
+
+def test_monthly_trip_pipeline(mocker):
+    env_dictionary = environment_dictionary()
+    with seven.TemporaryDirectory() as tmp_dir:
+        # Run pipeline
+        download_zipfile = mocker.patch(
+            'dagster_examples.bay_bikes.solids._download_zipfile_from_url',
+            side_effect=partial(mock_download_zipfile, tmp_dir, FAKE_TRIP_DATA),
+        )
+        to_sql_call = mocker.patch('dagster_examples.bay_bikes.solids.DataFrame.to_sql')
+        env_dictionary['resources']['volume']['config']['mount_location'] = tmp_dir
+        # Done because we are zipping the file in the tmpdir
+        env_dictionary['solids']['trip_etl']['solids']['load_baybike_data_into_dataframe'][
+            'inputs'
+        ]['target_csv_file_in_archive']['value'] = os.path.join(tmp_dir, FAKE_ZIPFILE_NAME)
+        result = execute_solid(
+            trip_etl,
+            environment_dict=env_dictionary,
+            mode_def=ModeDefinition(
+                name='trip_testing',
+                resource_defs={'postgres_db': postgres_db_info_resource, 'volume': mount},
+                description='Mode to be used during local demo.',
+            ),
+        )
+        assert result.success
+        download_zipfile.assert_called_with(
+            'https://foo.com/data.csv.zip', os.path.join(tmp_dir, FAKE_ZIPFILE_NAME), 8192
+        )
+        to_sql_call.assert_called_with(
+            'test_trips', mocker.ANY, if_exists='append', index=False, index_label='uuid'
+        )

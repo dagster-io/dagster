@@ -133,7 +133,7 @@ def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, f
     config={'index_label': Field(str)},
     required_resource_keys={'postgres_db'},
 )
-def insert_into_table(context, row: DataFrame, table_name: str):
+def insert_into_table(context, row: DataFrame, table_name: str) -> str:
     row.to_sql(
         table_name,
         context.resources.postgres_db.engine,
@@ -141,6 +141,7 @@ def insert_into_table(context, row: DataFrame, table_name: str):
         index=False,
         index_label=context.solid_config['index_label'],
     )
+    return table_name
 
 
 @solid(
@@ -219,12 +220,6 @@ def preprocess_trip_dataset(_, dataframe: DataFrame) -> DataFrame:
     yield Output(dataframe, output_name='trip_dataframe')
 
 
-@composite_solid(output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)])
-def produce_trip_dataset():
-    load_entire_trip_table = download_table_as_dataframe.alias('load_entire_trip_table')
-    return preprocess_trip_dataset(load_entire_trip_table())
-
-
 @solid(
     input_defs=[InputDefinition('dataframe', DagsterPandasDataFrame)],
     output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
@@ -263,14 +258,6 @@ def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     dataframe['didRain'] = dataframe.precipType.apply(lambda x: x == 'rain')
     del dataframe['precipType']
     yield Output(dataframe, output_name='weather_dataframe')
-
-
-@composite_solid(
-    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)]
-)
-def produce_weather_dataset() -> DataFrame:
-    load_entire_weather_table = download_table_as_dataframe.alias('load_entire_weather_table')
-    return preprocess_weather_dataset(load_entire_weather_table())
 
 
 @solid(
@@ -477,13 +464,39 @@ def train_lstm_model(context, training_set: TrainingSet):
     yield Output(model)
 
 
-@composite_solid
-def compose_training_data():
-    upload_training_set_to_gcs = upload_pickled_object_to_gcs_bucket.alias(
-        'upload_training_set_to_gcs'
+@composite_solid(output_defs=[OutputDefinition(str, 'table_name')])
+def trip_etl():
+    download_baybike_zipfile_from_url = download_zipfile_from_url.alias(
+        'download_baybike_zipfile_from_url'
     )
-    return upload_training_set_to_gcs(
-        produce_training_set(
-            transform_into_traffic_dataset(produce_trip_dataset()), produce_weather_dataset()
-        )
+    insert_trip_data_into_table = insert_into_table.alias('insert_trip_data_into_table')
+    load_baybike_data_into_dataframe = load_compressed_csv_file.alias(
+        'load_baybike_data_into_dataframe'
     )
+    return insert_trip_data_into_table(
+        load_baybike_data_into_dataframe(download_baybike_zipfile_from_url())
+    )
+
+
+@composite_solid(
+    input_defs=[InputDefinition('table_name', str)],
+    output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)],
+)
+def produce_trip_dataset(table_name: str) -> DataFrame:
+    load_entire_trip_table = download_table_as_dataframe.alias('load_entire_trip_table')
+    return preprocess_trip_dataset(load_entire_trip_table(table_name))
+
+
+@composite_solid(output_defs=[OutputDefinition(str, 'table_name')])
+def weather_etl():
+    insert_weather_report_into_table = insert_into_table.alias('insert_weather_report_into_table')
+    return insert_weather_report_into_table(download_weather_report_from_weather_api())
+
+
+@composite_solid(
+    input_defs=[InputDefinition('table_name', str)],
+    output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
+)
+def produce_weather_dataset(table_name: str) -> DataFrame:
+    load_entire_weather_table = download_table_as_dataframe.alias('load_entire_weather_table')
+    return preprocess_weather_dataset(load_entire_weather_table(table_name))
