@@ -259,6 +259,34 @@ def execute_pipeline_with_preset(
     )
 
 
+def execute_pipeline_with_mode(
+    pipeline, mode, environment_dict=None, instance=None, raise_on_error=True
+):
+    '''Execute a pipeline synchronously, with the given mode.
+
+    Parameters:
+        pipeline (PipelineDefinition): The pipeline to execute.
+        mode (str): The mode to use.
+        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this run,
+            as a dict.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
+            (default: ``None``)
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Default is ``True``, since this is the most useful behavior in test.
+
+    Returns:
+      :py:class:`PipelineExecutionResult`: The result of pipeline execution.
+    '''
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.str_param(mode, 'mode')
+    check.opt_dict_param(environment_dict, 'environment_dict')
+    check.opt_inst_param(instance, 'instance', DagsterInstance)
+    return execute_pipeline(
+        pipeline, environment_dict, RunConfig(mode=mode), instance, raise_on_error=raise_on_error,
+    )
+
+
 def _steps_execution_iterator(pipeline_context, execution_plan, pipeline_run):
     '''Iterates over execution of individual steps yielding the associated events.
     '''

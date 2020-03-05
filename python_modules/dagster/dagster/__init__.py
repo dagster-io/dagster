@@ -82,6 +82,7 @@ from dagster.core.execution.api import (
     execute_partition_set,
     execute_pipeline,
     execute_pipeline_iterator,
+    execute_pipeline_with_mode,
     execute_pipeline_with_preset,
 )
 from dagster.core.execution.config import ExecutorConfig, RunConfig
@@ -164,6 +165,7 @@ __all__ = [
     'system_storage',
     # Execution
     'execute_pipeline_iterator',
+    'execute_pipeline_with_mode',
     'execute_pipeline',
     'DagsterEvent',
     'DagsterEventType',
