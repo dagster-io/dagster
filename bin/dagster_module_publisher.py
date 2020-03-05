@@ -206,7 +206,7 @@ class DagsterModulePublisher:
             )
             sys.exit(1)
 
-        return module_versions
+        return module_versions['dagster']
 
     def check_versions(self, nightly=False):
         click.echo('Checking that module versions are in lockstep')
