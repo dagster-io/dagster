@@ -25,6 +25,9 @@ MAX_FILENAME_LENGTH = 255
 
 
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
+    '''Stores copies of stdout & stderr for each compute step locally on disk.
+    '''
+
     def __init__(self, base_dir, inst_data=None):
         self._base_dir = base_dir
         self._subscription_manager = LocalComputeLogSubscriptionManager(self)

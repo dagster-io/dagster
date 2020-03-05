@@ -20,6 +20,10 @@ event_log_storage:
       db_name: test_event_log_storage
       port: 5432
 
+scheduler:
+  module: dagster_cron.cron_scheduler
+  class: SystemCronScheduler
+
 schedule_storage:
   module: dagster_postgres.schedule_storage
   class: PostgresScheduleStorage
@@ -43,3 +47,9 @@ compute_log_manager:
   config:
     bucket: "mycorp-dagster-compute-logs"
     prefix: "dagster-test-"
+
+run_launcher:
+  module: dagster_graphql.launcher
+  class: RemoteDagitRunLauncher
+    config:
+      address: http://dagit.mycorp.com

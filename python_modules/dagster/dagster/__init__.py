@@ -99,6 +99,7 @@ from dagster.core.instance.source_types import StringSource
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
     default_system_storage_defs,
     fs_system_storage,
@@ -178,6 +179,7 @@ __all__ = [
     'SystemComputeExecutionContext',
     'SystemStorageData',
     'TypeCheckContext',
+    'PipelineRun',
     # Errors
     'DagsterExecutionStepExecutionError',
     'DagsterExecutionStepNotFoundError',

@@ -14,6 +14,9 @@ from .schema import ScheduleTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
+    '''Base class for SQL backed schedule storage
+    '''
+
     @abstractmethod
     def connect(self):
         '''Context manager yielding a sqlalchemy.engine.Connection.'''

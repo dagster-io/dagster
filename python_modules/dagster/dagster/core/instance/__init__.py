@@ -91,7 +91,7 @@ class DagsterInstance:
             Users should not attempt to set this value directly or in their ``dagster.yaml`` files.
         local_artifact_storage (LocalArtifactStorage): The local artifact storage is used to
             configure storage for any artifacts that require a local disk, such as schedules, or
-            when using the fileystem system storage to manage files and intermediates. By default,
+            when using the filesystem system storage to manage files and intermediates. By default,
             this will be a :py:class:`dagster.core.storage.root.LocalArtifactStorage`. Configurable
             in ``dagster.yaml`` using the :py:class:`~dagster.core.serdes.ConfigurableClass`
             machinery.
@@ -110,7 +110,7 @@ class DagsterInstance:
             :py:class:`~dagster.core.serdes.ConfigurableClass` machinery.
         run_launcher (Optional[RunLauncher]): Optionally, a run launcher may be used to enable
             a Dagster instance to launch pipeline runs, e.g. on a remote Kubernetes cluster, in
-            addition to runnning them locally.
+            addition to running them locally.
         dagit_settings (Optional[Dict]): Specifies certain Dagit-specific, per-instance settings,
             such as feature flags. These are set in the ``dagster.yaml`` under the key ``dagit``.
         ref (Optional[InstanceRef]): Used by internal machinery to pass instances across process

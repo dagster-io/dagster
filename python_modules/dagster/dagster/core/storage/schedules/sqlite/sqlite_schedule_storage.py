@@ -13,6 +13,9 @@ from ..sql_schedule_storage import SqlScheduleStorage
 
 
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
+    '''Local SQLite backed schedule storage
+    '''
+
     def __init__(self, conn_string, inst_data=None):
         check.str_param(conn_string, 'conn_string')
         self._conn_string = conn_string

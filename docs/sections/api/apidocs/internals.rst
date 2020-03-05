@@ -69,52 +69,73 @@ Instance
 .. currentmodule:: dagster.core.storage.root
 
 .. autoclass:: LocalArtifactStorage
-   :members:
+   :properties:
 
-.. currentmodule:: dagster.core.storage.event_log
-
-.. autoclass:: EventLogStorage
-   :members:
-
-.. autoclass:: SqlEventLogStorage
-   :members: connect, upgrade
-
-.. autoclass:: SqliteEventLogStorage
+Run storage
+-----------
 
 .. currentmodule:: dagster.core.storage.runs
 
 .. autoclass:: RunStorage
-   :members:
 
 .. autoclass:: SqlRunStorage
-   :members: connect, upgrade
 
 .. autoclass:: SqliteRunStorage
+
+.. currentmodule:: dagster_postgres.run_storage
+
+.. autoclass:: PostgresRunStorage
 
 .. currentmodule:: dagster.core.storage.pipeline_run
 
 .. autoclass:: PipelineRun
 
+Event log storage
+-----------------
+
+.. currentmodule:: dagster.core.storage.event_log
+
+.. autoclass:: EventLogStorage
+
+.. autoclass:: SqlEventLogStorage
+
+.. autoclass:: SqliteEventLogStorage
+
+.. currentmodule:: dagster_postgres.event_log
+
+.. autoclass:: PostgresEventLogStorage
+
+
+Compute log manager
+-------------------
+
 .. currentmodule:: dagster.core.storage.compute_log_manager
 
 .. autoclass:: ComputeLogManager
-   :members:
 
 .. currentmodule:: dagster.core.storage.local_compute_log_manager
 
 .. autoclass:: LocalComputeLogManager
 
+
+.. currentmodule:: dagster_aws.s3.compute_log_manager
+
+.. autoclass:: S3ComputeLogManager
+
+Run launcher
+------------
 .. currentmodule:: dagster.core.launcher
 
 .. autoclass:: RunLauncher
-   :members:
 
-----
+.. currentmodule:: dagster_graphql.launcher
 
-.. currentmodule:: dagster.core.storage.compute_log_manager
+.. autoclass:: RemoteDagitRunLauncher
 
-.. autoclass:: ComputeLogManager
-   :members:
+.. currentmodule:: dagster_k8s.launcher
+
+.. autoclass:: K8sRunLauncher
+
 
 Scheduling
 ----------
@@ -122,4 +143,22 @@ Scheduling
 .. currentmodule:: dagster.core.scheduler
 
 .. autoclass:: Scheduler
-   :members:
+
+
+.. currentmodule:: dagster_cron.cron_scheduler
+
+.. autoclass:: SystemCronScheduler
+
+
+.. currentmodule:: dagster.core.storage.schedules
+
+.. autoclass:: ScheduleStorage
+
+.. autoclass:: SqlScheduleStorage
+
+.. autoclass:: SqliteScheduleStorage
+
+
+.. currentmodule:: dagster_postgres.schedule_storage
+
+.. autoclass:: PostgresScheduleStorage

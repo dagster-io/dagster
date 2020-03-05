@@ -13,11 +13,10 @@ from dagster.core.serdes import ConfigurableClass
 
 
 class SystemCronScheduler(Scheduler, ConfigurableClass):
-    '''Scheduler class for system cron-backed scheduling.
+    '''Scheduler implementation that uses the local systems cron. Only works on unix systems that
+    have cron.
 
-    Pass this class as the ``scheduler`` argument to the :py:func:`@schedules <dagster.schedules>`
-    API -- do not instantiate it directly.
-
+    Enable this scheduler by adding it to your ``dagster.yaml`` in ``$DAGSTER_HOME``.
     '''
 
     def __init__(self, inst_data=None):

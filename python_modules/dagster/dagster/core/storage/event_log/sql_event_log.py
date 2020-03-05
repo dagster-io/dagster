@@ -16,6 +16,9 @@ from .schema import SqlEventLogStorageTable
 
 
 class SqlEventLogStorage(EventLogStorage):
+    '''Base class for SQL backed event log storages.
+    '''
+
     @abstractmethod
     def connect(self, run_id=None):
         '''Context manager yielding a connection.

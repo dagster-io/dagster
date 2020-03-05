@@ -17,6 +17,9 @@ from .schema import RunTagsTable, RunsTable
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
+    '''Base class for SQL based run storages
+    '''
+
     @abstractmethod
     def connect(self):
         '''Context manager yielding a sqlalchemy.engine.Connection.'''

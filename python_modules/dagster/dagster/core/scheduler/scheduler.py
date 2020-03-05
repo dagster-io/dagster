@@ -135,6 +135,10 @@ class SchedulerHandle(object):
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
+    '''Abstract base class for a scheduler. This component is responsible for interfacing with
+    an external system such as cron to ensure scheduled repeated execution according.
+    '''
+
     @abc.abstractmethod
     def start_schedule(self, instance, repository, schedule_name):
         '''Resume a pipeline schedule.

@@ -4,6 +4,9 @@ import six
 
 
 class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
+    '''Abstract class for managing persistance of scheduler artifacts
+    '''
+
     @abc.abstractmethod
     def all_schedules(self, repository=None):
         '''Return all schedules present in the storage
