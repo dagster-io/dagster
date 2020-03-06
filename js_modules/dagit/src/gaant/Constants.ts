@@ -9,17 +9,25 @@ export interface GaantViewport {
   height: number;
 }
 
-export interface GaantChartBox {
-  children: GaantChartBox[];
-  node: IGaantNode;
+export interface GaantChartPlacement {
   width: number;
   x: number; // Note: This is a pixel value
   y: number; // Note: This is a "row number" not a pixel value
+}
+
+export interface GaantChartBox extends GaantChartPlacement {
+  children: GaantChartBox[];
+  node: IGaantNode;
   root: boolean;
+}
+
+export interface GaantChartMarker extends GaantChartPlacement {
+  key: string;
 }
 
 export interface GaantChartLayout {
   boxes: GaantChartBox[];
+  markers: GaantChartMarker[];
 }
 
 export interface GaantChartLayoutOptions {

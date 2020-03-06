@@ -27,6 +27,7 @@ import {
   DEFAULT_OPTIONS,
   BOX_HEIGHT,
   BOX_MARGIN_Y,
+  BOX_SPACING_X,
   LINE_SIZE,
   CSS_DURATION,
   BOX_DOT_WIDTH_CUTOFF,
@@ -34,7 +35,8 @@ import {
   BOX_DOT_SIZE,
   MIN_SCALE,
   MAX_SCALE,
-  GaantViewport
+  GaantViewport,
+  GaantChartPlacement
 } from "./Constants";
 import { SplitPanelContainer } from "../SplitPanelContainer";
 import { GaantChartModeControl } from "./GaantChartModeControl";
@@ -256,9 +258,9 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
   // To make the slider feel more linear, we convert the input from log10 to logE.
   let minScale = MIN_SCALE;
-  if (viewport.width && metadata && metadata.minStepStart) {
+  if (viewport.width && metadata && metadata.firstLogAt) {
     const zoomToFitWidthPx = Math.max(1, viewport.width - 150);
-    const elapsedMs = Math.max(1, nowMs - metadata.minStepStart);
+    const elapsedMs = Math.max(1, nowMs - metadata.firstLogAt);
     minScale = zoomToFitWidthPx / elapsedMs;
   }
 
@@ -308,7 +310,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const hovered = layout.boxes[hoveredIdx];
 
   const layoutSize = {
-    width: Math.max(0, ...layout.boxes.map(b => b.x + b.width)),
+    width: Math.max(0, ...layout.boxes.map(b => b.x + b.width + BOX_SPACING_X)),
     height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
   };
 
@@ -330,13 +332,13 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           scale={scale}
           viewport={viewport}
           layoutSize={layoutSize}
-          startMs={metadata?.minStepStart || 0}
+          startMs={metadata?.firstLogAt || 0}
           nowMs={nowMs}
           highlightedMs={
             focused
               ? ([
                   metadata?.steps[focused.node.name]?.start,
-                  metadata?.steps[focused.node.name]?.finish
+                  metadata?.steps[focused.node.name]?.end
                 ].filter(Number) as number[])
               : []
           }
@@ -442,6 +444,35 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     });
   }
 
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
+    layout.markers.forEach(marker => {
+      const bounds = boundsForBox(marker);
+      const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
+      if (!intersectsViewport(bounds)) {
+        return;
+      }
+
+      items.push(
+        <div
+          key={marker.key}
+          title={marker.key}
+          className={`
+            chart-element
+            ${useDot ? "marker-dot" : "marker-whiskers"}`}
+          style={{
+            left: bounds.minX,
+            top:
+              bounds.minY +
+              (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+            width: useDot ? BOX_DOT_SIZE : marker.width
+          }}
+        >
+          <div />
+        </div>
+      );
+    });
+  }
+
   layout.boxes.forEach((box, idx) => {
     const bounds = boundsForBox(box);
     const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
@@ -458,6 +489,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         onMouseEnter={() => props.setHoveredIdx(idx)}
         onMouseLeave={() => props.setHoveredIdx(-1)}
         className={`
+            chart-element
             ${useDot ? "dot" : "box"}
             ${focused === box && "focused"}
             ${hovered === box && "hovered"}`}
@@ -489,7 +521,7 @@ interface Bounds {
  * Returns the top left + bottom right bounds for the provided Gaant chart box
  * so that the box can be drawn and tested for intersection with the viewport.
  */
-const boundsForBox = (a: GaantChartBox): Bounds => {
+const boundsForBox = (a: GaantChartPlacement): Bounds => {
   return {
     minX: a.x,
     minY: a.y * BOX_HEIGHT,
@@ -600,32 +632,31 @@ const GaantChartContainer = styled.div`
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
   }
 
-  .dot {
+  .chart-element {
+    font-size: 11px;
+    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
     display: inline-block;
     position: absolute;
+    color: white;
+    overflow: hidden;
+    user-select: text;
+    z-index: 2;
+  }
+
+  .dot {
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
     border: 1px solid transparent;
-    z-index: 2;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: ${BOX_DOT_SIZE / 2}px;
-
-    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear;
   }
 
   .box {
-    display: inline-block;
-    position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    color: white;
     padding: 2px;
-    font-size: 11px;
     border: 1px solid transparent;
-    overflow: hidden;
-    z-index: 2;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     border-radius: 2px;
-    user-select: text;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
@@ -636,6 +667,28 @@ const GaantChartContainer = styled.div`
     }
     &.hovered {
       border: 1px solid ${Colors.DARK_GRAY3};
+    }
+  }
+
+  .marker-dot {
+    width: ${BOX_DOT_SIZE}px;
+    height: ${BOX_DOT_SIZE}px;
+    border: 1px solid purple;
+    border-radius: ${BOX_DOT_SIZE / 2}px;
+  }
+  .marker-whiskers {
+    display: inline-block;
+    position: absolute;
+    height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
+    background: rgb(128, 0, 128, 0.2);
+    border-left: 1px solid purple;
+    border-right: 1px solid purple;
+    transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
+      width ${CSS_DURATION}ms linear;
+
+    & > div {
+      border-bottom: 1px dashed purple;
+      height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
 `;
