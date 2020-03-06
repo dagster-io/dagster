@@ -1,5 +1,4 @@
 import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
-import { GraphQueryItem } from "../GraphQueryImpl";
 import { Colors } from "@blueprintjs/core";
 import {
   GaantChartLayoutOptions,
@@ -10,7 +9,8 @@ import {
   GaantChartLayout,
   BOX_WIDTH,
   BOX_DOT_WIDTH_CUTOFF,
-  IGaantNode
+  IGaantNode,
+  GaantChartMarker
 } from "./Constants";
 
 export interface BuildLayoutParams {
@@ -139,7 +139,7 @@ export const buildLayout = (params: BuildLayoutParams) => {
     }
   }
 
-  return { boxes } as GaantChartLayout;
+  return { boxes, markers: [] } as GaantChartLayout;
 };
 
 const ensureChildrenAfterParentInArray = (
@@ -207,20 +207,13 @@ const addChildren = (
 };
 
 const boxWidthFor = (
-  step: GraphQueryItem,
+  { start, end }: { start?: number; end?: number },
   options: GaantChartLayoutOptions,
-  metadata: IRunMetadataDict,
   scale: number,
   nowMs: number
 ) => {
-  const stepInfo = metadata.steps[step.name] || {};
-  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
-    if (stepInfo.start) {
-      return Math.max(
-        BOX_DOT_WIDTH_CUTOFF,
-        ((stepInfo.finish || nowMs) - stepInfo.start) * scale
-      );
-    }
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && start) {
+    return Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
   }
   return BOX_WIDTH;
 };
@@ -242,7 +235,7 @@ export const boxStyleFor = (
   let color = "#2491eb";
 
   if (
-    context.metadata.startedPipelineAt ||
+    context.metadata.firstLogAt ||
     context.options.mode === GaantChartMode.WATERFALL_TIMED
   ) {
     const info = context.metadata.steps[stepName];
@@ -266,8 +259,12 @@ export const boxStyleFor = (
 // This requires special logic because (for easy graph travesal), boxes.children references
 // other elements of the boxes array. A basic deepClone would replicate these into
 // copies rather than references.
-const cloneLayout = ({ boxes }: GaantChartLayout): GaantChartLayout => {
+const cloneLayout = ({
+  boxes,
+  markers
+}: GaantChartLayout): GaantChartLayout => {
   const map = new WeakMap();
+  const nextMarkers = markers.map(m => ({ ...m }));
   const nextBoxes: GaantChartBox[] = [];
   for (const box of boxes) {
     const next = { ...box };
@@ -277,7 +274,8 @@ const cloneLayout = ({ boxes }: GaantChartLayout): GaantChartLayout => {
   for (let ii = 0; ii < boxes.length; ii++) {
     nextBoxes[ii].children = boxes[ii].children.map(c => map.get(c));
   }
-  return { boxes: nextBoxes };
+
+  return { boxes: nextBoxes, markers: nextMarkers };
 };
 
 export const adjustLayoutWithRunMetadata = (
@@ -291,36 +289,65 @@ export const adjustLayoutWithRunMetadata = (
   // comparison between the old set and the new set and code below can traverse + mutate
   // in place.
   let { boxes } = cloneLayout(layout);
+  const markers: GaantChartMarker[] = [];
+  const { firstLogAt } = metadata;
 
   // Move and size boxes based on the run metadata. Note that we don't totally invalidate
   // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
   // step ordering, etc. should obey the constraints we already planned for). We just push
   // boxes around on their existing rows.
-  if (
-    options.mode === GaantChartMode.WATERFALL_TIMED &&
-    metadata.minStepStart
-  ) {
+  if (options.mode === GaantChartMode.WATERFALL_TIMED && firstLogAt) {
+    const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt!) * scale;
+
     // Apply all box widths
     for (const box of boxes) {
-      box.width = boxWidthFor(box.node, options, metadata, scale, nowMs);
+      box.width = boxWidthFor(
+        metadata.steps[box.node.name] || {},
+        options,
+        scale,
+        nowMs
+      );
     }
 
     // Traverse the graph and push boxes right as we go to account for new widths
     const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
-      const start =
-        metadata.steps[box.node.name] && metadata.steps[box.node.name].start;
-      box.x = start
-        ? LEFT_INSET + (start - metadata.minStepStart!) * scale
-        : Math.max(parentX, box.x);
+      const start = metadata.steps[box.node.name]?.start;
 
-      const minChildX = box.x + box.width + BOX_SPACING_X;
+      box.x = start
+        ? xForMs(start)
+        : Math.max(parentX, box.x, xForMs(nowMs) + BOX_SPACING_X);
+
+      const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
       for (const child of box.children) {
-        deepenOrUseMetadata(child, minChildX);
+        deepenOrUseMetadata(child, minXForUnstartedChildren);
       }
     };
+
     boxes
       .filter(box => box.root)
       .forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+
+    // Add markers to the layout using the run metadata
+    metadata.globalMarkers.forEach(m => {
+      if (m.start === undefined) return;
+      markers.push({
+        key: m.key,
+        y: 0,
+        x: xForMs(m.start),
+        width: boxWidthFor(m, options, scale, nowMs)
+      });
+    });
+    Object.entries(metadata.steps).forEach(([name, step]) => {
+      for (const m of step.markers) {
+        if (m.start === undefined) return;
+        markers.push({
+          key: `${name}:${m.key}`,
+          y: layout.boxes.find(b => b.node.name === name)!.y,
+          x: xForMs(m.start),
+          width: boxWidthFor(m, options, scale, nowMs)
+        });
+      }
+    });
   }
 
   // Apply display options / filtering
@@ -331,7 +358,7 @@ export const adjustLayoutWithRunMetadata = (
     });
   }
 
-  return { boxes };
+  return { boxes, markers };
 };
 
 /**
@@ -355,12 +382,12 @@ export const interestingQueriesFor = (
   }
 
   const slowStepsQuery = Object.keys(metadata.steps)
-    .filter(k => metadata.steps[k]?.finish && metadata.steps[k]?.start)
+    .filter(k => metadata.steps[k]?.end && metadata.steps[k]?.start)
     .sort(
       (a, b) =>
-        metadata.steps[b]!.finish! -
+        metadata.steps[b]!.end! -
         metadata.steps[b]!.start! -
-        (metadata.steps[a]!.finish! - metadata.steps[a]!.start!)
+        (metadata.steps[a]!.end! - metadata.steps[a]!.start!)
     )
     .slice(0, 5)
     .map(k => `${k}`)
@@ -370,7 +397,7 @@ export const interestingQueriesFor = (
   }
 
   const rightmostCompletedBox = [...layout.boxes]
-    .filter(b => metadata.steps[b.node.name]?.finish)
+    .filter(b => metadata.steps[b.node.name]?.end)
     .sort((a, b) => b.x + b.width - (a.x + a.width))[0];
 
   if (rightmostCompletedBox) {

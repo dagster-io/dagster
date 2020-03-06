@@ -52,31 +52,41 @@ export interface IExpectationResult extends IStepDisplayEvent {
 
 export interface IMaterialization extends IStepDisplayEvent {}
 
+export interface IMarker {
+  key: string;
+  start?: number;
+  end?: number;
+}
+
 export interface IStepMetadata {
   state: IStepState;
   start?: number;
-  finish?: number;
+  end?: number;
   transitionedAt: number;
   expectationResults: IExpectationResult[];
   materializations: IMaterialization[];
+  markers: IMarker[];
 }
 
 export interface IRunMetadataDict {
+  firstLogAt: number;
   mostRecentLogAt: number;
   startingProcessAt?: number;
   startedProcessAt?: number;
   startedPipelineAt?: number;
-  minStepStart?: number;
   exitedAt?: number;
   processId?: number;
   initFailed?: boolean;
+  globalMarkers: IMarker[];
   steps: {
     [stepKey: string]: IStepMetadata;
   };
 }
 
 export const EMPTY_RUN_METADATA: IRunMetadataDict = {
+  firstLogAt: 0,
   mostRecentLogAt: 0,
+  globalMarkers: [],
   steps: {}
 };
 
@@ -154,13 +164,27 @@ export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
+    firstLogAt: 0,
     mostRecentLogAt: 0,
+    globalMarkers: [],
     steps: {}
   };
 
-  logs.forEach(log => {
-    const timestamp = Number.parseInt(log.timestamp);
+  const upsertMarker = (set: IMarker[], key: string) => {
+    let marker = set.find(f => f.key === key);
+    if (!marker) {
+      marker = { key };
+      set.push(marker);
+    }
+    return marker;
+  };
 
+  logs.forEach(log => {
+    const timestamp = Number.parseInt(log.timestamp, 10);
+
+    metadata.firstLogAt = metadata.firstLogAt
+      ? Math.min(metadata.firstLogAt, timestamp)
+      : timestamp;
     metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
 
     if (log.__typename === "PipelineStartEvent") {
@@ -177,17 +201,28 @@ export function extractMetadataFromLogs(
       metadata.exitedAt = timestamp;
     }
 
+    if (log.__typename === "EngineEvent" && !log.step) {
+      if (log.markerStart) {
+        upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
+      }
+      if (log.markerEnd) {
+        upsertMarker(metadata.globalMarkers, log.markerEnd).end = timestamp;
+      }
+    }
+
     if (log.step) {
-      const timestamp = Number.parseInt(log.timestamp, 10);
       const stepKey = log.step.key;
-      const step = metadata.steps[stepKey] || {
-        state: IStepState.WAITING,
-        start: undefined,
-        elapsed: undefined,
-        transitionedAt: 0,
-        expectationResults: [],
-        materializations: []
-      };
+      const step =
+        metadata.steps[stepKey] ||
+        ({
+          state: IStepState.WAITING,
+          start: undefined,
+          elapsed: undefined,
+          transitionedAt: 0,
+          markers: [],
+          expectationResults: [],
+          materializations: []
+        } as IStepMetadata);
 
       if (log.__typename === "ExecutionStepStartEvent") {
         if (step.state === IStepState.WAITING) {
@@ -200,14 +235,14 @@ export function extractMetadataFromLogs(
         }
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         step.state = IStepState.SUCCEEDED;
-        step.finish = Math.max(timestamp, step.finish || 0);
+        step.end = Math.max(timestamp, step.end || 0);
         step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
         step.state = IStepState.SKIPPED;
         step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         step.state = IStepState.FAILED;
-        step.finish = Math.max(timestamp, step.finish || 0);
+        step.end = Math.max(timestamp, step.end || 0);
         step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
@@ -226,17 +261,18 @@ export function extractMetadataFromLogs(
           text: log.expectationResult.label,
           items: itemsForMetadataEntries(log.expectationResult.metadataEntries)
         });
+      } else if (log.__typename === "EngineEvent") {
+        if (log.markerStart) {
+          upsertMarker(step.markers, log.markerStart).start = timestamp;
+        }
+        if (log.markerEnd) {
+          upsertMarker(step.markers, log.markerEnd).end = timestamp;
+        }
       }
 
       metadata.steps[stepKey] = step;
     }
   });
-
-  metadata.minStepStart = Math.min(
-    ...Object.values(metadata.steps)
-      .map(s => s.start || 0)
-      .filter(v => !!v)
-  );
 
   return metadata;
 }
