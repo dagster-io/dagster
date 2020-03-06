@@ -132,7 +132,7 @@ class _PlanBuilder(object):
                     parent_step_inputs,
                 )
 
-                # If an input with runtime_type "Nothing" doesnt have a value
+                # If an input with dagster_type "Nothing" doesnt have a value
                 # we don't create a StepInput
                 if step_input is None:
                     continue
@@ -197,9 +197,9 @@ def get_step_input(
     solid_config = plan_builder.environment_config.solids.get(str(handle))
     if solid_config and input_name in solid_config.inputs:
         return StepInput(
-            input_name,
-            input_def.dagster_type,
-            StepInputSourceType.CONFIG,
+            name=input_name,
+            dagster_type=input_def.dagster_type,
+            source_type=StepInputSourceType.CONFIG,
             config_data=solid_config.inputs[input_name],
         )
 
@@ -207,19 +207,19 @@ def get_step_input(
     if dependency_structure.has_singular_dep(input_handle):
         solid_output_handle = dependency_structure.get_singular_dep(input_handle)
         return StepInput(
-            input_name,
-            input_def.dagster_type,
-            StepInputSourceType.SINGLE_OUTPUT,
-            [plan_builder.get_output_handle(solid_output_handle)],
+            name=input_name,
+            dagster_type=input_def.dagster_type,
+            source_type=StepInputSourceType.SINGLE_OUTPUT,
+            source_handles=[plan_builder.get_output_handle(solid_output_handle)],
         )
 
     if dependency_structure.has_multi_deps(input_handle):
         solid_output_handles = dependency_structure.get_multi_deps(input_handle)
         return StepInput(
-            input_name,
-            input_def.dagster_type,
-            StepInputSourceType.MULTIPLE_OUTPUTS,
-            [
+            name=input_name,
+            dagster_type=input_def.dagster_type,
+            source_type=StepInputSourceType.MULTIPLE_OUTPUTS,
+            source_handles=[
                 plan_builder.get_output_handle(solid_output_handle)
                 for solid_output_handle in solid_output_handles
             ],
@@ -231,11 +231,11 @@ def get_step_input(
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]
             return StepInput(
-                input_name,
-                input_def.dagster_type,
-                parent_input.source_type,
-                parent_input.source_handles,
-                parent_input.config_data,
+                name=input_name,
+                dagster_type=input_def.dagster_type,
+                source_type=parent_input.source_type,
+                source_handles=parent_input.source_handles,
+                config_data=parent_input.config_data,
             )
 
     # At this point we have an input that is not hooked up to

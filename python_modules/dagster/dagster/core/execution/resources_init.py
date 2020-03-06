@@ -184,29 +184,29 @@ def get_required_resource_keys_for_step(execution_step, pipeline_def, system_sto
 
     # add input type and input hydration config resource keys
     for step_input in execution_step.step_inputs:
-        resource_keys = resource_keys.union(step_input.runtime_type.required_resource_keys)
+        resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
         if (
             step_input.source_type == StepInputSourceType.CONFIG
-            and step_input.runtime_type.input_hydration_config
+            and step_input.dagster_type.input_hydration_config
         ):
             resource_keys = resource_keys.union(
-                step_input.runtime_type.input_hydration_config.required_resource_keys()
+                step_input.dagster_type.input_hydration_config.required_resource_keys()
             )
 
     # add output type and output materialization config resource keys
     for step_output in execution_step.step_outputs:
-        resource_keys = resource_keys.union(step_output.runtime_type.required_resource_keys)
+        resource_keys = resource_keys.union(step_output.dagster_type.required_resource_keys)
         if (
             step_output.should_materialize
-            and step_output.runtime_type.output_materialization_config
+            and step_output.dagster_type.output_materialization_config
         ):
             resource_keys = resource_keys.union(
-                step_output.runtime_type.output_materialization_config.required_resource_keys()
+                step_output.dagster_type.output_materialization_config.required_resource_keys()
             )
 
     # add all the storage-compatible plugin resource keys
-    for runtime_type in solid_def.all_dagster_types():
-        for auto_plugin in runtime_type.auto_plugins:
+    for dagster_type in solid_def.all_dagster_types():
+        for auto_plugin in dagster_type.auto_plugins:
             if auto_plugin.compatible_with_storage_def(system_storage_def):
                 resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
 

@@ -16,7 +16,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
             isBuiltin
         }
         ... on PipelineNotFoundError {
-            pipelineName 
+            pipelineName
         }
         ... on RuntimeTypeNotFoundError {
             pipeline { name }
@@ -77,7 +77,7 @@ fragment runtimeTypeFragment on RuntimeType {
 '''
 
 
-def test_runtime_type_query_works():
+def test_dagster_type_query_works():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
@@ -90,7 +90,7 @@ def test_runtime_type_query_works():
     assert result.data['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
-def test_runtime_type_builtin_query():
+def test_dagster_type_builtin_query():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
@@ -104,7 +104,7 @@ def test_runtime_type_builtin_query():
     assert result.data['runtimeTypeOrError']['isBuiltin']
 
 
-def test_runtime_type_or_error_pipeline_not_found():
+def test_dagster_type_or_error_pipeline_not_found():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
@@ -117,7 +117,7 @@ def test_runtime_type_or_error_pipeline_not_found():
     assert result.data['runtimeTypeOrError']['pipelineName'] == 'nope'
 
 
-def test_runtime_type_or_error_type_not_found():
+def test_dagster_type_or_error_type_not_found():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
@@ -131,7 +131,7 @@ def test_runtime_type_or_error_type_not_found():
     assert result.data['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
 
 
-def test_smoke_test_runtime_type_system():
+def test_smoke_test_dagster_type_system():
     result = execute_dagster_graphql(define_test_context(), ALL_RUNTIME_TYPES_QUERY)
 
     assert not result.errors

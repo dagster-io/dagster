@@ -304,18 +304,18 @@ def check_dagster_type(dagster_type, value):
             ).format(dagster_type=dagster_type)
         )
 
-    runtime_type = resolve_dagster_type(dagster_type)
+    dagster_type = resolve_dagster_type(dagster_type)
     with yield_empty_pipeline_context() as pipeline_context:
-        context = pipeline_context.for_type(runtime_type)
+        context = pipeline_context.for_type(dagster_type)
         try:
-            type_check = runtime_type.type_check(context, value)
+            type_check = dagster_type.type_check(context, value)
         except Failure as failure:
             return TypeCheck(success=False, description=failure.description)
 
         if not isinstance(type_check, TypeCheck):
             raise DagsterInvariantViolationError(
                 'Type checks can only return TypeCheck. Type {type_name} returned {value}.'.format(
-                    type_name=runtime_type.name, value=repr(type_check)
+                    type_name=dagster_type.name, value=repr(type_check)
                 )
             )
         return type_check

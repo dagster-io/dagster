@@ -1,4 +1,4 @@
-from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
+from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 
 from dagster.core.definitions.pipeline import ExecutionSelector
 
@@ -7,7 +7,7 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
-def get_runtime_type(graphene_info, pipeline_name, type_name):
+def get_dagster_type(graphene_info, pipeline_name, type_name):
     pipeline = get_dagster_pipeline_from_selector(graphene_info, ExecutionSelector(pipeline_name))
 
     if not pipeline.has_dagster_type(type_name):
@@ -17,4 +17,4 @@ def get_runtime_type(graphene_info, pipeline_name, type_name):
             )
         )
 
-    return to_dauphin_runtime_type(pipeline.dagster_type_named(type_name))
+    return to_dauphin_dagster_type(pipeline.dagster_type_named(type_name))

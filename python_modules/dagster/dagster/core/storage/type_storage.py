@@ -8,7 +8,7 @@ from dagster import check
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     '''Base class for storage plugins.
 
-    Extend this class for (system_storage_name, runtime_type) pairs that need special handling.
+    Extend this class for (system_storage_name, dagster_type) pairs that need special handling.
     '''
 
     @classmethod
@@ -18,12 +18,12 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
     @classmethod
     @abstractmethod
-    def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
         raise NotImplementedError()
 
     @classmethod
     @abstractmethod
-    def get_object(cls, intermediate_store, context, runtime_type, paths):
+    def get_object(cls, intermediate_store, context, dagster_type, paths):
         raise NotImplementedError()
 
     @classmethod
@@ -54,26 +54,26 @@ class TypeStoragePluginRegistry(object):
         )
         self._registry[type_to_register.name] = type_storage_plugin
 
-    def is_registered(self, runtime_type):
-        if runtime_type.name is not None and runtime_type.name in self._registry:
+    def is_registered(self, dagster_type):
+        if dagster_type.name is not None and dagster_type.name in self._registry:
             return True
         return False
 
     def get(self, name):
         return self._registry.get(name)
 
-    def check_for_unsupported_composite_overrides(self, runtime_type):
+    def check_for_unsupported_composite_overrides(self, dagster_type):
         from dagster.core.types.dagster_type import DagsterTypeKind
 
-        composite_overrides = {t.name for t in runtime_type.inner_types if t.name in self._registry}
+        composite_overrides = {t.name for t in dagster_type.inner_types if t.name in self._registry}
         if composite_overrides:
             outer_type = 'composite type'
-            if runtime_type.kind == DagsterTypeKind.LIST:
-                if runtime_type.kind == DagsterTypeKind.NULLABLE:
+            if dagster_type.kind == DagsterTypeKind.LIST:
+                if dagster_type.kind == DagsterTypeKind.NULLABLE:
                     outer_type = 'Optional List'
                 else:
                     outer_type = 'List'
-            elif runtime_type.kind == DagsterTypeKind.NULLABLE:
+            elif dagster_type.kind == DagsterTypeKind.NULLABLE:
                 outer_type = 'Optional'
 
             if len(composite_overrides) > 1:

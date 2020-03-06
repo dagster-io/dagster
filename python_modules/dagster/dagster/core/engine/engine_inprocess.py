@@ -166,17 +166,19 @@ def _input_values_from_intermediates_manager(step_context):
 
     input_values = {}
     for step_input in step.step_inputs:
-        if step_input.runtime_type.kind == DagsterTypeKind.NOTHING:
+        if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
 
         if step_input.is_from_multiple_outputs:
-            if hasattr(step_input.runtime_type, 'inner_type'):
-                runtime_type = step_input.runtime_type.inner_type
+            if hasattr(step_input.dagster_type, 'inner_type'):
+                dagster_type = step_input.dagster_type.inner_type
             else:  # This is the case where the fan-in is typed Any
-                runtime_type = step_input.runtime_type
+                dagster_type = step_input.dagster_type
             _input_value = [
                 step_context.intermediates_manager.get_intermediate(
-                    step_context, runtime_type, source_handle
+                    context=step_context,
+                    step_output_handle=source_handle,
+                    dagster_type=dagster_type,
                 )
                 for source_handle in step_input.source_handles
             ]
@@ -190,7 +192,9 @@ def _input_values_from_intermediates_manager(step_context):
 
         elif step_input.is_from_single_output:
             input_value = step_context.intermediates_manager.get_intermediate(
-                step_context, step_input.runtime_type, step_input.source_handles[0]
+                context=step_context,
+                step_output_handle=step_input.source_handles[0],
+                dagster_type=step_input.dagster_type,
             )
 
         else:  # is from config
@@ -212,7 +216,7 @@ def _input_values_from_intermediates_manager(step_context):
                 DagsterInputHydrationConfigError,
                 msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
             ):
-                input_value = step_input.runtime_type.input_hydration_config.construct_from_config_value(
+                input_value = step_input.dagster_type.input_hydration_config.construct_from_config_value(
                     step_context, step_input.config_data
                 )
         input_values[step_input.name] = input_value
@@ -397,7 +401,7 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
 
     for step_output_def in step.step_outputs:
         if not step_output_def.name in seen_outputs and not step_output_def.optional:
-            if step_output_def.runtime_type.kind == DagsterTypeKind.NOTHING:
+            if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
                     'Emitting implicit Nothing for output "{output}" on solid {solid}'.format(
                         output=step_output_def.name, solid={str(step.solid_handle)}
@@ -432,16 +436,16 @@ class DagsterTypeCheckDidNotPass(DagsterError):
         self.dagster_type = check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
 
 
-def _do_type_check(context, runtime_type, value):
-    type_check = runtime_type.type_check(context, value)
+def _do_type_check(context, dagster_type, value):
+    type_check = dagster_type.type_check(context, value)
     if not isinstance(type_check, TypeCheck):
         return TypeCheck(
             success=False,
             description=(
                 'Type checks must return TypeCheck. Type check for type {type_name} returned '
-                'value of type {return_type} when checking runtime value of type {runtime_type}.'
+                'value of type {return_type} when checking runtime value of type {dagster_type}.'
             ).format(
-                type_name=runtime_type.name, return_type=type(type_check), runtime_type=type(value)
+                type_name=dagster_type.name, return_type=type(type_check), dagster_type=type(value)
             ),
         )
     return type_check
@@ -479,12 +483,12 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             input_name=input_name,
             input_value=input_value,
             input_type=type(input_value),
-            dagster_type_name=step_input.runtime_type.name,
+            dagster_type_name=step_input.dagster_type.name,
             step_key=step_context.step.key,
         ),
     ):
         type_check = _do_type_check(
-            step_context.for_type(step_input.runtime_type), step_input.runtime_type, input_value,
+            step_context.for_type(step_input.dagster_type), step_input.dagster_type, input_value,
         )
 
         yield _create_step_input_event(
@@ -493,11 +497,11 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
 
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step input {input_name} of type {runtime_type}.'.format(
-                    input_name=input_name, runtime_type=step_input.runtime_type.name,
+                description='Type check failed for step input {input_name} of type {dagster_type}.'.format(
+                    input_name=input_name, dagster_type=step_input.dagster_type.name,
                 ),
                 metadata_entries=type_check.metadata_entries,
-                dagster_type=step_input.runtime_type,
+                dagster_type=step_input.dagster_type,
             )
 
 
@@ -535,12 +539,12 @@ def _type_checked_step_output_event_sequence(step_context, output):
             output_name=output.output_name,
             output_value=output.value,
             output_type=type(output.value),
-            dagster_type_name=step_output.runtime_type.name,
+            dagster_type_name=step_output.dagster_type.name,
             step_key=step_context.step.key,
         ),
     ):
         type_check = _do_type_check(
-            step_context.for_type(step_output.runtime_type), step_output.runtime_type, output.value
+            step_context.for_type(step_output.dagster_type), step_output.dagster_type, output.value
         )
 
         yield _create_step_output_event(
@@ -549,11 +553,11 @@ def _type_checked_step_output_event_sequence(step_context, output):
 
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step output {output_name} of type {runtime_type}.'.format(
-                    output_name=output.output_name, runtime_type=step_output.runtime_type.name,
+                description='Type check failed for step output {output_name} of type {dagster_type}.'.format(
+                    output_name=output.output_name, dagster_type=step_output.dagster_type.name,
                 ),
                 metadata_entries=type_check.metadata_entries,
-                dagster_type=step_output.runtime_type,
+                dagster_type=step_output.dagster_type,
             )
 
 
@@ -645,7 +649,7 @@ def _create_step_events_for_output(step_context, output):
 def _set_intermediates(step_context, step_output, step_output_handle, output):
     res = step_context.intermediates_manager.set_intermediate(
         context=step_context,
-        runtime_type=step_output.runtime_type,
+        dagster_type=step_output.dagster_type,
         step_output_handle=step_output_handle,
         value=output.value,
     )
@@ -686,7 +690,7 @@ def _create_output_materializations(step_context, output_name, value):
                         solid=step_context.solid.name,
                     ),
                 ):
-                    materialization = step_output.runtime_type.output_materialization_config.materialize_runtime_value(
+                    materialization = step_output.dagster_type.output_materialization_config.materialize_runtime_value(
                         step_context, output_spec, value
                     )
 
@@ -697,7 +701,7 @@ def _create_output_materializations(step_context, output_name, value):
                             'value {value} of type {python_type}. You must return a '
                             'Materialization.'
                         ).format(
-                            type_name=step_output.runtime_type.name,
+                            type_name=step_output.dagster_type.name,
                             value=repr(materialization),
                             python_type=type(materialization).__name__,
                         )

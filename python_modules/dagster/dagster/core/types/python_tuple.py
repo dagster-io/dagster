@@ -9,8 +9,8 @@ PythonTuple = PythonObjectDagsterType(tuple, 'PythonTuple', description='Represe
 
 
 class TypedTupleInputHydrationConfig(InputHydrationConfig):
-    def __init__(self, runtime_types):
-        self._runtime_types = check.list_param(runtime_types, 'runtime_types', of_type=DagsterType)
+    def __init__(self, dagster_types):
+        self._dagster_types = check.list_param(dagster_types, 'dagster_types', of_type=DagsterType)
 
     @property
     def schema_type(self):
@@ -19,7 +19,7 @@ class TypedTupleInputHydrationConfig(InputHydrationConfig):
     def construct_from_config_value(self, context, config_value):
         return tuple(
             (
-                self._runtime_types[idx].input_hydration_config.construct_from_config_value(
+                self._dagster_types[idx].input_hydration_config.construct_from_config_value(
                     context, item
                 )
                 for idx, item in enumerate(config_value)
@@ -28,16 +28,16 @@ class TypedTupleInputHydrationConfig(InputHydrationConfig):
 
 
 class _TypedPythonTuple(DagsterType):
-    def __init__(self, runtime_types):
+    def __init__(self, dagster_types):
         all_have_input_configs = all(
-            (runtime_type.input_hydration_config for runtime_type in runtime_types)
+            (dagster_type.input_hydration_config for dagster_type in dagster_types)
         )
-        self.runtime_types = runtime_types
+        self.dagster_types = dagster_types
         super(_TypedPythonTuple, self).__init__(
-            key='TypedPythonTuple' + '.'.join(map(lambda t: t.key, runtime_types)),
+            key='TypedPythonTuple' + '.'.join(map(lambda t: t.key, dagster_types)),
             name=None,
             input_hydration_config=(
-                TypedTupleInputHydrationConfig(runtime_types) if all_have_input_configs else None
+                TypedTupleInputHydrationConfig(dagster_types) if all_have_input_configs else None
             ),
             type_check_fn=self.type_check_method,
         )
@@ -53,16 +53,16 @@ class _TypedPythonTuple(DagsterType):
                 ),
             )
 
-        if len(value) != len(self.runtime_types):
+        if len(value) != len(self.dagster_types):
             return TypeCheck(
                 success=False,
                 description=(
                     'Tuple with key {key} requires {n} entries, received {m} ' 'values'
-                ).format(key=self.key, n=len(self.runtime_types), m=len(value)),
+                ).format(key=self.key, n=len(self.dagster_types), m=len(value)),
             )
 
-        for item, runtime_type in zip(value, self.runtime_types):
-            item_check = runtime_type.type_check(context, item)
+        for item, dagster_type in zip(value, self.dagster_types):
+            item_check = dagster_type.type_check(context, item)
             if not item_check.success:
                 return item_check
 
@@ -71,23 +71,23 @@ class _TypedPythonTuple(DagsterType):
     @property
     def display_name(self):
         return 'Tuple[{}]'.format(
-            ','.join([inner_type.display_name for inner_type in self.runtime_types])
+            ','.join([inner_type.display_name for inner_type in self.dagster_types])
         )
 
     @property
     def inner_types(self):
-        return self.runtime_types
+        return self.dagster_types
 
 
 def create_typed_tuple(*dagster_type_args):
-    runtime_types = list(map(resolve_dagster_type, dagster_type_args))
+    dagster_types = list(map(resolve_dagster_type, dagster_type_args))
 
     check.invariant(
-        not any((runtime_type.kind == DagsterTypeKind.NOTHING for runtime_type in runtime_types)),
+        not any((dagster_type.kind == DagsterTypeKind.NOTHING for dagster_type in dagster_types)),
         'Cannot create a runtime tuple containing inner type Nothing. Use List for fan-in',
     )
 
-    return _TypedPythonTuple(runtime_types)
+    return _TypedPythonTuple(dagster_types)
 
 
 class DagsterTupleApi:

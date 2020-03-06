@@ -29,7 +29,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
         step_outputs=[
             StepOutput(
                 name=name,
-                runtime_type=output_def.dagster_type,
+                dagster_type=output_def.dagster_type,
                 optional=output_def.optional,
                 should_materialize=name in config_output_names,
             )

@@ -38,7 +38,7 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_or_error,
     get_scheduler_or_error,
 )
-from dagster_graphql.implementation.fetch_types import get_runtime_type
+from dagster_graphql.implementation.fetch_types import get_dagster_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
@@ -137,7 +137,7 @@ class DauphinQuery(dauphin.ObjectType):
     instance = dauphin.NonNull('Instance')
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
-        return get_runtime_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
+        return get_dagster_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version

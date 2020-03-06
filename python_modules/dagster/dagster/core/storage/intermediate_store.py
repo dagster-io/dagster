@@ -32,24 +32,24 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
     def key_for_paths(self, paths):
         return self.object_store.key_for_paths([self.root] + paths)
 
-    def set_object(self, obj, context, runtime_type, paths):
+    def set_object(self, obj, context, dagster_type, paths):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
-        check.inst_param(runtime_type, 'runtime_type', DagsterType)
+        check.inst_param(dagster_type, 'dagster_type', DagsterType)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
         key = self.object_store.key_for_paths([self.root] + paths)
         return self.object_store.set_object(
-            key, obj, serialization_strategy=runtime_type.serialization_strategy
+            key, obj, serialization_strategy=dagster_type.serialization_strategy
         )
 
-    def get_object(self, context, runtime_type, paths):
+    def get_object(self, context, dagster_type, paths):
         check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
-        check.inst_param(runtime_type, 'runtime_type', DagsterType)
+        check.inst_param(dagster_type, 'dagster_type', DagsterType)
         key = self.object_store.key_for_paths([self.root] + paths)
         return self.object_store.get_object(
-            key, serialization_strategy=runtime_type.serialization_strategy
+            key, serialization_strategy=dagster_type.serialization_strategy
         )
 
     def has_object(self, context, paths):
@@ -76,28 +76,28 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
 
         return self.object_store.cp_object(src, dst)
 
-    def set_value(self, obj, context, runtime_type, paths):
-        if self.type_storage_plugin_registry.is_registered(runtime_type):
-            return self.type_storage_plugin_registry.get(runtime_type.name).set_object(
-                self, obj, context, runtime_type, paths
+    def set_value(self, obj, context, dagster_type, paths):
+        if self.type_storage_plugin_registry.is_registered(dagster_type):
+            return self.type_storage_plugin_registry.get(dagster_type.name).set_object(
+                self, obj, context, dagster_type, paths
             )
-        elif runtime_type.name is None:
+        elif dagster_type.name is None:
             self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
-                runtime_type
+                dagster_type
             )
 
-        return self.set_object(obj, context, runtime_type, paths)
+        return self.set_object(obj, context, dagster_type, paths)
 
-    def get_value(self, context, runtime_type, paths):
-        if self.type_storage_plugin_registry.is_registered(runtime_type):
-            return self.type_storage_plugin_registry.get(runtime_type.name).get_object(
-                self, context, runtime_type, paths
+    def get_value(self, context, dagster_type, paths):
+        if self.type_storage_plugin_registry.is_registered(dagster_type):
+            return self.type_storage_plugin_registry.get(dagster_type.name).get_object(
+                self, context, dagster_type, paths
             )
-        elif runtime_type.name is None:
+        elif dagster_type.name is None:
             self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
-                runtime_type
+                dagster_type
             )
-        return self.get_object(context, runtime_type, paths)
+        return self.get_object(context, dagster_type, paths)
 
     @staticmethod
     def paths_for_intermediate(step_key, output_name):
@@ -106,7 +106,7 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
     def get_intermediate(self, context, step_key, dagster_type, output_name='result'):
         return self.get_object(
             context=context,
-            runtime_type=resolve_dagster_type(dagster_type),
+            dagster_type=resolve_dagster_type(dagster_type),
             paths=self.paths_for_intermediate(step_key, output_name),
         )
 

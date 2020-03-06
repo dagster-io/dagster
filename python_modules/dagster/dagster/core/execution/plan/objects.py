@@ -7,6 +7,7 @@ from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils import frozentags, merge_dicts
+from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -125,13 +126,29 @@ class StepInputSourceType(Enum):
 
 
 class StepInput(
-    namedtuple('_StepInput', 'name runtime_type source_type source_handles config_data')
+    namedtuple(
+        '_StepInput', 'name dagster_type source_type source_handles config_data runtime_type'
+    )
 ):
-    def __new__(cls, name, runtime_type, source_type, source_handles=None, config_data=None):
+    def __new__(
+        cls,
+        name,
+        dagster_type=None,
+        source_type=None,
+        source_handles=None,
+        config_data=None,
+        runtime_type=None,
+    ):
+        canonicalize_dagster_type = canonicalize_backcompat_args(
+            dagster_type, 'dagster_type', runtime_type, 'runtime_type',
+        )
         return super(StepInput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            runtime_type=check.inst_param(runtime_type, 'runtime_type', DagsterType),
+            runtime_type=check.inst_param(
+                canonicalize_dagster_type, 'runtime_type', DagsterType
+            ),  # TODO to deprecate in 0.8.0
+            dagster_type=check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType),
             source_type=check.inst_param(source_type, 'source_type', StepInputSourceType),
             source_handles=check.opt_list_param(
                 source_handles, 'source_handles', of_type=StepOutputHandle
@@ -159,14 +176,28 @@ class StepInput(
         return {handle.step_key for handle in self.source_handles}
 
 
-class StepOutput(namedtuple('_StepOutput', 'name runtime_type optional should_materialize')):
-    def __new__(cls, name, runtime_type, optional, should_materialize):
+class StepOutput(
+    namedtuple('_StepOutput', 'name dagster_type optional should_materialize runtime_type')
+):
+    def __new__(
+        cls, name, dagster_type=None, optional=None, should_materialize=None, runtime_type=None
+    ):
+        canonicalize_dagster_type = canonicalize_backcompat_args(
+            new_val=dagster_type,
+            new_arg='dagster_type',
+            old_val=runtime_type,
+            old_arg='runtime_type',
+        )
+
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            runtime_type=check.inst_param(runtime_type, 'runtime_type', DagsterType),
             optional=check.bool_param(optional, 'optional'),
             should_materialize=check.bool_param(should_materialize, 'should_materialize'),
+            runtime_type=check.inst_param(
+                canonicalize_dagster_type, 'runtime_type', DagsterType
+            ),  # TODO to deprecate in 0.8.0
+            dagster_type=check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType),
         )
 
 

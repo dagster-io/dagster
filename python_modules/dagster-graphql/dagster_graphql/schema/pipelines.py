@@ -14,7 +14,7 @@ from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.seven import lru_cache
 
 from .config_types import to_dauphin_config_type
-from .runtime_types import to_dauphin_runtime_type
+from .runtime_types import to_dauphin_dagster_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
 
@@ -65,10 +65,11 @@ class DauphinPipeline(dauphin.ObjectType):
         return build_dauphin_solids(self._pipeline)
 
     def resolve_runtime_types(self, _graphene_info):
+        # TODO yuhan rename runtime_type in schema
         return sorted(
             list(
                 map(
-                    to_dauphin_runtime_type,
+                    to_dauphin_dagster_type,
                     [t for t in self._pipeline.all_dagster_types() if t.name],
                 )
             ),
@@ -90,7 +91,7 @@ class DauphinPipeline(dauphin.ObjectType):
         if self._pipeline.has_config_type(typeName):
             return to_dauphin_config_type(self._pipeline.config_type_named(typeName))
         elif self._pipeline.has_dagster_type(typeName):
-            return to_dauphin_runtime_type(self._pipeline.dagster_type_named(typeName))
+            return to_dauphin_dagster_type(self._pipeline.dagster_type_named(typeName))
 
         else:
             check.failed('Not a config type or runtime type')

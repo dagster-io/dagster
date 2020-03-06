@@ -12,22 +12,22 @@ def is_json_serializable(value):
         return False
 
 
-def read_value(runtime_type, value):
-    check.inst_param(runtime_type, 'runtime_type', DagsterType)
-    if runtime_type.kind == DagsterTypeKind.SCALAR:
+def read_value(dagster_type, value):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    if dagster_type.kind == DagsterTypeKind.SCALAR:
         return value
-    elif runtime_type.kind == DagsterTypeKind.ANY and is_json_serializable(value):
-        return value
-    else:
-        return runtime_type.serialization_strategy.deserialize_from_file(value)
-
-
-def write_value(runtime_type, value, target_file):
-    check.inst_param(runtime_type, 'runtime_type', DagsterType)
-    if runtime_type.kind == DagsterTypeKind.SCALAR:
-        return value
-    elif runtime_type.kind == DagsterTypeKind.ANY and is_json_serializable(value):
+    elif dagster_type.kind == DagsterTypeKind.ANY and is_json_serializable(value):
         return value
     else:
-        runtime_type.serialization_strategy.serialize_to_file(value, target_file)
+        return dagster_type.serialization_strategy.deserialize_from_file(value)
+
+
+def write_value(dagster_type, value, target_file):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
+    if dagster_type.kind == DagsterTypeKind.SCALAR:
+        return value
+    elif dagster_type.kind == DagsterTypeKind.ANY and is_json_serializable(value):
+        return value
+    else:
+        dagster_type.serialization_strategy.serialize_to_file(value, target_file)
         return target_file

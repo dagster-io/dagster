@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from dagster_graphql import dauphin
-from dagster_graphql.schema.runtime_types import to_dauphin_runtime_type
+from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 
 from dagster import check
 from dagster.core.execution.plan.objects import ExecutionStep, StepInput, StepOutput
@@ -45,7 +45,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         return self._step_output.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._step_output.runtime_type)
+        return to_dauphin_dagster_type(self._step_output.dagster_type)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -65,7 +65,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         return self._step_input.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._step_input.runtime_type)
+        return to_dauphin_dagster_type(self._step_input.dagster_type)
 
     def resolve_dependsOn(self, graphene_info):
         return [

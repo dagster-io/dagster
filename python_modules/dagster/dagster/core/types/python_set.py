@@ -11,20 +11,20 @@ PythonSet = PythonObjectDagsterType(
 
 
 class TypedSetInputHydrationConfig(InputHydrationConfig):
-    def __init__(self, item_runtime_type):
-        self._item_runtime_type = check.inst_param(
-            item_runtime_type, 'item_runtime_type', DagsterType
+    def __init__(self, item_dagster_type):
+        self._item_dagster_type = check.inst_param(
+            item_dagster_type, 'item_dagster_type', DagsterType
         )
 
     @property
     def schema_type(self):
-        return Array(self._item_runtime_type.input_hydration_config.schema_type)
+        return Array(self._item_dagster_type.input_hydration_config.schema_type)
 
     def construct_from_config_value(self, context, config_value):
         runtime_value = set()
         for item in config_value:
             runtime_value.add(
-                self._item_runtime_type.input_hydration_config.construct_from_config_value(
+                self._item_dagster_type.input_hydration_config.construct_from_config_value(
                     context, item
                 )
             )
@@ -32,14 +32,14 @@ class TypedSetInputHydrationConfig(InputHydrationConfig):
 
 
 class _TypedPythonSet(DagsterType):
-    def __init__(self, item_runtime_type):
-        self.item_type = item_runtime_type
+    def __init__(self, item_dagster_type):
+        self.item_type = item_dagster_type
         super(_TypedPythonSet, self).__init__(
-            key='TypedPythonSet.{}'.format(item_runtime_type.key),
+            key='TypedPythonSet.{}'.format(item_dagster_type.key),
             name=None,
             input_hydration_config=(
-                TypedSetInputHydrationConfig(item_runtime_type)
-                if item_runtime_type.input_hydration_config
+                TypedSetInputHydrationConfig(item_dagster_type)
+                if item_dagster_type.input_hydration_config
                 else None
             ),
             type_check_fn=self.type_check_method,
@@ -73,14 +73,14 @@ class _TypedPythonSet(DagsterType):
 
 
 def create_typed_runtime_set(item_dagster_type):
-    item_runtime_type = resolve_dagster_type(item_dagster_type)
+    item_dagster_type = resolve_dagster_type(item_dagster_type)
 
     check.invariant(
-        not item_runtime_type.kind == DagsterTypeKind.NOTHING,
+        not item_dagster_type.kind == DagsterTypeKind.NOTHING,
         'Cannot create the runtime type Set[Nothing]. Use List type for fan-in.',
     )
 
-    return _TypedPythonSet(item_runtime_type)
+    return _TypedPythonSet(item_dagster_type)
 
 
 class DagsterSetApi:

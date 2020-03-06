@@ -417,7 +417,7 @@ def test_more_complicated_multiple_errors():
     assert not_defined_one['reason'] == 'FIELD_NOT_DEFINED'
     assert not_defined_one['fieldName'] == 'extra_one'
 
-    runtime_type_error = find_error(
+    dagster_type_error = find_error(
         result,
         ['solids', 'a_solid_with_multilayered_config', 'config', 'nested_field', 'field_four_str'],
         'RUNTIME_TYPE_MISMATCH',
@@ -428,10 +428,10 @@ def test_more_complicated_multiple_errors():
         'config',
         'nested_field',
         'field_four_str',
-    ] == field_stack(runtime_type_error)
-    assert runtime_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
-    assert runtime_type_error['valueRep'] == '23434'
-    assert runtime_type_error['type']['key'] == 'String'
+    ] == field_stack(dagster_type_error)
+    assert dagster_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
+    assert dagster_type_error['valueRep'] == '23434'
+    assert dagster_type_error['type']['key'] == 'String'
 
     not_defined_two = find_error(
         result,

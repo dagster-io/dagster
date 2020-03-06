@@ -170,13 +170,13 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
         raise NotImplementedError()
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
         paths.append(obj)
-        return intermediate_store.set_object('', context, runtime_type, paths)
+        return intermediate_store.set_object('', context, dagster_type, paths)
 
     @classmethod
-    def get_object(cls, intermediate_store, _context, _runtime_type, paths):
+    def get_object(cls, intermediate_store, _context, _dagster_type, paths):
         check.inst_param(intermediate_store, 'intermediate_store', S3IntermediateStore)
         res = intermediate_store.object_store.s3.list_objects(
             Bucket=intermediate_store.object_store.bucket,

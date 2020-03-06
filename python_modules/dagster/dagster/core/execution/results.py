@@ -503,7 +503,7 @@ class SolidExecutionResult(object):
     def _get_value(self, context, step_output_data):
         value = context.intermediates_manager.get_intermediate(
             context=context,
-            runtime_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
+            dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
             step_output_handle=step_output_data.step_output_handle,
         )
         if isinstance(value, ObjectStoreOperation):

@@ -10,35 +10,35 @@ def config_type_for_schema(schema):
     return to_dauphin_config_type(schema.schema_type) if schema else None
 
 
-def to_dauphin_runtime_type(runtime_type):
-    check.inst_param(runtime_type, 'runtime_type', DagsterType)
+def to_dauphin_dagster_type(dagster_type):
+    check.inst_param(dagster_type, 'dagster_type', DagsterType)
 
     base_args = dict(
-        key=runtime_type.key,
-        name=runtime_type.name,
-        display_name=runtime_type.display_name,
-        description=runtime_type.description,
-        is_builtin=runtime_type.is_builtin,
-        is_nullable=runtime_type.kind == DagsterTypeKind.NULLABLE,
-        is_list=runtime_type.kind == DagsterTypeKind.LIST,
-        is_nothing=runtime_type.kind == DagsterTypeKind.NOTHING,
-        input_schema_type=config_type_for_schema(runtime_type.input_hydration_config),
-        output_schema_type=config_type_for_schema(runtime_type.output_materialization_config),
-        inner_types=_resolve_inner_types(runtime_type),
+        key=dagster_type.key,
+        name=dagster_type.name,
+        display_name=dagster_type.display_name,
+        description=dagster_type.description,
+        is_builtin=dagster_type.is_builtin,
+        is_nullable=dagster_type.kind == DagsterTypeKind.NULLABLE,
+        is_list=dagster_type.kind == DagsterTypeKind.LIST,
+        is_nothing=dagster_type.kind == DagsterTypeKind.NOTHING,
+        input_schema_type=config_type_for_schema(dagster_type.input_hydration_config),
+        output_schema_type=config_type_for_schema(dagster_type.output_materialization_config),
+        inner_types=_resolve_inner_types(dagster_type),
     )
 
-    if runtime_type.kind == DagsterTypeKind.LIST:
-        base_args['of_type'] = runtime_type.inner_type
+    if dagster_type.kind == DagsterTypeKind.LIST:
+        base_args['of_type'] = dagster_type.inner_type
         return DauphinListRuntimeType(**base_args)
-    elif runtime_type.kind == DagsterTypeKind.NULLABLE:
-        base_args['of_type'] = runtime_type.inner_type
+    elif dagster_type.kind == DagsterTypeKind.NULLABLE:
+        base_args['of_type'] = dagster_type.inner_type
         return DauphinNullableRuntimeType(**base_args)
     else:
         return DauphinRegularRuntimeType(**base_args)
 
 
-def _resolve_inner_types(runtime_type):
-    return list(map(to_dauphin_runtime_type, runtime_type.inner_types))
+def _resolve_inner_types(dagster_type):
+    return list(map(to_dauphin_dagster_type, dagster_type.inner_types))
 
 
 class DauphinRuntimeType(dauphin.Interface):

@@ -108,13 +108,13 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
             return False
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, _context, _dagster_type, paths):
         target_path = intermediate_store.object_store.key_for_paths(paths)
         obj.write.parquet(intermediate_store.uri_for_paths(paths, protocol='s3a://'))
         return target_path
 
     @classmethod
-    def get_object(cls, intermediate_store, context, _runtime_type, paths):
+    def get_object(cls, intermediate_store, context, _dagster_type, paths):
         return context.resources.spark.spark_session.read.parquet(
             intermediate_store.uri_for_paths(paths, protocol='s3a://')
         )
@@ -130,13 +130,13 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
         return system_storage_def is fs_system_storage
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, _context, _runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, _context, _dagster_type, paths):
         target_path = os.path.join(intermediate_store.root, *paths)
         obj.write.parquet(intermediate_store.uri_for_paths(paths))
         return target_path
 
     @classmethod
-    def get_object(cls, intermediate_store, context, _runtime_type, paths):
+    def get_object(cls, intermediate_store, context, _dagster_type, paths):
         return context.resources.spark.spark_session.read.parquet(
             os.path.join(intermediate_store.root, *paths)
         )

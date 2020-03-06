@@ -14,7 +14,7 @@ from dagster.core.definitions import (
     SolidOutputHandle,
 )
 
-from .runtime_types import to_dauphin_runtime_type
+from .runtime_types import to_dauphin_dagster_type
 
 
 class DauphinSolidContainer(dauphin.Interface):
@@ -236,7 +236,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._input_definition.dagster_type)
+        return to_dauphin_dagster_type(self._input_definition.dagster_type)
 
 
 class DauphinOutputDefinition(dauphin.ObjectType):
@@ -261,7 +261,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
         )
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_runtime_type(self._output_definition.dagster_type)
+        return to_dauphin_dagster_type(self._output_definition.dagster_type)
 
 
 class DauphinInput(dauphin.ObjectType):

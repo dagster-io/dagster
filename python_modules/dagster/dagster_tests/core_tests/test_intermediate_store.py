@@ -35,12 +35,12 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
         raise NotImplementedError()
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, context, runtime_type, paths):
+    def set_object(cls, intermediate_store, obj, context, dagster_type, paths):
         paths.append(obj)
         mkdir_p(os.path.join(intermediate_store.root, *paths))
 
     @classmethod
-    def get_object(cls, intermediate_store, context, runtime_type, paths):
+    def get_object(cls, intermediate_store, context, dagster_type, paths):
         return os.listdir(os.path.join(intermediate_store.root, *paths))[0]
 
 

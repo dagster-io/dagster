@@ -455,12 +455,12 @@ class PythonObjectDagsterType(DagsterType):
 
 
 class NoneableInputSchema(InputHydrationConfig):
-    def __init__(self, inner_runtime_type):
-        self._inner_runtime_type = check.inst_param(
-            inner_runtime_type, 'inner_runtime_type', DagsterType
+    def __init__(self, inner_dagster_type):
+        self._inner_dagster_type = check.inst_param(
+            inner_dagster_type, 'inner_dagster_type', DagsterType
         )
-        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
-        self._schema_type = ConfigNoneable(inner_runtime_type.input_hydration_config.schema_type)
+        check.param_invariant(inner_dagster_type.input_hydration_config, 'inner_dagster_type')
+        self._schema_type = ConfigNoneable(inner_dagster_type.input_hydration_config.schema_type)
 
     @property
     def schema_type(self):
@@ -469,7 +469,7 @@ class NoneableInputSchema(InputHydrationConfig):
     def construct_from_config_value(self, context, config_value):
         if config_value is None:
             return None
-        return self._inner_runtime_type.input_hydration_config.construct_from_config_value(
+        return self._inner_dagster_type.input_hydration_config.construct_from_config_value(
             context, config_value
         )
 
@@ -515,12 +515,12 @@ class OptionalType(DagsterType):
 
 
 class ListInputSchema(InputHydrationConfig):
-    def __init__(self, inner_runtime_type):
-        self._inner_runtime_type = check.inst_param(
-            inner_runtime_type, 'inner_runtime_type', DagsterType
+    def __init__(self, inner_dagster_type):
+        self._inner_dagster_type = check.inst_param(
+            inner_dagster_type, 'inner_dagster_type', DagsterType
         )
-        check.param_invariant(inner_runtime_type.input_hydration_config, 'inner_runtime_type')
-        self._schema_type = Array(inner_runtime_type.input_hydration_config.schema_type)
+        check.param_invariant(inner_dagster_type.input_hydration_config, 'inner_dagster_type')
+        self._schema_type = Array(inner_dagster_type.input_hydration_config.schema_type)
 
     @property
     def schema_type(self):
@@ -528,7 +528,7 @@ class ListInputSchema(InputHydrationConfig):
 
     def construct_from_config_value(self, context, config_value):
         convert_item = partial(
-            self._inner_runtime_type.input_hydration_config.construct_from_config_value, context
+            self._inner_dagster_type.input_hydration_config.construct_from_config_value, context
         )
         return list(map(convert_item, config_value))
 
@@ -750,19 +750,19 @@ ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 def construct_dagster_type_dictionary(solid_defs):
     type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
-        for runtime_type in solid_def.all_dagster_types():
-            if not runtime_type.name:
+        for dagster_type in solid_def.all_dagster_types():
+            if not dagster_type.name:
                 continue
-            if runtime_type.name not in type_dict:
-                type_dict[runtime_type.name] = runtime_type
+            if dagster_type.name not in type_dict:
+                type_dict[dagster_type.name] = dagster_type
                 continue
 
-            if type_dict[runtime_type.name] is not runtime_type:
+            if type_dict[dagster_type.name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
                     (
                         'You have created two dagster types with the same name "{type_name}". '
                         'Dagster types have must have unique names.'
-                    ).format(type_name=runtime_type.name)
+                    ).format(type_name=dagster_type.name)
                 )
 
     return type_dict
