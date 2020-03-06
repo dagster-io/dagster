@@ -85,7 +85,6 @@ export const useViewport = () => {
     }
     animation.current = animate(offset, targetOffset, {
       step: (v: any) => {
-        console.log(v);
         ref.current.scrollTop = v.top;
         ref.current.scrollLeft = v.left;
         setOffset({
@@ -94,7 +93,6 @@ export const useViewport = () => {
         });
       },
       done: () => {
-        console.log(targetOffset);
         ref.current.scrollTop = targetOffset.top;
         ref.current.scrollLeft = targetOffset.left;
         setOffset(targetOffset);
