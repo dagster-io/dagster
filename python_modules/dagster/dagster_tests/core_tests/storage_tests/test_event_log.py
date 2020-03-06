@@ -9,11 +9,11 @@ import pytest
 import sqlalchemy
 
 from dagster import seven
+from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.plan.objects import StepSuccessData
 from dagster.core.storage.event_log import (
-    DagsterEventLogInvalidForRun,
     InMemoryEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,

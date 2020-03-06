@@ -5,13 +5,14 @@ import six
 import sqlalchemy as db
 
 from dagster import check, seven
+from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import datetime_as_float
 
 from ..pipeline_run import PipelineRunStatsSnapshot
-from .base import DagsterEventLogInvalidForRun, EventLogStorage
+from .base import EventLogStorage
 from .schema import SqlEventLogStorageTable
 
 

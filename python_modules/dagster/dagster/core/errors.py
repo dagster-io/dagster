@@ -343,3 +343,32 @@ class DagsterRunAlreadyExists(DagsterError):
 
 class DagsterRunConflict(DagsterError):
     '''Indicates that a conflicting pipeline run exists in a run storage.'''
+
+
+class DagsterTypeCheckDidNotPass(DagsterError):
+    '''Indicates that a type check failed.
+
+    This is raised when ``raise_on_error`` is ``True`` in calls to the synchronous pipeline and
+    solid execution APIs (:py:func:`~dagster.execute_pipeline`, :py:func:`~dagster.execute_solid`,
+    etc.), that is, typically in test, and  a :py:class:`~dagster.DagsterType`'s type check fails
+    by returning either ``False`` or an instance of :py:class:`~dagster.TypeCheck` whose ``success``
+    member is ``False``.
+    '''
+
+    def __init__(self, description=None, metadata_entries=None, dagster_type=None):
+        from dagster import EventMetadataEntry, DagsterType
+
+        super(DagsterTypeCheckDidNotPass, self).__init__(description)
+        self.description = check.opt_str_param(description, 'description')
+        self.metadata_entries = check.opt_list_param(
+            metadata_entries, 'metadata_entries', of_type=EventMetadataEntry
+        )
+        self.dagster_type = check.opt_inst_param(dagster_type, 'dagster_type', DagsterType)
+
+
+class DagsterEventLogInvalidForRun(DagsterError):
+    def __init__(self, run_id):
+        self.run_id = check.str_param(run_id, 'run_id')
+        super(DagsterEventLogInvalidForRun, self).__init__(
+            'Event logs invalid for run id {}'.format(run_id)
+        )

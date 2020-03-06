@@ -57,11 +57,11 @@ from dagster.core.definitions import (
     system_storage,
 )
 from dagster.core.engine import Engine
-from dagster.core.engine.engine_inprocess import DagsterTypeCheckDidNotPass
 from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
+    DagsterEventLogInvalidForRun,
     DagsterExecutionStepExecutionError,
     DagsterExecutionStepNotFoundError,
     DagsterInvalidConfigDefinitionError,
@@ -72,6 +72,7 @@ from dagster.core.errors import (
     DagsterRunNotFoundError,
     DagsterStepOutputNotFoundError,
     DagsterSubprocessError,
+    DagsterTypeCheckDidNotPass,
     DagsterTypeCheckError,
     DagsterUnknownResourceError,
     DagsterUnmetExecutorRequirementsError,
@@ -202,6 +203,7 @@ __all__ = [
     # Errors
     'DagsterConfigMappingFunctionError',
     'DagsterError',
+    'DagsterEventLogInvalidForRun',
     'DagsterExecutionStepExecutionError',
     'DagsterExecutionStepNotFoundError',
     'DagsterInvalidConfigDefinitionError',

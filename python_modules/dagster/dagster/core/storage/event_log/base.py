@@ -3,18 +3,8 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import pyrsistent
 import six
 
-from dagster import check
-from dagster.core.errors import DagsterError
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import build_stats_from_events
-
-
-class DagsterEventLogInvalidForRun(DagsterError):
-    def __init__(self, run_id):
-        self.run_id = check.str_param(run_id, 'run_id')
-        super(DagsterEventLogInvalidForRun, self).__init__(
-            'Event logs invalid for run id {}'.format(run_id)
-        )
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
