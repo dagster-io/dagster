@@ -3,7 +3,6 @@ import pickle
 import uuid
 
 import dagstermill
-from dagster_pandas import DataFrame
 
 from dagster import (
     DependencyDefinition,
@@ -23,6 +22,27 @@ from dagster import (
     resource,
     solid,
 )
+
+try:
+    from dagster_pandas import DataFrame
+
+    DAGSTER_PANDAS_PRESENT = True
+except ImportError:
+    DAGSTER_PANDAS_PRESENT = False
+
+try:
+    import sklearn as _
+
+    SKLEARN_PRESENT = True
+except ImportError:
+    SKLEARN_PRESENT = False
+
+try:
+    import matplotlib as _
+
+    MATPLOTLIB_PRESENT = True
+except ImportError:
+    MATPLOTLIB_PRESENT = False
 
 
 def nb_test_path(name):
@@ -172,41 +192,42 @@ def define_error_pipeline():
     )
 
 
-@solid_definition
-def clean_data_solid():
-    return dagstermill.define_dagstermill_solid(
-        'clean_data', nb_test_path('clean_data'), output_defs=[OutputDefinition(DataFrame)]
-    )
+if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
+    @solid_definition
+    def clean_data_solid():
+        return dagstermill.define_dagstermill_solid(
+            'clean_data', nb_test_path('clean_data'), output_defs=[OutputDefinition(DataFrame)]
+        )
 
-@solid_definition
-def LR_solid():
-    return dagstermill.define_dagstermill_solid(
-        'linear_regression',
-        nb_test_path('tutorial_LR'),
-        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
-    )
+    @solid_definition
+    def LR_solid():
+        return dagstermill.define_dagstermill_solid(
+            'linear_regression',
+            nb_test_path('tutorial_LR'),
+            input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        )
 
+    @solid_definition
+    def RF_solid():
+        return dagstermill.define_dagstermill_solid(
+            'random_forest_regression',
+            nb_test_path('tutorial_RF'),
+            input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
+        )
 
-@solid_definition
-def RF_solid():
-    return dagstermill.define_dagstermill_solid(
-        'random_forest_regression',
-        nb_test_path('tutorial_RF'),
-        input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
-    )
-
-
-def define_tutorial_pipeline():
-    return PipelineDefinition(
-        name='tutorial_pipeline',
-        solid_defs=[clean_data_solid, LR_solid, RF_solid],
-        dependencies={
-            SolidInvocation('clean_data'): {},
-            SolidInvocation('linear_regression'): {'df': DependencyDefinition('clean_data')},
-            SolidInvocation('random_forest_regression'): {'df': DependencyDefinition('clean_data')},
-        },
-    )
+    def define_tutorial_pipeline():
+        return PipelineDefinition(
+            name='tutorial_pipeline',
+            solid_defs=[clean_data_solid, LR_solid, RF_solid],
+            dependencies={
+                SolidInvocation('clean_data'): {},
+                SolidInvocation('linear_regression'): {'df': DependencyDefinition('clean_data')},
+                SolidInvocation('random_forest_regression'): {
+                    'df': DependencyDefinition('clean_data')
+                },
+            },
+        )
 
 
 @solid('resource_solid', required_resource_keys={'list'})
@@ -312,19 +333,20 @@ def define_bad_kernel_pipeline():
 
 
 def define_example_repository():
-    return RepositoryDefinition(
-        name='notebook_repo',
-        pipeline_dict={
-            'bad_kernel_pipeline': define_bad_kernel_pipeline,
-            'error_pipeline': define_error_pipeline,
-            'hello_world_pipeline': define_hello_world_pipeline,
-            'hello_world_config_pipeline': define_hello_world_config_pipeline,
-            'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
-            'hello_logging_pipeline': define_hello_logging_pipeline,
-            'resource_pipeline': define_resource_pipeline,
-            'resource_with_exception_pipeline': define_resource_with_exception_pipeline,
-            'test_add_pipeline': define_add_pipeline,
-            'test_notebook_dag': define_test_notebook_dag_pipeline,
-            'tutorial_pipeline': define_tutorial_pipeline,
-        },
-    )
+    pipeline_dict = {
+        'bad_kernel_pipeline': define_bad_kernel_pipeline,
+        'error_pipeline': define_error_pipeline,
+        'hello_world_pipeline': define_hello_world_pipeline,
+        'hello_world_config_pipeline': define_hello_world_config_pipeline,
+        'hello_world_explicit_yield_pipeline': define_hello_world_explicit_yield_pipeline,
+        'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
+        'hello_logging_pipeline': define_hello_logging_pipeline,
+        'resource_pipeline': define_resource_pipeline,
+        'resource_with_exception_pipeline': define_resource_with_exception_pipeline,
+        'test_add_pipeline': define_add_pipeline,
+        'test_notebook_dag': define_test_notebook_dag_pipeline,
+    }
+    if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
+        pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline
+
+    return RepositoryDefinition(name='notebook_repo', pipeline_dict=pipeline_dict)

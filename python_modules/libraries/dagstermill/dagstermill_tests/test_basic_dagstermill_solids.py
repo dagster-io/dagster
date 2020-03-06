@@ -67,6 +67,12 @@ def test_hello_world():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_with_config():
+    with exec_for_test('define_hello_world_config_pipeline') as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
 def test_reexecute_result_notebook():
     with exec_for_test('define_hello_world_pipeline') as result:
         assert result.success
@@ -257,7 +263,13 @@ def test_resources_notebook_with_exception():
 
 
 @pytest.mark.notebook_test
-def test_bad_kernel():
+def define_bad_kernel_pipeline():
     with pytest.raises(NoSuchKernel):
-        with exec_for_test('define_bad_kernel_pipeline'):
+        with exec_for_test('bad_kernel_pipeline'):
             pass
+
+
+@pytest.mark.notebook_test
+def test_hello_logging():
+    with exec_for_test('define_hello_logging_pipeline') as result:
+        assert result.success

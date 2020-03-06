@@ -38,7 +38,6 @@ def _do_setup(name='dagstermill'):
         ],
         install_requires=[
             'dagster',
-            'dagster-pandas',
             'ipykernel>=4.9.0',
             'nteract-scrapbook>=0.2.0',
             'papermill>=1.0.0,<2.0.0',
