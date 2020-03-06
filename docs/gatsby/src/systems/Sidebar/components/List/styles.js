@@ -8,7 +8,17 @@ export const wrapper = {
   "&.toctree-l1 a": {
     fontWeight: 600,
     fontSize: "18px",
-    color: "#A59898 !important"
+    color: t => {
+      return `${t.colors.gray[1]} !important`;
+    }
+  },
+  "&.toctree-l1 a.active": {
+    color: "black !important"
+  },
+  "&.toctree-l1 a:hover": {
+    color: t => {
+      return `${t.colors.gray[0]} !important`;
+    }
   },
   "&.active.toctree-l1 a": {
     color: "black !important"
@@ -35,7 +45,7 @@ export const wrapper = {
   "&.toctree-l2 a": {
     fontWeight: 400,
     fontSize: 1,
-    opacity: 0.6
+    opacity: 0.8
   },
   "&.toctree-l2 a:hover, &.toctree-l2 a.active": {
     opacity: 1,

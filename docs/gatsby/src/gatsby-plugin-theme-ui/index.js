@@ -1,5 +1,5 @@
 import { rem } from "utils/css";
-import colors, { newColors } from "./colors";
+import colors from "./colors";
 
 export default {
   breakpoints: ["600px", "1024px", "1366px"],
@@ -14,8 +14,8 @@ export default {
       bg: colors.white
     },
     sidebar: {
-      bg: newColors.white,
-      color: newColors.gray
+      bg: colors.white,
+      color: colors.gray[1]
     }
   },
   fonts: {

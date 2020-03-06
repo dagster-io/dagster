@@ -29,6 +29,7 @@ about past runs and the structured events.
 By default (if ``dagster.yaml`` is not present or nothing is specified in that file), Dagster will
 store this information on the local filesystem, laid out like this:
 
+
 .. code-block::
 
     $DAGSTER_HOME
@@ -189,6 +190,7 @@ For example, if you'd like your production pipelines to run using the built-in m
 executor (taking advantage of the big box to which you've deployed Dagit), rather than the
 single-process executor (which can be easier to reason about for test), you'll need to make sure
 your pipeline configuration YAML contains a block like the following:
+
 
 .. code-block:: yaml
 

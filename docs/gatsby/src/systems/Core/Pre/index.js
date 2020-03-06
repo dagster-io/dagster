@@ -22,7 +22,7 @@ export const Pre = ({ children, ...props }) => {
 
   return (
     <Styled.pre sx={styles.wrapper} {...props}>
-      <Styled.code ref={ref} className={`language-${language}`}>
+      <Styled.code ref={ref} className={`language-${language} hljs`}>
         {children}
       </Styled.code>
     </Styled.pre>
