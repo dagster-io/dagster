@@ -57,10 +57,48 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_stats {
   ticksFailed: number;
 }
 
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline {
+  __typename: "Pipeline" | "UnknownPipeline";
+  name: string;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run {
+  __typename: "PipelineRun";
+  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run_pipeline;
+  runId: string;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData {
+  __typename: "ScheduleTickSuccessData";
+  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData_run | null;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData {
+  __typename: "ScheduleTickFailureData";
+  error: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData_error;
+}
+
+export type ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData = ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickSuccessData | ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData_ScheduleTickFailureData;
+
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
   __typename: "ScheduleTick";
   tickId: string;
   status: ScheduleTickStatus;
+  timestamp: number;
+  tickSpecificData: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run {

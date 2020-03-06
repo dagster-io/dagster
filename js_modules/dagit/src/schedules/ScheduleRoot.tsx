@@ -11,7 +11,8 @@ import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
 } from "./types/ScheduleRootQuery";
 import {
   PartitionRunsQuery,
@@ -25,8 +26,9 @@ import { ScheduleRow, ScheduleRowFragment, AttemptStatus } from "./ScheduleRow";
 
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { showCustomAlert } from "../CustomAlertProvider";
-import { unixTimestampToString } from "../Util";
+import { unixTimestampToString, assertUnreachable } from "../Util";
 import { RunStatus } from "../runs/RunUtils";
+import { ScheduleTickStatus } from "../types/globalTypes";
 import styled from "styled-components/macro";
 import {
   Collapse,
@@ -34,10 +36,12 @@ import {
   Icon,
   Intent,
   Callout,
-  Code
+  Code,
+  Tag
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
+import PythonErrorInfo from "../PythonErrorInfo";
 import { useState } from "react";
 
 const NUM_RUNS_TO_DISPLAY = 10;
@@ -93,22 +97,103 @@ export class ScheduleRoot extends React.Component<
   }
 }
 
+const RenderEventSpecificData: React.FunctionComponent<{
+  data: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
+}> = ({ data }) => {
+  if (!data) {
+    return null;
+  }
+
+  switch (data.__typename) {
+    case "ScheduleTickFailureData":
+      return (
+        <a
+          onClick={() =>
+            showCustomAlert({
+              title: "Schedule Response",
+              body: (
+                <>
+                  <PythonErrorInfo error={data.error} />
+                </>
+              )
+            })
+          }
+        >
+          <Tag fill={true} minimal={true} intent={Intent.DANGER}>
+            See Error
+          </Tag>
+        </a>
+      );
+    case "ScheduleTickSuccessData":
+      return (
+        <a href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}>
+          <Tag fill={true} minimal={true} intent={Intent.SUCCESS}>
+            Run {data.run?.runId}
+          </Tag>
+        </a>
+      );
+  }
+
+  return null;
+};
+
+const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
+  status
+}) => {
+  switch (status) {
+    case ScheduleTickStatus.STARTED:
+      return (
+        <Tag minimal={true} intent={Intent.PRIMARY}>
+          Success
+        </Tag>
+      );
+    case ScheduleTickStatus.SUCCESS:
+      return (
+        <Tag minimal={true} intent={Intent.SUCCESS}>
+          Success
+        </Tag>
+      );
+    case ScheduleTickStatus.SKIPPED:
+      return (
+        <Tag minimal={true} intent={Intent.WARNING}>
+          Failure
+        </Tag>
+      );
+    case ScheduleTickStatus.FAILURE:
+      return (
+        <Tag minimal={true} intent={Intent.DANGER}>
+          Failure
+        </Tag>
+      );
+    default:
+      return assertUnreachable(status);
+  }
+};
+
 const TicksTable: React.FunctionComponent<{
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
 }> = ({ ticks }) => {
   return (
-    <>
-      <Header>Attempts</Header>
-      <div style={{ width: "50%" }}>
+    <div style={{ marginTop: 10 }}>
+      <Header>Schedule Attempts Log</Header>
+      <div>
         {ticks.map((tick, i) => {
           return (
             <RowContainer key={i}>
-              <RowColumn>{tick.status}</RowColumn>
+              <RowColumn>
+                {unixTimestampToString(tick.timestamp)}
+                <div style={{ marginLeft: 20, display: "inline" }}>
+                  <TickTag status={tick.status} />
+                </div>
+              </RowColumn>
+              <RowColumn>
+                <RenderEventSpecificData data={tick.tickSpecificData} />
+              </RowColumn>
             </RowContainer>
           );
         })}
       </div>
-    </>
+    </div>
   );
 };
 
@@ -299,6 +384,23 @@ export const SCHEDULE_ROOT_QUERY = gql`
         ticksList: ticks(limit: $attemptsLimit) {
           tickId
           status
+          timestamp
+          tickSpecificData {
+            __typename
+            ... on ScheduleTickSuccessData {
+              run {
+                pipeline {
+                  name
+                }
+                runId
+              }
+            }
+            ... on ScheduleTickFailureData {
+              error {
+                ...PythonErrorFragment
+              }
+            }
+          }
         }
         attemptList: attempts(limit: $attemptsLimit) {
           time
@@ -321,6 +423,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
   }
 
   ${ScheduleRowFragment}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 export const PARTITION_RUNS_QUERY = gql`

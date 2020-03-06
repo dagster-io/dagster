@@ -125,6 +125,45 @@ class DauphinScheduleTick(dauphin.ObjectType):
 
     tick_id = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('ScheduleTickStatus')
+    timestamp = dauphin.NonNull(dauphin.Float)
+    tick_specific_data = dauphin.Field('ScheduleTickSpecificData')
+
+
+class DauphinScheduleTickSuccessData(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleTickSuccessData'
+
+    run = dauphin.Field('PipelineRun')
+
+
+class DauphinScheduleTickFailureData(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleTickFailureData'
+
+    error = dauphin.NonNull('PythonError')
+
+
+class DauphinScheduleTickSpecificData(dauphin.Union):
+    class Meta(object):
+        name = 'ScheduleTickSpecificData'
+        types = (
+            DauphinScheduleTickSuccessData,
+            DauphinScheduleTickFailureData,
+        )
+
+
+def tick_specific_data_from_dagster_tick(graphene_info, tick):
+    if tick.status == ScheduleTickStatus.SUCCESS:
+        run_id = tick.run_id
+        run = None
+        if graphene_info.context.instance.has_run(run_id):
+            run = graphene_info.schema.type_named('PipelineRun')(
+                graphene_info.context.instance.get_run_by_id(run_id)
+            )
+        return graphene_info.schema.type_named('ScheduleTickSuccessData')(run=run)
+    elif tick.status == ScheduleTickStatus.FAILURE:
+        error = tick.error
+        return graphene_info.schema.type_named('ScheduleTickFailureData')(error=error)
 
 
 class DauphinScheduleTickStatsSnapshot(dauphin.ObjectType):
@@ -270,7 +309,10 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
         return [
             graphene_info.schema.type_named('ScheduleTick')(
-                tick_id=tick.tick_id, status=tick.status
+                tick_id=tick.tick_id,
+                status=tick.status,
+                timestamp=tick.timestamp,
+                tick_specific_data=tick_specific_data_from_dagster_tick(graphene_info, tick),
             )
             for tick in tick_subset
         ]

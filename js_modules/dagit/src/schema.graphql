@@ -1003,7 +1003,15 @@ enum ScheduleStatus {
 type ScheduleTick {
   tickId: String!
   status: ScheduleTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
 }
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
 
 type ScheduleTickStatsSnapshot {
   ticksStarted: Int!
@@ -1017,6 +1025,10 @@ enum ScheduleTickStatus {
   SKIPPED
   SUCCESS
   FAILURE
+}
+
+type ScheduleTickSuccessData {
+  run: PipelineRun
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
