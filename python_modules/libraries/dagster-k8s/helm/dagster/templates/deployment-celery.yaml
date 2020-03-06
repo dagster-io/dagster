@@ -44,7 +44,7 @@ spec:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: dagster-postgresql
+                  name: "{{ template "dagster.fullname" . }}-postgresql-secret"
                   key: postgresql-password
           envFrom:
             - configMapRef:

@@ -410,13 +410,14 @@ def run_launcher(
         image_pull_secrets=[{'name': 'element-dev-key'}],
         service_account_name='dagit-admin',
         instance_config_map='dagster-instance',
+        postgres_password_secret='dagster-postgresql-secret',
         dagster_home='/opt/dagster/dagster_home',
         job_image=docker_image,
         load_kubeconfig=True,
         kubeconfig_file=kubeconfig_file,
         image_pull_policy=image_pull_policy,
         job_namespace='dagster-test',
-        env_config_maps=['test-env-configmap'],
+        env_config_maps=['dagster-job-runner-env', 'test-env-configmap'],
         env_secrets=['test-env-secret'],
     )
 

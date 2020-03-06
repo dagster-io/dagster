@@ -46,7 +46,7 @@ spec:
           value_from:
             secret_key_ref:
               key: postgresql-password
-              name: dagster-postgresql
+              name: dagster-postgresql-secret
         env_from:
         - config_map_ref:
             name: dagster-job-runner-env
