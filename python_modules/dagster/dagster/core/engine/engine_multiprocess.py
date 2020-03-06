@@ -20,6 +20,8 @@ from .child_process_executor import (
 )
 from .engine_base import Engine, override_env_for_inner_executor
 
+DELEGATE_MARKER = 'multiprocess_subprocess_init'
+
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def __init__(
@@ -46,7 +48,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             execution_plan,
             self.pipeline_run,
             environment_dict=override_env_for_inner_executor(
-                self.environment_dict, self.executor_config.retries, self.step_key
+                self.environment_dict, self.executor_config.retries, self.step_key, DELEGATE_MARKER,
             ),
             instance=DagsterInstance.from_ref(self.instance_ref),
         ):
@@ -61,6 +63,13 @@ def execute_step_out_of_process(step_context, step, errors, term_events):
         step.key,
         step_context.instance.get_ref(),
         term_events[step.key],
+    )
+
+    yield DagsterEvent.engine_event(
+        step_context,
+        'Launching subprocess for {}'.format(step.key),
+        EngineEventData(marker_start=DELEGATE_MARKER),
+        step_key=step.key,
     )
 
     for ret in execute_child_process_command(command):
@@ -164,7 +173,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
                         yield event
 
                 # In the very small chance that we get interrupted in this coordination section and not
-                # polling the subprocesses for events - try to clean up greacefully
+                # polling the subprocesses for events - try to clean up gracefully
                 except KeyboardInterrupt:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
@@ -178,7 +187,7 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
             errs = {pid: err for pid, err in errors.items() if err}
             if errs:
                 raise DagsterSubprocessError(
-                    'During multiprocess execution errors occured in child processes:\n{error_list}'.format(
+                    'During multiprocess execution errors occurred in child processes:\n{error_list}'.format(
                         error_list='\n'.join(
                             [
                                 'In process {pid}: {err}'.format(pid=pid, err=err.to_string())

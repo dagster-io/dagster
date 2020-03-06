@@ -143,7 +143,8 @@ class _ExecutorDecoratorCallable(object):
 
 
 @executor(
-    name='in_process', config={'retries': get_retries_config()},
+    name='in_process',
+    config={'retries': get_retries_config(), 'marker_to_close': Field(str, is_required=False),},
 )
 def in_process_executor(init_context):
     '''The default in-process executor.
@@ -167,7 +168,8 @@ def in_process_executor(init_context):
 
     return InProcessExecutorConfig(
         # shouldn't need to .get() here - issue with defaults in config setup
-        retries=Retries.from_config(init_context.executor_config.get('retries', {'enabled': {}}))
+        retries=Retries.from_config(init_context.executor_config.get('retries', {'enabled': {}})),
+        marker_to_close=init_context.executor_config.get('marker_to_close'),
     )
 
 
@@ -234,7 +236,7 @@ def _check_pipeline_has_target_handle(pipeline_def):
     if not handle:
         raise DagsterUnmetExecutorRequirementsError(
             'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
-            'that can not be re-hyrated. Pipelines must be loaded in a way that allows dagster to reconstruct '
+            'that can not be re-hydrated. Pipelines must be loaded in a way that allows dagster to reconstruct '
             'them in a new process. This means: \n'
             '  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n'
             '  * constructing an ExecutionTargetHandle directly\n'.format(name=pipeline_def.name)

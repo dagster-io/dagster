@@ -4,19 +4,23 @@ fragment eventMetadataEntryFragment on EventMetadataEntry {
   label
   description
   ... on EventPathMetadataEntry {
-      path
+    path
   }
   ... on EventJsonMetadataEntry {
-      jsonString
+    jsonString
   }
   ... on EventUrlMetadataEntry {
-      url
+    url
   }
   ... on EventTextMetadataEntry {
-      text
+    text
   }
   ... on EventMarkdownMetadataEntry {
-      mdStr
+    mdStr
+  }
+  ... on EventPythonArtifactMetadataEntry {
+    module
+    name
   }
 }
 
@@ -106,6 +110,13 @@ fragment stepEventFragment on StepEvent {
         ...eventMetadataEntryFragment
       }
     }
+  }
+  ... on EngineEvent {
+    metadataEntries {
+      ...eventMetadataEntryFragment
+    }
+    markerStart
+    markerEnd
   }
 }
 '''

@@ -116,8 +116,9 @@ class ExecutorConfig(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 class InProcessExecutorConfig(ExecutorConfig):
-    def __init__(self, retries):
-        self.retries = retries
+    def __init__(self, retries, marker_to_close):
+        self.retries = check.inst_param(retries, 'retries', Retries)
+        self.marker_to_close = check.opt_str_param(marker_to_close, 'marker_to_close')
 
     def get_engine(self):
         from dagster.core.engine.engine_inprocess import InProcessEngine

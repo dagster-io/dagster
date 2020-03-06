@@ -10,6 +10,7 @@ snapshots['test_basic_solids_config 1'] = {
     'execution': {
         'in_process': {
             'config': {
+                'marker_to_close': '',
                 'retries': {
                     'deferred': {
                         'previous_attempts': {
@@ -80,6 +81,7 @@ snapshots['test_two_modes 2'] = {
     'execution': {
         'in_process': {
             'config': {
+                'marker_to_close': '',
                 'retries': {
                     'deferred': {
                         'previous_attempts': {
@@ -150,6 +152,7 @@ snapshots['test_two_modes 4'] = {
     'execution': {
         'in_process': {
             'config': {
+                'marker_to_close': '',
                 'retries': {
                     'deferred': {
                         'previous_attempts': {

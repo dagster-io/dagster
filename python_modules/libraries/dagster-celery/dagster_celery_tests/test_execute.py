@@ -286,6 +286,15 @@ def test_execute_eagerly_on_celery():
         assert len(events_of_type(result, 'STEP_OUTPUT')) == 1
         assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 1
         assert len(events_of_type(result, 'STEP_SUCCESS')) == 1
+        started = set()
+        ended = set()
+        for engine_event in events_of_type(result, 'ENGINE_EVENT'):
+            if engine_event.engine_event_data.marker_start:
+                started.add(engine_event.engine_event_data.marker_start)
+            if engine_event.engine_event_data.marker_end:
+                ended.add(engine_event.engine_event_data.marker_end)
+
+        assert started == ended
 
 
 def test_execute_eagerly_serial_on_celery():

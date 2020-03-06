@@ -2,6 +2,7 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, ExecutionPar
 
 from dagster import EventMetadataEntry, check, seven
 from dagster.core.definitions import ExpectationResult, Materialization, SolidHandle
+from dagster.core.definitions.events import PythonArtifactMetadataEntryData
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -83,6 +84,14 @@ def event_metadata_entries(metadata_entry_datas):
             yield EventMetadataEntry.url(
                 label=label, description=description, url=metadata_entry_data['url']
             )
+        elif typename == 'EventPythonArtifactMetadataEntry':
+            yield EventMetadataEntry(
+                label=label,
+                description=description,
+                entry_data=PythonArtifactMetadataEntryData(
+                    metadata_entry_data['module'], metadata_entry_data['name']
+                ),
+            )
         else:
             check.not_implemented('TODO for type {}'.format(typename))
 
@@ -156,7 +165,9 @@ def dagster_event_from_dict(event_dict, pipeline_name):
 
     elif event_type == DagsterEventType.ENGINE_EVENT:
         event_specific_data = EngineEventData(
-            metadata_entries=list(event_metadata_entries(event_dict.get('metadataEntries')))
+            metadata_entries=list(event_metadata_entries(event_dict.get('metadataEntries'))),
+            marker_start=event_dict.get('markerStart'),
+            marker_end=event_dict.get('markerEnd'),
         )
 
     # We should update the GraphQL response so that clients don't need to do this handle parsing.

@@ -16,6 +16,7 @@ from .defaults import task_default_priority, task_default_queue
 from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
+DELEGATE_MARKER = 'celery_queue_wait'
 
 
 class CeleryEngine(Engine):
@@ -104,7 +105,7 @@ class CeleryEngine(Engine):
             for event in active_execution.skipped_step_events_iterator(pipeline_context):
                 yield event
 
-            # dont add any new steps if we are stopping
+            # don't add any new steps if we are stopping
             if stopping:
                 continue
 
@@ -115,7 +116,16 @@ class CeleryEngine(Engine):
             # case has m >> n to exhibit this behavior in the absence of this sort step.
             for step in active_execution.get_steps_to_execute():
                 try:
-                    step_results[step.key] = _submit_task(app, pipeline_context, step)
+                    queue = step.tags.get('dagster-celery/queue', task_default_queue)
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
+                            step_key=step.key, queue=queue
+                        ),
+                        EngineEventData(marker_start=DELEGATE_MARKER),
+                        step_key=step.key,
+                    )
+                    step_results[step.key] = _submit_task(app, pipeline_context, step, queue)
                 except Exception:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
@@ -130,7 +140,7 @@ class CeleryEngine(Engine):
 
         if step_errors:
             raise DagsterSubprocessError(
-                'During celery execution errors occured in workers:\n{error_list}'.format(
+                'During celery execution errors occurred in workers:\n{error_list}'.format(
                     error_list='\n'.join(
                         [
                             '[{step}]: {err}'.format(step=key, err=err.to_string())
@@ -142,9 +152,9 @@ class CeleryEngine(Engine):
             )
 
 
-def _submit_task(app, pipeline_context, step):
+def _submit_task(app, pipeline_context, step, queue):
     priority = int(step.tags.get('dagster-celery/priority', task_default_priority))
-    queue = step.tags.get('dagster-celery/queue', task_default_queue)
+
     task = create_task(app)
 
     handle_dict = pipeline_context.execution_target_handle.to_dict()
@@ -161,6 +171,7 @@ def _submit_task(app, pipeline_context, step):
                 pipeline_context.environment_dict,
                 pipeline_context.executor_config.retries,
                 step.key,
+                DELEGATE_MARKER,
             ),
             'mode': mode,
             'executionMetadata': {'runId': run_id},

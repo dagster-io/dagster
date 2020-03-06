@@ -65,7 +65,11 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
         yield DagsterEvent.engine_event(
             pipeline_context,
             'Executing steps in process (pid: {pid})'.format(pid=os.getpid()),
-            event_specific_data=EngineEventData.in_process(os.getpid(), step_keys_to_execute),
+            event_specific_data=EngineEventData.in_process(
+                os.getpid(),
+                step_keys_to_execute,
+                marker_end=pipeline_context.executor_config.marker_to_close,
+            ),
             step_key=for_step_key,
         )
 
