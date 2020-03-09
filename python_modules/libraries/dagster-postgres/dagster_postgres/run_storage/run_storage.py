@@ -20,7 +20,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     To use Postgres for run storage, you can add a block such as the following to your
     ``dagster.yaml``:
 
-    .. literalinclude:: ../../../../../docs/sections/deploying/postgres_dagster.yaml
+    .. literalinclude:: ../../../../../docs/sections/deploying/dagster-pg.yaml
        :caption: dagster.yaml
        :lines: 1-10
        :language: YAML

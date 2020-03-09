@@ -90,7 +90,6 @@ from dagster.core.execution.config import ExecutorConfig, RunConfig
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext, TypeCheckContext
-from dagster.core.execution.plan.objects import StepKind
 from dagster.core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
@@ -184,7 +183,6 @@ __all__ = [
     'RetryRequested',
     'RunConfig',
     'SolidExecutionResult',
-    'StepKind',
     'SystemComputeExecutionContext',
     'SystemStorageData',
     'TypeCheckContext',

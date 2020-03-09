@@ -276,22 +276,28 @@ def solid(
         output_defs (Optional[List[OutputDefinition]]):
             List of output definitions. Inferred from typehints if not provided.
         config (Optional[Any]): The schema for the config. Configuration data available
-            as context.solid_config. This value can be a:
+            as context.solid_config. This value can be any of:
 
-            1. A Python primitive type that resolve to dagster config
-               types: int, float, bool, str.
+            1. A Python primitive type that resolves to a Dagster config type 
+               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
+               :py:class:`~python:str`, or :py:class:`~python:list`).
 
-            2. A dagster config type: Int, Float, Bool,
-               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
-               :py:class:`Shape`, :py:class:`Permissive`, etc
+            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
+               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
+               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
+               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
+               :py:class:`~dagster.Permissive`.
 
-            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
-               values in the dictionary get resolved by the same rules, recursively.
+            3. A bare python dictionary, which will be automatically wrapped in
+               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
+               according to the same rules.
 
             4. A bare python list of length one which itself is config type.
                Becomes :py:class:`Array` with list element as an argument.
 
-            5. A instance of :py:class:`Field`.
+            5. An instance of :py:class:`~dagster.Field`.
+
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by this solid.
         tags (Optional[Dict[str, Any]]): Arbitrary metadata for the solid. Frameworks may
             expect and require certain metadata to be attached to a solid. Users should generally
@@ -721,20 +727,26 @@ def composite_solid(
             argument in order to transform this config into the config for the contained
             solids.
 
-            1. A Python primitive type that resolve to dagster config
-               types: int, float, bool, str.
+            1. A Python primitive type that resolves to a Dagster config type 
+               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
+               :py:class:`~python:str`, or :py:class:`~python:list`).
 
-            2. A dagster config type: Int, Float, Bool,
-               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
-               :py:class:`Shape`, :py:class:`Permissive`, etc
+            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
+               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
+               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
+               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
+               :py:class:`~dagster.Permissive`.
 
-            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
-               values in the dictionary get resolved by the same rules, recursively.
+            3. A bare python dictionary, which will be automatically wrapped in
+               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
+               according to the same rules.
 
             4. A bare python list of length one which itself is config type.
                Becomes :py:class:`Array` with list element as an argument.
 
-            5. A instance of :py:class:`Field`.
+            5. An instance of :py:class:`~dagster.Field`.
+
         config_fn (Callable[[dict], dict]): By specifying a config mapping
             function, you can override the configuration for the child solids contained within this
             composite solid.

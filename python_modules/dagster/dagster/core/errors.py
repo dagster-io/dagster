@@ -1,16 +1,18 @@
-'''Dagster error classes.
+'''Core Dagster error classes.
 
-All errors thrown by the Dagster framework inherit from :class:`DagsterError <dagster.DagsterError>`.
-Users should not subclass this base class for their own exceptions.
+All errors thrown by the Dagster framework inherit from :py:class:`~dagster.DagsterError`. Users
+should not subclass this base class for their own exceptions.
 
-There is another exception base class,
-:class:`DagsterUserCodeExecutionError <dagster.DagsterUserCodeExecutionError>`, which is meant to
-be used in concert with the :func:`dagster.core.errors.user_code_error_boundary`. Dagster calls into
-user code which can be arbitrary computation and can itself throw. The pattern here is to use the
-error boundary to catch this exception, and then rethrow that exception wrapped in a
-:class:`DagsterUserCodeExecutionError <dagster.DagsterUserCodeExecutionError>`-derived exception.
-This new exception is there to embellish the original error with additional context that the
-Dagster runtime is aware of.
+There is another exception base class, :py:class:`~dagster.DagsterUserCodeExecutionError`, which is
+used by the framework in concert with the :py:func:`~dagster.core.errors.user_code_error_boundary`.
+
+Dagster uses this construct to wrap user code into which it calls. User code can perform arbitrary
+computations and may itself throw exceptions. The error boundary catches these user code-generated
+exceptions, and then reraises them wrapped in a subclass of 
+:py:class:`~dagster.DagsterUserCodeExecutionError`.
+
+The wrapped exceptions include additional context for the original exceptions, injected by the
+Dagster runtime.
 '''
 
 import sys
@@ -52,15 +54,26 @@ This value can be a:
 class DagsterInvalidConfigDefinitionError(DagsterError):
     '''Indicates that you have attempted to construct a config with an invalid value
 
-    This value can be a:
+    Acceptable values for config types are any of:
+        1. A Python primitive type that resolves to a Dagster config type 
+            (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
+            :py:class:`~python:str`, or :py:class:`~python:list`).
 
-        - :py:class:`Field`
-        - Python primitive types that resolve to dagster config types
-            - int, float, bool, str, list.
-        - A dagster config type: Int, Float, Bool, List, Optional, :py:class:`Selector`, :py:class:`Dict`
-        - A bare python dictionary, which is wrapped in Field(Dict(...)). Any values
-          in the dictionary get resolved by the same rules, recursively.
-        - A python list with a single entry that can resolve to a type, e.g. [int]
+        2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
+            :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
+            :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+            :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
+            :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
+            :py:class:`~dagster.Permissive`.
+
+        3. A bare python dictionary, which will be automatically wrapped in
+            :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
+            according to the same rules.
+
+        4. A bare python list of length one which itself is config type.
+            Becomes :py:class:`Array` with list element as an argument.
+
+        5. An instance of :py:class:`~dagster.Field`.
     '''
 
     def __init__(self, original_root, current_value, stack, reason=None, **kwargs):
@@ -176,9 +189,12 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
 class DagsterUserCodeExecutionError(DagsterError):
     '''
     This is the base class for any exception that is meant to wrap an
-    :class:`Exception <python:Exception>` thrown by user code. It wraps that existing user code.
+    :py:class:`~python:Exception` thrown by user code. It wraps that existing user code.
     The ``original_exc_info`` argument to the constructor is meant to be a tuple of the type
-    returned by :func:`sys.exc_info <python:sys.exc_info>` at the call site of the constructor.
+    returned by :py:func:`sys.exc_info <python:sys.exc_info>` at the call site of the constructor.
+
+    Users should not subclass this base class for their own exceptions and should instead throw
+    freely from user code. User exceptions will be automatically wrapped and rethrown.
     '''
 
     def __init__(self, *args, **kwargs):
@@ -222,32 +238,30 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''
     Indicates an error occured while executing the body of the ``resource_fn`` in a
-    :class:`ResourceDefinition <dagster.ResourceDefinition>` during resource initialization.
+    :py:class:`~dagster.ResourceDefinition` during resource initialization.
     '''
 
 
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
     Indicates that an unexpected error occured while executing the body of a config mapping
-    function defined in a :class:`CompositeSolidDefinition <dagster.CompositeSolidDefinition>`
-    during config parsing.
+    function defined in a :py:class:`~dagster.CompositeSolidDefinition` during config parsing.
     '''
 
 
 class DagsterInputHydrationConfigError(DagsterUserCodeExecutionError):
     '''
     Indicates that an unexpected error occurred while executing the body of an input hydration
-    config function defined in a :class:`InputHydrationConfig <dagster.InputHydrationConfig>` during
-    input hydration of a custom type
+    config function defined in a :py:class:`~dagster.InputHydrationConfig` during input hydration of
+    a custom type.
     '''
 
 
 class DagsterOutputMaterializationError(DagsterUserCodeExecutionError):
     '''
     Indicates that an unexpected error occurred while executing the body of an output
-    materialization function defined in a
-    :class:`OutputMaterializationConfig <dagster.OutputMaterializationConfig>` during output
-    materialization of a custom type
+    materialization function defined in a :py:class:`~dagster.OutputMaterializationConfig` during
+    output materialization of a custom type.
     '''
 
 
@@ -296,7 +310,7 @@ class DagsterInvalidConfigError(DagsterError):
 
 class DagsterUnmetExecutorRequirementsError(DagsterError):
     '''Indicates the resolved executor is incompatible with the state of other systems
-    such as the :class:`DagsterInstance <dagster.DagsterInstance>` or system storage configuration.
+    such as the :py:class:`~dagster.core.instance.DagsterInstance` or system storage configuration.
     '''
 
 
@@ -367,6 +381,8 @@ class DagsterTypeCheckDidNotPass(DagsterError):
 
 
 class DagsterEventLogInvalidForRun(DagsterError):
+    '''Raised when the event logs for a historical run are malformed or invalid.'''
+
     def __init__(self, run_id):
         self.run_id = check.str_param(run_id, 'run_id')
         super(DagsterEventLogInvalidForRun, self).__init__(

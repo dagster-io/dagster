@@ -368,6 +368,11 @@ Built-in primitive types
             return [x for x in tuple_input]
 
 
+.. autoclass:: FileHandle
+   :members:
+
+.. autoclass:: LocalFileHandle
+
 Making New Types
 ----------------
 

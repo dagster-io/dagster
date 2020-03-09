@@ -43,7 +43,19 @@ System Storage
 
 .. autoclass:: SystemStorageDefinition
 
+.. autoclass:: InitSystemStorageContext
+   :members: 
+
 .. currentmodule:: dagster.core.storage.system_storage
+
+.. autoclass:: SystemStorageData
+
+.. currentmodule:: dagster.core.storage.file_manager
+
+.. autoclass:: FileManager
+   :members:
+
+.. autoclass:: LocalFileManager
 
 ----
 
@@ -69,7 +81,9 @@ Instance
 .. currentmodule:: dagster.core.storage.root
 
 .. autoclass:: LocalArtifactStorage
-   :properties:
+   :members:
+
+----
 
 Run storage
 -----------
@@ -82,13 +96,13 @@ Run storage
 
 .. autoclass:: SqliteRunStorage
 
-.. currentmodule:: dagster_postgres.run_storage
-
-.. autoclass:: PostgresRunStorage
-
 .. currentmodule:: dagster.core.storage.pipeline_run
 
 .. autoclass:: PipelineRun
+
+See also: :py:class:`dagster_postgres.PostgresRunStorage`.
+
+----
 
 Event log storage
 -----------------
@@ -101,10 +115,9 @@ Event log storage
 
 .. autoclass:: SqliteEventLogStorage
 
-.. currentmodule:: dagster_postgres.event_log
+See also: :py:class:`dagster_postgres.PostgresEventLogStorage`.
 
-.. autoclass:: PostgresEventLogStorage
-
+----
 
 Compute log manager
 -------------------
@@ -117,10 +130,9 @@ Compute log manager
 
 .. autoclass:: LocalComputeLogManager
 
+See also: :py:class:`dagster_aws.S3ComputeLogManager`.
 
-.. currentmodule:: dagster_aws.s3.compute_log_manager
-
-.. autoclass:: S3ComputeLogManager
+----
 
 Run launcher
 ------------
@@ -132,10 +144,9 @@ Run launcher
 
 .. autoclass:: RemoteDagitRunLauncher
 
-.. currentmodule:: dagster_k8s.launcher
+See also: :py:class:`dagster_k8s.K8sRunLauncher`.
 
-.. autoclass:: K8sRunLauncher
-
+----
 
 Scheduling
 ----------
@@ -158,7 +169,13 @@ Scheduling
 
 .. autoclass:: SqliteScheduleStorage
 
+See also: :py:class:`dagster_postgres.PostgresScheduleStorage`.
 
-.. currentmodule:: dagster_postgres.schedule_storage
+----
 
-.. autoclass:: PostgresScheduleStorage
+Exception handling
+------------------
+
+.. currentmodule:: dagster.core.errors
+
+.. autofunction:: user_code_error_boundary

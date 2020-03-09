@@ -6,3 +6,5 @@ dagster_postgres
 .. autoclass:: PostgresEventLogStorage
 
 .. autoclass:: PostgresRunStorage
+
+.. autoclass:: PostgresScheduleStorage

@@ -12,6 +12,8 @@ Executing pipelines
 
 .. autofunction:: execute_pipeline_with_preset
 
+.. autofunction:: execute_pipeline_with_mode
+
 Executing solids
 ----------------
 

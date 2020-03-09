@@ -22,7 +22,7 @@ class SystemStorageDefinition(
     pipeline run configuration respectively.
 
     It's possible to write additional system storage definitions, such as the
-    :py:class:`dagster_aws.S3SystemStorageDefinition`. Library authors can write system storages to
+    :py:class:`dagster_aws.s3_system_storage`. Library authors can write system storages to
     support additional cloud providers, and users can write custom system storages to support their
     own infrastructure needs.
 
@@ -39,23 +39,27 @@ class SystemStorageDefinition(
             Configuration data passed in this field will be made available to the
             ``system_storage_creation_fn`` under ``init_context.system_storage_config``.
 
-            This value can be:
+            This value can be any of:
 
-            1. A Python primitive type that resolve to dagster config
-               types: int, float, bool, str.
+            1. A Python primitive type that resolves to a Dagster config type 
+               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
+               :py:class:`~python:str`, or :py:class:`~python:list`).
 
-            2. A dagster config type: Int, Float, Bool,
-               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
-               :py:class:`Shape`, :py:class:`Permissive`, etc
+            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
+               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
+               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
+               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
+               :py:class:`~dagster.Permissive`.
 
-            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
-               values in the dictionary get resolved by the same rules, recursively.
+            3. A bare python dictionary, which will be automatically wrapped in
+               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
+               according to the same rules.
 
             4. A bare python list of length one which itself is config type.
                Becomes :py:class:`Array` with list element as an argument.
 
-            5. A instance of :py:class:`Field`.
-
+            5. An instance of :py:class:`~dagster.Field`.
 
         system_storage_creation_fn: (Callable[InitSystemStorageContext, SystemStorageData])
             Called to construct the storage. This function should consume the init context and emit
@@ -86,6 +90,13 @@ class SystemStorageDefinition(
 
 
 class SystemStorageData(object):
+    '''Represents an instance of system storage.
+
+    Attributes:
+        intermediates_manager (IntermediatesManager): An intermediates manager.
+        file_manager (FileManager): A file manager.
+    '''
+
     def __init__(self, intermediates_manager, file_manager):
         self.intermediates_manager = check.inst_param(
             intermediates_manager, 'intermediates_manager', IntermediatesManager
@@ -108,22 +119,27 @@ def system_storage(required_resource_keys, name=None, is_persistent=True, config
             The resources that this storage needs at runtime to function.
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
-            This value can be:
+            This value can be any of:
 
-            1. A Python primitive type that resolve to dagster config
-               types: int, float, bool, str.
+            1. A Python primitive type that resolves to a Dagster config type 
+               (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
+               :py:class:`~python:str`, or :py:class:`~python:list`).
 
-            2. A dagster config type: Int, Float, Bool,
-               :py:class:`Array`, :py:class:`Noneable`, :py:class:`Selector`,
-               :py:class:`Shape`, :py:class:`Permissive`, etc
+            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
+               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
+               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
+               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
+               :py:class:`~dagster.Permissive`.
 
-            3. A bare python dictionary, which is wrapped in :py:class:`Shape`. Any
-               values in the dictionary get resolved by the same rules, recursively.
+            3. A bare python dictionary, which will be automatically wrapped in
+               :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
+               according to the same rules.
 
             4. A bare python list of length one which itself is config type.
                Becomes :py:class:`Array` with list element as an argument.
 
-            5. A instance of :py:class:`Field`.
+            5. An instance of :py:class:`~dagster.Field`.
 
     '''
 

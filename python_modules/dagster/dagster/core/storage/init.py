@@ -17,6 +17,24 @@ class InitSystemStorageContext(
         ),
     )
 ):
+    '''System storage-specific initialization context.
+
+    Attributes:
+        pipeline_def (PipelineDefinition): The definition of the pipeline in context.
+        mode_def (ModeDefinition): The definition of the mode in contxt.
+        system_storage_def (SystemStorageDefinition): The definition of the system storage to be
+            constructed.
+        pipeline_run (PipelineRun): The pipeline run in context.
+        instance (DagsterInstance): The instance.
+        environment_config (EnvironmentConfig): The environment config.
+        type_storage_plugin_registry (TypeStoragePluginRegistry): Registry containing custom type
+            storage plugins.
+        resources (Any): Resources available in context.
+        system_storage_config (Dict[str, Any]): The system storage-specific configuration data
+            provided by the environment config. The schema for this data is defined by the
+            ``config_field`` argument to :py:class:`SystemStorageDefinition`.
+    '''
+
     def __new__(
         cls,
         pipeline_def,

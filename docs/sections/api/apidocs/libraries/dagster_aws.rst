@@ -52,6 +52,8 @@ Testing
 
 .. autofunction:: create_s3_fake_resource
 
+-----
+
 CLI
 ---
 

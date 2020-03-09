@@ -1,14 +1,13 @@
 Errors
 =========
 
+.. automodule:: dagster.core.errors
+
 .. currentmodule:: dagster
 
-Core dagster error classes. All errors thrown by the Dagster framework inherit from
-:class:`DagsterError <dagster.DagsterError>`. Users should not subclass this base class for their
-own exceptions.
-
-
 .. autoexception:: DagsterError
+
+.. autoexception:: DagsterConfigMappingFunctionError
 
 .. autoexception:: DagsterEventLogInvalidForRun
 
@@ -17,6 +16,8 @@ own exceptions.
 .. autoexception:: DagsterExecutionStepNotFoundError
 
 .. autoexception:: DagsterInvalidConfigError
+
+.. autoexception:: DagsterInvalidConfigDefinitionError
 
 .. autoexception:: DagsterInvalidDefinitionError
 
