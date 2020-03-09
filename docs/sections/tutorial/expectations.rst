@@ -60,10 +60,6 @@ Running this pipeline yields an :py:class:`ExpectationResult <dagster.Expectatio
 Extra Fiber (50 calories per serving) and the most caloric cereal is Mueslix Crispy Blend (160
 calories per serving).
 
-If you're already using the `Great Expectations <https://greatexpectations.io/>`_ library
-to express expectations about your data, you may be interested in the ``dagster_ge`` wrapper
-library.
-
 This part of this system remains relatively immature, but yielding structured expectation results
 from your solid logic means that in future, tools like Dagit will be able to aggregate and track
 expectation results, as well as implement sophisticated policy engines to drive alerting and

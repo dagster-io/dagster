@@ -110,10 +110,6 @@ Experimental
   Library solids to wrap invocations of `dbt <https://www.getdbt.com/>`_ and integrate with Dagster
   pipelines.
 
-**dagster-ge**
-  Tools for working with the `Great Expectations <https://greatexpectations.io/>`_ data quality
-  testing library.
-
 **dagster-github**
   Library resource to interact with `Github <https://github.com/>`_ from within Dagster pipelines.
 

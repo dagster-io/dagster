@@ -82,15 +82,6 @@ Dagster works with the tools and systems that you're already using with your dat
 			<br />Provides a Dagster resource for publishing metrics to Datadog.
 			</td>
 		</tr>
-        <!-- Commenting out until we rebuild dagster-ge on ExpectationResult et al
-        <tr>
-            <td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/58349454-3846f500-7e18-11e9-84f0-6c9c75ae9993.png"></td>
-            <td style="border-left: 0px"> <b>Great Expectations</b></td>
-            <td><a href="https://dagster.readthedocs.io/en/stable/sections/learn/tutorial/expectations.html" />Expectations in Dagster</a><br />
-            The <a href="https://github.com/great-expectations/great_expectations">Great Expectations</a> framework is designed to promote data quality checks for data warehouses. In Dagster, expectations are a first-class citizen.
-            </td>
-        </tr>
-	    -->
 		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987809-bf245800-7a3b-11e9-8905-494ed99d0852.png" />
 			&nbsp;/&nbsp; <img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987827-fa268b80-7a3b-11e9-8a18-b675d76c19aa.png">
