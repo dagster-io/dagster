@@ -1,4 +1,4 @@
-import pytest
+import re
 
 from dagster import (
     Any,
@@ -19,7 +19,7 @@ from dagster import (
     solid,
 )
 from dagster.config.config_type import ConfigTypeKind
-from dagster.config.errors import DagsterEvaluateConfigValueError
+from dagster.config.validate import process_config
 from dagster.core.definitions import create_environment_schema, create_environment_type
 from dagster.core.definitions.environment_configs import (
     EnvironmentClassCreationData,
@@ -27,7 +27,6 @@ from dagster.core.definitions.environment_configs import (
     define_solid_dictionary_cls,
 )
 from dagster.core.system_config.objects import EnvironmentConfig, SolidConfig
-from dagster.core.test_utils import throwing_validate_config_value
 from dagster.loggers import default_loggers
 
 
@@ -123,8 +122,8 @@ def test_default_environment():
 
 def test_solid_config():
     solid_config_type = define_solid_config_cls(Field(Int), None, None)
-    solid_inst = throwing_validate_config_value(solid_config_type, {'config': 1})
-    assert solid_inst['config'] == 1
+    solid_inst = process_config(solid_config_type, {'config': 1})
+    assert solid_inst.value['config'] == 1
 
 
 def test_solid_dictionary_type():
@@ -260,11 +259,12 @@ def test_solid_config_error():
 
     int_solid_config_type = solid_dict_type.fields['int_config_solid'].config_type
 
-    with pytest.raises(DagsterEvaluateConfigValueError, match='Undefined field "notconfig"'):
-        throwing_validate_config_value(int_solid_config_type, {'notconfig': 1})
+    res = process_config(int_solid_config_type, {'notconfig': 1})
+    assert not res.success
+    assert re.match('Undefined field "notconfig"', res.errors[0].message)
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_validate_config_value(int_solid_config_type, 1)
+    res = process_config(int_solid_config_type, 1)
+    assert not res.success
 
 
 def test_optional_solid_with_no_config():
@@ -391,11 +391,11 @@ def test_required_solid_with_required_subfield():
 
     assert env_obj.solids['int_config_solid'].config['required_field'] == 'foobar'
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_validate_config_value(env_type, {'solids': {}})
+    res = process_config(env_type, {'solids': {}})
+    assert not res.success
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
-        throwing_validate_config_value(env_type, {})
+    res = process_config(env_type, {})
+    assert not res.success
 
 
 def test_optional_solid_with_optional_subfield():
@@ -599,7 +599,8 @@ def test_files_default_config():
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
-    config_value = throwing_validate_config_value(env_type, {})
+    config_value = process_config(env_type, {})
+    assert config_value.success
 
     assert 'storage' not in config_value
 
@@ -610,9 +611,10 @@ def test_storage_in_memory_config():
     env_type = create_environment_type(pipeline_def)
     assert 'storage' in env_type.fields
 
-    config_value = throwing_validate_config_value(env_type, {'storage': {'in_memory': {}}})
+    config_value = process_config(env_type, {'storage': {'in_memory': {}}})
+    assert config_value.success
 
-    assert config_value['storage'] == {'in_memory': {}}
+    assert config_value.value['storage'] == {'in_memory': {}}
 
 
 def test_directly_init_environment_config():

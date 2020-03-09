@@ -9,8 +9,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.config.errors import DagsterEvaluateConfigValueError
-from dagster.config.validate import process_config
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
@@ -59,16 +57,6 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
         output_defs=[output_def],
         description=description,
     )
-
-
-# This is a legacy API from when the config parsing only returned a single
-# error. Existing test logic was written assuming structure to this is still
-# around to avoid having to port all the unit tests.
-def throwing_validate_config_value(config_type, config_value):
-    result = process_config(config_type, config_value)
-    if not result.success:
-        raise DagsterEvaluateConfigValueError(result.errors[0].stack, result.errors[0].message)
-    return result.value
 
 
 def nesting_composite_pipeline(depth, num_children, *args, **kwargs):

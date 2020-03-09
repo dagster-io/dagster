@@ -24,10 +24,9 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.config.errors import DagsterEvaluateConfigValueError, DagsterEvaluationErrorReason
+from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.field_utils import convert_potential_field
 from dagster.config.validate import process_config, validate_config
-from dagster.core.test_utils import throwing_validate_config_value
 
 
 def test_noop_config():
@@ -96,7 +95,9 @@ def _multiple_required_fields_config_permissive_dict():
 
 
 def _validate(config_field, value):
-    return throwing_validate_config_value(config_field.config_type, value)
+    res = process_config(config_field.config_type, value)
+    assert res.success, res.errors[0].message
+    return res.value
 
 
 def test_single_required_string_field_config_type():
@@ -104,27 +105,30 @@ def test_single_required_string_field_config_type():
         'string_field': 'value'
     }
 
-    with pytest.raises(DagsterEvaluateConfigValueError) as top_error:
+    with pytest.raises(
+        AssertionError,
+        match=(
+            re.escape(
+                'Missing required field "string_field" at document config root. Available Fields: '
+                '"[\'string_field\']".'
+            )
+        ),
+    ):
         _validate(_single_required_string_config_dict(), {})
 
-    assert str(top_error.value) == (
-        '''Missing required field "string_field" at document config root. '''
-        '''Available Fields: "['string_field']".'''
-    )
-
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_single_required_string_config_dict(), {'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_single_required_string_config_dict(), {'string_field': 'yupup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_single_required_string_config_dict(), {'string_field': 1})
 
 
 def test_undefined_field_error():
     with pytest.raises(
-        DagsterEvaluateConfigValueError,
+        AssertionError,
         match=(
             'Undefined field "extra" at document config root. Expected: "{ string_field: '
             'String }"'
@@ -143,22 +147,22 @@ def test_multiple_required_fields_passing():
 
 
 def test_multiple_required_fields_failing():
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_multiple_required_fields_config_dict(), {})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_multiple_required_fields_config_dict(), {'field_one': 'yup', 'extra': 'yup'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(
             _multiple_required_fields_config_dict(),
             {'field_one': 'yup', 'field_two': 'yup', 'extra': 'should_not_exist'},
         )
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(
             _multiple_required_fields_config_dict(), {'field_one': 'value_one', 'field_two': 2}
         )
@@ -170,18 +174,18 @@ def test_single_optional_field_passing():
     }
     assert _validate(_single_optional_string_config_dict(), {}) == {}
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         assert _validate(_single_optional_string_config_dict(), {'optional_field': None}) == {
             'optional_field': None
         }
 
 
 def test_single_optional_field_failing():
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
 
         _validate(_single_optional_string_config_dict(), {'optional_field': 1})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_single_optional_string_config_dict(), {'dlkjfalksdjflksaj': 1})
 
 
@@ -226,13 +230,13 @@ def test_permissive_multiple_required_fields_nested_passing():
 
 
 def test_permissive_multiple_required_fields_failing():
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_multiple_required_fields_config_permissive_dict(), {})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(_multiple_required_fields_config_permissive_dict(), {'field_one': 'yup'})
 
-    with pytest.raises(DagsterEvaluateConfigValueError):
+    with pytest.raises(AssertionError):
         _validate(
             _multiple_required_fields_config_permissive_dict(),
             {'field_one': 'value_one', 'field_two': 2},
@@ -281,19 +285,19 @@ def test_single_nested_config():
 
 def test_single_nested_config_undefined_errors():
     with pytest.raises(
-        DagsterEvaluateConfigValueError,
+        AssertionError,
         match='Value at path root:nested must be dict. Expected: "{ int_field: Int }".',
     ):
         _validate(_single_nested_config(), {'nested': 'dkjfdk'})
 
     with pytest.raises(
-        DagsterEvaluateConfigValueError,
+        AssertionError,
         match='Invalid scalar at path root:nested:int_field value "dkjfdk" of type .* is not valid for expected type "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
     with pytest.raises(
-        DagsterEvaluateConfigValueError,
+        AssertionError,
         match=(
             'Undefined field "not_a_field" at path root:nested Expected: ' '"{ int_field: Int }"'
         ),
@@ -301,7 +305,7 @@ def test_single_nested_config_undefined_errors():
         _validate(_single_nested_config(), {'nested': {'int_field': 2, 'not_a_field': 1}})
 
     with pytest.raises(
-        DagsterEvaluateConfigValueError,
+        AssertionError,
         match='Invalid scalar at path root:nested:int_field value "{\'too_nested\': \'dkjfdk\'}" of type .* is not valid for expected type "Int"',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})

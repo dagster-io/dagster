@@ -2,7 +2,6 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.errors import DagsterError
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_type import ConfigType, ConfigTypeKind
@@ -91,14 +90,6 @@ class EvaluationError(namedtuple('_EvaluationError', 'stack reason message error
             check.str_param(message, 'message'),
             check.inst_param(error_data, 'error_data', ERROR_DATA_TYPES),
         )
-
-
-class DagsterEvaluateConfigValueError(DagsterError):
-    '''Indicates invalid value was passed to a type's evaluate_value method'''
-
-    def __init__(self, stack, *args, **kwargs):
-        super(DagsterEvaluateConfigValueError, self).__init__(*args, **kwargs)
-        self.stack = check.inst_param(stack, 'stack', EvaluationStack)
 
 
 def _get_type_msg(type_in_context):
