@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button, Menu, MenuItem, Icon } from "@blueprintjs/core";
+import * as ReactDOM from "react-dom";
 
 import { Select } from "@blueprintjs/select";
 import { useQuery } from "react-apollo";
@@ -20,6 +21,7 @@ import { IExecutionSession } from "../LocalStorage";
 import ApolloClient from "apollo-client";
 import { isEqual } from "apollo-utilities";
 import styled from "styled-components";
+import { ShortcutHandler } from "../ShortcutHandler";
 
 type Preset = ConfigPresetsQuery_pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
@@ -233,80 +235,103 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
     let configGenerators: ConfigGenerator[] = presets;
     configGenerators = configGenerators.concat(partitionSets);
 
+    const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
+
     return (
       <div>
-        <ConfigGeneratorSelect
-          items={configGenerators}
-          itemPredicate={(query, configGenerator) =>
-            query.length === 0 || configGenerator.name.includes(query)
-          }
-          itemListRenderer={({ itemsParentRef, renderItem, filteredItems }) => {
-            const presetItems = filteredItems.filter(
-              item => item.__typename === "PipelinePreset"
-            );
-
-            const partitionSetItems = filteredItems.filter(
-              item => item.__typename === "PartitionSet"
-            );
-
-            const renderedPresetItems = presetItems
-              .map(renderItem)
-              .filter(item => item != null);
-
-            const renderedPartitionSetItems = partitionSetItems
-              .map(renderItem)
-              .filter(item => item != null);
-
-            return (
-              <Menu ulRef={itemsParentRef}>
-                {renderedPresetItems.length > 0 && (
-                  <>
-                    <MenuItem disabled={true} text={`Presets`} />
-                    {renderedPresetItems}
-                  </>
-                )}
-                {renderedPresetItems.length > 0 &&
-                  renderedPartitionSetItems.length > 0 && <Menu.Divider />}
-                {renderedPartitionSetItems.length > 0 && (
-                  <>
-                    <MenuItem disabled={true} text={`Partitions`} />
-                    {renderedPartitionSetItems}
-                  </>
-                )}
-              </Menu>
-            );
-          }}
-          itemRenderer={(configGenerator, props) => (
-            <Menu.Item
-              active={props.modifiers.active}
-              onClick={props.handleClick}
-              key={configGenerator.name}
-              text={configGenerator.name}
-            />
-          )}
-          noResults={<Menu.Item disabled={true} text="No presets." />}
-          onItemSelect={selection => {
-            selection.__typename === "PipelinePreset"
-              ? onPresetSelect(selection, pipelineName, client)
-              : onPartitionSetSelect(selection);
-          }}
+        <ShortcutHandler
+          shortcutLabel={"⌥E"}
+          shortcutFilter={e => e.keyCode === 69 && e.altKey}
+          onShortcut={() => activateSelect(select.current)}
         >
-          <Button
-            text={
-              props.selectedConfigGenerator
-                ? props.selectedConfigGenerator.name
-                : ""
+          <ConfigGeneratorSelect
+            ref={select}
+            items={configGenerators}
+            itemPredicate={(query, configGenerator) =>
+              query.length === 0 || configGenerator.name.includes(query)
             }
-            title="preset-selector-button"
-            icon="insert"
-            rightIcon="caret-down"
-          />
-        </ConfigGeneratorSelect>
+            itemListRenderer={({
+              itemsParentRef,
+              renderItem,
+              filteredItems
+            }) => {
+              const presetItems = filteredItems.filter(
+                item => item.__typename === "PipelinePreset"
+              );
+
+              const partitionSetItems = filteredItems.filter(
+                item => item.__typename === "PartitionSet"
+              );
+
+              const renderedPresetItems = presetItems
+                .map(renderItem)
+                .filter(item => item != null);
+
+              const renderedPartitionSetItems = partitionSetItems
+                .map(renderItem)
+                .filter(item => item != null);
+
+              return (
+                <Menu ulRef={itemsParentRef}>
+                  {renderedPresetItems.length > 0 && (
+                    <>
+                      <MenuItem disabled={true} text={`Presets`} />
+                      {renderedPresetItems}
+                    </>
+                  )}
+                  {renderedPresetItems.length > 0 &&
+                    renderedPartitionSetItems.length > 0 && <Menu.Divider />}
+                  {renderedPartitionSetItems.length > 0 && (
+                    <>
+                      <MenuItem disabled={true} text={`Partitions`} />
+                      {renderedPartitionSetItems}
+                    </>
+                  )}
+                </Menu>
+              );
+            }}
+            itemRenderer={(configGenerator, props) => (
+              <Menu.Item
+                active={props.modifiers.active}
+                onClick={props.handleClick}
+                key={configGenerator.name}
+                text={configGenerator.name}
+              />
+            )}
+            noResults={<Menu.Item disabled={true} text="No presets." />}
+            onItemSelect={selection => {
+              selection.__typename === "PipelinePreset"
+                ? onPresetSelect(selection, pipelineName, client)
+                : onPartitionSetSelect(selection);
+            }}
+          >
+            <Button
+              text={
+                props.selectedConfigGenerator
+                  ? props.selectedConfigGenerator.name
+                  : ""
+              }
+              title="preset-selector-button"
+              icon="insert"
+              rightIcon="caret-down"
+            />
+          </ConfigGeneratorSelect>
+        </ShortcutHandler>
       </div>
     );
   },
   isEqual
 );
+
+function activateSelect(select: Select<any> | null) {
+  if (!select) return;
+  // eslint-disable-next-line react/no-find-dom-node
+  const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
+  const btnEl = selectEl.querySelector("button");
+  if (btnEl) {
+    btnEl.click();
+  }
+}
 
 const PickerContainer = styled.div`
   display: flex;
