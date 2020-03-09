@@ -395,6 +395,15 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
 
 
 def execute_partition_set(partition_set, partition_filter, instance=None):
+    '''Programatically perform a backfill over a partition set
+
+    Arguments:
+        partition_set (PartitionSet): The base partition set to run the backfill over
+        partition_filter (Callable[[List[Partition]]], List[Partition]): A function that takes
+            a list of partitions and returns a filtered list of partitions to run the backfill
+            over.
+        instance (DagsterInstance): The instance to use to perform the backfill
+    '''
     check.inst_param(partition_set, 'partition_set', PartitionSetDefinition)
     check.callable_param(partition_filter, 'partition_filter')
     check.inst_param(instance, 'instance', DagsterInstance)

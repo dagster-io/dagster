@@ -9,15 +9,21 @@ from dagster.core.serdes import whitelist_for_serdes
 from .mode import DEFAULT_MODE_NAME
 
 
-class ScheduleExecutionContext:
-    ''' Defines the context where an instance is configured to execute scheduled jobs '''
+class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance')):
+    '''Schedule-specific execution context.
 
-    def __init__(self, instance):
-        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+    An instance of this class is made avaiable as the first argument to various ScheduleDefinition
+    functions. It is passed as the first argument to ``environment_dict_fn``, ``tags_fn``,
+    and ``should_execute``.
 
-    @property
-    def instance(self):
-        return self._instance
+    Attributes:
+        instance (DagsterInstance): The instance configured to run the schedule
+    '''
+
+    def __new__(cls, instance):
+        return super(ScheduleExecutionContext, cls).__new__(
+            cls, check.inst_param(instance, 'instance', DagsterInstance)
+        )
 
 
 @whitelist_for_serdes
