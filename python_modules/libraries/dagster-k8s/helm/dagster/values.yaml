@@ -170,6 +170,23 @@ ingress:
       #   servicePort: "use-annotation"
 
 
+####################################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+####################################################################################################
+extraManifests:
+##
+## Example:
+##  - apiVersion: cloud.google.com/v1beta1
+##    kind: BackendConfig
+##    metadata:
+##      name: "{{ .Release.Name }}-backend-config"
+##      labels:
+##      {{- include "dagster.labels" . | nindent 6 }}
+##    spec:
+##      securityPolicy:
+##        name: "gcp-cloud-armor-policy-test"
+
+
 serviceAccount:
   create: true
 

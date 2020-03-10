@@ -13,6 +13,18 @@ data:
       module: dagster_cron.cron_scheduler
       class: SystemCronScheduler
 
+    schedule_storage:
+      module: dagster_postgres.schedule_storage
+      class: PostgresScheduleStorage
+      config:
+        postgres_db:
+          username: {{ .Values.postgresql.postgresqlUsername }}
+          password:
+            env: DAGSTER_PG_PASSWORD
+          hostname: {{ include "dagster.postgresql.host" . }}
+          db_name:  {{ .Values.postgresql.postgresqlDatabase	}}
+          port: {{ .Values.postgresql.service.port }}
+
     run_launcher:
       module: dagster_k8s.launcher
       class: K8sRunLauncher
@@ -43,7 +55,6 @@ data:
           {{- end }}
           {{- end }}
         {{- end }}
-
 
     run_storage:
       module: dagster_postgres.run_storage
