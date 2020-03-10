@@ -1,3 +1,5 @@
+import os
+
 import glob
 
 import yaml
@@ -33,4 +35,4 @@ def merge_yamls(file_list):
 def load_yaml_from_path(path):
     check.str_param(path, 'path')
     with open(path, 'r') as ff:
-        return yaml.safe_load(ff)
+        return yaml.safe_load(os.path.expandvars(ff.read()))
