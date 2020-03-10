@@ -15,8 +15,10 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
+    RetryRequested,
     RunConfig,
     execute_pipeline,
+    lambda_solid,
     solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
@@ -68,6 +70,10 @@ def define_test_events_pipeline():
     def should_be_skipped(_context, some_input):  # pylint: disable=unused-argument
         pass
 
+    @lambda_solid
+    def retries():
+        raise RetryRequested()
+
     return PipelineDefinition(
         name='test_events',
         solid_defs=[
@@ -75,6 +81,7 @@ def define_test_events_pipeline():
             optional_only_one,
             should_fail,
             should_be_skipped,
+            retries,
         ],
         dependencies={
             'optional_only_one': {},

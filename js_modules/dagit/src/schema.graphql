@@ -334,6 +334,8 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
+  error: PythonError!
+  secondsToWait: Int
 }
 
 input ExecutionTag {
@@ -817,6 +819,7 @@ type PresetNotFoundError implements Error {
 
 type PythonError implements Error {
   message: String!
+  className: String
   stack: [String!]!
   cause: PythonError
 }

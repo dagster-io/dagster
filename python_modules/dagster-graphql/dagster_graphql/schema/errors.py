@@ -31,6 +31,7 @@ class DauphinPythonError(dauphin.ObjectType):
         name = 'PythonError'
         interfaces = (DauphinError,)
 
+    className = dauphin.Field(dauphin.String)
     stack = dauphin.non_null_list(dauphin.String)
     cause = dauphin.Field('PythonError')
 
@@ -40,6 +41,7 @@ class DauphinPythonError(dauphin.ObjectType):
         self.message = error_info.message
         self.stack = error_info.stack
         self.cause = error_info.cause
+        self.className = error_info.cls_name
 
 
 class DauphinSchedulerNotDefinedError(dauphin.ObjectType):

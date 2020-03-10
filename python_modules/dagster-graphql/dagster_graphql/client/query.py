@@ -24,6 +24,22 @@ fragment eventMetadataEntryFragment on EventMetadataEntry {
   }
 }
 
+fragment errorFragment on PythonError {
+  message
+  stack
+  className
+  cause {
+    message
+    stack
+    className
+    cause {
+      message
+      stack
+      className
+    }
+  }
+}
+
 
 fragment stepEventFragment on StepEvent {
   step {
@@ -101,7 +117,7 @@ fragment stepEventFragment on StepEvent {
   }
   ... on ExecutionStepFailureEvent {
     error {
-      message
+      ...errorFragment
     }
     failureMetadata {
       label
@@ -111,12 +127,21 @@ fragment stepEventFragment on StepEvent {
       }
     }
   }
+  ... on ExecutionStepUpForRetryEvent {
+    retryError: error {
+      ...errorFragment
+    }
+    secondsToWait
+  }
   ... on EngineEvent {
     metadataEntries {
       ...eventMetadataEntryFragment
     }
     markerStart
     markerEnd
+    engineError: error {
+      ...errorFragment
+    }
   }
 }
 '''

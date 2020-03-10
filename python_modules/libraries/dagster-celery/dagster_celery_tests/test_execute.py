@@ -17,6 +17,7 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineExecutionResult,
+    RetryRequested,
     SolidExecutionResult,
     check,
     default_executors,
@@ -133,6 +134,16 @@ def should_never_execute(_):
 @pipeline(mode_defs=celery_mode_defs)
 def test_fails():
     should_never_execute(fails())
+
+
+@lambda_solid
+def retry_request():
+    raise RetryRequested()
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def test_retries():
+    retry_request()
 
 
 def events_of_type(result, event_type):
@@ -370,6 +381,14 @@ def test_execute_eagerly_fails_pipeline_on_celery():
             result.result_for_solid('fails').failure_data.error.message == 'Exception: argjhgjh\n'
         )
         assert result.result_for_solid('should_never_execute').skipped
+
+
+def test_execute_eagerly_retries_pipeline_on_celery():
+    with execute_eagerly_on_celery('test_retries') as result:
+        assert len(events_of_type(result, 'STEP_START')) == 1
+        assert len(events_of_type(result, 'STEP_UP_FOR_RETRY')) == 1
+        assert len(events_of_type(result, 'STEP_RESTARTED')) == 1
+        assert len(events_of_type(result, 'STEP_FAILURE')) == 1
 
 
 def test_bad_broker():

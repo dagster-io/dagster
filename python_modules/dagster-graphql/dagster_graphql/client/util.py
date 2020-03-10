@@ -15,6 +15,7 @@ from dagster.core.execution.plan.objects import (
     StepInputData,
     StepOutputData,
     StepOutputHandle,
+    StepRetryData,
     StepSuccessData,
     TypeCheckData,
     UserFailureData,
@@ -34,6 +35,8 @@ HANDLED_EVENTS = {
     'StepExpectationResultEvent': DagsterEventType.STEP_EXPECTATION_RESULT,
     'ObjectStoreOperationEvent': DagsterEventType.OBJECT_STORE_OPERATION,
     'EngineEvent': DagsterEventType.ENGINE_EVENT,
+    'ExecutionStepUpForRetryEvent': DagsterEventType.STEP_UP_FOR_RETRY,
+    'ExecutionStepRestartEvent': DagsterEventType.STEP_RESTARTED,
 }
 
 
@@ -51,6 +54,15 @@ def materialization_from_data(data):
         label=data['label'],
         description=data.get('description'),  # enforce?
         metadata_entries=list(event_metadata_entries(data.get('metadataEntries')) or []),
+    )
+
+
+def error_from_data(data):
+    return SerializableErrorInfo(
+        message=data['message'],
+        stack=data['stack'],
+        cls_name=data['className'],
+        cause=error_from_data(data['cause']) if data.get('cause') else None,
     )
 
 
@@ -137,6 +149,12 @@ def dagster_event_from_dict(event_dict, pipeline_name):
     elif event_type == DagsterEventType.STEP_SUCCESS:
         event_specific_data = StepSuccessData(0.0)
 
+    elif event_type == DagsterEventType.STEP_UP_FOR_RETRY:
+        event_specific_data = StepRetryData(
+            error=error_from_data(event_dict['retryError']),
+            seconds_to_wait=event_dict['secondsToWait'],
+        )
+
     elif event_type == DagsterEventType.STEP_MATERIALIZATION:
         materialization = event_dict['materialization']
         event_specific_data = StepMaterializationData(
@@ -147,11 +165,8 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         event_specific_data = StepExpectationResultData(expectation_result)
 
     elif event_type == DagsterEventType.STEP_FAILURE:
-        error_info = SerializableErrorInfo(
-            event_dict['error']['message'], stack=None, cls_name=None
-        )
         event_specific_data = StepFailureData(
-            error_info,
+            error_from_data(event_dict['error']),
             UserFailureData(
                 label=event_dict['failureMetadata']['label'],
                 description=event_dict['failureMetadata']['description'],
@@ -168,6 +183,9 @@ def dagster_event_from_dict(event_dict, pipeline_name):
             metadata_entries=list(event_metadata_entries(event_dict.get('metadataEntries'))),
             marker_start=event_dict.get('markerStart'),
             marker_end=event_dict.get('markerEnd'),
+            error=error_from_data(event_dict['engineError'])
+            if event_dict.get('engineError')
+            else None,
         )
 
     # We should update the GraphQL response so that clients don't need to do this handle parsing.
