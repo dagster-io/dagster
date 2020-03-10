@@ -13,7 +13,9 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.config import RunConfig
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.utils import make_new_run_id
@@ -684,3 +686,51 @@ def test_multiprocessing_resource_teardown_failure():
         if event.is_engine_event and event.event_specific_data.error
     ]
     assert len(error_events) > 1
+
+
+def test_single_step_resource_event_logs():
+    # Test to attribute logs for single-step plans which are often the representation of
+    # sub-plans in a multiprocessing execution environment. Most likely will need to be rewritten
+    # with the refactor detailed in https://github.com/dagster-io/dagster/issues/2239
+    USER_SOLID_MESSAGE = 'I AM A SOLID'
+    USER_RESOURCE_MESSAGE = 'I AM A RESOURCE'
+    events = []
+
+    def event_callback(record):
+        assert isinstance(record, EventRecord)
+        events.append(record)
+
+    @solid(required_resource_keys={'a'})
+    def resource_solid(context):
+        context.log.info(USER_SOLID_MESSAGE)
+
+    @resource
+    def resource_a(context):
+        context.log.info(USER_RESOURCE_MESSAGE)
+        return 'A'
+
+    pipeline = PipelineDefinition(
+        name='resource_logging_pipeline',
+        solid_defs=[resource_solid],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={'a': resource_a},
+                logger_defs={'callback': construct_event_logger(event_callback)},
+            )
+        ],
+    )
+
+    result = execute_pipeline(
+        pipeline,
+        environment_dict={'loggers': {'callback': {}},},
+        instance=DagsterInstance.local_temp(),
+        run_config=RunConfig(step_keys_to_execute=['resource_solid.compute']),
+    )
+    assert result.success
+    log_messages = [event for event in events if isinstance(event, LogMessageRecord)]
+    assert len(log_messages) == 2
+
+    resource_log_message = next(
+        iter([message for message in log_messages if message.user_message == USER_RESOURCE_MESSAGE])
+    )
+    assert resource_log_message.step_key == 'resource_solid.compute'

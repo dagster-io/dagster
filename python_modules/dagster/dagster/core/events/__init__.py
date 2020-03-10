@@ -207,11 +207,6 @@ class DagsterEvent(
 
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         pipeline_name = execution_plan.pipeline_def.name
-        step_key = (
-            execution_plan.step_keys_to_execute[0]
-            if execution_plan.step_keys_to_execute and len(execution_plan.step_keys_to_execute) == 1
-            else None
-        )
         event = DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             pipeline_name=pipeline_name,
@@ -219,7 +214,7 @@ class DagsterEvent(
             event_specific_data=_validate_event_specific_data(
                 DagsterEventType.ENGINE_EVENT, event_specific_data
             ),
-            step_key=step_key,
+            step_key=execution_plan.step_key_for_single_step_plans(),
         )
         log_resource_event(log_manager, pipeline_name, event)
         return event

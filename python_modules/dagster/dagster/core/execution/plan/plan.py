@@ -358,6 +358,14 @@ class ExecutionPlan(
 
         return ActiveExecution(self, retries, sort_key_fn)
 
+    def step_key_for_single_step_plans(self):
+        # Temporary hack to isolate single-step plans, which are often the representation of
+        # sub-plans in a multiprocessing execution environment.  We want to attribute pipeline
+        # events (like resource initialization) that are associated with the execution of these
+        # single step sub-plans.  Most likely will be removed with the refactor detailed in
+        # https://github.com/dagster-io/dagster/issues/2239
+        return self.step_keys_to_execute[0] if len(self.step_keys_to_execute) == 1 else None
+
     @staticmethod
     def build(pipeline_def, environment_config, run_config):
         '''Here we build a new ExecutionPlan from a pipeline definition and the environment config.

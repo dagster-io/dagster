@@ -56,11 +56,7 @@ class InProcessEngine(Engine):  # pylint: disable=no-init
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         step_keys_to_execute = execution_plan.step_keys_to_execute
-        for_step_key = (
-            step_keys_to_execute[0]
-            if step_keys_to_execute and len(step_keys_to_execute) == 1
-            else None
-        )
+        for_step_key = execution_plan.step_key_for_single_step_plans()
 
         yield DagsterEvent.engine_event(
             pipeline_context,

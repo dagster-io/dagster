@@ -13,7 +13,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.utils import EventGenerationManager, ensure_gen
+from dagster.utils import EventGenerationManager, ensure_gen, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
@@ -38,6 +38,16 @@ def resource_initialization_event_generator(
     check.inst_param(log_manager, 'log_manager', DagsterLogManager)
     check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
 
+    if execution_plan.step_key_for_single_step_plans():
+        step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
+        resource_log_manager = DagsterLogManager(
+            pipeline_run.run_id,
+            merge_dicts(log_manager.logging_tags, step.logging_tags),
+            log_manager.loggers,
+        )
+    else:
+        resource_log_manager = log_manager
+
     resource_instances = {}
     pipeline_def = execution_plan.pipeline_def
     mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
@@ -48,7 +58,7 @@ def resource_initialization_event_generator(
     try:
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                execution_plan, log_manager, resource_keys_to_init,
+                execution_plan, resource_log_manager, resource_keys_to_init,
             )
 
         for resource_name, resource_def in sorted(mode_definition.resource_defs.items()):
@@ -59,7 +69,7 @@ def resource_initialization_event_generator(
                 resource_def=resource_def,
                 resource_config=environment_config.resources.get(resource_name, {}).get('config'),
                 run_id=pipeline_run.run_id,
-                log_manager=log_manager,
+                log_manager=resource_log_manager,
             )
             manager = single_resource_generation_manager(
                 resource_context, resource_name, resource_def
@@ -74,7 +84,7 @@ def resource_initialization_event_generator(
 
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                execution_plan, log_manager, resource_instances, resource_init_times
+                execution_plan, resource_log_manager, resource_instances, resource_init_times
             )
         yield ScopedResourcesBuilder(resource_instances)
     except GeneratorExit:
@@ -85,7 +95,7 @@ def resource_initialization_event_generator(
     except DagsterUserCodeExecutionError as dagster_user_error:
         yield DagsterEvent.resource_init_failure(
             execution_plan,
-            log_manager,
+            resource_log_manager,
             resource_keys_to_init,
             serializable_error_info_from_exc_info(dagster_user_error.original_exc_info),
         )
@@ -103,7 +113,7 @@ def resource_initialization_event_generator(
             if error:
                 yield DagsterEvent.resource_teardown_failure(
                     execution_plan,
-                    log_manager,
+                    resource_log_manager,
                     resource_keys_to_init,
                     serializable_error_info_from_exc_info(error.original_exc_info),
                 )
