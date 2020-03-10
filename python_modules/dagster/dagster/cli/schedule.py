@@ -97,6 +97,24 @@ def print_changes(scheduler_handle, repository, instance, print_fn=print, previe
             print_fn(click.style('  - %s (delete)' % schedule_name, fg='red'))
 
 
+def check_handle_and_scheduler(handle, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    if not handle.build_scheduler_handle():
+        repository = handle.build_repository_definition()
+        raise click.UsageError(
+            "There are no schedules defined for repository {name}.".format(name=repository.name)
+        )
+
+    if not instance.scheduler:
+        raise click.UsageError(
+            'A scheduler must be configured to run schedule commands.\n'
+            'You can configure a scheduler on your instance using dagster.yaml.\n'
+            'For more information, see:\n\n'
+            'https://docs.dagster.io/latest/deploying/instance/#scheduler'
+        )
+
+
 @click.command(
     name='preview', help='Preview changes that will be performed by `dagster schedule up'
 )
@@ -107,13 +125,11 @@ def schedule_preview_command(**kwargs):
 
 def execute_preview_command(cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
-
     instance = DagsterInstance.get()
+    check_handle_and_scheduler(handle, instance)
+
     scheduler_handle = handle.build_scheduler_handle()
-    if not scheduler_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    repository = handle.build_repository_definition()
 
     print_changes(scheduler_handle, repository, instance, print_fn, preview=True)
 
@@ -135,16 +151,13 @@ def schedule_up_command(preview, **kwargs):
 
 def execute_up_command(preview, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
+    instance = DagsterInstance.get()
+    check_handle_and_scheduler(handle, instance)
 
+    scheduler_handle = handle.build_scheduler_handle()
+    repository = handle.build_repository_definition()
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
-
-    instance = DagsterInstance.get()
-    scheduler_handle = handle.build_scheduler_handle()
-    if not scheduler_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
 
     print_changes(scheduler_handle, repository, instance, print_fn, preview=preview)
     if preview:
@@ -173,14 +186,11 @@ def schedule_list_command(running, stopped, name, verbose, **kwargs):
 
 def execute_list_command(running_filter, stopped_filter, name_filter, verbose, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
-
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle()
+    check_handle_and_scheduler(handle, instance)
 
-    if not schedule_handle and not name_filter:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    schedule_handle = handle.build_scheduler_handle()
+    repository = handle.build_repository_definition()
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository.name)
@@ -249,14 +259,11 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
-
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle()
+    check_handle_and_scheduler(handle, instance)
 
-    if not schedule_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    schedule_handle = handle.build_scheduler_handle()
+    repository = handle.build_repository_definition()
 
     if all_flag:
         for schedule in instance.all_schedules(repository):
@@ -284,16 +291,12 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-
-    instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
+    instance = DagsterInstance.get()
+    check_handle_and_scheduler(handle, instance)
 
     schedule_handle = handle.build_scheduler_handle()
-
-    if not schedule_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    repository = handle.build_repository_definition()
 
     try:
         instance.stop_schedule(repository, schedule_name)
@@ -319,14 +322,11 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
-
     instance = DagsterInstance.get()
-    schedule_handle = handle.build_scheduler_handle()
+    check_handle_and_scheduler(handle, instance)
 
-    if not schedule_handle:
-        print_fn("Scheduler not defined for repository {name}".format(name=repository.name))
-        return
+    schedule_handle = handle.build_scheduler_handle()
+    repository = handle.build_repository_definition()
 
     if all_running_flag:
         for schedule in instance.all_schedules(repository):
@@ -365,19 +365,9 @@ def schedule_wipe_command(**kwargs):
 
 
 def execute_wipe_command(cli_args, print_fn):
-
     handle = handle_for_repo_cli_args(cli_args)
-    repository = handle.build_repository_definition()
-
     instance = DagsterInstance.get()
-    if not instance.scheduler:
-        raise click.UsageError(
-            'A scheduler must be configured to run schedule commands. You can configure a scheduler '
-            '(e.g. dagster_cron.scheduler.SystemCronScheduler) on your instance '
-            '`dagster.yaml` settings. See '
-            'https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/scheduler.html for more'
-            'information.'
-        )
+    check_handle_and_scheduler(handle, instance)
 
     confirmation = click.prompt(
         'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
