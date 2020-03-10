@@ -1,4 +1,9 @@
+# pylint doesn't know about pytest fixtures
+# pylint: disable=unused-argument
+
 import os
+import threading
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -10,12 +15,14 @@ from dagster_celery.cli import main
 from dagster import (
     ExecutionTargetHandle,
     ModeDefinition,
+    RunConfig,
     default_executors,
     execute_pipeline,
     pipeline,
     seven,
     solid,
 )
+from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
 
 BUILDKITE = os.getenv('BUILDKITE')
@@ -28,48 +35,52 @@ celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_exe
 
 
 @contextmanager
-def execute_pipeline_on_celery(pipeline_name):
-    with seven.TemporaryDirectory() as tempdir:
-        handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, pipeline_name)
-        pipeline_def = handle.build_pipeline_definition()
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
-        result = execute_pipeline(
-            pipeline_def,
-            environment_dict={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'celery': {}},
-            },
-            instance=instance,
-        )
-        yield result
-
-
-@contextmanager
-def execute_eagerly_on_celery(pipeline_name):
-    with seven.TemporaryDirectory() as tempdir:
-        result = execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, pipeline_name
-            ).build_pipeline_definition(),
-            environment_dict={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
-            },
-            instance=DagsterInstance.local_temp(tempdir=tempdir),
-        )
-        yield result
-
-
-@contextmanager
 def start_celery_worker():
     runner = CliRunner()
-    result = runner.invoke(main, ['worker', 'start', '-d'])
+    runargs = ['worker', 'start', '-d']
+    result = runner.invoke(main, runargs)
     assert result.exit_code == 0, str(result.exception)
+    try:
+        yield
+    finally:
+        result = runner.invoke(main, ['worker', 'terminate'])
+        assert result.exit_code == 0, str(result.exception)
 
-    yield
 
-    result = runner.invoke(main, ['worker', 'terminate'])
-    assert result.exit_code == 0, str(result.exception)
+def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
+    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, pipeline_name)
+    pipeline_def = handle.build_pipeline_definition()
+    instance = DagsterInstance.local_temp(tempdir=tempdir)
+    return execute_pipeline(
+        pipeline_def,
+        environment_dict={
+            'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
+            'execution': {'celery': {}},
+        },
+        instance=instance,
+        run_config=RunConfig(tags=tags),
+    )
+
+
+def execute_eagerly_on_celery(tempdir, pipeline_name, tags=None):
+    return execute_pipeline(
+        ExecutionTargetHandle.for_pipeline_python_file(
+            __file__, pipeline_name
+        ).build_pipeline_definition(),
+        environment_dict={
+            'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
+            'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
+        },
+        instance=DagsterInstance.local_temp(tempdir=tempdir),
+        run_config=RunConfig(tags=tags),
+    )
+
+
+def execute_on_thread(tempdir, pipeline_name, run_priority, done):
+    execute_pipeline_on_celery(
+        tempdir, pipeline_name, {'dagster-celery/run_priority': run_priority}
+    )
+    done.set()
 
 
 @solid(tags={'dagster-celery/priority': 0})
@@ -179,7 +190,8 @@ def priority_pipeline():
 @pytest.mark.skip
 @skip_ci
 def test_priority_pipeline():
-    with execute_pipeline_on_celery('priority_pipeline') as result:
+    with seven.TemporaryDirectory() as tempdir:
+        result = execute_pipeline_on_celery(tempdir, 'priority_pipeline')
         assert result.success
 
 
@@ -198,8 +210,11 @@ def simple_priority_pipeline():
     ten()
 
 
+@pytest.mark.skip
+@skip_ci
 def test_eager_priority_pipeline():
-    with execute_eagerly_on_celery('simple_priority_pipeline') as result:
+    with seven.TemporaryDirectory() as tempdir:
+        result = execute_eagerly_on_celery(tempdir, 'simple_priority_pipeline')
         assert result.success
         assert list(OrderedDict.fromkeys([evt.step_key for evt in result.step_event_list])) == [
             'ten.compute',
@@ -214,3 +229,70 @@ def test_eager_priority_pipeline():
             'one.compute',
             'zero.compute',
         ]
+
+
+@solid
+def sleep_solid(_):
+    time.sleep(0.5)
+    return True
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def low_pipeline():
+    sleep_solid.alias('low_one')()
+    sleep_solid.alias('low_two')()
+    sleep_solid.alias('low_three')()
+    sleep_solid.alias('low_four')()
+    sleep_solid.alias('low_five')()
+
+
+@pipeline(mode_defs=celery_mode_defs)
+def hi_pipeline():
+    sleep_solid.alias('hi_one')()
+    sleep_solid.alias('hi_two')()
+    sleep_solid.alias('hi_three')()
+    sleep_solid.alias('hi_four')()
+    sleep_solid.alias('hi_five')()
+
+
+@skip_ci
+def test_run_priority_pipeline():
+    with seven.TemporaryDirectory() as tempdir:
+        instance = DagsterInstance.local_temp(tempdir)
+
+        low_done = threading.Event()
+        hi_done = threading.Event()
+
+        # enqueue low-priority tasks
+        low_thread = threading.Thread(
+            target=execute_on_thread, args=(tempdir, 'low_pipeline', -3, low_done)
+        )
+        low_thread.daemon = True
+        low_thread.start()
+
+        time.sleep(1)  # sleep so that we don't hit any sqlite concurrency issues
+
+        # enqueue hi-priority tasks
+        hi_thread = threading.Thread(
+            target=execute_on_thread, args=(tempdir, 'hi_pipeline', 3, hi_done)
+        )
+        hi_thread.daemon = True
+        hi_thread.start()
+
+        time.sleep(5)  # sleep to give queue time to prioritize tasks
+
+        with start_celery_worker():
+            while not low_done.is_set() or not hi_done.is_set():
+                time.sleep(1)
+
+            low_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name='low_pipeline'))
+            assert len(low_runs) == 1
+            low_run = low_runs[0]
+            lowstats = instance.get_run_stats(low_run.run_id)
+            hi_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name='hi_pipeline'))
+            assert len(hi_runs) == 1
+            hi_run = hi_runs[0]
+            histats = instance.get_run_stats(hi_run.run_id)
+
+            assert lowstats.start_time < histats.start_time
+            assert lowstats.end_time > histats.end_time
