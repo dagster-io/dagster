@@ -20,6 +20,7 @@ should feel friendly, collegial, and relaxed for everyone. We take our
 
   code_of_conduct
   contributing
+  open_source
   Slack <https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU>
   Github <https://www.github.com/dagster-io/dagster/>
   StackOverflow <https://stackoverflow.com/questions/tagged/dagster>
