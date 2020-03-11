@@ -84,7 +84,7 @@ To host dagit on a bare VM or in Docker on ECS, see `Running Dagit as a service 
 Using RDS for run and event log storage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Youu can use a hosted RDS PostgreSQL database for your Dagster run/events data. You can do
+You can use a hosted RDS PostgreSQL database for your Dagster run/events data. You can do
 this by setting blocks in your ``$DAGSTER_HOME/dagster.yaml`` appropriately.
 
 .. literalinclude:: dagster-pg.yaml

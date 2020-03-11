@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 import click
 import six
@@ -10,6 +11,7 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
 from dagster.core.instance import DagsterInstance
+from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
 from .app import create_app
@@ -135,6 +137,10 @@ def start_server(host, port, app, port_lookup, port_lookup_attempts=0):
     )
 
     try:
+        thread = threading.Thread(target=upload_logs, args=())
+        thread.daemon = True
+        thread.start()
+
         server.serve_forever()
     except OSError as os_error:
         if 'Address already in use' in str(os_error):

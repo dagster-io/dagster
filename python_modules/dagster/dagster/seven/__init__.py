@@ -156,3 +156,23 @@ def is_module_available(module_name):
         loader = importlib.util.find_spec(module_name)
 
     return loader is not None
+
+
+def builtin_print():
+    if sys.version_info.major >= 3:
+        return 'builtins.print'
+
+    else:
+        return 'sys.stdout'
+
+
+def print_single_line_str(single_line_str):
+    if sys.version_info.major >= 3:
+        return [
+            mock.call(single_line_str),
+        ]
+    else:
+        return [
+            mock.call.write(single_line_str),
+            mock.call.write('\n'),
+        ]

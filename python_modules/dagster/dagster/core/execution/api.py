@@ -11,6 +11,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 
@@ -165,6 +166,7 @@ def execute_pipeline_iterator(pipeline, environment_dict=None, run_config=None, 
     return execute_run_iterator(pipeline, run, instance)
 
 
+@telemetry_wrapper
 def execute_pipeline(
     pipeline, environment_dict=None, run_config=None, instance=None, raise_on_error=True
 ):

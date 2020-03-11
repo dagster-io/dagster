@@ -8,6 +8,7 @@ Quick start
   self
   packages
   python
+  telemetry
 
 
 To install dagster and dagit into an existing Python environment, run:
@@ -38,4 +39,3 @@ running Anaconda, you should install dagster inside a Conda environment.
 
 If you would like to install dagster from source, please see the section on
 :ref:`Contributing <Contributing>`.
-

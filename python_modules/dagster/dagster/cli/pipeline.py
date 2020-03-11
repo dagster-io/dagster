@@ -25,6 +25,7 @@ from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_run_id
 from dagster.seven import IS_WINDOWS
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
@@ -304,6 +305,7 @@ def pipeline_graphviz_command(only_solids, **kwargs):
 @click.option(
     '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
+@telemetry_wrapper
 def pipeline_execute_command(env, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
 
