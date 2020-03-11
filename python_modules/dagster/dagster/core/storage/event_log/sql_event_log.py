@@ -123,9 +123,10 @@ class SqlEventLogStorage(EventLogStorage):
             counts = {}
             times = {}
             for result in results:
-                if result[0]:
-                    counts[result[0]] = result[1]
-                    times[result[0]] = result[2]
+                (dagster_event_type, n_events_of_type, last_event_timestamp) = result
+                if dagster_event_type:
+                    counts[dagster_event_type] = n_events_of_type
+                    times[dagster_event_type] = last_event_timestamp
 
             start_time = times.get(DagsterEventType.PIPELINE_START.value, None)
             end_time = times.get(
