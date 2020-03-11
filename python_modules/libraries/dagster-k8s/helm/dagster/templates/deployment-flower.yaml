@@ -26,7 +26,7 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
       securityContext:
-      {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- toYaml .Values.flower.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: postgres:9.6.16
@@ -34,11 +34,11 @@ spec:
             'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.flower.securityContext | nindent 12 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- toYaml .Values.flower.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
           args: ["flower", "-A", "dagster_celery.tasks"]
@@ -51,17 +51,17 @@ spec:
               containerPort: 5555
               protocol: TCP
           resources:
-      {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+      {{- toYaml .Values.flower.resources | nindent 12 }}
+      {{- with .Values.flower.nodeSelector }}
       nodeSelector:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes: []
-      {{- with .Values.affinity }}
+      {{- with .Values.flower.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.tolerations }}
+      {{- with .Values.flower.tolerations }}
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}

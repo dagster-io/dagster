@@ -25,7 +25,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.dagit.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: postgres:9.6.16
@@ -33,11 +33,11 @@ spec:
             'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.dagit.securityContext | nindent 12 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.dagit.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           image: "{{ .Values.dagit.image.repository }}:{{ .Values.dagit.image.tag }}"
           command: [
@@ -89,8 +89,8 @@ spec:
               path: /
               port: http
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+            {{- toYaml .Values.dagit.resources | nindent 12 }}
+      {{- with .Values.dagit.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -99,11 +99,11 @@ spec:
         - name: dagster-instance
           configMap:
             name: {{ template "dagster.fullname" . }}-instance
-    {{- with .Values.affinity }}
+    {{- with .Values.dagit.saffinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.tolerations }}
+    {{- with .Values.dagit.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}

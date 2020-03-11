@@ -23,7 +23,7 @@ spec:
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml .Values.celery.podSecurityContext | nindent 8 }}
       initContainers:
         - name: check-db-ready
           image: postgres:9.6.16
@@ -31,11 +31,11 @@ spec:
             'until pg_isready -h {{ include "dagster.postgresql.host" . }} -p {{ .Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
             ]
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.celery.securityContext | nindent 12 }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- toYaml .Values.celery.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           image: "{{ .Values.job_runner.image.repository }}:{{ .Values.job_runner.image.tag }}"
           command: ["dagster-celery"]
@@ -73,8 +73,8 @@ spec:
               mountPath: "{{ .Values.dagster_home }}/celery-config.yaml"
               subPath: celery.yaml
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+            {{- toYaml .Values.celery.resources | nindent 12 }}
+      {{- with .Values.celery.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -85,11 +85,11 @@ spec:
         - name: dagster-celery
           configMap:
             name: {{ template "dagster.fullname" . }}-celery
-    {{- with .Values.affinity }}
+    {{- with .Values.celery.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-    {{- with .Values.tolerations }}
+    {{- with .Values.celery.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}

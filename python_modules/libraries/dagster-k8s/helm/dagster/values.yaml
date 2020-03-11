@@ -33,6 +33,25 @@ dagit:
   # as a list here
   env_secrets:
     - ""
+  # Support Node, affinity and tolerations for Dagit pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources:
+    {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 ####################################################################################################
 # Job Runner: Configuration for the celery/job containers, which together handle physical execution
@@ -101,7 +120,25 @@ celery:
     # Example:
     # - name: "redshift"
     #   replicaCount: "3"
-
+  # Support Node, affinity and tolerations for Celery pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources:
+    {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
@@ -136,6 +173,25 @@ flower:
   service:
     annotations:
     port:
+  # Support Node, affinity and tolerations for Flower pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources:
+    {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
 
 ####################################################################################################
 # Ingress: (Optional) Create ingresses for Dagit and Flower
@@ -199,24 +255,3 @@ extraManifests:
 
 serviceAccount:
   create: true
-
-podSecurityContext: {}
-
-securityContext: {}
-
-resources:
-  {}
-  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
-  # and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
