@@ -9,6 +9,7 @@ from contextlib import closing
 
 import pytest
 import six
+import yaml
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 from kubernetes import client, config
@@ -312,32 +313,55 @@ def helm_chart(
         kube_api.create_namespaced_secret(namespace='dagster-test', body=secret)
 
         try:
-            image, tag = docker_image.split(':')
+            repository, tag = docker_image.split(':')
 
-            # See: https://github.com/helm/helm/issues/1987#issuecomment-280497496
-            helm_cmd = '''helm install \\
-            --set dagit.image.repository="{image}" \\
-            --set dagit.image.tag="{tag}" \\
-            --set dagit.env.TEST_SET_ENV_VAR="test_dagit_env_var" \\
-            --set dagit.env_config_maps={{test-env-configmap}} \\
-            --set dagit.env_secrets={{test-env-secret}} \\
-            --set job_runner.image.repository="{image}" \\
-            --set job_runner.image.tag="{tag}" \\
-            --set job_runner.env.TEST_SET_ENV_VAR="test_job_runner_env_var" \\
-            --set job_runner.env_config_maps={{test-env-configmap}} \\
-            --set job_runner.env_secrets={{test-env-secret}} \\
-            --set imagePullPolicy="{image_pull_policy}" \\
-            --set serviceAccount.name="dagit-admin" \\
-            --set postgresqlPassword="test", \\
-            --set postgresqlDatabase="test", \\
-            --set postgresqlUser="test" \\
-            --namespace dagster-test \\
-            dagster \\
-            helm/dagster/'''.format(
-                image=image, tag=tag, image_pull_policy=image_pull_policy,
+            helm_config = {
+                'imagePullPolicy': image_pull_policy,
+                'dagit': {
+                    'image': {'repository': repository, 'tag': tag},
+                    'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
+                    'env_config_maps': ['test-env-configmap'],
+                    'env_secrets': ['test-env-secret'],
+                },
+                'job_runner': {
+                    'image': {'repository': repository, 'tag': tag},
+                    'env': {'TEST_SET_ENV_VAR': 'test_job_runner_env_var'},
+                    'env_config_maps': ['test-env-configmap'],
+                    'env_secrets': ['test-env-secret'],
+                },
+                'serviceAccount': {'name': 'dagit-admin'},
+                'postgresqlPassword': 'test',
+                'postgresqlDatabase': 'test',
+                'postgresqlUser': 'test',
+                'celery': {
+                    'extraWorkerQueues': [
+                        {'name': 'extra-queue-1', 'replicaCount': 1},
+                        {'name': 'extra-queue-2', 'replicaCount': 2},
+                    ]
+                },
+            }
+            helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
+
+            helm_cmd = [
+                'helm',
+                'install',
+                '--namespace',
+                'dagster-test',
+                '-f',
+                '-',
+                'dagster',
+                'helm/dagster/',
+            ]
+
+            print('Running Helm Install: \n', helm_cmd, '\nwith config:\n', helm_config_yaml)
+
+            p = subprocess.Popen(
+                helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
-
-            print('Running Helm Install: \n', helm_cmd)
+            stdout, stderr = p.communicate(six.ensure_binary(helm_config_yaml))
+            print('\n\nstdout:\n', six.ensure_str(stdout))
+            print('\n\nstderr:\n', six.ensure_str(stderr))
+            assert p.returncode == 0
 
             check_output(
                 helm_cmd,
@@ -345,9 +369,23 @@ def helm_chart(
                 cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
             )
 
+            # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
             success, _ = wait_for_pod('dagit')
             assert success
+
+            # Wait for additional Celery worker queues to become ready
+            pods = kube_api.list_namespaced_pod(namespace='dagster-test')
+            for extra_queue in helm_config['celery']['extraWorkerQueues']:
+                pod_names = [
+                    p.metadata.name for p in pods.items if extra_queue['name'] in p.metadata.name
+                ]
+                assert len(pod_names) == extra_queue['replicaCount']
+                for pod in pod_names:
+                    success, _ = wait_for_pod(pod)
+                    assert success
+
             yield
+
         finally:
             print('Uninstalling helm chart')
             check_output(

@@ -46,7 +46,7 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{- define "dagster.workers.fullname" -}}
-{{- $name := default "celery-workers" .Values.workers.nameOverride -}}
+{{- $name := default "celery-workers" .Values.celery.workers.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 

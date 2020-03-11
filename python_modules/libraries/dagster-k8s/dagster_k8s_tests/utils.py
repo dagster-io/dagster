@@ -98,7 +98,13 @@ def wait_for_job_success(job_name):
     return success, raw_logs
 
 
-def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False, timeout=600.0):
+def wait_for_pod(
+    name,
+    wait_for_termination=False,
+    wait_for_readiness=False,
+    timeout=600.0,
+    namespace='dagster-test',
+):
     '''Wait for the dagit pod to launch and be running, or wait for termination
 
     NOTE: Adding this wait because helm --wait will just wait indefinitely in a crash loop scenario,
@@ -112,7 +118,7 @@ def wait_for_pod(name, wait_for_termination=False, wait_for_readiness=False, tim
     start = time.time()
 
     while True:
-        pods = client.CoreV1Api().list_namespaced_pod(namespace='dagster-test')
+        pods = client.CoreV1Api().list_namespaced_pod(namespace=namespace)
         pod = next((p for p in pods.items if name in p.metadata.name), None)
 
         if time.time() - start > timeout:

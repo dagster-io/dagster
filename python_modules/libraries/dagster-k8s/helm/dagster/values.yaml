@@ -57,9 +57,6 @@ job_runner:
   env_secrets:
     - ""
 
-workers:
-  nameOverride: ""
-
 ####################################################################################################
 # PostgreSQL: Configuration values for postgresql
 #
@@ -89,9 +86,22 @@ postgresql:
 ####################################################################################################
 celery:
   enabled: true
+  # support overriding the name of Celery workers
+  workers:
+    nameOverride: ""
+  # Number of replicas for the default Celery queue
   replicaCount: 5
-  # additional config options for Celery
+  # additional config options for Celery, applied to all queues. See:
+  # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
   configSource:
+  # additional Celery worker queues can be configured here. Off by default.
+  extraWorkerQueues:
+    # Each additional queue specified will be provisioned as an additional deployment alongside the
+    # default Celery worker deployment.
+    # Example:
+    # - name: "redshift"
+    #   replicaCount: "3"
+
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
