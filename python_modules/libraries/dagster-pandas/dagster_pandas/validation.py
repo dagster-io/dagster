@@ -1,8 +1,8 @@
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnExistsConstraint,
     ColumnTypeConstraint,
     Constraint,
+    ConstraintViolationException,
     DataFrameConstraint,
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
@@ -27,15 +27,23 @@ def _construct_keyword_constraints(non_nullable, unique):
 
 
 class PandasColumn:
-    def __init__(self, name, constraints=None):
+    def __init__(self, name, constraints=None, is_optional=False):
         self.name = check.str_param(name, 'name')
-        self.constraints = [ColumnExistsConstraint()] + check.opt_list_param(
-            constraints, 'constraints', of_type=Constraint
-        )
+        self.is_optional = check.opt_bool_param(is_optional, 'is_optional')
+        self.constraints = check.opt_list_param(constraints, 'constraints', of_type=Constraint)
 
     def validate(self, dataframe):
-        for constraint in self.constraints:
-            constraint.validate(dataframe, self.name)
+        if self.name not in dataframe.columns:
+            # Ignore validation if column is missing from dataframe and is optional
+            if not self.is_optional:
+                raise ConstraintViolationException(
+                    "Required column {column_name} not in dataframe with columns {dataframe_columns}".format(
+                        column_name=self.name, dataframe_columns=dataframe.columns
+                    )
+                )
+        else:
+            for constraint in self.constraints:
+                constraint.validate(dataframe, self.name)
 
     @staticmethod
     def exists(name, non_nullable=False, unique=False):

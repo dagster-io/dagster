@@ -1,9 +1,5 @@
 import pandas as pd
-from dagster_pandas.constraints import (
-    ColumnExistsConstraint,
-    ColumnTypeConstraint,
-    ConstraintViolationException,
-)
+from dagster_pandas.constraints import ColumnTypeConstraint, ConstraintViolationException
 from dagster_pandas.validation import PandasColumn, validate_constraints
 
 from dagster import (
@@ -20,7 +16,7 @@ from dagster import (
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
-CONSTRAINT_BLACKLIST = {ColumnExistsConstraint, ColumnTypeConstraint}
+CONSTRAINT_BLACKLIST = {ColumnTypeConstraint}
 
 
 def dict_without_keys(ddict, *keys):

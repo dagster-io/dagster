@@ -1,7 +1,6 @@
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnExistsConstraint,
     ColumnTypeConstraint,
     ConstraintViolationException,
     InRangeColumnConstraint,
@@ -16,6 +15,25 @@ from pandas import DataFrame
 def test_validate_constraints_ok():
     column_constraints = [
         PandasColumn(name='foo', constraints=[ColumnTypeConstraint('object')]),
+    ]
+    dataframe = DataFrame({'foo': ['bar', 'baz']})
+    assert validate_constraints(dataframe, pandas_columns=column_constraints) is None
+
+
+def test_missing_column_validation():
+    column_constraints = [
+        PandasColumn(name='qux', constraints=[ColumnTypeConstraint('object')]),
+    ]
+    dataframe = DataFrame({'foo': ['bar', 'baz']})
+    with pytest.raises(
+        ConstraintViolationException, match="Required column qux not in dataframe with columns"
+    ):
+        validate_constraints(dataframe, pandas_columns=column_constraints)
+
+
+def test_missing_column_validation_with_optional_column():
+    column_constraints = [
+        PandasColumn(name='qux', constraints=[ColumnTypeConstraint('object')], is_optional=True),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})
     assert validate_constraints(dataframe, pandas_columns=column_constraints) is None
@@ -86,13 +104,6 @@ def has_constraints(column, constraints):
         ):
             return False
     return True
-
-
-def test_exists_column_composition():
-    exists_column = PandasColumn.exists('foo')
-    assert isinstance(exists_column, PandasColumn)
-    assert len(exists_column.constraints) == 1
-    assert isinstance(exists_column.constraints[0], ColumnExistsConstraint)
 
 
 @pytest.mark.parametrize(

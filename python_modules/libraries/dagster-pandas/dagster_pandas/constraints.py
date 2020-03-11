@@ -137,25 +137,6 @@ class ColumnConstraint(Constraint):
         return zip(dataframe.index.tolist(), dataframe[column_name].tolist())
 
 
-class ColumnExistsConstraint(ColumnConstraint):
-    def __init__(self):
-        description = "Column Name must exist in dataframe"
-        super(ColumnExistsConstraint, self).__init__(
-            error_description=description, markdown_description=description
-        )
-
-    def validate(self, dataframe, column_name):
-        check.inst_param(dataframe, 'dataframe', DataFrame)
-        check.str_param(column_name, 'column_name')
-
-        if column_name not in dataframe.columns:
-            raise ColumnConstraintViolationException(
-                constraint_name=self.name,
-                constraint_description=self.markdown_description,
-                column_name=column_name,
-            )
-
-
 class ColumnTypeConstraint(ColumnConstraint):
     def __init__(self, expected_pandas_dtypes):
         if isinstance(expected_pandas_dtypes, str):

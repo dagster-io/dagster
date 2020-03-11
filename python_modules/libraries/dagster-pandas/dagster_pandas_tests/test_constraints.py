@@ -1,7 +1,6 @@
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnExistsConstraint,
     ColumnTypeConstraint,
     ConstraintViolationException,
     InRangeColumnConstraint,
@@ -19,14 +18,6 @@ NAN_VALUES = [
     NaN,
     None,
 ]
-
-
-def test_column_exists_constraint():
-    test_dataframe = DataFrame({'foo': ['baz']})
-    assert ColumnExistsConstraint().validate(test_dataframe, 'foo') is None
-
-    with pytest.raises(ConstraintViolationException):
-        ColumnExistsConstraint().validate(test_dataframe, 'bar')
 
 
 def test_column_unique_constraint():
