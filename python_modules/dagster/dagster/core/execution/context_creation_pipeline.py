@@ -344,9 +344,11 @@ def scoped_pipeline_context(
     for _ in initialization_manager.generate_setup_events():
         pass
 
-    yield check.inst(initialization_manager.get_object(), SystemPipelineExecutionContext)
-    for _ in initialization_manager.generate_teardown_events():
-        pass
+    try:
+        yield check.inst(initialization_manager.get_object(), SystemPipelineExecutionContext)
+    finally:
+        for _ in initialization_manager.generate_teardown_events():
+            pass
 
 
 def create_log_manager(context_creation_data):

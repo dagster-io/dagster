@@ -9,9 +9,11 @@ from dagster import (
     DagsterSubprocessError,
     ExecutionTargetHandle,
     Field,
+    ModeDefinition,
     String,
     execute_pipeline_iterator,
     pipeline,
+    resource,
     seven,
     solid,
 )
@@ -119,3 +121,55 @@ def test_interrupt_multiproc():
 
         assert [result.event_type for result in results].count(DagsterEventType.STEP_FAILURE) == 4
         assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
+
+
+def test_interrupt_resource_teardown():
+    called = []
+    cleaned = []
+
+    @resource
+    def resource_a(_):
+        try:
+            called.append('A')
+            yield 'A'
+        finally:
+            cleaned.append('A')
+
+    @solid(config={'tempfile': Field(String)}, required_resource_keys={'a'})
+    def write_a_file_resource_solid(context):
+        with open(context.solid_config['tempfile'], 'w') as ff:
+            ff.write('yup')
+
+        while True:
+            time.sleep(0.1)
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    def write_a_file_pipeline():
+        write_a_file_resource_solid()
+
+    with safe_tempfile_path() as success_tempfile:
+
+        # launch a thread the waits until the file is written to launch an interrupt
+        Thread(target=_send_kbd_int, args=([success_tempfile],)).start()
+
+        results = []
+        try:
+            # launch a pipeline that writes a file and loops infinitely
+            # next time the launched thread wakes up it will send a keyboard
+            # interrupt
+            for result in execute_pipeline_iterator(
+                write_a_file_pipeline,
+                environment_dict={
+                    'solids': {
+                        'write_a_file_resource_solid': {'config': {'tempfile': success_tempfile}}
+                    }
+                },
+            ):
+                results.append(result.event_type)
+            assert False  # should never reach
+        except KeyboardInterrupt:
+            pass
+
+        assert DagsterEventType.STEP_FAILURE in results
+        assert DagsterEventType.PIPELINE_FAILURE in results
+        assert 'A' in cleaned

@@ -369,10 +369,11 @@ class EventGenerationManager(object):
         self.object_cls = check.type_param(object_cls, 'object_cls')
         self.require_object = check.bool_param(require_object, 'require_object')
         self.object = None
-        self.has_setup = False
+        self.did_setup = False
+        self.did_teardown = False
 
     def generate_setup_events(self):
-        self.has_setup = True
+        self.did_setup = True
         try:
             while self.object is None:
                 obj = next(self.generator)
@@ -390,11 +391,12 @@ class EventGenerationManager(object):
                 )
 
     def get_object(self):
-        if not self.has_setup:
+        if not self.did_setup:
             check.failed('Called `get_object` before `generate_setup_events`')
         return self.object
 
     def generate_teardown_events(self):
+        self.did_teardown = True
         if self.object:
             for event in self.generator:
                 yield event

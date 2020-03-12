@@ -123,12 +123,6 @@ def test_bad_requirements_txt():
         )
     assert 'The requirements.txt file that was specified does not exist' in str(exc_info.value)
 
-    # We have to manually stop the pyspark context here because we interrupted before resources
-    # were cleaned up, and so stop() was never called on the spark session.
-    from pyspark.sql import SparkSession
-
-    SparkSession.builder.getOrCreate().stop()
-
 
 @pytest.mark.skipif(
     'AWS_EMR_TEST_DO_IT_LIVE' not in os.environ,

@@ -1,3 +1,5 @@
+import pytest
+
 from dagster import (
     DagsterEventType,
     DagsterResourceFunctionError,
@@ -586,6 +588,47 @@ def test_solid_failure_resource_teardown():
     assert events[-1].event_type_value == 'PIPELINE_FAILURE'
     assert called == ['A', 'B']
     assert cleaned == ['B', 'A']
+
+
+def test_solid_failure_resource_teardown_raise():
+    ''' test that teardown is invoked in resources for tests that raise_on_error '''
+    called = []
+    cleaned = []
+
+    @resource
+    def resource_a(_):
+        try:
+            called.append('A')
+            yield 'A'
+        finally:
+            cleaned.append('A')
+
+    @resource
+    def resource_b(_):
+        try:
+            called.append('B')
+            yield 'B'
+        finally:
+            cleaned.append('B')
+
+    @solid(required_resource_keys={'a', 'b'})
+    def resource_solid(_):
+        raise Exception('uh oh')
+
+    pipeline = PipelineDefinition(
+        name='test_solid_failure_resource_teardown',
+        solid_defs=[resource_solid],
+        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+    )
+
+    with pytest.raises(Exception) as exc_info:
+        execute_pipeline(pipeline)
+
+    assert called == ['A', 'B']
+    assert cleaned == ['B', 'A']
+
+    called = []
+    cleaned = []
 
 
 def test_resource_teardown_failure():
