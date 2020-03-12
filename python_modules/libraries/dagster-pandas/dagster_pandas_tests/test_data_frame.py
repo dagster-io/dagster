@@ -124,7 +124,7 @@ def test_dataframe_description_generation_multi_constraints():
                 name='foo',
                 constraints=[
                     ColumnTypeConstraint('int64'),
-                    InRangeColumnConstraint(0, 100),
+                    InRangeColumnConstraint(0, 100, ignore_missing_vals=False),
                     NonNullableColumnConstraint(),
                 ],
             ),

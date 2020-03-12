@@ -10,19 +10,24 @@ from dagster_pandas.constraints import (
 )
 from pandas import DataFrame, Timestamp
 
-from dagster import check
+from dagster import DagsterInvariantViolationError, check
 
 PANDAS_NUMERIC_TYPES = {'int64', 'float'}
 
 
-def _construct_keyword_constraints(non_nullable, unique):
+def _construct_keyword_constraints(non_nullable, unique, ignore_missing_vals):
     non_nullable = check.bool_param(non_nullable, 'exists')
     unique = check.bool_param(unique, 'unique')
+    ignore_missing_vals = check.bool_param(ignore_missing_vals, 'ignore_missing_vals')
+    if non_nullable and ignore_missing_vals:
+        raise DagsterInvariantViolationError(
+            "PandasColumn cannot have a non-null constraint while also ignore missing values"
+        )
     constraints = []
     if non_nullable:
         constraints.append(NonNullableColumnConstraint())
     if unique:
-        constraints.append(UniqueColumnConstraint())
+        constraints.append(UniqueColumnConstraint(ignore_missing_vals=ignore_missing_vals))
     return constraints
 
 
@@ -46,18 +51,22 @@ class PandasColumn:
                 constraint.validate(dataframe, self.name)
 
     @staticmethod
-    def exists(name, non_nullable=False, unique=False):
+    def exists(name, non_nullable=False, unique=False, ignore_missing_vals=False):
         return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=_construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            constraints=_construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
     @staticmethod
-    def boolean_column(name, non_nullable=False, unique=False):
+    def boolean_column(name, non_nullable=False, unique=False, ignore_missing_vals=False):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[ColumnTypeConstraint('bool')]
-            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
     @staticmethod
@@ -68,6 +77,7 @@ class PandasColumn:
         max_value=float('inf'),
         non_nullable=False,
         unique=False,
+        ignore_missing_vals=False,
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -76,25 +86,50 @@ class PandasColumn:
                 InRangeColumnConstraint(
                     check.numeric_param(min_value, 'min_value'),
                     check.numeric_param(max_value, 'max_value'),
+                    ignore_missing_vals=ignore_missing_vals,
                 ),
             ]
-            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
     @staticmethod
     def integer_column(
-        name, min_value=-float('inf'), max_value=float('inf'), non_nullable=False, unique=False
+        name,
+        min_value=-float('inf'),
+        max_value=float('inf'),
+        non_nullable=False,
+        unique=False,
+        ignore_missing_vals=False,
     ):
         return PandasColumn.numeric_column(
-            name, 'int64', min_value, max_value, non_nullable=non_nullable, unique=unique
+            name,
+            'int64',
+            min_value,
+            max_value,
+            non_nullable=non_nullable,
+            unique=unique,
+            ignore_missing_vals=ignore_missing_vals,
         )
 
     @staticmethod
     def float_column(
-        name, min_value=-float('inf'), max_value=float('inf'), non_nullable=False, unique=False
+        name,
+        min_value=-float('inf'),
+        max_value=float('inf'),
+        non_nullable=False,
+        unique=False,
+        ignore_missing_vals=False,
     ):
         return PandasColumn.numeric_column(
-            name, 'float64', min_value, max_value, non_nullable=non_nullable, unique=unique
+            name,
+            'float64',
+            min_value,
+            max_value,
+            non_nullable=non_nullable,
+            unique=unique,
+            ignore_missing_vals=ignore_missing_vals,
         )
 
     @staticmethod
@@ -104,30 +139,49 @@ class PandasColumn:
         max_datetime=Timestamp.max,
         non_nullable=False,
         unique=False,
+        ignore_missing_vals=False,
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[
                 ColumnTypeConstraint({'datetime64[ns]'}),
-                InRangeColumnConstraint(min_datetime, max_datetime),
+                InRangeColumnConstraint(
+                    min_datetime, max_datetime, ignore_missing_vals=ignore_missing_vals
+                ),
             ]
-            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
     @staticmethod
-    def string_column(name, non_nullable=False, unique=False):
+    def string_column(name, non_nullable=False, unique=False, ignore_missing_vals=False):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[ColumnTypeConstraint('object')]
-            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
     @staticmethod
-    def categorical_column(name, categories, of_types='object', non_nullable=False, unique=False):
+    def categorical_column(
+        name,
+        categories,
+        of_types='object',
+        non_nullable=False,
+        unique=False,
+        ignore_missing_vals=False,
+    ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=[ColumnTypeConstraint(of_types), CategoricalColumnConstraint(categories)]
-            + _construct_keyword_constraints(non_nullable=non_nullable, unique=unique),
+            constraints=[
+                ColumnTypeConstraint(of_types),
+                CategoricalColumnConstraint(categories, ignore_missing_vals=ignore_missing_vals),
+            ]
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
         )
 
 

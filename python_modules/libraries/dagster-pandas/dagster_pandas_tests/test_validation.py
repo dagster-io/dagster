@@ -139,3 +139,10 @@ def test_datetime_column_composition(composer, composer_args, expected_constrain
     distinct_included_constraints = expected_constraints + [UniqueColumnConstraint]
     distinct_column = composer('foo', *composer_args, unique=True)
     assert has_constraints(distinct_column, distinct_included_constraints)
+
+    # Test ignore_missing_values flag
+    ignore_column = composer('foo', *composer_args, ignore_missing_vals=True)
+    assert has_constraints(ignore_column, expected_constraints)
+    for constraint in ignore_column.constraints:
+        if hasattr(constraint, 'ignore_missing_vals'):
+            assert constraint.ignore_missing_vals
