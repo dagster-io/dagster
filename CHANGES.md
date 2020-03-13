@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.7.4
+
+**New**
+
+- It is now possible to use Postgres to back schedule storage by configuring
+  `dagster_postgres.PostgresScheduleStorage` on the instance.
+- Added the `execute_pipeline_with_mode` API to allow executing a pipeline in test with a specific
+  mode without having to specify `RunConfig`.
+- Experimental support for retries in the Celery executor.
+- It is now possible to set run-level priorities for backfills run using the Celery executor by
+  passing `--celery-base-priority` to `dagster pipeline backfill`.
+- Added the `@weekly` schedule decorator.
+
+**Deprecations**
+
+- The `dagster-ge` library has been removed from this release due to drift from the underlying
+  Great Expectations implementation.
+
+**dagster-pandas**
+
+- `PandasColumn` now includes an `is_optional` flag, replacing the previous
+  `ColumnExistsConstraint`.
+- You can now pass the `ignore_missing_values flag` to `PandasColumn` in order to apply column
+  constraints only to the non-missing rows in a column.
+
+**dagster-k8s**
+
+- The Helm chart now includes provision for an Ingress and for multiple Celery queues.
+
+**Documentation**
+
+- Improvements and fixes.
+
 ## 0.7.3
 
 **New**
@@ -11,7 +44,6 @@
   consolidated and rationalized.
 - Support Redis queue provider in `dagster-k8s` Helm chart.
 - Support external postgresql in `dagster-k8s` Helm chart.
-
 
 **Bugfix**
 
@@ -36,19 +68,21 @@
 - Restored dagster.readthedocs.io.
 
 **Experimental**
+
 - An initial implementation of solid retries, throwing a `RetryRequested` exception, was added.
   This API is experimental and likely to change.
 
 **Other**
+
 - Renamed property `runtime_type` to `dagster_type` in definitions. The following are deprecated
   and will be removed in a future version.
-  * `InputDefinition.runtime_type` is deprecated. Use `InputDefinition.dagster_type` instead.
-  * `OutputDefinition.runtime_type` is deprecated. Use `OutputDefinition.dagster_type` instead.
-  * `CompositeSolidDefinition.all_runtime_types` is deprecated. Use `CompositeSolidDefinition.all_dagster_types` instead.
-  * `SolidDefinition.all_runtime_types` is deprecated. Use `SolidDefinition.all_dagster_types` instead.
-  * `PipelineDefinition.has_runtime_type` is deprecated. Use `PipelineDefinition.has_dagster_type` instead.
-  * `PipelineDefinition.runtime_type_named` is deprecated. Use `PipelineDefinition.dagster_type_named` instead.
-  * `PipelineDefinition.all_runtime_types` is deprecated. Use `PipelineDefinition.all_dagster_types` instead.
+  - `InputDefinition.runtime_type` is deprecated. Use `InputDefinition.dagster_type` instead.
+  - `OutputDefinition.runtime_type` is deprecated. Use `OutputDefinition.dagster_type` instead.
+  - `CompositeSolidDefinition.all_runtime_types` is deprecated. Use `CompositeSolidDefinition.all_dagster_types` instead.
+  - `SolidDefinition.all_runtime_types` is deprecated. Use `SolidDefinition.all_dagster_types` instead.
+  - `PipelineDefinition.has_runtime_type` is deprecated. Use `PipelineDefinition.has_dagster_type` instead.
+  - `PipelineDefinition.runtime_type_named` is deprecated. Use `PipelineDefinition.dagster_type_named` instead.
+  - `PipelineDefinition.all_runtime_types` is deprecated. Use `PipelineDefinition.all_dagster_types` instead.
 
 ## 0.7.2
 
