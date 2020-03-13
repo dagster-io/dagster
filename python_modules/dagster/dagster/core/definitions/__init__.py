@@ -10,6 +10,7 @@ from .decorators import (
     schedule,
     schedules,
     solid,
+    weekly_schedule,
 )
 from .dependency import (
     DependencyDefinition,

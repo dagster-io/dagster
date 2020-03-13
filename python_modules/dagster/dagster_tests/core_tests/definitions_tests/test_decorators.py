@@ -24,7 +24,12 @@ from dagster import (
     schedules,
     solid,
 )
-from dagster.core.definitions.decorators import daily_schedule, hourly_schedule, monthly_schedule
+from dagster.core.definitions.decorators import (
+    daily_schedule,
+    hourly_schedule,
+    monthly_schedule,
+    weekly_schedule,
+)
 from dagster.core.utility_solids import define_stub_solid
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -321,6 +326,14 @@ def test_schedule_decorators_sanity():
     def monthly_foo_schedule():
         return {}
 
+    @weekly_schedule(
+        pipeline_name='foo_pipeline',
+        execution_day_of_week=1,
+        start_date=datetime(year=2019, month=1, day=1),
+    )
+    def weekly_foo_schedule():
+        return {}
+
     @daily_schedule(
         pipeline_name='foo_pipeline', start_date=datetime(year=2019, month=1, day=1),
     )
@@ -361,6 +374,16 @@ def test_schedule_decorators_bad():
             start_date=datetime(year=2019, month=1, day=1),
         )
         def monthly_foo_schedule_under():
+            return {}
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @weekly_schedule(
+            pipeline_name='foo_pipeline',
+            execution_day_of_week=7,
+            start_date=datetime(year=2019, month=1, day=1),
+        )
+        def weekly_foo_schedule_over():
             return {}
 
 

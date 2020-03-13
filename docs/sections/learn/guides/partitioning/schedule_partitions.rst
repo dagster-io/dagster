@@ -7,6 +7,7 @@ To support this use case, we've added helpful decorators to define a schedule de
 
 - :py:func:`@hourly_schedule <dagster.hourly_schedule>`
 - :py:func:`@daily_schedule <dagster.daily_schedule>`
+- :py:func:`@weekly_schedule <dagster.weekly_schedule>`
 - :py:func:`@monthly_schedule <dagster.monthly_schedule>`
 
 We can use the monthly decorator to create a partition set and schedule definition for our pipeline:

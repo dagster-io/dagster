@@ -55,6 +55,7 @@ from dagster.core.definitions import (
     schedules,
     solid,
     system_storage,
+    weekly_schedule,
 )
 from dagster.core.engine import Engine
 from dagster.core.engine.init import InitExecutorContext
@@ -270,5 +271,6 @@ __all__ = [
     'execute_partition_set',
     'hourly_schedule',
     'monthly_schedule',
+    'weekly_schedule',
     'repository_partitions',
 ]

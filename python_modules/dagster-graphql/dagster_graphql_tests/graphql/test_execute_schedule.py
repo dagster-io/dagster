@@ -263,6 +263,7 @@ def test_partition_based_decorator():
         'solid_subset_hourly_decorator',
         'solid_subset_daily_decorator',
         'solid_subset_monthly_decorator',
+        'solid_subset_weekly_decorator',
     ],
 )
 def test_solid_subset_schedule_decorator(schedule_name):

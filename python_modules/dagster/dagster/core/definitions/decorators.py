@@ -968,6 +968,71 @@ def monthly_schedule(
     return inner
 
 
+def weekly_schedule(
+    pipeline_name,
+    start_date,
+    name=None,
+    execution_day_of_week=0,
+    execution_time=datetime.time(0, 0),
+    tags_fn_for_date=None,
+    solid_subset=None,
+    mode="default",
+    should_execute=None,
+    environment_vars=None,
+):
+    check.opt_str_param(name, 'name')
+    check.inst_param(start_date, 'start_date', datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
+    check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, 'should_execute')
+    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.int_param(execution_day_of_week, 'execution_day_of_week')
+    check.inst_param(execution_time, 'execution_time', datetime.time)
+
+    if execution_day_of_week < 0 or execution_day_of_week >= 7:
+        raise DagsterInvalidDefinitionError(
+            "`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be between 0 [Sunday] and 6 [Saturday]".format(
+                execution_day_of_week
+            )
+        )
+
+    cron_schedule = '{minute} {hour} * * {day}'.format(
+        minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
+    )
+
+    partition_fn = date_partition_range(start_date, delta=relativedelta(months=1), fmt="%Y-%m-%d")
+
+    def inner(fn):
+        check.callable_param(fn, 'fn')
+
+        schedule_name = name or fn.__name__
+
+        tags_fn_for_partition_value = lambda partition: {}
+        if tags_fn_for_date:
+            tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
+
+        partition_set = PartitionSetDefinition(
+            name='{}_weekly'.format(pipeline_name),
+            pipeline_name=pipeline_name,
+            partition_fn=partition_fn,
+            environment_dict_fn_for_partition=lambda partition: fn(partition.value),
+            solid_subset=solid_subset,
+            tags_fn_for_partition=tags_fn_for_partition_value,
+            mode=mode,
+        )
+
+        return partition_set.create_schedule_definition(
+            schedule_name,
+            cron_schedule,
+            should_execute=should_execute,
+            environment_vars=environment_vars,
+        )
+
+    return inner
+
+
 def daily_schedule(
     pipeline_name,
     start_date,

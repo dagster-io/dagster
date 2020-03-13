@@ -71,6 +71,14 @@ snapshots['test_get_all_partition_sets 1'] = {
                 'solidSubset': [
                     'return_foo'
                 ]
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_chain_pipeline_weekly',
+                'pipelineName': 'no_config_chain_pipeline',
+                'solidSubset': [
+                    'return_foo'
+                ]
             }
         ]
     }

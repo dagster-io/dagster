@@ -8,6 +8,7 @@ from dagster import (
     hourly_schedule,
     monthly_schedule,
     schedules,
+    weekly_schedule,
 )
 from dagster.core.definitions.partition import last_empty_partition
 
@@ -106,6 +107,15 @@ def define_scheduler():
     def solid_subset_monthly_decorator(_date):
         return {"storage": {"filesystem": {}}}
 
+    @weekly_schedule(
+        pipeline_name='no_config_chain_pipeline',
+        start_date=datetime.datetime.now() - datetime.timedelta(days=50),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
+        solid_subset=['return_foo'],
+    )
+    def solid_subset_weekly_decorator(_date):
+        return {"storage": {"filesystem": {}}}
+
     return [
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
@@ -118,4 +128,5 @@ def define_scheduler():
         solid_subset_hourly_decorator,
         solid_subset_daily_decorator,
         solid_subset_monthly_decorator,
+        solid_subset_weekly_decorator,
     ]
