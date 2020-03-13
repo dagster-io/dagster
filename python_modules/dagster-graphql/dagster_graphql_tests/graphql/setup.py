@@ -34,6 +34,7 @@ from dagster import (
     pipeline,
     resource,
     solid,
+    usable_as_dagster_type,
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.utils import file_relative_path
@@ -161,6 +162,7 @@ def define_repository():
             multi_mode_with_loggers,
             multi_mode_with_resources,
             naughty_programmer_pipeline,
+            pipeline_with_invalid_definition_error,
             no_config_pipeline,
             no_config_chain_pipeline,
             pipeline_with_enum_config,
@@ -375,6 +377,26 @@ def naughty_programmer_pipeline():
         raise Exception('bad programmer, bad')
 
     return throw_a_thing()
+
+
+@pipeline
+def pipeline_with_invalid_definition_error():
+    @usable_as_dagster_type(name='InputTypeWithoutHydration')
+    class InputTypeWithoutHydration(int):
+        pass
+
+    @solid(output_defs=[OutputDefinition(InputTypeWithoutHydration)])
+    def one(_):
+        return 1
+
+    @solid(
+        input_defs=[InputDefinition('some_input', InputTypeWithoutHydration)],
+        output_defs=[OutputDefinition(Int)],
+    )
+    def fail_subset(_, some_input):
+        return some_input
+
+    return fail_subset(one())
 
 
 @resource(config=Field(Int))

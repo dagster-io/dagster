@@ -275,6 +275,22 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'fail_subset'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_invalid_definition_error'
+                    },
+                    'solidHandle': {
+                        'handleID': 'fail_subset'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'loop'
             },
             'invocations': [
@@ -316,6 +332,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'noop_solid'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'one'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'pipeline_with_invalid_definition_error'
+                    },
+                    'solidHandle': {
+                        'handleID': 'one'
                     }
                 }
             ]

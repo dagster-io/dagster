@@ -6,15 +6,15 @@ from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
 from dagster.core.execution.api import create_execution_plan
 
-from .fetch_pipelines import (
-    get_dauphin_pipeline_from_selector_or_raise,
-    get_dauphin_pipeline_reference_from_selector,
-)
+from .fetch_pipelines import get_dauphin_pipeline_from_selector_or_raise
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode):
     check.str_param(mode, 'mode')
+    check.inst_param(
+        dauphin_pipeline, 'dauphin_pipeline', graphene_info.schema.type_named('Pipeline')
+    )
 
     pipeline = dauphin_pipeline.get_dagster_pipeline()
 
@@ -92,7 +92,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    dauphin_pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, selector)
+    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(graphene_info, selector)
     get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
         dauphin_pipeline,
