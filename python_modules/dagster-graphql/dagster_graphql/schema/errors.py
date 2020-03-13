@@ -352,17 +352,14 @@ class DauphinEvaluationStackPathEntry(dauphin.ObjectType):
     class Meta(object):
         name = 'EvaluationStackPathEntry'
 
-    def __init__(self, field_name, field_def):
+    def __init__(self, field_name):
         super(DauphinEvaluationStackPathEntry, self).__init__()
         self._field_name = field_name
-        self._field_def = field_def
 
-    field = dauphin.NonNull('ConfigTypeField')
+    field_name = dauphin.NonNull(dauphin.String)
 
-    def resolve_field(self, info):
-        return info.schema.type_named('ConfigTypeField')(
-            name=self._field_name, field=self._field_def
-        )  # pylint: disable=E1101
+    def resolve_field_name(self, _info):
+        return self._field_name
 
 
 class DauphinEvaluationStackEntry(dauphin.Union):
@@ -373,9 +370,7 @@ class DauphinEvaluationStackEntry(dauphin.Union):
     @staticmethod
     def from_native_entry(entry):
         if isinstance(entry, EvaluationStackPathEntry):
-            return DauphinEvaluationStackPathEntry(
-                field_name=entry.field_name, field_def=entry.field_def
-            )
+            return DauphinEvaluationStackPathEntry(field_name=entry.field_name)
         elif isinstance(entry, EvaluationStackListItemEntry):
             return DauphinEvaluationStackListItemEntry(list_index=entry.list_index)
         else:

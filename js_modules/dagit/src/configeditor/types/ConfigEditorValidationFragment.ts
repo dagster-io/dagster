@@ -13,14 +13,9 @@ export interface ConfigEditorValidationFragment_InvalidSubsetError {
   __typename: "InvalidSubsetError" | "PipelineConfigValidationValid" | "PipelineNotFoundError" | "PythonError";
 }
 
-export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field {
-  __typename: "ConfigTypeField";
-  name: string;
-}
-
 export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry {
   __typename: "EvaluationStackPathEntry";
-  field: ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackPathEntry_field;
+  fieldName: string;
 }
 
 export interface ConfigEditorValidationFragment_PipelineConfigValidationInvalid_errors_stack_entries_EvaluationStackListItemEntry {

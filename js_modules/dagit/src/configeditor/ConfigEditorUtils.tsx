@@ -51,9 +51,7 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
           entries {
             __typename
             ... on EvaluationStackPathEntry {
-              field {
-                name
-              }
+              fieldName
             }
             ... on EvaluationStackListItemEntry {
               listIndex
@@ -78,7 +76,7 @@ export async function responseToValidationResult(
     reason: reason,
     path: stack.entries.map(entry =>
       entry.__typename === "EvaluationStackPathEntry"
-        ? entry.field.name
+        ? entry.fieldName
         : `${entry.listIndex}`
     )
   }));

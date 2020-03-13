@@ -124,12 +124,7 @@ query PipelineQuery(
                     entries {
                         __typename
                         ... on EvaluationStackPathEntry {
-                            field {
-                                name
-                                configType {
-                                    key
-                                }
-                            }
+                            fieldName
                         }
                         ... on EvaluationStackListItemEntry {
                             listIndex

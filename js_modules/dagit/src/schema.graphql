@@ -159,7 +159,7 @@ type EvaluationStackListItemEntry {
 }
 
 type EvaluationStackPathEntry {
-  field: ConfigTypeField!
+  fieldName: String!
 }
 
 type EventJsonMetadataEntry implements EventMetadataEntry {

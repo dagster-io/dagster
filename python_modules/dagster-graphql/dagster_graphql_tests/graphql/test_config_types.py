@@ -49,12 +49,7 @@ query PipelineQuery(
                     entries {
                         __typename
                         ... on EvaluationStackPathEntry {
-                            field {
-                                name
-                                configType {
-                                   key
-                                }
-                            }
+                            fieldName
                         }
                         ... on EvaluationStackListItemEntry {
                             listIndex
@@ -77,7 +72,7 @@ query PipelineQuery(
 
 def field_stack(error_data):
     return [
-        entry['field']['name']
+        entry['fieldName']
         for entry in error_data['stack']['entries']
         if entry['__typename'] == 'EvaluationStackPathEntry'
     ]
