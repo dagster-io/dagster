@@ -909,7 +909,6 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   path: [String!]!
   stack: EvaluationStack!
   reason: EvaluationErrorReason!
-  type: ConfigType!
   valueRep: String
 }
 

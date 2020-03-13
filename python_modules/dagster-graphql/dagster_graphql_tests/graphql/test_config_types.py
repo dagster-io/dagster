@@ -26,7 +26,6 @@ query PipelineQuery(
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {
-                    type { key }
                     valueRep
                 }
                 ... on MissingFieldConfigError {
@@ -234,7 +233,6 @@ def test_basic_invalid_config_type_mismatch():
     assert error_data['stack']['entries']
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert error_data['valueRep'] == '123'
-    assert error_data['type']['key'] == 'Path'
 
     assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
 
@@ -431,7 +429,6 @@ def test_more_complicated_multiple_errors():
     ] == field_stack(dagster_type_error)
     assert dagster_type_error['reason'] == 'RUNTIME_TYPE_MISMATCH'
     assert dagster_type_error['valueRep'] == '23434'
-    assert dagster_type_error['type']['key'] == 'String'
 
     not_defined_two = find_error(
         result,

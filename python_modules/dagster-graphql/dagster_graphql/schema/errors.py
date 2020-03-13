@@ -15,7 +15,6 @@ from dagster.config.errors import (
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
 from dagster.utils.error import SerializableErrorInfo
 
-from .config_types import to_dauphin_config_type
 from .runs import DauphinStepEvent
 
 
@@ -217,7 +216,6 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 path=[],  # TODO: remove
                 stack=error.stack,
                 reason=error.reason,
-                type=error.error_data.config_type,
                 value_rep=error.error_data.value_rep,
             )
         elif isinstance(error.error_data, MissingFieldErrorData):
@@ -281,11 +279,7 @@ class DauphinRuntimeMismatchConfigError(dauphin.ObjectType):
         name = 'RuntimeMismatchConfigError'
         interfaces = (DauphinPipelineConfigValidationError,)
 
-    type = dauphin.NonNull('ConfigType')
     value_rep = dauphin.Field(dauphin.String)
-
-    def resolve_type(self, _info):
-        return to_dauphin_config_type(self.type)
 
 
 class DauphinMissingFieldConfigError(dauphin.ObjectType):

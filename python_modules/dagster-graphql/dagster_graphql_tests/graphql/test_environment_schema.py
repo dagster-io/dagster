@@ -101,7 +101,6 @@ query PipelineQuery(
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {
-                    type { key }
                     valueRep
                 }
                 ... on MissingFieldConfigError {
