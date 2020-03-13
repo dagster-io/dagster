@@ -192,7 +192,7 @@ class DauphinQuery(dauphin.ObjectType):
         definition = None
 
         for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(pipeline):
+            for handle in build_dauphin_solid_handles(pipeline.get_pipeline_snapshot(), pipeline):
                 if handle.handleID.definition_name == name:
                     if definition is None:
                         definition = handle.solid.resolve_definition(graphene_info)
@@ -208,7 +208,7 @@ class DauphinQuery(dauphin.ObjectType):
         definitions = []
 
         for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(pipeline):
+            for handle in build_dauphin_solid_handles(pipeline.get_pipeline_snapshot(), pipeline):
                 definition = handle.solid.resolve_definition(graphene_info)
                 if definition.name not in inv_by_def_name:
                     definitions.append(definition)
@@ -691,12 +691,23 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_allConfigTypes(self, _graphene_info):
         return sorted(
-            list(map(to_dauphin_config_type, self._environment_schema.all_config_types())),
+            list(
+                map(
+                    lambda ct: to_dauphin_config_type(
+                        ct.key,
+                        self._dagster_pipeline.get_pipeline_snapshot().config_schema_snapshot,
+                    ),
+                    self._environment_schema.all_config_types(),
+                )
+            ),
             key=lambda ct: ct.key,
         )
 
     def resolve_rootEnvironmentType(self, _graphene_info):
-        return to_dauphin_config_type(self._environment_schema.environment_type)
+        return to_dauphin_config_type(
+            self._environment_schema.environment_type.key,
+            self._dagster_pipeline.get_config_schema_snapshot(),
+        )
 
     def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):
         return resolve_is_environment_config_valid(

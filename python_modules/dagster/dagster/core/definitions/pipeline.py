@@ -203,6 +203,7 @@ class PipelineDefinition(IContainSolids, object):
             _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
         )
         self._cached_enviroment_schemas = {}
+        self._cached_pipeline_snapshot = None
 
     def get_environment_schema(self, mode=None):
         check.str_param(mode, 'mode')
@@ -444,6 +445,17 @@ class PipelineDefinition(IContainSolids, object):
             mode_defs=mode_defs if mode_defs is not None else self._mode_definitions,
             preset_defs=preset_defs if preset_defs is not None else self._preset_defs,
         )
+
+    def get_pipeline_snapshot(self):
+        if self._cached_pipeline_snapshot is None:
+            from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
+
+            self._cached_pipeline_snapshot = PipelineSnapshot.from_pipeline_def(self)
+
+        return self._cached_pipeline_snapshot
+
+    def get_config_schema_snapshot(self):
+        return self.get_pipeline_snapshot().config_schema_snapshot
 
 
 def _dep_key_of(solid):

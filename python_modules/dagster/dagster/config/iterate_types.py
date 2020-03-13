@@ -4,7 +4,6 @@ from .config_type import ConfigType, ConfigTypeKind
 
 
 def iterate_config_types(config_type):
-
     # TODO: Investigate during config refactor. Very sketchy -- schrockn 12/05/19
     # Looping over this should be done at callsites
     if isinstance(config_type, list):

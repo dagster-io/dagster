@@ -11,6 +11,7 @@ from dagster import (
     check,
 )
 from dagster.core.definitions.pipeline import PipelineRunsFilter
+from dagster.core.meta.config_types import ConfigSchemaSnapshot, meta_from_field
 from dagster.seven import lru_cache
 
 from .runtime_types import to_dauphin_dagster_type
@@ -61,18 +62,18 @@ class DauphinPipeline(dauphin.ObjectType):
         self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
 
     def resolve_solids(self, _graphene_info):
-        return build_dauphin_solids(self._pipeline)
+        return build_dauphin_solids(self._pipeline.get_pipeline_snapshot(), self._pipeline)
 
     def resolve_runtime_types(self, _graphene_info):
         # TODO yuhan rename runtime_type in schema
         return sorted(
             list(
                 map(
-                    to_dauphin_dagster_type,
+                    lambda dt: to_dauphin_dagster_type(self._pipeline.get_pipeline_snapshot(), dt),
                     [t for t in self._pipeline.all_dagster_types() if t.name],
                 )
             ),
-            key=lambda config_type: config_type.name,
+            key=lambda dagster_type: dagster_type.name,
         )
 
     def resolve_runs(self, graphene_info):
@@ -88,7 +89,9 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_modes(self, graphene_info):
         return [
-            graphene_info.schema.type_named('Mode')(mode_definition)
+            graphene_info.schema.type_named('Mode')(
+                mode_definition, self._pipeline.get_pipeline_snapshot().config_schema_snapshot
+            )
             for mode_definition in sorted(
                 self._pipeline.mode_definitions, key=lambda item: item.name
             )
@@ -121,7 +124,11 @@ class DauphinPipeline(dauphin.ObjectType):
 
 @lru_cache(maxsize=32)
 def _get_solid_handles(pipeline):
-    return {str(item.handleID): item for item in build_dauphin_solid_handles(pipeline)}
+    pipeline_snapshot = pipeline.get_pipeline_snapshot()
+    return {
+        str(item.handleID): item
+        for item in build_dauphin_solid_handles(pipeline_snapshot, pipeline)
+    }
 
 
 class DauphinPipelineConnection(dauphin.ObjectType):
@@ -135,10 +142,13 @@ class DauphinResource(dauphin.ObjectType):
     class Meta(object):
         name = 'Resource'
 
-    def __init__(self, resource_name, resource):
+    def __init__(self, resource_name, resource, config_schema_snapshot):
         self.name = check.str_param(resource_name, 'resource_name')
         self._resource = check.inst_param(resource, 'resource', ResourceDefinition)
         self.description = resource.description
+        self._config_schema_snapshot = check.inst_param(
+            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+        )
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
@@ -147,7 +157,8 @@ class DauphinResource(dauphin.ObjectType):
     def resolve_configField(self, graphene_info):
         return (
             graphene_info.schema.type_named('ConfigTypeField')(
-                name="config", field=self._resource.config_field
+                field_meta=meta_from_field('config', self._resource.config_field),
+                config_schema_snapshot=self._config_schema_snapshot,
             )
             if self._resource.config_field
             else None
@@ -158,10 +169,13 @@ class DauphinLogger(dauphin.ObjectType):
     class Meta(object):
         name = 'Logger'
 
-    def __init__(self, logger_name, logger):
+    def __init__(self, logger_name, logger, config_schema_snapshot):
         self.name = check.str_param(logger_name, 'logger_name')
         self._logger = check.inst_param(logger, 'logger', LoggerDefinition)
         self.description = logger.description
+        self._config_schema_snapshot = check.inst_param(
+            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+        )
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
@@ -170,7 +184,8 @@ class DauphinLogger(dauphin.ObjectType):
     def resolve_configField(self, graphene_info):
         return (
             graphene_info.schema.type_named('ConfigTypeField')(
-                name="config", field=self._logger.config_field
+                field_meta=meta_from_field('config', self._logger.config_field),
+                config_schema_snapshot=self._config_schema_snapshot,
             )
             if self._logger.config_field
             else None
@@ -178,8 +193,11 @@ class DauphinLogger(dauphin.ObjectType):
 
 
 class DauphinMode(dauphin.ObjectType):
-    def __init__(self, mode_definition):
+    def __init__(self, mode_definition, config_schema_snapshot):
         self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
+        self._config_schema_snapshot = check.inst_param(
+            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+        )
 
     class Meta(object):
         name = 'Mode'
@@ -197,11 +215,15 @@ class DauphinMode(dauphin.ObjectType):
 
     def resolve_resources(self, _graphene_info):
         return [
-            DauphinResource(*item) for item in sorted(self._mode_definition.resource_defs.items())
+            DauphinResource(name, resource, self._config_schema_snapshot)
+            for name, resource in sorted(self._mode_definition.resource_defs.items())
         ]
 
     def resolve_loggers(self, _graphene_info):
-        return [DauphinLogger(*item) for item in sorted(self._mode_definition.loggers.items())]
+        return [
+            DauphinLogger(name, logger, self._config_schema_snapshot)
+            for name, logger in sorted(self._mode_definition.loggers.items())
+        ]
 
 
 class DauphinMetadataItemDefinition(dauphin.ObjectType):

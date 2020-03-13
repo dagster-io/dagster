@@ -6,7 +6,7 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import Shape
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.types.dagster_type import construct_dagster_type_dictionary
+from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
@@ -257,16 +257,16 @@ def define_solid_dictionary_cls(solids, dependency_structure, parent_handle=None
     return Shape(fields)
 
 
-def iterate_solid_def_types(solid_def):
+def iterate_solid_def_config_types(solid_def):
 
     if isinstance(solid_def, SolidDefinition):
         if solid_def.config_field:
-            for dagster_type in iterate_config_types(solid_def.config_field.config_type):
-                yield dagster_type
+            for config_type in iterate_config_types(solid_def.config_field.config_type):
+                yield config_type
     elif isinstance(solid_def, CompositeSolidDefinition):
         for solid in solid_def.solids:
-            for def_type in iterate_solid_def_types(solid.definition):
-                yield def_type
+            for config_type in iterate_solid_def_config_types(solid.definition):
+                yield config_type
 
     else:
         check.invariant('Unexpected ISolidDefinition type {type}'.format(type=type(solid_def)))
@@ -274,12 +274,12 @@ def iterate_solid_def_types(solid_def):
 
 def _gather_all_schemas(solid_defs):
     dagster_types = construct_dagster_type_dictionary(solid_defs)
-    for rtt in dagster_types.values():
-        if rtt.input_hydration_config:
-            for ct in iterate_config_types(rtt.input_hydration_config.schema_type):
+    for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
+        if dagster_type.input_hydration_config:
+            for ct in iterate_config_types(dagster_type.input_hydration_config.schema_type):
                 yield ct
-        if rtt.output_materialization_config:
-            for ct in iterate_config_types(rtt.output_materialization_config.schema_type):
+        if dagster_type.output_materialization_config:
+            for ct in iterate_config_types(dagster_type.output_materialization_config.schema_type):
                 yield ct
 
 
@@ -288,8 +288,8 @@ def _gather_all_config_types(solid_defs, environment_type):
     check.inst_param(environment_type, 'environment_type', ConfigType)
 
     for solid_def in solid_defs:
-        for dagster_type in iterate_solid_def_types(solid_def):
-            yield dagster_type
+        for config_type in iterate_solid_def_config_types(solid_def):
+            yield config_type
 
     for config_type in iterate_config_types(environment_type):
         yield config_type
@@ -299,8 +299,7 @@ def construct_config_type_dictionary(solid_defs, environment_type):
     check.list_param(solid_defs, 'solid_defs', ISolidDefinition)
     check.inst_param(environment_type, 'environment_type', ConfigType)
 
-    type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS}
-    # type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
+    type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
     all_types = list(_gather_all_config_types(solid_defs, environment_type)) + list(
         _gather_all_schemas(solid_defs)

@@ -17,4 +17,6 @@ def get_dagster_type(graphene_info, pipeline_name, type_name):
             )
         )
 
-    return to_dauphin_dagster_type(pipeline.dagster_type_named(type_name))
+    return to_dauphin_dagster_type(
+        pipeline.get_pipeline_snapshot(), pipeline.dagster_type_named(type_name),
+    )

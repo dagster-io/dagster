@@ -6,6 +6,7 @@ from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 from dagster import check
 from dagster.core.execution.plan.objects import ExecutionStep, StepInput, StepOutput
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
@@ -37,15 +38,18 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
 
-    def __init__(self, step_output):
+    def __init__(self, pipeline_snapshot, step_output):
         super(DauphinExecutionStepOutput, self).__init__()
         self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
+        self._pipeline_snapshot = check.inst_param(
+            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+        )
 
     def resolve_name(self, _graphene_info):
         return self._step_output.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._step_output.dagster_type)
+        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_output.dagster_type,)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -56,16 +60,19 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
     dependsOn = dauphin.non_null_list('ExecutionStep')
 
-    def __init__(self, execution_plan, step_input):
+    def __init__(self, pipeline_snapshot, execution_plan, step_input):
         super(DauphinExecutionStepInput, self).__init__()
         self._step_input = check.inst_param(step_input, 'step_input', StepInput)
         self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._pipeline_snapshot = check.inst_param(
+            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+        )
 
     def resolve_name(self, _graphene_info):
         return self._step_input.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._step_input.dagster_type)
+        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_input.dagster_type)
 
     def resolve_dependsOn(self, graphene_info):
         return [
@@ -116,13 +123,19 @@ class DauphinExecutionStep(dauphin.ObjectType):
 
     def resolve_inputs(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ExecutionStepInput')(self._execution_plan, inp)
+            graphene_info.schema.type_named('ExecutionStepInput')(
+                self._execution_plan.pipeline_def.get_pipeline_snapshot(),
+                self._execution_plan,
+                inp,
+            )
             for inp in self._execution_step.step_inputs
         ]
 
     def resolve_outputs(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ExecutionStepOutput')(out)
+            graphene_info.schema.type_named('ExecutionStepOutput')(
+                self._execution_plan.pipeline_def.get_pipeline_snapshot(), out,
+            )
             for out in self._execution_step.step_outputs
         ]
 

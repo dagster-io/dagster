@@ -34,6 +34,10 @@ class ConfigSchemaSnapshot(namedtuple('_ConfigSchemaSnapshot', 'all_config_metas
             ),
         )
 
+    def get_config_meta(self, key):
+        check.str_param(key, 'key')
+        return self.all_config_metas_by_key[key]
+
 
 @whitelist_for_serdes
 class ConfigTypeMeta(
@@ -71,6 +75,16 @@ class ConfigTypeMeta(
         check.invariant(self.kind == ConfigTypeKind.NONEABLE or self.kind == ConfigTypeKind.ARRAY)
         check.invariant(len(self.type_param_keys) == 1)
         return self.type_param_keys[0]
+
+    @property
+    def scalar_type_key(self):
+        check.invariant(self.kind == ConfigTypeKind.SCALAR_UNION)
+        return self.type_param_keys[0]
+
+    @property
+    def non_scalar_type_key(self):
+        check.invariant(self.kind == ConfigTypeKind.SCALAR_UNION)
+        return self.type_param_keys[1]
 
     def get_field(self, name):
         check.str_param(name, 'name')
@@ -142,8 +156,10 @@ def meta_from_config_type(config_type):
         given_name=config_type.given_name,
         kind=config_type.kind,
         description=config_type.description,
-        type_param_keys=[ct.key for ct in config_type.type_params]
-        if config_type.type_params
+        type_param_keys=[ct.key for ct in config_type.type_params] if config_type.type_params
+        # jam scalar union types into type_param_keys
+        else [config_type.scalar_type.key, config_type.non_scalar_type.key]
+        if config_type.kind == ConfigTypeKind.SCALAR_UNION
         else None,
         enum_values=[
             ConfigEnumValueMeta(ev.config_value, ev.description) for ev in config_type.enum_values

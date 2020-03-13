@@ -748,16 +748,23 @@ ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
 def construct_dagster_type_dictionary(solid_defs):
-    type_dict = {t.name: t for t in ALL_RUNTIME_BUILTINS}
+    type_dict_by_name = {t.name: t for t in ALL_RUNTIME_BUILTINS}
+    type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for dagster_type in solid_def.all_dagster_types():
+            # We don't do uniqueness check on key because with classes
+            # like Array, Noneable, etc, those are ephemeral objectds
+            # and it is perfectly fine to have many of them.
+            type_dict_by_key[dagster_type.key] = dagster_type
+
             if not dagster_type.name:
                 continue
-            if dagster_type.name not in type_dict:
-                type_dict[dagster_type.name] = dagster_type
+
+            if dagster_type.name not in type_dict_by_name:
+                type_dict_by_name[dagster_type.name] = dagster_type
                 continue
 
-            if type_dict[dagster_type.name] is not dagster_type:
+            if type_dict_by_name[dagster_type.name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
                     (
                         'You have created two dagster types with the same name "{type_name}". '
@@ -765,7 +772,7 @@ def construct_dagster_type_dictionary(solid_defs):
                     ).format(type_name=dagster_type.name)
                 )
 
-    return type_dict
+    return type_dict_by_key
 
 
 class DagsterOptionalApi:

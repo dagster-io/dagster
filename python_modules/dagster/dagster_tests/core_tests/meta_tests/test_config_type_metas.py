@@ -3,6 +3,7 @@ from dagster import (
     Field,
     ModeDefinition,
     Noneable,
+    ScalarUnion,
     Selector,
     Shape,
     pipeline,
@@ -295,3 +296,33 @@ def test_multiple_modes():
 
     assert a_resource.config_field.config_type.key in config_metas
     assert b_resource.config_field.config_type.key in config_metas
+
+    assert get_config_meta(modez, a_resource.config_field.config_type.key)
+    assert get_config_meta(modez, b_resource.config_field.config_type.key)
+
+
+def get_config_meta(pipeline_def, key):
+    return pipeline_def.get_pipeline_snapshot().config_schema_snapshot.get_config_meta(key)
+
+
+def test_scalar_union():
+    # Requiring resolve calls is bad: https://github.com/dagster-io/dagster/issues/2266
+    @solid(config=ScalarUnion(resolve_to_config_type(str), resolve_to_config_type({'bar': str})))
+    def solid_with_config(_):
+        pass
+
+    @pipeline
+    def single_solid_pipeline():
+        solid_with_config()
+
+    config_metas = build_config_schema_snapshot(single_solid_pipeline).all_config_metas_by_key
+
+    scalar_union_key = solid_with_config.config_field.config_type.key
+
+    assert scalar_union_key in config_metas
+
+    assert config_metas[config_metas[scalar_union_key].scalar_type_key].key == 'String'
+    assert (
+        config_metas[config_metas[scalar_union_key].non_scalar_type_key].kind
+        == ConfigTypeKind.STRICT_SHAPE
+    )
