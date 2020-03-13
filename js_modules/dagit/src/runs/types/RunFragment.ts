@@ -27,6 +27,12 @@ export interface RunFragment_pipeline_Pipeline {
 
 export type RunFragment_pipeline = RunFragment_pipeline_UnknownPipeline | RunFragment_pipeline_Pipeline;
 
+export interface RunFragment_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface RunFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
@@ -70,6 +76,7 @@ export interface RunFragment {
   environmentConfigYaml: string;
   canCancel: boolean;
   mode: string;
+  tags: RunFragment_tags[];
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }

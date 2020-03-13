@@ -31,6 +31,12 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline {
 
 export type RunRootQuery_pipelineRunOrError_PipelineRun_pipeline = RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_UnknownPipeline | RunRootQuery_pipelineRunOrError_PipelineRun_pipeline_Pipeline;
 
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs_type {
   __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
   name: string | null;
@@ -74,6 +80,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   environmentConfigYaml: string;
   canCancel: boolean;
   mode: string;
+  tags: RunRootQuery_pipelineRunOrError_PipelineRun_tags[];
   executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }

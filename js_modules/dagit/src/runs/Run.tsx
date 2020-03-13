@@ -56,6 +56,10 @@ export class Run extends React.Component<IRunProps, IRunState> {
         canCancel
         status
         mode
+        tags {
+          key
+          value
+        }
         pipeline {
           __typename
           ... on PipelineReference {
@@ -149,13 +153,20 @@ export class Run extends React.Component<IRunProps, IRunState> {
       }
     };
 
+    // single step re-execution
     if (stepKey && run.executionPlan) {
       const step = run.executionPlan.steps.find(s => s.key === stepKey);
       if (!step) return;
       executionParams["stepKeys"] = [stepKey];
       executionParams["retryRunId"] = run.runId;
-    } else if (resumeRetry) {
-      executionParams["retryRunId"] = run.runId;
+    } else {
+      // only copy tags over on full resume-retry or full retry
+      executionParams["executionMetadata"] = {
+        tags: run.tags.map(tag => ({ value: tag.value, key: tag.key }))
+      };
+      if (resumeRetry) {
+        executionParams["retryRunId"] = run.runId;
+      }
     }
     return { executionParams };
   };
