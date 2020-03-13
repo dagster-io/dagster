@@ -56,12 +56,23 @@ extensions = [
 # https://stackoverflow.com/a/54843636/324449
 autosectionlabel_prefix_document = True
 
+# To add a new intersphinx mapping and find the right intersphinx inv file, add a new record with
+# the inv field set to None, e.g.
+#
+# 'mylib': ('https://www.mylib.org/docs/', None)
+#
+# Then when building the docs, you'll see:
+#
+# loading intersphinx inventory from https://www.mylib.org/docs/objects.inv...
+#
+# You should download this file and put it under the intersphinx/ directory.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', 'intersphinx/python.inv'),
     'airflow': ('https://airflow.apache.org', 'intersphinx/airflow.inv'),
     'dask': ('https://distributed.dask.org/en/latest/', 'intersphinx/dask.inv'),
     'celery': ('http://docs.celeryproject.org/en/latest/', 'intersphinx/celery.inv'),
     'boto3': ('https://boto3.amazonaws.com/v1/documentation/api/latest/', 'intersphinx/boto3.inv'),
+    'psycopg2': ('https://www.psycopg.org/docs/', 'intersphinx/psycopg2.inv'),
 }
 
 # Add any paths that contain templates here, relative to this directory.

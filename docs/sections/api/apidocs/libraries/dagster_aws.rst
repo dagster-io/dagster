@@ -44,13 +44,22 @@ S3
   provide custom system storages, i.e., :py:class:`~dagster.default_system_storage_defs` plus the
   :py:class:`s3_system_storage`.
 
+
+Redshift
+--------
+.. autodata:: redshift_resource
+  :annotation: ResourceDefinition
+
+
 Testing
 -------
-
 .. autoclass:: S3FakeSession
   :members:
 
 .. autofunction:: create_s3_fake_resource
+
+.. autodata:: fake_redshift_resource
+  :annotation: ResourceDefinition
 
 -----
 
