@@ -302,7 +302,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_config_type_key(self, _):
-        return self._field.config_type.key
+        return self._field_meta.type_key
 
     def __init__(self, field_meta, config_schema_snapshot):
         check.inst_param(field_meta, 'field_meta', ConfigFieldMeta)
