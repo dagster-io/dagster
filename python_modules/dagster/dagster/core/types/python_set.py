@@ -71,6 +71,10 @@ class _TypedPythonSet(DagsterType):
     def inner_types(self):
         return [self.item_type]
 
+    @property
+    def type_param_keys(self):
+        return [self.item_type.key]
+
 
 def create_typed_runtime_set(item_dagster_type):
     item_dagster_type = resolve_dagster_type(item_dagster_type)

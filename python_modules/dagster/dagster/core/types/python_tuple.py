@@ -78,6 +78,10 @@ class _TypedPythonTuple(DagsterType):
     def inner_types(self):
         return self.dagster_types
 
+    @property
+    def type_param_keys(self):
+        return [dt.key for dt in self.dagster_types]
+
 
 def create_typed_tuple(*dagster_type_args):
     dagster_types = list(map(resolve_dagster_type, dagster_type_args))

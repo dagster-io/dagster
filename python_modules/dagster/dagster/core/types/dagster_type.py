@@ -102,7 +102,7 @@ class DagsterType(object):
             check.param_invariant(
                 bool(key), 'key', 'If name is not provided, must provide key.',
             )
-            self.key, self.name = key, name
+            self.key, self.name = key, None
         elif key is None:
             check.param_invariant(
                 bool(name), 'name', 'If key is not provided, must provide name.',
@@ -188,6 +188,22 @@ class DagsterType(object):
 
     @property
     def inner_types(self):
+        return []
+
+    @property
+    def input_hydration_schema_key(self):
+        return self.input_hydration_config.schema_type.key if self.input_hydration_config else None
+
+    @property
+    def output_materialization_schema_key(self):
+        return (
+            self.output_materialization_config.schema_type.key
+            if self.output_materialization_config
+            else None
+        )
+
+    @property
+    def type_param_keys(self):
         return []
 
 
@@ -513,6 +529,10 @@ class OptionalType(DagsterType):
     def inner_types(self):
         return [self.inner_type] + self.inner_type.inner_types
 
+    @property
+    def type_param_keys(self):
+        return [self.inner_type.key]
+
 
 class ListInputSchema(InputHydrationConfig):
     def __init__(self, inner_dagster_type):
@@ -572,6 +592,10 @@ class ListType(DagsterType):
     def inner_types(self):
         return [self.inner_type] + self.inner_type.inner_types
 
+    @property
+    def type_param_keys(self):
+        return [self.inner_type.key]
+
 
 class DagsterListApi:
     def __getitem__(self, inner_type):
@@ -611,7 +635,7 @@ class Stringish(DagsterType):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
-def create_string_type(name, description):
+def create_string_type(name, description=None):
     return Stringish(name=name, key=name, description=description)
 
 

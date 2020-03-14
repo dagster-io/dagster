@@ -59,6 +59,10 @@ class _TypedPythonDict(DagsterType):
     def inner_types(self):
         return [self.key_type, self.value_type]
 
+    @property
+    def type_param_keys(self):
+        return [self.key_type.key, self.value_type.key]
+
 
 def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
     key_type = resolve_dagster_type(key_dagster_type)
