@@ -52,6 +52,10 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
         return self._tags
 
     @property
+    def positional_inputs(self):
+        return self._positional_inputs
+
+    @property
     def input_defs(self):
         return self._input_defs
 

@@ -69,6 +69,10 @@ class OutputDefinition(object):
     def optional(self):
         return self._optional
 
+    @property
+    def is_required(self):
+        return not self._optional
+
     def mapping_from(self, solid_name, output_name=None):
         '''Create an output mapping from an output of a child solid.
 
