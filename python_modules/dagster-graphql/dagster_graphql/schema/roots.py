@@ -694,8 +694,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             list(
                 map(
                     lambda ct: to_dauphin_config_type(
-                        ct.key,
-                        self._dagster_pipeline.get_pipeline_snapshot().config_schema_snapshot,
+                        self._dagster_pipeline.get_config_schema_snapshot(), ct.key
                     ),
                     self._environment_schema.all_config_types(),
                 )
@@ -705,8 +704,8 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_rootEnvironmentType(self, _graphene_info):
         return to_dauphin_config_type(
-            self._environment_schema.environment_type.key,
             self._dagster_pipeline.get_config_schema_snapshot(),
+            self._environment_schema.environment_type.key,
         )
 
     def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):

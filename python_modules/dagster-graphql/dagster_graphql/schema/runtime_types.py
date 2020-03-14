@@ -9,7 +9,7 @@ from .config_types import DauphinConfigType, to_dauphin_config_type
 
 def config_type_for_schema(pipeline_snapshot, schema):
     return (
-        to_dauphin_config_type(schema.schema_type.key, pipeline_snapshot.config_schema_snapshot)
+        to_dauphin_config_type(pipeline_snapshot.config_schema_snapshot, schema.schema_type.key)
         if schema
         else None
     )

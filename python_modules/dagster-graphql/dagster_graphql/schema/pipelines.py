@@ -14,6 +14,7 @@ from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.meta.config_types import ConfigSchemaSnapshot, meta_from_field
 from dagster.seven import lru_cache
 
+from .config_types import DauphinConfigTypeField
 from .runtime_types import to_dauphin_dagster_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
@@ -87,11 +88,9 @@ class DauphinPipeline(dauphin.ObjectType):
     def get_dagster_pipeline(self):
         return self._pipeline
 
-    def resolve_modes(self, graphene_info):
+    def resolve_modes(self, _):
         return [
-            graphene_info.schema.type_named('Mode')(
-                mode_definition, self._pipeline.get_pipeline_snapshot().config_schema_snapshot
-            )
+            DauphinMode(self._pipeline.get_config_schema_snapshot(), mode_definition)
             for mode_definition in sorted(
                 self._pipeline.mode_definitions, key=lambda item: item.name
             )
@@ -142,23 +141,23 @@ class DauphinResource(dauphin.ObjectType):
     class Meta(object):
         name = 'Resource'
 
-    def __init__(self, resource_name, resource, config_schema_snapshot):
-        self.name = check.str_param(resource_name, 'resource_name')
-        self._resource = check.inst_param(resource, 'resource', ResourceDefinition)
-        self.description = resource.description
+    def __init__(self, config_schema_snapshot, resource_name, resource):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
         )
+        self.name = check.str_param(resource_name, 'resource_name')
+        self._resource = check.inst_param(resource, 'resource', ResourceDefinition)
+        self.description = resource.description
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, graphene_info):
+    def resolve_configField(self, _):
         return (
-            graphene_info.schema.type_named('ConfigTypeField')(
-                field_meta=meta_from_field('config', self._resource.config_field),
+            DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
+                field_meta=meta_from_field('config', self._resource.config_field),
             )
             if self._resource.config_field
             else None
@@ -169,23 +168,23 @@ class DauphinLogger(dauphin.ObjectType):
     class Meta(object):
         name = 'Logger'
 
-    def __init__(self, logger_name, logger, config_schema_snapshot):
-        self.name = check.str_param(logger_name, 'logger_name')
-        self._logger = check.inst_param(logger, 'logger', LoggerDefinition)
-        self.description = logger.description
+    def __init__(self, config_schema_snapshot, logger_name, logger):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
         )
+        self.name = check.str_param(logger_name, 'logger_name')
+        self._logger = check.inst_param(logger, 'logger', LoggerDefinition)
+        self.description = logger.description
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     configField = dauphin.Field('ConfigTypeField')
 
-    def resolve_configField(self, graphene_info):
+    def resolve_configField(self, _):
         return (
-            graphene_info.schema.type_named('ConfigTypeField')(
-                field_meta=meta_from_field('config', self._logger.config_field),
+            DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
+                field_meta=meta_from_field('config', self._logger.config_field),
             )
             if self._logger.config_field
             else None
@@ -193,7 +192,7 @@ class DauphinLogger(dauphin.ObjectType):
 
 
 class DauphinMode(dauphin.ObjectType):
-    def __init__(self, mode_definition, config_schema_snapshot):
+    def __init__(self, config_schema_snapshot, mode_definition):
         self._mode_definition = check.inst_param(mode_definition, 'mode_definition', ModeDefinition)
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
@@ -215,13 +214,13 @@ class DauphinMode(dauphin.ObjectType):
 
     def resolve_resources(self, _graphene_info):
         return [
-            DauphinResource(name, resource, self._config_schema_snapshot)
+            DauphinResource(self._config_schema_snapshot, name, resource)
             for name, resource in sorted(self._mode_definition.resource_defs.items())
         ]
 
     def resolve_loggers(self, _graphene_info):
         return [
-            DauphinLogger(name, logger, self._config_schema_snapshot)
+            DauphinLogger(self._config_schema_snapshot, name, logger,)
             for name, logger in sorted(self._mode_definition.loggers.items())
         ]
 

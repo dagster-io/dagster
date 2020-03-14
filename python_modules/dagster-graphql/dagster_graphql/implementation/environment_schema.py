@@ -52,7 +52,7 @@ def resolve_is_environment_config_valid(
                     graphene_info.schema.type_named(
                         'PipelineConfigValidationError'
                     ).from_dagster_error(
-                        graphene_info, err, dagster_pipeline.get_config_schema_snapshot()
+                        dagster_pipeline.get_config_schema_snapshot(), err,
                     )
                     for err in validated_config.errors
                 ],

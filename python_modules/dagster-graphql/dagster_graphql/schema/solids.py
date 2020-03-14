@@ -16,6 +16,7 @@ from dagster.core.definitions import (
 from dagster.core.meta.config_types import meta_from_field
 from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
 
+from .config_types import DauphinConfigTypeField
 from .runtime_types import to_dauphin_dagster_type
 
 
@@ -146,11 +147,11 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         )
         ISolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
 
-    def resolve_config_field(self, graphene_info):
+    def resolve_config_field(self, _):
         return (
-            graphene_info.schema.type_named('ConfigTypeField')(
-                field_meta=meta_from_field('config', self._solid_def.config_field),
+            DauphinConfigTypeField(
                 config_schema_snapshot=self._pipeline_snapshot.config_schema_snapshot,
+                field_meta=meta_from_field('config', self._solid_def.config_field),
             )
             if self._solid_def.config_field
             else None

@@ -29,7 +29,7 @@ def get_validated_config(graphene_info, dauphin_pipeline, environment_dict, mode
                 errors=[
                     graphene_info.schema.type_named(
                         'PipelineConfigValidationError'
-                    ).from_dagster_error(graphene_info, err, pipeline.get_config_schema_snapshot())
+                    ).from_dagster_error(pipeline.get_config_schema_snapshot(), err)
                     for err in validated_config.errors
                 ],
             )
