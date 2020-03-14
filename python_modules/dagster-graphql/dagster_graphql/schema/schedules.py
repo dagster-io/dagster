@@ -14,9 +14,9 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
-from dagster.core.definitions import ScheduleDefinition
+from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
+from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import PipelineRunsFilter
-from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 from dagster.core.scheduler import Schedule
 
@@ -48,10 +48,12 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
     name = dauphin.NonNull(dauphin.String)
     cron_schedule = dauphin.NonNull(dauphin.String)
+
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_subset = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     environment_config_yaml = dauphin.Field(dauphin.String)
+    partition_set = dauphin.Field('PartitionSet')
 
     def resolve_environment_config_yaml(self, _graphene_info):
         schedule_def = self._schedule_def
@@ -67,6 +69,14 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
         environment_config_yaml = yaml.dump(environment_config, default_flow_style=False)
         return environment_config_yaml if environment_config_yaml else ''
+
+    def resolve_partition_set(self, graphene_info):
+        if isinstance(self._schedule_def, PartitionScheduleDefinition):
+            return graphene_info.schema.type_named('PartitionSet')(
+                self._schedule_def.get_partition_set()
+            )
+
+        return None
 
     def __init__(self, graphene_info, schedule_def):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
@@ -165,7 +175,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
                             run = graphene_info.schema.type_named('PipelineRun')(
                                 graphene_info.context.instance.get_run_by_id(run_id)
                             )
-                    elif typename == 'ScheduleExecutionBlocked':
+                    elif typename == 'ScheduledExecutionBlocked':
                         status = DauphinScheduleAttemptStatus.SKIPPED
                     else:
                         status = DauphinScheduleAttemptStatus.ERROR

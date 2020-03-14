@@ -9,6 +9,17 @@ import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../.
 // GraphQL query operation: ScheduleRootQuery
 // ====================================================
 
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions {
+  __typename: "Partition";
+  name: string;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet {
+  __typename: "PartitionSet";
+  name: string;
+  partitions: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions[];
+}
+
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition {
   __typename: "ScheduleDefinition";
   name: string;
@@ -17,6 +28,7 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefin
   solidSubset: (string | null)[] | null;
   mode: string;
   environmentConfigYaml: string | null;
+  partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline {

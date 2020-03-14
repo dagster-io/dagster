@@ -195,7 +195,7 @@ export const ScheduleRow: React.FunctionComponent<{
                   >
                     <Tooltip
                       position={"top"}
-                      content="View scheduling error"
+                      content="View response"
                       wrapperTagName="div"
                       targetTagName="div"
                     >

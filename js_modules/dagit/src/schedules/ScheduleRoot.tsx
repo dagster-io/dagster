@@ -6,11 +6,16 @@ import {
   RowColumn,
   RowContainer
 } from "../ListComponents";
-import { Query, QueryResult } from "react-apollo";
+import { Query, QueryResult, useQuery } from "react-apollo";
 import {
   ScheduleRootQuery,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList,
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet
 } from "./types/ScheduleRootQuery";
+import {
+  PartitionRunsQuery,
+  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results
+} from "./types/PartitionRunsQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
@@ -55,6 +60,13 @@ export class ScheduleRoot extends React.Component<
                     <Header>Schedules</Header>
                     <ScheduleRow schedule={scheduleOrError} />
                     <AttemptsTable attemptList={scheduleOrError.attemptList} />
+                    {scheduleOrError.scheduleDefinition.partitionSet ? (
+                      <PartitionTable
+                        partitionSet={
+                          scheduleOrError.scheduleDefinition.partitionSet
+                        }
+                      />
+                    ) : null}
                   </ScrollContainer>
                 );
               } else {
@@ -79,7 +91,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
     return null;
   }
   return (
-    <>
+    <div style={{ marginBottom: 9 }}>
       <Header>Attempts</Header>
       {attemptList.map((attempt, i) => (
         <RowContainer key={i} style={{ marginBottom: 0, boxShadow: "none" }}>
@@ -125,7 +137,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
                   }
                 >
                   {" "}
-                  View error
+                  View response
                 </ButtonLink>
               </div>
             )}
@@ -134,6 +146,65 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
             style={{ maxWidth: 200, paddingLeft: 0, textAlign: "left" }}
           >
             {unixTimestampToString(attempt.time)}
+          </RowColumn>
+        </RowContainer>
+      ))}
+    </div>
+  );
+};
+
+const PartitionTable: React.FunctionComponent<{
+  partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet;
+}> = ({ partitionSet }) => {
+  const { data }: { data?: PartitionRunsQuery } = useQuery(
+    PARTITION_RUNS_QUERY,
+    {
+      variables: {
+        partitionSetName: partitionSet.name
+      }
+    }
+  );
+  if (data?.pipelineRunsOrError.__typename !== "PipelineRuns") {
+    return null;
+  }
+  const runs = data.pipelineRunsOrError.results;
+  const runsByPartition: {
+    [key: string]: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results[];
+  } = {};
+  partitionSet.partitions.forEach(
+    partition => (runsByPartition[partition.name] = [])
+  );
+
+  runs.forEach(run => {
+    const tagKV = run.tags.find(tagKV => tagKV.key === "dagster/partition");
+    // need to defend against mis match in partitions here
+    runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
+  });
+
+  return (
+    <>
+      <Header>{`Partition Set: ${partitionSet.name}`}</Header>
+      {Object.keys(runsByPartition).map(partition => (
+        <RowContainer
+          key={partition}
+          style={{ marginBottom: 0, boxShadow: "none" }}
+        >
+          <RowColumn>{partition}</RowColumn>
+          <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
+            {runsByPartition[partition].map(run => (
+              <div
+                key={run.runId}
+                style={{
+                  display: "inline-block",
+                  cursor: "pointer",
+                  marginRight: 5
+                }}
+              >
+                <Link to={`/runs/all/${run.runId}`}>
+                  <RunStatus status={run.status} />
+                </Link>
+              </div>
+            ))}
           </RowColumn>
         </RowContainer>
       ))}
@@ -152,6 +223,12 @@ export const SCHEDULE_ROOT_QUERY = gql`
         ...ScheduleFragment
         scheduleDefinition {
           name
+          partitionSet {
+            name
+            partitions {
+              name
+            }
+          }
         }
         attemptList: attempts(limit: $attemptsLimit) {
           time
@@ -174,6 +251,28 @@ export const SCHEDULE_ROOT_QUERY = gql`
   }
 
   ${ScheduleRowFragment}
+`;
+
+export const PARTITION_RUNS_QUERY = gql`
+  query PartitionRunsQuery($partitionSetName: String!) {
+    pipelineRunsOrError(
+      filter: {
+        tags: { key: "dagster/partition_set", value: $partitionSetName }
+      }
+    ) {
+      __typename
+      ... on PipelineRuns {
+        results {
+          runId
+          tags {
+            key
+            value
+          }
+          status
+        }
+      }
+    }
+  }
 `;
 
 const ButtonLink = styled.button`

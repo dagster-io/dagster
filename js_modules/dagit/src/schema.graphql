@@ -966,6 +966,7 @@ type ScheduleDefinition {
   solidSubset: [String]
   mode: String!
   environmentConfigYaml: String
+  partitionSet: PartitionSet
 }
 
 type ScheduledExecutionBlocked {
