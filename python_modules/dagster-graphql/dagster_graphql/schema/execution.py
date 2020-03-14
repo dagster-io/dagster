@@ -49,7 +49,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         return self._step_output.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_output.dagster_type,)
+        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_output.dagster_type.key)
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -72,7 +72,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         return self._step_input.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_input.dagster_type)
+        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_input.dagster_type.key)
 
     def resolve_dependsOn(self, graphene_info):
         return [

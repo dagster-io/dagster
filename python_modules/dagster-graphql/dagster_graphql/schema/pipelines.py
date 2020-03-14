@@ -70,7 +70,9 @@ class DauphinPipeline(dauphin.ObjectType):
         return sorted(
             list(
                 map(
-                    lambda dt: to_dauphin_dagster_type(self._pipeline.get_pipeline_snapshot(), dt),
+                    lambda dt: to_dauphin_dagster_type(
+                        self._pipeline.get_pipeline_snapshot(), dt.key
+                    ),
                     [t for t in self._pipeline.all_dagster_types() if t.name],
                 )
             ),

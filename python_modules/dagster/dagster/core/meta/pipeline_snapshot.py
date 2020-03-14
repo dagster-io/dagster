@@ -12,10 +12,10 @@ class PipelineSnapshot(
     def __new__(cls, config_schema_snapshot, dagster_type_namespace_snapshot):
         return super(PipelineSnapshot, cls).__new__(
             cls,
-            check.inst_param(
+            config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
             ),
-            check.inst_param(
+            dagster_type_namespace_snapshot=check.inst_param(
                 dagster_type_namespace_snapshot,
                 'dagster_type_namespace_snapshot',
                 DagsterTypeNamespaceSnapshot,
@@ -25,6 +25,6 @@ class PipelineSnapshot(
     @staticmethod
     def from_pipeline_def(pipeline_def):
         return PipelineSnapshot(
-            build_config_schema_snapshot(pipeline_def),
-            build_dagster_type_namespace_snapshot(pipeline_def),
+            config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
+            dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
         )
