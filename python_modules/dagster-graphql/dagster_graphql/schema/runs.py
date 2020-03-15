@@ -4,7 +4,10 @@ import logging
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
+from dagster_graphql.implementation.fetch_pipelines import (
+    get_pipeline_def_from_selector,
+    get_pipeline_reference_or_raise,
+)
 from dagster_graphql.implementation.fetch_runs import get_stats
 
 from dagster import RunConfig, check, seven
@@ -118,7 +121,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         pipeline = self.resolve_pipeline(graphene_info)
         if isinstance(pipeline, DauphinPipeline):
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(),
+                get_pipeline_def_from_selector(graphene_info, self._pipeline_run.selector),
                 self._pipeline_run.environment_dict,
                 RunConfig(mode=self._pipeline_run.mode),
             )
@@ -263,11 +266,12 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
     def resolve_nodes(self, graphene_info):
+
         pipeline = get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
 
         if isinstance(pipeline, DauphinPipeline):
             execution_plan = create_execution_plan(
-                pipeline.get_dagster_pipeline(),
+                get_pipeline_def_from_selector(graphene_info, self._pipeline_run.selector),
                 self._pipeline_run.environment_dict,
                 RunConfig(mode=self._pipeline_run.mode),
             )

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from dagster_graphql.client.util import pipeline_run_from_execution_params
+from dagster_graphql.schema.pipelines import DauphinPipeline
 from dagster_graphql.schema.runs import (
     from_compute_log_file,
     from_dagster_event_record,
@@ -19,8 +20,8 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 from .fetch_pipelines import (
-    get_dauphin_pipeline_from_selector_or_raise,
     get_dauphin_pipeline_reference_from_selector,
+    get_pipeline_def_from_selector,
 )
 from .fetch_runs import get_validated_config
 from .fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
@@ -105,20 +106,17 @@ def start_pipeline_execution(graphene_info, execution_params):
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineExecutionDisabledError')()
 
-    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(
-        graphene_info, execution_params.selector
-    )
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
 
     get_validated_config(
         graphene_info,
-        dauphin_pipeline,
+        pipeline_def,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
     )
 
-    pipeline = dauphin_pipeline.get_dagster_pipeline()
     execution_plan = create_execution_plan(
-        pipeline,
+        pipeline_def,
         execution_params.environment_dict,
         run_config=RunConfig(
             mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
@@ -127,13 +125,10 @@ def start_pipeline_execution(graphene_info, execution_params):
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline, execution_params))
+    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline_def, execution_params))
 
     graphene_info.context.execution_manager.execute_pipeline(
-        graphene_info.context.get_handle(),
-        dauphin_pipeline.get_dagster_pipeline(),
-        run,
-        instance=instance,
+        graphene_info.context.get_handle(), pipeline_def, run, instance=instance,
     )
 
     return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
@@ -166,20 +161,17 @@ def launch_pipeline_execution(graphene_info, execution_params):
     if run_launcher is None:
         return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
 
-    dauphin_pipeline = get_dauphin_pipeline_from_selector_or_raise(
-        graphene_info, execution_params.selector
-    )
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
 
     get_validated_config(
         graphene_info,
-        dauphin_pipeline,
+        pipeline_def,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
     )
 
-    pipeline = dauphin_pipeline.get_dagster_pipeline()
     execution_plan = create_execution_plan(
-        pipeline,
+        pipeline_def,
         execution_params.environment_dict,
         run_config=RunConfig(
             mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
@@ -188,7 +180,7 @@ def launch_pipeline_execution(graphene_info, execution_params):
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = instance.launch_run(_create_pipeline_run(instance, pipeline, execution_params))
+    run = instance.launch_run(_create_pipeline_run(instance, pipeline_def, execution_params))
 
     return graphene_info.schema.type_named('LaunchPipelineExecutionSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
@@ -222,14 +214,13 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    pipeline = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
-
-    from ..schema.pipelines import DauphinPipeline
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
+    pipeline_ref = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
 
     execution_plan = None
-    if isinstance(pipeline, DauphinPipeline):
+    if isinstance(pipeline_ref, DauphinPipeline):
         execution_plan = create_execution_plan(
-            pipeline.get_dagster_pipeline(), run.environment_dict, RunConfig(mode=run.mode)
+            pipeline_def, run.environment_dict, RunConfig(mode=run.mode)
         )
 
     # pylint: disable=E1101
@@ -239,7 +230,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             run=graphene_info.schema.type_named('PipelineRun')(run),
             messages=[
-                from_event_record(graphene_info, event, pipeline, execution_plan)
+                from_event_record(graphene_info, event, pipeline_ref, execution_plan)
                 for event in events
             ],
         )
@@ -263,27 +254,17 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    return _execute_plan_resolve_config(
-        graphene_info,
-        execution_params,
-        get_dauphin_pipeline_from_selector_or_raise(graphene_info, execution_params.selector),
-    )
-
-
-def _execute_plan_resolve_config(graphene_info, execution_params, dauphin_pipeline):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
     get_validated_config(
-        graphene_info, dauphin_pipeline, execution_params.environment_dict, execution_params.mode
+        graphene_info, pipeline_def, execution_params.environment_dict, execution_params.mode
     )
-    return _do_execute_plan(graphene_info, execution_params, dauphin_pipeline)
+    return _do_execute_plan(graphene_info, execution_params, pipeline_def)
 
 
-def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
+def _do_execute_plan(graphene_info, execution_params, pipeline_def):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    pipeline = dauphin_pipeline.get_dagster_pipeline()
     run_id = execution_params.execution_metadata.run_id
 
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
@@ -291,15 +272,15 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         # TODO switch to raising a UserFacingError if the run_id cannot be found
         # https://github.com/dagster-io/dagster/issues/1876
         pipeline_run = PipelineRun(
-            pipeline_name=pipeline.name,
+            pipeline_name=pipeline_def.name,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
-            mode=execution_params.mode or pipeline.get_default_mode_name(),
+            mode=execution_params.mode or pipeline_def.get_default_mode_name(),
             tags=execution_params.execution_metadata.tags or {},
         )
 
     execution_plan = create_execution_plan(
-        pipeline=pipeline,
+        pipeline=pipeline_def,
         environment_dict=execution_params.environment_dict,
         run_config=pipeline_run,
     )
@@ -327,6 +308,8 @@ def _do_execute_plan(graphene_info, execution_params, dauphin_pipeline):
         pipeline_run=pipeline_run,
         instance=graphene_info.context.instance,
     )
+
+    dauphin_pipeline = DauphinPipeline(pipeline_def)
 
     def to_graphql_event(event_record):
         return from_dagster_event_record(

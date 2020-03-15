@@ -87,9 +87,6 @@ class DauphinPipeline(dauphin.ObjectType):
             )
         ]
 
-    def get_dagster_pipeline(self):
-        return self._pipeline
-
     def resolve_modes(self, _):
         return [
             DauphinMode(self._pipeline.get_config_schema_snapshot(), mode_definition)
