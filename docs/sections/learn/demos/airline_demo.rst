@@ -57,7 +57,7 @@ The demo defines a single repository with two pipelines, in ``airline_demo/pipel
   Jupyter notebooks.
 
 Default configuration is provided for both of these pipelines using
-`Presets <https://dagster.readthedocs.io/en/stable/sections/api/apidocs/pipeline.html>`_, and the
+`Presets </sections/api/apidocs/pipeline.html#presets>`_, and the
 corresponding YAML files can be found under the ``environments/`` folder.
 
 
@@ -136,7 +136,7 @@ Digging deeper, you'll notice that these solids in Dagit are shown with an "Expa
 
 
 That's because these are actually `Composite
-Solids <https://dagster.readthedocs.io/en/stable/sections/reference/reference.html#composite-solids>`_:
+Solids </sections/api/apidocs/pipeline.html#presets>`_:
 solids that contain other solids. Dagster supports arbitrarily nested, composed solid hierarchies,
 which can be really useful for encapsulating functionality as we've done here. Click Expand and
 you'll see the solids contained within ``s3_to_df``:
@@ -205,7 +205,7 @@ to be a matter of flipping a config switch.
 
 Dagster decouples the instantiation of external resources like these from the business logic of your
 data pipelines. In Dagster, a set of resources configured for a particular environment is called a
-`Mode <https://dagster.readthedocs.io/en/latest/sections/api/apidocs/pipeline.html#modes>`_.
+`Mode </sections/api/apidocs/pipeline.html#modes>`_.
 
 Let's look at how we make configurable resources available to our pipelines with modes. In
 ``airline_demo/pipelines.py``, you'll find that we define multiple modes within which our pipelines

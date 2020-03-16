@@ -99,7 +99,7 @@ async function main() {
     // Postprocess file
     const fileContent = fs.readFileSync(file, "utf8");
     const result = fileContent.replace(
-      /href=\\"(?!http)[^>]*?html\\">/g,
+      /href=\\"(?!http)[^>]*?html(?:#[\d\w-_]*?)?\\">/g,
       function(match) {
         return match.replace(".html", "");
       }
