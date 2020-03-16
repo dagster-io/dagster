@@ -59,8 +59,8 @@ def test_python_object_type_with_custom_type_check():
     Int3 = DagsterType(name='Int3', type_check_fn=eq_3)
 
     assert Int3.name == 'Int3'
-    assert_success(Int3, 3)
-    assert_failure(Int3, 5)
+    assert check_dagster_type(Int3, 3).success
+    assert not check_dagster_type(Int3, 5).success
 
 
 def test_nullable_python_object_type():
@@ -72,6 +72,7 @@ def test_nullable_python_object_type():
 def test_nullable_int_coercion():
     assert check_dagster_type(Int, 1).success
     assert not check_dagster_type(Int, None).success
+
     assert check_dagster_type(Optional[Int], 1).success
     assert check_dagster_type(Optional[Int], None).success
 
