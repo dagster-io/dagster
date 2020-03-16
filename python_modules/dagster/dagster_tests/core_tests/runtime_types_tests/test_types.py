@@ -3,7 +3,6 @@ import re
 import pytest
 
 from dagster import (
-    check_dagster_type,
     DagsterEventType,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -16,16 +15,14 @@ from dagster import (
     Optional,
     OutputDefinition,
     TypeCheck,
+    check_dagster_type,
     execute_pipeline,
     lambda_solid,
     pipeline,
     resource,
     solid,
 )
-from dagster.core.types.dagster_type import (
-    DagsterType,
-    PythonObjectDagsterType,
-)
+from dagster.core.types.dagster_type import DagsterType, PythonObjectDagsterType
 
 
 class BarObj(object):
