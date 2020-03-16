@@ -3,6 +3,7 @@ import re
 import pytest
 
 from dagster import (
+    check_dagster_type,
     DagsterEventType,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
@@ -24,7 +25,6 @@ from dagster import (
 from dagster.core.types.dagster_type import (
     DagsterType,
     PythonObjectDagsterType,
-    resolve_dagster_type,
 )
 
 
@@ -59,33 +59,22 @@ def test_python_object_type_with_custom_type_check():
     Int3 = DagsterType(name='Int3', type_check_fn=eq_3)
 
     assert Int3.name == 'Int3'
-    assert_success(Int3, 3)
-    assert_failure(Int3, 5)
+    assert check_dagster_type(Int3, 3).success
+    assert not check_dagster_type(Int3, 5).success
 
 
 def test_nullable_python_object_type():
-    nullable_type_bar = resolve_dagster_type(Optional[Bar])
-
-    # https://github.com/dagster-io/dagster/issues/2141
-    # this test and others near by
-
-    assert_type_check(nullable_type_bar.type_check(None, BarObj()))
-    assert_type_check(nullable_type_bar.type_check(None, None))
-
-    res = nullable_type_bar.type_check(None, 'not_a_bar')
-    assert not res.success
+    assert check_dagster_type(Optional[Bar], BarObj()).success
+    assert check_dagster_type(Optional[Bar], None).success
+    assert not check_dagster_type(Optional[Bar], 'not_a_bar').success
 
 
 def test_nullable_int_coercion():
-    int_type = resolve_dagster_type(Int)
-    assert_type_check(int_type.type_check(None, 1))
+    assert check_dagster_type(Int, 1).success
+    assert not check_dagster_type(Int, None).success
 
-    res = int_type.type_check(None, None)
-    assert not res.success
-
-    nullable_int_type = resolve_dagster_type(Optional[Int])
-    assert_type_check(nullable_int_type.type_check(None, 1))
-    assert_type_check(nullable_int_type.type_check(None, None))
+    assert check_dagster_type(Optional[Int], 1).success
+    assert check_dagster_type(Optional[Int], None).success
 
 
 def assert_type_check(type_check):
@@ -103,32 +92,25 @@ def assert_failure(dagster_type, value):
 
 
 def test_nullable_list_combos_coerciion():
+    assert not check_dagster_type(List[Int], None).success
+    assert check_dagster_type(List[Int], []).success
+    assert check_dagster_type(List[Int], [1]).success
+    assert not check_dagster_type(List[Int], [None]).success
 
-    list_of_int = resolve_dagster_type(List[Int])
+    assert check_dagster_type(Optional[List[Int]], None).success
+    assert check_dagster_type(Optional[List[Int]], []).success
+    assert check_dagster_type(Optional[List[Int]], [1]).success
+    assert not check_dagster_type(Optional[List[Int]], [None]).success
 
-    assert_failure(list_of_int, None)
-    assert_success(list_of_int, [])
-    assert_success(list_of_int, [1])
-    assert_failure(list_of_int, [None])
+    assert not check_dagster_type(List[Optional[Int]], None).success
+    assert check_dagster_type(List[Optional[Int]], []).success
+    assert check_dagster_type(List[Optional[Int]], [1]).success
+    assert check_dagster_type(List[Optional[Int]], [None]).success
 
-    nullable_int_of_list = resolve_dagster_type(Optional[List[Int]])
-
-    assert_success(nullable_int_of_list, None)
-    assert_success(nullable_int_of_list, [])
-    assert_success(nullable_int_of_list, [1])
-    assert_failure(nullable_int_of_list, [None])
-
-    list_of_nullable_int = resolve_dagster_type(List[Optional[Int]])
-    assert_failure(list_of_nullable_int, None)
-    assert_success(list_of_nullable_int, [])
-    assert_success(list_of_nullable_int, [1])
-    assert_success(list_of_nullable_int, [None])
-
-    nullable_list_of_nullable_int = resolve_dagster_type(Optional[List[Optional[Int]]])
-    assert_success(nullable_list_of_nullable_int, None)
-    assert_success(nullable_list_of_nullable_int, [])
-    assert_success(nullable_list_of_nullable_int, [1])
-    assert_success(nullable_list_of_nullable_int, [None])
+    assert check_dagster_type(Optional[List[Optional[Int]]], None).success
+    assert check_dagster_type(Optional[List[Optional[Int]]], []).success
+    assert check_dagster_type(Optional[List[Optional[Int]]], [1]).success
+    assert check_dagster_type(Optional[List[Optional[Int]]], [None]).success
 
 
 def execute_no_throw(pipeline_def):
