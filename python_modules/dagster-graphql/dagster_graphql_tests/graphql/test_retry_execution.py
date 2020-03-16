@@ -3,7 +3,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster.core.instance import DagsterInstance
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY
-from .setup import define_test_context, retry_config
+from .setup import define_test_context, get_retry_multi_execution_params, retry_config
 
 NON_PERSISTENT_INTERMEDIATES_ERROR = (
     'Cannot perform reexecution with non persistent intermediates manager'
@@ -205,3 +205,56 @@ def test_retry_resource_pipeline():
     logs = retry_one.data['startPipelineExecution']['run']['logs']['nodes']
     assert step_did_not_run(logs, 'start.compute')
     assert step_did_fail(logs, 'will_fail.compute')
+
+
+def test_retry_multi_output():
+    context = define_test_context(instance=DagsterInstance.local_temp())
+    result = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={'executionParams': get_retry_multi_execution_params(should_fail=True)},
+    )
+
+    print(result.data)
+    run_id = result.data['startPipelineExecution']['run']['runId']
+    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    assert step_did_succeed(logs, 'multi.compute')
+    assert step_did_skip(logs, 'child_multi_skip.compute')
+    assert step_did_fail(logs, 'can_fail.compute')
+    assert step_did_skip(logs, 'child_fail.compute')
+    assert step_did_skip(logs, 'child_skip.compute')
+    assert step_did_skip(logs, 'grandchild_fail.compute')
+
+    retry_one = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': get_retry_multi_execution_params(should_fail=True, retry_id=run_id)
+        },
+    )
+
+    run_id = retry_one.data['startPipelineExecution']['run']['runId']
+    logs = retry_one.data['startPipelineExecution']['run']['logs']['nodes']
+    assert step_did_not_run(logs, 'multi.compute')
+    assert step_did_not_run(logs, 'child_multi_skip.compute')
+    assert step_did_fail(logs, 'can_fail.compute')
+    assert step_did_skip(logs, 'child_fail.compute')
+    assert step_did_skip(logs, 'child_skip.compute')
+    assert step_did_skip(logs, 'grandchild_fail.compute')
+
+    retry_two = execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_QUERY,
+        variables={
+            'executionParams': get_retry_multi_execution_params(should_fail=False, retry_id=run_id)
+        },
+    )
+
+    run_id = retry_two.data['startPipelineExecution']['run']['runId']
+    logs = retry_two.data['startPipelineExecution']['run']['logs']['nodes']
+    assert step_did_not_run(logs, 'multi.compute')
+    assert step_did_not_run(logs, 'child_multi_skip.compute')
+    assert step_did_succeed(logs, 'can_fail.compute')
+    assert step_did_succeed(logs, 'child_fail.compute')
+    assert step_did_skip(logs, 'child_skip.compute')
+    assert step_did_succeed(logs, 'grandchild_fail.compute')

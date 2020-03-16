@@ -148,6 +148,8 @@ def get_retry_steps_from_execution_plan(instance, execution_plan):
         previous_run_output_names_by_step[handle.step_key].add(handle.output_name)
 
     to_retry = []
+
+    execution_deps = execution_plan.execution_deps()
     for step in execution_plan.topological_steps():
         if previous_run.step_keys_to_execute and step.key not in previous_run.step_keys_to_execute:
             continue
@@ -156,8 +158,9 @@ def get_retry_steps_from_execution_plan(instance, execution_plan):
             to_retry.append(step.key)
             continue
 
-        step_output_names = set(step_output.name for step_output in step.step_outputs)
-        if step_output_names.difference(previous_run_output_names_by_step[step.key]):
+        step_deps = execution_deps[step.key]
+        if step_deps.intersection(to_retry):
+            # this step is downstream of a step we are about to retry
             to_retry.append(step.key)
 
     return to_retry

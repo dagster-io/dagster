@@ -139,6 +139,22 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'can_fail'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'can_fail'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'df_expectations_solid'
             },
             'invocations': [
@@ -323,6 +339,54 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'multi'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'multi'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'no_output'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'child_multi_skip'
+                    }
+                },
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'child_skip'
+                    }
+                },
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'grandchild_fail'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'noop_solid'
             },
             'invocations': [
@@ -348,6 +412,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'one'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'passthrough'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_output_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'child_fail'
                     }
                 }
             ]

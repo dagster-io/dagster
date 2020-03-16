@@ -19,6 +19,7 @@ from dagster import (
     Materialization,
     ModeDefinition,
     Noneable,
+    Nothing,
     Output,
     OutputDefinition,
     Path,
@@ -170,6 +171,7 @@ def define_repository():
             pipeline_with_list,
             required_resource_pipeline,
             retry_resource_pipeline,
+            retry_multi_output_pipeline,
             scalar_output_pipeline,
             spew_pipeline,
             noop_pipeline,
@@ -622,3 +624,59 @@ def will_fail(context, num):
 @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})])
 def retry_resource_pipeline():
     will_fail(start())
+
+
+@solid(
+    config={'fail': bool},
+    input_defs=[InputDefinition('inp', str)],
+    output_defs=[
+        OutputDefinition(str, 'start_fail', is_required=False),
+        OutputDefinition(str, 'start_skip', is_required=False),
+    ],
+)
+def can_fail(context, inp):
+    if context.solid_config['fail']:
+        raise Exception('blah')
+
+    yield Output('okay perfect', 'start_fail')
+
+
+@solid(
+    output_defs=[
+        OutputDefinition(str, 'success', is_required=False),
+        OutputDefinition(str, 'skip', is_required=False),
+    ],
+)
+def multi(_):
+    yield Output('okay perfect', 'success')
+
+
+@solid
+def passthrough(_, value):
+    return value
+
+
+@solid(input_defs=[InputDefinition('start', Nothing)], output_defs=[])
+def no_output(_):
+    yield ExpectationResult(True)
+
+
+@pipeline
+def retry_multi_output_pipeline():
+    multi_success, multi_skip = multi()
+    fail, skip = can_fail(multi_success)
+    no_output.alias('child_multi_skip')(multi_skip)
+    no_output.alias('child_skip')(skip)
+    no_output.alias('grandchild_fail')(passthrough.alias('child_fail')(fail))
+
+
+def get_retry_multi_execution_params(should_fail, retry_id=None):
+    return {
+        'mode': 'default',
+        'selector': {'name': 'retry_multi_output_pipeline'},
+        'environmentConfigData': {
+            'storage': {'filesystem': {}},
+            'solids': {'can_fail': {'config': {'fail': should_fail}}},
+        },
+        'retryRunId': retry_id,
+    }
