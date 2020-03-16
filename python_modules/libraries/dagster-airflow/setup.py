@@ -47,9 +47,6 @@ def _do_setup(name='dagster-airflow'):
             'dagster-graphql=={ver}'.format(ver=ver),
             'docker',
             'python-dateutil>=2.8.0',
-            # This pin because https://github.com/lepture/flask-wtf/issues/394
-            # Our issue: https://github.com/dagster-io/dagster/issues/2119
-            'werkzeug<1.0.0',
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},

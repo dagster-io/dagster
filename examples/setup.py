@@ -45,12 +45,7 @@ setup(
             'tensorflow',
             'dagster-gcp',
         ],
-        'dbt': [
-            'dbt-postgres',
-            # pin werkzeug pending https://github.com/fishtown-analytics/dbt/issues/1697
-            # for Flask compatibility
-            'werkzeug>=0.15.0',
-        ],
+        'dbt': ['dbt-postgres'],
         'airflow': ['dagster_airflow', 'docker-compose==1.23.2'],
     },
     include_package_data=True,
