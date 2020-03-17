@@ -34,6 +34,12 @@ class S3Resource(object):
         '''
         return self.session.upload_fileobj(fileobj, bucket, key)
 
+    def list_objects_v2(self, **kwargs):
+        '''This mirrors the list_objects_v2 boto3 API:
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_objects_v2
+        '''
+        return self.session.list_objects_v2(**kwargs)
+
 
 @resource(
     {
