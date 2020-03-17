@@ -123,8 +123,10 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = props => {
           <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
           <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Recent Attempts</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Last Attempt</LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>
+            Schedule Attempt Stats
+          </LegendColumn>
+          <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
         </Legend>
       )}

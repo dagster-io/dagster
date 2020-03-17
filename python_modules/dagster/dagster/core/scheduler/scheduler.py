@@ -209,6 +209,23 @@ class Schedule(
         )
 
 
+class ScheduleTickStatsSnapshot(
+    namedtuple(
+        'ScheduleTickStatsSnapshot', ('ticks_started ticks_succeeded ticks_skipped ticks_failed'),
+    )
+):
+    def __new__(
+        cls, ticks_started, ticks_succeeded, ticks_skipped, ticks_failed,
+    ):
+        return super(ScheduleTickStatsSnapshot, cls).__new__(
+            cls,
+            ticks_started=check.int_param(ticks_started, 'ticks_started'),
+            ticks_succeeded=check.int_param(ticks_succeeded, 'ticks_succeeded'),
+            ticks_skipped=check.int_param(ticks_skipped, 'ticks_skipped'),
+            ticks_failed=check.int_param(ticks_failed, 'ticks_failed'),
+        )
+
+
 @whitelist_for_serdes
 class ScheduleTickStatus(Enum):
     STARTED = 'STARTED'

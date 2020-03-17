@@ -18,7 +18,8 @@ from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContex
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
-from dagster.core.scheduler import Schedule
+from dagster.core.scheduler import Schedule, ScheduleTickStatus
+from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
 
 
 class DauphinScheduleStatus(dauphin.Enum):
@@ -92,6 +93,8 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         )
 
 
+# TODO: Delete in 0.8.0 release
+# https://github.com/dagster-io/dagster/issues/2288
 class DauphinScheduleAttemptStatus(dauphin.Enum):
     class Meta(object):
         name = 'ScheduleAttemptStatus'
@@ -101,6 +104,8 @@ class DauphinScheduleAttemptStatus(dauphin.Enum):
     SKIPPED = 'SKIPPED'
 
 
+# TODO: Delete in 0.8.0 release
+# https://github.com/dagster-io/dagster/issues/228
 class DauphinScheduleAttempt(dauphin.ObjectType):
     class Meta(object):
         name = 'ScheduleAttempt'
@@ -109,6 +114,36 @@ class DauphinScheduleAttempt(dauphin.ObjectType):
     json_result = dauphin.NonNull(dauphin.String)
     status = dauphin.NonNull('ScheduleAttemptStatus')
     run = dauphin.Field('PipelineRun')
+
+
+DauphinScheduleTickStatus = dauphin.Enum.from_enum(ScheduleTickStatus)
+
+
+class DauphinScheduleTick(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleTick'
+
+    tick_id = dauphin.NonNull(dauphin.String)
+    status = dauphin.NonNull('ScheduleTickStatus')
+
+
+class DauphinScheduleTickStatsSnapshot(dauphin.ObjectType):
+    class Meta(object):
+        name = 'ScheduleTickStatsSnapshot'
+
+    ticks_started = dauphin.NonNull(dauphin.Int)
+    ticks_succeeded = dauphin.NonNull(dauphin.Int)
+    ticks_skipped = dauphin.NonNull(dauphin.Int)
+    ticks_failed = dauphin.NonNull(dauphin.Int)
+
+    def __init__(self, stats):
+        super(DauphinScheduleTickStatsSnapshot, self).__init__(
+            ticks_started=stats.ticks_started,
+            ticks_succeeded=stats.ticks_succeeded,
+            ticks_skipped=stats.ticks_skipped,
+            ticks_failed=stats.ticks_failed,
+        )
+        self._stats = check.inst_param(stats, 'stats', ScheduleTickStatsSnapshot)
 
 
 class DauphinRunningSchedule(dauphin.ObjectType):
@@ -121,6 +156,11 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     status = dauphin.NonNull('ScheduleStatus')
     runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
+    ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
+    ticks_count = dauphin.NonNull(dauphin.Int)
+    stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
+    # TODO: Delete attempts and attempts_count in 0.8.0 release
+    # https://github.com/dagster-io/dagster/issues/228
     attempts = dauphin.Field(dauphin.non_null_list('ScheduleAttempt'), limit=dauphin.Int())
     attempts_count = dauphin.NonNull(dauphin.Int)
     logs_path = dauphin.NonNull(dauphin.String)
@@ -138,6 +178,8 @@ class DauphinRunningSchedule(dauphin.ObjectType):
             repository_path=schedule.repository_path,
         )
 
+    # TODO: Delete in 0.8.0 release
+    # https://github.com/dagster-io/dagster/issues/228
     def resolve_attempts(self, graphene_info, **kwargs):
         limit = kwargs.get('limit')
 
@@ -191,14 +233,54 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
         return attempts
 
+    # TODO: Delete in 0.8.0 release
+    # https://github.com/dagster-io/dagster/issues/228
     def resolve_attempts_count(self, graphene_info):
         attempt_files = get_schedule_attempt_filenames(graphene_info, self._schedule.name)
         return len(attempt_files)
 
+    # TODO: Delete in 0.8.0 release
+    # https://github.com/dagster-io/dagster/issues/228
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
         repository = graphene_info.context.get_repository()
         return instance.log_path_for_schedule(repository, self._schedule.name)
+
+    def resolve_stats(self, graphene_info):
+        repository = graphene_info.context.get_repository()
+        stats = graphene_info.context.instance.get_schedule_tick_stats_by_schedule(
+            repository, self._schedule.name
+        )
+        return graphene_info.schema.type_named('ScheduleTickStatsSnapshot')(stats)
+
+    def resolve_ticks(self, graphene_info, limit=None):
+
+        repository = graphene_info.context.get_repository()
+
+        # TODO: Add cursor limit argument to get_schedule_ticks_by_schedule
+        # https://github.com/dagster-io/dagster/issues/2291
+        ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
+            repository, self._schedule.name
+        )
+
+        if not limit:
+            tick_subset = ticks
+        else:
+            tick_subset = ticks[:limit]
+
+        return [
+            graphene_info.schema.type_named('ScheduleTick')(
+                tick_id=tick.tick_id, status=tick.status
+            )
+            for tick in tick_subset
+        ]
+
+    def resolve_ticks_count(self, graphene_info):
+        repository = graphene_info.context.get_repository()
+        ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
+            repository, self._schedule.name
+        )
+        return len(ticks)
 
     def resolve_runs(self, graphene_info, **kwargs):
         return [

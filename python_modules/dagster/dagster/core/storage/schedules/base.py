@@ -61,6 +61,15 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
+    def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
+        '''Get summary statistics for schedule ticks for a given schedule
+
+        Args:
+            repository (RepositoryDefinition): The repository the schedule belongs to
+            schedule_name (str): The name of the schedule
+        '''
+
+    @abc.abstractmethod
     def create_schedule_tick(self, repository, schedule_tick_data):
         '''Add a schedule tick to storage.
 

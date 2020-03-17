@@ -17,16 +17,20 @@ import {
 } from "@blueprintjs/core";
 import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
-import { RunStatus, titleForRun } from "../runs/RunUtils";
 import { ScheduleFragment } from "./types/ScheduleFragment";
-import { ScheduleStatus, ScheduleAttemptStatus } from "../types/globalTypes";
+import {
+  ScheduleStatus,
+  ScheduleTickStatus,
+  ScheduleAttemptStatus
+} from "../types/globalTypes";
+
 import { Link, useRouteMatch } from "react-router-dom";
 import cronstrue from "cronstrue";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
-import { unixTimestampToString } from "../Util";
 import { copyValue } from "../DomUtils";
+import { titleForRun, RunStatus } from "../runs/RunUtils";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -45,8 +49,10 @@ export const ScheduleRow: React.FunctionComponent<{
     status,
     scheduleDefinition,
     logsPath,
-    attempts,
-    attemptsCount
+    stats,
+    ticks,
+    runs,
+    runsCount
   } = schedule;
   const {
     name,
@@ -61,10 +67,7 @@ export const ScheduleRow: React.FunctionComponent<{
   const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
   const match = useRouteMatch("/schedules/:scheduleName");
 
-  const mostRecentAttempt = attempts.length > 0 ? attempts[0] : null;
-  const mostRecentAttemptLogError = mostRecentAttempt
-    ? JSON.parse(mostRecentAttempt.jsonResult)
-    : null;
+  const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   const displayName = match ? (
     <ScheduleName>{name}</ScheduleName>
@@ -149,114 +152,81 @@ export const ScheduleRow: React.FunctionComponent<{
           )}
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1 }}>
-        {attempts && attempts.length > 0
-          ? attempts.slice(0, NUM_RUNS_TO_DISPLAY).map((attempt, i) => (
+      <RowColumn style={{ flex: 1, textAlign: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-around"
+          }}
+        >
+          <Stat>
+            <StatNumber>{stats.ticksStarted}</StatNumber> Running
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksSkipped}</StatNumber> Skipped
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksSucceeded}</StatNumber> Succeeded
+          </Stat>
+          <Stat>
+            <StatNumber>{stats.ticksFailed}</StatNumber> Failed
+          </Stat>
+        </div>
+        <div>
+          {latestTick && latestTick.status === ScheduleTickStatus.FAILURE && (
+            <ErrorTag>
+              <Tag fill={true} minimal={true} intent={Intent.WARNING}>
+                Latest Attempt failed
+              </Tag>
+            </ErrorTag>
+          )}
+        </div>
+      </RowColumn>
+      <RowColumn
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}
+      >
+        <div>
+          {runs.map(run => {
+            return (
               <div
                 style={{
                   display: "inline-block",
                   cursor: "pointer",
                   marginRight: 5
                 }}
-                key={i}
+                key={run.runId}
               >
-                {attempt.run ? (
-                  <Link
-                    to={`/runs/${attempt.run.pipeline.name}/${attempt.run.runId}`}
+                <Link to={`/runs/${run.pipeline.name}/${run.runId}`}>
+                  <Tooltip
+                    position={"top"}
+                    content={titleForRun(run)}
+                    wrapperTagName="div"
+                    targetTagName="div"
                   >
-                    <Tooltip
-                      position={"top"}
-                      content={titleForRun(attempt.run)}
-                      wrapperTagName="div"
-                      targetTagName="div"
-                    >
-                      <RunStatus status={attempt.run.status} />
-                    </Tooltip>
-                  </Link>
-                ) : (
-                  <span
-                    onClick={() =>
-                      showCustomAlert({
-                        title: "Schedule Response",
-                        body: (
-                          <>
-                            <HighlightedCodeBlock
-                              value={JSON.stringify(
-                                JSON.parse(attempt.jsonResult),
-                                null,
-                                2
-                              )}
-                              languages={["json"]}
-                            />
-                          </>
-                        )
-                      })
-                    }
-                  >
-                    <Tooltip
-                      position={"top"}
-                      content="View response"
-                      wrapperTagName="div"
-                      targetTagName="div"
-                    >
-                      <AttemptStatus status={attempt.status} />
-                    </Tooltip>
-                  </span>
-                )}
+                    <RunStatus status={run.status} />
+                  </Tooltip>
+                </Link>
               </div>
-            ))
-          : "-"}
-        {attemptsCount > NUM_RUNS_TO_DISPLAY && (
-          <Link
-            to={`/schedules/${encodeURIComponent(
-              schedule.scheduleDefinition.name
-            )}`}
-            style={{ verticalAlign: "top" }}
-          >
-            {" "}
-            +{attemptsCount - NUM_RUNS_TO_DISPLAY} more
-          </Link>
-        )}
-      </RowColumn>
-      <RowColumn style={{ flex: 1 }}>
-        {mostRecentAttempt
-          ? unixTimestampToString(mostRecentAttempt.time)
-          : "-"}
+            );
+          })}
 
-        {mostRecentAttempt &&
-          mostRecentAttempt.status === ScheduleAttemptStatus.ERROR && (
-            <ErrorTag>
-              <Tag intent={Intent.WARNING}>
-                Latest run failed:
-                <ButtonLink
-                  onClick={() =>
-                    showCustomAlert({
-                      title: "Error",
-                      body: (
-                        <>
-                          <ErrorHeader>
-                            {mostRecentAttemptLogError.__typename}
-                          </ErrorHeader>
-                          <ErrorWrapper>
-                            <HighlightedCodeBlock
-                              value={JSON.stringify(
-                                mostRecentAttemptLogError,
-                                null,
-                                2
-                              )}
-                              languages={["json"]}
-                            />
-                          </ErrorWrapper>
-                        </>
-                      )
-                    })
-                  }
-                >
-                  View Error
-                </ButtonLink>
-              </Tag>
-            </ErrorTag>
+          {runsCount > NUM_RUNS_TO_DISPLAY && (
+            <Link
+              to={`/runs/?q=${encodeURIComponent(
+                `tag:dagster/schedule_name=${name}`
+              )}`}
+              style={{ verticalAlign: "top" }}
+            >
+              {" "}
+              +{runsCount - NUM_RUNS_TO_DISPLAY} more
+            </Link>
           )}
+        </div>
       </RowColumn>
       <RowColumn
         style={{
@@ -335,19 +305,25 @@ export const ScheduleRowFragment = gql`
       environmentConfigYaml
     }
     logsPath
-    attempts(limit: $limit) {
-      run {
-        runId
-        pipeline {
-          name
-        }
-        status
-      }
-      time
-      jsonResult
+    ticks(limit: $limit) {
+      tickId
       status
     }
-    attemptsCount
+    runsCount
+    runs(limit: 10) {
+      runId
+      pipeline {
+        name
+      }
+      status
+    }
+    stats {
+      ticksStarted
+      ticksSucceeded
+      ticksSkipped
+      ticksFailed
+    }
+    ticksCount
     status
   }
 `;
@@ -356,39 +332,20 @@ const ScheduleName = styled.pre`
   margin: 0;
 `;
 
-const ErrorHeader = styled.h3`
-  color: #b05c47;
-  font-weight: 400;
-  margin: 0.5em 0 0.25em;
+const Stat = styled.div`
+  text-align: center;
+  padding: 2px;
+  font-size: 10px;
 `;
 
-const ErrorWrapper = styled.pre`
-  background-color: rgba(206, 17, 38, 0.05);
-  border: 1px solid #d17257;
-  border-radius: 3px;
-  max-width: 90vw;
-  padding: 1em 2em;
+const StatNumber = styled.div`
+  font-size: 15px;
+  font-weight: bold;
 `;
 
 const ErrorTag = styled.div`
   display: block;
-  margin-top: 5px;
-`;
-
-const ButtonLink = styled.button`
-  color: #ffffff;
-  margin-left: 10px;
-  font-size: 12px;
-  background: none !important;
-  border: none;
-  padding: 0!important;
-  font-family: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-  &: hover {
-    color: #cccccc;
-  }
-}
+  margin-top: 8px;
 `;
 
 const START_SCHEDULE_MUTATION = gql`

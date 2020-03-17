@@ -145,10 +145,8 @@ class TestScheduleStorage:
         with pytest.raises(DagsterInvariantViolationError):
             storage.add_schedule(repository, schedule)
 
-    def build_tick(self, current_time):
-        return ScheduleTickData(
-            "my_schedule", "* * * * *", current_time, ScheduleTickStatus.STARTED
-        )
+    def build_tick(self, current_time, status=ScheduleTickStatus.STARTED, run_id=None, error=None):
+        return ScheduleTickData("my_schedule", "* * * * *", current_time, status, run_id, error)
 
     def test_create_tick(self, storage):
         assert storage
@@ -240,3 +238,36 @@ class TestScheduleStorage:
         assert tick.status == ScheduleTickStatus.FAILURE
         assert tick.run_id == None
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
+
+    def test_get_schedule_stats(self, storage):
+        assert storage
+
+        repository = RepositoryDefinition("repository_name")
+        current_time = time.time()
+
+        error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
+
+        # Create ticks
+        for x in range(2):
+            storage.create_schedule_tick(repository, self.build_tick(current_time))
+
+        for x in range(3):
+            storage.create_schedule_tick(
+                repository, self.build_tick(current_time, ScheduleTickStatus.SUCCESS, run_id=str(x))
+            )
+
+        for x in range(4):
+            storage.create_schedule_tick(
+                repository, self.build_tick(current_time, ScheduleTickStatus.SKIPPED),
+            )
+
+        for x in range(5):
+            storage.create_schedule_tick(
+                repository, self.build_tick(current_time, ScheduleTickStatus.FAILURE, error=error),
+            )
+
+        stats = storage.get_schedule_tick_stats_by_schedule(repository, "my_schedule")
+        assert stats.ticks_started == 2
+        assert stats.ticks_succeeded == 3
+        assert stats.ticks_skipped == 4
+        assert stats.ticks_failed == 5

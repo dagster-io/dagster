@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, ScheduleAttemptStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus, ScheduleAttemptStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -31,24 +31,36 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefin
   partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet | null;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline {
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks {
+  __typename: "ScheduleTick";
+  tickId: string;
+  status: ScheduleTickStatus;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run {
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_runs {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run_pipeline;
+  pipeline: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs_pipeline;
   status: PipelineRunStatus;
 }
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts {
-  __typename: "ScheduleAttempt";
-  run: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts_run | null;
-  time: number;
-  jsonResult: string;
-  status: ScheduleAttemptStatus;
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_stats {
+  __typename: "ScheduleTickStatsSnapshot";
+  ticksStarted: number;
+  ticksSucceeded: number;
+  ticksSkipped: number;
+  ticksFailed: number;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList {
+  __typename: "ScheduleTick";
+  tickId: string;
+  status: ScheduleTickStatus;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList_run {
@@ -69,9 +81,13 @@ export interface ScheduleRootQuery_scheduleOrError_RunningSchedule {
   __typename: "RunningSchedule";
   scheduleDefinition: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition;
   logsPath: string;
-  attempts: ScheduleRootQuery_scheduleOrError_RunningSchedule_attempts[];
-  attemptsCount: number;
+  ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticks[];
+  runsCount: number;
+  runs: ScheduleRootQuery_scheduleOrError_RunningSchedule_runs[];
+  stats: ScheduleRootQuery_scheduleOrError_RunningSchedule_stats;
+  ticksCount: number;
   status: ScheduleStatus;
+  ticksList: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
   attemptList: ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList[];
 }
 

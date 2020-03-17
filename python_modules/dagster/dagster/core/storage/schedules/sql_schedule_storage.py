@@ -7,7 +7,11 @@ from dagster import check
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import Schedule, ScheduleTick
-from dagster.core.scheduler.scheduler import ScheduleTickData
+from dagster.core.scheduler.scheduler import (
+    ScheduleTickData,
+    ScheduleTickStatsSnapshot,
+    ScheduleTickStatus,
+)
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -68,11 +72,37 @@ class SqlScheduleStorage(ScheduleStorage):
             .select_from(ScheduleTickTable)
             .where(ScheduleTickTable.c.repository_name == repository.name)
             .where(ScheduleTickTable.c.schedule_name == schedule_name)
+            .order_by(ScheduleTickTable.c.id.desc())
         )
 
         rows = self.execute(query)
         return list(
             map(lambda r: ScheduleTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
+        )
+
+    def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
+        check.inst_param(repository, 'repository', RepositoryDefinition)
+        check.str_param(schedule_name, 'schedule_name')
+
+        query = (
+            db.select([ScheduleTickTable.c.status, db.func.count()])
+            .select_from(ScheduleTickTable)
+            .where(ScheduleTickTable.c.repository_name == repository.name)
+            .where(ScheduleTickTable.c.schedule_name == schedule_name)
+            .group_by(ScheduleTickTable.c.status)
+        )
+
+        rows = self.execute(query)
+
+        counts = {}
+        for status, count in rows:
+            counts[status] = count
+
+        return ScheduleTickStatsSnapshot(
+            ticks_started=counts.get(ScheduleTickStatus.STARTED.value, 0),
+            ticks_succeeded=counts.get(ScheduleTickStatus.SUCCESS.value, 0),
+            ticks_skipped=counts.get(ScheduleTickStatus.SKIPPED.value, 0),
+            ticks_failed=counts.get(ScheduleTickStatus.FAILURE.value, 0),
         )
 
     def create_schedule_tick(self, repository, schedule_tick_data):
@@ -188,3 +218,4 @@ class SqlScheduleStorage(ScheduleStorage):
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(ScheduleTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(ScheduleTickTable.delete())  # pylint: disable=no-value-for-parameter

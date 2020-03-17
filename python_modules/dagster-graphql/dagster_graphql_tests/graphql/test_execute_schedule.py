@@ -13,9 +13,35 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite import SqliteScheduleStorage
 from dagster.utils import file_relative_path
+from dagster.utils.test import FilesytemTestScheduler
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
 from .utils import InMemoryRunLauncher
+
+SCHEDULE_TICKS_QUERY = '''
+{
+    scheduler {
+    ... on Scheduler {
+        runningSchedules {
+            scheduleDefinition {
+                name
+            }
+            ticks {
+                tickId
+                status
+            }
+            stats {
+                ticksStarted
+                ticksSucceeded
+                ticksSkipped
+                ticksFailed
+            }
+            ticksCount
+        }
+    }
+    }
+}
+'''
 
 
 def get_instance(temp_dir):
@@ -24,6 +50,7 @@ def get_instance(temp_dir):
         local_artifact_storage=LocalArtifactStorage(temp_dir),
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
+        scheduler=FilesytemTestScheduler(temp_dir),
         schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
         compute_log_manager=NoOpComputeLogManager(temp_dir),
     )
@@ -329,7 +356,7 @@ def test_partition_based_multi_mode_decorator():
 
 
 # Tests for ticks and execution user error boundary
-def test_tick_success():
+def test_tick_success(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
@@ -338,6 +365,7 @@ def test_tick_success():
         repository = context.get_repository()
 
         schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
         schedule_def = schedule_handle.get_schedule_def_by_name(
             "no_config_pipeline_hourly_schedule"
         )
@@ -347,8 +375,20 @@ def test_tick_success():
             context, START_SCHEDULED_EXECUTION_QUERY, variables={'scheduleName': schedule_def.name},
         )
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository, schedule_def.name)
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            schedule_result
+            for schedule_result in result.data['scheduler']['runningSchedules']
+            if schedule_result['scheduleDefinition']['name'] == schedule_def.name
+        )
 
+        assert schedule_result
+        assert schedule_result['stats']['ticksSucceeded'] == 1
+        snapshot.assert_match(schedule_result)
+
+        # Check directly against the DB
+        ticks = instance.get_schedule_ticks_by_schedule(repository, schedule_def.name)
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.schedule_name == schedule_def.name
@@ -358,19 +398,31 @@ def test_tick_success():
         assert tick.run_id
 
 
-def test_tick_skip():
+def test_tick_skip(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
         repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
 
         execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'no_config_should_execute'},
         )
+
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            x
+            for x in result.data['scheduler']['runningSchedules']
+            if x['scheduleDefinition']['name'] == 'no_config_should_execute'
+        )
+        assert schedule_result['stats']['ticksSkipped'] == 1
+        snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(repository, 'no_config_should_execute')
 
@@ -379,19 +431,31 @@ def test_tick_skip():
         assert tick.status == ScheduleTickStatus.SKIPPED
 
 
-def test_should_execute_scheduler_error():
+def test_should_execute_scheduler_error(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
         repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
 
         execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'should_execute_error_schedule'},
         )
+
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            x
+            for x in result.data['scheduler']['runningSchedules']
+            if x['scheduleDefinition']['name'] == 'should_execute_error_schedule'
+        )
+        assert schedule_result['stats']['ticksFailed'] == 1
+        snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(repository, 'should_execute_error_schedule')
 
@@ -405,19 +469,31 @@ def test_should_execute_scheduler_error():
         )
 
 
-def test_tags_scheduler_error():
+def test_tags_scheduler_error(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
         repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
 
         execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tags_error_schedule'},
         )
+
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            x
+            for x in result.data['scheduler']['runningSchedules']
+            if x['scheduleDefinition']['name'] == 'tags_error_schedule'
+        )
+        assert schedule_result['stats']['ticksFailed'] == 1
+        snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(repository, 'tags_error_schedule')
 
@@ -431,19 +507,31 @@ def test_tags_scheduler_error():
         )
 
 
-def test_enviornment_dict_scheduler_error():
+def test_enviornment_dict_scheduler_error(snapshot):
     with seven.TemporaryDirectory() as temp_dir:
         instance = get_instance(temp_dir)
         context = define_context_for_repository_yaml(
             path=file_relative_path(__file__, '../repository.yaml'), instance=instance
         )
         repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
 
         execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'environment_dict_error_schedule'},
         )
+
+        # Check tick data and stats through gql
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        schedule_result = next(
+            x
+            for x in result.data['scheduler']['runningSchedules']
+            if x['scheduleDefinition']['name'] == 'environment_dict_error_schedule'
+        )
+        assert schedule_result['stats']['ticksFailed'] == 1
+        snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(
             repository, 'environment_dict_error_schedule'
@@ -457,6 +545,29 @@ def test_enviornment_dict_scheduler_error():
             "Error occurred during the execution of environment_dict_fn for schedule "
             "environment_dict_error_schedule" in tick.error.message
         )
+
+
+def test_query_multiple_schedule_ticks(snapshot):
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
+
+        for scheduleName in [
+            'no_config_pipeline_hourly_schedule',
+            'no_config_should_execute',
+            'environment_dict_error_schedule',
+        ]:
+            execute_dagster_graphql(
+                context, START_SCHEDULED_EXECUTION_QUERY, variables={'scheduleName': scheduleName},
+            )
+
+        result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
+        snapshot.assert_match(result.data['scheduler']['runningSchedules'])
 
 
 def test_tagged_pipeline_schedule():

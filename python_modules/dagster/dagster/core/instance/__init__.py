@@ -559,6 +559,9 @@ class DagsterInstance:
     def get_schedule_ticks_by_schedule(self, repository, schedule_name):
         return self._schedule_storage.get_schedule_ticks_by_schedule(repository, schedule_name)
 
+    def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
+        return self._schedule_storage.get_schedule_tick_stats_by_schedule(repository, schedule_name)
+
     def all_schedules(self, repository):
         return self._schedule_storage.all_schedules(repository)
 

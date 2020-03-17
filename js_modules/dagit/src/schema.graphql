@@ -896,6 +896,9 @@ type RunningSchedule {
   status: ScheduleStatus!
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
+  ticks(limit: Int): [ScheduleTick!]!
+  ticksCount: Int!
+  stats: ScheduleTickStatsSnapshot!
   attempts(limit: Int): [ScheduleAttempt!]!
   attemptsCount: Int!
   logsPath: String!
@@ -995,6 +998,25 @@ enum ScheduleStatus {
   RUNNING
   STOPPED
   ENDED
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: ScheduleTickStatus!
+}
+
+type ScheduleTickStatsSnapshot {
+  ticksStarted: Int!
+  ticksSucceeded: Int!
+  ticksSkipped: Int!
+  ticksFailed: Int!
+}
+
+enum ScheduleTickStatus {
+  STARTED
+  SKIPPED
+  SUCCESS
+  FAILURE
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
