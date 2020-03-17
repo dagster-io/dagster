@@ -673,21 +673,21 @@ const GaantChartContainer = styled.div`
   .marker-dot {
     width: ${BOX_DOT_SIZE}px;
     height: ${BOX_DOT_SIZE}px;
-    border: 1px solid purple;
+    border: 1px solid rgb(27, 164, 206);
     border-radius: ${BOX_DOT_SIZE / 2}px;
   }
   .marker-whiskers {
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background: rgb(128, 0, 128, 0.2);
-    border-left: 1px solid purple;
-    border-right: 1px solid purple;
+    background: rgba(27, 164, 206, 0.2);
+    border-left: 1px solid rgb(27, 164, 206);
+    border-right: 1px solid rgb(27, 164, 206);
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {
-      border-bottom: 1px dashed purple;
+      border-bottom: 1px dashed rgb(27, 164, 206);
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
