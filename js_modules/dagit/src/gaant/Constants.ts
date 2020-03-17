@@ -3,7 +3,7 @@ import { GraphQueryItem } from "../GraphQueryImpl";
 export type IGaantNode = GraphQueryItem;
 
 export interface GaantViewport {
-  left: number;
+  left: number; // Note: pixel values
   top: number;
   width: number;
   height: number;
@@ -27,6 +27,8 @@ export interface GaantChartMarker extends GaantChartPlacement {
 
 export interface GaantChartLayout {
   boxes: GaantChartBox[];
+
+  // only present in timescaled layout
   markers: GaantChartMarker[];
 }
 

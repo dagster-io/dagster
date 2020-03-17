@@ -62,10 +62,10 @@ export interface IStepMetadata {
   state: IStepState;
   start?: number;
   end?: number;
-  transitionedAt: number;
   expectationResults: IExpectationResult[];
   materializations: IMaterialization[];
   markers: IMarker[];
+  retries: number[];
 }
 
 export interface IRunMetadataDict {
@@ -170,11 +170,12 @@ export function extractMetadataFromLogs(
     steps: {}
   };
 
+  // Returns the most recent marker with the given `key` without an end time
   const upsertMarker = (set: IMarker[], key: string) => {
-    let marker = set.find(f => f.key === key);
+    let marker = set.find(f => f.key === key && !f.end);
     if (!marker) {
       marker = { key };
-      set.push(marker);
+      set.unshift(marker);
     }
     return marker;
   };
@@ -218,8 +219,8 @@ export function extractMetadataFromLogs(
           state: IStepState.WAITING,
           start: undefined,
           elapsed: undefined,
-          transitionedAt: 0,
           markers: [],
+          retries: [],
           expectationResults: [],
           materializations: []
         } as IStepMetadata);
@@ -228,7 +229,6 @@ export function extractMetadataFromLogs(
         if (step.state === IStepState.WAITING) {
           step.state = IStepState.RUNNING;
           step.start = timestamp;
-          step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
         } else {
           // we have already received a success / skipped / failure event
           // and this message is out of order.
@@ -236,14 +236,13 @@ export function extractMetadataFromLogs(
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
         step.state = IStepState.SUCCEEDED;
         step.end = Math.max(timestamp, step.end || 0);
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
         step.state = IStepState.SKIPPED;
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         step.state = IStepState.FAILED;
         step.end = Math.max(timestamp, step.end || 0);
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
+      } else if (log.__typename === "ExecutionStepRestartEvent") {
+        step.retries.push(timestamp);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,

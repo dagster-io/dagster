@@ -1,8 +1,8 @@
 import * as React from "react";
 import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors, Checkbox } from "@blueprintjs/core";
+import styled from "styled-components";
 import { isEqual } from "lodash";
+import { Colors, Checkbox } from "@blueprintjs/core";
 
 import { weakmapMemoize } from "../Util";
 import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
@@ -45,6 +45,18 @@ import { ZoomSlider } from "./ZoomSlider";
 import { useViewport } from "./useViewport";
 
 export { GaantChartMode } from "./Constants";
+
+const HIGHLIGHT_TIME_EVENT = "gaant-highlight-time";
+
+/**
+ * Set or clear the highlighted time on the Gaant chart. Goal of this convenience
+ * method is to make the implementation (via event dispatch) private to this file.
+ */
+export function setHighlightedGaantChartTime(timestamp: null | string) {
+  document.dispatchEvent(
+    new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp })
+  );
+}
 
 /**
  * Converts a Run execution plan into a tree of `GraphQueryItem` items that
@@ -248,9 +260,17 @@ type GaantChartInnerProps = GaantChartProps &
     onDoubleClickStep: (stepName: string) => void;
   };
 
+interface TooltipState {
+  text: string;
+  cx: number;
+  cy: number;
+}
+
 const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps, onMoveToViewport } = useViewport();
   const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
+  const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
+  const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
   const { options, metadata } = props;
 
@@ -296,6 +316,14 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     return () => clearTimeout(timeout);
   }, [scale, setNowMs, metadata, nowMs]);
 
+  // Listen for events specifying hover time (eg: a marker at a particular timestamp)
+  // and sync them to our React state for display.
+  React.useEffect(() => {
+    const listener = (e: CustomEvent) => setHoveredTime(e.detail);
+    document.addEventListener(HIGHLIGHT_TIME_EVENT, listener);
+    return () => document.removeEventListener(HIGHLIGHT_TIME_EVENT, listener);
+  });
+
   // The `layout` we receive has been laid out and the rows / "waterfall" are final,
   // but it doesn't incorporate the display scale or run metadata. We stretch and
   // shift the layout boxes using this data to create the final layout for display.
@@ -325,6 +353,36 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     onMoveToViewport({ left: x, top: y }, true);
   }, [props.selectedStep]); // eslint-disable-line
 
+  const onUpdateTooltip = (e: React.MouseEvent<any>) => {
+    if (!(e.target instanceof HTMLElement)) return;
+    const tooltippedEl = e.target.closest("[data-tooltip-text]");
+    const text =
+      tooltippedEl &&
+      tooltippedEl instanceof HTMLElement &&
+      tooltippedEl.dataset.tooltipText;
+
+    if (text && (!tooltip || tooltip.text !== text)) {
+      const bounds = tooltippedEl!.getBoundingClientRect();
+      setTooltip({
+        text,
+        cx: bounds.left,
+        cy: bounds.bottom
+      });
+    } else if (!text && tooltip) {
+      setTooltip(null);
+    }
+  };
+
+  const highlightedMs: number[] = [];
+  if (hoveredTime) {
+    highlightedMs.push(hoveredTime);
+  }
+  if (focused) {
+    const meta = metadata?.steps[focused.node.name];
+    meta && meta.start && highlightedMs.push(meta.start);
+    meta && meta.end && highlightedMs.push(meta.end);
+  }
+
   const content = (
     <>
       {options.mode === GaantChartMode.WATERFALL_TIMED && (
@@ -333,19 +391,16 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           viewport={viewport}
           layoutSize={layoutSize}
           startMs={metadata?.firstLogAt || 0}
+          highlightedMs={highlightedMs}
           nowMs={nowMs}
-          highlightedMs={
-            focused
-              ? ([
-                  metadata?.steps[focused.node.name]?.start,
-                  metadata?.steps[focused.node.name]?.end
-                ].filter(Number) as number[])
-              : []
-          }
         />
       )}
       <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
-        <div style={{ position: "relative", ...layoutSize }}>
+        <div
+          style={{ position: "relative", ...layoutSize }}
+          onMouseOver={onUpdateTooltip}
+          onMouseOut={onUpdateTooltip}
+        >
           <GaantChartViewportContents
             options={options}
             metadata={metadata || EMPTY_RUN_METADATA}
@@ -358,6 +413,11 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
             onDoubleClickStep={props.onDoubleClickStep}
           />
         </div>
+        {tooltip && (
+          <GaantTooltip style={{ left: tooltip.cx, top: tooltip.cy }}>
+            {tooltip.text}
+          </GaantTooltip>
+        )}
       </div>
 
       <GraphQueryInput
@@ -445,7 +505,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
   }
 
   if (options.mode === GaantChartMode.WATERFALL_TIMED) {
-    layout.markers.forEach(marker => {
+    layout.markers.forEach((marker, idx) => {
       const bounds = boundsForBox(marker);
       const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
       if (!intersectsViewport(bounds)) {
@@ -454,8 +514,9 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
 
       items.push(
         <div
-          key={marker.key}
-          title={marker.key}
+          key={idx}
+          id={marker.key}
+          data-tooltip-text={marker.key}
           className={`
             chart-element
             ${useDot ? "marker-dot" : "marker-whiskers"}`}
@@ -483,7 +544,9 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     items.push(
       <div
         key={box.node.name}
-        title={box.node.name}
+        data-tooltip-text={
+          box.width < box.node.name.length * 5 ? box.node.name : undefined
+        }
         onClick={() => props.onApplyStepFilter?.(box.node.name)}
         onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
         onMouseEnter={() => props.setHoveredIdx(idx)}
@@ -693,6 +756,15 @@ const GaantChartContainer = styled.div`
   }
 `;
 
+const GaantTooltip = styled.div`
+  position: fixed;
+  font-size: 11px;
+  padding: 3px;
+  color: #a88860;
+  background: #fffaf5;
+  border: 1px solid #dbc5ad;
+  transform: translate(5px, 5px);
+`;
 const OptionsContainer = styled.div`
   min-height: 40px;
   display: flex;

@@ -3,20 +3,23 @@ import { Colors } from "@blueprintjs/core";
 import {
   GaantChartLayoutOptions,
   GaantChartBox,
-  BOX_SPACING_X,
-  LEFT_INSET,
   GaantChartMode,
   GaantChartLayout,
+  GaantChartMarker,
+  BOX_SPACING_X,
+  LEFT_INSET,
   BOX_WIDTH,
   BOX_DOT_WIDTH_CUTOFF,
-  IGaantNode,
-  GaantChartMarker
+  IGaantNode
 } from "./Constants";
 
 export interface BuildLayoutParams {
   nodes: IGaantNode[];
   mode: GaantChartMode;
 }
+
+const ROUNDED_GRADIENT =
+  "linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))";
 
 export const buildLayout = (params: BuildLayoutParams) => {
   const { nodes, mode } = params;
@@ -247,11 +250,22 @@ export const boxStyleFor = (
         boxShadow: `none`
       };
     }
+
     color = ColorsForStates[info.state] || Colors.GRAY3;
+
+    if (info.retries.length) {
+      const retry = info.retries[info.retries.length - 1];
+      const pct =
+        ((retry - info.start!) / ((info.end || Date.now()) - info.start!)) *
+        100;
+
+      color = `linear-gradient(90deg, ${Colors.GRAY3} ${pct}%, ${color} ${pct +
+        0.01}%)`;
+    }
   }
 
   return {
-    background: `${color} linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))`
+    background: `${ROUNDED_GRADIENT}, ${color}`
   };
 };
 
@@ -331,7 +345,7 @@ export const adjustLayoutWithRunMetadata = (
     metadata.globalMarkers.forEach(m => {
       if (m.start === undefined) return;
       markers.push({
-        key: m.key,
+        key: `global:${m.key}`,
         y: 0,
         x: xForMs(m.start),
         width: boxWidthFor(m, options, scale, nowMs)
@@ -339,10 +353,13 @@ export const adjustLayoutWithRunMetadata = (
     });
     Object.entries(metadata.steps).forEach(([name, step]) => {
       for (const m of step.markers) {
-        if (m.start === undefined) return;
+        if (m.start === undefined) continue;
+        const stepBox = layout.boxes.find(b => b.node.name === name);
+        if (!stepBox) continue;
+
         markers.push({
           key: `${name}:${m.key}`,
-          y: layout.boxes.find(b => b.node.name === name)!.y,
+          y: stepBox.y,
           x: xForMs(m.start),
           width: boxWidthFor(m, options, scale, nowMs)
         });
