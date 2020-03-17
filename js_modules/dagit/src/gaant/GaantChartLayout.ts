@@ -224,8 +224,8 @@ const boxWidthFor = (
 const ColorsForStates = {
   [IStepState.RUNNING]: Colors.GRAY3,
   [IStepState.SUCCEEDED]: Colors.GREEN2,
-  [IStepState.SKIPPED]: Colors.GOLD3,
-  [IStepState.FAILED]: Colors.RED3
+  [IStepState.FAILED]: Colors.RED3,
+  [IStepState.SKIPPED]: "rgb(173, 185, 152)"
 };
 
 export const boxStyleFor = (

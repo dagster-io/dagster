@@ -28,6 +28,9 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   onDoubleClickStep,
   onHighlightStep
 }) => {
+  const preparing = Object.keys(metadata.steps).filter(
+    key => metadata.steps[key].state === IStepState.PREPARING
+  );
   const executing = Object.keys(metadata.steps).filter(
     key => metadata.steps[key].state === IStepState.RUNNING
   );
@@ -49,6 +52,11 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <SectionHeader>Preparing</SectionHeader>
+      <Section>{preparing.map(renderStepItem)}</Section>
+      {preparing.length === 0 && (
+        <EmptyNotice>No steps are preparing to execute</EmptyNotice>
+      )}
       <SectionHeader>Executing</SectionHeader>
       <Section>{executing.map(renderStepItem)}</Section>
       {executing.length === 0 && (

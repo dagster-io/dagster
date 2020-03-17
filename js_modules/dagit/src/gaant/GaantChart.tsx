@@ -743,14 +743,14 @@ const GaantChartContainer = styled.div`
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background: rgba(27, 164, 206, 0.2);
-    border-left: 1px solid rgb(27, 164, 206);
-    border-right: 1px solid rgb(27, 164, 206);
+    background: rgba(27, 164, 206, 0.1);
+    border-left: 1px solid rgba(27, 164, 206, 0.6);
+    border-right: 1px solid rgba(27, 164, 206, 0.6);
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear;
 
     & > div {
-      border-bottom: 1px dashed rgb(27, 164, 206);
+      border-bottom: 1px dashed rgba(27, 164, 206, 0.6);
       height: ${(BOX_HEIGHT - BOX_MARGIN_Y * 2) / 2}px;
     }
   }
@@ -764,6 +764,7 @@ const GaantTooltip = styled.div`
   background: #fffaf5;
   border: 1px solid #dbc5ad;
   transform: translate(5px, 5px);
+  z-index: 4;
 `;
 const OptionsContainer = styled.div`
   min-height: 40px;

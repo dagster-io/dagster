@@ -6,6 +6,7 @@ import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
   WAITING = "waiting",
+  PREPARING = "preparing",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
   SKIPPED = "skipped",
@@ -216,7 +217,7 @@ export function extractMetadataFromLogs(
       const step =
         metadata.steps[stepKey] ||
         ({
-          state: IStepState.WAITING,
+          state: IStepState.PREPARING,
           start: undefined,
           elapsed: undefined,
           markers: [],
@@ -226,7 +227,10 @@ export function extractMetadataFromLogs(
         } as IStepMetadata);
 
       if (log.__typename === "ExecutionStepStartEvent") {
-        if (step.state === IStepState.WAITING) {
+        if (
+          step.state === IStepState.WAITING ||
+          step.state === IStepState.PREPARING
+        ) {
           step.state = IStepState.RUNNING;
           step.start = timestamp;
         } else {
@@ -241,6 +245,8 @@ export function extractMetadataFromLogs(
       } else if (log.__typename === "ExecutionStepFailureEvent") {
         step.state = IStepState.FAILED;
         step.end = Math.max(timestamp, step.end || 0);
+      } else if (log.__typename === "ExecutionStepUpForRetryEvent") {
+        step.state = IStepState.WAITING;
       } else if (log.__typename === "ExecutionStepRestartEvent") {
         step.retries.push(timestamp);
       } else if (log.__typename === "StepMaterializationEvent") {

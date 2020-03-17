@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Tag, Colors } from "@blueprintjs/core";
+import { Tag, Colors, Intent } from "@blueprintjs/core";
 import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
 import { EventTypeColumn } from "./LogsRowComponents";
 import { MetadataEntries } from "./MetadataEntry";
@@ -45,7 +45,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
         <DefaultContent
           message={node.message}
           eventType="Step Skipped"
-          eventIntent="warning"
+          eventColor="rgba(173, 185, 152, 0.3)"
         />
       );
 
@@ -145,7 +145,11 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
         );
       }
       return (
-        <DefaultContent message={node.message} eventType="Engine Event">
+        <DefaultContent
+          message={node.message}
+          eventType="Engine Event"
+          eventColor="rgba(27,164,206,0.2)"
+        >
           <MetadataEntries entries={node.metadataEntries} />
         </DefaultContent>
       );
@@ -163,10 +167,11 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
 const DefaultContent: React.FunctionComponent<{
   message: string;
   eventType?: string;
-  eventIntent?: "success" | "danger" | "warning";
+  eventColor?: string;
+  eventIntent?: Intent;
   metadataEntries?: MetadataEntryFragment[];
   children?: React.ReactElement;
-}> = ({ message, eventType, eventIntent, children }) => {
+}> = ({ message, eventType, eventColor, eventIntent, children }) => {
   return (
     <>
       <EventTypeColumn>
@@ -174,7 +179,17 @@ const DefaultContent: React.FunctionComponent<{
           <Tag
             minimal={true}
             intent={eventIntent}
-            style={{ fontSize: "0.9em" }}
+            style={
+              eventColor
+                ? {
+                    fontSize: "0.9em",
+                    color: "black",
+                    background: eventColor
+                  }
+                : {
+                    fontSize: "0.9em"
+                  }
+            }
           >
             {eventType}
           </Tag>
