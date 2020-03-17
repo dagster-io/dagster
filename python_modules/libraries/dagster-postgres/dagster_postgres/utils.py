@@ -2,8 +2,7 @@ import time
 
 import psycopg2
 
-from dagster.config import Field, Selector
-from dagster.core.instance.source_types import StringSource
+from dagster import Field, IntSource, Selector, StringSource
 from dagster.seven import quote_plus as urlquote
 
 
@@ -18,11 +17,11 @@ def pg_config():
         {
             'postgres_url': str,
             'postgres_db': {
-                'username': str,
+                'username': StringSource,
                 'password': StringSource,
-                'hostname': str,
-                'db_name': str,
-                'port': Field(int, is_required=False, default_value=5432),
+                'hostname': StringSource,
+                'db_name': StringSource,
+                'port': Field(IntSource, is_required=False, default_value=5432),
             },
         }
     )

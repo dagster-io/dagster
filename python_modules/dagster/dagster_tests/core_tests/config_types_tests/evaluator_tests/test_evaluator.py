@@ -1,5 +1,4 @@
-from dagster import Any, Bool, Field, Int, Noneable, Shape, String
-from dagster.config import Selector
+from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, StringSource
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import resolve_to_config_type
@@ -526,8 +525,6 @@ def test_any_with_default_value():
 
 
 def test_post_process_error():
-    from dagster.core.instance.source_types import StringSource
-
     error_result = eval_config_value_from_dagster_type(
         Shape({'foo': StringSource}), {'foo': {'env': 'THIS_ENV_VAR_DOES_NOT_EXIST'}}
     )

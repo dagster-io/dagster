@@ -96,9 +96,13 @@ def environ(env):
     """Temporarily set environment variables inside the context manager and
     fully restore previous environment afterwards
     """
-    original_env = dict(os.environ)
+    previous_values = {key: os.getenv(key) for key in env}
     os.environ.update(env)
     try:
         yield
     finally:
-        os.environ.update(original_env)
+        for key, value in previous_values.items():
+            if value is None:
+                del os.environ[key]
+            else:
+                os.environ[key] = value

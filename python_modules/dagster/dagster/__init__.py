@@ -97,7 +97,6 @@ from dagster.core.execution.results import (
     SolidExecutionResult,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.source_types import StringSource
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle
 from dagster.core.storage.init import InitSystemStorageContext
@@ -126,6 +125,9 @@ from dagster.utils.test import (
 )
 
 from .version import __version__
+
+from dagster.config.source import StringSource, IntSource  # isort:skip
+
 
 __all__ = [
     # Definition
@@ -255,6 +257,7 @@ __all__ = [
     'Permissive',
     'ScalarUnion',
     'StringSource',
+    'IntSource',
     'Selector',
     'Shape',
     # file things
