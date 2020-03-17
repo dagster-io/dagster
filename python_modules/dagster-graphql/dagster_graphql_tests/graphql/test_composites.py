@@ -42,18 +42,21 @@ fragment SolidInfo on Solid {
   }
   definition {
     ... on CompositeSolidDefinition {
+      solids { name }
       inputMappings {
-		definition {name}
+        definition { name }
         mappedInput {
-          definition {name}
-          solid {name}
+          definition { name }
+          solid { name }
         }
       }
-	  outputMappings {
-        definition {name}
+      outputMappings {
+        definition {
+          name
+        }
         mappedOutput {
-          definition {name}
-          solid {name}
+          definition { name }
+          solid { name }
         }
       }
     }

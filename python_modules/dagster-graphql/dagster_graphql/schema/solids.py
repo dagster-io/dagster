@@ -175,7 +175,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin)
         ISolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
 
     def resolve_solids(self, _graphene_info):
-        return build_dauphin_solids(self._solid_def, self._pipeline_snapshot.config_schema_snapshot)
+        return build_dauphin_solids(self._pipeline_snapshot, self._solid_def)
 
     def resolve_output_mappings(self, _):
         mappings = []

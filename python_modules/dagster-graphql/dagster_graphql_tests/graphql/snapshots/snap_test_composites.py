@@ -44,6 +44,14 @@ snapshots['test_composites 1'] = {
                                     }
                                 }
                             }
+                        ],
+                        'solids': [
+                            {
+                                'name': 'adder_1'
+                            },
+                            {
+                                'name': 'adder_2'
+                            }
                         ]
                     },
                     'inputs': [
@@ -104,6 +112,14 @@ snapshots['test_composites 1'] = {
                                         'name': 'adder_2'
                                     }
                                 }
+                            }
+                        ],
+                        'solids': [
+                            {
+                                'name': 'adder_1'
+                            },
+                            {
+                                'name': 'adder_2'
                             }
                         ]
                     },
@@ -228,6 +244,14 @@ snapshots['test_composites 1'] = {
                                     }
                                 }
                             }
+                        ],
+                        'solids': [
+                            {
+                                'name': 'adder_1'
+                            },
+                            {
+                                'name': 'adder_2'
+                            }
                         ]
                     },
                     'inputs': [
@@ -350,6 +374,14 @@ snapshots['test_composites 1'] = {
                                         'name': 'div_2'
                                     }
                                 }
+                            }
+                        ],
+                        'solids': [
+                            {
+                                'name': 'div_1'
+                            },
+                            {
+                                'name': 'div_2'
                             }
                         ]
                     },
