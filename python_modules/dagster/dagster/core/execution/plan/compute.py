@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions import ExpectationResult, Materialization, Output, Solid, SolidHandle
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.context.compute import ComputeExecutionContext
+from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 
 from .objects import ExecutionStep, StepInput, StepKind, StepOutput
@@ -47,7 +47,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
 def _yield_compute_results(compute_context, inputs, compute_fn):
     check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
     step = compute_context.step
-    user_event_sequence = compute_fn(ComputeExecutionContext(compute_context), inputs)
+    user_event_sequence = compute_fn(SolidExecutionContext(compute_context), inputs)
 
     if isinstance(user_event_sequence, Output):
         raise DagsterInvariantViolationError(

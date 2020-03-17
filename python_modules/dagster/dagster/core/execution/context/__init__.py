@@ -30,11 +30,11 @@ StepExecutionContext
  |                -------------------------------------------
  |                |                                         |
  |                V                                         V
- |--> ComputeExecutionContext              DagstermillInNotebookExecutionContext
+ |--> SolidExecutionContext              DagstermillInNotebookExecutionContext
                                              (defined in dagstermill)
 
 ====================================================================================================
 These contexts exist so that we can add system-defined stuff to the System* contexts without
 exposing them to users. System*Context classes are totally internal, whereas
-ComputeExecutionContext et all are passed to the user and exported at the global level.
+SolidExecutionContext et all are passed to the user and exported at the global level.
 '''

@@ -23,7 +23,7 @@ from dagster import (
 )
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.errors import user_code_error_boundary
-from dagster.core.execution.context.compute import ComputeExecutionContext
+from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
@@ -147,7 +147,7 @@ def _dm_solid_compute(name, notebook_path):
     check.str_param(notebook_path, 'notebook_path')
 
     def _t_fn(compute_context, inputs):
-        check.inst_param(compute_context, 'compute_context', ComputeExecutionContext)
+        check.inst_param(compute_context, 'compute_context', SolidExecutionContext)
         check.param_invariant(
             isinstance(compute_context.environment_dict, dict),
             'context',

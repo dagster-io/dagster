@@ -88,6 +88,7 @@ from dagster.core.execution.api import (
     execute_pipeline_with_preset,
 )
 from dagster.core.execution.config import ExecutorConfig, RunConfig
+from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext, TypeCheckContext
@@ -187,6 +188,7 @@ __all__ = [
     'RunConfig',
     'SolidExecutionResult',
     'SystemComputeExecutionContext',
+    'SolidExecutionContext',
     'SystemStorageData',
     'TypeCheckContext',
     'PipelineRun',
