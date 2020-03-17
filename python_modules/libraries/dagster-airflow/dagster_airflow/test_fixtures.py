@@ -84,6 +84,53 @@ def dagster_airflow_python_operator_pipeline():
 
 
 @pytest.fixture(scope='function')
+def dagster_airflow_custom_operator_pipeline():
+    '''This is a test fixture for running Dagster pipelines with custom operators as Airflow DAGs.
+
+    Usage:
+        from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
+
+        def test_airflow(dagster_airflow_python_operator_pipeline):
+            results = dagster_airflow_custom_operator_pipeline(
+                pipeline_name='test_pipeline',
+                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                operator=MyCustomOperator,
+                environment_yaml=['environments/test_*.yaml']
+            )
+            assert len(results) == 3
+    '''
+    from .factory import make_airflow_dag_for_operator
+    from .vendor.python_operator import PythonOperator
+
+    def _pipeline_fn(
+        handle,
+        pipeline_name,
+        operator,
+        environment_dict=None,
+        environment_yaml=None,
+        op_kwargs=None,
+        mode=None,
+        execution_date=timezone.utcnow(),
+    ):
+        if environment_dict is None and environment_yaml is not None:
+            environment_dict = load_yaml_from_glob_list(environment_yaml)
+
+        dag, tasks = make_airflow_dag_for_operator(
+            handle, pipeline_name, operator, environment_dict, mode=mode, op_kwargs=op_kwargs
+        )
+        assert isinstance(dag, DAG)
+
+        for task in tasks:
+            assert isinstance(task, PythonOperator)
+
+        return execute_tasks_in_dag(
+            dag, tasks, run_id=make_new_run_id(), execution_date=execution_date
+        )
+
+    return _pipeline_fn
+
+
+@pytest.fixture(scope='function')
 def dagster_airflow_docker_operator_pipeline():
     '''This is a test fixture for running Dagster pipelines as containerized Airflow DAGs.
 

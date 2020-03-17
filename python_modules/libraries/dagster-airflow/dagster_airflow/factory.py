@@ -1,12 +1,15 @@
 import datetime
 import re
+from collections import namedtuple
 
 from airflow import DAG
 from airflow.operators import BaseOperator
+from dagster_airflow.operators.util import check_storage_specified
 
 from dagster import ExecutionTargetHandle, RunConfig, check, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
+from dagster.core.instance.ref import InstanceRef
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -42,6 +45,59 @@ def _rename_for_airflow(name):
     constraints on our naming schemes.
     '''
     return re.sub(r'[^\w\-\.]', '_', name)[:AIRFLOW_MAX_DAG_NAME_LEN]
+
+
+class DagsterOperatorParameters(
+    namedtuple(
+        '_DagsterOperatorParameters',
+        (
+            'handle pipeline_name environment_dict '
+            'mode task_id step_keys dag instance_ref op_kwargs'
+        ),
+    )
+):
+    def __new__(
+        cls,
+        pipeline_name,
+        task_id,
+        handle=None,
+        environment_dict=None,
+        mode=None,
+        step_keys=None,
+        dag=None,
+        instance_ref=None,
+        op_kwargs=None,
+    ):
+        check_storage_specified(environment_dict)
+        return super(DagsterOperatorParameters, cls).__new__(
+            cls,
+            handle=check.opt_inst_param(handle, 'handle', ExecutionTargetHandle),
+            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
+            environment_dict=check.opt_dict_param(
+                environment_dict, 'environment_dict', key_type=str
+            ),
+            mode=check.opt_str_param(mode, 'mode'),
+            task_id=check.str_param(task_id, 'task_id'),
+            step_keys=check.opt_list_param(step_keys, 'step_keys', of_type=str),
+            dag=check.opt_inst_param(dag, 'dag', DAG),
+            instance_ref=check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef),
+            op_kwargs=check.opt_dict_param(op_kwargs.copy(), 'op_kwargs', key_type=str),
+        )
+
+    @property
+    def invocation_args(self):
+        InvocationArgs = namedtuple(
+            'InvocationArgs', 'handle pipeline_name environment_dict mode step_keys instance_ref',
+        )
+        invocation_args = InvocationArgs(
+            handle=self.handle,
+            pipeline_name=self.pipeline_name,
+            environment_dict=self.environment_dict,
+            mode=self.mode,
+            step_keys=self.step_keys,
+            instance_ref=self.instance_ref,
+        )
+        return invocation_args
 
 
 def _make_airflow_dag(
@@ -84,7 +140,6 @@ def _make_airflow_dag(
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
-
     pipeline = handle.build_pipeline_definition()
 
     if mode is None:
@@ -99,32 +154,20 @@ def _make_airflow_dag(
     coalesced_plan = coalesce_execution_steps(execution_plan)
 
     for solid_handle, solid_steps in coalesced_plan.items():
-
         step_keys = [step.key for step in solid_steps]
 
-        if operator == DagsterPythonOperator:
-            task = operator(
-                handle=handle,
-                pipeline_name=pipeline_name,
-                environment_dict=environment_dict,
-                mode=mode,
-                task_id=solid_handle,
-                step_keys=step_keys,
-                dag=dag,
-                instance_ref=instance.get_ref(),
-                **op_kwargs
-            )
-        else:
-            task = operator(
-                pipeline_name=pipeline_name,
-                environment_dict=environment_dict,
-                mode=mode,
-                task_id=solid_handle,
-                step_keys=step_keys,
-                dag=dag,
-                instance_ref=instance.get_ref(),
-                **op_kwargs
-            )
+        operator_parameters = DagsterOperatorParameters(
+            handle=handle,
+            pipeline_name=pipeline_name,
+            environment_dict=environment_dict,
+            mode=mode,
+            task_id=solid_handle,
+            step_keys=step_keys,
+            dag=dag,
+            instance_ref=instance.get_ref(),
+            op_kwargs=op_kwargs,
+        )
+        task = operator(operator_parameters)
 
         tasks[solid_handle] = task
 
@@ -199,6 +242,67 @@ def make_airflow_dag(
         dag_description=dag_description,
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
+    )
+
+
+def make_airflow_dag_for_operator(
+    handle,
+    pipeline_name,
+    operator,
+    environment_dict=None,
+    mode=None,
+    dag_id=None,
+    dag_description=None,
+    dag_kwargs=None,
+    op_kwargs=None,
+):
+    '''Construct an Airflow DAG corresponding to a given Dagster pipeline and custom operator.
+
+    `Custom operator template <https://github.com/dagster-io/dagster/blob/master/examples/dagster_examples/dagster_airflow/custom_operator.py>`_
+
+    Tasks in the resulting DAG will execute the Dagster logic they encapsulate run by the given
+    Operator :py:class:`BaseOperator <airflow.models.BaseOperator>`. If you
+    are looking for a containerized solution to provide better isolation, see instead
+    :py:func:`make_airflow_dag_containerized`.
+
+    This function should be invoked in an Airflow DAG definition file, such as that created by an
+    invocation of the dagster-airflow scaffold CLI tool.
+
+    Args:
+        handle (:class:`dagster.ExecutionTargetHandle`): reference to a Dagster RepositoryDefinition
+            or PipelineDefinition
+        pipeline_name (str): The name of the pipeline definition.
+        operator (type): The operator to use. Must be a class that inherits from
+            :py:class:`BaseOperator <airflow.models.BaseOperator>`
+        environment_dict (Optional[dict]): The environment config, if any, with which to compile
+            the pipeline to an execution plan, as a Python dict.
+        mode (Optional[str]): The mode in which to execute the pipeline.
+        instance (Optional[DagsterInstance]): The Dagster instance to use to execute the pipeline.
+        dag_id (Optional[str]): The id to use for the compiled Airflow DAG (passed through to
+            :py:class:`DAG <airflow:airflow.models.DAG>`).
+        dag_description (Optional[str]): The description to use for the compiled Airflow DAG
+            (passed through to :py:class:`DAG <airflow:airflow.models.DAG>`)
+        dag_kwargs (Optional[dict]): Any additional kwargs to pass to the Airflow
+            :py:class:`DAG <airflow:airflow.models.DAG>` constructor, including ``default_args``.
+        op_kwargs (Optional[dict]): Any additional kwargs to pass to the underlying Airflow
+            operator.
+
+    Returns:
+        (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
+        list of its constituent tasks.
+    '''
+    check.subclass_param(operator, 'operator', BaseOperator)
+
+    return _make_airflow_dag(
+        handle=handle,
+        pipeline_name=pipeline_name,
+        environment_dict=environment_dict,
+        mode=mode,
+        dag_id=dag_id,
+        dag_description=dag_description,
+        dag_kwargs=dag_kwargs,
+        op_kwargs=op_kwargs,
+        operator=operator,
     )
 
 

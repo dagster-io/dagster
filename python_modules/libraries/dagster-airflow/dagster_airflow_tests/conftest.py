@@ -3,7 +3,7 @@
 These make very heavy use of fixture dependency and scope. If you're unfamiliar with pytest
 fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 '''
-# pylint doesn't understand the way that pytest constructs fixture dependnecies
+# pylint doesn't understand the way that pytest constructs fixture dependencies
 # pylint: disable=redefined-outer-name, unused-argument
 import os
 import shutil

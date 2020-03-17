@@ -268,7 +268,7 @@ class ExecutionTargetHandle(object):
     one of the primary reasons that we pass this around vs. an instantiated
     RepositoryDefinition/PipelineDefinition object.
 
-    ### Creation
+    Creation:
     ExecutionTargetHandles can be created via the staticmethod constructors below.
 
         - for_repo_fn
@@ -292,7 +292,7 @@ class ExecutionTargetHandle(object):
     For repository-based handles, you can use the `with_pipeline_name(pipeline_name)` method on a
     repository handle to construct and return a new fully-qualified pipeline handle.
 
-    ### Usage
+    Usage:
     Handle objects support the following methods to construct `*Definition` objects:
 
         - handle.build_repository_definition() => RepositoryDefinition

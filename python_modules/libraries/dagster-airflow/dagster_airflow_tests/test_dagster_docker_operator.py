@@ -2,6 +2,7 @@ import os
 
 import pytest
 from airflow.exceptions import AirflowException
+from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
 from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
@@ -11,44 +12,50 @@ from .conftest import dagster_docker_image  # pylint: disable=unused-import
 def test_init_modified_docker_operator(
     dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
-    DagsterDockerOperator(
-        image=dagster_docker_image,
-        api_version='auto',
+    dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
         mode='default',
+        op_kwargs={'image': dagster_docker_image, 'api_version': 'auto',},
     )
+    DagsterDockerOperator(dagster_operator_parameters)
 
 
 def test_modified_docker_operator_bad_docker_conn(
     dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
-    operator = DagsterDockerOperator(
-        image=dagster_docker_image,
-        api_version='auto',
+    dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
-        docker_conn_id='foo_conn',
-        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
         mode='default',
+        op_kwargs={
+            'image': dagster_docker_image,
+            'api_version': 'auto',
+            'docker_conn_id': 'foo_conn',
+            'command': 'dagster-graphql --help',
+        },
     )
+    operator = DagsterDockerOperator(dagster_operator_parameters)
 
     with pytest.raises(AirflowException, match='The conn_id `foo_conn` isn\'t defined'):
         operator.execute({})
 
 
 def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=redefined-outer-name
-    operator = DagsterDockerOperator(
-        image=dagster_docker_image,
-        api_version='auto',
+    dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
-        command='dagster-graphql --help',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
         mode='default',
+        op_kwargs={
+            'image': dagster_docker_image,
+            'api_version': 'auto',
+            'command': 'dagster-graphql --help',
+        },
     )
+    operator = DagsterDockerOperator(dagster_operator_parameters)
     with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
         operator.execute({})
 
@@ -56,15 +63,18 @@ def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=
 def test_modified_docker_operator_bad_command(
     dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
-    operator = DagsterDockerOperator(
-        image=dagster_docker_image,
-        api_version='auto',
+    dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
-        command='dagster-graphql gargle bargle',
         environment_dict={'storage': {'filesystem': {}}},
         pipeline_name='',
         mode='default',
+        op_kwargs={
+            'image': dagster_docker_image,
+            'api_version': 'auto',
+            'command': 'dagster-graphql gargle bargle',
+        },
     )
+    operator = DagsterDockerOperator(dagster_operator_parameters)
     with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
         operator.execute({})
 
@@ -79,18 +89,21 @@ def test_modified_docker_operator_url(dagster_docker_image):  # pylint: disable=
         os.environ['DOCKER_TLS_VERIFY'] = 'bargle'
         os.environ['DOCKER_CERT_PATH'] = 'farfle'
 
-        operator = DagsterDockerOperator(
-            image=dagster_docker_image,
-            api_version='auto',
+        dagster_operator_parameters = DagsterOperatorParameters(
             task_id='nonce',
-            docker_url=docker_host or 'unix:///var/run/docker.sock',
-            tls_hostname=docker_host if docker_tls_verify else False,
-            tls_ca_cert=docker_cert_path,
-            command='dagster-graphql --help',
             environment_dict={'storage': {'filesystem': {}}},
             pipeline_name='',
             mode='default',
+            op_kwargs={
+                'image': dagster_docker_image,
+                'api_version': 'auto',
+                'docker_url': docker_host or 'unix:///var/run/docker.sock',
+                'tls_hostname': docker_host if docker_tls_verify else False,
+                'tls_ca_cert': docker_cert_path,
+                'command': 'dagster-graphql --help',
+            },
         )
+        operator = DagsterDockerOperator(dagster_operator_parameters)
 
         with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
             operator.execute({})

@@ -33,6 +33,12 @@ Execution context
 .. autoclass:: AbstractComputeExecutionContext
    :members:
 
+.. autoclass:: SystemComputeExecutionContext
+   :members:
+
+.. autoclass:: ExecutionTargetHandle
+   :members:
+
 .. currentmodule:: dagster
 
 Pipeline and solid results

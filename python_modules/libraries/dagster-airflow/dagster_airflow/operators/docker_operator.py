@@ -9,10 +9,10 @@ from dagster_airflow.vendor.docker_operator import DockerOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 from docker import APIClient, from_env
 
-from dagster import check, seven
+from dagster import seven
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import EngineEventData
-from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -131,44 +131,12 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
     # py2 compat
     # pylint: disable=keyword-arg-before-vararg
-    def __init__(
-        self,
-        task_id,
-        pipeline_name,
-        mode,
-        environment_dict=None,
-        step_keys=None,
-        dag=None,
-        instance_ref=None,
-        *args,
-        **kwargs
-    ):
-        check.str_param(pipeline_name, 'pipeline_name')
-        step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
-        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-        check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef)
-
+    def __init__(self, dagster_operator_parameters, *args):
+        kwargs = dagster_operator_parameters.op_kwargs
         tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
         host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
 
-        if not environment_dict.get('storage'):
-            raise AirflowException(
-                'No storage config found -- must configure storage for '
-                'the DagsterDockerOperator. Ex.: \n'
-                'storage:\n'
-                '  filesystem:\n'
-                '    config:'
-                '      base_dir: \'/some/shared/volume/mount/special_place\''
-                '\n\n --or--\n\n'
-                'storage:\n'
-                '  s3:\n'
-                '    s3_bucket: \'my-s3-bucket\'\n'
-                '\n\n --or--\n\n'
-                'storage:\n'
-                '  gcs:\n'
-                '    gcs_bucket: \'my-gcs-bucket\'\n'
-            )
-
+        environment_dict = dagster_operator_parameters.environment_dict
         if 'filesystem' in environment_dict['storage']:
             if (
                 'config' in (environment_dict['storage'].get('filesystem', {}) or {})
@@ -208,13 +176,17 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.environment_dict = environment_dict
-        self.pipeline_name = pipeline_name
-        self.mode = mode
-        self.step_keys = step_keys
+        self.pipeline_name = dagster_operator_parameters.pipeline_name
+        self.mode = dagster_operator_parameters.mode
+        self.step_keys = dagster_operator_parameters.step_keys
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
-        self.instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
+        self.instance = (
+            DagsterInstance.from_ref(dagster_operator_parameters.instance_ref)
+            if dagster_operator_parameters.instance_ref
+            else None
+        )
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -238,7 +210,12 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             kwargs['environment'] = get_aws_environment()
 
         super(DagsterDockerOperator, self).__init__(
-            task_id=task_id, dag=dag, tmp_dir=tmp_dir, host_tmp_dir=host_tmp_dir, *args, **kwargs
+            task_id=dagster_operator_parameters.task_id,
+            dag=dagster_operator_parameters.dag,
+            tmp_dir=tmp_dir,
+            host_tmp_dir=host_tmp_dir,
+            *args,
+            **kwargs
         )
 
     @property

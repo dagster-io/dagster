@@ -8,10 +8,10 @@ from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
 
 from dagster import __version__ as dagster_version
-from dagster import check, seven
+from dagster import seven
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import EngineEventData
-from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -36,55 +36,26 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
     # py2 compat
     # pylint: disable=keyword-arg-before-vararg
-    def __init__(
-        self,
-        task_id,
-        environment_dict=None,
-        pipeline_name=None,
-        mode=None,
-        step_keys=None,
-        dag=None,
-        instance_ref=None,
-        *args,
-        **kwargs
-    ):
-        check.str_param(pipeline_name, 'pipeline_name')
-        step_keys = check.opt_list_param(step_keys, 'step_keys', of_type=str)
-        environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-        check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef)
-
+    def __init__(self, operator_parameters, *args):
+        kwargs = operator_parameters.op_kwargs
+        self.pipeline_name = operator_parameters.pipeline_name
         kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
-            pipeline_name=pipeline_name, task_id=task_id
+            pipeline_name=self.pipeline_name, task_id=operator_parameters.task_id
         ).replace(
             '_', '-'  # underscores are not permissible DNS names
         )
 
-        if 'storage' not in environment_dict:
-            raise AirflowException(
-                'No storage config found -- must configure either filesystem or s3 storage for '
-                'the DagsterKubernetesPodOperator. Ex.: \n'
-                'storage:\n'
-                '  filesystem:\n'
-                '    base_dir: \'/some/shared/volume/mount/special_place\''
-                '\n\n --or--\n\n'
-                'storage:\n'
-                '  s3:\n'
-                '    s3_bucket: \'my-s3-bucket\'\n'
-            )
-
-        check.invariant(
-            'in_memory' not in environment_dict.get('storage', {}),
-            'Cannot use in-memory storage with Airflow, must use S3',
-        )
-
-        self.environment_dict = environment_dict
-        self.pipeline_name = pipeline_name
-        self.mode = mode
-        self.step_keys = step_keys
+        self.environment_dict = operator_parameters.environment_dict
+        self.mode = operator_parameters.mode
+        self.step_keys = operator_parameters.step_keys
         self._run_id = None
         # self.instance might be None in, for instance, a unit test setting where the operator
         # was being directly instantiated without passing through make_airflow_dag
-        self.instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
+        self.instance = (
+            DagsterInstance.from_ref(operator_parameters.instance_ref)
+            if operator_parameters.instance_ref
+            else None
+        )
 
         # Store Airflow DAG run timestamp so that we can pass along via execution metadata
         self.airflow_ts = kwargs.get('ts')
@@ -112,7 +83,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         kwargs['xcom_push'] = False
 
         super(DagsterKubernetesPodOperator, self).__init__(
-            task_id=task_id, dag=dag, *args, **kwargs
+            task_id=operator_parameters.task_id, dag=operator_parameters.dag, *args, **kwargs
         )
 
     @property
