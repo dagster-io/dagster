@@ -52,10 +52,24 @@ const HIGHLIGHT_TIME_EVENT = "gaant-highlight-time";
  * Set or clear the highlighted time on the Gaant chart. Goal of this convenience
  * method is to make the implementation (via event dispatch) private to this file.
  */
-export function setHighlightedGaantChartTime(timestamp: null | string) {
-  document.dispatchEvent(
-    new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp })
-  );
+let highlightTimer: NodeJS.Timeout;
+
+export function setHighlightedGaantChartTime(
+  timestamp: null | string,
+  debounced = false
+) {
+  clearTimeout(highlightTimer);
+
+  if (debounced) {
+    highlightTimer = setTimeout(
+      () => setHighlightedGaantChartTime(timestamp, false),
+      400
+    );
+  } else {
+    document.dispatchEvent(
+      new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp })
+    );
+  }
 }
 
 /**

@@ -190,7 +190,7 @@ const StructuredMemoizedContent: React.FunctionComponent<{
   ({ node }) => (
     <Row
       level={LogLevel.INFO}
-      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp, true)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
     >
       <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
@@ -248,7 +248,7 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
   ({ node }) => (
     <Row
       level={node.level}
-      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp, true)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
     >
       <SolidColumn stepKey={node.step && node.step.key} />
