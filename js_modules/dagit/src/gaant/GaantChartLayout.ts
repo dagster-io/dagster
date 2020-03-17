@@ -21,6 +21,12 @@ export interface BuildLayoutParams {
 const ROUNDED_GRADIENT =
   "linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))";
 
+export const BOX_EXIT_STATES = [
+  IStepState.PREPARING, // retry occurred
+  IStepState.SUCCEEDED,
+  IStepState.FAILED
+];
+
 export const buildLayout = (params: BuildLayoutParams) => {
   const { nodes, mode } = params;
 
@@ -33,6 +39,8 @@ export const buildLayout = (params: BuildLayoutParams) => {
 
   const boxes: GaantChartBox[] = nodes.filter(hasNoDependencies).map(node => ({
     node: node,
+    key: node.name,
+    state: undefined,
     children: [],
     x: -1,
     y: -1,
@@ -184,7 +192,9 @@ const addChildren = (
       if (depBoxIdx === -1) {
         depBox = {
           children: [],
+          key: depNode.name,
           node: depNode,
+          state: undefined,
           width: BOX_WIDTH,
           root: false,
           x: 0,
@@ -222,6 +232,7 @@ const boxWidthFor = (
 };
 
 const ColorsForStates = {
+  [IStepState.PREPARING]: Colors.ORANGE2,
   [IStepState.RUNNING]: Colors.GRAY3,
   [IStepState.SUCCEEDED]: Colors.GREEN2,
   [IStepState.FAILED]: Colors.RED3,
@@ -229,43 +240,31 @@ const ColorsForStates = {
 };
 
 export const boxStyleFor = (
-  stepName: string,
+  state: IStepState | undefined,
   context: {
     metadata: IRunMetadataDict;
     options: { mode: GaantChartMode };
   }
 ) => {
-  let color = "#2491eb";
-
   if (
     context.metadata.firstLogAt ||
     context.options.mode === GaantChartMode.WATERFALL_TIMED
   ) {
-    const info = context.metadata.steps[stepName];
-    if (!info || info.state === "waiting") {
-      return {
-        color: Colors.DARK_GRAY4,
-        background: Colors.WHITE,
-        border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
-        boxShadow: `none`
-      };
-    }
-
-    color = ColorsForStates[info.state] || Colors.GRAY3;
-
-    if (info.retries.length) {
-      const retry = info.retries[info.retries.length - 1];
-      const pct =
-        ((retry - info.start!) / ((info.end || Date.now()) - info.start!)) *
-        100;
-
-      color = `linear-gradient(90deg, ${Colors.GRAY3} ${pct}%, ${color} ${pct +
-        0.01}%)`;
-    }
+    return state
+      ? {
+          background: `${ROUNDED_GRADIENT}, ${ColorsForStates[state] ||
+            Colors.GRAY3}`
+        }
+      : {
+          color: Colors.DARK_GRAY4,
+          background: Colors.WHITE,
+          border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
+          boxShadow: `none`
+        };
   }
 
   return {
-    background: `${ROUNDED_GRADIENT}, ${color}`
+    background: `${ROUNDED_GRADIENT}, #2491eb`
   };
 };
 
@@ -306,6 +305,11 @@ export const adjustLayoutWithRunMetadata = (
   const markers: GaantChartMarker[] = [];
   const { firstLogAt } = metadata;
 
+  // Apply step states to boxes
+  for (const box of boxes) {
+    box.state = metadata.steps[box.node.name]?.state;
+  }
+
   // Move and size boxes based on the run metadata. Note that we don't totally invalidate
   // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
   // step ordering, etc. should obey the constraints we already planned for). We just push
@@ -313,14 +317,40 @@ export const adjustLayoutWithRunMetadata = (
   if (options.mode === GaantChartMode.WATERFALL_TIMED && firstLogAt) {
     const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt!) * scale;
 
-    // Apply all box widths
-    for (const box of boxes) {
-      box.width = boxWidthFor(
-        metadata.steps[box.node.name] || {},
-        options,
-        scale,
-        nowMs
-      );
+    // Apply X + widths to boxes, and break apart retries into their own boxes by looking
+    // at the transitions recorded for each step.
+    for (let ii = boxes.length - 1; ii >= 0; ii--) {
+      const box = boxes[ii];
+      const meta = metadata.steps[box.node.name];
+      if (!meta) {
+        continue;
+      }
+      if (meta.state === IStepState.SKIPPED) {
+        box.state = IStepState.SKIPPED;
+        continue;
+      }
+
+      const next: GaantChartBox[] = [];
+      let start = null;
+      for (const t of meta.transitions) {
+        if (t.state === IStepState.RUNNING) {
+          start = t.time;
+        }
+        if (start && BOX_EXIT_STATES.includes(t.state)) {
+          next.push({
+            ...box,
+            state: t.state,
+            x: xForMs(start),
+            key: `${box.key}-${next.length}`,
+            width: boxWidthFor({ start, end: t.time }, options, scale, nowMs)
+          });
+        }
+      }
+
+      Object.assign(box, next[0]);
+      if (next.length > 1) {
+        boxes.splice(ii, 0, ...next.slice(1));
+      }
     }
 
     // Traverse the graph and push boxes right as we go to account for new widths
@@ -369,10 +399,7 @@ export const adjustLayoutWithRunMetadata = (
 
   // Apply display options / filtering
   if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
-    boxes = boxes.filter(b => {
-      const state = metadata.steps[b.node.name]?.state || "waiting";
-      return state !== "waiting";
-    });
+    boxes = boxes.filter(b => !!metadata.steps[b.node.name]?.state);
   }
 
   return { boxes, markers };

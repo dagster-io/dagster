@@ -93,7 +93,7 @@ const StepItem: React.FunctionComponent<{
       ) : (
         <StepStatusDot
           style={{
-            ...boxStyleFor(name, {
+            ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
               options: { mode: GaantChartMode.WATERFALL_TIMED }
             })

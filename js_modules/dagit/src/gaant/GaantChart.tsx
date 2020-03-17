@@ -48,12 +48,12 @@ export { GaantChartMode } from "./Constants";
 
 const HIGHLIGHT_TIME_EVENT = "gaant-highlight-time";
 
+let highlightTimer: NodeJS.Timeout;
+
 /**
  * Set or clear the highlighted time on the Gaant chart. Goal of this convenience
  * method is to make the implementation (via event dispatch) private to this file.
  */
-let highlightTimer: NodeJS.Timeout;
-
 export function setHighlightedGaantChartTime(
   timestamp: null | string,
   debounced = false
@@ -282,7 +282,7 @@ interface TooltipState {
 
 const GaantChartInner = (props: GaantChartInnerProps) => {
   const { viewport, containerProps, onMoveToViewport } = useViewport();
-  const [hoveredIdx, setHoveredIdx] = React.useState<number>(-1);
+  const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
   const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
@@ -348,9 +348,6 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     scale,
     nowMs
   );
-  const focused = layout.boxes.find(b => b.node.name === props.selectedStep);
-  const hovered = layout.boxes[hoveredIdx];
-
   const layoutSize = {
     width: Math.max(0, ...layout.boxes.map(b => b.x + b.width + BOX_SPACING_X)),
     height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
@@ -390,9 +387,8 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const highlightedMs: number[] = [];
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
-  }
-  if (focused) {
-    const meta = metadata?.steps[focused.node.name];
+  } else if (props.selectedStep) {
+    const meta = metadata?.steps[props.selectedStep];
     meta && meta.start && highlightedMs.push(meta.start);
     meta && meta.end && highlightedMs.push(meta.end);
   }
@@ -419,10 +415,10 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
             options={options}
             metadata={metadata || EMPTY_RUN_METADATA}
             layout={layout}
-            hovered={hovered}
-            focused={focused}
+            hoveredStep={hoveredStep}
+            focusedStep={props.selectedStep}
             viewport={viewport}
-            setHoveredIdx={setHoveredIdx}
+            setHoveredNodeName={setHoveredNodeName}
             onApplyStepFilter={props.onApplyStepFilter}
             onDoubleClickStep={props.onDoubleClickStep}
           />
@@ -455,9 +451,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           {...props}
           nowMs={nowMs}
           metadata={metadata}
-          onHighlightStep={name => {
-            setHoveredIdx(layout.boxes.findIndex(b => b.node.name === name));
-          }}
+          onHighlightStep={name => setHoveredNodeName(name)}
         />
       }
     />
@@ -470,16 +464,23 @@ interface GaantChartViewportContentsProps {
   options: GaantChartLayoutOptions;
   metadata: IRunMetadataDict;
   layout: GaantChartLayout;
-  hovered: GaantChartBox | undefined;
-  focused: GaantChartBox | undefined;
+  hoveredStep: string | null;
+  focusedStep: string | null;
   viewport: GaantViewport;
-  setHoveredIdx: (idx: number) => void;
+  setHoveredNodeName: (name: string | null) => void;
   onDoubleClickStep: (step: string) => void;
   onApplyStepFilter?: (step: string) => void;
 }
 
 const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
-  const { viewport, layout, hovered, focused, metadata, options } = props;
+  const {
+    viewport,
+    layout,
+    hoveredStep,
+    focusedStep,
+    metadata,
+    options
+  } = props;
   const items: React.ReactChild[] = [];
 
   // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
@@ -505,10 +506,11 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         items.push(
           <GaantLine
             darkened={
-              (focused || hovered) === box || (focused || hovered) === child
+              (focusedStep || hoveredStep) === box.node.name ||
+              (focusedStep || hoveredStep) === child.node.name
             }
             dotted={childNotDrawn || childWaiting}
-            key={`${box.node.name}-${child.node.name}-${childIdx}`}
+            key={`${box.key}-${child.key}-${childIdx}`}
             depNotDrawn={childNotDrawn}
             depIdx={childIdx}
             {...bounds}
@@ -517,6 +519,42 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
       });
     });
   }
+
+  layout.boxes.forEach(box => {
+    const bounds = boundsForBox(box);
+    const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
+    if (!intersectsViewport(bounds)) {
+      return;
+    }
+
+    items.push(
+      <div
+        key={box.key}
+        data-tooltip-text={
+          box.width < box.node.name.length * 5 ? box.node.name : undefined
+        }
+        onClick={() => props.onApplyStepFilter?.(box.node.name)}
+        onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
+        onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
+        onMouseLeave={() => props.setHoveredNodeName(null)}
+        className={`
+            chart-element
+            ${useDot ? "dot" : "box"}
+            ${focusedStep === box.node.name && "focused"}
+            ${hoveredStep === box.node.name && "hovered"}`}
+        style={{
+          left: bounds.minX,
+          top:
+            bounds.minY +
+            (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+          width: useDot ? BOX_DOT_SIZE : box.width,
+          ...boxStyleFor(box.state, { metadata, options })
+        }}
+      >
+        {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
+      </div>
+    );
+  });
 
   if (options.mode === GaantChartMode.WATERFALL_TIMED) {
     layout.markers.forEach((marker, idx) => {
@@ -547,42 +585,6 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
       );
     });
   }
-
-  layout.boxes.forEach((box, idx) => {
-    const bounds = boundsForBox(box);
-    const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
-    if (!intersectsViewport(bounds)) {
-      return;
-    }
-
-    items.push(
-      <div
-        key={box.node.name}
-        data-tooltip-text={
-          box.width < box.node.name.length * 5 ? box.node.name : undefined
-        }
-        onClick={() => props.onApplyStepFilter?.(box.node.name)}
-        onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
-        onMouseEnter={() => props.setHoveredIdx(idx)}
-        onMouseLeave={() => props.setHoveredIdx(-1)}
-        className={`
-            chart-element
-            ${useDot ? "dot" : "box"}
-            ${focused === box && "focused"}
-            ${hovered === box && "hovered"}`}
-        style={{
-          left: bounds.minX,
-          top:
-            bounds.minY +
-            (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
-          width: useDot ? BOX_DOT_SIZE : box.width,
-          ...boxStyleFor(box.node.name, { metadata, options })
-        }}
-      >
-        {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
-      </div>
-    );
-  });
 
   return <>{items}</>;
 };
@@ -757,7 +759,7 @@ const GaantChartContainer = styled.div`
     display: inline-block;
     position: absolute;
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
-    background: rgba(27, 164, 206, 0.1);
+    background: rgba(27, 164, 206, 0.09);
     border-left: 1px solid rgba(27, 164, 206, 0.6);
     border-right: 1px solid rgba(27, 164, 206, 0.6);
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
@@ -778,7 +780,7 @@ const GaantTooltip = styled.div`
   background: #fffaf5;
   border: 1px solid #dbc5ad;
   transform: translate(5px, 5px);
-  z-index: 4;
+  z-index: 100;
 `;
 const OptionsContainer = styled.div`
   min-height: 40px;

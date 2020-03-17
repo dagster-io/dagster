@@ -5,7 +5,6 @@ import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderM
 import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
-  WAITING = "waiting",
   PREPARING = "preparing",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
@@ -42,8 +41,8 @@ interface IDisplayEventItem {
 }
 
 export interface IStepDisplayEvent {
-  icon: IStepDisplayIconType;
   text: string;
+  icon: IStepDisplayIconType;
   items: IDisplayEventItem[];
 }
 
@@ -60,13 +59,23 @@ export interface IMarker {
 }
 
 export interface IStepMetadata {
+  // current state
   state: IStepState;
+
+  // execution start and stop (user-code)
   start?: number;
   end?: number;
+
+  // current state + prev state transition times
+  transitions: {
+    state: IStepState;
+    time: number;
+  }[];
+
+  // accumulated metadata
   expectationResults: IExpectationResult[];
   materializations: IMaterialization[];
   markers: IMarker[];
-  retries: number[];
 }
 
 export interface IRunMetadataDict {
@@ -181,6 +190,16 @@ export function extractMetadataFromLogs(
     return marker;
   };
 
+  const upsertState = (
+    step: IStepMetadata,
+    time: number,
+    state: IStepState
+  ) => {
+    step.transitions.push({ time, state });
+    step.transitions = step.transitions.sort((a, b) => a.time - b.time);
+    step.state = state;
+  };
+
   logs.forEach(log => {
     const timestamp = Number.parseInt(log.timestamp, 10);
 
@@ -218,8 +237,14 @@ export function extractMetadataFromLogs(
         metadata.steps[stepKey] ||
         ({
           state: IStepState.PREPARING,
+          transitions: [
+            {
+              state: IStepState.PREPARING,
+              time: timestamp
+            }
+          ],
           start: undefined,
-          elapsed: undefined,
+          end: undefined,
           markers: [],
           retries: [],
           expectationResults: [],
@@ -227,28 +252,20 @@ export function extractMetadataFromLogs(
         } as IStepMetadata);
 
       if (log.__typename === "ExecutionStepStartEvent") {
-        if (
-          step.state === IStepState.WAITING ||
-          step.state === IStepState.PREPARING
-        ) {
-          step.state = IStepState.RUNNING;
-          step.start = timestamp;
-        } else {
-          // we have already received a success / skipped / failure event
-          // and this message is out of order.
-        }
+        upsertState(step, timestamp, IStepState.RUNNING);
+        step.start = timestamp;
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
-        step.state = IStepState.SUCCEEDED;
+        upsertState(step, timestamp, IStepState.SUCCEEDED);
         step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
-        step.state = IStepState.SKIPPED;
+        upsertState(step, timestamp, IStepState.SKIPPED);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
-        step.state = IStepState.FAILED;
+        upsertState(step, timestamp, IStepState.FAILED);
         step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === "ExecutionStepUpForRetryEvent") {
-        step.state = IStepState.WAITING;
+        upsertState(step, timestamp, IStepState.PREPARING);
       } else if (log.__typename === "ExecutionStepRestartEvent") {
-        step.retries.push(timestamp);
+        upsertState(step, timestamp, IStepState.RUNNING);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,

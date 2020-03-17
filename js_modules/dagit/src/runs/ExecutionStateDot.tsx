@@ -10,7 +10,6 @@ export const ExecutionStateDot = styled.div<{ state: IStepState }>`
   transition: background 200ms linear;
   background: ${({ state }) =>
     ({
-      [IStepState.WAITING]: Colors.GRAY1,
       [IStepState.RUNNING]: Colors.GRAY3,
       [IStepState.SUCCEEDED]: Colors.GREEN2,
       [IStepState.SKIPPED]: Colors.GOLD3,
@@ -19,7 +18,6 @@ export const ExecutionStateDot = styled.div<{ state: IStepState }>`
   &:hover {
     background: ${({ state }) =>
       ({
-        [IStepState.WAITING]: Colors.GRAY1,
         [IStepState.RUNNING]: Colors.GRAY3,
         [IStepState.SUCCEEDED]: Colors.GREEN2,
         [IStepState.SKIPPED]: Colors.GOLD3,

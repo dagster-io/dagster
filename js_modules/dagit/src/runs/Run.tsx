@@ -296,7 +296,7 @@ const RunWithData = ({
                   selectedStep={selectedStep}
                   selectedStepState={
                     (selectedStep && metadata.steps[selectedStep]?.state) ||
-                    IStepState.WAITING
+                    IStepState.PREPARING
                   }
                 />
               }
@@ -317,7 +317,7 @@ const RunWithData = ({
                 filterStep={selectedStep}
                 filterStepState={
                   (selectedStep && metadata.steps[selectedStep]?.state) ||
-                  IStepState.WAITING
+                  IStepState.PREPARING
                 }
               />
               <LogsScrollingTable

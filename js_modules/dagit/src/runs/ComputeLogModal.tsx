@@ -27,12 +27,7 @@ export const ComputeLogLink = ({
   const [isOpen, setOpen] = React.useState(false);
   const run = React.useContext(RunContext);
 
-  if (
-    !run ||
-    !run.runId ||
-    runState === IStepState.WAITING ||
-    runState === IStepState.SKIPPED
-  ) {
+  if (!run || !run.runId || runState === IStepState.SKIPPED) {
     return null;
   }
 
