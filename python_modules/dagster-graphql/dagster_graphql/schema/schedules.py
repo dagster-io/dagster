@@ -16,10 +16,10 @@ from dagster_graphql.schema.errors import (
 from dagster import check
 from dagster.core.definitions import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
 from dagster.core.scheduler import Schedule, ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickStatsSnapshot
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 
 class DauphinScheduleStatus(dauphin.Enum):
@@ -328,14 +328,13 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(tags={'dagster/schedule_name': self._schedule.name}),
-                limit=kwargs.get('limit'),
+                filters=PipelineRunsFilter.for_schedule(self._schedule), limit=kwargs.get('limit'),
             )
         ]
 
     def resolve_runs_count(self, graphene_info):
         return graphene_info.context.instance.get_runs_count(
-            filters=PipelineRunsFilter(tags={"dagster/schedule_name": self._schedule.name})
+            filters=PipelineRunsFilter.for_schedule(self._schedule)
         )
 
 

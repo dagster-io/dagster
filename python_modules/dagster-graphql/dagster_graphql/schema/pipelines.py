@@ -10,8 +10,8 @@ from dagster import (
     ResourceDefinition,
     check,
 )
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.snap.config_types import ConfigSchemaSnapshot, snap_from_field
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
 
 from .config_types import DauphinConfigTypeField

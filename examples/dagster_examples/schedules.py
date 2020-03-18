@@ -2,9 +2,8 @@ import datetime
 from collections import defaultdict
 
 from dagster import PartitionSetDefinition, ScheduleExecutionContext
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.scheduler import SchedulerHandle
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.partitions import date_partition_range
 
 

@@ -1,7 +1,6 @@
 import pytest
 
-from dagster.core.definitions.pipeline import PipelineRunsFilter
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 
 

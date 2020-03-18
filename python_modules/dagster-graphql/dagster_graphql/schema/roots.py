@@ -42,11 +42,11 @@ from dagster_graphql.implementation.fetch_types import get_dagster_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector, PipelineRunsFilter
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
 from .config_types import to_dauphin_config_type
 from .runs import DauphinPipelineRunStatus

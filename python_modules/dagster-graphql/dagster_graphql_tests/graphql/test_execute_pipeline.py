@@ -6,9 +6,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import parse
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name

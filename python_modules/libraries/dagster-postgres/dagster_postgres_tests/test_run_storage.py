@@ -1,10 +1,9 @@
 import pytest
 import yaml
 
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.test_utils import environ
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test.run_storage import TestRunStorage

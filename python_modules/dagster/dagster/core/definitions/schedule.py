@@ -5,6 +5,9 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
 from dagster.core.serdes import whitelist_for_serdes
+from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import check_tags
+from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -172,8 +175,15 @@ class ScheduleDefinition(object):
     def get_tags(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)
         if self._tags:
-            return self._tags
-        return self._tags_fn(context)
+            tags = self._tags
+            check_tags(tags, 'tags')
+        else:
+            tags = self._tags_fn(context)
+            # These tags are checked in _tags_fn_wrapper
+
+        tags = merge_dicts(tags, PipelineRun.tags_for_schedule(self))
+
+        return tags
 
     def should_execute(self, context):
         check.inst_param(context, 'context', ScheduleExecutionContext)

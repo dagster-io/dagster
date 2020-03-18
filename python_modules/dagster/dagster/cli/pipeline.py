@@ -664,7 +664,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
 
         print_fn('Launching runs... ')
         backfill_id = make_new_backfill_id()
-        run_tags = {'dagster/backfill': backfill_id}
+        run_tags = PipelineRun.tags_for_backfill_id(backfill_id)
         if celery_priority is not None:
             run_tags['dagster-celery/run_priority'] = celery_priority
 

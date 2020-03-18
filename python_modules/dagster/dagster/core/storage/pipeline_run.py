@@ -5,6 +5,8 @@ from dagster import check
 from dagster.core.execution.config import IRunConfig
 from dagster.core.serdes import whitelist_for_serdes
 
+from .tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG, SCHEDULE_NAME_TAG
+
 
 @whitelist_for_serdes
 class PipelineRunStatus(Enum):
@@ -135,3 +137,43 @@ class PipelineRun(
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
+
+    @staticmethod
+    def tags_for_schedule(schedule):
+        return {SCHEDULE_NAME_TAG: schedule.name}
+
+    @staticmethod
+    def tags_for_backfill_id(backfill_id):
+        return {BACKFILL_ID_TAG: backfill_id}
+
+    @staticmethod
+    def tags_for_partition_set(partition_set, partition):
+        return {PARTITION_NAME_TAG: partition.name, PARTITION_SET_TAG: partition_set.name}
+
+
+@whitelist_for_serdes
+class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_id tags pipeline_name status')):
+    def __new__(cls, run_id=None, pipeline_name=None, status=None, tags=None):
+        return super(PipelineRunsFilter, cls).__new__(
+            cls,
+            run_id=check.opt_str_param(run_id, 'run_id'),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
+            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
+            status=status,
+        )
+
+    def to_graphql_input(self):
+        return {
+            'runId': self.run_id,
+            'tags': [{'key': k, 'value': v} for k, v in self.tags.items()],
+            'pipelineName': self.pipeline_name,
+            'status': self.status,
+        }
+
+    @staticmethod
+    def for_schedule(schedule):
+        return PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
+
+    @staticmethod
+    def for_partition(partition_set, partition):
+        return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))

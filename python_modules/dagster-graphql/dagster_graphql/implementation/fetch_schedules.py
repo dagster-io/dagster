@@ -6,6 +6,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
+from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
 from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
@@ -57,13 +58,11 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
         lambda: 'Error occurred during the execution of tags_fn for schedule '
         '{schedule_name}'.format(schedule_name=schedule_def.name),
     ):
-        user_tags = schedule_def.get_tags(schedule_context)
+        schedule_tags = schedule_def.get_tags(schedule_context)
 
     pipeline_tags = pipeline_def.tags or {}
-    check.invariant('dagster/schedule_name' not in user_tags)
-    tags = merge_dicts(
-        pipeline_tags, merge_dicts({'dagster/schedule_name': schedule_def.name}, user_tags)
-    )
+    check_tags(pipeline_tags, 'pipeline_tags')
+    tags = merge_dicts(pipeline_tags, schedule_tags)
 
     selector = schedule_def.selector
     mode = schedule_def.mode

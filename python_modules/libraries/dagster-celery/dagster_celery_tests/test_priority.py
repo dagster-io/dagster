@@ -22,8 +22,8 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 BUILDKITE = os.getenv('BUILDKITE')
 skip_ci = pytest.mark.skipif(

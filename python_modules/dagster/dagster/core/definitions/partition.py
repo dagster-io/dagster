@@ -1,10 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
@@ -51,12 +51,7 @@ def last_empty_partition(context, partition_set_def):
         return None
     selected = None
     for partition in reversed(partitions):
-        filters = PipelineRunsFilter(
-            tags={
-                "dagster/partition": partition.name,
-                'dagster/partition_set': partition_set_def.name,
-            }
-        )
+        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
         if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
             selected = partition
@@ -145,12 +140,11 @@ class PartitionSetDefinition(
 
     def tags_for_partition(self, partition):
         user_tags = self.user_defined_tags_fn_for_partition(partition)
-        # TODO: Validate tags from user - Check they returned a Dict[str, str]
-        check.invariant('dagster/partition' not in user_tags)
-        check.invariant('dagster/partition_set' not in user_tags)
-        return merge_dicts(
-            {'dagster/partition': partition.name, 'dagster/partition_set': self.name}, user_tags
-        )
+        check_tags(user_tags, 'user_tags')
+
+        tags = merge_dicts(user_tags, PipelineRun.tags_for_partition_set(self, partition))
+
+        return tags
 
     def get_partitions(self):
         return self.partition_fn()

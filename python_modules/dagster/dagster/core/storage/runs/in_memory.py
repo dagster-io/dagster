@@ -1,11 +1,10 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
-from dagster.core.definitions.pipeline import PipelineRunsFilter
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.utils import frozendict
 
-from ..pipeline_run import PipelineRun, PipelineRunStatus
+from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
 
 
