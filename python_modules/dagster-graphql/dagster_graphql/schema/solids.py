@@ -81,6 +81,10 @@ def build_dauphin_solid_definition(pipeline_snapshot, solid_definition):
     check.failed('Unknown solid definition type {type}'.format(type=type(solid_definition)))
 
 
+class _ArgNotPresentSentinel:
+    pass
+
+
 class DauphinSolid(dauphin.ObjectType):
     class Meta(object):
         name = 'Solid'
@@ -90,32 +94,61 @@ class DauphinSolid(dauphin.ObjectType):
     inputs = dauphin.non_null_list('Input')
     outputs = dauphin.non_null_list('Output')
 
-    def __init__(self, pipeline_snapshot, solid, depends_on=None, depended_by=None):
-        check.opt_dict_param(depends_on, 'depends_on', key_type=SolidInputHandle, value_type=list)
-        check.opt_dict_param(
-            depended_by, 'depended_by', key_type=SolidOutputHandle, value_type=list
-        )
+    # This is an odd class insofar as one can optionally construct it without
+    # depends_on and depended_by set which means in turn that in certain context
+    # if you went deeply nested in the graphql query the solid would "lie" and
+    # say that it has no dependencies.
+    def __init__(
+        self, pipeline_snapshot, solid, depends_on, depended_by,
+    ):
+        if depends_on is not _ArgNotPresentSentinel:
+            check.dict_param(depends_on, 'depends_on', key_type=SolidInputHandle, value_type=list)
+
+        if depends_on is not _ArgNotPresentSentinel:
+            check.dict_param(
+                depended_by, 'depended_by', key_type=SolidOutputHandle, value_type=list
+            )
 
         self._solid = check.inst_param(solid, 'solid', Solid)
         self._pipeline_snapshot = check.inst_param(
             pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
         )
+        self._depends_on = (
+            _ArgNotPresentSentinel
+            if depends_on is _ArgNotPresentSentinel
+            else {
+                input_handle: output_handles for input_handle, output_handles in depends_on.items()
+            }
+        )
+        self._depended_by = (
+            _ArgNotPresentSentinel
+            if depended_by is _ArgNotPresentSentinel
+            else {
+                output_handle: input_handles for output_handle, input_handles in depended_by.items()
+            }
+        )
 
         super(DauphinSolid, self).__init__(name=solid.name)
 
-        if depends_on:
-            self.depends_on = {
-                input_handle: output_handles for input_handle, output_handles in depends_on.items()
-            }
-        else:
-            self.depends_on = {}
+    @staticmethod
+    def construct_without_deps(pipeline_snapshot, solid):
+        return DauphinSolid(
+            pipeline_snapshot, solid, _ArgNotPresentSentinel, _ArgNotPresentSentinel
+        )
 
-        if depended_by:
-            self.depended_by = {
-                output_handle: input_handles for output_handle, input_handles in depended_by.items()
-            }
-        else:
-            self.depended_by = {}
+    @property
+    def depended_by(self):
+        check.invariant(
+            self._depended_by is not _ArgNotPresentSentinel, 'Cannot access this if not set'
+        )
+        return self._depended_by
+
+    @property
+    def depends_on(self):
+        check.invariant(
+            self._depends_on is not _ArgNotPresentSentinel, 'Cannot access this if not set'
+        )
+        return self._depends_on
 
     def resolve_definition(self, _):
         return build_dauphin_solid_definition(self._pipeline_snapshot, self._solid.definition)
@@ -189,7 +222,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin)
                     DauphinOutput(
                         self._pipeline_snapshot,
                         mapped_solid.output_handle(mapping.output_name),
-                        DauphinSolid(self._pipeline_snapshot, mapped_solid),
+                        DauphinSolid.construct_without_deps(self._pipeline_snapshot, mapped_solid),
                     ),
                 )
             )
@@ -207,7 +240,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin)
                     DauphinInput(
                         self._pipeline_snapshot,
                         mapped_solid.input_handle(mapping.input_name),
-                        DauphinSolid(self._pipeline_snapshot, mapped_solid),
+                        DauphinSolid.construct_without_deps(self._pipeline_snapshot, mapped_solid),
                     ),
                 )
             )
@@ -319,7 +352,9 @@ class DauphinInput(dauphin.ObjectType):
     def resolve_depends_on(self, _):
         return [
             DauphinOutput(
-                self._pipeline_snapshot, dep, DauphinSolid(self._pipeline_snapshot, dep.solid)
+                self._pipeline_snapshot,
+                dep,
+                DauphinSolid.construct_without_deps(self._pipeline_snapshot, dep.solid),
             )
             for dep in self._solid.depends_on.get(self._input_handle, [])
         ]
@@ -355,7 +390,7 @@ class DauphinOutput(dauphin.ObjectType):
             DauphinInput(
                 self._pipeline_snapshot,
                 input_handle,
-                DauphinSolid(self._pipeline_snapshot, input_handle.solid),
+                DauphinSolid.construct_without_deps(self._pipeline_snapshot, input_handle.solid),
             )
             for input_handle in self._solid.depended_by.get(self._output_handle, [])
         ]
