@@ -1,6 +1,6 @@
 import os
 
-from dagster import Bool, Int, String, check
+from dagster import Bool, Int, check
 from dagster.config import Field, Permissive
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import validate_config
@@ -52,10 +52,5 @@ def define_dagster_config_cls():
             },
             is_required=False,
         ),
-        'telemetry': Field(
-            {
-                'instance_id': Field(String, is_required=False),
-                'enabled': Field(Bool, is_required=False),
-            }
-        ),
+        'telemetry': Field({'enabled': Field(Bool, default_value=False, is_required=False)}),
     }

@@ -14,11 +14,11 @@ We will not see or store solid definitions (including generated context) or
 pipeline definitions (including modes and resources). We will not see or
 store any data that is processed within solids and pipelines.
 
-If you'd like to opt out, you can add the following to
+The default is opt-out. If you'd like to opt-in, you can add the following to
 ``$DAGSTER_HOME/dagster.yaml`` (creating that file if necessary):
 
 .. code-block:: yaml
    :caption: dagster.yaml
 
    telemetry:
-     enabled: false
+     enabled: true

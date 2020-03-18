@@ -40,7 +40,7 @@ class InstanceRef(
     namedtuple(
         '_InstanceRef',
         'local_artifact_storage_data run_storage_data event_storage_data compute_logs_data '
-        'schedule_storage_data scheduler_data run_launcher_data dagit_settings',
+        'schedule_storage_data scheduler_data run_launcher_data dagit_settings telemetry_settings',
     )
 ):
     '''Serializable representation of a :py:class:`DagsterInstance`.
@@ -58,6 +58,7 @@ class InstanceRef(
         scheduler_data,
         run_launcher_data,
         dagit_settings,
+        telemetry_settings,
     ):
         return super(self, InstanceRef).__new__(
             self,
@@ -83,6 +84,7 @@ class InstanceRef(
                 run_launcher_data, 'run_launcher_data', ConfigurableClassData
             ),
             dagit_settings=check.opt_dict_param(dagit_settings, 'dagit_settings'),
+            telemetry_settings=check.opt_dict_param(telemetry_settings, 'telemetry_settings'),
         )
 
     @staticmethod
@@ -154,6 +156,7 @@ class InstanceRef(
             scheduler_data=scheduler_data,
             run_launcher_data=run_launcher_data,
             dagit_settings=config_value.get('dagit'),
+            telemetry_settings=config_value.get('telemetry'),
         )
 
     @staticmethod
@@ -161,7 +164,7 @@ class InstanceRef(
         def value_for_ref_item(k, v):
             if v is None:
                 return None
-            if k == 'dagit_settings':
+            if k in ['dagit_settings', 'telemetry_settings']:
                 return v
             return ConfigurableClassData(*v)
 

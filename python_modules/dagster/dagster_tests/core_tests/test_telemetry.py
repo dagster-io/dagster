@@ -1,150 +1,97 @@
-import datetime
 import json
-import logging
+import os
+
+import yaml
+from click.testing import CliRunner
 
 from dagster import seven
-from dagster.core.telemetry import (
-    _get_instance_id,
-    execute_disable_telemetry,
-    execute_enable_telemetry,
-    execute_reset_telemetry_profile,
-    log_action,
-)
+from dagster.cli.pipeline import pipeline_execute_command
+from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import environ
-from dagster.seven import mock
+from dagster.utils import pushd, script_relative_path
 
 
-def mock_uuid():
-    return 'some_random_uuid'
+def path_to_tutorial_file(path):
+    return script_relative_path(
+        os.path.join('../../../../examples/dagster_examples/intro_tutorial/', path)
+    )
 
 
-@mock.patch(seven.builtin_print())
-@mock.patch('uuid.uuid4', mock_uuid)
-def test_reset_telemetry_profile(mocked_print):
-    with environ({'DAGSTER_TELEMETRY_ENABLED': 'True', 'DAGSTER_HOME': ''}):
-        open_mock = mock.mock_open()
-        with mock.patch('dagster.core.telemetry.open', open_mock, create=True):
-            execute_reset_telemetry_profile()
-            open_mock.assert_not_called()
+def test_dagster_telemetry_enabled(caplog):
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+                yaml.dump({'telemetry': {'enabled': True}}, fd, default_flow_style=False)
 
-            assert mocked_print.mock_calls == seven.print_single_line_str(
-                'Must set $DAGSTER_HOME environment variable to reset profile'
-            )
-
-            with environ({'DAGSTER_HOME': '/dagster/home/path/'}):
-                execute_reset_telemetry_profile()
-                open_mock.assert_called_with('/dagster/home/path/dagster.yaml', 'w')
-
-                open_mock.return_value.write.assert_has_calls(
+            DagsterInstance.local_temp(temp_dir)
+            runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
+            with pushd(path_to_tutorial_file('')):
+                runner.invoke(
+                    pipeline_execute_command,
                     [
-                        mock.call('telemetry'),
-                        mock.call(':'),
-                        mock.call('\n'),
-                        mock.call('  '),
-                        mock.call('instance_id'),
-                        mock.call(':'),
-                        mock.call(' '),
-                        mock.call('some_random_uuid'),
-                        mock.call('\n'),
+                        '-f',
+                        path_to_tutorial_file('hello_cereal.py'),
+                        '-n',
+                        'hello_cereal_pipeline',
+                    ],
+                )
+
+                expectedKeys = set(
+                    [
+                        'action',
+                        'client_time',
+                        'elapsed_time',
+                        'event_id',
+                        'instance_id',
+                        'metadata',
                     ]
                 )
 
+                for record in caplog.records:
+                    message = json.loads(record.getMessage())
+                    assert set(message.keys()) == expectedKeys
 
-@mock.patch(seven.builtin_print())
-def test_enable_telemetry(mocked_print):
-    with environ({'DAGSTER_TELEMETRY_ENABLED': 'True', 'DAGSTER_HOME': ''}):
-        open_mock = mock.mock_open()
-        with mock.patch('dagster.core.telemetry.open', open_mock, create=True):
-            execute_enable_telemetry()
-            open_mock.assert_not_called()
-            assert mocked_print.mock_calls == seven.print_single_line_str(
-                'Must set $DAGSTER_HOME environment variable to enable telemetry'
-            )
-            with environ({'DAGSTER_HOME': '/dagster/home/path/'}):
-                execute_enable_telemetry()
-                open_mock.assert_called_with('/dagster/home/path/dagster.yaml', 'w')
-                open_mock.return_value.write.assert_has_calls(
+                assert len(caplog.records) == 4
+
+
+def test_dagster_telemetry_disabled(caplog):
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+                yaml.dump({'telemetry': {'enabled': False}}, fd, default_flow_style=False)
+
+            DagsterInstance.local_temp(temp_dir)
+
+            with pushd(path_to_tutorial_file('')):
+                CliRunner().invoke(
+                    pipeline_execute_command,
                     [
-                        mock.call('telemetry'),
-                        mock.call(':'),
-                        mock.call('\n'),
-                        mock.call('  '),
-                        mock.call('enabled'),
-                        mock.call(':'),
-                        mock.call(' '),
-                        mock.call('true'),
-                        mock.call('\n'),
-                    ]
+                        '-f',
+                        path_to_tutorial_file('hello_cereal.py'),
+                        '-n',
+                        'hello_cereal_pipeline',
+                    ],
                 )
 
+            assert len(caplog.records) == 0
 
-@mock.patch(seven.builtin_print())
-def test_disable_telemetry(mocked_print):
-    with environ({'DAGSTER_TELEMETRY_ENABLED': 'True'}):
-        open_mock = mock.mock_open()
-        with mock.patch('dagster.core.telemetry.open', open_mock, create=True):
-            execute_disable_telemetry()
-            open_mock.assert_not_called()
-            assert mocked_print.mock_calls == seven.print_single_line_str(
-                'Must set $DAGSTER_HOME environment variable to disable telemetry'
-            )
 
-            with environ({'DAGSTER_HOME': '/dagster/home/path/'}):
-                execute_disable_telemetry()
-                open_mock.assert_called_with('/dagster/home/path/dagster.yaml', 'w')
-                open_mock.return_value.write.assert_has_calls(
+def test_dagster_telemetry_unset(caplog):
+    with seven.TemporaryDirectory() as temp_dir:
+        with environ({'DAGSTER_HOME': temp_dir}):
+            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+                yaml.dump({}, fd, default_flow_style=False)
+
+            DagsterInstance.local_temp(temp_dir)
+
+            with pushd(path_to_tutorial_file('')):
+                CliRunner().invoke(
+                    pipeline_execute_command,
                     [
-                        mock.call('telemetry'),
-                        mock.call(':'),
-                        mock.call('\n'),
-                        mock.call('  '),
-                        mock.call('enabled'),
-                        mock.call(':'),
-                        mock.call(' '),
-                        mock.call('false'),
-                        mock.call('\n'),
-                    ]
+                        '-f',
+                        path_to_tutorial_file('hello_cereal.py'),
+                        '-n',
+                        'hello_cereal_pipeline',
+                    ],
                 )
-
-
-def test_telemetry_disabled():
-    with environ({'DAGSTER_TELEMETRY_ENABLED': 'True'}):
-        with seven.TemporaryDirectory() as tmpdir_path:
-            with environ({'DAGSTER_HOME': tmpdir_path}):
-                logger = logging.getLogger('telemetry_logger')
-                with mock.patch.object(logger, 'info') as mock_logger:
-                    execute_disable_telemetry()
-                    log_action(
-                        action='did something', client_time=datetime.datetime.now(), metadata={}
-                    )
-                    mock_logger.assert_not_called()
-
-
-def test_dagster_telemetry_enabled():
-    with environ({'DAGSTER_TELEMETRY_ENABLED': 'True'}):
-        with seven.TemporaryDirectory() as tmpdir_path:
-            with environ({'DAGSTER_HOME': tmpdir_path}):
-                logger = logging.getLogger('telemetry_logger')
-                with mock.patch.object(logger, 'info') as mock_logger:
-                    execute_enable_telemetry()
-                    (instance_id, dagster_telemetry_enabled) = _get_instance_id()
-                    assert dagster_telemetry_enabled == True
-
-                    log_action(
-                        action='did something', client_time=datetime.datetime.now(), metadata={}
-                    )
-
-                    (x) = mock_logger.call_args[0][0]
-
-                    client_time = json.loads(x)['client_time']
-                    event_id = json.loads(x)['event_id']
-
-                    expected_log = {
-                        'action': 'did something',
-                        'client_time': client_time,
-                        'elapsed_time': 'None',
-                        'event_id': event_id,
-                        'instance_id': instance_id,
-                        'metadata': {},
-                    }
-                    mock_logger.assert_called_once_with(json.dumps(expected_log))
+            assert len(caplog.records) == 0

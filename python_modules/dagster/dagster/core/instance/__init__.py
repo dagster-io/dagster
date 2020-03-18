@@ -113,6 +113,9 @@ class DagsterInstance:
             addition to running them locally.
         dagit_settings (Optional[Dict]): Specifies certain Dagit-specific, per-instance settings,
             such as feature flags. These are set in the ``dagster.yaml`` under the key ``dagit``.
+        telemetry_settings (Optional[Dict]): Specifies certain telemetry-specific, per-instance
+            settings, such as whether it is enabled. These are set in the ``dagster.yaml`` under
+            the key ``telemetry``
         ref (Optional[InstanceRef]): Used by internal machinery to pass instances across process
             boundaries.
     '''
@@ -130,6 +133,7 @@ class DagsterInstance:
         scheduler=None,
         run_launcher=None,
         dagit_settings=None,
+        telemetry_settings=None,
         ref=None,
     ):
         from dagster.core.storage.compute_log_manager import ComputeLogManager
@@ -155,6 +159,8 @@ class DagsterInstance:
         self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
         self._run_launcher = check.opt_inst_param(run_launcher, 'run_launcher', RunLauncher)
         self._dagit_settings = check.opt_dict_param(dagit_settings, 'dagit_settings')
+        self._telemetry_settings = check.opt_dict_param(telemetry_settings, 'telemetry_settings')
+
         self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
 
         self._subscribers = defaultdict(list)
@@ -220,6 +226,7 @@ class DagsterInstance:
             scheduler=instance_ref.scheduler,
             run_launcher=instance_ref.run_launcher,
             dagit_settings=instance_ref.dagit_settings,
+            telemetry_settings=instance_ref.telemetry_settings,
             ref=instance_ref,
         )
 
@@ -263,6 +270,7 @@ class DagsterInstance:
             return '{}{}\n'.format(prefix, component.__class__.__name__)
 
         dagit_settings = self._dagit_settings if self._dagit_settings else None
+        telemetry_settings = self._telemetry_settings if self._telemetry_settings else None
 
         return (
             'DagsterInstance components:\n\n'
@@ -274,6 +282,7 @@ class DagsterInstance:
             '  Scheduler:\n{scheduler}\n'
             '  Run Launcher:\n{run_launcher}\n'
             '  Dagit:\n{dagit}\n'
+            '  Telemetry:\n{telemetry}\n'
             ''.format(
                 artifact=_info(self._local_artifact_storage),
                 run=_info(self._run_storage),
@@ -283,6 +292,7 @@ class DagsterInstance:
                 scheduler=_info(self._scheduler),
                 run_launcher=_info(self._run_launcher),
                 dagit=_info(dagit_settings),
+                telemetry=_info(telemetry_settings),
             )
         )
 
@@ -315,6 +325,21 @@ class DagsterInstance:
         if self._dagit_settings:
             return self._dagit_settings
         return {}
+
+    @property
+    def telemetry_enabled(self):
+        if self.is_ephemeral:
+            return False
+
+        dagster_telemetry_enabled_default = False
+
+        if not self._telemetry_settings:
+            return dagster_telemetry_enabled_default
+
+        if 'enabled' in self._telemetry_settings:
+            return self._telemetry_settings['enabled']
+        else:
+            return dagster_telemetry_enabled_default
 
     def upgrade(self, print_fn=lambda _: None):
         print_fn('Updating run storage...')
