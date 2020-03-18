@@ -1,7 +1,7 @@
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .config_types import DauphinConfigType, to_dauphin_config_type
@@ -19,7 +19,7 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
     check.str_param(dagster_type_key, 'dagster_type_key')
     check.inst_param(pipeline_snapshot, pipeline_snapshot, PipelineSnapshot)
 
-    dagster_type_meta = pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_meta(
+    dagster_type_meta = pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(
         dagster_type_key
     )
 

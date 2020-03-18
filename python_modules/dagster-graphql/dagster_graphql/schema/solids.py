@@ -13,8 +13,8 @@ from dagster.core.definitions import (
     SolidInputHandle,
     SolidOutputHandle,
 )
-from dagster.core.meta.config_types import meta_from_field
-from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap.config_types import snap_from_field
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
 from .config_types import DauphinConfigTypeField
 from .runtime_types import to_dauphin_dagster_type
@@ -151,7 +151,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._pipeline_snapshot.config_schema_snapshot,
-                field_meta=meta_from_field('config', self._solid_def.config_field),
+                field_meta=snap_from_field('config', self._solid_def.config_field),
             )
             if self._solid_def.config_field
             else None

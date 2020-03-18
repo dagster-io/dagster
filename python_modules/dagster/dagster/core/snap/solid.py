@@ -4,21 +4,21 @@ from dagster import check
 from dagster.core.definitions import InputDefinition, OutputDefinition, SolidDefinition
 from dagster.core.serdes import whitelist_for_serdes
 
-from .config_types import ConfigFieldMeta, meta_from_field
+from .config_types import ConfigFieldSnap, snap_from_field
 
 
-def build_input_def_meta(input_def):
+def build_input_def_snap(input_def):
     check.inst_param(input_def, 'input_def', InputDefinition)
-    return InputDefMeta(
+    return InputDefSnap(
         name=input_def.name,
         dagster_type_key=input_def.dagster_type.key,
         description=input_def.description,
     )
 
 
-def build_output_def_meta(output_def):
+def build_output_def_snap(output_def):
     check.inst_param(output_def, 'output_def', OutputDefinition)
-    return OutputDefMeta(
+    return OutputDefSnap(
         name=output_def.name,
         dagster_type_key=output_def.dagster_type.key,
         description=output_def.description,
@@ -26,13 +26,13 @@ def build_output_def_meta(output_def):
     )
 
 
-def build_solid_def_meta(solid_def):
+def build_solid_def_snap(solid_def):
     check.inst_param(solid_def, 'solid_def', SolidDefinition)
-    return SolidDefMeta(
+    return SolidDefSnap(
         name=solid_def.name,
-        input_def_metas=list(map(build_input_def_meta, solid_def.input_defs)),
-        output_def_metas=list(map(build_output_def_meta, solid_def.output_defs)),
-        config_field_meta=meta_from_field('config', solid_def.config_field)
+        input_def_snaps=list(map(build_input_def_snap, solid_def.input_defs)),
+        output_def_snaps=list(map(build_output_def_snap, solid_def.output_defs)),
+        config_field_snap=snap_from_field('config', solid_def.config_field)
         if solid_def.config_field
         else None,
         description=solid_def.description,
@@ -43,31 +43,31 @@ def build_solid_def_meta(solid_def):
 
 
 @whitelist_for_serdes
-class SolidDefMeta(
+class SolidDefSnap(
     namedtuple(
-        '_SolidDefMeta',
-        'name input_def_metas output_def_metas config_field_meta '
+        '_SolidDefSnap',
+        'name input_def_snaps output_def_snaps config_field_snap '
         'description tags required_resource_keys positional_inputs',
     )
 ):
     def __new__(
         cls,
         name,
-        input_def_metas,
-        output_def_metas,
-        config_field_meta,
+        input_def_snaps,
+        output_def_snaps,
+        config_field_snap,
         description,
         tags,
         required_resource_keys,
         positional_inputs,
     ):
-        return super(SolidDefMeta, cls).__new__(
+        return super(SolidDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            input_def_metas=check.list_param(input_def_metas, 'input_def_metas', InputDefMeta),
-            output_def_metas=check.list_param(output_def_metas, 'output_def_metas', OutputDefMeta),
-            config_field_meta=check.opt_inst_param(
-                config_field_meta, 'config_field_meta', ConfigFieldMeta
+            input_def_snaps=check.list_param(input_def_snaps, 'input_def_snaps', InputDefSnap),
+            output_def_snaps=check.list_param(output_def_snaps, 'output_def_snaps', OutputDefSnap),
+            config_field_snap=check.opt_inst_param(
+                config_field_snap, 'config_field_snap', ConfigFieldSnap
             ),
             description=check.opt_str_param(description, 'description'),
             tags=check.dict_param(tags, 'tags'),  # validate using validate_tags?
@@ -77,17 +77,17 @@ class SolidDefMeta(
             positional_inputs=check.list_param(positional_inputs, 'positional_inputs', str),
         )
 
-    def get_input_meta(self, name):
+    def get_input_snap(self, name):
         check.str_param(name, 'name')
-        for inp in self.input_def_metas:
+        for inp in self.input_def_snaps:
             if inp.name == name:
                 return inp
 
         check.failed('Could not find input ' + name)
 
-    def get_output_meta(self, name):
+    def get_output_snap(self, name):
         check.str_param(name, 'name')
-        for out in self.output_def_metas:
+        for out in self.output_def_snaps:
             if out.name == name:
                 return out
 
@@ -95,9 +95,9 @@ class SolidDefMeta(
 
 
 @whitelist_for_serdes
-class InputDefMeta(namedtuple('_InputDefMeta', 'name dagster_type_key description')):
+class InputDefSnap(namedtuple('_InputDefSnap', 'name dagster_type_key description')):
     def __new__(cls, name, dagster_type_key, description):
-        return super(InputDefMeta, cls).__new__(
+        return super(InputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             dagster_type_key=check.str_param(dagster_type_key, 'dagster_type_key'),
@@ -106,9 +106,9 @@ class InputDefMeta(namedtuple('_InputDefMeta', 'name dagster_type_key descriptio
 
 
 @whitelist_for_serdes
-class OutputDefMeta(namedtuple('_OutputDefMeta', 'name dagster_type_key description is_required')):
+class OutputDefSnap(namedtuple('_OutputDefSnap', 'name dagster_type_key description is_required')):
     def __new__(cls, name, dagster_type_key, description, is_required):
-        return super(OutputDefMeta, cls).__new__(
+        return super(OutputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             dagster_type_key=check.str_param(dagster_type_key, 'dagster_type_key'),

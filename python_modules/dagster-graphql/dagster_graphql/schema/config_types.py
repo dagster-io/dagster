@@ -2,38 +2,38 @@ from dagster_graphql import dauphin
 
 from dagster import check
 from dagster.config.config_type import ConfigTypeKind
-from dagster.core.meta.config_types import ConfigFieldMeta, ConfigSchemaSnapshot, ConfigTypeMeta
+from dagster.core.snap.config_types import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 
 def to_dauphin_config_type(config_schema_snapshot, config_type_key):
     check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
     check.str_param(config_type_key, 'config_type_key')
 
-    config_type_meta = config_schema_snapshot.get_config_meta(config_type_key)
-    kind = config_type_meta.kind
+    config_type_snap = config_schema_snapshot.get_config_snap(config_type_key)
+    kind = config_type_snap.kind
 
     if kind == ConfigTypeKind.ENUM:
-        return DauphinEnumConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinEnumConfigType(config_schema_snapshot, config_type_snap)
     elif ConfigTypeKind.has_fields(kind):
-        return DauphinCompositeConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinCompositeConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.ARRAY:
-        return DauphinArrayConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinArrayConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.NONEABLE:
-        return DauphinNullableConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinNullableConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
-        return DauphinRegularConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinRegularConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.SCALAR_UNION:
-        return DauphinScalarUnionConfigType(config_schema_snapshot, config_type_meta)
+        return DauphinScalarUnionConfigType(config_schema_snapshot, config_type_snap)
     else:
         check.failed('Should never reach')
 
 
-def _ctor_kwargs_for_meta(config_type_meta):
+def _ctor_kwargs_for_snap(config_type_snap):
     return dict(
-        key=config_type_meta.key,
-        description=config_type_meta.description,
-        is_selector=config_type_meta.kind == ConfigTypeKind.SELECTOR,
-        type_param_keys=config_type_meta.type_param_keys or [],
+        key=config_type_snap.key,
+        description=config_type_snap.description,
+        is_selector=config_type_snap.kind == ConfigTypeKind.SELECTOR,
+        type_param_keys=config_type_snap.type_param_keys or [],
     )
 
 
@@ -74,34 +74,34 @@ navigating the full schema client-side and not innerTypes.
     is_selector = dauphin.NonNull(dauphin.Boolean)
 
 
-def get_recursive_type_keys(config_type_meta, config_schema_snapshot):
-    check.inst_param(config_type_meta, 'config_type_meta', ConfigTypeMeta)
+def get_recursive_type_keys(config_type_snap, config_schema_snapshot):
+    check.inst_param(config_type_snap, 'config_type_snap', ConfigTypeSnap)
     check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
     result_keys = set()
-    for type_key in config_type_meta.get_child_type_keys():
+    for type_key in config_type_snap.get_child_type_keys():
         result_keys.add(type_key)
         for recurse_key in get_recursive_type_keys(
-            config_schema_snapshot.get_config_meta(type_key), config_schema_snapshot
+            config_schema_snapshot.get_config_snap(type_key), config_schema_snapshot
         ):
             result_keys.add(recurse_key)
     return result_keys
 
 
 class ConfigTypeMixin(object):
-    def __init__(self, config_schema_snapshot, config_type_meta):
-        self._config_type_meta = check.inst_param(
-            config_type_meta, 'config_type_meta', ConfigTypeMeta
+    def __init__(self, config_schema_snapshot, config_type_snap):
+        self._config_type_snap = check.inst_param(
+            config_type_snap, 'config_type_snap', ConfigTypeSnap
         )
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
         )
-        super(ConfigTypeMixin, self).__init__(**_ctor_kwargs_for_meta(config_type_meta))
+        super(ConfigTypeMixin, self).__init__(**_ctor_kwargs_for_snap(config_type_snap))
 
     def resolve_recursive_config_types(self, _graphene_info):
         return list(
             map(
                 lambda key: to_dauphin_config_type(self._config_schema_snapshot, key),
-                get_recursive_type_keys(self._config_type_meta, self._config_schema_snapshot),
+                get_recursive_type_keys(self._config_type_snap, self._config_schema_snapshot),
             )
         )
 
@@ -115,7 +115,7 @@ class DauphinRegularConfigType(ConfigTypeMixin, dauphin.ObjectType):
     given_name = dauphin.NonNull(dauphin.String)
 
     def resolve_given_name(self, _):
-        return self._config_type_meta.given_name
+        return self._config_type_snap.given_name
 
 
 class DauphinWrappingConfigType(dauphin.Interface):
@@ -132,7 +132,7 @@ class DauphinArrayConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
     def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(
-            self._config_schema_snapshot, self._config_type_meta.inner_type_key,
+            self._config_schema_snapshot, self._config_type_snap.inner_type_key,
         )
 
 
@@ -148,10 +148,10 @@ class DauphinScalarUnionConfigType(ConfigTypeMixin, dauphin.ObjectType):
     non_scalar_type_key = dauphin.NonNull(dauphin.String)
 
     def get_scalar_type_key(self):
-        return self._config_type_meta.scalar_type_key
+        return self._config_type_snap.scalar_type_key
 
     def get_non_scalar_type_key(self):
-        return self._config_type_meta.non_scalar_type_key
+        return self._config_type_snap.non_scalar_type_key
 
     def resolve_scalar_type_key(self, _):
         return self.get_scalar_type_key()
@@ -173,7 +173,7 @@ class DauphinNullableConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
     def resolve_of_type(self, _graphene_info):
         return to_dauphin_config_type(
-            self._config_schema_snapshot, self._config_type_meta.inner_type_key
+            self._config_schema_snapshot, self._config_type_snap.inner_type_key
         )
 
 
@@ -188,11 +188,11 @@ class DauphinEnumConfigType(ConfigTypeMixin, dauphin.ObjectType):
     def resolve_values(self, _graphene_info):
         return [
             DauphinEnumConfigValue(value=ev.value, description=ev.description)
-            for ev in self._config_type_meta.enum_values
+            for ev in self._config_type_snap.enum_values
         ]
 
     def resolve_given_name(self, _):
-        return self._config_type_meta.given_name
+        return self._config_type_snap.given_name
 
 
 class DauphinEnumConfigValue(dauphin.ObjectType):
@@ -216,7 +216,7 @@ class DauphinCompositeConfigType(ConfigTypeMixin, dauphin.ObjectType):
                 DauphinConfigTypeField(
                     config_schema_snapshot=self._config_schema_snapshot, field_meta=field_meta,
                 )
-                for field_meta in self._config_type_meta.fields
+                for field_meta in self._config_type_snap.fields
             ],
             key=lambda field: field.name,
         )
@@ -240,7 +240,7 @@ class DauphinConfigTypeField(dauphin.ObjectType):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
         )
-        self._field_meta = check.inst_param(field_meta, 'field_meta', ConfigFieldMeta)
+        self._field_meta = check.inst_param(field_meta, 'field_meta', ConfigFieldSnap)
         super(DauphinConfigTypeField, self).__init__(
             name=field_meta.name,
             description=field_meta.description,

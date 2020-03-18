@@ -6,7 +6,7 @@ from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 from dagster import check
 from dagster.core.execution.plan.objects import ExecutionStep, StepInput, StepOutput
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):

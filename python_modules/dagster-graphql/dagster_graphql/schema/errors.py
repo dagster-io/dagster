@@ -13,7 +13,7 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
-from dagster.core.meta.config_types import ConfigSchemaSnapshot, meta_from_field
+from dagster.core.snap.config_types import ConfigSchemaSnapshot, snap_from_field
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import DauphinConfigTypeField
@@ -229,7 +229,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 field=DauphinConfigTypeField(
                     config_schema_snapshot=config_schema_snapshot,
-                    field_meta=meta_from_field(
+                    field_meta=snap_from_field(
                         error.error_data.field_name, error.error_data.field_def
                     ),
                 ),
@@ -243,7 +243,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 fields=[
                     DauphinConfigTypeField(
                         config_schema_snapshot=config_schema_snapshot,
-                        field_meta=meta_from_field(field_name, field_def),
+                        field_meta=snap_from_field(field_name, field_def),
                     )
                     for field_name, field_def in zip(
                         error.error_data.field_names, error.error_data.field_defs

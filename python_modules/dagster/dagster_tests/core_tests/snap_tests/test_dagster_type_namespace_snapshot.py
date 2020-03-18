@@ -1,5 +1,5 @@
 from dagster import Dict, InputDefinition, List, OutputDefinition, Set, Tuple, pipeline, solid
-from dagster.core.meta.dagster_types import build_dagster_type_namespace_snapshot
+from dagster.core.snap.dagster_types import build_dagster_type_namespace_snapshot
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, create_string_type
 
 
@@ -15,17 +15,17 @@ def test_simple_pipeline_input_dagster_type_namespace():
         take_something()
 
     namespace = build_dagster_type_namespace_snapshot(simple)
-    type_meta = namespace.get_dagster_type_meta('SomethingType')
-    assert type_meta
-    assert type_meta.key == 'SomethingType'
-    assert type_meta.name == 'SomethingType'
-    assert type_meta.display_name == 'SomethingType'
-    assert type_meta.description == 'desc'
-    assert type_meta.is_builtin is False
-    assert type_meta.type_param_keys == []
-    assert type_meta.input_hydration_schema_key == SomethingType.input_hydration_schema_key
+    type_snap = namespace.get_dagster_type_snap('SomethingType')
+    assert type_snap
+    assert type_snap.key == 'SomethingType'
+    assert type_snap.name == 'SomethingType'
+    assert type_snap.display_name == 'SomethingType'
+    assert type_snap.description == 'desc'
+    assert type_snap.is_builtin is False
+    assert type_snap.type_param_keys == []
+    assert type_snap.input_hydration_schema_key == SomethingType.input_hydration_schema_key
     assert (
-        type_meta.output_materialization_schema_key
+        type_snap.output_materialization_schema_key
         == SomethingType.output_materialization_schema_key
     )
 
@@ -42,10 +42,10 @@ def test_simple_pipeline_output_dagster_type_namespace():
         take_something()
 
     namespace = build_dagster_type_namespace_snapshot(simple)
-    assert namespace.get_dagster_type_meta('SomethingType')
+    assert namespace.get_dagster_type_snap('SomethingType')
 
 
-def test_kitchen_sink_of_collection_types_metas():
+def test_kitchen_sink_of_collection_types_snaps():
     SomethingType = create_string_type('SomethingType')
 
     @solid(input_defs=[InputDefinition('somethings', List[SomethingType])])
@@ -75,27 +75,27 @@ def test_kitchen_sink_of_collection_types_metas():
 
     namespace = build_dagster_type_namespace_snapshot(simple)
 
-    assert namespace.get_dagster_type_meta(List[SomethingType].key)
-    list_something = namespace.get_dagster_type_meta(List[SomethingType].key)
+    assert namespace.get_dagster_type_snap(List[SomethingType].key)
+    list_something = namespace.get_dagster_type_snap(List[SomethingType].key)
     assert len(list_something.type_param_keys) == 1
     assert list_something.type_param_keys[0] == SomethingType.key
     assert list_something.display_name == '[SomethingType]'
 
-    assert namespace.get_dagster_type_meta(Set[SomethingType].key)
-    something_set = namespace.get_dagster_type_meta(Set[SomethingType].key)
+    assert namespace.get_dagster_type_snap(Set[SomethingType].key)
+    something_set = namespace.get_dagster_type_snap(Set[SomethingType].key)
     assert len(something_set.type_param_keys) == 1
     assert something_set.type_param_keys[0] == SomethingType.key
     assert something_set.display_name == 'Set[SomethingType]'
 
-    assert namespace.get_dagster_type_meta(Dict[str, SomethingType].key)
-    something_dict = namespace.get_dagster_type_meta(Dict[str, SomethingType].key)
+    assert namespace.get_dagster_type_snap(Dict[str, SomethingType].key)
+    something_dict = namespace.get_dagster_type_snap(Dict[str, SomethingType].key)
     assert len(something_dict.type_param_keys) == 2
     assert something_dict.type_param_keys[0] == 'String'
     assert something_dict.type_param_keys[1] == SomethingType.key
     assert something_dict.display_name == 'Dict[String,SomethingType]'
 
-    assert namespace.get_dagster_type_meta(Tuple[str, SomethingType].key)
-    something_tuple = namespace.get_dagster_type_meta(Tuple[str, SomethingType].key)
+    assert namespace.get_dagster_type_snap(Tuple[str, SomethingType].key)
+    something_tuple = namespace.get_dagster_type_snap(Tuple[str, SomethingType].key)
     assert len(something_tuple.type_param_keys) == 2
     assert something_tuple.type_param_keys[0] == 'String'
     assert something_tuple.type_param_keys[1] == SomethingType.key
@@ -114,4 +114,4 @@ def test_kitchen_sink_of_builtins():
     namespace = build_dagster_type_namespace_snapshot(simple)
 
     for builtin in ALL_RUNTIME_BUILTINS:
-        assert namespace.get_dagster_type_meta(builtin.key)
+        assert namespace.get_dagster_type_snap(builtin.key)

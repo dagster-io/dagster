@@ -11,7 +11,7 @@ from dagster import (
     check,
 )
 from dagster.core.definitions.pipeline import PipelineRunsFilter
-from dagster.core.meta.config_types import ConfigSchemaSnapshot, meta_from_field
+from dagster.core.snap.config_types import ConfigSchemaSnapshot, snap_from_field
 from dagster.seven import lru_cache
 
 from .config_types import DauphinConfigTypeField
@@ -156,7 +156,7 @@ class DauphinResource(dauphin.ObjectType):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
-                field_meta=meta_from_field('config', self._resource.config_field),
+                field_meta=snap_from_field('config', self._resource.config_field),
             )
             if self._resource.config_field
             else None
@@ -183,7 +183,7 @@ class DauphinLogger(dauphin.ObjectType):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
-                field_meta=meta_from_field('config', self._logger.config_field),
+                field_meta=snap_from_field('config', self._logger.config_field),
             )
             if self._logger.config_field
             else None

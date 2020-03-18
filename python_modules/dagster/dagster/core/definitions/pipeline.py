@@ -448,7 +448,7 @@ class PipelineDefinition(IContainSolids, object):
 
     def get_pipeline_snapshot(self):
         if self._cached_pipeline_snapshot is None:
-            from dagster.core.meta.pipeline_snapshot import PipelineSnapshot
+            from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
             self._cached_pipeline_snapshot = PipelineSnapshot.from_pipeline_def(self)
 
