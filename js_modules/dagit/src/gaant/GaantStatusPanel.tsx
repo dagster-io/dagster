@@ -101,7 +101,7 @@ const StepItem: React.FunctionComponent<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      <Elapsed>{formatElapsedTime(end - step.start!)}</Elapsed>
+      {step.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };

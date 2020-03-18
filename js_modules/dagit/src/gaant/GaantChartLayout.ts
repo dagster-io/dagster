@@ -1,4 +1,8 @@
-import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
+import {
+  IRunMetadataDict,
+  IStepState,
+  IStepAttempt
+} from "../RunMetadataProvider";
 import { Colors } from "@blueprintjs/core";
 import {
   GaantChartLayoutOptions,
@@ -18,20 +22,13 @@ export interface BuildLayoutParams {
   mode: GaantChartMode;
 }
 
-const ROUNDED_GRADIENT =
+const ROUNDING_GRADIENT =
   "linear-gradient(180deg, rgba(255,255,255,0.15), rgba(0,0,0,0.1))";
-
-export const BOX_EXIT_STATES = [
-  IStepState.PREPARING, // retry occurred
-  IStepState.SUCCEEDED,
-  IStepState.FAILED
-];
 
 export const buildLayout = (params: BuildLayoutParams) => {
   const { nodes, mode } = params;
 
   // Step 1: Place the nodes that have no dependencies into the layout.
-
   const hasNoDependencies = (g: IGaantNode) =>
     !g.inputs.some(i =>
       i.dependsOn.some(s => nodes.find(o => o.name === s.solid.name))
@@ -219,20 +216,8 @@ const addChildren = (
   }
 };
 
-const boxWidthFor = (
-  { start, end }: { start?: number; end?: number },
-  options: GaantChartLayoutOptions,
-  scale: number,
-  nowMs: number
-) => {
-  if (options.mode === GaantChartMode.WATERFALL_TIMED && start) {
-    return Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
-  }
-  return BOX_WIDTH;
-};
-
 const ColorsForStates = {
-  [IStepState.PREPARING]: Colors.ORANGE2,
+  [IStepState.RETRY_REQUESTED]: Colors.ORANGE2,
   [IStepState.RUNNING]: Colors.GRAY3,
   [IStepState.SUCCEEDED]: Colors.GREEN2,
   [IStepState.FAILED]: Colors.RED3,
@@ -246,25 +231,28 @@ export const boxStyleFor = (
     options: { mode: GaantChartMode };
   }
 ) => {
+  // Not running and not viewing waterfall? We always use a nice blue
   if (
-    context.metadata.firstLogAt ||
-    context.options.mode === GaantChartMode.WATERFALL_TIMED
+    !context.metadata.firstLogAt &&
+    context.options.mode !== GaantChartMode.WATERFALL_TIMED
   ) {
-    return state
-      ? {
-          background: `${ROUNDED_GRADIENT}, ${ColorsForStates[state] ||
-            Colors.GRAY3}`
-        }
-      : {
-          color: Colors.DARK_GRAY4,
-          background: Colors.WHITE,
-          border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
-          boxShadow: `none`
-        };
+    return { background: `${ROUNDING_GRADIENT}, #2491eb` };
   }
 
+  // Step has started and has state? Return state color.
+  if (state && state !== IStepState.PREPARING) {
+    return {
+      background: `${ROUNDING_GRADIENT}, ${ColorsForStates[state] ||
+        Colors.GRAY3}`
+    };
+  }
+
+  // Step has not started, use "hypothetical dotted box".
   return {
-    background: `${ROUNDED_GRADIENT}, #2491eb`
+    color: Colors.DARK_GRAY4,
+    background: Colors.WHITE,
+    border: `1.5px dotted ${Colors.LIGHT_GRAY1}`,
+    boxShadow: `none`
   };
 };
 
@@ -291,6 +279,75 @@ const cloneLayout = ({
   return { boxes: nextBoxes, markers: nextMarkers };
 };
 
+const positionAndSplitBoxes = (
+  boxes: GaantChartBox[],
+  metadata: IRunMetadataDict,
+  positionFor: (
+    box: GaantChartBox,
+    run?: IStepAttempt | null,
+    runIdx?: number
+  ) => { width: number; x: number }
+) => {
+  // Apply X values + widths to boxes, and break apart retries into their own boxes by looking
+  // at the transitions recorded for each step.
+  for (let ii = boxes.length - 1; ii >= 0; ii--) {
+    const box = boxes[ii];
+    const meta = metadata.steps[box.node.name];
+    if (!meta) {
+      Object.assign(box, positionFor(box));
+      continue;
+    }
+    if (meta.attempts.length === 0) {
+      Object.assign(box, positionFor(box));
+      box.state = meta.state;
+      continue;
+    }
+
+    const runBoxes: GaantChartBox[] = [];
+    meta.attempts.forEach((run, runIdx) => {
+      runBoxes.push({
+        ...box,
+        ...positionFor(box, run, runIdx),
+        key: `${box.key}-${runBoxes.length}`,
+        state: run.exitState || IStepState.RUNNING
+      });
+    });
+
+    // Move the children (used to draw outbound lines) to the last box
+    for (let ii = 0; ii < runBoxes.length - 1; ii++) {
+      runBoxes[ii].children = [runBoxes[ii + 1]];
+    }
+    runBoxes[runBoxes.length - 1].children = box.children;
+
+    Object.assign(box, runBoxes[0]);
+    // Add additional boxes we created for retries
+    if (runBoxes.length > 1) {
+      boxes.splice(ii, 0, ...runBoxes.slice(1));
+    }
+  }
+};
+
+/** Traverse the graph from the root and place boxes that still have x=0 locations.
+(Unstarted or skipped boxes) so that they appear downstream of running boxes
+we have position / time data for. */
+const positionUntimedBoxes = (
+  boxes: GaantChartBox[],
+  earliestAllowedMs: number
+) => {
+  const visit = (box: GaantChartBox, parentX: number) => {
+    if (box.x === 0) {
+      box.x = Math.max(parentX, box.x, earliestAllowedMs);
+    }
+
+    const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
+    for (const child of box.children) {
+      visit(child, minXForUnstartedChildren);
+    }
+  };
+
+  boxes.filter(box => box.root).forEach(box => visit(box, LEFT_INSET));
+};
+
 export const adjustLayoutWithRunMetadata = (
   layout: GaantChartLayout,
   options: GaantChartLayoutOptions,
@@ -303,96 +360,23 @@ export const adjustLayoutWithRunMetadata = (
   // in place.
   let { boxes } = cloneLayout(layout);
   const markers: GaantChartMarker[] = [];
-  const { firstLogAt } = metadata;
-
-  // Apply step states to boxes
-  for (const box of boxes) {
-    box.state = metadata.steps[box.node.name]?.state;
-  }
 
   // Move and size boxes based on the run metadata. Note that we don't totally invalidate
   // the pre-computed layout for the execution plan, (and shouldn't have to since the run's
   // step ordering, etc. should obey the constraints we already planned for). We just push
   // boxes around on their existing rows.
-  if (options.mode === GaantChartMode.WATERFALL_TIMED && firstLogAt) {
-    const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt!) * scale;
+  if (options.mode === GaantChartMode.WATERFALL_TIMED) {
+    const firstLogAt = metadata.firstLogAt || nowMs;
+    const xForMs = (time: number) => LEFT_INSET + (time - firstLogAt) * scale;
+    const widthForMs = ({ start, end }: { start: number; end?: number }) =>
+      Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 
-    // Apply X + widths to boxes, and break apart retries into their own boxes by looking
-    // at the transitions recorded for each step.
-    for (let ii = boxes.length - 1; ii >= 0; ii--) {
-      const box = boxes[ii];
-      const meta = metadata.steps[box.node.name];
-      if (!meta) {
-        box.x = 0; // allow position to be set based on ohther timed boxes
-        continue;
-      }
-      if (meta.state === IStepState.SKIPPED) {
-        box.state = IStepState.SKIPPED;
-        box.x = 0; // allow position to be set based on other timed boxes
-        continue;
-      }
+    positionAndSplitBoxes(boxes, metadata, (box, run) => ({
+      x: run ? xForMs(run.start) : 0,
+      width: run ? widthForMs(run) : BOX_WIDTH
+    }));
 
-      box.x = xForMs(start);
-      box.width = boxWidthFor(meta, options, scale, nowMs);
-
-      if ()
-      const next: GaantChartBox[] = [];
-      let start = null;
-      for (const t of meta.transitions) {
-        if (t.state === IStepState.RUNNING) {
-          start = t.time;
-        }
-        if (start && BOX_EXIT_STATES.includes(t.state)) {
-          next.push({
-            ...box,
-            state: t.state,
-            x: xForMs(start),
-            key: `${box.key}-${next.length}`,
-            width: boxWidthFor({ start, end: t.time }, options, scale, nowMs)
-          });
-          start = null;
-        }
-      }
-      if (start !== null) {
-        next.push({
-          ...box,
-          state: IStepState.RUNNING,
-          x: xForMs(start),
-          key: `${box.key}-${next.length}`,
-          width: boxWidthFor({ start }, options, scale, nowMs)
-        });
-      }
-
-      // Move the children (used to draw outbound lines) to the last box
-      for (let ii = 0; ii < next.length - 1; ii++) {
-        next[ii].children = [next[ii + 1]];
-      }
-      next[next.length - 1].children = box.children;
-
-      Object.assign(box, next[0]);
-      // Add additional boxes we created for retries
-      if (next.length > 1) {
-        boxes.splice(ii, 0, ...next.slice(1));
-      }
-    }
-
-    // Traverse the graph from the root and place boxes that still have x=0 locations.
-    // (Unstarted or skipped boxes) so that they appear downstream of running boxes
-    // we have position / time data for.
-    const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
-      if (box.x === 0) {
-        box.x = Math.max(parentX, box.x, xForMs(nowMs) + BOX_SPACING_X);
-      }
-
-      const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
-      for (const child of box.children) {
-        deepenOrUseMetadata(child, minXForUnstartedChildren);
-      }
-    };
-
-    boxes
-      .filter(box => box.root)
-      .forEach(box => deepenOrUseMetadata(box, LEFT_INSET));
+    positionUntimedBoxes(boxes, xForMs(nowMs) + BOX_SPACING_X);
 
     // Add markers to the layout using the run metadata
     metadata.globalMarkers.forEach(m => {
@@ -401,7 +385,7 @@ export const adjustLayoutWithRunMetadata = (
         key: `global:${m.key}`,
         y: 0,
         x: xForMs(m.start),
-        width: boxWidthFor(m, options, scale, nowMs)
+        width: widthForMs({ start: m.start, end: m.end })
       });
     });
     Object.entries(metadata.steps).forEach(([name, step]) => {
@@ -414,15 +398,28 @@ export const adjustLayoutWithRunMetadata = (
           key: `${name}:${m.key}`,
           y: stepBox.y,
           x: xForMs(m.start),
-          width: boxWidthFor(m, options, scale, nowMs)
+          width: widthForMs({ start: m.start, end: m.end })
         });
       }
     });
-  }
 
-  // Apply display options / filtering
-  if (options.mode === GaantChartMode.WATERFALL_TIMED && options.hideWaiting) {
-    boxes = boxes.filter(b => !!metadata.steps[b.node.name]?.state);
+    // Apply display options / filtering
+    if (options.hideWaiting) {
+      boxes = boxes.filter(b => !!metadata.steps[b.node.name]?.state);
+    }
+  } else if (options.mode === GaantChartMode.WATERFALL) {
+    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+      x: run ? box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0) : 0,
+      width: BOX_WIDTH
+    }));
+    positionUntimedBoxes(boxes, LEFT_INSET);
+  } else if (options.mode === GaantChartMode.FLAT) {
+    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+      x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
+      width: BOX_WIDTH
+    }));
+  } else {
+    throw new Error("Invalid mdoe ");
   }
 
   return { boxes, markers };

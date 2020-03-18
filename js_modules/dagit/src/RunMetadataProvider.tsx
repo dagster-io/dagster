@@ -6,11 +6,18 @@ import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
   PREPARING = "preparing",
+  RETRY_REQUESTED = "retry-requested",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
   SKIPPED = "skipped",
   FAILED = "failed"
 }
+
+export const BOX_EXIT_STATES = [
+  IStepState.RETRY_REQUESTED,
+  IStepState.SUCCEEDED,
+  IStepState.FAILED
+];
 
 export enum IExpectationResultStatus {
   PASSED = "Passed",
@@ -58,6 +65,12 @@ export interface IMarker {
   end?: number;
 }
 
+export interface IStepAttempt {
+  start: number;
+  end?: number;
+  exitState?: IStepState;
+}
+
 export interface IStepMetadata {
   // current state
   state: IStepState;
@@ -72,10 +85,9 @@ export interface IStepMetadata {
     time: number;
   }[];
 
-  runs: {
-    state: IStepState;
-    time: number;
-  }[];
+  // transition times organized into start+stop+exit state pairs.
+  // This is the metadata used to render boxes on the realtime vi.z
+  attempts: IStepAttempt[];
 
   // accumulated metadata
   expectationResults: IExpectationResult[];
@@ -201,8 +213,8 @@ export function extractMetadataFromLogs(
     state: IStepState
   ) => {
     step.transitions.push({ time, state });
-    step.transitions = step.transitions.sort((a, b) => a.time - b.time);
     step.state = state;
+    step.attempts = [];
   };
 
   logs.forEach(log => {
@@ -242,6 +254,7 @@ export function extractMetadataFromLogs(
         metadata.steps[stepKey] ||
         ({
           state: IStepState.PREPARING,
+          attempts: [],
           transitions: [
             {
               state: IStepState.PREPARING,
@@ -251,7 +264,6 @@ export function extractMetadataFromLogs(
           start: undefined,
           end: undefined,
           markers: [],
-          retries: [],
           expectationResults: [],
           materializations: []
         } as IStepMetadata);
@@ -268,7 +280,12 @@ export function extractMetadataFromLogs(
         upsertState(step, timestamp, IStepState.FAILED);
         step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === "ExecutionStepUpForRetryEvent") {
-        upsertState(step, timestamp, IStepState.PREPARING);
+        // We only get one event when the step fails/aborts and is queued for retry,
+        // but we create an "exit" state separate from the "preparing for retry" state
+        // so that the box representing the attempt doesn't have a final state = preparing.
+        // That'd be more confusing.
+        upsertState(step, timestamp, IStepState.RETRY_REQUESTED);
+        upsertState(step, timestamp + 1, IStepState.PREPARING);
       } else if (log.__typename === "ExecutionStepRestartEvent") {
         upsertState(step, timestamp, IStepState.RUNNING);
       } else if (log.__typename === "StepMaterializationEvent") {
@@ -300,6 +317,28 @@ export function extractMetadataFromLogs(
       metadata.steps[stepKey] = step;
     }
   });
+
+  // Post processing
+
+  for (const step of Object.values(metadata.steps)) {
+    // Sort step transitions because logs may not arrive in order
+    step.transitions = step.transitions.sort((a, b) => a.time - b.time);
+
+    // Build step "attempts" from transitions
+    let start = null;
+    for (const t of step.transitions) {
+      if (t.state === IStepState.RUNNING) {
+        start = t.time;
+      }
+      if (start && BOX_EXIT_STATES.includes(t.state)) {
+        step.attempts.push({ start, end: t.time, exitState: t.state });
+        start = null;
+      }
+    }
+    if (start !== null) {
+      step.attempts.push({ start });
+    }
+  }
 
   return metadata;
 }
