@@ -1,9 +1,7 @@
 from __future__ import print_function
 
 import os
-import random
 import re
-import string
 import sys
 import textwrap
 import time
@@ -26,15 +24,13 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import telemetry_wrapper
-from dagster.core.utils import make_new_run_id
+from dagster.core.utils import make_new_backfill_id, make_new_run_id
 from dagster.seven import IS_WINDOWS
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
 from .config_scaffolder import scaffold_pipeline_config
-
-BACKFILL_TAG_LENGTH = 8
 
 
 def create_pipeline_cli_group():
@@ -598,9 +594,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     ):
 
         print_fn('Launching runs... ')
-        backfill_id = ''.join(
-            random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH)
-        )
+        backfill_id = make_new_backfill_id()
         run_tags = {'dagster/backfill': backfill_id}
         if celery_priority is not None:
             run_tags['dagster-celery/run_priority'] = celery_priority

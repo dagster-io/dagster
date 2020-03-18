@@ -1,6 +1,10 @@
+import random
+import string
 import uuid
 
 import toposort as toposort_
+
+BACKFILL_TAG_LENGTH = 8
 
 
 def toposort(data):
@@ -13,3 +17,7 @@ def toposort_flatten(data):
 
 def make_new_run_id():
     return str(uuid.uuid4())
+
+
+def make_new_backfill_id():
+    return ''.join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))

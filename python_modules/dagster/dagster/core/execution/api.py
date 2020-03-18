@@ -12,7 +12,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import telemetry_wrapper
-from dagster.core.utils import make_new_run_id
+from dagster.core.utils import make_new_backfill_id, make_new_run_id
 from dagster.utils import merge_dicts
 
 from .config import IRunConfig, RunConfig
@@ -423,7 +423,8 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
             environment_dict=partition_set.environment_dict_for_partition(partition),
             mode='default',
             tags=merge_dicts(
-                {'dagster/backfill': 'custom'}, partition_set.tags_for_partition(partition)
+                {'dagster/backfill': make_new_backfill_id()},
+                partition_set.tags_for_partition(partition),
             ),
             status=PipelineRunStatus.NOT_STARTED,
         )
