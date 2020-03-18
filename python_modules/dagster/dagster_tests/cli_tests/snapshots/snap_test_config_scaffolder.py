@@ -12,10 +12,6 @@ snapshots['test_basic_solids_config 1'] = {
             'config': {
                 'marker_to_close': '',
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {
@@ -27,10 +23,6 @@ snapshots['test_basic_solids_config 1'] = {
             'config': {
                 'max_concurrent': 0,
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {
@@ -83,10 +75,6 @@ snapshots['test_two_modes 2'] = {
             'config': {
                 'marker_to_close': '',
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {
@@ -98,10 +86,6 @@ snapshots['test_two_modes 2'] = {
             'config': {
                 'max_concurrent': 0,
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {
@@ -154,10 +138,6 @@ snapshots['test_two_modes 4'] = {
             'config': {
                 'marker_to_close': '',
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {
@@ -169,10 +149,6 @@ snapshots['test_two_modes 4'] = {
             'config': {
                 'max_concurrent': 0,
                 'retries': {
-                    'deferred': {
-                        'previous_attempts': {
-                        }
-                    },
                     'disabled': {
                     },
                     'enabled': {

@@ -549,6 +549,16 @@ class ExecutionTargetHandle(object):
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
+    def get_pipeline_for_run(self, pipeline_run):
+        from dagster.core.storage.pipeline_run import PipelineRun
+
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        return (
+            self.build_repository_definition()
+            .get_pipeline(pipeline_run.selector.name)
+            .build_sub_pipeline(pipeline_run.selector.solid_subset)
+        )
+
     def __init__(self, data, mode, is_resolved_to_pipeline=False):
         '''Not intended to be invoked directly. Use one of the factory functions above.
         '''

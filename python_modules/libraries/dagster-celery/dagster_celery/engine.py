@@ -2,7 +2,7 @@ import sys
 import time
 
 from dagster import check
-from dagster.core.engine.engine_base import Engine, override_env_for_inner_executor
+from dagster.core.engine.engine_base import Engine
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -13,7 +13,6 @@ from dagster.utils.net import is_local_uri
 
 from .config import CeleryConfig
 from .defaults import task_default_priority, task_default_queue
-from .tasks import create_task, make_app
 
 TICK_SECONDS = 1
 DELEGATE_MARKER = 'celery_queue_wait'
@@ -22,6 +21,8 @@ DELEGATE_MARKER = 'celery_queue_wait'
 class CeleryEngine(Engine):
     @staticmethod
     def execute(pipeline_context, execution_plan):
+        from .tasks import make_app
+
         check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -154,36 +155,23 @@ class CeleryEngine(Engine):
 
 
 def _submit_task(app, pipeline_context, step, queue):
+    from .tasks import create_task
+
     run_priority = _get_run_priority(pipeline_context)
     step_priority = int(step.tags.get('dagster-celery/priority', task_default_priority))
     priority = run_priority + step_priority
 
     task = create_task(app)
 
-    handle_dict = pipeline_context.execution_target_handle.to_dict()
-    instance_ref_dict = pipeline_context.instance.get_ref().to_dict()
-
-    pipeline_name = pipeline_context.pipeline_def.name
-    mode = pipeline_context.mode_def.name
-    run_id = pipeline_context.pipeline_run.run_id
-
-    variables = {
-        'executionParams': {
-            'selector': {'name': pipeline_name},
-            'environmentConfigData': override_env_for_inner_executor(
-                pipeline_context.environment_dict,
-                pipeline_context.executor_config.retries,
-                step.key,
-                DELEGATE_MARKER,
-            ),
-            'mode': mode,
-            'executionMetadata': {'runId': run_id},
-            'stepKeys': [step.key],
-        }
-    }
-    task_signature = task.si(handle_dict, variables, instance_ref_dict)
+    task_signature = task.si(
+        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
+        handle_dict=pipeline_context.execution_target_handle.to_dict(),
+        run_id=pipeline_context.pipeline_run.run_id,
+        step_keys=[step.key],
+        retries_dict=pipeline_context.executor_config.retries.for_inner_plan().to_config(),
+    )
     return task_signature.apply_async(
-        priority=priority, queue=queue, routing_key='{queue}.execute_query'.format(queue=queue),
+        priority=priority, queue=queue, routing_key='{queue}.execute_plan'.format(queue=queue),
     )
 
 

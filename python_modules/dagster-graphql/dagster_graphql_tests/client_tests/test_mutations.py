@@ -8,7 +8,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.utils import make_new_run_id
 
 EXPECTED_EVENTS = {
-    ('ENGINE_EVENT', None),
     ('STEP_INPUT', 'sleeper.compute'),
     ('STEP_INPUT', 'sleeper_2.compute'),
     ('STEP_INPUT', 'sleeper_3.compute'),

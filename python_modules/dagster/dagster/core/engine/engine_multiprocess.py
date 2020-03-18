@@ -1,12 +1,11 @@
 import os
 
-from dagster import check
+from dagster import EventMetadataEntry, check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.config import MultiprocessExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.utils import get_multiprocessing_context, start_termination_thread
@@ -18,7 +17,7 @@ from .child_process_executor import (
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from .engine_base import Engine, override_env_for_inner_executor
+from .engine_base import Engine
 
 DELEGATE_MARKER = 'multiprocess_subprocess_init'
 
@@ -37,6 +36,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
         pipeline_def = self.executor_config.load_pipeline(self.pipeline_run)
+        instance = DagsterInstance.from_ref(self.instance_ref)
 
         start_termination_thread(self.term_event)
 
@@ -44,13 +44,25 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             pipeline_def, self.environment_dict, self.pipeline_run
         ).build_subset_plan([self.step_key])
 
+        yield instance.report_engine_event(
+            MultiprocessEngine,
+            'Executing step {} in subprocess'.format(self.step_key),
+            self.pipeline_run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(str(os.getpid), 'pid'),
+                    EventMetadataEntry.text(self.step_key, 'step_key'),
+                ],
+                marker_end=DELEGATE_MARKER,
+            ),
+        )
+
         for step_event in execute_plan_iterator(
             execution_plan,
             self.pipeline_run,
-            environment_dict=override_env_for_inner_executor(
-                self.environment_dict, self.executor_config.retries, self.step_key, DELEGATE_MARKER,
-            ),
-            instance=DagsterInstance.from_ref(self.instance_ref),
+            environment_dict=self.environment_dict,
+            retries=self.executor_config.retries.for_inner_plan(),
+            instance=instance,
         ):
             yield step_event
 
@@ -114,11 +126,6 @@ class MultiprocessEngine(Engine):  # pylint: disable=no-init
         # garbage collection results that are no longer needed by any steps
         # https://github.com/dagster-io/dagster/issues/811
         with time_execution_scope() as timer_result:
-
-            for event in copy_required_intermediates_for_execution(
-                pipeline_context, execution_plan
-            ):
-                yield event
 
             active_execution = execution_plan.start(
                 retries=pipeline_context.executor_config.retries

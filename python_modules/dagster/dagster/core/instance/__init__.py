@@ -460,7 +460,9 @@ class DagsterInstance:
     def add_event_listener(self, run_id, cb):
         self._subscribers[run_id].append(cb)
 
-    def report_engine_event(self, cls, message, pipeline_run, engine_event_data=None):
+    def report_engine_event(
+        self, cls, message, pipeline_run, engine_event_data=None, step_key=None
+    ):
         '''
         Report a EngineEvent that occurred outside of a pipeline execution context.
         '''
@@ -480,6 +482,12 @@ class DagsterInstance:
         if engine_event_data and engine_event_data.error:
             log_level = logging.ERROR
 
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.ENGINE_EVENT.value,
+            pipeline_name=pipeline_run.pipeline_name,
+            message=message,
+            event_specific_data=engine_event_data,
+        )
         event_record = DagsterEventRecord(
             message=message,
             user_message=message,
@@ -488,15 +496,12 @@ class DagsterInstance:
             run_id=pipeline_run.run_id,
             error_info=None,
             timestamp=time.time(),
-            dagster_event=DagsterEvent(
-                event_type_value=DagsterEventType.ENGINE_EVENT.value,
-                pipeline_name=pipeline_run.pipeline_name,
-                message=message,
-                event_specific_data=engine_event_data,
-            ),
+            step_key=step_key,
+            dagster_event=dagster_event,
         )
 
         self.handle_new_event(event_record)
+        return dagster_event
 
     def report_run_failed(self, pipeline_run):
         from dagster.core.events import DagsterEvent, DagsterEventType

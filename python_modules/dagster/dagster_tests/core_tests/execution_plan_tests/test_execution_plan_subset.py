@@ -46,7 +46,6 @@ def test_execution_plan_simple_two_steps():
     )
     # start, out, success, start, input, out, success
     assert [e.event_type_value for e in events] == [
-        'ENGINE_EVENT',
         'STEP_START',
         'STEP_OUTPUT',
         'STEP_SUCCESS',
@@ -54,7 +53,6 @@ def test_execution_plan_simple_two_steps():
         'STEP_INPUT',
         'STEP_OUTPUT',
         'STEP_SUCCESS',
-        'ENGINE_EVENT',
     ]
 
     output_events = [e for e in events if e.event_type_value == 'STEP_OUTPUT']
@@ -81,10 +79,10 @@ def test_execution_plan_two_outputs():
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
 
+    assert step_events[1].step_key == 'return_one_two.compute'
+    assert step_events[1].step_output_data.output_name == 'num_one'
     assert step_events[2].step_key == 'return_one_two.compute'
-    assert step_events[2].step_output_data.output_name == 'num_one'
-    assert step_events[3].step_key == 'return_one_two.compute'
-    assert step_events[3].step_output_data.output_name == 'num_two'
+    assert step_events[2].step_output_data.output_name == 'num_two'
 
 
 def test_reentrant_execute_plan():
@@ -108,6 +106,6 @@ def test_reentrant_execute_plan():
     )
 
     assert called['yup']
-    assert len(step_events) == 5
+    assert len(step_events) == 3
 
     assert step_events[1].logging_tags['foo'] == 'bar'

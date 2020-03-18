@@ -9,6 +9,7 @@ from dagster import (
     ExecutionTargetHandle,
     Output,
     OutputDefinition,
+    PipelineRun,
     RetryRequested,
     RunConfig,
     execute_pipeline,
@@ -18,6 +19,8 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.retries import Retries, RetryMode
 from dagster.core.instance import DagsterInstance
 
 executors = pytest.mark.parametrize(
@@ -186,17 +189,18 @@ def test_step_retry_limit(environment):
 
 
 def test_retry_deferral():
-    result = execute_pipeline(
-        define_retry_limit_pipeline(),
-        environment_dict={'execution': {'in_process': {'config': {'retries': {'deferred': {}}}}}},
+    events = execute_plan(
+        create_execution_plan(define_retry_limit_pipeline()),
+        pipeline_run=PipelineRun.create_empty_run('retry_limits', '42'),
+        retries=Retries(RetryMode.DEFERRED),
         instance=DagsterInstance.local_temp(),
     )
-    events = defaultdict(list)
-    for ev in result.event_list:
-        events[ev.event_type].append(ev)
+    events_by_type = defaultdict(list)
+    for ev in events:
+        events_by_type[ev.event_type].append(ev)
 
-    assert len(events[DagsterEventType.STEP_START]) == 2
-    assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
+    assert len(events_by_type[DagsterEventType.STEP_START]) == 2
+    assert len(events_by_type[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
     assert DagsterEventType.STEP_RESTARTED not in events
     assert DagsterEventType.STEP_SUCCESS not in events
 

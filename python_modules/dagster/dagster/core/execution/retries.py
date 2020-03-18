@@ -1,22 +1,20 @@
 from collections import defaultdict
 from enum import Enum
 
-from dagster import Field, Permissive, Selector, check
+from dagster import Field, Selector, check
 
 
 def get_retries_config():
     return Field(
-        Selector({'enabled': {}, 'disabled': {}, 'deferred': {'previous_attempts': Permissive()}}),
-        is_required=False,
-        default_value={'enabled': {}},
+        Selector({'enabled': {}, 'disabled': {}}), is_required=False, default_value={'enabled': {}},
     )
 
 
 class RetryMode(Enum):
     ENABLED = 'enabled'
     DISABLED = 'disabled'
-    # Designed for use of in_process engine within "orchestrator" engine such as multiprocess,
-    # up_for_retry steps are not directly re-enqued, deferring that to the outer engine.
+    # Designed for use of inner plan execution within "orchestrator" engine such as multiprocess,
+    # up_for_retry steps are not directly re-enqueued, deferring that to the engine.
     DEFERRED = 'deferred'
 
 
@@ -47,7 +45,25 @@ class Retries:
     def mark_attempt(self, key):
         self._attempts[key] += 1
 
+    def for_inner_plan(self):
+        if self.disabled:
+            return self
+        elif self.enabled:
+            return Retries(mode=RetryMode.DEFERRED, previous_attempts=dict(self._attempts))
+        else:
+            check.failed('Can not create Retries for inner plan when already in deferred mode')
+
     @staticmethod
     def from_config(config_value):
         for selector, value in config_value.items():
             return Retries(RetryMode(selector), value.get('previous_attempts'))
+
+    def to_config(self):
+        value = {self._mode.value: {}}
+        if self.deferred:
+            value[self._mode.value] = {'previous_attempts': dict(self._attempts)}
+        return value
+
+    @staticmethod
+    def disabled_mode():
+        return Retries(RetryMode.DISABLED)

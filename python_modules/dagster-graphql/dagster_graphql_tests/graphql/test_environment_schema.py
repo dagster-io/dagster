@@ -20,7 +20,7 @@ query($selector: ExecutionSelector! $mode: String!)
 '''
 
 
-def test_successful_enviroment_schema():
+def test_successful_environment_schema():
     result = execute_dagster_graphql(
         define_test_context(),
         ENVIRONMENT_SCHEMA_QUERY,

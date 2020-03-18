@@ -11,6 +11,7 @@ from dagster.core.engine.init import InitExecutorContext
 from dagster.core.errors import DagsterError
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.config import ExecutorConfig
+from dagster.core.execution.memoization import validate_retry_memoization
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.resources_init import (
     get_required_resource_keys_to_init,
@@ -184,6 +185,9 @@ def pipeline_initialization_event_generator(
             executor_config=executor_config,
             raise_on_error=raise_on_error,
         )
+
+        _validate_plan_with_context(pipeline_context, execution_plan)
+
         yield pipeline_context
         for event in resources_manager.generate_teardown_events():
             yield event
@@ -212,6 +216,12 @@ def pipeline_initialization_event_generator(
 
         if raise_on_error:
             raise dagster_error
+
+
+# perform any plan validation that is dependent on access to the pipeline context
+def _validate_plan_with_context(pipeline_context, execution_plan):
+    if execution_plan.previous_run_id:
+        validate_retry_memoization(pipeline_context, execution_plan)
 
 
 def create_system_storage_data(

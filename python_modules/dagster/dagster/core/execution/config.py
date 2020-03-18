@@ -140,9 +140,7 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
-        return self._handle.build_pipeline_definition().build_sub_pipeline(
-            pipeline_run.selector.solid_subset
-        )
+        return self._handle.get_pipeline_for_run(pipeline_run)
 
     def get_engine(self):
         from dagster.core.engine.engine_multiprocess import MultiprocessEngine

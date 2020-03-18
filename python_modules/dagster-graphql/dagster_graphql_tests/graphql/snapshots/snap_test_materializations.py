@@ -17,10 +17,7 @@ snapshots['test_materializations 1'] = [
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Executing steps in process ((pid: *****))',
-        'step': {
-            'key': 'materialize.compute',
-            'solidHandleID': 'materialize'
-        }
+        'step': None
     },
     {
         '__typename': 'ExecutionStepStartEvent',
@@ -115,10 +112,7 @@ snapshots['test_materializations 1'] = [
         '__typename': 'EngineEvent',
         'level': 'DEBUG',
         'message': 'Finished steps in process ((pid: *****)) in ***.**ms',
-        'step': {
-            'key': 'materialize.compute',
-            'solidHandleID': 'materialize'
-        }
+        'step': None
     },
     {
         '__typename': 'PipelineSuccessEvent',

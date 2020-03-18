@@ -48,7 +48,7 @@ follows:
 
     app = Celery('dagster', broker_url='some://custom@value', ...)
 
-    execute_query = create_task(app)
+    execute_plan = create_task(app)
 
     if __name__ == '__main__':
         app.worker_main()

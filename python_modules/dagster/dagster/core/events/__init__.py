@@ -769,13 +769,11 @@ class EngineEventData(
         )
 
     @staticmethod
-    def multiprocess(pid, parent_pid=None, step_keys_to_execute=None):
+    def multiprocess(pid, step_keys_to_execute=None):
         check.int_param(pid, 'pid')
-        check.opt_int_param(parent_pid, 'parent_pid')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute')
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), 'pid')]
-            + ([EventMetadataEntry.text(str(parent_pid), 'parent_pid')] if parent_pid else [])
             + (
                 [EventMetadataEntry.text(str(step_keys_to_execute), 'step_keys')]
                 if step_keys_to_execute

@@ -320,7 +320,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         PipelineRun(
             pipeline_name=composite_pipeline_with_config_mapping.name,
             run_id=run_id,
-            selector=ExecutionSelector('nonce'),
+            selector=ExecutionSelector(composite_pipeline_with_config_mapping.name),
             environment_dict=environment_dict,
             mode='default',
             step_keys_to_execute=None,
@@ -349,9 +349,9 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
     pipeline_run = instance.create_run(
         PipelineRun(
-            pipeline_name=composite_pipeline.name,
+            pipeline_name=composite_pipeline_with_config_mapping.name,
             run_id=run_id,
-            selector=ExecutionSelector('nonce'),
+            selector=ExecutionSelector(composite_pipeline_with_config_mapping.name),
             environment_dict=environment_dict,
             mode='default',
             step_keys_to_execute=None,
@@ -360,7 +360,9 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         )
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(
+        handle, composite_pipeline_with_config_mapping, pipeline_run, instance
+    )
 
     execution_manager.join()
     assert instance.get_run_by_id(run_id).status == PipelineRunStatus.SUCCESS

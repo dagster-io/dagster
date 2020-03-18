@@ -142,7 +142,9 @@ def test_execute_plan_iterator():
     )
 
     execution_plan = create_execution_plan(pipeline, environment_dict)
-    iterator = execute_plan_iterator(execution_plan, pipeline_run, environment_dict, instance)
+    iterator = execute_plan_iterator(
+        execution_plan, pipeline_run, instance, environment_dict=environment_dict
+    )
 
     event_type = None
     while event_type != 'STEP_START':
