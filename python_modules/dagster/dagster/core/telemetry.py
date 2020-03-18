@@ -268,11 +268,17 @@ def _get_instance_id():
             if instance_profile_json is None:
                 instance_profile_json = {}
 
-            if TELEMETRY_STR in instance_profile_json:
-                if INSTANCE_ID_STR in instance_profile_json[TELEMETRY_STR]:
-                    instance_id = instance_profile_json[TELEMETRY_STR][INSTANCE_ID_STR]
-                if ENABLED_STR in instance_profile_json[TELEMETRY_STR]:
-                    dagster_telemetry_enabled = instance_profile_json[TELEMETRY_STR][ENABLED_STR]
+            # Make sure instance_profile_json[TELEMETRY_STR] exists and is dict
+            if (
+                TELEMETRY_STR in instance_profile_json
+                and not isinstance(instance_profile_json[TELEMETRY_STR], dict)
+            ) or TELEMETRY_STR not in instance_profile_json:
+                instance_profile_json[TELEMETRY_STR] = {}
+
+            if INSTANCE_ID_STR in instance_profile_json[TELEMETRY_STR]:
+                instance_id = instance_profile_json[TELEMETRY_STR][INSTANCE_ID_STR]
+            if ENABLED_STR in instance_profile_json[TELEMETRY_STR]:
+                dagster_telemetry_enabled = instance_profile_json[TELEMETRY_STR][ENABLED_STR]
 
         if not dagster_telemetry_enabled is False and (
             instance_id is None or dagster_telemetry_enabled is None

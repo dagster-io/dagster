@@ -1,7 +1,6 @@
 import datetime
 import json
 import logging
-import time
 
 from dagster import seven
 from dagster.core.telemetry import (
@@ -112,50 +111,40 @@ def test_telemetry_disabled():
     with environ({'DAGSTER_TELEMETRY_ENABLED': 'True'}):
         with seven.TemporaryDirectory() as tmpdir_path:
             with environ({'DAGSTER_HOME': tmpdir_path}):
-                execute_disable_telemetry()
-                with mock.patch(
-                    'dagster.core.telemetry.open', mock.mock_open(), create=True
-                ) as file_mock:
+                logger = logging.getLogger('telemetry_logger')
+                with mock.patch.object(logger, 'info') as mock_logger:
+                    execute_disable_telemetry()
                     log_action(
                         action='did something', client_time=datetime.datetime.now(), metadata={}
                     )
-                    time.sleep(0.5)
-                    file_mock.return_value.write.assert_not_called()
+                    mock_logger.assert_not_called()
 
 
 def test_dagster_telemetry_enabled():
     with environ({'DAGSTER_TELEMETRY_ENABLED': 'True'}):
         with seven.TemporaryDirectory() as tmpdir_path:
             with environ({'DAGSTER_HOME': tmpdir_path}):
-                with mock.patch(
-                    'dagster.core.telemetry.open', mock.mock_open(), create=True
-                ) as file_mock:
-                    logger = logging.getLogger('telemetry_logger')
-                    with mock.patch.object(logger, 'info') as mock_logger:
-                        execute_enable_telemetry()
-                        (instance_id, dagster_telemetry_enabled) = _get_instance_id()
-                        assert dagster_telemetry_enabled == True
+                logger = logging.getLogger('telemetry_logger')
+                with mock.patch.object(logger, 'info') as mock_logger:
+                    execute_enable_telemetry()
+                    (instance_id, dagster_telemetry_enabled) = _get_instance_id()
+                    assert dagster_telemetry_enabled == True
 
-                        log_action(
-                            action='did something', client_time=datetime.datetime.now(), metadata={}
-                        )
+                    log_action(
+                        action='did something', client_time=datetime.datetime.now(), metadata={}
+                    )
 
-                        assert file_mock.call_args_list == [
-                            mock.call(tmpdir_path + '/dagster.yaml', 'w'),
-                            mock.call(tmpdir_path + '/dagster.yaml', 'w'),
-                            mock.call(tmpdir_path + '/dagster.yaml', 'w'),
-                        ]
-                        (x) = mock_logger.call_args[0][0]
+                    (x) = mock_logger.call_args[0][0]
 
-                        client_time = json.loads(x)['client_time']
-                        event_id = json.loads(x)['event_id']
+                    client_time = json.loads(x)['client_time']
+                    event_id = json.loads(x)['event_id']
 
-                        expected_log = {
-                            'action': 'did something',
-                            'client_time': client_time,
-                            'elapsed_time': 'None',
-                            'event_id': event_id,
-                            'instance_id': instance_id,
-                            'metadata': {},
-                        }
-                        mock_logger.assert_called_once_with(json.dumps(expected_log))
+                    expected_log = {
+                        'action': 'did something',
+                        'client_time': client_time,
+                        'elapsed_time': 'None',
+                        'event_id': event_id,
+                        'instance_id': instance_id,
+                        'metadata': {},
+                    }
+                    mock_logger.assert_called_once_with(json.dumps(expected_log))
