@@ -323,13 +323,19 @@ export const adjustLayoutWithRunMetadata = (
       const box = boxes[ii];
       const meta = metadata.steps[box.node.name];
       if (!meta) {
+        box.x = 0; // allow position to be set based on ohther timed boxes
         continue;
       }
       if (meta.state === IStepState.SKIPPED) {
         box.state = IStepState.SKIPPED;
+        box.x = 0; // allow position to be set based on other timed boxes
         continue;
       }
 
+      box.x = xForMs(start);
+      box.width = boxWidthFor(meta, options, scale, nowMs);
+
+      if ()
       const next: GaantChartBox[] = [];
       let start = null;
       for (const t of meta.transitions) {
@@ -344,22 +350,39 @@ export const adjustLayoutWithRunMetadata = (
             key: `${box.key}-${next.length}`,
             width: boxWidthFor({ start, end: t.time }, options, scale, nowMs)
           });
+          start = null;
         }
       }
+      if (start !== null) {
+        next.push({
+          ...box,
+          state: IStepState.RUNNING,
+          x: xForMs(start),
+          key: `${box.key}-${next.length}`,
+          width: boxWidthFor({ start }, options, scale, nowMs)
+        });
+      }
+
+      // Move the children (used to draw outbound lines) to the last box
+      for (let ii = 0; ii < next.length - 1; ii++) {
+        next[ii].children = [next[ii + 1]];
+      }
+      next[next.length - 1].children = box.children;
 
       Object.assign(box, next[0]);
+      // Add additional boxes we created for retries
       if (next.length > 1) {
         boxes.splice(ii, 0, ...next.slice(1));
       }
     }
 
-    // Traverse the graph and push boxes right as we go to account for new widths
+    // Traverse the graph from the root and place boxes that still have x=0 locations.
+    // (Unstarted or skipped boxes) so that they appear downstream of running boxes
+    // we have position / time data for.
     const deepenOrUseMetadata = (box: GaantChartBox, parentX: number) => {
-      const start = metadata.steps[box.node.name]?.start;
-
-      box.x = start
-        ? xForMs(start)
-        : Math.max(parentX, box.x, xForMs(nowMs) + BOX_SPACING_X);
+      if (box.x === 0) {
+        box.x = Math.max(parentX, box.x, xForMs(nowMs) + BOX_SPACING_X);
+      }
 
       const minXForUnstartedChildren = box.x + box.width + BOX_SPACING_X;
       for (const child of box.children) {

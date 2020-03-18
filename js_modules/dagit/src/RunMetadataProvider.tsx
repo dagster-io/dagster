@@ -62,12 +62,17 @@ export interface IStepMetadata {
   // current state
   state: IStepState;
 
-  // execution start and stop (user-code)
+  // execution start and stop (user-code) inclusive of all retries
   start?: number;
   end?: number;
 
   // current state + prev state transition times
   transitions: {
+    state: IStepState;
+    time: number;
+  }[];
+
+  runs: {
     state: IStepState;
     time: number;
   }[];
