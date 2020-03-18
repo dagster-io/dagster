@@ -132,6 +132,14 @@ def test_start_worker_config_from_empty_yaml():
 
 
 @skip_ci
+def test_start_worker_config_from_partial_yaml():
+    args = ['-y', file_relative_path(__file__, 'partial.yaml')]
+    with cleanup_worker('dagster_test_worker', args=args):
+        start_worker('dagster_test_worker', args=args)
+        assert check_for_worker('dagster_test_worker')
+
+
+@skip_ci
 def test_start_worker_config_from_yaml():
     args = ['-y', file_relative_path(__file__, 'engine_config.yaml')]
 

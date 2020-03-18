@@ -1,4 +1,4 @@
-from dagster import Field, Permissive, String
+from dagster import Field, Noneable, Permissive
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.execution.retries import Retries, get_retries_config
 
@@ -9,7 +9,7 @@ from .config import CeleryConfig
     name='celery',
     config={
         'broker': Field(
-            String,
+            Noneable(str),
             is_required=False,
             description=(
                 'The URL of the Celery broker. Default: '
@@ -18,7 +18,7 @@ from .config import CeleryConfig
             ),
         ),
         'backend': Field(
-            String,
+            Noneable(str),
             is_required=False,
             default_value='rpc://',
             description='The URL of the Celery results backend. Default: \'rpc://\'.',
@@ -27,7 +27,9 @@ from .config import CeleryConfig
             [str], is_required=False, description='List of modules every worker should import'
         ),
         'config_source': Field(
-            Permissive(), is_required=False, description='Additional settings for the Celery app.'
+            Noneable(Permissive()),
+            is_required=False,
+            description='Additional settings for the Celery app.',
         ),
         'retries': get_retries_config(),
     },

@@ -7,6 +7,7 @@ from celery.utils.nodenames import default_nodename, host_format
 
 from dagster import check
 from dagster.config.validate import validate_config
+from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_path, mkdir_p
 
@@ -64,19 +65,28 @@ def get_config_dir(config_yaml=None):
     config_path = os.path.join(
         config_dir, '{config_module_name}.py'.format(config_module_name=config_module_name)
     )
+
+    config = validate_config(config_type, config_value)
+    if not config.success:
+        raise DagsterInvalidConfigError(
+            'Errors while loading Celery executor config at {}.'.format(config_yaml),
+            config.errors,
+            config_value,
+        )
+
     validated_config = validate_config(config_type, config_value).value
     with open(config_path, 'w') as fd:
-        if 'broker' in validated_config:
+        if 'broker' in validated_config and validated_config['broker']:
             fd.write(
                 'broker_url = \'{broker_url}\'\n'.format(broker_url=str(validated_config['broker']))
             )
-        if 'backend' in validated_config:
+        if 'backend' in validated_config and validated_config['backend']:
             fd.write(
                 'result_backend = \'{result_backend}\'\n'.format(
                     result_backend=str(validated_config['backend'])
                 )
             )
-        if 'config_source' in validated_config:
+        if 'config_source' in validated_config and validated_config['config_source']:
             for key, value in validated_config['config_source'].items():
                 fd.write('{key} = {value}\n'.format(key=key, value=repr(value)))
 
