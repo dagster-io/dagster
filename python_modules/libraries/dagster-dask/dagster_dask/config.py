@@ -53,6 +53,11 @@ class DaskConfig(
         '''
         dask_cfg = {
             'name': pipeline_name,
+        }
+
+        # if address is set, don't add LocalCluster args
+        # context: https://github.com/dask/distributed/issues/3313
+        if not getattr(self, 'address', None):
             # We set threads_per_worker because Dagster is not thread-safe. Even though
             # processes=True by default, there is a clever piece of machinery
             # (dask.distributed.deploy.local.nprocesses_nthreads) that automagically makes execution
@@ -60,8 +65,8 @@ class DaskConfig(
             # See: https://github.com/dagster-io/dagster/issues/2181
             # We may want to try to figure out a way to enforce this on remote Dask clusters against
             # which users run Dagster workloads.
-            'threads_per_worker': 1,
-        }
+            dask_cfg['threads_per_worker'] = 1
+
         for cfg_param in [
             'address',
             'timeout',
