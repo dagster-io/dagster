@@ -1,4 +1,6 @@
-export const wrapper = opened => ({
+import { SxStyleProp } from "theme-ui";
+
+export const wrapper = (opened: boolean): SxStyleProp => ({
   zIndex: opened ? 99 : "auto",
   position: "relative",
   overflowY: "auto",
@@ -29,7 +31,7 @@ export const wrapper = opened => ({
   }
 });
 
-export const active = (hasActive, top) => ({
+export const active = (hasActive: boolean, top: number): SxStyleProp => ({
   position: "absolute",
   width: 4,
   height: 25,
@@ -42,7 +44,7 @@ export const active = (hasActive, top) => ({
   transition: "transform .2s cubic-bezier(.25,.75,.5,1.25)"
 });
 
-export const content = {
+export const content: SxStyleProp = {
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-start",
@@ -50,6 +52,6 @@ export const content = {
   maxHeight: "100vh"
 };
 
-export const menu = {
+export const menu: SxStyleProp = {
   mb: 4
 };

@@ -1,0 +1,23 @@
+export type Color = string;
+export type ColorPallette = [Color, Color, Color, Color, Color];
+export type ColorTheme = {
+  black: Color;
+  white: Color;
+  dark: ColorPallette;
+  gray: ColorPallette;
+  lightGray: ColorPallette;
+  blue: ColorPallette;
+  green: ColorPallette;
+  orange: ColorPallette;
+  red: ColorPallette;
+  vermilion: ColorPallette;
+  rose: ColorPallette;
+  violet: ColorPallette;
+  indigo: ColorPallette;
+  cobalt: ColorPallette;
+  turquoise: ColorPallette;
+  forest: ColorPallette;
+  lime: ColorPallette;
+  gold: ColorPallette;
+  sepia: ColorPallette;
+};

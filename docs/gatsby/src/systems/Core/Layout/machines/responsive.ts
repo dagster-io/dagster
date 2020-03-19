@@ -38,14 +38,14 @@ const machine = Machine({
 });
 
 const guards = {
-  isDesktop: ctx => {
+  isDesktop: (ctx: any) => {
     return ctx.width >= 1366;
   }
 };
 
 const actions = {
   setWidth: assign({
-    width: (_, ev) => ev.data
+    width: (_, ev: any) => ev.data
   })
 };
 

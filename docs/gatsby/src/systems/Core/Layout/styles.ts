@@ -1,6 +1,7 @@
 import { theme as t } from "utils/css";
+import { SxStyleProp } from "theme-ui";
 
-export const page = state => {
+export const page = (state: any): SxStyleProp => {
   const closed = !state.matches("showing");
   const transform = `translate(${closed ? "-250px" : 0})`;
 
@@ -14,7 +15,7 @@ export const page = state => {
   };
 };
 
-export const content = state => {
+export const content = (state: any): SxStyleProp => {
   const closed = !state.matches("showing");
   return {
     flex: 1,

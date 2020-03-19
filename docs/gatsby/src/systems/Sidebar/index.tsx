@@ -17,7 +17,13 @@ import { isSidebarLink, Link as SidebarLink } from "./components/Link";
 import { useElement } from "../ReactParser/hooks/useElement";
 import * as styles from "./styles";
 
-export const renderElements = () => (renderedNodes, node, idx, _nodes) => {
+export const renderElements = () => (
+  renderedNodes: any[],
+  node: any,
+  idx: number,
+  // TODO: Remove after testing
+  _nodes: any[]
+) => {
   const { tagName: Component, nodeName, value = [] } = node;
   const { props, children } = useElement(node, renderElements);
 
@@ -56,44 +62,52 @@ export const renderElements = () => (renderedNodes, node, idx, _nodes) => {
   return renderedNodes;
 };
 
-export const Sidebar = forwardRef(({ opened, location }, ref) => {
-  const { width } = useWindowSize();
-  const data = useStaticQuery(graphql`
-    query IndexPage {
-      page: sphinxPage(current_page_name: { eq: "index" }) {
-        parsed
+type SidebarProps = {
+  opened: boolean;
+  location: any;
+  onLinkClick: () => void;
+};
+
+export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(
+  ({ opened, location }, ref) => {
+    const { width } = useWindowSize();
+    const data = useStaticQuery(graphql`
+      query IndexPage {
+        page: sphinxPage(current_page_name: { eq: "index" }) {
+          parsed
+        }
       }
-    }
-  `);
+    `);
 
-  const storage = useLocalStorage("activeMenuTop");
-  const [state, send] = useMachine(
-    activeMenuMachine.withContext({
-      storage,
-      top: storage ? storage.get() : 0
-    })
-  );
+    const storage = useLocalStorage("activeMenuTop");
+    const [state, send] = useMachine(
+      activeMenuMachine.withContext({
+        storage,
+        top: storage ? storage.get() : 0
+      })
+    );
 
-  const { top, active } = state.context;
+    const { top, active } = state.context;
 
-  useEffect(() => {
-    send("FIND_REFERENCE", { location: location });
-  }, [location, send]);
+    useEffect(() => {
+      send("FIND_REFERENCE", { location: location });
+    }, [location, send]);
 
-  return (
-    <div ref={ref} sx={styles.wrapper(opened && width < 1024)}>
-      <div sx={styles.content}>
-        <Menu vertical sx={styles.menu}>
-          {Boolean(top) && <span sx={styles.active(active, top)} />}
-          <ReactParser
-            tree={data.page.parsed}
-            renderElements={renderElements}
-          />
-          <h6 class="version-wrapper">
-            Version: <VersionSelector />
-          </h6>
-        </Menu>
+    return (
+      <div ref={ref} sx={styles.wrapper(opened && width < 1024)}>
+        <div sx={styles.content}>
+          <Menu vertical sx={styles.menu}>
+            {Boolean(top) && <span sx={styles.active(active, top)} />}
+            <ReactParser
+              tree={data.page.parsed}
+              renderElements={renderElements}
+            />
+            <h6 className="version-wrapper">
+              Version: <VersionSelector />
+            </h6>
+          </Menu>
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);

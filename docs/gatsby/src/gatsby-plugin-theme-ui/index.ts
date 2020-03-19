@@ -1,8 +1,11 @@
+import { Theme } from "theme-ui";
 import { rem } from "utils/css";
 import colors from "./colors";
 
-export default {
+const theme: Theme = {
   breakpoints: ["600px", "1024px", "1366px"],
+  // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+  // @ts-ignore
   colors: {
     ...colors,
     primary: colors.blue[2],
@@ -62,3 +65,5 @@ export default {
     gutter: [rem(88), rem(100), rem(155)]
   }
 };
+
+export default theme;

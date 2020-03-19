@@ -1,8 +1,10 @@
 import { rem } from "utils/css";
+import { SxStyleProp } from "theme-ui";
 
-const minWidthCalc = (t, space) => `calc(100% - ${rem(t.space[space])})`;
+const minWidthCalc = (t: any, space: any) =>
+  `calc(100% - ${rem(t.space[space])})`;
 
-export const wrapper = {
+export const wrapper: SxStyleProp = {
   zIndex: 9,
   position: "relative",
   p: 3,
@@ -12,20 +14,20 @@ export const wrapper = {
   bg: "header.bg"
 };
 
-export const right = {
+export const right: SxStyleProp = {
   display: "flex",
   alignItems: "center",
   flex: 1
 };
 
-export const search = showing => ({
+export const search = (showing: boolean): SxStyleProp => ({
   ml: [showing ? 0 : 3, showing ? 0 : 3, 5],
   mr: [showing ? 0 : 3, showing ? 0 : 3, 5],
   position: "relative",
   width: "100%"
 });
 
-const toggleVisiblity = showing => ({
+const toggleVisiblity = (showing: boolean): SxStyleProp => ({
   visibility: [
     showing ? "hidden" : "visible",
     showing ? "hidden" : "visible",
@@ -36,7 +38,7 @@ const toggleVisiblity = showing => ({
   transition: "all .3s"
 });
 
-export const menuBtn = showing => ({
+export const menuBtn = (showing: boolean): SxStyleProp => ({
   ...toggleVisiblity(showing),
   p: 0,
   mr: [showing ? 0 : 2, showing ? 0 : 2, 2],
@@ -56,12 +58,12 @@ export const menuBtn = showing => ({
   }
 });
 
-export const logo = showing => ({
+export const logo = (showing: boolean): SxStyleProp => ({
   ...toggleVisiblity(showing),
   width: [showing ? 0 : 120, showing ? 0 : 120, 120]
 });
 
-export const socialIcons = showing => ({
+export const socialIcons = (showing: boolean): SxStyleProp => ({
   mr: [2, 2, 4],
   display: [
     showing ? "none" : "inline-grid",
@@ -77,7 +79,7 @@ export const socialIcons = showing => ({
   }
 });
 
-export const externalLink = {
+export const externalLink: SxStyleProp = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

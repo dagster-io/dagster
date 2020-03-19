@@ -17,6 +17,7 @@
     "serve": "gatsby serve",
     "clean": "gatsby clean",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
+    "check-types": "tsc --noEmit",
     "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\""
   },
@@ -31,6 +32,7 @@
     "gatsby": "^2.19.19",
     "gatsby-image": "^2.2.41",
     "gatsby-link": "^2.2.29",
+    "gatsby-plugin-typescript": "^2.2.5",
     "gatsby-react-router-scroll": "^2.1.21",
     "highlight.js": "^9.18.1",
     "immer": "^5.3.6",
@@ -55,6 +57,7 @@
   "devDependencies": {
     "@commitlint/cli": "^8.3.5",
     "@commitlint/config-conventional": "^8.3.4",
+    "@types/theme-ui": "^0.3.0",
     "@typescript-eslint/eslint-plugin": "^2.20.0",
     "@typescript-eslint/parser": "^2.20.0",
     "algoliasearch": "^4.0.3",

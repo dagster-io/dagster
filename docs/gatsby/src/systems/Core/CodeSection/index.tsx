@@ -5,11 +5,17 @@ import traverse from "parse5-traverse";
 
 import * as styles from "./styles";
 import { renderElements } from "systems/ReactParser";
+import { DetailedHTMLProps, HTMLAttributes } from "react";
 
-const findPreInTree = (node, language) => {
-  const acc = [];
+export type TraverseNode = HTMLElement & {
+  attrs: any[];
+  value: any;
+};
+
+const findPreInTree = (node: TraverseNode, language: string) => {
+  const acc: TraverseNode[] = [];
   traverse(node, {
-    post(node, parent) {
+    post(node: TraverseNode, parent: TraverseNode) {
       if (node.tagName === "pre" && parent.tagName === "div") {
         node.attrs.push({ name: "data-language", value: language });
         acc.push(node);
@@ -20,10 +26,10 @@ const findPreInTree = (node, language) => {
   return acc;
 };
 
-const findLanguage = node => {
+const findLanguage = (node: TraverseNode) => {
   let language = "";
   traverse(node, {
-    post(node) {
+    post(node: TraverseNode) {
       const regexp = /(.+)(\.)(.+)$/;
       if (node.nodeName === "#text" && regexp.test(node.value)) {
         language = node.value.match(regexp)[3];
@@ -33,14 +39,14 @@ const findLanguage = node => {
   return language;
 };
 
-const removeTableElements = language => node => {
+const removeTableElements = (language: string) => (node: TraverseNode) => {
   if (node.attrs.length > 0 && node.attrs[0].value === "code-block") {
     return { ...node, childNodes: findPreInTree(node, language) };
   }
   return node;
 };
 
-const parseChildren = nodes => {
+const parseChildren = (nodes: TraverseNode[]) => {
   const child = nodes.filter(({ nodeName }) => nodeName !== "#text");
   return produce(child, draft => {
     draft[0].attrs.push({ name: "className", value: "code-file" });
@@ -48,7 +54,17 @@ const parseChildren = nodes => {
   });
 };
 
-export const CodeSection = ({ nodes, ...props }) => {
+type CodeSectionProps = DetailedHTMLProps<
+  HTMLAttributes<HTMLElement>,
+  HTMLElement
+> & {
+  nodes: TraverseNode[];
+};
+
+export const CodeSection: React.FC<CodeSectionProps> = ({
+  nodes,
+  ...props
+}) => {
   const children = parseChildren(nodes);
   const language = findLanguage(children[0]);
 

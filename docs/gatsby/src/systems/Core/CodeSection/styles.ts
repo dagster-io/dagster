@@ -1,8 +1,10 @@
-const border = t => {
-  return `1px solid ${t.colors.lightGray[1]}`;
+import { Theme, SxStyleProp } from "theme-ui";
+
+const border = (t: Theme) => {
+  return `1px solid ${(t.colors!.lightGray as string[])[1]}`;
 };
 
-export const wrapper = {
+export const wrapper: SxStyleProp = {
   fontFamily: "mono",
   my: [3, 3, 4],
 

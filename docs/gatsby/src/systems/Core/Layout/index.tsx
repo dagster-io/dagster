@@ -5,7 +5,6 @@ import { jsx, Styled } from "theme-ui";
 import { useRef, useEffect } from "react";
 import { Location } from "@reach/router";
 import { useMachine } from "@xstate/react";
-import useClickAway from "react-use/lib/useClickAway";
 import useKeyPressEvent from "react-use/lib/useKeyPressEvent";
 import useWindowSize from "react-use/lib/useWindowSize";
 import PropTypes from "prop-types";
@@ -18,7 +17,7 @@ import * as styles from "./styles";
 
 import styled from "@emotion/styled";
 
-export const Layout = ({ children }) => {
+export const Layout: React.FC = ({ children }) => {
   const sidebarRef = useRef(null);
   const { width } = useWindowSize();
   const [state, send] = useMachine(responsiveMachine);

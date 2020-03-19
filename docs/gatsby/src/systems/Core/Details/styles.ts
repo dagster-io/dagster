@@ -1,4 +1,6 @@
-export const wrapper = {
+import { SxStyleProp } from "theme-ui";
+
+export const wrapper: SxStyleProp = {
   p: 4,
   bg: "lightGray.3",
   borderRadius: "radius",

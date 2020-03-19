@@ -4,7 +4,7 @@ import { Redirect } from "@reach/router";
 
 import { useVersion } from "systems/Version";
 
-const IndexPage = () => {
+const IndexPage: React.FC = () => {
   const { version } = useVersion();
   return (
     <Layout>

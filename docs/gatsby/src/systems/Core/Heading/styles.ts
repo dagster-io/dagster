@@ -1,3 +1,7 @@
+import { SxStyleProp } from "theme-ui";
+
+type Tag = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
 const headingColor = {
   h1: "dark",
   h2: "dark",
@@ -7,12 +11,11 @@ const headingColor = {
   h6: "dark"
 };
 
-export const wrapper = tag => ({
+export const wrapper = (tag: Tag): SxStyleProp => ({
   position: "relative",
   display: "table",
   fontFamily: "heading",
   color: headingColor[tag],
-
   ".permalink": {
     position: "absolute",
     color: "inherit",
@@ -22,7 +25,6 @@ export const wrapper = tag => ({
     opacity: 0,
     transition: "opacity .3s"
   },
-
   ":hover .permalink": {
     opacity: 0.6
   }
