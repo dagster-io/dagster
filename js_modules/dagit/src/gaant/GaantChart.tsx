@@ -560,16 +560,15 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     // Note: We sort the markers from left to right so that they're added to the DOM in that
     // order and a long one doesn't make ones "behind it" unclickable.
     layout.markers
-      .map(marker => ({ marker, bounds: boundsForBox(marker) }))
+      .map((marker, idx) => ({ marker, idx, bounds: boundsForBox(marker) }))
       .filter(({ bounds }) => intersectsViewport(bounds))
       .sort((a, b) => a.bounds.minX - b.bounds.minX)
-      .forEach(({ marker, bounds }) => {
+      .forEach(({ marker, bounds, idx }) => {
         const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
 
         items.push(
           <div
-            key={marker.key}
-            id={marker.key}
+            key={idx}
             data-tooltip-text={marker.key}
             className={`
             chart-element
