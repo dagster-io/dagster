@@ -2,5 +2,4 @@ solids:
   sort_by_calories:
     inputs:
       cereals:
-        pickle:
-          path: "/dagster_home/storage/2584d954-a30f-4be6-bbfc-c919e4bee84b/intermediates/read_csv.compute/result"
+        pickle: "/dagster_home/storage/2584d954-a30f-4be6-bbfc-c919e4bee84b/intermediates/read_csv.compute/result"

@@ -42,9 +42,9 @@ custom :py:class:`SerializationStrategy <dagster.SerializationStrategy>` on it t
 to store intermediates of this type.
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/serialization_strategy.py
-   :lines: 12-36
+   :lines: 16-39
    :linenos:
-   :lineno-start: 12
+   :lineno-start: 16
    :caption: serialization_strategy.py
    :language: python
 

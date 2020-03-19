@@ -1,8 +1,11 @@
 import csv
 
 from dagster import (
+    Path,
+    Selector,
     SerializationStrategy,
     execute_pipeline,
+    input_hydration_config,
     pipeline,
     solid,
     usable_as_dagster_type,
@@ -26,6 +29,15 @@ class CsvSerializationStrategy(SerializationStrategy):
         return LessSimpleDataFrame([row for row in reader])
 
 
+@input_hydration_config(Selector({'pickle': Path}))
+def less_simple_data_frame_input_hydration_config(context, selector):
+    with open(selector['pickle'], 'r') as fd:
+        lines = [row for row in csv.DictReader(fd)]
+
+    context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
+    return LessSimpleDataFrame(lines)
+
+
 @usable_as_dagster_type(
     name='LessSimpleDataFrame',
     description=(
@@ -33,6 +45,7 @@ class CsvSerializationStrategy(SerializationStrategy):
         'csv.DictReader.'
     ),
     serialization_strategy=CsvSerializationStrategy(),
+    input_hydration_config=less_simple_data_frame_input_hydration_config,
 )
 class LessSimpleDataFrame(list):
     pass
