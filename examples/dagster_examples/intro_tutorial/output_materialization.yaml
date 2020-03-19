@@ -8,3 +8,5 @@ solids:
           csv:
             path: "sorted_cereals.csv"
             sep: ";"
+          json:
+            path: "sorted_cereals.json"

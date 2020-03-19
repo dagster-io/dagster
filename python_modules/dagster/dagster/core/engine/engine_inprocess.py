@@ -674,24 +674,25 @@ def _create_output_materializations(step_context, output_name, value):
                         solid=step_context.solid.name,
                     ),
                 ):
-                    materialization = step_output.dagster_type.output_materialization_config.materialize_runtime_value(
+                    materializations = step_output.dagster_type.output_materialization_config.materialize_runtime_values(
                         step_context, output_spec, value
                     )
 
-                if not isinstance(materialization, Materialization):
-                    raise DagsterInvariantViolationError(
-                        (
-                            'materialize_runtime_value on type {type_name} has returned '
-                            'value {value} of type {python_type}. You must return a '
-                            'Materialization.'
-                        ).format(
-                            type_name=step_output.dagster_type.name,
-                            value=repr(materialization),
-                            python_type=type(materialization).__name__,
+                for materialization in materializations:
+                    if not isinstance(materialization, Materialization):
+                        raise DagsterInvariantViolationError(
+                            (
+                                'materialize_runtime_values on type {type_name} has returned '
+                                'value {value} of type {python_type}. You must return a '
+                                'Materialization.'
+                            ).format(
+                                type_name=step_output.dagster_type.name,
+                                value=repr(materialization),
+                                python_type=type(materialization).__name__,
+                            )
                         )
-                    )
 
-                yield DagsterEvent.step_materialization(step_context, materialization)
+                    yield DagsterEvent.step_materialization(step_context, materialization)
 
 
 def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):

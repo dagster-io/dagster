@@ -56,7 +56,7 @@ def test_enum_query():
       ... on EnvironmentSchema {
         allConfigTypes {
           __typename
-          key 
+          key
           ... on EnumConfigType {
             values
             {
@@ -93,15 +93,15 @@ def test_enum_query():
 
 TYPE_RENDER_QUERY = '''
 fragment innerInfo on ConfigType {
-  key 
+  key
   recursiveConfigTypes {
-    key 
+    key
   }
   ... on CompositeConfigType {
     fields {
       name
       configType {
-        key 
+        key
       }
       isOptional
     }

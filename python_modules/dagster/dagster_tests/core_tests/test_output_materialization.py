@@ -7,6 +7,7 @@ from dagster import (
     DagsterInvalidConfigError,
     InputDefinition,
     Int,
+    Materialization,
     Output,
     OutputDefinition,
     PipelineDefinition,
@@ -328,14 +329,46 @@ def test_basic_int_json_multiple_materializations():
 
 
 @output_materialization_config(Int)
+def yield_two_materializations(*_args, **_kwargs):
+    yield Materialization('1st hello')
+    yield Materialization('2nd hello')
+
+
+def test_basic_yield_multiple_materializations():
+    SomeDagsterType = create_any_type(
+        name='SomeType', output_materialization_config=yield_two_materializations
+    )
+
+    @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
+    def return_one():
+        return 1
+
+    pipeline_def = PipelineDefinition(name='single_int_output_pipeline', solid_defs=[return_one])
+    result = execute_pipeline(
+        pipeline_def, environment_dict={'solids': {'return_one': {'outputs': [{'result': 2}]}}}
+    )
+    assert result.success
+
+    event_types = [event.event_type_value for event in result.event_list]
+    assert 2 == (
+        sum(
+            [
+                True
+                for event_type in event_types
+                if event_type == DagsterEventType.STEP_MATERIALIZATION.value
+            ]
+        )
+    )
+
+
+@output_materialization_config(Int)
 def return_int(*_args, **_kwargs):
     return 1
 
 
-SomeDagsterType = create_any_type(name='SomeType', output_materialization_config=return_int)
-
-
 def test_basic_bad_output_materialization():
+    SomeDagsterType = create_any_type(name='SomeType', output_materialization_config=return_int)
+
     @lambda_solid(output_def=OutputDefinition(SomeDagsterType))
     def return_one():
         return 1

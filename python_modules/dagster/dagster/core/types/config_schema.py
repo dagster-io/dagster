@@ -5,7 +5,7 @@ from dagster.core.decorator_utils import (
     validate_decorated_fn_positionals,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils import ensure_single_item
+from dagster.utils import ensure_gen, ensure_single_item
 
 
 class InputHydrationConfig(object):
@@ -48,7 +48,7 @@ class OutputMaterializationConfig(object):
             'Must override schema_type in {klass}'.format(klass=type(self).__name__)
         )
 
-    def materialize_runtime_value(self, _context, _config_value, _runtime_value):
+    def materialize_runtime_values(self, _context, _config_value, _runtime_value):
         '''
         How to materialize a runtime value given configuration.
         '''
@@ -156,8 +156,8 @@ class OutputSchemaForDecorator(OutputMaterializationConfig):
     def schema_type(self):
         return self._config_type
 
-    def materialize_runtime_value(self, context, config_value, runtime_value):
-        return self._func(context, config_value, runtime_value)
+    def materialize_runtime_values(self, context, config_value, runtime_value):
+        return ensure_gen(self._func(context, config_value, runtime_value))
 
     def required_resource_keys(self):
         return frozenset(self._required_resource_keys)

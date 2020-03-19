@@ -11,6 +11,7 @@ from dagster import (
     input_hydration_config,
     output_materialization_config,
     pipeline,
+    seven,
     solid,
     usable_as_dagster_type,
 )
@@ -26,23 +27,21 @@ def less_simple_data_frame_input_hydration_config(context, selector):
 
 
 @output_materialization_config(
-    Selector(
-        {
-            'csv': Field(
-                {
-                    'path': String,
-                    'sep': Field(
-                        String, is_required=False, default_value=','
-                    ),
-                },
-                is_required=False,
-            )
-        }
-    )
+    {
+        'csv': Field(
+            {
+                'path': String,
+                'sep': Field(String, is_required=False, default_value=','),
+            },
+            is_required=False,
+        ),
+        'json': Field({'path': String,}, is_required=False,),
+    }
 )
 def less_simple_data_frame_output_materialization_config(
     context, config, value
 ):
+    # Materialize LessSimpleDataFrame into a csv file
     csv_path = os.path.abspath(config['csv']['path'])
     with open(csv_path, 'w') as fd:
         fieldnames = list(value[0].keys())
@@ -51,13 +50,40 @@ def less_simple_data_frame_output_materialization_config(
         )
         writer.writeheader()
         writer.writerows(value)
+
     context.log.debug(
         'Wrote dataframe as .csv to {path}'.format(path=csv_path)
     )
-    return Materialization(
-        'data_frame_csv',
+    yield Materialization(
+        '1data_frame_csv',
         'LessSimpleDataFrame materialized as csv',
-        [EventMetadataEntry.path(csv_path, 'data_frame_csv_path')],
+        [
+            EventMetadataEntry.path(
+                path=csv_path,
+                label='data_frame_csv_path',
+                description='LessSimpleDataFrame written to csv format',
+            )
+        ],
+    )
+    # Materialize LessSimpleDataFrame into a json file
+    json_path = os.path.abspath(config['json']['path'])
+    with open(json_path, 'w') as fd:
+        json_value = seven.json.dumps([dict(row) for row in value])
+        fd.write(json_value)
+
+    context.log.debug(
+        'Wrote dataframe as .json to {path}'.format(path=json_path)
+    )
+    yield Materialization(
+        'data_frame_json',
+        'LessSimpleDataFrame materialized as json',
+        [
+            EventMetadataEntry.path(
+                path=json_path,
+                label='data_frame_json_path',
+                description='LessSimpleDataFrame written to json format',
+            )
+        ],
     )
 
 
@@ -104,7 +130,12 @@ if __name__ == '__main__':
                 'sort_by_calories': {
                     'inputs': {'cereals': {'csv': 'cereal.csv'}},
                     'outputs': [
-                        {'result': {'csv': {'path': 'cereal_out.csv'}}}
+                        {
+                            'result': {
+                                'csv': {'path': 'cereal_out.csv'},
+                                'json': {'path': 'cereal_out.json'},
+                            }
+                        }
                     ],
                 }
             }
