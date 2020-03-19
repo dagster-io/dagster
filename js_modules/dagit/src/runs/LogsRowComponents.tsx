@@ -29,6 +29,9 @@ export const Row = styled.div<{ level: LogLevel }>`
   overflow: hidden;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY3};
   background: ${props => bgcolorForLevel(props.level)};
+  &:hover {
+    background: white;
+  }
   color: ${props =>
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
@@ -40,7 +43,7 @@ export const Row = styled.div<{ level: LogLevel }>`
 `;
 
 export const StructuredContent = styled.div`
-  background: white;
+  background: rgba(255, 255, 255, 0.5);
   color: ${Colors.DARK_GRAY2};
   box-sizing: border-box;
   margin: -4px;

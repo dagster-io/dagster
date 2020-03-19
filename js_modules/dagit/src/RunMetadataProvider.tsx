@@ -5,12 +5,19 @@ import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderM
 import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
 
 export enum IStepState {
-  WAITING = "waiting",
+  PREPARING = "preparing",
+  RETRY_REQUESTED = "retry-requested",
   RUNNING = "running",
   SUCCEEDED = "succeeded",
   SKIPPED = "skipped",
   FAILED = "failed"
 }
+
+export const BOX_EXIT_STATES = [
+  IStepState.RETRY_REQUESTED,
+  IStepState.SUCCEEDED,
+  IStepState.FAILED
+];
 
 export enum IExpectationResultStatus {
   PASSED = "Passed",
@@ -41,8 +48,8 @@ interface IDisplayEventItem {
 }
 
 export interface IStepDisplayEvent {
-  icon: IStepDisplayIconType;
   text: string;
+  icon: IStepDisplayIconType;
   items: IDisplayEventItem[];
 }
 
@@ -52,31 +59,61 @@ export interface IExpectationResult extends IStepDisplayEvent {
 
 export interface IMaterialization extends IStepDisplayEvent {}
 
-export interface IStepMetadata {
-  state: IStepState;
+export interface IMarker {
+  key: string;
   start?: number;
-  finish?: number;
-  transitionedAt: number;
+  end?: number;
+}
+
+export interface IStepAttempt {
+  start: number;
+  end?: number;
+  exitState?: IStepState;
+}
+
+export interface IStepMetadata {
+  // current state
+  state: IStepState;
+
+  // execution start and stop (user-code) inclusive of all retries
+  start?: number;
+  end?: number;
+
+  // current state + prev state transition times
+  transitions: {
+    state: IStepState;
+    time: number;
+  }[];
+
+  // transition times organized into start+stop+exit state pairs.
+  // This is the metadata used to render boxes on the realtime vi.z
+  attempts: IStepAttempt[];
+
+  // accumulated metadata
   expectationResults: IExpectationResult[];
   materializations: IMaterialization[];
+  markers: IMarker[];
 }
 
 export interface IRunMetadataDict {
+  firstLogAt: number;
   mostRecentLogAt: number;
   startingProcessAt?: number;
   startedProcessAt?: number;
   startedPipelineAt?: number;
-  minStepStart?: number;
   exitedAt?: number;
   processId?: number;
   initFailed?: boolean;
+  globalMarkers: IMarker[];
   steps: {
     [stepKey: string]: IStepMetadata;
   };
 }
 
 export const EMPTY_RUN_METADATA: IRunMetadataDict = {
+  firstLogAt: 0,
   mostRecentLogAt: 0,
+  globalMarkers: [],
   steps: {}
 };
 
@@ -154,13 +191,38 @@ export function extractMetadataFromLogs(
   logs: RunMetadataProviderMessageFragment[]
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
+    firstLogAt: 0,
     mostRecentLogAt: 0,
+    globalMarkers: [],
     steps: {}
   };
 
-  logs.forEach(log => {
-    const timestamp = Number.parseInt(log.timestamp);
+  // Returns the most recent marker with the given `key` without an end time
+  const upsertMarker = (set: IMarker[], key: string) => {
+    let marker = set.find(f => f.key === key && !f.end);
+    if (!marker) {
+      marker = { key };
+      set.unshift(marker);
+    }
+    return marker;
+  };
 
+  const upsertState = (
+    step: IStepMetadata,
+    time: number,
+    state: IStepState
+  ) => {
+    step.transitions.push({ time, state });
+    step.state = state;
+    step.attempts = [];
+  };
+
+  logs.forEach(log => {
+    const timestamp = Number.parseInt(log.timestamp, 10);
+
+    metadata.firstLogAt = metadata.firstLogAt
+      ? Math.min(metadata.firstLogAt, timestamp)
+      : timestamp;
     metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
 
     if (log.__typename === "PipelineStartEvent") {
@@ -177,38 +239,55 @@ export function extractMetadataFromLogs(
       metadata.exitedAt = timestamp;
     }
 
+    if (log.__typename === "EngineEvent" && !log.step) {
+      if (log.markerStart) {
+        upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
+      }
+      if (log.markerEnd) {
+        upsertMarker(metadata.globalMarkers, log.markerEnd).end = timestamp;
+      }
+    }
+
     if (log.step) {
-      const timestamp = Number.parseInt(log.timestamp, 10);
       const stepKey = log.step.key;
-      const step = metadata.steps[stepKey] || {
-        state: IStepState.WAITING,
-        start: undefined,
-        elapsed: undefined,
-        transitionedAt: 0,
-        expectationResults: [],
-        materializations: []
-      };
+      const step =
+        metadata.steps[stepKey] ||
+        ({
+          state: IStepState.PREPARING,
+          attempts: [],
+          transitions: [
+            {
+              state: IStepState.PREPARING,
+              time: timestamp
+            }
+          ],
+          start: undefined,
+          end: undefined,
+          markers: [],
+          expectationResults: [],
+          materializations: []
+        } as IStepMetadata);
 
       if (log.__typename === "ExecutionStepStartEvent") {
-        if (step.state === IStepState.WAITING) {
-          step.state = IStepState.RUNNING;
-          step.start = timestamp;
-          step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
-        } else {
-          // we have already received a success / skipped / failure event
-          // and this message is out of order.
-        }
+        upsertState(step, timestamp, IStepState.RUNNING);
+        step.start = timestamp;
       } else if (log.__typename === "ExecutionStepSuccessEvent") {
-        step.state = IStepState.SUCCEEDED;
-        step.finish = Math.max(timestamp, step.finish || 0);
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
+        upsertState(step, timestamp, IStepState.SUCCEEDED);
+        step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === "ExecutionStepSkippedEvent") {
-        step.state = IStepState.SKIPPED;
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
+        upsertState(step, timestamp, IStepState.SKIPPED);
       } else if (log.__typename === "ExecutionStepFailureEvent") {
-        step.state = IStepState.FAILED;
-        step.finish = Math.max(timestamp, step.finish || 0);
-        step.transitionedAt = Math.max(timestamp, step.transitionedAt || 0);
+        upsertState(step, timestamp, IStepState.FAILED);
+        step.end = Math.max(timestamp, step.end || 0);
+      } else if (log.__typename === "ExecutionStepUpForRetryEvent") {
+        // We only get one event when the step fails/aborts and is queued for retry,
+        // but we create an "exit" state separate from the "preparing for retry" state
+        // so that the box representing the attempt doesn't have a final state = preparing.
+        // That'd be more confusing.
+        upsertState(step, timestamp, IStepState.RETRY_REQUESTED);
+        upsertState(step, timestamp + 1, IStepState.PREPARING);
+      } else if (log.__typename === "ExecutionStepRestartEvent") {
+        upsertState(step, timestamp, IStepState.RUNNING);
       } else if (log.__typename === "StepMaterializationEvent") {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,
@@ -226,17 +305,40 @@ export function extractMetadataFromLogs(
           text: log.expectationResult.label,
           items: itemsForMetadataEntries(log.expectationResult.metadataEntries)
         });
+      } else if (log.__typename === "EngineEvent") {
+        if (log.markerStart) {
+          upsertMarker(step.markers, log.markerStart).start = timestamp;
+        }
+        if (log.markerEnd) {
+          upsertMarker(step.markers, log.markerEnd).end = timestamp;
+        }
       }
 
       metadata.steps[stepKey] = step;
     }
   });
 
-  metadata.minStepStart = Math.min(
-    ...Object.values(metadata.steps)
-      .map(s => s.start || 0)
-      .filter(v => !!v)
-  );
+  // Post processing
+
+  for (const step of Object.values(metadata.steps)) {
+    // Sort step transitions because logs may not arrive in order
+    step.transitions = step.transitions.sort((a, b) => a.time - b.time);
+
+    // Build step "attempts" from transitions
+    let start = null;
+    for (const t of step.transitions) {
+      if (t.state === IStepState.RUNNING) {
+        start = t.time;
+      }
+      if (start && BOX_EXIT_STATES.includes(t.state)) {
+        step.attempts.push({ start, end: t.time, exitState: t.state });
+        start = null;
+      }
+    }
+    if (start !== null) {
+      step.attempts.push({ start });
+    }
+  }
 
   return metadata;
 }

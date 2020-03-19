@@ -28,6 +28,9 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   onDoubleClickStep,
   onHighlightStep
 }) => {
+  const preparing = Object.keys(metadata.steps).filter(
+    key => metadata.steps[key].state === IStepState.PREPARING
+  );
   const executing = Object.keys(metadata.steps).filter(
     key => metadata.steps[key].state === IStepState.RUNNING
   );
@@ -49,6 +52,11 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <SectionHeader>Preparing</SectionHeader>
+      <Section>{preparing.map(renderStepItem)}</Section>
+      {preparing.length === 0 && (
+        <EmptyNotice>No steps are preparing to execute</EmptyNotice>
+      )}
       <SectionHeader>Executing</SectionHeader>
       <Section>{executing.map(renderStepItem)}</Section>
       {executing.length === 0 && (
@@ -70,7 +78,7 @@ const StepItem: React.FunctionComponent<{
   onDoubleClick?: (name: string) => void;
 }> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
   const step = metadata.steps[name];
-  const endTime = step.finish ?? nowMs;
+  const end = step.end ?? nowMs;
   return (
     <StepItemContainer
       key={name}
@@ -85,7 +93,7 @@ const StepItem: React.FunctionComponent<{
       ) : (
         <StepStatusDot
           style={{
-            ...boxStyleFor(name, {
+            ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
               options: { mode: GaantChartMode.WATERFALL_TIMED }
             })
@@ -93,7 +101,7 @@ const StepItem: React.FunctionComponent<{
         />
       )}
       <StepLabel>{name}</StepLabel>
-      <Elapsed>{formatElapsedTime(endTime - step.start!)}</Elapsed>
+      {step.start && <Elapsed>{formatElapsedTime(end - step.start)}</Elapsed>}
     </StepItemContainer>
   );
 };

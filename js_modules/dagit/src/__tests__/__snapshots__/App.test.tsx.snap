@@ -199,10 +199,10 @@ exports[`renders execution 1`] = `
     <span />
   </div>
   <div
-    className="sc-htpNat iwJDzi"
+    className="sc-bZQynM dtIaTh"
   >
     <div
-      className="sc-bxivhb kqOucM"
+      className="sc-gzVnrw jSdZtO"
     >
       <span
         className="bp3-popover-wrapper"
@@ -4403,7 +4403,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ljAPCL"
+          className="sc-ifAKCX tdlsv"
           id="zoom-slider-container"
         >
           <span
@@ -8729,7 +8729,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ljAPCL"
+          className="sc-ifAKCX tdlsv"
           id="zoom-slider-container"
         >
           <span
@@ -14519,7 +14519,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ljAPCL"
+          className="sc-ifAKCX tdlsv"
           id="zoom-slider-container"
         >
           <span
@@ -18845,7 +18845,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ljAPCL"
+          className="sc-ifAKCX tdlsv"
           id="zoom-slider-container"
         >
           <span
@@ -23171,7 +23171,7 @@ load_q2_sfo_weather:data_frame
           </svg>
         </div>
         <div
-          className="sc-bdVaJa ljAPCL"
+          className="sc-ifAKCX tdlsv"
           id="zoom-slider-container"
         >
           <span

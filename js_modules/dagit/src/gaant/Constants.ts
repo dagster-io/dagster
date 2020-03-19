@@ -1,25 +1,36 @@
 import { GraphQueryItem } from "../GraphQueryImpl";
+import { IStepState } from "../RunMetadataProvider";
 
 export type IGaantNode = GraphQueryItem;
 
 export interface GaantViewport {
-  left: number;
+  left: number; // Note: pixel values
   top: number;
   width: number;
   height: number;
 }
 
-export interface GaantChartBox {
-  children: GaantChartBox[];
-  node: IGaantNode;
+export interface GaantChartPlacement {
+  key: string; // A React-friendly unique key like `step:retry-1`
   width: number;
   x: number; // Note: This is a pixel value
   y: number; // Note: This is a "row number" not a pixel value
+}
+
+export interface GaantChartBox extends GaantChartPlacement {
+  state: IStepState | undefined;
+  children: GaantChartBox[];
+  node: IGaantNode;
   root: boolean;
 }
 
+export interface GaantChartMarker extends GaantChartPlacement {}
+
 export interface GaantChartLayout {
   boxes: GaantChartBox[];
+
+  // only present in timescaled layout
+  markers: GaantChartMarker[];
 }
 
 export interface GaantChartLayoutOptions {

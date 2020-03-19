@@ -15,6 +15,7 @@ import {
 import { MetadataEntry } from "./MetadataEntry";
 import { CellTruncationProvider } from "./CellTruncationProvider";
 import { showCustomAlert } from "../CustomAlertProvider";
+import { setHighlightedGaantChartTime } from "../gaant/GaantChart";
 import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
@@ -187,7 +188,11 @@ const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
 }> = React.memo(
   ({ node }) => (
-    <Row level={LogLevel.INFO}>
+    <Row
+      level={LogLevel.INFO}
+      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+      onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    >
       <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
       <StructuredContent>
         <LogsRowStructuredContent node={node} />
@@ -241,7 +246,11 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowUnstructuredFragment;
 }> = React.memo(
   ({ node }) => (
-    <Row level={node.level}>
+    <Row
+      level={node.level}
+      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+      onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    >
       <SolidColumn stepKey={node.step && node.step.key} />
       <EventTypeColumn>{node.level}</EventTypeColumn>
       <span style={{ flex: 1 }}>{node.message}</span>
