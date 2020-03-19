@@ -37,7 +37,7 @@ Finally, we add a reference to this function in ``repository.yaml``, alongside o
 
 .. code-block:: yaml
 
-    repository:
+    partitions:
         file: repository.py
         fn: define_partitions
 
