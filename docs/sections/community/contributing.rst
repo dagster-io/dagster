@@ -30,13 +30,20 @@ Environment Setup
 
     $ brew install yarn
 
-4. Clone the dagster repository to the destination of your choice:
+4. Ensure that you have pandoc installed by running `pandoc -v`.  If you are on macOS, you can install pandoc with Homebrew:
+
+.. code-block:: console
+
+    $ brew install pandoc
+    $ brew install pandoc-citeproc
+
+5. Clone the dagster repository to the destination of your choice:
 
 .. code-block:: console
 
     $ git clone git@github.com:dagster-io/dagster.git
 
-5. Run ``make dev_install`` at the root of the repository. This sets up a full dagster developer
+6. Run ``make dev_install`` at the root of the repository. This sets up a full dagster developer
    environment with all modules and runs tests that do not require heavy external dependencies
    such as docker. This will take a few minutes.
 
@@ -44,7 +51,7 @@ Environment Setup
 
     $ make dev_install
 
-6. Run some tests manually to make sure things are working:
+7. Run some tests manually to make sure things are working:
 
 .. code-block:: console
 
