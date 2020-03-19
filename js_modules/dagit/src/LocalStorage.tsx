@@ -35,7 +35,7 @@ export interface IExecutionSession {
   mode: string | null;
   solidSubset: string[] | null;
   solidSubsetQuery: string | null;
-  tags: PipelineRunTag[];
+  tags: PipelineRunTag[] | null;
 
   // this is set when you execute the session and freeze it
   runId?: string;
@@ -96,7 +96,7 @@ export function applyCreateSession(
         mode: null,
         solidSubset: null,
         solidSubsetQuery: "*",
-        tags: [],
+        tags: null,
         runId: undefined,
         ...initial,
         configChangedSinceRun: false,

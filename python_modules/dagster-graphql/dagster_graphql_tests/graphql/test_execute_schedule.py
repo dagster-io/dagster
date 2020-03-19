@@ -457,3 +457,93 @@ def test_enviornment_dict_scheduler_error():
             "Error occurred during the execution of environment_dict_fn for schedule "
             "environment_dict_error_schedule" in tick.error.message
         )
+
+
+def test_tagged_pipeline_schedule():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'tagged_pipeline_schedule'},
+        )
+
+        assert not result.errors
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+        assert (
+            result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
+        )
+
+        assert any(
+            tag['key'] == 'foo' and tag['value'] == 'bar'
+            for tag in result.data['startScheduledExecution']['run']['tags']
+        )
+
+
+def test_tagged_pipeline_override_schedule():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'tagged_pipeline_override_schedule'},
+        )
+
+        assert not result.errors
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+        )
+        assert (
+            result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
+        )
+
+        assert not any(
+            tag['key'] == 'foo' and tag['value'] == 'bar'
+            for tag in result.data['startScheduledExecution']['run']['tags']
+        )
+        assert any(
+            tag['key'] == 'foo' and tag['value'] == 'notbar'
+            for tag in result.data['startScheduledExecution']['run']['tags']
+        )
+
+
+def test_tagged_pipeline_scheduled_execution_with_run_launcher():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance_with_launcher(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'tagged_pipeline_schedule'},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        # just test existence
+        assert (
+            result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
+        )
+
+        assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
+        assert (
+            result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
+        )
+
+        assert any(
+            tag['key'] == 'foo' and tag['value'] == 'bar'
+            for tag in result.data['startScheduledExecution']['run']['tags']
+        )

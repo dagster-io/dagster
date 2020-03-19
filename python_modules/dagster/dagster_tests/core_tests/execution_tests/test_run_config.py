@@ -50,3 +50,29 @@ def test_injected_tags():
 
     assert result.success
     assert called['yup']
+
+
+def test_pipeline_tags():
+    called = {}
+
+    @solid
+    def check_tags(context):
+        assert context.get_tag('foo') == 'bar'
+        called['yup'] = True
+
+    pipeline_def_with_tags = PipelineDefinition(
+        name='injected_run_id', solid_defs=[check_tags], tags={'foo': 'bar'}
+    )
+    result = execute_pipeline(pipeline_def_with_tags)
+    assert result.success
+    assert called['yup']
+
+    called = {}
+    pipeline_def_with_override_tags = PipelineDefinition(
+        name='injected_run_id', solid_defs=[check_tags], tags={'foo': 'notbar'}
+    )
+    result = execute_pipeline(
+        pipeline_def_with_override_tags, run_config=RunConfig(tags={'foo': 'bar'})
+    )
+    assert result.success
+    assert called['yup']

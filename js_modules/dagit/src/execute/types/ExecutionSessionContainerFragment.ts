@@ -17,10 +17,17 @@ export interface ExecutionSessionContainerFragment_Pipeline_modes {
   description: string | null;
 }
 
+export interface ExecutionSessionContainerFragment_Pipeline_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ExecutionSessionContainerFragment_Pipeline {
   __typename: "Pipeline";
   name: string;
   modes: ExecutionSessionContainerFragment_Pipeline_modes[];
+  tags: ExecutionSessionContainerFragment_Pipeline_tags[];
 }
 
 export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_modes {
@@ -29,10 +36,17 @@ export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_m
   description: string | null;
 }
 
+export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ExecutionSessionContainerFragment_InvalidSubsetError_pipeline {
   __typename: "Pipeline";
   name: string;
   modes: ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_modes[];
+  tags: ExecutionSessionContainerFragment_InvalidSubsetError_pipeline_tags[];
 }
 
 export interface ExecutionSessionContainerFragment_InvalidSubsetError {

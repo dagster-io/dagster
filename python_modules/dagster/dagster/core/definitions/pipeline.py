@@ -16,6 +16,7 @@ from .dependency import (
 from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
+from .utils import validate_tags
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -80,6 +81,10 @@ class PipelineDefinition(IContainSolids, object):
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution run of the pipeline.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
 
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
@@ -132,6 +137,7 @@ class PipelineDefinition(IContainSolids, object):
         dependencies=None,
         mode_defs=None,
         preset_defs=None,
+        tags=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
     ):
         self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
@@ -147,6 +153,7 @@ class PipelineDefinition(IContainSolids, object):
         self._current_level_solid_defs = check.list_param(
             _check_solids_arg(self._name, solid_defs), 'solid_defs', of_type=ISolidDefinition
         )
+        self._tags = validate_tags(tags)
 
         seen_modes = set()
         for mode_def in mode_definitions:
@@ -289,6 +296,10 @@ class PipelineDefinition(IContainSolids, object):
         is unnamed the method will return "<<unnamed>>".
         '''
         return self._name if self._name else '<<unnamed>>'
+
+    @property
+    def tags(self):
+        return self._tags
 
     @property
     def solids(self):

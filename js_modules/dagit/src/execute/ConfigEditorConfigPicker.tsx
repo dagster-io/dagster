@@ -10,7 +10,8 @@ import {
 } from "./types/ConfigPresetsQuery";
 import {
   ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions,
+  ConfigPartitionsQuery_pipeline
 } from "./types/ConfigPartitionsQuery";
 import {
   ConfigPartitionSetsQuery,
@@ -26,6 +27,7 @@ import { ShortcutHandler } from "../ShortcutHandler";
 type Preset = ConfigPresetsQuery_pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
 type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions;
+type Pipeline = ConfigPartitionsQuery_pipeline;
 type ConfigGenerator = Preset | PartitionSet;
 
 const ConfigGeneratorSelect = Select.ofType<ConfigGenerator>();
@@ -109,25 +111,31 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
   props => {
     const {
       partitionSet,
+      pipelineName,
       onCreateSession,
       onSelectPartition,
       selectedPartition
     } = props;
 
-    const onPartitionSelect = async (partition: Partition) => {
+    const onPartitionSelect = async (
+      partition: Partition,
+      pipeline?: Pipeline
+    ) => {
+      const pipelineTags = pipeline?.tags || [];
+      const partitionTags = partition.tags;
       onCreateSession({
         name: partition.name,
         environmentConfigYaml: partition.environmentConfigYaml || "",
         solidSubset: partition.solidSubset,
         mode: partition.mode,
-        tags: partition.tags
+        tags: [...pipelineTags, ...partitionTags]
       });
       onSelectPartition(partition);
     };
 
     const { data } = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
       fetchPolicy: "network-only",
-      variables: { partitionSetName: partitionSet.name }
+      variables: { partitionSetName: partitionSet.name, pipelineName }
     });
 
     const partitions: Partition[] =
@@ -152,7 +160,9 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
             />
           )}
           noResults={<Menu.Item disabled={true} text="No presets." />}
-          onItemSelect={partition => onPartitionSelect(partition)}
+          onItemSelect={partition =>
+            onPartitionSelect(partition, data?.pipeline)
+          }
         >
           <Button
             text={selectedPartition ? selectedPartition.name : ""}
@@ -368,7 +378,17 @@ export const CONFIG_PARTITION_SETS_QUERY = gql`
 `;
 
 export const CONFIG_PARTITIONS_QUERY = gql`
-  query ConfigPartitionsQuery($partitionSetName: String!) {
+  query ConfigPartitionsQuery(
+    $partitionSetName: String!
+    $pipelineName: String!
+  ) {
+    pipeline(params: { name: $pipelineName }) {
+      name
+      tags {
+        key
+        value
+      }
+    }
     partitionSetOrError(partitionSetName: $partitionSetName) {
       __typename
       ... on PartitionSet {

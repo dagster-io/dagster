@@ -278,7 +278,7 @@ def solid(
         config (Optional[Any]): The schema for the config. Configuration data available
             as context.solid_config. This value can be any of:
 
-            1. A Python primitive type that resolves to a Dagster config type 
+            1. A Python primitive type that resolves to a Dagster config type
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 
@@ -727,7 +727,7 @@ def composite_solid(
             argument in order to transform this config into the config for the contained
             solids.
 
-            1. A Python primitive type that resolves to a Dagster config type 
+            1. A Python primitive type that resolves to a Dagster config type
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 
@@ -791,13 +791,12 @@ def composite_solid(
 
 
 class _Pipeline(object):
-    def __init__(
-        self, name=None, mode_defs=None, preset_defs=None, description=None,
-    ):
+    def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None, tags=None):
         self.name = check.opt_str_param(name, 'name')
         self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)
         self.preset_definitions = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
         self.description = check.opt_str_param(description, 'description')
+        self.tags = check.opt_dict_param(tags, 'tags')
 
     def __call__(self, fn):
         check.callable_param(fn, 'fn')
@@ -818,10 +817,11 @@ class _Pipeline(object):
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_definitions,
             description=self.description,
+            tags=self.tags,
         )
 
 
-def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
+def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags=None):
     '''Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
@@ -840,6 +840,10 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
             dict, an optional subset of solids to execute, and a mode selection. Presets can be used
             to ship common combinations of options to pipeline end users in Python code, and can
             be selected by tools like Dagit.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution run of the pipeline.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
 
     Examples:
 
@@ -867,7 +871,7 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None):
         return _Pipeline()(name)
 
     return _Pipeline(
-        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description,
+        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description, tags=tags
     )
 
 

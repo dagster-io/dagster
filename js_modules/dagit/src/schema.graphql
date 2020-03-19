@@ -647,6 +647,7 @@ type Pipeline implements SolidContainer & PipelineReference {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   presets: [PipelinePreset!]!
   solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
 }
 
 interface PipelineConfigValidationError {

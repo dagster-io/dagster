@@ -140,7 +140,23 @@ def define_scheduler():
     def environment_dict_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
 
+    tagged_pipeline_schedule = ScheduleDefinition(
+        name="tagged_pipeline_schedule",
+        cron_schedule="0 0 * * *",
+        pipeline_name="tagged_pipeline",
+        environment_dict={"storage": {"filesystem": {}}},
+    )
+
+    tagged_pipeline_override_schedule = ScheduleDefinition(
+        name="tagged_pipeline_override_schedule",
+        cron_schedule="0 0 * * *",
+        pipeline_name="tagged_pipeline",
+        environment_dict={"storage": {"filesystem": {}}},
+        tags={'foo': 'notbar'},
+    )
+
     return [
+        environment_dict_error_schedule,
         no_config_pipeline_hourly_schedule,
         no_config_pipeline_hourly_schedule_with_config_fn,
         no_config_should_execute,
@@ -154,6 +170,7 @@ def define_scheduler():
         solid_subset_monthly_decorator,
         solid_subset_weekly_decorator,
         should_execute_error_schedule,
+        tagged_pipeline_schedule,
+        tagged_pipeline_override_schedule,
         tags_error_schedule,
-        environment_dict_error_schedule,
     ]

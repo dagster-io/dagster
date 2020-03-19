@@ -57,6 +57,7 @@ class DauphinPipeline(dauphin.ObjectType):
     solid_handle = dauphin.Field(
         'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
+    tags = dauphin.non_null_list('PipelineTag')
 
     def __init__(self, pipeline):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
@@ -117,6 +118,12 @@ class DauphinPipeline(dauphin.ObjectType):
         return [
             DauphinPipelinePreset(preset, self._pipeline.name)
             for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
+        ]
+
+    def resolve_tags(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            for key, value in self._pipeline.tags.items()
         ]
 
 

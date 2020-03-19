@@ -114,7 +114,10 @@ def start_scheduled_execution(graphene_info, schedule_name):
                 ' True'.format(schedule_name=schedule_name)
             )
 
-        execution_params = execution_params_for_schedule(graphene_info, schedule_def=schedule_def)
+        pipeline_def = get_pipeline_def_from_selector(graphene_info, schedule_def.selector)
+        execution_params = execution_params_for_schedule(
+            graphene_info, schedule_def=schedule_def, pipeline_def=pipeline_def
+        )
 
         # Launch run if run launcher is defined
         run_launcher = graphene_info.context.instance.run_launcher
@@ -163,7 +166,7 @@ def start_pipeline_execution(graphene_info, execution_params):
         pipeline_def,
         execution_params.environment_dict,
         run_config=RunConfig(
-            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id,
         ),
     )
 
@@ -187,7 +190,7 @@ def _create_pipeline_run(instance, pipeline, execution_params):
             pipeline,
             execution_params.environment_dict,
             run_config=RunConfig(
-                mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+                mode=execution_params.mode, previous_run_id=execution_params.previous_run_id,
             ),
         )
         step_keys_to_execute = get_retry_steps_from_execution_plan(instance, execution_plan)

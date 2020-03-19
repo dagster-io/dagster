@@ -46,11 +46,16 @@ def check_run_config_param(run_config, pipeline_def):
                 ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
             )
 
-    return (
+    run_config = (
         run_config.with_mode(pipeline_def.get_default_mode_name())
         if run_config
         else RunConfig(mode=pipeline_def.get_default_mode_name())
     )
+
+    if pipeline_def.tags:
+        return run_config.with_tags(**merge_dicts(pipeline_def.tags, run_config.tags))
+
+    return run_config
 
 
 def create_execution_plan(pipeline, environment_dict=None, run_config=None):

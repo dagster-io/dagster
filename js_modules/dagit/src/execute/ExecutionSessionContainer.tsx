@@ -94,6 +94,10 @@ export default class ExecutionSessionContainer extends React.Component<
           name
           description
         }
+        tags {
+          key
+          value
+        }
       }
     `,
     EnvironmentSchemaOrErrorFragment: gql`
@@ -244,7 +248,7 @@ export default class ExecutionSessionContainer extends React.Component<
     const modeError = this.getModeError();
     const pipeline = this.getPipeline();
 
-    const tags = currentSession.tags || [];
+    const tags = currentSession.tags || pipeline.tags || [];
     return (
       <SplitPanelContainer
         axis={"vertical"}

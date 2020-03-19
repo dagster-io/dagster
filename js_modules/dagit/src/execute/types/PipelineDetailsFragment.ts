@@ -13,8 +13,15 @@ export interface PipelineDetailsFragment_modes {
   description: string | null;
 }
 
+export interface PipelineDetailsFragment_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface PipelineDetailsFragment {
   __typename: "Pipeline";
   name: string;
   modes: PipelineDetailsFragment_modes[];
+  tags: PipelineDetailsFragment_tags[];
 }

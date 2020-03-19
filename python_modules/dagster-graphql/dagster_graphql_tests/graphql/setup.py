@@ -163,6 +163,7 @@ def define_repository():
             multi_mode_with_loggers,
             multi_mode_with_resources,
             naughty_programmer_pipeline,
+            noop_pipeline,
             pipeline_with_invalid_definition_error,
             no_config_pipeline,
             no_config_chain_pipeline,
@@ -174,7 +175,7 @@ def define_repository():
             retry_multi_output_pipeline,
             scalar_output_pipeline,
             spew_pipeline,
-            noop_pipeline,
+            tagged_pipeline,
         ],
     )
 
@@ -668,6 +669,15 @@ def retry_multi_output_pipeline():
     no_output.alias('child_multi_skip')(multi_skip)
     no_output.alias('child_skip')(skip)
     no_output.alias('grandchild_fail')(passthrough.alias('child_fail')(fail))
+
+
+@pipeline(tags={'foo': 'bar'})
+def tagged_pipeline():
+    @lambda_solid
+    def simple_solid():
+        return 'Hello'
+
+    return simple_solid()
 
 
 def get_retry_multi_execution_params(should_fail, retry_id=None):
