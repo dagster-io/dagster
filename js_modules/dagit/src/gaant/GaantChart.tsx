@@ -56,14 +56,14 @@ let highlightTimer: NodeJS.Timeout;
  */
 export function setHighlightedGaantChartTime(
   timestamp: null | string,
-  debounced = false
+  debounced = true
 ) {
   clearTimeout(highlightTimer);
 
   if (debounced) {
     highlightTimer = setTimeout(
       () => setHighlightedGaantChartTime(timestamp, false),
-      400
+      100
     );
   } else {
     document.dispatchEvent(
@@ -557,33 +557,35 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
   });
 
   if (options.mode === GaantChartMode.WATERFALL_TIMED) {
-    layout.markers.forEach((marker, idx) => {
-      const bounds = boundsForBox(marker);
-      const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
-      if (!intersectsViewport(bounds)) {
-        return;
-      }
+    // Note: We sort the markers from left to right so that they're added to the DOM in that
+    // order and a long one doesn't make ones "behind it" unclickable.
+    layout.markers
+      .map(marker => ({ marker, bounds: boundsForBox(marker) }))
+      .filter(({ bounds }) => intersectsViewport(bounds))
+      .sort((a, b) => a.bounds.minX - b.bounds.minX)
+      .forEach(({ marker, bounds }) => {
+        const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
 
-      items.push(
-        <div
-          key={idx}
-          id={marker.key}
-          data-tooltip-text={marker.key}
-          className={`
+        items.push(
+          <div
+            key={marker.key}
+            id={marker.key}
+            data-tooltip-text={marker.key}
+            className={`
             chart-element
             ${useDot ? "marker-dot" : "marker-whiskers"}`}
-          style={{
-            left: bounds.minX,
-            top:
-              bounds.minY +
-              (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
-            width: useDot ? BOX_DOT_SIZE : marker.width
-          }}
-        >
-          <div />
-        </div>
-      );
-    });
+            style={{
+              left: bounds.minX,
+              top:
+                bounds.minY +
+                (useDot ? (BOX_HEIGHT - BOX_DOT_SIZE) / 2 : BOX_MARGIN_Y),
+              width: useDot ? BOX_DOT_SIZE : marker.width
+            }}
+          >
+            <div />
+          </div>
+        );
+      });
   }
 
   return <>{items}</>;

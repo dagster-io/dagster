@@ -210,7 +210,7 @@ const TimescaleContainer = styled.div`
 
   & .fog-of-war {
     position: absolute;
-    background: rgba(0, 0, 0, 0.08);
+    background: rgb(203, 216, 224, 0.3);
     transition: left ${CSS_DURATION}ms linear;
     top: 0px;
     bottom: 0px;

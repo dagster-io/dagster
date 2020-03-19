@@ -2,7 +2,6 @@ import * as React from "react";
 import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
 import { useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
@@ -337,5 +336,5 @@ const LogsContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: ${Colors.LIGHT_GRAY5};
+  background: #f1f6f9;
 `;
