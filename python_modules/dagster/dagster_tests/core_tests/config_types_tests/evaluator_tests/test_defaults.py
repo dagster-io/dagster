@@ -155,3 +155,12 @@ def test_post_process_config():
         'bar': 'baz',
         'mau': 'mau',
     }
+
+    noneable_permissive_config_type = resolve_to_config_type(
+        {'args': Field(Noneable(Permissive()), is_required=False, default_value=None)}
+    )
+    assert post_process_config(
+        noneable_permissive_config_type, {'args': {'foo': 'wow', 'mau': 'mau'}}
+    ).value['args'] == {'foo': 'wow', 'mau': 'mau',}
+    assert post_process_config(noneable_permissive_config_type, {'args': {}}).value['args'] == {}
+    assert post_process_config(noneable_permissive_config_type, None).value['args'] == None
