@@ -132,6 +132,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'job_namespace': str,
             'env_config_maps': Field(Noneable(list), is_required=False),
             'env_secrets': Field(Noneable(list), is_required=False),
+            'load_kubeconfig': Field(bool, is_required=False, default_value=False),
+            'kubeconfig_file': Field(Noneable(str), is_required=False, default_value=None),
         }
 
     @classmethod
