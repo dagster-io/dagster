@@ -72,12 +72,17 @@ Since Dask will invoke your pipeline code on the cluster workers, you must ensur
 version of your Python code is available to all of the Dask workers. Ideally, you'll package this as
 a Python module, and target your ``repository.yaml`` at this module.
 
-If you want Dask to share the `DAGSTER_HOME` environment variable with spawned workers, then you can 
-edit the `dask_jobqueue` configuration file:
+If you want Dask to share the ``DAGSTER_HOME`` environment variable with spawned workers, then you can 
+edit Dask's ``jobqueue.yaml`` configuration file:
 
-.. literalinclude:: dask_jobqueue_config.yaml
-  :caption: jobqueue.yaml
-  :langauge: YAML
+.. code-block:: YAML
+
+  jobqueue:
+    sge:  # your resource manager
+      name: dask-worker
+      ...
+      job-extra: ['-v DAGSTER_HOME=/path/to/dagster']
+
 
 Managing compute resources with Dask
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
