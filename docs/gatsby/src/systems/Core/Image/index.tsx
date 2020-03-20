@@ -2,7 +2,6 @@
 import { jsx, SxStyleProp } from "theme-ui";
 import styleToObj from "style-to-object";
 import ModalImage from "react-modal-image";
-import { DetailedHTMLProps, ImgHTMLAttributes } from "react";
 
 export const imgStyle: SxStyleProp & {
   "-webkit-box-shadow": string;
@@ -14,14 +13,11 @@ export const imgStyle: SxStyleProp & {
   "-moz-box-shadow": "5px 5px 5px 0px rgba(0, 0, 0, 0.75)"
 };
 
-type ImageProps = DetailedHTMLProps<
-  ImgHTMLAttributes<HTMLImageElement>,
-  HTMLImageElement
-> & {
-  src: string;
-  width: string;
+type ImageProps = JSX.IntrinsicElements["img"] & {
+  src?: string;
+  width?: string;
   images: any[];
-  style: string | object;
+  style?: string | object;
 };
 
 export const Image: React.FC<ImageProps> = ({

@@ -1,11 +1,7 @@
 /** @jsx jsx */
 import { jsx } from "theme-ui";
-import { DetailedHTMLProps, AnchorHTMLAttributes } from "react";
 
-type ExternalLinkProps = DetailedHTMLProps<
-  AnchorHTMLAttributes<HTMLAnchorElement>,
-  HTMLAnchorElement
->;
+type ExternalLinkProps = JSX.IntrinsicElements["a"];
 
 export const ExternalLink: React.FC<ExternalLinkProps> = ({
   href,

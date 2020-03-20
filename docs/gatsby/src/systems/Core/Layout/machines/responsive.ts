@@ -1,5 +1,6 @@
 import { Machine, assign } from "xstate";
 
+// TODO: Add types to FSM
 const machine = Machine({
   id: "responsive",
   initial: "idle",

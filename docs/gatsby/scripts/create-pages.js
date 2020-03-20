@@ -40,7 +40,7 @@ module.exports = async ({ graphql, actions }) => {
       ALL_VERSIONS.forEach(version => {
         actions.createPage({
           path: `${version}/${node.slug}`,
-          component: path.resolve("./src/templates/SphinxPage/index.js"),
+          component: path.resolve("./src/templates/SphinxPage/index.tsx"),
           context: {
             page: node
           }

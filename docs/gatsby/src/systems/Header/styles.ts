@@ -1,8 +1,8 @@
 import { rem } from "utils/css";
-import { SxStyleProp } from "theme-ui";
+import { SxStyleProp, Theme } from "theme-ui";
 
-const minWidthCalc = (t: any, space: any) =>
-  `calc(100% - ${rem(t.space[space])})`;
+const minWidthCalc = (t: Theme, space: number) =>
+  `calc(100% - ${rem(t.space![space] as number)})`;
 
 export const wrapper: SxStyleProp = {
   zIndex: 9,

@@ -2,12 +2,8 @@
 import { jsx } from "theme-ui";
 
 import * as styles from "./styles";
-import { DetailedHTMLProps, HTMLAttributes } from "react";
 
-type MenuProps = DetailedHTMLProps<
-  HTMLAttributes<HTMLDivElement>,
-  HTMLDivElement
-> & {
+type MenuProps = JSX.IntrinsicElements["div"] & {
   gap?: number;
   vertical?: boolean;
 };

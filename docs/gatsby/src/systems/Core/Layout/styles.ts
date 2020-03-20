@@ -1,4 +1,3 @@
-import { theme as t } from "utils/css";
 import { SxStyleProp } from "theme-ui";
 
 export const page = (state: any): SxStyleProp => {

@@ -2,12 +2,8 @@
 import { jsx } from "theme-ui";
 
 import * as styles from "./styles";
-import { DetailedHTMLProps, HTMLAttributes } from "react";
 
-type DetailsProps = DetailedHTMLProps<
-  HTMLAttributes<HTMLDListElement>,
-  HTMLDListElement
->;
+type DetailsProps = JSX.IntrinsicElements["dl"];
 
 export const Details: React.FC<DetailsProps> = ({ children, ...props }) => {
   return (

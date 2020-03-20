@@ -1,0 +1,14 @@
+import colors from "gatsby-plugin-theme-ui/colors";
+import { SxStyleProp } from "theme-ui";
+
+export const wrapper: SxStyleProp = {
+  // display: "block",
+  appearance: "menulist-button",
+  px: "10px",
+  mr: 2,
+  mb: 3,
+  // width: "100%",
+  height: 30,
+  fontSize: 1,
+  color: colors.gray[1]
+};

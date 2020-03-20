@@ -5,8 +5,8 @@ import traverse from "parse5-traverse";
 
 import * as styles from "./styles";
 import { renderElements } from "systems/ReactParser";
-import { DetailedHTMLProps, HTMLAttributes } from "react";
 
+// TODO: Check out this Lib's source.
 export type TraverseNode = HTMLElement & {
   attrs: any[];
   value: any;
@@ -54,10 +54,7 @@ const parseChildren = (nodes: TraverseNode[]) => {
   });
 };
 
-type CodeSectionProps = DetailedHTMLProps<
-  HTMLAttributes<HTMLElement>,
-  HTMLElement
-> & {
+type CodeSectionProps = JSX.IntrinsicElements["section"] & {
   nodes: TraverseNode[];
 };
 

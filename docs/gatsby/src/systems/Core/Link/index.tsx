@@ -1,6 +1,6 @@
 /** @jsx jsx */
 import { Styled, jsx } from "theme-ui";
-import { forwardRef } from "react";
+import { forwardRef, ReactNode } from "react";
 import { Link as BaseLink } from "gatsby";
 import { Location } from "@reach/router";
 import path from "path-browserify";
@@ -13,11 +13,14 @@ const parseHrefLink = (href: string) => {
 };
 
 type LinkProps = {
-  href: string;
-  to: string;
-  isNav: boolean;
+  href?: string;
+  to?: string;
+  isNav?: boolean;
+  children?: ReactNode;
+  partiallyActive?: boolean;
 };
 
+// TODO: Fix ref type.
 export const Link = forwardRef<any, LinkProps>(
   ({ href, to, isNav, ...props }, ref) => {
     const isExternal = href && href.startsWith("http");
