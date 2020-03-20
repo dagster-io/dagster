@@ -141,7 +141,7 @@ def _get_telemetry_instance_id():
     telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
     if os.path.exists(telemetry_id_path):
         with open(telemetry_id_path, 'r') as telemetry_id_file:
-            telemetry_id_yaml = yaml.load(telemetry_id_file, Loader=yaml.FullLoader)
+            telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
             if INSTANCE_ID_STR in telemetry_id_yaml:
                 if isinstance(telemetry_id_yaml[INSTANCE_ID_STR], six.string_types):
                     return telemetry_id_yaml[INSTANCE_ID_STR]
