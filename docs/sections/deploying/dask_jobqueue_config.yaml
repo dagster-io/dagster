@@ -1,0 +1,5 @@
+jobqueue:
+  sge:  # your resource manager
+    name: dask-worker
+    ...
+    job-extra: ['-v DAGSTER_HOME=/path/to/dagster']
