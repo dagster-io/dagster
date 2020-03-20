@@ -80,7 +80,7 @@ edit Dask's ``jobqueue.yaml`` configuration file. Using SGE as an example:
   jobqueue:
     sge:
       name: dask-worker
-      ...
+      # ...
       job-extra: ['-v DAGSTER_HOME=/path/to/dagster']
 
 
