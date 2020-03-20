@@ -1,5 +1,79 @@
 # Changelog
 
+## 0.7.5
+
+**New**
+
+- Added the `IntSource` type, which lets integers be set from environment variables in config.
+- You may now set tags on pipeline definitions. These will resolve in the following cases:
+
+  1. Loading in the playground view in Dagit will pre-populate the tag container.
+  2. Loading partition sets from the preset/config picker will pre-populate the tag container with
+     the union of pipeline tags and partition tags, with partition tags taking precedence.
+  3. Executing from the CLI will generate runs with the pipeline tags.
+  4. Executing programmatically using the `execute_pipeline` api will create a run with the union
+     of pipeline tags and `RunConfig` tags, with `RunConfig` tags taking precedence.
+  5. Scheduled runs (both launched and executed) will have the union of pipeline tags and the
+     schedule tags function, with the schedule tags taking precedence.
+
+- Output materialization configs may now yield multiple Materializations, and the tutorial has
+  been updated to reflect this.
+
+- We now export the `SolidExecutionContext` in the public API so that users can correctly type hint
+  solid compute functions.
+
+**Dagit**
+
+- Pipeline run tags are now preserved when resuming/retrying from Dagit.
+- Scheduled run stats are now grouped by partition.
+- A "preparing" section has been added to the execution viewer. This shows steps that are in
+  progress of starting execution.
+- Markers emitted by the underlying execution engines are now visualized in the Dagit execution
+  timeline.
+  
+**Bugfix**
+
+- Resume/retry now works as expected in the presence of solids that yield optional outputs.
+- Fixed an issue where dagster-celery workers were failing to start in the presence of config
+  values that were `None`.
+- Fixed an issue with attempting to set `threads_per_worker` on Dask distributed clusters.
+
+**dagster-postgres**
+- All postgres config may now be set using environment variables in config.
+
+**dagster-aws**
+- The `s3_resource` now exposes a `list_objects_v2` method corresponding to the underlying boto3
+  API. (Thanks, @basilvetas!)
+- Added the `redshift_resource` to access Redshift databases.
+
+**dagster-k8s**
+  - The `K8sRunLauncher` config now includes the `load_kubeconfig` and `kubeconfig_file` options.
+
+**Documentation**
+- Fixes and improvements.
+
+**Dependencies**
+
+- dagster-airflow no longer pins its werkzeug dependency.
+
+**Community**
+
+- We've added opt-in telemetry to Dagster so we can collect usage statistics in order to inform
+  development priorities. Telemetry data will motivate projects such as adding features in
+  frequently-used parts of the CLI and adding more examples in the docs in areas where users
+  encounter more errors.
+
+  We will not see or store solid definitions (including generated context) or pipeline definitions
+  (including modes and resources). We will not see or store any data that is processed within solids
+  and pipelines.
+
+  If you'd like to opt in to telemetry, please add the following to `$DAGSTER_HOME/dagster.yaml`:
+
+      telemetry:
+        enabled: true
+
+- Thanks to @basilvetas and @hspak for their contributions!
+
 ## 0.7.4
 
 **New**
