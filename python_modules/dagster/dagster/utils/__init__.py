@@ -400,3 +400,17 @@ class EventGenerationManager(object):
         if self.object:
             for event in self.generator:
                 yield event
+
+
+def utc_datetime_from_timestamp(timestamp):
+    tz = None
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
+        from datetime import timezone
+
+        tz = timezone.utc
+    else:
+        import pytz
+
+        tz = pytz.utc
+
+    return datetime.datetime.fromtimestamp(timestamp, tz=tz)

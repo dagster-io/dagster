@@ -9,6 +9,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import Schedule, ScheduleTick
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
 from .schema import ScheduleTable, ScheduleTickTable
@@ -84,6 +85,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     repository_name=repository.name,
                     schedule_name=schedule_tick_data.schedule_name,
                     status=schedule_tick_data.status.value,
+                    timestamp=utc_datetime_from_timestamp(schedule_tick_data.timestamp),
                     tick_body=serialize_dagster_namedtuple(schedule_tick_data),
                 )
                 result = conn.execute(tick_insert)

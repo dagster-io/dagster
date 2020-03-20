@@ -87,6 +87,7 @@ def _do_setup(name='dagster'):
             'psutil >= 1.0; platform_system=="Windows"',
             # https://github.com/mhammond/pywin32/issues/1439
             'pywin32 != 226; platform_system=="Windows"',
+            'pytz',
         ],
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
