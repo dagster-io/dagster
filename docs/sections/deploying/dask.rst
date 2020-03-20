@@ -73,12 +73,12 @@ version of your Python code is available to all of the Dask workers. Ideally, yo
 a Python module, and target your ``repository.yaml`` at this module.
 
 If you want Dask to share the ``DAGSTER_HOME`` environment variable with spawned workers, then you can 
-edit Dask's ``jobqueue.yaml`` configuration file:
+edit Dask's ``jobqueue.yaml`` configuration file. Using SGE as an example:
 
 .. code-block:: YAML
 
   jobqueue:
-    sge:  # your resource manager
+    sge:
       name: dask-worker
       ...
       job-extra: ['-v DAGSTER_HOME=/path/to/dagster']
