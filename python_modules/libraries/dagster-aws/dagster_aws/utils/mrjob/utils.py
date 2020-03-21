@@ -94,9 +94,6 @@ def _boto3_now():
     """Get a ``datetime`` that's compatible with :py:mod:`boto3`.
     These are always UTC time, with time zone ``dateutil.tz.tzutc()``.
     """
-    if tzutc is None:
-        raise ImportError('You must install dateutil to get boto3-compatible datetimes')
-
     return datetime.now(tzutc())
 
 

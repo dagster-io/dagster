@@ -3,7 +3,7 @@ import logging
 
 import boto3
 
-from dagster import Field, check, logger, seven
+from dagster import Field, StringSource, check, logger, seven
 from dagster.core.log_manager import coerce_valid_log_level
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event
@@ -175,16 +175,53 @@ class CloudwatchLogsHandler(logging.Handler):
     {
         'log_level': Field(str, is_required=False, default_value='INFO'),
         'name': Field(str, is_required=False, default_value='dagster'),
-        'log_group_name': Field(str),
-        'log_stream_name': Field(str),
-        'aws_region': Field(str, is_required=False),
-        'aws_secret_access_key': Field(str, is_required=False),
-        'aws_access_key_id': Field(str, is_required=False),
+        'log_group_name': Field(str, description='The name of the log group'),
+        'log_stream_name': Field(str, description='The name of the log stream'),
+        'aws_region': Field(
+            StringSource,
+            is_required=False,
+            description='Specifies a custom region for the S3 session. Default is chosen through '
+            'the ordinary boto3 credential chain.',
+        ),
+        'aws_secret_access_key': Field(StringSource, is_required=False),
+        'aws_access_key_id': Field(StringSource, is_required=False),
     },
     description='The default colored console logger.',
 )
 def cloudwatch_logger(init_context):
+    '''This logger provides support for sending Dagster logs to AWS CloudWatch.
 
+    Example:
+
+        .. code-block:: python
+
+            from dagster import ModeDefinition, execute_pipeline, pipeline, solid
+            from dagster_aws import cloudwatch_logger
+
+            @solid
+            def hello_cloudwatch(context):
+                context.log.info('Hello, Cloudwatch!')
+                context.log.error('This is an error')
+
+            @pipeline(mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})])
+            def hello_cloudwatch_pipeline():
+                hello_cloudwatch()
+
+            execute_pipeline(
+                hello_cloudwatch_pipeline,
+                {
+                    'loggers': {
+                        'cloudwatch': {
+                            'config': {
+                                'log_group_name': '/dagster-test/test-cloudwatch-logging',
+                                'log_stream_name': 'test-logging',
+                                'aws_region': 'us-west-1'
+                            }
+                        }
+                    }
+                },
+            )
+    '''
     level = coerce_valid_log_level(init_context.logger_config['log_level'])
     name = init_context.logger_config['name']
 

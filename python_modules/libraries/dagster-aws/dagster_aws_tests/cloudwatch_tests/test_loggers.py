@@ -6,7 +6,7 @@ import pytest
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
 
-from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, solid
+from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 
 from .conftest import AWS_REGION, TEST_CLOUDWATCH_LOG_GROUP_NAME, TEST_CLOUDWATCH_LOG_STREAM_NAME
 
@@ -14,17 +14,15 @@ TEN_MINUTES_MS = 10 * 60 * 1000  # in milliseconds
 NUM_POLL_ATTEMPTS = 5
 
 
-@solid(name='hello_cloudwatch')
+@solid
 def hello_cloudwatch(context):
     context.log.info('Hello, Cloudwatch!')
+    context.log.error('This is an error')
 
 
-def define_hello_cloudwatch_pipeline():
-    return PipelineDefinition(
-        [hello_cloudwatch],
-        name='hello_cloudwatch_pipeline',
-        mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})],
-    )
+@pipeline(mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})])
+def hello_cloudwatch_pipeline():
+    hello_cloudwatch()
 
 
 def test_cloudwatch_logging_bad_log_group_name():
@@ -33,7 +31,7 @@ def test_cloudwatch_logging_bad_log_group_name():
         match='Failed to initialize Cloudwatch logger: Could not find log group with name foo',
     ):
         execute_pipeline(
-            define_hello_cloudwatch_pipeline(),
+            hello_cloudwatch_pipeline,
             {
                 'loggers': {
                     'cloudwatch': {
@@ -54,7 +52,7 @@ def test_cloudwatch_logging_bad_log_stream_name():
         match='Failed to initialize Cloudwatch logger: Could not find log stream with name bar',
     ):
         execute_pipeline(
-            define_hello_cloudwatch_pipeline(),
+            hello_cloudwatch_pipeline,
             {
                 'loggers': {
                     'cloudwatch': {
@@ -74,7 +72,7 @@ def test_cloudwatch_logging_bad_log_stream_name():
 
 def test_cloudwatch_logging(cloudwatch_client):
     res = execute_pipeline(
-        define_hello_cloudwatch_pipeline(),
+        hello_cloudwatch_pipeline,
         {
             'loggers': {
                 'cloudwatch': {

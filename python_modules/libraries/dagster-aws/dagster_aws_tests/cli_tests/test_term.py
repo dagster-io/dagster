@@ -31,7 +31,7 @@ def test_term():
 
 
 def test_spinner(capsys):
-    with Spinner():
+    with Spinner(0.1):
         time.sleep(0.5)
 
     captured = capsys.readouterr()

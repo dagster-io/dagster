@@ -59,6 +59,9 @@ class GCSObjectStore(ObjectStore):
     def get_object(self, key, serialization_strategy=None):
         check.str_param(key, 'key')
         check.param_invariant(len(key) > 0, 'key')
+        check.inst_param(
+            serialization_strategy, 'serialization_strategy', SerializationStrategy
+        )  # cannot be none here
 
         if serialization_strategy.read_mode == 'rb':
             file_obj = BytesIO()

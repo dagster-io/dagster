@@ -55,6 +55,9 @@ class S3ObjectStore(ObjectStore):
     def get_object(self, key, serialization_strategy=None):
         check.str_param(key, 'key')
         check.param_invariant(len(key) > 0, 'key')
+        check.inst_param(
+            serialization_strategy, 'serialization_strategy', SerializationStrategy
+        )  # cannot be none here
 
         # FIXME we need better error handling for object store
         obj = serialization_strategy.deserialize(

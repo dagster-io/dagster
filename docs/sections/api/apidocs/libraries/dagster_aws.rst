@@ -48,6 +48,13 @@ Redshift
   :annotation: ResourceDefinition
 
 
+CloudWatch
+----------
+
+.. autodata:: cloudwatch_logger
+  :annotation: LoggerDefinition
+
+
 Testing
 -------
 .. autoclass:: S3FakeSession

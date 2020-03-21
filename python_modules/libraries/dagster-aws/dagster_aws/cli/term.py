@@ -9,7 +9,7 @@ import uuid
 import click
 import six
 
-from dagster import seven
+from dagster import check, seven
 
 CURSOR_UP_ONE = '\x1b[1A'
 ERASE_LINE = '\x1b[2K'
@@ -32,6 +32,8 @@ class Spinner(object):
                 yield cursor
 
     def __init__(self, delay=None):
+        check.opt_float_param(delay, 'delay')
+
         self.spinner_generator = self.spinning_cursor()
         if delay and float(delay):
             self.delay = delay
@@ -95,6 +97,11 @@ class Term(object):
 
 
 def run_remote_cmd(key_file_path, host, cmd, quiet=False):
+    check.str_param(key_file_path, 'key_file_path')
+    check.str_param(host, 'host')
+    check.str_param(cmd, 'cmd')
+    check.opt_bool_param(quiet, 'quiet')
+
     ssh_cmd = 'ssh -o StrictHostKeyChecking=no -i %s ubuntu@%s -t "%s"' % (key_file_path, host, cmd)
     if quiet:
         return subprocess.check_output(ssh_cmd, shell=True)
@@ -102,8 +109,12 @@ def run_remote_cmd(key_file_path, host, cmd, quiet=False):
         return subprocess.call(ssh_cmd, shell=True)
 
 
-def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
-    remote_user = 'ubuntu'
+def rsync_to_remote(key_file_path, local_path, remote_host, remote_path, remote_user='ubuntu'):
+    check.str_param(key_file_path, 'key_file_path')
+    check.str_param(local_path, 'local_path')
+    check.str_param(remote_host, 'remote_host')
+    check.str_param(remote_path, 'remote_path')
+    check.str_param(remote_user, 'remote_user')
 
     rsync_command = [
         'rsync',
@@ -129,6 +140,8 @@ def rsync_to_remote(key_file_path, local_path, remote_host, remote_path):
 
 
 def remove_ssh_key(key_file_path):
+    check.str_param(key_file_path, 'key_file_path')
+
     # We have to clean up after ourselves to avoid "Too many authentication failures" issue.
     Term.waiting('Removing SSH key from authentication agent...')
 
@@ -170,5 +183,3 @@ def remove_ssh_key(key_file_path):
         Term.rewind()
         Term.info('key not found, skipping')
         return False
-
-    return True

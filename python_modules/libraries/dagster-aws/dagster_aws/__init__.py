@@ -1,3 +1,4 @@
+from .cloudwatch.loggers import cloudwatch_logger
 from .redshift.resources import fake_redshift_resource, redshift_resource
 from .s3.compute_log_manager import S3ComputeLogManager
 from .s3.file_cache import S3FileCache
@@ -9,6 +10,7 @@ from .s3.system_storage import s3_plus_default_storage_defs, s3_system_storage
 from .version import __version__
 
 __all__ = [
+    'cloudwatch_logger',
     'create_s3_fake_resource',
     'fake_redshift_resource',
     'redshift_resource',

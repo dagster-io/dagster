@@ -20,6 +20,7 @@ from dagster.core.types.config_schema import input_selector_schema, output_selec
 
 from .decorators import pyspark_solid
 from .resources import PySparkResourceDefinition, pyspark_resource, spark_session_from_config
+from .version import __version__
 
 
 @input_selector_schema(
