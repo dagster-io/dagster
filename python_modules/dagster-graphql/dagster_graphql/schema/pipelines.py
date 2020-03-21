@@ -62,9 +62,10 @@ class DauphinPipeline(dauphin.ObjectType):
     def __init__(self, pipeline):
         super(DauphinPipeline, self).__init__(name=pipeline.name, description=pipeline.description)
         self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        self._pipeline_index = self._pipeline.get_pipeline_index()
 
     def resolve_solids(self, _graphene_info):
-        return build_dauphin_solids(self._pipeline.get_pipeline_snapshot(), self._pipeline)
+        return build_dauphin_solids(self._pipeline_index, self._pipeline_index.dep_structure_index)
 
     def resolve_runtime_types(self, _graphene_info):
         # TODO yuhan rename runtime_type in schema
@@ -72,7 +73,7 @@ class DauphinPipeline(dauphin.ObjectType):
             list(
                 map(
                     lambda dt: to_dauphin_dagster_type(
-                        self._pipeline.get_pipeline_snapshot(), dt.key
+                        self._pipeline_index.pipeline_snapshot, dt.key
                     ),
                     [t for t in self._pipeline.all_dagster_types() if t.name],
                 )
@@ -90,7 +91,9 @@ class DauphinPipeline(dauphin.ObjectType):
 
     def resolve_modes(self, _):
         return [
-            DauphinMode(self._pipeline.get_config_schema_snapshot(), mode_definition)
+            DauphinMode(
+                self._pipeline_index.pipeline_snapshot.config_schema_snapshot, mode_definition
+            )
             for mode_definition in sorted(
                 self._pipeline.mode_definitions, key=lambda item: item.name
             )
@@ -129,10 +132,10 @@ class DauphinPipeline(dauphin.ObjectType):
 
 @lru_cache(maxsize=32)
 def _get_solid_handles(pipeline):
-    pipeline_snapshot = pipeline.get_pipeline_snapshot()
+    pipeline_index = pipeline.get_pipeline_index()
     return {
         str(item.handleID): item
-        for item in build_dauphin_solid_handles(pipeline_snapshot, pipeline)
+        for item in build_dauphin_solid_handles(pipeline_index, pipeline_index.dep_structure_index)
     }
 
 
