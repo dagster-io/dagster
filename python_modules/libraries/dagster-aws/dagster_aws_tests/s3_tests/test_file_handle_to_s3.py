@@ -36,12 +36,9 @@ def test_successful_file_handle_to_s3():
 
         assert result.success
 
-        assert s3_fake_resource.session.mock_extras.upload_fileobj.call_count == 1
+        assert s3_fake_resource.mock_extras.upload_fileobj.call_count == 1
 
-        assert (
-            s3_fake_resource.session.get_object('some-bucket', 'some-key')['Body'].read()
-            == foo_bytes
-        )
+        assert s3_fake_resource.get_object('some-bucket', 'some-key')['Body'].read() == foo_bytes
 
         materializations = result.result_for_solid(
             'file_handle_to_s3'

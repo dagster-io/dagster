@@ -11,9 +11,6 @@ S3
 .. autoclass:: S3FileCache
   :members:
 
-.. autoclass:: S3Resource
-  :members:
-
 .. autodata:: s3_resource
   :annotation: ResourceDefinition
 

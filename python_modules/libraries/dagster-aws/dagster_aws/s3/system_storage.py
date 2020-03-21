@@ -17,7 +17,7 @@ from .intermediate_store import S3IntermediateStore
 )
 def s3_system_storage(init_context):
     '''Persistent system storage using S3 for storage.
-    
+
     Suitable for intermediates storage for distributed executors, so long as
     each execution node has network connectivity and credentials for S3 and
     the backing bucket.
@@ -41,14 +41,14 @@ def s3_system_storage(init_context):
     You may configure this storage as follows:
 
     .. code-block:: YAML
-    
+
         storage:
           s3:
             config:
               s3_bucket: my-cool-bucket
               s3_prefix: good/prefix-for-files-
     '''
-    s3_session = init_context.resources.s3.session
+    s3_session = init_context.resources.s3
     s3_key = '{prefix}/storage/{run_id}/files'.format(
         prefix=init_context.system_storage_config['s3_prefix'],
         run_id=init_context.pipeline_run.run_id,

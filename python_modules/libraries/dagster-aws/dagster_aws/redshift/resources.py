@@ -251,7 +251,7 @@ def redshift_resource(context):
         .. code-block:: python
 
             from dagster import ModeDefinition, execute_solid, solid
-            from dagster_aws.redshift import redshift_resource
+            from dagster_aws import redshift_resource
 
             @solid(required_resource_keys={'redshift'})
             def example_redshift_solid(context):

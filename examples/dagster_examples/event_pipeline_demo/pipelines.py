@@ -113,7 +113,7 @@ def download_from_s3_to_file(context):
     )
 
     return _download_from_s3_to_file(
-        context.resources.s3.session, context, bucket, key, target_folder, skip_if_present
+        context.resources.s3, context, bucket, key, target_folder, skip_if_present
     )
 
 

@@ -2,12 +2,11 @@ import io
 from collections import defaultdict
 
 from botocore.exceptions import ClientError
-from dagster_aws.s3.resources import S3Resource
 
 
 def create_s3_fake_resource(buckets=None):
-    '''Create a mock :py:class:`S3Resource` for test.'''
-    return S3Resource(S3FakeSession(buckets=buckets))
+    '''Create a mock S3 session for test.'''
+    return S3FakeSession(buckets=buckets)
 
 
 class S3FakeSession(object):

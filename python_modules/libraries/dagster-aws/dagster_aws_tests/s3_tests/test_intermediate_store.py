@@ -135,9 +135,7 @@ def test_using_s3_for_subplan(s3_bucket):
         store = S3IntermediateStore(
             s3_bucket,
             run_id,
-            s3_session=context.scoped_resources_builder.build(
-                required_resource_keys={'s3'},
-            ).s3.session,
+            s3_session=context.scoped_resources_builder.build(required_resource_keys={'s3'},).s3,
         )
         assert store.has_intermediate(context, 'return_one.compute')
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
@@ -300,9 +298,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
             run_id=run_id,
             s3_bucket=s3_bucket,
             s3_prefix=s3_prefix,
-            s3_session=context.scoped_resources_builder.build(
-                required_resource_keys={'s3'}
-            ).s3.session,
+            s3_session=context.scoped_resources_builder.build(required_resource_keys={'s3'}).s3,
         )
         assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1

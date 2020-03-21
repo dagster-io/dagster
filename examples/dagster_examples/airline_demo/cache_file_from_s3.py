@@ -45,7 +45,7 @@ def cache_file_from_s3(context, s3_coordinate: S3Coordinate) -> FileHandle:
 
     if file_cache.overwrite or not file_cache.has_file_object(target_key):
         with get_temp_file_name() as tmp_file:
-            context.resources.s3.session.download_file(
+            context.resources.s3.download_file(
                 Bucket=s3_coordinate['bucket'], Key=s3_coordinate['key'], Filename=tmp_file
             )
 

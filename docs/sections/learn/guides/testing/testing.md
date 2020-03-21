@@ -201,13 +201,14 @@ def test_cache_file_from_s3():
 
 #### Mocks and Fakes
 
-Now we add also add an S3Resource to ease testability. You'll note that the monkeypatch of a global symbol via `mock.patch` has been eliminated.
+Now we add also add an S3 fake to ease testability. You'll note that the monkeypatch of a global
+symbol via `mock.patch` has been eliminated.
 
 ```python
 def unittest_for_local_mode_def(temp_dir, s3_session):
     return ModeDefinition.from_resources({
         'file_cache': FSFileCache(temp_dir),
-        's3': S3Resource(s3_session),
+        's3': s3_session,
     })
 
 def test_cache_file_from_s3():
@@ -297,7 +298,7 @@ def unittest_for_aws_mode_def(s3_file_cache_session, s3_session):
                 'file-cache',
                 s3_file_cache_session
              ),
-            's3': S3Resource(s3_session),
+            's3': s3_session,
         }
     )
 

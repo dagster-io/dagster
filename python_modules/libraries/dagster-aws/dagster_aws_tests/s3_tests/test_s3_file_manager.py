@@ -105,13 +105,13 @@ def test_depends_on_s3_resource_intermediates():
     assert result.success
     assert result.result_for_solid('add_numbers').output_value() == 6
 
-    assert 'some-bucket' in s3_fake_resource.session.buckets
+    assert 'some-bucket' in s3_fake_resource.buckets
 
     keys = set()
     for step_key, output_name in [('add_numbers.compute', 'result')]:
         keys.add(create_s3_key(result.run_id, step_key, output_name))
 
-    assert set(s3_fake_resource.session.buckets['some-bucket'].keys()) == keys
+    assert set(s3_fake_resource.buckets['some-bucket'].keys()) == keys
 
 
 def create_s3_key(run_id, step_key, output_name):
@@ -153,7 +153,7 @@ def test_depends_on_s3_resource_file_manager():
 
     assert result.success
 
-    keys_in_bucket = set(s3_fake_resource.session.buckets['some-bucket'].keys())
+    keys_in_bucket = set(s3_fake_resource.buckets['some-bucket'].keys())
 
     for step_key, output_name in [
         ('emit_file.compute', 'result'),

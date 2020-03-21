@@ -1,7 +1,6 @@
 import os
 
 import pytest
-from dagster_aws.s3.resources import S3Resource
 from dagster_examples.airline_demo.cache_file_from_s3 import cache_file_from_s3
 
 from dagster import (
@@ -36,7 +35,7 @@ def test_cache_file_from_s3_basic():
             ModeDefinition(
                 resource_defs={
                     'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
+                    's3': ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
             environment_dict={
@@ -75,7 +74,7 @@ def test_cache_file_from_s3_specify_target_key():
             ModeDefinition(
                 resource_defs={
                     'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session)),
+                    's3': ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
             environment_dict={
@@ -104,7 +103,7 @@ def test_cache_file_from_s3_skip_download():
             ModeDefinition(
                 resource_defs={
                     'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
+                    's3': ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
             environment_dict={
@@ -126,7 +125,7 @@ def test_cache_file_from_s3_skip_download():
             ModeDefinition(
                 resource_defs={
                     'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_two)),
+                    's3': ResourceDefinition.hardcoded_resource(s3_session_two),
                 }
             ),
             environment_dict={
@@ -151,7 +150,7 @@ def test_cache_file_from_s3_overwrite():
             ModeDefinition(
                 resource_defs={
                     'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(S3Resource(s3_session_one)),
+                    's3': ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
             environment_dict={

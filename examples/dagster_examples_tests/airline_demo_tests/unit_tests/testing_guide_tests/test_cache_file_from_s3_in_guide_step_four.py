@@ -1,4 +1,4 @@
-from dagster_aws import S3Coordinate, S3FakeSession, S3FileCache, S3Resource
+from dagster_aws import S3Coordinate, S3FakeSession, S3FileCache
 
 from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name
@@ -11,7 +11,7 @@ def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
     target_key = s3_coord['key'].split('/')[-1]
 
     with get_temp_file_name() as tmp_file:
-        context.resources.s3.session.download_file(
+        context.resources.s3.download_file(
             Bucket=s3_coord['bucket'], Key=s3_coord['key'], Filename=tmp_file
         )
 
@@ -26,7 +26,7 @@ def unittest_for_aws_mode_def(s3_file_cache_session, s3_session):
     return ModeDefinition.from_resources(
         {
             'file_cache': S3FileCache('file-cache-bucket', 'file-cache', s3_file_cache_session),
-            's3': S3Resource(s3_session),
+            's3': s3_session,
         }
     )
 
