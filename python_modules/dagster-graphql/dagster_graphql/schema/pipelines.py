@@ -163,7 +163,7 @@ class DauphinResource(dauphin.ObjectType):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
-                field_meta=snap_from_field('config', self._resource.config_field),
+                field_snap=snap_from_field('config', self._resource.config_field),
             )
             if self._resource.config_field
             else None
@@ -190,7 +190,7 @@ class DauphinLogger(dauphin.ObjectType):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._config_schema_snapshot,
-                field_meta=snap_from_field('config', self._logger.config_field),
+                field_snap=snap_from_field('config', self._logger.config_field),
             )
             if self._logger.config_field
             else None

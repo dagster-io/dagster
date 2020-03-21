@@ -214,9 +214,9 @@ class DauphinCompositeConfigType(ConfigTypeMixin, dauphin.ObjectType):
         return sorted(
             [
                 DauphinConfigTypeField(
-                    config_schema_snapshot=self._config_schema_snapshot, field_meta=field_meta,
+                    config_schema_snapshot=self._config_schema_snapshot, field_snap=field_snap,
                 )
-                for field_meta in self._config_type_snap.fields
+                for field_snap in self._config_type_snap.fields
             ],
             key=lambda field: field.name,
         )
@@ -234,19 +234,19 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_config_type_key(self, _):
-        return self._field_meta.type_key
+        return self._field_snap.type_key
 
-    def __init__(self, config_schema_snapshot, field_meta):
+    def __init__(self, config_schema_snapshot, field_snap):
         self._config_schema_snapshot = check.inst_param(
             config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
         )
-        self._field_meta = check.inst_param(field_meta, 'field_meta', ConfigFieldSnap)
+        self._field_snap = check.inst_param(field_snap, 'field_snap', ConfigFieldSnap)
         super(DauphinConfigTypeField, self).__init__(
-            name=field_meta.name,
-            description=field_meta.description,
-            default_value=field_meta.default_value_as_str if field_meta.default_provided else None,
-            is_optional=not field_meta.is_required,
+            name=field_snap.name,
+            description=field_snap.description,
+            default_value=field_snap.default_value_as_str if field_snap.default_provided else None,
+            is_optional=not field_snap.is_required,
         )
 
     def resolve_config_type(self, _graphene_info):
-        return to_dauphin_config_type(self._config_schema_snapshot, self._field_meta.type_key)
+        return to_dauphin_config_type(self._config_schema_snapshot, self._field_snap.type_key)

@@ -184,7 +184,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         return (
             DauphinConfigTypeField(
                 config_schema_snapshot=self._pipeline_snapshot.config_schema_snapshot,
-                field_meta=snap_from_field('config', self._solid_def.config_field),
+                field_snap=snap_from_field('config', self._solid_def.config_field),
             )
             if self._solid_def.config_field
             else None

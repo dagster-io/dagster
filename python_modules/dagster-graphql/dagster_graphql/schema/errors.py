@@ -229,7 +229,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 field=DauphinConfigTypeField(
                     config_schema_snapshot=config_schema_snapshot,
-                    field_meta=snap_from_field(
+                    field_snap=snap_from_field(
                         error.error_data.field_name, error.error_data.field_def
                     ),
                 ),
@@ -243,7 +243,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 fields=[
                     DauphinConfigTypeField(
                         config_schema_snapshot=config_schema_snapshot,
-                        field_meta=snap_from_field(field_name, field_def),
+                        field_snap=snap_from_field(field_name, field_def),
                     )
                     for field_name, field_def in zip(
                         error.error_data.field_names, error.error_data.field_defs
