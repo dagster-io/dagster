@@ -1,6 +1,6 @@
 from dagster import InputDefinition, OutputDefinition, solid
 from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.core.snap.solid import build_solid_def_snap
+from dagster.core.snap.solid import build_core_solid_def_snap
 
 
 def test_basic_solid_definition():
@@ -8,7 +8,7 @@ def test_basic_solid_definition():
     def noop_solid(_):
         pass
 
-    solid_snap = build_solid_def_snap(noop_solid)
+    solid_snap = build_core_solid_def_snap(noop_solid)
 
     assert solid_snap
     assert (
@@ -39,7 +39,7 @@ def test_solid_definition_kitchen_sink():
         assert arg_two
         raise Exception('should not execute')
 
-    kitchen_sink_solid_snap = build_solid_def_snap(kitchen_sink_solid)
+    kitchen_sink_solid_snap = build_core_solid_def_snap(kitchen_sink_solid)
 
     assert kitchen_sink_solid_snap
     assert kitchen_sink_solid_snap.name == 'kitchen_sink_solid'
