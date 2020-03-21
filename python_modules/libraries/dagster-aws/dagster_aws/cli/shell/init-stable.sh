@@ -32,7 +32,7 @@ chown -R ubuntu:ubuntu $INSTALL_PATH/app
 # Setup default $DAGSTER_HOME
 mkdir -p $INSTALL_PATH/dagster_home
 chown -R ubuntu:ubuntu $INSTALL_PATH/dagster_home
-echo 'export DAGSTER_HOME=$INSTALL_PATH/dagster_home' > ~/dagster_home.sh
+echo "export DAGSTER_HOME=$INSTALL_PATH/dagster_home" > ~/dagster_home.sh
 chmod +x ~/dagster_home.sh
 sudo mv ~/dagster_home.sh /etc/profile.d/dagster_home.sh
 
