@@ -8,6 +8,7 @@ from dagster_examples.toys.log_spew import log_spew
 from dagster_examples.toys.many_events import many_events
 from dagster_examples.toys.resources_error import resource_error_pipeline
 from dagster_examples.toys.sleepy import sleepy_pipeline
+from dagster_examples.toys.solid_aliasing_def_collisions import solid_aliasing_def_collisions
 from dagster_examples.toys.tree_demo import generate_tree
 
 from dagster import RepositoryDefinition
@@ -28,6 +29,7 @@ def define_repo():
             many_events,
             resource_error_pipeline,
             sleepy_pipeline,
+            solid_aliasing_def_collisions,
             generate_tree('demo_tree_pipeline', 2, 3),
         ],
     )
