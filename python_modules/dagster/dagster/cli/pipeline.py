@@ -41,6 +41,7 @@ def create_pipeline_cli_group():
     group.add_command(pipeline_execute_command)
     group.add_command(pipeline_backfill_command)
     group.add_command(pipeline_scaffold_command)
+    group.add_command(pipeline_launch_command)
     return group
 
 
@@ -342,6 +343,74 @@ def do_execute_command(pipeline, env_file_list, mode=None):
         instance=DagsterInstance.get(),
         raise_on_error=False,
     )
+
+
+@click.command(
+    name='launch',
+    help='Launch a pipeline using the run launcher configured on the Dagster instance.\n\n{instructions}'.format(
+        instructions=get_pipeline_instructions('launch')
+    ),
+)
+@pipeline_target_command
+@click.option(
+    '-e',
+    '--env',
+    type=click.Path(exists=True),
+    multiple=True,
+    help=(
+        'Specify one or more environment files. These can also be file patterns. '
+        'If more than one environment file is captured then those files are merged. '
+        'Files listed first take precendence. They will smash the values of subsequent '
+        'files at the key-level granularity. If the file is a pattern then you must '
+        'enclose it in double quotes'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
+        '\n\nYou can also specifiy multiple files:'
+        '\n\nExample: '
+        'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
+        '-e pandas_hello_world/env.yaml'
+    ),
+)
+@click.option(
+    '-p',
+    '--preset-name',
+    '--preset',
+    type=click.STRING,
+    help='Specify a preset to use for this pipeline. Presets are defined on pipelines under '
+    'preset_defs.',
+)
+@click.option(
+    '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
+)
+@telemetry_wrapper
+def pipeline_launch_command(env, preset_name, mode, **kwargs):
+    env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
+
+    pipeline = create_pipeline_from_cli_args(kwargs)
+
+    instance = DagsterInstance.get()
+
+    if preset_name:
+        if env:
+            raise click.UsageError('Can not use --preset with --env.')
+
+        if mode:
+            raise click.UsageError('Can not use --preset with --mode.')
+
+        preset = pipeline.get_preset(preset_name)
+    else:
+        preset = None
+
+    run = PipelineRun(
+        pipeline_name=pipeline.name,
+        run_id=make_new_run_id(),
+        selector=ExecutionSelector(pipeline.name, preset.solid_subset if preset else None),
+        environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
+        mode=(preset.mode if preset else mode) or 'default',
+        status=PipelineRunStatus.NOT_STARTED,
+    )
+
+    return instance.launch_run(run)
 
 
 @click.command(

@@ -748,6 +748,25 @@ def test_tuple_param():
     with pytest.raises(CheckError):
         assert check.tuple_param('kdjfkd', 'something')
 
+    assert check.tuple_param((3, 4), 'something', of_type=int)
+    assert check.tuple_param(('foo', 'bar'), 'something', of_type=str)
+
+    assert check.tuple_param((3, 4), 'something', of_type=(int, int))
+    assert check.tuple_param((3, 4), 'something', of_type=(int, int))
+    assert check.tuple_param((3, 'bar'), 'something', of_type=(int, str))
+
+    with pytest.raises(CheckError):
+        check.tuple_param((3, 4, 5), 'something', of_type=(int, int))
+
+    with pytest.raises(CheckError):
+        check.tuple_param((3, 4), 'something', of_type=(int, int, int))
+
+    with pytest.raises(CheckError):
+        check.tuple_param((3, 4), 'something', of_type=(int, str))
+
+    with pytest.raises(CheckError):
+        check.tuple_param((3, 4), 'something', of_type=(str, str))
+
 
 def test_matrix_param():
     assert check.matrix_param([[1, 2], [2, 3]], 'something')
@@ -777,16 +796,35 @@ def test_opt_tuple_param():
     assert check.opt_tuple_param(None, 'something', (2)) == (2)
 
     with pytest.raises(CheckError):
-        assert check.opt_tuple_param(1, 'something')
+        check.opt_tuple_param(1, 'something')
 
     with pytest.raises(CheckError):
-        assert check.opt_tuple_param([1], 'something')
+        check.opt_tuple_param([1], 'something')
 
     with pytest.raises(CheckError):
-        assert check.opt_tuple_param({1: 2}, 'something')
+        check.opt_tuple_param({1: 2}, 'something')
 
     with pytest.raises(CheckError):
-        assert check.opt_tuple_param('kdjfkd', 'something')
+        check.opt_tuple_param('kdjfkd', 'something')
+
+    assert check.opt_tuple_param((3, 4), 'something', of_type=int)
+    assert check.opt_tuple_param(('foo', 'bar'), 'something', of_type=str)
+
+    assert check.opt_tuple_param((3, 4), 'something', of_type=(int, int))
+    assert check.opt_tuple_param((3, 4), 'something', of_type=(int, int))
+    assert check.opt_tuple_param((3, 'bar'), 'something', of_type=(int, str))
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_param((3, 4, 5), 'something', of_type=(int, int))
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_param((3, 4), 'something', of_type=(int, int, int))
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_param((3, 4), 'something', of_type=(int, str))
+
+    with pytest.raises(CheckError):
+        check.opt_tuple_param((3, 4), 'something', of_type=(str, str))
 
 
 def test_opt_type_param():

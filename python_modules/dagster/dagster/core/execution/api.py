@@ -271,7 +271,7 @@ def execute_pipeline_with_preset(
     check.str_param(preset_name, 'preset_name')
     check.opt_inst_param(run_config, 'run_config', RunConfig)
     check.opt_inst_param(instance, 'instance', DagsterInstance)
-    instance = instance or DagsterInstance.ephemeral()
+    instance = instance or DagsterInstance.get()
 
     preset = pipeline.get_preset(preset_name)
 

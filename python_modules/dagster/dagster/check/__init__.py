@@ -318,10 +318,14 @@ def set_param(obj_set, param_name, of_type=None):
     return _check_set_items(obj_set, of_type)
 
 
-def tuple_param(obj, param_name):
+def tuple_param(obj, param_name, of_type=None):
     if not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
-    return obj
+
+    if of_type is None:
+        return obj
+
+    return _check_tuple_items(obj, of_type)
 
 
 def matrix_param(matrix, param_name, of_type=None):
@@ -335,10 +339,17 @@ def matrix_param(matrix, param_name, of_type=None):
     return matrix
 
 
-def opt_tuple_param(obj, param_name, default=None):
+def opt_tuple_param(obj, param_name, default=None, of_type=None):
     if obj is not None and not isinstance(obj, tuple):
         raise_with_traceback(_param_type_mismatch_exception(obj, tuple, param_name))
-    return default if obj is None else obj
+
+    if obj is None:
+        return default
+
+    if of_type is None:
+        return obj
+
+    return _check_tuple_items(obj, of_type)
 
 
 def _check_list_items(obj_list, of_type):
@@ -393,6 +404,68 @@ def _check_set_items(obj_set, of_type):
                 )
             )
     return obj_set
+
+
+def _check_tuple_items(obj_tuple, of_type):
+    if isinstance(of_type, tuple):
+        len_tuple = len(obj_tuple)
+        len_type = len(of_type)
+        if not len_tuple == len_type:
+            raise_with_traceback(
+                CheckError(
+                    'Tuple mismatches type: tuple had {len_tuple} members but type had '
+                    '{len_type}'.format(len_tuple=len_tuple, len_type=len_type)
+                )
+            )
+        for (i, obj) in enumerate(obj_tuple):
+            of_type_i = of_type[i]
+            if of_type_i is str:
+                of_type_i = string_types
+            if not isinstance(obj, of_type_i):
+                if isinstance(obj, type):
+                    additional_message = (
+                        ' Did you pass a class where you were expecting an instance of the class?'
+                    )
+                else:
+                    additional_message = ''
+                raise_with_traceback(
+                    CheckError(
+                        'Member of tuple mismatches type at index {index}. Expected {of_type}. Got '
+                        '{obj_repr} of type {obj_type}.{additional_message}'.format(
+                            index=i,
+                            of_type=of_type_i,
+                            obj_repr=repr(obj),
+                            obj_type=type(obj),
+                            additional_message=additional_message,
+                        )
+                    )
+                )
+    else:
+        if of_type is str:
+            of_type = string_types
+
+        for (i, obj) in enumerate(obj_tuple):
+            if not isinstance(obj, of_type):
+                if isinstance(obj, type):
+                    additional_message = (
+                        ' Did you pass a class where you were expecting an instance of the class?'
+                    )
+                else:
+                    additional_message = ''
+                raise_with_traceback(
+                    CheckError(
+                        'Member of tuple mismatches type at index {index}. Expected {of_type}. Got '
+                        '{obj_repr} of type {obj_type}.{additional_message}'.format(
+                            index=i,
+                            of_type=of_type,
+                            obj_repr=repr(obj),
+                            obj_type=type(obj),
+                            additional_message=additional_message,
+                        )
+                    )
+                )
+
+    return obj_tuple
 
 
 def opt_list_param(obj_list, param_name, of_type=None):

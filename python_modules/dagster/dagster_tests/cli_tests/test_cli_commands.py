@@ -28,6 +28,7 @@ from dagster.cli.pipeline import (
     execute_scaffold_command,
     pipeline_backfill_command,
     pipeline_execute_command,
+    pipeline_launch_command,
     pipeline_list_command,
     pipeline_print_command,
     pipeline_scaffold_command,
@@ -1031,3 +1032,29 @@ def test_backfill_partition_range():
 def test_backfill_partition_enum():
     args = {'pipeline_name': 'baz', 'partition_set': 'baz_partitions', 'partitions': 'c,x,z'}
     run_test_backfill(args, expected_count=3)
+
+
+def run_launch(execution_args, expected_count=None):
+    runner = CliRunner()
+    run_launcher = InMemoryRunLauncher()
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=run_launcher,
+        )
+        with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
+            _instance.return_value = instance
+
+            result = runner.invoke(pipeline_launch_command, execution_args)
+            assert result.exit_code == 0
+            if expected_count:
+                assert len(run_launcher.queue()) == expected_count
+
+
+def test_launch_pipeline():
+    for cli_args in valid_cli_args():
+        run_launch(cli_args, expected_count=1)
