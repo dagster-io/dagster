@@ -39,7 +39,7 @@ class DauphinISolidDefinition(dauphin.Interface):
     required_resources = dauphin.non_null_list('ResourceRequirement')
 
 
-class ISolidDefinitionMixin(object):
+class IDauphinSolidDefinitionMixin(object):
     def __init__(self, pipeline_snapshot, solid_def):
         self._solid_def = check.inst_param(solid_def, 'solid_def', ISolidDefinition)
         self._pipeline_snapshot = check.inst_param(
@@ -166,7 +166,7 @@ class DauphinSolid(dauphin.ObjectType):
         ]
 
 
-class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
+class DauphinSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
     class Meta(object):
         name = 'SolidDefinition'
         interfaces = [DauphinISolidDefinition]
@@ -178,7 +178,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         super(DauphinSolidDefinition, self).__init__(
             name=solid_def.name, description=solid_def.description
         )
-        ISolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
+        IDauphinSolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
 
     def resolve_config_field(self, _):
         return (
@@ -191,7 +191,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
         )
 
 
-class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin):
+class DauphinCompositeSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
     class Meta(object):
         name = 'CompositeSolidDefinition'
         interfaces = [DauphinISolidDefinition, DauphinSolidContainer]
@@ -205,7 +205,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, ISolidDefinitionMixin)
         super(DauphinCompositeSolidDefinition, self).__init__(
             name=solid_def.name, description=solid_def.description
         )
-        ISolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
+        IDauphinSolidDefinitionMixin.__init__(self, pipeline_snapshot, solid_def)
 
     def resolve_solids(self, _graphene_info):
         return build_dauphin_solids(self._pipeline_snapshot, self._solid_def)
