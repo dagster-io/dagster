@@ -1,6 +1,6 @@
 import { ColorTheme } from "./types";
 
-export default {
+const theme: ColorTheme = {
   black: "#10161A",
   white: "#FFFFFF",
   dark: ["#182026", "#202B33", "#293742", "#30404D", "#394B59"],
@@ -20,4 +20,6 @@ export default {
   lime: ["#728C23", "#87A629", "#9BBF30", "#B6D94C", "#D1F26D"],
   gold: ["#A67908", "#BF8C0A", "#D99E0B", "#F2B824", "#FFC940"],
   sepia: ["#63411E", "#7D5125", "#96622D", "#B07B46", "#C99765"]
-} as ColorTheme;
+};
+
+export default theme;

@@ -6,8 +6,8 @@ import { useLocalStorage } from "utils/localStorage";
 import { version, all } from "~dagster-info";
 
 const ctx = createContext({
-  setCurrent: (version: string) => {
-    console.log(version);
+  setCurrent: (_version: string) => {
+    /* */
   },
   version: {
     all,

@@ -6,14 +6,8 @@ import useWindowSize from "react-use/lib/useWindowSize";
 import { ExternalLink, Menu, Logo } from "systems/Core";
 import { Search } from "systems/Search";
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-//@ts-ignore
 import githubIcon from "./images/github-icon.svg";
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-//@ts-ignore
 import slackIcon from "./images/slack-icon.svg";
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-//@ts-ignore
 import stackOverflowIcon from "./images/stack-overflow-icon.svg";
 
 import { MenuIcon } from "./components/MenuIcon";

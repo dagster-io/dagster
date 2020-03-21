@@ -3,8 +3,6 @@ import { jsx } from "theme-ui";
 import * as styles from "./styles";
 
 import * as hitComps from "./hitComps";
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
 import algoliaLogo from "./algolia-logo.svg";
 import { Index, Hits, connectStateResults } from "react-instantsearch-dom";
 import { useVersion } from "systems/Version";
