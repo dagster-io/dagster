@@ -20,7 +20,7 @@ TOX_MAP = {
 }
 
 # https://github.com/dagster-io/dagster/issues/1662
-DO_COVERAGE = False
+DO_COVERAGE = True
 
 # GCP tests need appropriate credentials
 GCP_CREDS_LOCAL_FILE = "/tmp/gcp-key-elementl-dev.json"
