@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions import PipelineDefinition
 
 from .config_types import ConfigSchemaSnapshot, build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
@@ -9,6 +10,7 @@ from .dep_snapshot import (
     DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from .mode import ModeDefSnap, build_mode_def_snap
 from .solid import SolidDefinitionsSnapshot, build_solid_definitions_snapshot
 
 
@@ -33,6 +35,10 @@ class PipelineIndex:
             for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
+    @property
+    def name(self):
+        return self.pipeline_snapshot.name
+
     def get_solid_def_snap(self, solid_def_name):
         check.str_param(solid_def_name, 'solid_def_name')
         return self._solid_defs_snaps_index[solid_def_name]
@@ -40,23 +46,35 @@ class PipelineIndex:
     def get_dep_structure_index(self, comp_solid_def_name):
         return self._comp_dep_structures[comp_solid_def_name]
 
+    def get_dagster_type_snaps(self):
+        dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
+        return list(dt_namespace.all_dagster_type_snaps_by_key.values())
+
 
 class PipelineSnapshot(
     namedtuple(
         '_PipelineSnapshot',
+        'name description tags '
         'config_schema_snapshot dagster_type_namespace_snapshot solid_definitions_snapshot '
-        'dep_structure_snapshot',
+        'dep_structure_snapshot mode_def_snaps',
     )
 ):
     def __new__(
         cls,
+        name,
+        description,
+        tags,
         config_schema_snapshot,
         dagster_type_namespace_snapshot,
         solid_definitions_snapshot,
         dep_structure_snapshot,
+        mode_def_snaps,
     ):
         return super(PipelineSnapshot, cls).__new__(
             cls,
+            name=check.str_param(name, 'name'),
+            description=check.opt_str_param(description, 'description'),
+            tags=check.dict_param(tags, 'tags') if tags else None,
             config_schema_snapshot=check.inst_param(
                 config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
             ),
@@ -71,15 +89,21 @@ class PipelineSnapshot(
             dep_structure_snapshot=check.inst_param(
                 dep_structure_snapshot, 'dep_structure_snapshot', DependencyStructureSnapshot
             ),
+            mode_def_snaps=check.list_param(mode_def_snaps, 'mode_def_snaps', of_type=ModeDefSnap),
         )
 
     @staticmethod
     def from_pipeline_def(pipeline_def):
+        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         return PipelineSnapshot(
+            name=pipeline_def.name,
+            description=pipeline_def.description,
+            tags=pipeline_def.tags,
             config_schema_snapshot=build_config_schema_snapshot(pipeline_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(pipeline_def),
+            mode_def_snaps=list(map(build_mode_def_snap, pipeline_def.mode_definitions)),
         )
 
     def get_solid_def_snap(self, solid_def_name):
