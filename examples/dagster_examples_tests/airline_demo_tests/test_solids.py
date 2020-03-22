@@ -20,7 +20,7 @@ tempfile_mode = ModeDefinition(name='tempfile', resource_defs={'tempfile': tempf
 
 spark_mode = ModeDefinition(
     name='spark',
-    resource_defs={'spark': pyspark_resource, 'tempfile': tempfile_resource, 's3': s3_resource},
+    resource_defs={'pyspark': pyspark_resource, 'tempfile': tempfile_resource, 's3': s3_resource},
     system_storage_defs=s3_plus_default_storage_defs,
 )
 

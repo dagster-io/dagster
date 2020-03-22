@@ -3,7 +3,8 @@ resources:
     config:
       username: test
       password: test
-      hostname: localhost
+      hostname:
+        env: POSTGRES_TEST_DB_HOST
       db_name: test
   file_cache:
     config:

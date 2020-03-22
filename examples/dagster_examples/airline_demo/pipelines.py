@@ -1,9 +1,13 @@
-"""Pipeline definitions for the airline_demo."""
-from dagster_aws.s3.file_cache import s3_file_cache
-from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.solids import file_handle_to_s3
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+'''Pipeline definitions for the airline_demo.
+'''
+from dagster_aws import (
+    S3FileHandle,
+    file_handle_to_s3,
+    s3_file_cache,
+    s3_plus_default_storage_defs,
+    s3_resource,
+)
+from dagster_aws.emr import emr_pyspark_resource
 from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
@@ -33,7 +37,7 @@ from .solids import (
 test_mode = ModeDefinition(
     name='test',
     resource_defs={
-        'spark': pyspark_resource,
+        'pyspark': pyspark_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
         's3': s3_resource,
@@ -46,7 +50,7 @@ test_mode = ModeDefinition(
 local_mode = ModeDefinition(
     name='local',
     resource_defs={
-        'spark': pyspark_resource,
+        'pyspark': pyspark_resource,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
         'tempfile': tempfile_resource,
@@ -59,7 +63,7 @@ local_mode = ModeDefinition(
 prod_mode = ModeDefinition(
     name='prod',
     resource_defs={
-        'spark': pyspark_resource,  # FIXME
+        'pyspark': emr_pyspark_resource,
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
@@ -87,6 +91,15 @@ prod_mode = ModeDefinition(
             environment_files=[
                 file_relative_path(__file__, 'environments/local_base.yaml'),
                 file_relative_path(__file__, 'environments/local_full_ingest.yaml'),
+            ],
+        ),
+        PresetDefinition.from_files(
+            name='prod_fast',
+            mode='prod',
+            environment_files=[
+                file_relative_path(__file__, 'environments/prod_base.yaml'),
+                file_relative_path(__file__, 'environments/s3_storage.yaml'),
+                file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
             ],
         ),
     ],

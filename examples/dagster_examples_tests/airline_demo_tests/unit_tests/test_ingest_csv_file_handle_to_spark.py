@@ -19,13 +19,13 @@ def test_ingest_csv_file_handle_to_spark(spark_config):
     def emit_num_csv_local_file(_):
         return LocalFileHandle(file_relative_path(__file__, '../num.csv'))
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': pyspark_resource})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'pyspark': pyspark_resource})])
     def ingest_csv_file_test():
         return collect_df(ingest_csv_file_handle_to_spark(emit_num_csv_local_file()))
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        environment_dict={'resources': {'spark': {'config': {'spark_conf': spark_config}}}},
+        environment_dict={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
     )
     assert result.success
 
@@ -38,13 +38,13 @@ def test_ingest_csv_file_with_special_handle_to_spark(spark_config):
     def emit_num_special_csv_local_file(_):
         return LocalFileHandle(file_relative_path(__file__, '../num_with_special_chars.csv'))
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'spark': pyspark_resource})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'pyspark': pyspark_resource})])
     def ingest_csv_file_test():
         return collect_df(ingest_csv_file_handle_to_spark(emit_num_special_csv_local_file()))
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        environment_dict={'resources': {'spark': {'config': {'spark_conf': spark_config}}}},
+        environment_dict={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
     )
     assert result.success
 

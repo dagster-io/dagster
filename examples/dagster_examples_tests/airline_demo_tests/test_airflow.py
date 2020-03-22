@@ -30,7 +30,7 @@ class TestAirflowPython_0IngestExecution(object):
         ),
         script_relative_path(
             os.path.join(
-                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_airflow.yaml'
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 's3_storage.yaml'
             )
         ),
         script_relative_path(
@@ -63,7 +63,7 @@ class TestAirflowPython_1WarehouseExecution(object):
         ),
         script_relative_path(
             os.path.join(
-                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 'local_airflow.yaml'
+                '..', '..', 'dagster_examples', 'airline_demo', 'environments', 's3_storage.yaml'
             )
         ),
         script_relative_path(

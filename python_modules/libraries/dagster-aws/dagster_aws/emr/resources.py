@@ -7,7 +7,7 @@ from dagster_pyspark import PySparkResourceDefinition
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict, format_for_cli
 
-from dagster import Field, check, resource
+from dagster import Field, StringSource, check, resource
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import get_system_temp_directory
 
@@ -207,8 +207,10 @@ class EmrPySparkResource(PySparkResourceDefinition):
         'pipeline_file': Field(str, description='Path to the file where the pipeline is defined'),
         'pipeline_fn_name': Field(str),
         'spark_config': spark_config(),
-        'cluster_id': Field(str, description='Name of the job flow (cluster) on which to execute'),
-        'region_name': Field(str),
+        'cluster_id': Field(
+            StringSource, description='Name of the job flow (cluster) on which to execute'
+        ),
+        'region_name': Field(StringSource),
         'action_on_failure': Field(str, is_required=False, default_value='CANCEL_AND_WAIT'),
         'staging_bucket': Field(
             str,
@@ -271,6 +273,9 @@ def emr_pyspark_resource(init_context):
        requirements will be installed on EMR prior to job execution;
     3. An EMR job will be constructed for the solid and execution invoked. Job logs will be
     retrieved and logged if configured via `wait_for_logs`.
+
+    This resource (currently) assumes you've configured your EMR cluster to run Python 3 with:
+    https://aws.amazon.com/premiumsupport/knowledge-center/emr-pyspark-python-3x/
     '''
     emr_pyspark = EmrPySparkResource(init_context.resource_config)
     try:

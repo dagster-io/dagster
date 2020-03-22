@@ -5,6 +5,7 @@ import re
 
 import dagster_pyspark
 from dagster_aws.s3.solids import S3Coordinate
+from dagster_pyspark import pyspark_solid
 from dagstermill import define_dagstermill_solid
 from pyspark.sql import DataFrame
 from sqlalchemy import text
@@ -25,10 +26,13 @@ from dagster import (
     make_python_type_usable_as_dagster_type,
     solid,
 )
+from dagster.core.types.dagster_type import create_string_type
 
 from .cache_file_from_s3 import cache_file_from_s3
-from .types import SqlTableName
 from .unzip_file_handle import unzip_file_handle
+
+SqlTableName = create_string_type('SqlTableName', description='The name of a database table')
+
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(
@@ -145,8 +149,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     return _sql_solid
 
 
-@solid(
-    required_resource_keys={'spark'},
+@pyspark_solid(
     description='''Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
 
@@ -171,7 +174,7 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> Dat
     # the spark APIs to load directly from whatever object store, rather
     # than using any interleaving temp files.
     data_frame = (
-        context.resources.spark.spark_session.read.format('csv')
+        context.resources.pyspark.spark_session.read.format('csv')
         .options(
             header='true',
             # inferSchema='true',
@@ -195,7 +198,7 @@ def do_prefix_column_names(df, prefix):
     return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
 
 
-@solid
+@pyspark_solid
 def canonicalize_column_names(_context, data_frame: DataFrame) -> DataFrame:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
@@ -204,13 +207,13 @@ def replace_values_spark(data_frame, old, new):
     return data_frame.na.replace(old, new)
 
 
-@solid
+@pyspark_solid
 def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame:
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
-@solid(
+@pyspark_solid(
     output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
     config={'table_name': String},
     required_resource_keys={'db_info'},
@@ -232,7 +235,7 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
     yield Output(value=table_name, output_name='table_name')
 
 
-@solid(
+@pyspark_solid(
     description='Subsample a spark dataset via the configuration option.',
     config={
         'subsample_pct': Field(
@@ -506,14 +509,13 @@ sfo_delays_by_destination = notebook_solid(
 )
 
 
-@solid(
+@pyspark_solid(
     config={'subsample_pct': Int},
     description='''
     This solid takes April, May, and June data and coalesces it into a q2 data set.
     It then joins the that origin and destination airport with the data in the
     master_cord_data.
     ''',
-    required_resource_keys={'spark'},
 )
 def join_q2_data(
     context,
@@ -561,7 +563,7 @@ def join_q2_data(
     origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'ORIGIN_')
     origin_prefixed_master_cord_data.createOrReplaceTempView('origin_cord_data')
 
-    full_data = context.resources.spark.spark_session.sql(
+    full_data = context.resources.pyspark.spark_session.sql(
         '''
         SELECT * FROM origin_cord_data
         LEFT JOIN (

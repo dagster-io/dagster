@@ -25,14 +25,6 @@ warehouse_pipeline_handle = handle_for_pipeline_cli_args(
 warehouse_pipeline_def = warehouse_pipeline_handle.build_pipeline_definition()
 
 
-def enviroment_overrides(config):
-    if os.environ.get('POSTGRES_TEST_DB_HOST'):
-        config['resources']['db_info']['config']['postgres_hostname'] = os.environ.get(
-            'POSTGRES_TEST_DB_HOST'
-        )
-    return config
-
-
 def config_path(relative_path):
     return file_relative_path(
         __file__, os.path.join('../../dagster_examples/airline_demo/environments/', relative_path)
@@ -43,11 +35,10 @@ def config_path(relative_path):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_ingest_pipeline_fast(postgres):
+def test_ingest_pipeline_fast(postgres, pg_hostname):
     ingest_config_dict = load_yaml_from_globs(
-        config_path('local_base.yaml'), config_path('local_fast_ingest.yaml')
+        config_path('test_base.yaml'), config_path('local_fast_ingest.yaml')
     )
-    ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
         ingest_pipeline_def,
         ingest_config_dict,
@@ -62,13 +53,12 @@ def test_ingest_pipeline_fast(postgres):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_ingest_pipeline_fast_filesystem_storage(postgres):
+def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
     ingest_config_dict = load_yaml_from_globs(
-        config_path('local_base.yaml'),
+        config_path('test_base.yaml'),
         config_path('local_fast_ingest.yaml'),
         config_path('filesystem_storage.yaml'),
     )
-    ingest_config_dict = enviroment_overrides(ingest_config_dict)
     result_ingest = execute_pipeline(
         ingest_pipeline_def,
         ingest_config_dict,
@@ -83,11 +73,10 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres):
 @pytest.mark.nettest
 @pytest.mark.py3
 @pytest.mark.spark
-def test_airline_pipeline_1_warehouse(postgres):
+def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
-        config_path('local_base.yaml'), config_path('local_warehouse.yaml')
+        config_path('test_base.yaml'), config_path('local_warehouse.yaml')
     )
-    warehouse_config_object = enviroment_overrides(warehouse_config_object)
     result_warehouse = execute_pipeline(
         warehouse_pipeline_def,
         warehouse_config_object,
@@ -101,10 +90,10 @@ def test_airline_pipeline_1_warehouse(postgres):
 # These tests are provided to help distinguish issues using the S3 object store from issues using
 # Airflow, but add too much overhead (~30m) to run on each push
 @pytest.mark.skip
-def test_airline_pipeline_s3_0_ingest(postgres):
+def test_airline_pipeline_s3_0_ingest(postgres, pg_hostname):
     ingest_config_dict = load_yaml_from_globs(
-        config_path('local_base.yaml'),
-        config_path('local_airflow.yaml'),
+        config_path('test_base.yaml'),
+        config_path('s3_storage.yaml'),
         config_path('local_fast_ingest.yaml'),
     )
 
@@ -116,10 +105,10 @@ def test_airline_pipeline_s3_0_ingest(postgres):
 
 
 @pytest.mark.skip
-def test_airline_pipeline_s3_1_warehouse(postgres):
+def test_airline_pipeline_s3_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
-        config_path('local_base.yaml'),
-        config_path('local_airflow.yaml'),
+        config_path('test_base.yaml'),
+        config_path('s3_storage.yaml'),
         config_path('local_warehouse.yaml'),
     )
 

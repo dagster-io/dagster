@@ -42,7 +42,9 @@ def pg_hostname():
     # In buildkite we get the ip address from this variable (see buildkite code for commentary)
     # Otherwise assume local development and assume localhost
     env_name = 'POSTGRES_TEST_DB_HOST'
-    return os.environ.get(env_name, 'localhost')
+    if env_name not in os.environ:
+        os.environ[env_name] = 'localhost'
+    return os.environ[env_name]
 
 
 @pytest.fixture(scope='function')

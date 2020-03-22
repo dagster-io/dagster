@@ -154,10 +154,10 @@ def compose_training_data_env_dict():
         "resources": {
             "postgres_db": {
                 "config": {
-                    "postgres_db_name": "test",
-                    "postgres_hostname": "localhost",
-                    "postgres_password": "test",
-                    "postgres_username": "test",
+                    "db_name": "test",
+                    "hostname": "localhost",
+                    "password": "test",
+                    "username": "test",
                 }
             },
             'volume': {'config': {'mount_location': '/tmp'}},
@@ -382,10 +382,10 @@ def environment_dictionary():
         'resources': {
             'postgres_db': {
                 'config': {
-                    'postgres_db_name': 'test',
-                    'postgres_hostname': 'localhost',
-                    'postgres_password': 'test',
-                    'postgres_username': 'test',
+                    'db_name': 'test',
+                    'hostname': 'localhost',
+                    'password': 'test',
+                    'username': 'test',
                 }
             },
             'volume': {'config': {'mount_location': ''}},

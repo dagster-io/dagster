@@ -15,14 +15,14 @@ snapshots['test_presets_on_examples 1'] = {
                 'environmentConfigYaml': '''resources:
   db_info:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
-  spark:
+  pyspark:
     config:
       spark_conf:
         spark:
@@ -111,14 +111,14 @@ solids:
                 'environmentConfigYaml': '''resources:
   db_info:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
-  spark:
+  pyspark:
     config:
       spark_conf:
         spark:
@@ -220,6 +220,121 @@ solids:
                 'mode': 'local',
                 'name': 'local_full',
                 'solidSubset': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  db_info:
+    config:
+      db_name:
+        env: REDSHIFT_DB
+      hostname:
+        env: REDSHIFT_ENDPOINT
+      password:
+        env: REDSHIFT_PASSWORD
+      port:
+        env: REDSHIFT_PORT
+      s3_temp_dir: dagster-scratch-80542c2
+      username:
+        env: REDSHIFT_USERNAME
+  file_cache:
+    config:
+      bucket: dagster-scratch-80542c2
+      key: airline-demo
+  pyspark:
+    config:
+      cluster_id:
+        env: EMR_CLUSTER_ID
+      pipeline_file: dagster_examples/airline_demo/pipelines.py
+      pipeline_fn_name: airline_demo_ingest_pipeline
+      region_name: us-west-1
+      spark_config:
+        spark:
+          jars:
+            packages: com.databricks:spark-avro_2.11:3.0.0,com.databricks:spark-redshift_2.11:2.0.1,com.databricks:spark-csv_2.11:1.5.0,org.postgresql:postgresql:42.2.5,org.apache.hadoop:hadoop-aws:2.6.5,com.amazonaws:aws-java-sdk:1.7.4
+      staging_bucket: dagster-scratch-80542c2
+solids:
+  april_on_time_s3_to_df:
+    inputs:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_4.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_4.zip
+  download_q2_sfo_weather:
+    inputs:
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/sfo_q2_weather.txt
+  join_q2_data:
+    config:
+      subsample_pct: 100
+  june_on_time_s3_to_df:
+    inputs:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_6.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_6.zip
+  load_q2_on_time_data:
+    config:
+      table_name: q2_on_time_data
+  load_q2_sfo_weather:
+    config:
+      table_name: q2_sfo_weather
+  master_cord_s3_to_df:
+    inputs:
+      archive_member:
+        value: 954834304_T_MASTER_CORD.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/954834304_T_MASTER_CORD.zip
+  may_on_time_s3_to_df:
+    inputs:
+      archive_member:
+        value: On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2018_5.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2018_5.zip
+  process_q2_coupon_data:
+    config:
+      subsample_pct: 100
+      table_name: q2_coupon_data
+    inputs:
+      archive_member:
+        value: Origin_and_Destination_Survey_DB1BCoupon_2018_2.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/Origin_and_Destination_Survey_DB1BCoupon_2018_2.zip
+  process_q2_market_data:
+    config:
+      subsample_pct: 100
+      table_name: q2_market_data
+    inputs:
+      archive_member:
+        value: Origin_and_Destination_Survey_DB1BMarket_2018_2.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/Origin_and_Destination_Survey_DB1BMarket_2018_2.zip
+  process_q2_ticket_data:
+    config:
+      subsample_pct: 100
+      table_name: q2_ticket_data
+    inputs:
+      archive_member:
+        value: Origin_and_Destination_Survey_DB1BTicket_2018_2.csv
+      s3_coordinate:
+        bucket: dagster-airline-demo-source-data
+        key: test/Origin_and_Destination_Survey_DB1BTicket_2018_2.zip
+storage:
+  s3:
+    config:
+      s3_bucket: dagster-scratch-80542c2
+      s3_prefix: airline-demo
+''',
+                'mode': 'prod',
+                'name': 'prod_fast',
+                'solidSubset': None
             }
         ]
     }
@@ -234,14 +349,14 @@ snapshots['test_presets_on_examples 2'] = {
                 'environmentConfigYaml': '''resources:
   db_info:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   file_cache:
     config:
       target_folder: /tmp/dagster/airline_data/file_cache
-  spark:
+  pyspark:
     config:
       spark_conf:
         spark:
@@ -365,10 +480,10 @@ snapshots['test_presets_on_examples 6'] = {
       - DARK_SKY_API_KEY
   postgres_db:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   volume:
     config:
       mount_location: /tmp
@@ -417,10 +532,10 @@ solids:
       - DARK_SKY_API_KEY
   postgres_db:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   volume:
     config:
       mount_location: /tmp
@@ -457,10 +572,10 @@ solids:
       - DARK_SKY_API_KEY
   postgres_db:
     config:
-      postgres_db_name: test
-      postgres_hostname: localhost
-      postgres_password: test
-      postgres_username: test
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
   volume:
     config:
       mount_location: /tmp

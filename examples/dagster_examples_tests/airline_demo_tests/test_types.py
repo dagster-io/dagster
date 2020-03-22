@@ -32,7 +32,6 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
 
     @pipeline(mode_defs=[spark_mode])
     def spark_df_test_pipeline():
-
         ingest_csv_file_handle_to_spark(nonce())
 
     run_id = make_new_run_id()
@@ -46,7 +45,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
         run_config=RunConfig(run_id=run_id, mode='spark'),
         environment_dict={
             'storage': {'filesystem': {}},
-            'resources': {'spark': {'config': {'spark_conf': spark_config}}},
+            'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
         instance=instance,
     )
@@ -86,7 +85,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
         spark_df_test_pipeline,
         environment_dict={
             'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
-            'resources': {'spark': {'config': {'spark_conf': spark_config}}},
+            'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
         run_config=RunConfig(run_id=run_id, mode='spark'),
     )

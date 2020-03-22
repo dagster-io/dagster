@@ -235,9 +235,10 @@ a Redshift cluster. Let's look more closely at how this is implemented for the P
 
 First, we define the ``db_info`` resource itself:
 
-.. code-block:: python
 
-    DbInfo = namedtuple('DbInfo', 'engine url jdbc_url dialect load_table')
+.. literalinclude:: ../../../../examples/dagster_examples/common/resources.py
+   :lines: 7
+   :language: python
 
 
 This resource exposes a SQLAlchemy engine, the URL of the database (in two forms), metadata about
@@ -250,16 +251,9 @@ easy task.
 
 Next, we define the config required to instantiate our resource:
 
-.. code-block:: python
-
-    PostgresConfigData = Dict(
-        {
-            'postgres_username': Field(String),
-            'postgres_password': Field(String),
-            'postgres_hostname': Field(String),
-            'postgres_db_name': Field(String),
-        }
-    )
+.. literalinclude:: ../../../../examples/dagster_examples/common/resources.py
+   :lines: 98-104
+   :language: python
 
 Obviously, this config will differ for Redshift, as it might if we had to reach our database through
 a proxy server, or using a different authentication schema.
@@ -267,7 +261,7 @@ a proxy server, or using a different authentication schema.
 Finally, we bring it all together in the ``postgres_db_info_resource``:
 
 .. literalinclude:: ../../../../examples/dagster_examples/common/resources.py
-   :lines: 89-128
+   :lines: 106-140
    :language: python
 
 By providing strongly typed configuration fields to the ``@resource`` decorator, we now have typeahead

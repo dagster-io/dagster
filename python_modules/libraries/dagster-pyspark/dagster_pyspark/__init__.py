@@ -19,7 +19,12 @@ from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
 from .decorators import pyspark_solid
-from .resources import PySparkResourceDefinition, pyspark_resource, spark_session_from_config
+from .resources import (
+    PySparkResourceDefinition,
+    fake_pyspark_resource,
+    pyspark_resource,
+    spark_session_from_config,
+)
 from .version import __version__
 
 
@@ -33,11 +38,11 @@ from .version import __version__
             }
         }
     ),
-    required_resource_keys={'spark'},
+    required_resource_keys={'pyspark'},
 )
 def load_rdd(context, file_type, file_options):
     if file_type == 'csv':
-        return context.resources.spark.spark_session.read.csv(
+        return context.resources.pyspark.spark_session.read.csv(
             file_options['path'], sep=file_options.get('sep')
         ).rdd
     else:
@@ -56,11 +61,11 @@ def load_rdd(context, file_type, file_options):
             )
         }
     ),
-    required_resource_keys={'spark'},
+    required_resource_keys={'pyspark'},
 )
 def write_rdd(context, file_type, file_options, spark_rdd):
     if file_type == 'csv':
-        df = context.resources.spark.spark_session.createDataFrame(spark_rdd)
+        df = context.resources.pyspark.spark_session.createDataFrame(spark_rdd)
         context.log.info('DF: {}'.format(df))
         df.write.csv(
             file_options['path'], header=file_options.get('header'), sep=file_options.get('sep')
@@ -116,13 +121,13 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 
     @classmethod
     def get_object(cls, intermediate_store, context, _dagster_type, paths):
-        return context.resources.spark.spark_session.read.parquet(
+        return context.resources.pyspark.spark_session.read.parquet(
             intermediate_store.uri_for_paths(paths, protocol='s3a://')
         )
 
     @classmethod
     def required_resource_keys(cls):
-        return frozenset({'spark'})
+        return frozenset({'pyspark'})
 
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
@@ -138,13 +143,13 @@ class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disab
 
     @classmethod
     def get_object(cls, intermediate_store, context, _dagster_type, paths):
-        return context.resources.spark.spark_session.read.parquet(
+        return context.resources.pyspark.spark_session.read.parquet(
             os.path.join(intermediate_store.root, *paths)
         )
 
     @classmethod
     def required_resource_keys(cls):
-        return frozenset({'spark'})
+        return frozenset({'pyspark'})
 
 
 DataFrame = PythonObjectDagsterType(

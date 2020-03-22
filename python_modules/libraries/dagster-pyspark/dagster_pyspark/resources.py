@@ -62,3 +62,16 @@ def pyspark_resource(init_context):
     finally:
         if init_context.resource_config['stop_session']:
             pyspark.stop()
+
+
+class FakePySparkResource(PySparkResourceDefinition):
+    def __init__(self):  # pylint: disable=super-init-not-called
+        pass
+
+    def get_compute_fn(self, fn, solid_name):
+        return fn
+
+
+@resource
+def fake_pyspark_resource(_init_context):
+    yield FakePySparkResource()
