@@ -7,6 +7,39 @@ from dagster.core.snap.dep_snapshot import (
     SolidInvocationSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+
+
+def test_empty_pipeline_snap_props():
+    @solid
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+
+    assert pipeline_snapshot.name == 'noop_pipeline'
+    assert pipeline_snapshot.description is None
+    assert pipeline_snapshot.tags == {}
+
+
+def test_pipeline_snap_all_props():
+    @solid
+    def noop_solid(_):
+        pass
+
+    @pipeline(description='desc', tags={'key': 'value'})
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+
+    assert pipeline_snapshot.name == 'noop_pipeline'
+    assert pipeline_snapshot.description == 'desc'
+    assert pipeline_snapshot.tags == {'key': 'value'}
 
 
 def test_noop_deps_snap():

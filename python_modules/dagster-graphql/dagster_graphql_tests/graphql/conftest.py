@@ -23,6 +23,10 @@ query AppQuery {
 fragment PipelineFragment on Pipeline {
   name
   description
+  tags {
+    key
+    value
+  }
   solids {
     ...SolidFragment
     __typename
