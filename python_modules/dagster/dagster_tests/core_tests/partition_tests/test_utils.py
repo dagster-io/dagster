@@ -21,25 +21,25 @@ def test_date_partition_range_out_of_order():
             datetime(year=2020, month=1, day=1),
             datetime(year=2020, month=1, day=6),
             timedelta(days=1),
-            ['2020-01-01', '2020-01-02', '2020-01-03', '2020-01-04'],
+            ['2020-01-01', '2020-01-02', '2020-01-03', '2020-01-04', '2020-01-05'],
         ),
         (
             datetime(year=2020, month=12, day=29),
             datetime(year=2021, month=1, day=3),
             timedelta(days=1),
-            ['2020-12-29', '2020-12-30', '2020-12-31', '2021-01-01'],
+            ['2020-12-29', '2020-12-30', '2020-12-31', '2021-01-01', '2021-01-02'],
         ),
         (
             datetime(year=2020, month=2, day=28),
             datetime(year=2020, month=3, day=3),
             timedelta(days=1),
-            ['2020-02-28', '2020-02-29', '2020-03-01'],
+            ['2020-02-28', '2020-02-29', '2020-03-01', '2020-03-02'],
         ),
         (
             datetime(year=2019, month=2, day=28),
             datetime(year=2019, month=3, day=3),
             timedelta(days=1),
-            ['2019-02-28', '2019-03-01'],
+            ['2019-02-28', '2019-03-01', '2019-03-02'],
         ),
         (
             datetime(year=2020, month=1, day=1),
@@ -71,7 +71,6 @@ def test_date_partition_range_daily(start, end, delta, expected_partitions):
     assert all(
         expected_partition_name == generated_partition_name
         for expected_partition_name, generated_partition_name in zip(
-            expected_partitions,
-            [generated_partition.name for generated_partition in generated_partitions],
+            expected_partitions, [partition.name for partition in generated_partitions]
         )
     )
