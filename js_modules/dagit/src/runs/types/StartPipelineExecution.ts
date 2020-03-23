@@ -18,10 +18,17 @@ export interface StartPipelineExecution_startPipelineExecution_StartPipelineExec
   name: string;
 }
 
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run {
   __typename: "PipelineRun";
   runId: string;
   pipeline: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline;
+  tags: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_tags[];
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess {

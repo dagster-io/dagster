@@ -114,6 +114,10 @@ export const START_PIPELINE_EXECUTION_MUTATION = gql`
           pipeline {
             name
           }
+          tags {
+            key
+            value
+          }
         }
       }
       ... on PipelineNotFoundError {

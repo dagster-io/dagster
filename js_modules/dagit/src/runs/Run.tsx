@@ -151,6 +151,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
         solidSubset: run.pipeline.solids.map(s => s.name)
       }
     };
+    const reexecutionTag = { key: "dagster/parent_run_id", value: run.runId };
 
     // single step re-execution
     if (stepKey && run.executionPlan) {
@@ -159,9 +160,12 @@ export class Run extends React.Component<IRunProps, IRunState> {
       executionParams["stepKeys"] = [stepKey];
       executionParams["retryRunId"] = run.runId;
     } else {
-      // only copy tags over on full resume-retry or full retry
+      // only copy tags over or pass parent_run_id
+      // on full resume-retry or full retry
       executionParams["executionMetadata"] = {
-        tags: run.tags.map(tag => ({ value: tag.value, key: tag.key }))
+        tags: run.tags
+          .map(tag => ({ value: tag.value, key: tag.key }))
+          .push(reexecutionTag)
       };
       if (resumeRetry) {
         executionParams["retryRunId"] = run.runId;

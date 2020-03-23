@@ -393,6 +393,9 @@ const RunActionsMenu: React.FunctionComponent<{
                         run.pipeline.__typename === "Pipeline"
                           ? run.pipeline.solids.map(s => s.name)
                           : []
+                    },
+                    executionMetadata: {
+                      tags: [{ key: "dagster/parent_run_id", value: run.runId }]
                     }
                   }
                 }

@@ -166,7 +166,9 @@ def start_pipeline_execution(graphene_info, execution_params):
         pipeline_def,
         execution_params.environment_dict,
         run_config=RunConfig(
-            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id,
+            mode=execution_params.mode,
+            previous_run_id=execution_params.previous_run_id,
+            tags=execution_params.execution_metadata.tags,
         ),
     )
 
@@ -190,7 +192,9 @@ def _create_pipeline_run(instance, pipeline, execution_params):
             pipeline,
             execution_params.environment_dict,
             run_config=RunConfig(
-                mode=execution_params.mode, previous_run_id=execution_params.previous_run_id,
+                mode=execution_params.mode,
+                previous_run_id=execution_params.previous_run_id,
+                tags=execution_params.execution_metadata.tags,
             ),
         )
         step_keys_to_execute = get_retry_steps_from_execution_plan(instance, execution_plan)
