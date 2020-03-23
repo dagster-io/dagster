@@ -1,0 +1,49 @@
+<h1 id="executing-our-first-pipeline">Executing our first pipeline</h1>
+<div class="toctree" data-maxdepth="1" hidden="">
+
+</div>
+<p>Assuming you've saved this pipeline as <code>hello_cereal.py</code>, we can execute it via any of three different mechanisms:</p>
+<ol type="1">
+<li>From the command line, using the <code>dagster</code> CLI.</li>
+<li>From a rich graphical interface, using the <code>dagit</code> GUI tool.</li>
+<li>From arbitrary Python scripts, using dagster's Python API.</li>
+</ol>
+<h2 id="using-the-dagster-cli-to-execute-a-pipeline">Using the dagster CLI to execute a pipeline</h2>
+<p>From the directory in which you've saved the pipeline file, just run:</p>
+<pre class="console"><code>$ dagster pipeline execute -f hello_cereal.py -n hello_cereal_pipeline</code></pre>
+<p>You'll see the full stream of events emitted by dagster appear in the console, including our call to the logging machinery, which will look like:</p>
+<pre class="console"><code>2019-10-10 11:46:50 - dagster - INFO - system - a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals
+              solid = &quot;hello_cereal&quot;
+    solid_definition = &quot;hello_cereal&quot;
+            step_key = &quot;hello_cereal.compute&quot;</code></pre>
+<p>Success!</p>
+<h2 id="using-dagit-to-execute-a-pipeline">Using dagit to execute a pipeline</h2>
+<p>To visualize your pipeline (which only has one node) in dagit, from the directory in which you've saved the pipeline file, just run:</p>
+<pre class="console"><code>$ dagit -f hello_cereal.py -n hello_cereal_pipeline</code></pre>
+<p>You'll see output like</p>
+<pre class="console"><code>Loading repository...
+Serving on http://127.0.0.1:3000</code></pre>
+<p>You should be able to navigate to <a href="http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/">http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/</a> in your web browser and view your pipeline. It isn't very interesting yet, because it only has one node.</p>
+<div class="thumbnail">
+<p>hello_cereal_figure_one.png</p>
+</div>
+<p>Click on the "Playground" tab and you'll see the two-paned view below.</p>
+<div class="thumbnail">
+<p>hello_cereal_figure_two.png</p>
+</div>
+<p>The top pane is empty here, but in more complicated pipelines, this is where you'll be able to edit pipeline configuration on the fly.</p>
+<p>The bottom pane shows the concrete execution plan corresponding to the logical structure of the pipeline -- which also only has one node, <code>hello_cereal.compute</code>.</p>
+<p>Click the "Start Execution" button to execute this plan directly from dagit. A new window should open, and you'll see a much more structured view of the stream of Dagster events start to appear in the left-hand pane.</p>
+<p>(If you have pop-up blocking enabled, you may need to tell your browser to allow pop-ups from 127.0.0.1 -- or, just navigate to the "Runs" tab to see this, and every run of your pipeline.)</p>
+<div class="thumbnail">
+<p>hello_cereal_figure_three.png</p>
+</div>
+<p>In this view, you can filter and search through the logs corresponding to your pipeline run.</p>
+<h2 id="using-the-python-api-to-execute-a-pipeline">Using the Python API to execute a pipeline</h2>
+<p>If you'd rather execute your pipelines as a script, you can do that without using the dagster CLI at all. Just add a few lines to <code>hello_cereal.py</code>:</p>
+<div class="literalinclude" data-linenos="" data-lineno-start="26" data-lines="26-28" data-caption="hello_cereal.py" data-language="python">
+<p>../../../examples/dagster_examples/intro_tutorial/hello_cereal.py</p>
+</div>
+<p>Now you can just run:</p>
+<pre class="console"><code>$ python hello_cereal.py</code></pre>
+<p>The :py<code class="interpreted-text" role="func">execute_pipeline</code> function called here is the core Python API for executing Dagster pipelines from code.</p>

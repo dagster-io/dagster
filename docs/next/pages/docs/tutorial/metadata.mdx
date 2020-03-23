@@ -1,0 +1,16 @@
+<h1 id="metadata-and-custom-type-checks">Metadata and custom type checks</h1>
+<div class="toctree" data-maxdepth="1" hidden="">
+
+</div>
+<p>Custom types can also yield metadata about the type check. For example, in the case of our data frame, we might want to record the number of rows and columns in the dataset when our type checks succeed, and provide more information about why type checks failed when they fail.</p>
+<p>User-defined type check functions can optionally return a :py<code class="interpreted-text" role="class">TypeCheck &lt;dagster.TypeCheck&gt;</code> object that contains metadata about the success or failure of the type check.</p>
+<p>Let's see how to use this to emit some summary statistics about our DataFrame type:</p>
+<div class="literalinclude" data-lines="17-69" data-linenos="" data-lineno-start="17" data-emphasize-lines="3-9, 33-53" data-caption="custom_types_4.py" data-language="python">
+<p>../../../examples/dagster_examples/intro_tutorial/custom_types_4.py</p>
+</div>
+<p>A :py<code class="interpreted-text" role="class">TypeCheck &lt;dagster.TypeCheck&gt;</code> must include a <code>success</code> argument describing whether the check passed or failed, and may include a description and/or a list of :py<code class="interpreted-text" role="class">EventMetadataEntry &lt;dagster.EventMetadataEntry&gt;</code> objects. You should use the static constructors on :py<code class="interpreted-text" role="class">EventMetadataEntry &lt;dagster.EventMetadataEntry&gt;</code> to construct these objects, which are flexible enough to support arbitrary metadata in JSON or Markdown format.</p>
+<p>Dagit knows how to display and archive structured metadata of this kind for future review:</p>
+<div class="thumbnail">
+<p>custom_types_figure_two.png</p>
+</div>
+<p>Custom type checks and metadata are appropriate for checking that a value will behave as we expect, and for collecting summary information about values.</p>

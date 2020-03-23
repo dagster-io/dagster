@@ -1,0 +1,21 @@
+run_storage:
+  module: dagster_postgres.run_storage
+  class: PostgresRunStorage
+  config:
+    postgres_db:
+      username: {username}
+      password: {password}
+      hostname: {hostname}
+      db_name: {database}
+      port: {port}
+
+event_log_storage:
+  module: dagster_postgres.event_log
+  class: PostgresEventLogStorage
+  config:
+    postgres_db:
+      username: {username}
+      password: {password}
+      hostname: {hostname}
+      db_name: {database}
+      port: {port}

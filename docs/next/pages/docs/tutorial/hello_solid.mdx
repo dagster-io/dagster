@@ -1,0 +1,41 @@
+import PyObject from "../../../components/PyObject";
+
+<h1 id="hello-solid">Hello, solid!</h1>
+<p>
+  Let's write our first Dagster solid and save it as{" "}
+  <code>hello_cereal.py</code>.
+</p>
+<p>
+  (You can also find this file, and all of the tutorial code, on{" "}
+  <a href="https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial">
+    Github
+  </a>{" "}
+  or, if you've cloned the git repo, at{" "}
+  <code>dagster/examples/dagster_examples/intro_tutorial/</code>.)
+</p>
+<p>
+  A solid is a unit of computation in a data pipeline. Typically, you'll define
+  solids by annotating ordinary Python functions with the{" "}
+  <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
+</p>
+<p>
+  The logic in our first solid is very straightforward: it just reads in the csv
+  from a hardcoded path and logs the number of rows it finds.
+</p>
+<div
+  class="literalinclude"
+  data-linenos=""
+  data-lines="1-18"
+  data-caption="hello_cereal.py"
+  data-language="python"
+>
+  <p>../../../examples/dagster_examples/intro_tutorial/hello_cereal.py</p>
+</div>
+<p>
+  In this simplest case, our solid takes no inputs except for the :py
+  <code class="interpreted-text" role="class">
+    context &lt;SystemComputeExecutionContext&gt;
+  </code> in which it executes (provided by the Dagster framework as the first argument
+  to every solid), and also returns no outputs. Don't worry, we'll soon encounter
+  solids that are much more dynamic.
+</p>

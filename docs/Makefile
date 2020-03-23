@@ -123,7 +123,7 @@ linkcheck:
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
-	      "or in $(BUILDDIR)/linkcheck/output.txt."
+	      "or in $(BUILDDIR)/linkcheck/output.
 
 doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
@@ -133,8 +133,14 @@ doctest:
 livehtml:
 	sphinx-autobuild -a -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 
-gatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn build && cd ..
-
-livegatsby:
-	cd gatsby && yarn install && yarn sphinx -v latest && yarn develop
+buildnext:
+	make clean && make json
+	rm -rf next/data
+	mkdir next/data
+	cp _build/json/searchindex.json next/data/searchindex.json
+	cp -r _build/json/sections/api/apidocs/ next/data
+	cp -r _build/json/_modules next/data
+	find next/data -type f -name "*.fjson" -print0 | xargs -0 rename "s/.fjson$$/.json/"
+	find next/data -name "*.fjson" -type f -delete
+	yarn --cwd next
+	yarn --cwd next process

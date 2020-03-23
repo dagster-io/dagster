@@ -1,0 +1,248 @@
+/* purgecss start ignore */
+@tailwind base;
+@tailwind components;
+/* purgecss end ignore */
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100;
+}
+
+.py-05 {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+
+.markdown {
+  @apply text-gray-900 leading-normal break-words;
+}
+
+.markdown > * + * {
+  @apply mt-0 mb-4;
+}
+
+.markdown li + li {
+  @apply mt-1;
+}
+
+.markdown li > p + p {
+  @apply mt-6;
+}
+
+.markdown strong {
+  @apply font-semibold;
+}
+
+.markdown a {
+  @apply text-blue-600 font-semibold;
+}
+
+.markdown strong a {
+  @apply font-bold;
+}
+
+.markdown h1 {
+  @apply leading-tight border-b text-4xl font-semibold mb-4 pb-2;
+}
+
+.markdown h2 {
+  @apply leading-tight border-b text-2xl font-semibold mb-4 mt-6 pb-2;
+}
+
+.markdown h3 {
+  @apply leading-snug text-lg font-semibold mb-4 mt-6;
+}
+
+.markdown h4 {
+  @apply leading-none text-base font-semibold mb-4 mt-6;
+}
+
+.markdown h5 {
+  @apply leading-tight text-sm font-semibold mb-4 mt-6;
+}
+
+.markdown h6 {
+  @apply leading-tight text-sm font-semibold text-gray-600 mb-4 mt-6;
+}
+
+.markdown blockquote {
+  @apply text-base border-l-4 border-gray-300 pl-4 pr-4 text-gray-600;
+}
+
+.markdown code {
+  @apply font-mono text-sm inline bg-gray-200 rounded px-1 py-05;
+}
+
+.markdown pre {
+  @apply bg-gray-100 rounded p-4;
+}
+
+.markdown pre code {
+  @apply block bg-transparent p-0 overflow-visible rounded-none;
+}
+
+.markdown ul {
+  @apply text-base pl-8 list-disc;
+}
+
+.markdown ol {
+  @apply text-base pl-8 list-decimal;
+}
+
+.markdown kbd {
+  @apply text-xs inline-block rounded border px-1 py-05 align-middle font-normal font-mono shadow;
+}
+
+.markdown table {
+  @apply text-base border-gray-600;
+}
+
+.markdown th {
+  @apply border py-1 px-3;
+}
+
+.markdown td {
+  @apply border py-1 px-3;
+}
+
+/* Override pygments style background color. */
+.markdown .highlight pre {
+  @apply bg-gray-100 !important;
+}
+
+/* Permalink */
+a.headerlink {
+  opacity: 20%;
+  @apply ml-2;
+}
+
+a.headerlink:hover {
+  @apply opacity-75;
+}
+
+.markdown dl.class,
+.markdown dl.data,
+.markdown dl.attribute,
+.markdown dl.exception,
+.markdown dl.function {
+  @apply bg-white shadow overflow-hidden rounded-lg my-8 relative !important;
+}
+
+/* Nested cards */
+
+dl.class dl.attribute {
+  @apply overflow-hidden shadow-none border-gray-100 border-2  !important;
+}
+
+/* Header ====================================== */
+dl.class > dt,
+dl.data > dt,
+dl.attribute > dt,
+dl.exception > dt,
+dl.function > dt {
+  @apply px-4 pt-8 pb-4 border-b border-gray-200;
+}
+
+dl.class > dt > code.descclassname,
+dl.data > dt > code.descclassname,
+dl.attribute > dt > code.descclassname,
+dl.exception > dt > code.descclassname,
+dl.function > dt > code.descclassname {
+  @apply bg-blue-100 rounded-r-none;
+}
+
+dl.class > dt > code.descname,
+dl.data > dt > code.descname,
+dl.attribute > dt > code.descname,
+dl.exception > dt > code.descname,
+dl.function > dt > code.descname {
+  @apply bg-blue-200 font-bold mr-1 rounded-l-none;
+}
+
+dl.class > dt > em.sig-param,
+dl.data > dt > em.sig-param,
+dl.attribute > dt > em.sig-param,
+dl.exception > dt > em.sig-param,
+dl.function > dt > em.sig-param {
+  @apply text-gray-600;
+}
+
+dl.class > dt > em.sig-param:hover,
+dl.data > dt > em.sig-param:hover,
+dl.attribute > dt > em.sig-param:hover,
+dl.exception > dt > em.sig-param:hover,
+dl.function > dt > em.sig-param:hover {
+  @apply font-semibold text-gray-900;
+}
+
+/* Source Link */
+dl.class > dt > a.reference.internal,
+dl.data > dt > a.reference.internal,
+dl.attribute > dt > a.reference.internal,
+dl.exception > dt > a.reference.internal,
+dl.function > dt > a.reference.internal {
+  @apply absolute top-1 right-2 opacity-50 text-sm;
+}
+
+dl.class > dt > a.reference.internal:hover,
+dl.data > dt > a.reference.internal:hover,
+dl.attribute > dt > a.reference.internal:hover,
+dl.exception > dt > a.reference.internal:hover,
+dl.function > dt > a.reference.internal:hover {
+  @apply opacity-100;
+}
+
+/* Class body ====================================== */
+
+dl.class > dd,
+dl.data > dd,
+dl.attribute > dd,
+dl.exception > dd,
+dl.function > dd {
+  @apply px-4 py-4 border-b border-gray-200;
+}
+
+dl.class > dd > p,
+dl.data > dd > p,
+dl.attribute > dd > p,
+dl.exception > dd > p,
+dl.function > dd > p {
+  @apply py-2;
+}
+
+/* Parameters */
+dl.class > dd > dl.field-list.simple,
+dl.data > dd > dl.field-list.simple,
+dl.attribute > dd > dl.field-list.simple,
+dl.exception > dd > dl.field-list.simple,
+dl.function > dd > dl.field-list.simple {
+  @apply bg-gray-50 rounded p-4 -mx-4;
+}
+
+dl.class > dd > dl.field-list.simple > dt.field-odd,
+dl.data > dd > dl.field-list.simple > dt.field-odd,
+dl.attribute > dd > dl.field-list.simple > dt.field-odd,
+dl.exception > dd > dl.field-list.simple > dt.field-odd,
+dl.function > dd > dl.field-list.simple > dt.field-odd {
+  @apply font-bold my-2;
+}
+
+dl.class > dd > dl.field-list.simple > dd.field-odd > ul > li,
+dl.data > dd > dl.field-list.simple > dd.field-odd > ul > li,
+dl.attribute > dd > dl.field-list.simple > dd.field-odd > ul > li,
+dl.exception > dd > dl.field-list.simple > dd.field-odd > ul > li,
+dl.function > dd > dl.field-list.simple > dd.field-odd > ul > li {
+  @apply my-4;
+}
+
+dl.class > dd > dl.field-list.simple > dd.field-odd p,
+dl.data > dd > dl.field-list.simple > dd.field-odd p,
+dl.attribute > dd > dl.field-list.simple > dd.field-odd p,
+dl.exception > dd > dl.field-list.simple > dd.field-odd p,
+dl.function > dd > dl.field-list.simple > dd.field-odd p {
+  @apply my-1;
+}
+
+.highlight pre {
+  overflow-x: scroll;
+}

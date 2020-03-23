@@ -1,0 +1,23 @@
+<h1 id="organizing-pipelines-in-repositories">Organizing pipelines in repositories</h1>
+<p>In all of the examples we've seen so far, we've specified a file (<code>-f</code>) or a module (<code>-m</code>) and named a pipeline definition function (<code>-n</code>) in order to tell the CLI tools how to load a pipeline, e.g.:</p>
+<pre class="console"><code>$ dagit -f hello_cereal.py -n hello_cereal_pipeline
+$ dagster pipeline execute -f hello_cereal.py \
+    -n hello_cereal_pipeline</code></pre>
+<p>But most of the time, especially when working on long-running projects with other people, we will want to be able to target many pipelines at once with our tools.</p>
+<p>Dagster provides the concept of a repository, a collection of pipelines that the Dagster tools can target as a whole. Repositories are declared using the :py<code class="interpreted-text" role="func">RepositoryDefinition &lt;dagster.RepositoryDefinition&gt;</code> API as follows:</p>
+<div class="literalinclude" data-linenos="" data-lines="14-24" data-lineno-start="14" data-caption="repos.py" data-language="python">
+<p>../../../examples/dagster_examples/intro_tutorial/repos.py</p>
+</div>
+<p>Note that the name of the pipeline in the <code>RepositoryDefinition</code> must match the name we declared for it in its <code>pipeline</code> (the default is the function name). Don't worry, if these names don't match, you'll see a helpful error message.</p>
+<p>If you save this file as <code>repos.py</code>, you can then run the command line tools on it. Try running:</p>
+<pre class="console"><code>$ dagit -f repos.py -n define_repo</code></pre>
+<p>Now you can see the list of all pipelines in the repo via the dropdown at the top:</p>
+<div class="thumbnail">
+<p>repos.png</p>
+</div>
+<p>Typing the name of the file and function defining the repository gets tiresome and repetitive, so let's create a declarative config file with this information to make using the command line tools easier. Save this file as <code>repository.yaml</code>. This is the default name for a repository config file, although you can tell the CLI tools to use any file you like with the <code>-y</code> flag.</p>
+<div class="literalinclude" data-language="YAML" data-caption="repository.yaml">
+<p>../../../examples/dagster_examples/intro_tutorial/repository.yaml</p>
+</div>
+<p>Now you should be able to list the pipelines in this repo without all the typing:</p>
+<pre class="console"><code>$ dagit</code></pre>
