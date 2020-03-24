@@ -222,6 +222,14 @@ mutation (
             __typename
             message
         }
+        ... on PythonError {
+            message
+            stack
+            cause {
+                message
+                stack
+            }
+        }
         ...startPipelineExecutionResultFragment
         ...launchPipelineExecutionResultFragment
     }

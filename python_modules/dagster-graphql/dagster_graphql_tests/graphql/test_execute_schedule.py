@@ -1,3 +1,4 @@
+import sys
 import time
 import uuid
 
@@ -541,10 +542,49 @@ def test_enviornment_dict_scheduler_error(snapshot):
         tick = ticks[0]
         assert tick.status == ScheduleTickStatus.FAILURE
         assert tick.error
+
         assert (
             "Error occurred during the execution of environment_dict_fn for schedule "
             "environment_dict_error_schedule" in tick.error.message
         )
+
+
+def test_enviornment_dict_scheduler_error_serialize_cauze():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = get_instance(temp_dir)
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+        repository = context.get_repository()
+        schedule_handle = context.scheduler_handle
+        schedule_handle.up("", "", repository, instance)
+
+        result = execute_dagster_graphql(
+            context,
+            START_SCHEDULED_EXECUTION_QUERY,
+            variables={'scheduleName': 'environment_dict_error_schedule'},
+        )
+
+        # Exception cause is only available in py3
+        assert result.data
+        assert result.data['startScheduledExecution']
+        if sys.version_info.major >= 3:
+            assert result.data['startScheduledExecution']['cause']
+            assert result.data['startScheduledExecution']['cause']['message']
+            assert (
+                result.data['startScheduledExecution']['cause']['message']
+                == "NameError: name 'asdf' is not defined\n"
+            )
+
+        ticks = instance.get_schedule_ticks_by_schedule(
+            repository, 'environment_dict_error_schedule'
+        )
+
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick
+        if sys.version_info.major >= 3:
+            assert tick.error.cause.message == "NameError: name 'asdf' is not defined\n"
 
 
 def test_query_multiple_schedule_ticks(snapshot):

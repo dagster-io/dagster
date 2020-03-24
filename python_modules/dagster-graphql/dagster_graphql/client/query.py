@@ -257,10 +257,6 @@ mutation(
     ...on ScheduledExecutionBlocked {
       message
     }
-    ...on PythonError {
-      message
-      stack
-    }
     ... on InvalidStepError {
       invalidStepKey
     }
@@ -286,6 +282,10 @@ mutation(
     ... on PythonError {
       message
       stack
+      cause {
+        message
+        stack
+      }
     }
     ... on StartPipelineExecutionSuccess {
       run {
