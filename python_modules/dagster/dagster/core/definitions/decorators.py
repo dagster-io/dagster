@@ -1006,7 +1006,7 @@ def weekly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
     )
 
-    partition_fn = date_partition_range(start_date, delta=relativedelta(months=1), fmt="%Y-%m-%d")
+    partition_fn = date_partition_range(start_date, delta=relativedelta(weeks=1), fmt="%Y-%m-%d")
 
     def inner(fn):
         check.callable_param(fn, 'fn')

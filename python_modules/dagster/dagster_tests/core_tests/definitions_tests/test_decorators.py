@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 
 import pytest
+from dateutil.relativedelta import relativedelta
 
 from dagster import (
     Any,
@@ -345,6 +346,51 @@ def test_schedule_decorators_sanity():
     )
     def hourly_foo_schedule():
         return {}
+
+
+def _check_partitions(partition_schedule_def, expected_relative_delta):
+    partitions = partition_schedule_def.get_partition_set().partition_fn()
+
+    for index, partition in enumerate(partitions):
+        assert partition.value == partitions[0].value + (index * expected_relative_delta)
+
+
+def test_partitions_for_schedule_decorators():
+    @hourly_schedule(
+        pipeline_name='foo_pipeline', start_date=datetime(year=2019, month=1, day=1),
+    )
+    def hourly_foo_schedule():
+        return {}
+
+    _check_partitions(hourly_foo_schedule, relativedelta(hours=1))
+
+    @daily_schedule(
+        pipeline_name='foo_pipeline', start_date=datetime(year=2019, month=1, day=1),
+    )
+    def daily_foo_schedule():
+        return {}
+
+    _check_partitions(daily_foo_schedule, relativedelta(days=1))
+
+    @weekly_schedule(
+        pipeline_name='foo_pipeline',
+        execution_day_of_week=1,
+        start_date=datetime(year=2019, month=1, day=1),
+    )
+    def weekly_foo_schedule():
+        return {}
+
+    _check_partitions(weekly_foo_schedule, relativedelta(weeks=1))
+
+    @monthly_schedule(
+        pipeline_name='foo_pipeline',
+        execution_day_of_month=3,
+        start_date=datetime(year=2019, month=1, day=1),
+    )
+    def monthly_foo_schedule():
+        return {}
+
+    _check_partitions(monthly_foo_schedule, relativedelta(months=1))
 
 
 def test_schedule_decorators_bad():
