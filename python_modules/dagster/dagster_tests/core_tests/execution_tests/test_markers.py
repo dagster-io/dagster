@@ -31,14 +31,20 @@ def test_multiproc_markers():
         dagster_event = event.dagster_event
         if dagster_event.is_engine_event:
             if dagster_event.engine_event_data.marker_start:
-                start_markers[dagster_event.engine_event_data.marker_start] = event.timestamp
+                key = '{step}.{marker}'.format(
+                    step=event.step_key, marker=dagster_event.engine_event_data.marker_start
+                )
+                start_markers[key] = event.timestamp
             if dagster_event.engine_event_data.marker_end:
-                end_markers[dagster_event.engine_event_data.marker_end] = event.timestamp
+                key = '{step}.{marker}'.format(
+                    step=event.step_key, marker=dagster_event.engine_event_data.marker_end
+                )
+                end_markers[key] = event.timestamp
 
     seen = set()
+    assert set(start_markers.keys()) == set(end_markers.keys())
     for key in end_markers:
-        assert key in start_markers
         assert end_markers[key] - start_markers[key] > 0
         seen.add(key)
 
-    assert 'multiprocess_subprocess_init' in seen
+    assert 'ping.compute.multiprocess_subprocess_init' in end_markers

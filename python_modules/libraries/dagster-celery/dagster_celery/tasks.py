@@ -31,9 +31,15 @@ def create_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
-        pipeline_def = handle.get_pipeline_for_run(pipeline_run)
+        pipeline_def = handle.build_pipeline_definition().build_sub_pipeline(
+            pipeline_run.selector.solid_subset
+        )
 
         step_keys_str = ", ".join(step_keys)
+
+        execution_plan = create_execution_plan(
+            pipeline_def, pipeline_run.environment_dict, pipeline_run
+        ).build_subset_plan(step_keys)
 
         engine_event = instance.report_engine_event(
             CeleryEngine,
@@ -42,11 +48,8 @@ def create_task(celery_app, **task_kwargs):
             EngineEventData(
                 [EventMetadataEntry.text(step_keys_str, 'step_keys'),], marker_end=DELEGATE_MARKER,
             ),
+            step_key=execution_plan.step_key_for_single_step_plans(),
         )
-
-        execution_plan = create_execution_plan(
-            pipeline_def, pipeline_run.environment_dict, pipeline_run
-        ).build_subset_plan(step_keys)
 
         events = [engine_event]
         for step_event in execute_plan_iterator(

@@ -50,11 +50,12 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
             self.pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(str(os.getpid), 'pid'),
+                    EventMetadataEntry.text(str(os.getpid()), 'pid'),
                     EventMetadataEntry.text(self.step_key, 'step_key'),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
+            self.step_key,
         )
 
         for step_event in execute_plan_iterator(

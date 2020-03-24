@@ -181,8 +181,9 @@ def execute_pipeline_on_celery(pipeline_name,):
 
 
 @contextmanager
-def execute_eagerly_on_celery(pipeline_name):
+def execute_eagerly_on_celery(pipeline_name, instance=None):
     with seven.TemporaryDirectory() as tempdir:
+        instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
             ExecutionTargetHandle.for_pipeline_python_file(
                 __file__, pipeline_name
@@ -191,7 +192,7 @@ def execute_eagerly_on_celery(pipeline_name):
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
             },
-            instance=DagsterInstance.local_temp(tempdir=tempdir),
+            instance=instance,
         )
         yield result
 
@@ -290,22 +291,38 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
 
 
 def test_execute_eagerly_on_celery():
-    with execute_eagerly_on_celery('test_pipeline') as result:
-        assert result.result_for_solid('simple').output_value() == 1
-        assert len(result.step_event_list) == 4
-        assert len(events_of_type(result, 'STEP_START')) == 1
-        assert len(events_of_type(result, 'STEP_OUTPUT')) == 1
-        assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 1
-        assert len(events_of_type(result, 'STEP_SUCCESS')) == 1
-        started = set()
-        ended = set()
-        for engine_event in events_of_type(result, 'ENGINE_EVENT'):
-            if engine_event.engine_event_data.marker_start:
-                started.add(engine_event.engine_event_data.marker_start)
-            if engine_event.engine_event_data.marker_end:
-                ended.add(engine_event.engine_event_data.marker_end)
+    with seven.TemporaryDirectory() as tempdir:
+        instance = DagsterInstance.local_temp(tempdir=tempdir)
+        with execute_eagerly_on_celery('test_pipeline', instance) as result:
+            assert result.result_for_solid('simple').output_value() == 1
+            assert len(result.step_event_list) == 4
+            assert len(events_of_type(result, 'STEP_START')) == 1
+            assert len(events_of_type(result, 'STEP_OUTPUT')) == 1
+            assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 1
+            assert len(events_of_type(result, 'STEP_SUCCESS')) == 1
 
-        assert started == ended
+            events = instance.all_logs(result.run_id)
+            start_markers = {}
+            end_markers = {}
+            for event in events:
+                dagster_event = event.dagster_event
+                if dagster_event.is_engine_event:
+                    if dagster_event.engine_event_data.marker_start:
+                        key = '{step}.{marker}'.format(
+                            step=event.step_key, marker=dagster_event.engine_event_data.marker_start
+                        )
+                        start_markers[key] = event.timestamp
+                    if dagster_event.engine_event_data.marker_end:
+                        key = '{step}.{marker}'.format(
+                            step=event.step_key, marker=dagster_event.engine_event_data.marker_end
+                        )
+                        end_markers[key] = event.timestamp
+
+            seen = set()
+            assert set(start_markers.keys()) == set(end_markers.keys())
+            for key in end_markers:
+                assert end_markers[key] - start_markers[key] > 0
+                seen.add(key)
 
 
 def test_execute_eagerly_serial_on_celery():

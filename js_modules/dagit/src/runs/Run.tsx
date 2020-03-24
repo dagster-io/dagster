@@ -165,7 +165,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
       executionParams["executionMetadata"] = {
         tags: run.tags
           .map(tag => ({ value: tag.value, key: tag.key }))
-          .push(reexecutionTag)
+          .concat(reexecutionTag)
       };
       if (resumeRetry) {
         executionParams["retryRunId"] = run.runId;
