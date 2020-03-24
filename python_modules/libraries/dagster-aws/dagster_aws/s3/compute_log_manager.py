@@ -1,5 +1,4 @@
 import os
-from contextlib import contextmanager
 
 from dagster import Field, check, seven
 from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
@@ -53,14 +52,6 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         self.local_manager = LocalComputeLogManager(local_dir)
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
-    @contextmanager
-    def _watch_logs(self, pipeline_run, step_key=None):
-        # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(  # pylint: disable=protected-access
-            pipeline_run, step_key
-        ):
-            yield
-
     @property
     def inst_data(self):
         return self._inst_data
@@ -77,25 +68,24 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return S3ComputeLogManager(inst_data=inst_data, **config_value)
 
-    def get_local_path(self, run_id, key, io_type):
-        return self.local_manager.get_local_path(run_id, key, io_type)
+    def get_local_path(self, run_id, step_key, io_type):
+        return self.local_manager.get_local_path(run_id, step_key, io_type)
 
-    def on_watch_start(self, pipeline_run, step_key):
-        self.local_manager.on_watch_start(pipeline_run, step_key)
+    def on_compute_start(self, step_context):
+        self.local_manager.on_compute_start(step_context)
 
-    def on_watch_finish(self, pipeline_run, step_key):
-        self.local_manager.on_watch_finish(pipeline_run, step_key)
-        key = self.local_manager.get_key(pipeline_run, step_key)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDOUT)
-        self._upload_from_local(pipeline_run.run_id, key, ComputeIOType.STDERR)
+    def on_compute_finish(self, step_context):
+        self.local_manager.on_compute_finish(step_context)
+        self._upload_from_local(step_context.run_id, step_context.step.key, ComputeIOType.STDOUT)
+        self._upload_from_local(step_context.run_id, step_context.step.key, ComputeIOType.STDERR)
 
-    def is_watch_completed(self, run_id, key):
-        return self.local_manager.is_watch_completed(run_id, key)
+    def is_compute_completed(self, run_id, step_key):
+        return self.local_manager.is_compute_completed(run_id, step_key)
 
-    def download_url(self, run_id, key, io_type):
-        if not self.is_watch_completed(run_id, key):
-            return self.local_manager.download_url(run_id, key, io_type)
-        key = self._bucket_key(run_id, key, io_type)
+    def download_url(self, run_id, step_key, io_type):
+        if not self.is_compute_completed(run_id, step_key):
+            return self.local_manager.download_url(run_id, step_key, io_type)
+        key = self._bucket_key(run_id, step_key, io_type)
         if key in self._download_urls:
             return self._download_urls[key]
         url = self._s3_session.generate_presigned_url(
@@ -104,28 +94,28 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._download_urls[key] = url
         return url
 
-    def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        if self._should_download(run_id, key, io_type):
-            self._download_to_local(run_id, key, io_type)
-        data = self.local_manager.read_logs_file(run_id, key, io_type, cursor, max_bytes)
-        return self._from_local_file_data(run_id, key, io_type, data)
+    def read_logs_file(self, run_id, step_key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
+        if self._should_download(run_id, step_key, io_type):
+            self._download_to_local(run_id, step_key, io_type)
+        data = self.local_manager.read_logs_file(run_id, step_key, io_type, cursor, max_bytes)
+        return self._from_local_file_data(run_id, step_key, io_type, data)
 
     def on_subscribe(self, subscription):
         self.local_manager.on_subscribe(subscription)
 
-    def _should_download(self, run_id, key, io_type):
-        local_path = self.get_local_path(run_id, key, io_type)
+    def _should_download(self, run_id, step_key, io_type):
+        local_path = self.get_local_path(run_id, step_key, io_type)
         if os.path.exists(local_path):
             return False
         s3_objects = self._s3_session.list_objects(
-            Bucket=self._s3_bucket, Prefix=self._bucket_key(run_id, key, io_type)
+            Bucket=self._s3_bucket, Prefix=self._bucket_key(run_id, step_key, io_type)
         )
         return len(s3_objects) > 0
 
-    def _from_local_file_data(self, run_id, key, io_type, local_file_data):
-        is_complete = self.is_watch_completed(run_id, key)
+    def _from_local_file_data(self, run_id, step_key, io_type, local_file_data):
+        is_complete = self.is_compute_completed(run_id, step_key)
         path = (
-            's3://{}/{}'.format(self._s3_bucket, self._bucket_key(run_id, key, io_type))
+            's3://{}/{}'.format(self._s3_bucket, self._bucket_key(run_id, step_key, io_type))
             if is_complete
             else local_file_data.path
         )
@@ -135,25 +125,25 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             local_file_data.data,
             local_file_data.cursor,
             local_file_data.size,
-            self.download_url(run_id, key, io_type),
+            self.download_url(run_id, step_key, io_type),
         )
 
-    def _upload_from_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
+    def _upload_from_local(self, run_id, step_key, io_type):
+        path = self.get_local_path(run_id, step_key, io_type)
         ensure_file(path)
-        key = self._bucket_key(run_id, key, io_type)
+        key = self._bucket_key(run_id, step_key, io_type)
         with open(path, 'rb') as data:
             self._s3_session.upload_fileobj(data, self._s3_bucket, key)
 
-    def _download_to_local(self, run_id, key, io_type):
-        path = self.get_local_path(run_id, key, io_type)
+    def _download_to_local(self, run_id, step_key, io_type):
+        path = self.get_local_path(run_id, step_key, io_type)
         ensure_dir(os.path.dirname(path))
         with open(path, 'wb') as fileobj:
             self._s3_session.download_fileobj(
-                self._s3_bucket, self._bucket_key(run_id, key, io_type), fileobj
+                self._s3_bucket, self._bucket_key(run_id, step_key, io_type), fileobj
             )
 
-    def _bucket_key(self, run_id, key, io_type):
+    def _bucket_key(self, run_id, step_key, io_type):
         check.inst_param(io_type, 'io_type', ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         paths = [
@@ -161,6 +151,6 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             'storage',
             run_id,
             'compute_logs',
-            '{}.{}'.format(key, extension),
+            '{}.{}'.format(step_key, extension),
         ]
         return '/'.join(paths)  # s3 path delimiter

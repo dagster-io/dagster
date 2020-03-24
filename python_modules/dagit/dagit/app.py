@@ -117,7 +117,7 @@ def download_view(context):
             result = manager.get_local_path(run_id, step_key, io_type)
             if not os.path.exists(result):
                 result = io.BytesIO()
-            timeout = None if manager.is_watch_completed(run_id, step_key) else 0
+            timeout = None if manager.is_compute_completed(run_id, step_key) else 0
         except ValueError:
             result = io.BytesIO()
             timeout = 0

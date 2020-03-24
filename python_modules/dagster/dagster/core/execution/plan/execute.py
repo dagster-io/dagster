@@ -22,6 +22,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.compute_logs import mirror_step_io
 from dagster.core.execution.context.system import (
     SystemPipelineExecutionContext,
     SystemStepExecutionContext,
@@ -69,9 +70,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
             'expected step context to have all required resources',
         )
 
-        with pipeline_context.instance.compute_log_manager.watch(
-            step_context.pipeline_run, step_context.step.key
-        ):
+        with mirror_step_io(step_context):
             # capture all of the logs for this step
             uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
                 step_context, step
