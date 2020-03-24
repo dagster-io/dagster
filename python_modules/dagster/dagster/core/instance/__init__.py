@@ -330,7 +330,7 @@ class DagsterInstance:
         if self.is_ephemeral:
             return False
 
-        dagster_telemetry_enabled_default = False
+        dagster_telemetry_enabled_default = True
 
         if not self._telemetry_settings:
             return dagster_telemetry_enabled_default

@@ -10,6 +10,10 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import environ
 from dagster.utils import pushd, script_relative_path
 
+EXPECTED_KEYS = set(
+    ['action', 'client_time', 'elapsed_time', 'event_id', 'instance_id', 'metadata',]
+)
+
 
 def path_to_tutorial_file(path):
     return script_relative_path(
@@ -26,7 +30,7 @@ def test_dagster_telemetry_enabled(caplog):
             DagsterInstance.local_temp(temp_dir)
             runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_tutorial_file('')):
-                runner.invoke(
+                result = runner.invoke(
                     pipeline_execute_command,
                     [
                         '-f',
@@ -36,22 +40,12 @@ def test_dagster_telemetry_enabled(caplog):
                     ],
                 )
 
-                expectedKeys = set(
-                    [
-                        'action',
-                        'client_time',
-                        'elapsed_time',
-                        'event_id',
-                        'instance_id',
-                        'metadata',
-                    ]
-                )
-
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
-                    assert set(message.keys()) == expectedKeys
+                    assert set(message.keys()) == EXPECTED_KEYS
 
                 assert len(caplog.records) == 4
+                assert result.exit_code == 0
 
 
 def test_dagster_telemetry_disabled(caplog):
@@ -62,8 +56,9 @@ def test_dagster_telemetry_disabled(caplog):
 
             DagsterInstance.local_temp(temp_dir)
 
+            runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_tutorial_file('')):
-                CliRunner().invoke(
+                result = runner.invoke(
                     pipeline_execute_command,
                     [
                         '-f',
@@ -74,6 +69,7 @@ def test_dagster_telemetry_disabled(caplog):
                 )
 
             assert len(caplog.records) == 0
+            assert result.exit_code == 0
 
 
 def test_dagster_telemetry_unset(caplog):
@@ -83,9 +79,9 @@ def test_dagster_telemetry_unset(caplog):
                 yaml.dump({}, fd, default_flow_style=False)
 
             DagsterInstance.local_temp(temp_dir)
-
+            runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
             with pushd(path_to_tutorial_file('')):
-                CliRunner().invoke(
+                result = runner.invoke(
                     pipeline_execute_command,
                     [
                         '-f',
@@ -94,4 +90,10 @@ def test_dagster_telemetry_unset(caplog):
                         'hello_cereal_pipeline',
                     ],
                 )
-            assert len(caplog.records) == 0
+
+                for record in caplog.records:
+                    message = json.loads(record.getMessage())
+                    assert set(message.keys()) == EXPECTED_KEYS
+
+                assert len(caplog.records) == 4
+                assert result.exit_code == 0

@@ -14,11 +14,23 @@ We will not see or store solid definitions (including generated context) or
 pipeline definitions (including modes and resources). We will not see or
 store any data that is processed within solids and pipelines.
 
-The default is opt-out. If you'd like to opt-in, you can add the following to
-``$DAGSTER_HOME/dagster.yaml`` (creating that file if necessary):
+The telemetry-instrumented functions are:
+
+.. literalinclude:: ../../../python_modules/dagster/dagster/core/telemetry.py
+   :lines: 47-51
+   :linenos:
+   :caption: telemetry.py
+   :language: python
+
+
+To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or
+~/.dagster/logs/ after calling the instrumented functions above.
+
+If you'd like to opt-out, you can add the following to ``$DAGSTER_HOME/dagster.yaml`` (creating
+that file if necessary):
 
 .. code-block:: yaml
    :caption: dagster.yaml
 
    telemetry:
-     enabled: true
+     enabled: false

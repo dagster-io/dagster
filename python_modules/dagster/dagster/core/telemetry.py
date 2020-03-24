@@ -20,23 +20,34 @@ import datetime
 import json
 import logging
 import os
+import sys
 import time
 import uuid
 import zlib
 from logging.handlers import RotatingFileHandler
 
+import click
 import requests
 import six
 import yaml
 
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 
-TELEMETRY_STR = 'telemetry'
+TELEMETRY_STR = '.telemetry'
 INSTANCE_ID_STR = 'instance_id'
 ENABLED_STR = 'enabled'
 DAGSTER_HOME_FALLBACK = '~/.dagster'
 DAGSTER_TELEMETRY_URL = 'http://telemetry.dagster.io/actions'
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
+
+# When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
+# docs/sections/install/telemetry.rst
+TELEMETRY_WHITELISTED_FUNCTIONS = {
+    'pipeline_execute_command',
+    'pipeline_launch_command',
+    'execute_pipeline',
+}
 
 
 def _dagster_home_if_set():
@@ -58,7 +69,7 @@ def get_dir_from_dagster_home(target_dir):
     The '.logs_queue' directory is used to temporarily store logs during upload. This is to prevent
     dropping events or double-sending events that occur during the upload process.
 
-    The 'telemetry' directory is used to store the instance_id
+    The '.telemetry' directory is used to store the instance id.
     '''
     dagster_home_path = _dagster_home_if_set()
     if dagster_home_path is None:
@@ -102,12 +113,13 @@ logger.addHandler(handler)
 
 def log_action(action, client_time, elapsed_time=None, metadata=None):
     '''
-    Log action in log directory
+    Log action in logs directory
 
-    instance_id - Unique id for dagster instance
     action - Name of function called i.e. `execute_pipeline_started` (see: fn telemetry_wrapper)
     client_time - Client time
     elapsed_time - Time elapsed between start of function and end of function call
+    event_id - Unique id for the event
+    instance_id - Unique id for dagster instance
     metadata - More information i.e. pipeline success (boolean), (see: fn telemetry_wrapper)
 
     If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
@@ -136,7 +148,7 @@ def log_action(action, client_time, elapsed_time=None, metadata=None):
         pass
 
 
-# Gets the instance_id at $DAGSTER_HOME/telemetry/id.yaml
+# Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id():
     telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
     if os.path.exists(telemetry_id_path):
@@ -148,8 +160,42 @@ def _get_telemetry_instance_id():
     return None
 
 
-# Sets the instance_id at $DAGSTER_HOME/telemetry/id.yaml
+TELEMETRY_TEXT = '''
+  %(telemetry)s
+
+  As an open source project, we collect usage statistics to inform development priorities. For more
+  information, read https://docs.dagster.io/latest/install/telemetry.
+
+  We will not see or store solid definitions, pipeline definitions, modes, resources, context, or
+  any data that is processed within solids and pipelines.
+
+  To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
+
+    telemetry:
+      enabled: false
+''' % {
+    'telemetry': click.style('Telemetry:', fg='blue', bold=True)
+}
+
+SLACK_PROMPT = '''
+  %(welcome)s
+
+  If you have any questions or would like to engage with the Dagster team, please join us on Slack
+  (https://bit.ly/39dvSsF).
+''' % {
+    'welcome': click.style('Welcome to Dagster!', bold=True)
+}
+
+
+def _isatty():
+    return sys.stdout.isatty()
+
+
+# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _set_telemetry_instance_id():
+    click.secho(TELEMETRY_TEXT)
+    click.secho(SLACK_PROMPT)
+
     telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), 'id.yaml')
     instance_id = str(uuid.uuid4())
     with open(telemetry_id_path, 'w') as telemetry_id_file:
@@ -162,6 +208,13 @@ def telemetry_wrapper(f):
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time.
     '''
+    if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
+        raise DagsterInvariantViolationError(
+            'Attempted to log telemetry for function {name} that is not in telemetry whitelisted '
+            'functions list: {whitelist}.'.format(
+                name=f.__name__, whitelist=TELEMETRY_WHITELISTED_FUNCTIONS
+            )
+        )
 
     def wrap(*args, **kwargs):
         start_time = datetime.datetime.now()
@@ -224,7 +277,7 @@ def upload_logs():
 
 
 def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir):
-    '''Send POST request to telemetry server with the contents of $DAGSTER_HOME/log.txt'''
+    '''Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory '''
     try:
         if log_size > 0:
             # Delete contents of dagster_log_queue_dir so that new logs can be copied over

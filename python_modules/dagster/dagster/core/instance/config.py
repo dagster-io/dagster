@@ -52,5 +52,5 @@ def define_dagster_config_cls():
             },
             is_required=False,
         ),
-        'telemetry': Field({'enabled': Field(Bool, default_value=False, is_required=False)}),
+        'telemetry': Field({'enabled': Field(Bool, default_value=True, is_required=False)}),
     }
