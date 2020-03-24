@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
+from dagster.utils.forked_pdb import ForkedPdb
 
 from .step import StepExecutionContext
 from .system import SystemComputeExecutionContext
@@ -55,6 +56,7 @@ class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContex
             'system_compute_execution_context',
             SystemComputeExecutionContext,
         )
+        self._pdb = None
         super(SolidExecutionContext, self).__init__(system_compute_execution_context)
 
     @property
@@ -66,3 +68,21 @@ class SolidExecutionContext(StepExecutionContext, AbstractComputeExecutionContex
     def pipeline_run(self):
         '''The current PipelineRun'''
         return self._system_compute_execution_context.pipeline_run
+
+    @property
+    def pdb(self):
+        '''Allows pdb debugging from within the solid.
+
+        Example:
+
+        .. code-block:: python
+
+            @solid
+            def debug_solid(context):
+                context.pdb.set_trace()
+
+        '''
+        if self._pdb is None:
+            self._pdb = ForkedPdb()
+
+        return self._pdb
