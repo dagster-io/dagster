@@ -1,5 +1,7 @@
+import json
 import os
 import pickle
+import sys
 import tempfile
 import uuid
 from datetime import timedelta
@@ -25,10 +27,19 @@ from dagster_pandas import DataFrame as DagsterPandasDataFrame
 from keras.layers import LSTM, Dense
 from keras.models import Sequential
 from numpy import array, ndarray, transpose
-from pandas import DataFrame, date_range, get_dummies, read_csv, read_sql_table, to_datetime
+from pandas import (
+    DataFrame,
+    date_range,
+    get_dummies,
+    notnull,
+    read_csv,
+    read_sql_table,
+    to_datetime,
+)
 
 from dagster import (
     Any,
+    DagsterType,
     EventMetadataEntry,
     Field,
     InputDefinition,
@@ -40,6 +51,12 @@ from dagster import (
     solid,
 )
 from dagster.utils import PICKLE_PROTOCOL
+
+if sys.version_info >= (3, 6):
+    # this is done because a compatibility issue with json_normalize in python 3.5
+    from pandas import json_normalize  # pylint:disable=import-error,no-name-in-module
+else:
+    from pandas.io.json import json_normalize  # pylint:disable=import-error,no-name-in-module
 
 # Added this to silence tensorflow logs. They are insanely verbose.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -64,14 +81,23 @@ def _download_zipfile_from_url(url: str, target: str, chunk_size=8192) -> str:
     config={'chunk_size': Field(int, is_required=False, default_value=8192)},
     required_resource_keys={'volume'},
 )
-def download_zipfile_from_url(context, file_name: str, base_url: str) -> str:
+def download_zipfile_from_url(context, file_name: str, base_url: str):
+    url = "/".join([base_url, file_name])
     # mount dirs onto volume
     target = os.path.join(context.resources.volume, file_name)
     if not os.path.exists(target):
         _download_zipfile_from_url(
-            "/".join([base_url, file_name]), target, context.solid_config['chunk_size'],
+            url, target, context.solid_config['chunk_size'],
         )
-    return os.path.join(context.resources.volume, file_name)
+    yield Materialization(
+        label='downloaded zipfile',
+        metadata_entries=[
+            EventMetadataEntry.text(url, 'zipfile url source'),
+            EventMetadataEntry.text(target, 'zipfile filepath'),
+            EventMetadataEntry.text(str(os.path.getsize(target)), 'size of zipfile (bytes)'),
+        ],
+    )
+    yield Output(target)
 
 
 @solid(
@@ -99,9 +125,9 @@ def load_compressed_csv_file(
         ZipFile(input_file_path).open(target_csv_file_in_archive),
         sep=context.solid_config['delimiter'],
         header=0,
+        index_col=0,
         compression=context.solid_config['compression'],
     )
-    dataset['uuid'] = [uuid.uuid4() for _ in range(len(dataset))]
     return dataset
 
 
@@ -128,40 +154,69 @@ def upload_pickled_object_to_gcs_bucket(context, value: Any, bucket_name: str, f
     yield Output(value)
 
 
-@solid(
-    input_defs=[InputDefinition('row', DagsterPandasDataFrame), InputDefinition('table_name', str)],
-    config={'index_label': Field(str)},
-    required_resource_keys={'postgres_db'},
-)
-def insert_into_table(context, row: DataFrame, table_name: str) -> str:
-    row.to_sql(
-        table_name,
-        context.resources.postgres_db.engine,
-        if_exists='append',
-        index=False,
-        index_label=context.solid_config['index_label'],
+def _create_and_load_staging_table(engine, table_name, records):
+    create_table_sql = "create table if not exists {table_name} (id serial not null primary key, staging_data json not null);".format(
+        table_name=table_name
     )
-    return table_name
+    engine.execute(create_table_sql)
+    records = records.where(notnull(records), None)
+    insert_sql = "insert into {table_name} (staging_data) values {data};".format(
+        table_name=table_name,
+        data=",".join(
+            [
+                "('{record}')".format(record=json.dumps(record).replace("'", ""))
+                for record in records.to_dict('records')
+            ]
+        ),
+    )
+    engine.execute(insert_sql)
 
 
 @solid(
-    input_defs=[InputDefinition('table_name', str)],
-    output_defs=[OutputDefinition(DagsterPandasDataFrame)],
-    config={
-        'index_label': Field(str),
-        'subsets': Field([str], is_required=False, default_value=[]),
-    },
+    input_defs=[
+        InputDefinition('records', DagsterPandasDataFrame),
+        InputDefinition('table_name', str),
+    ],
+    output_defs=[OutputDefinition(str, name='staging_table')],
     required_resource_keys={'postgres_db'},
 )
-def download_table_as_dataframe(context, table_name: str) -> DataFrame:
-    dataframe = read_sql_table(
-        table_name,
-        context.resources.postgres_db.engine,
-        index_col=context.solid_config['index_label'],
+def insert_into_staging_table(context, records: DataFrame, table_name: str):
+    _create_and_load_staging_table(context.resources.postgres_db.engine, table_name, records)
+    yield Materialization(
+        label=table_name,
+        description='Table {} created in database {}'.format(
+            table_name, context.resources.postgres_db.db_name
+        ),
+        metadata_entries=[EventMetadataEntry.text(str(len(records)), "num rows inserted")],
     )
-    # De-Duplicate Table
-    subsets = context.solid_config.get('subsets', None)
-    return dataframe.drop_duplicates(subset=subsets if subsets else None)
+    yield Output(output_name='staging_table', value=table_name)
+
+
+def create_download_table_as_dataframe_solid(name, expected_dagster_pandas_dataframe_type):
+    check.str_param(name, 'name')
+    check.inst_param(
+        expected_dagster_pandas_dataframe_type,
+        'expected_dagster_pandas_dataframe_schema',
+        DagsterType,
+    )
+
+    @solid(
+        input_defs=[InputDefinition('table_name', str)],
+        output_defs=[OutputDefinition(expected_dagster_pandas_dataframe_type)],
+        config={'subsets': Field([str], is_required=False)},
+        required_resource_keys={'postgres_db'},
+        name=name,
+    )
+    def download_table_as_dataframe(context, table_name: str) -> DataFrame:
+        dataframe = read_sql_table(table_name, context.resources.postgres_db.engine,)
+        # flatten dataframe
+        dataframe = json_normalize(dataframe.to_dict('records'))
+        dataframe.columns = [column.split('.')[-1] for column in dataframe.columns]
+        # De-Duplicate Table
+        subsets = context.solid_config.get('subsets', None)
+        return dataframe.drop_duplicates(subset=subsets if subsets else None)
+
+    return download_table_as_dataframe
 
 
 @solid(
@@ -203,7 +258,6 @@ def download_weather_report_from_weather_api(context, epoch_date: int) -> DataFr
     response = requests.get(url)
     response.raise_for_status()
     raw_weather_data = response.json()['daily']['data'][0]
-    raw_weather_data['uuid'] = uuid.uuid4()
     return DataFrame([raw_weather_data])
 
 
@@ -255,8 +309,6 @@ def preprocess_weather_dataset(_, dataframe: DataFrame) -> DataFrame:
     dataframe['time'] = to_datetime(
         dataframe['time'].apply(lambda epoch_ts: strftime('%Y-%m-%d', gmtime(epoch_ts)))
     )
-    dataframe['didRain'] = dataframe.precipType.apply(lambda x: x == 'rain')
-    del dataframe['precipType']
     yield Output(dataframe, output_name='weather_dataframe')
 
 
@@ -392,7 +444,7 @@ def produce_training_set(
     traffic_dataset['time'] = to_datetime(traffic_dataset.interval_date)
     weather_dataset['time'] = to_datetime(weather_dataset.time)
     dataset = traffic_dataset.join(weather_dataset.set_index('time'), on='time')
-    dataset = get_dummies(dataset, columns=['summary', 'icon', 'didRain'])
+    dataset = get_dummies(dataset, columns=['summary', 'icon'])
     multivariate_timeseries = MultivariateTimeseries.from_dataframe(
         dataset, FEATURE_COLUMNS, LABEL_COLUMN
     )
@@ -423,10 +475,14 @@ def produce_training_set(
             'num_epochs': Field(int, description='Number of epochs to optimize over'),
         },
     },
-    input_defs=[InputDefinition('training_set', dagster_type=TrainingSet)],
+    input_defs=[
+        InputDefinition('training_set', dagster_type=TrainingSet),
+        InputDefinition('bucket_name', dagster_type=str),
+    ],
     output_defs=[OutputDefinition(Any)],
+    required_resource_keys={'gcs_client'},
 )
-def train_lstm_model(context, training_set: TrainingSet):
+def train_lstm_model_and_upload_to_gcs(context, training_set: TrainingSet, bucket_name: str):
     X, y = training_set
     breakpoint = context.solid_config['timeseries_train_test_breakpoint']  # pylint: disable=W0622
     X_train, X_test = X[0:breakpoint], X[breakpoint:]
@@ -454,9 +510,24 @@ def train_lstm_model(context, training_set: TrainingSet):
         verbose=0,
     )
     results = model.evaluate(X_test, y_test, verbose=0)
+
+    # save model and upload
+    gcs_bucket = context.resources.gcs_client.get_bucket(bucket_name)
+    key = 'model-{}.h5'.format(uuid.uuid4())
+    with tempfile.TemporaryFile('w+b') as fp:
+        model.save(fp)
+        # Done because you can't upload the contents of a file outside the context manager if it's a tempfile.
+        fp.seek(0)
+        gcs_bucket.blob(key).upload_from_file(fp)
+
     yield Materialization(
-        label='test_set_results',
+        description='Serialized model to Google Cloud Storage Bucket',
+        label='Serialized model and uploaded to gcs',
         metadata_entries=[
+            EventMetadataEntry.text(
+                'gs://{bucket_name}/{key}'.format(bucket_name=bucket_name, key=key),
+                'google cloud storage URI',
+            ),
             EventMetadataEntry.text(str(results[0]), 'Mean Squared Error'),
             EventMetadataEntry.text(str(results[1]), 'Mean Absolute Error'),
         ],
@@ -464,12 +535,12 @@ def train_lstm_model(context, training_set: TrainingSet):
     yield Output(model)
 
 
-@composite_solid(output_defs=[OutputDefinition(str, 'table_name')])
+@composite_solid(output_defs=[OutputDefinition(str, 'trip_table_name')])
 def trip_etl():
     download_baybike_zipfile_from_url = download_zipfile_from_url.alias(
         'download_baybike_zipfile_from_url'
     )
-    insert_trip_data_into_table = insert_into_table.alias('insert_trip_data_into_table')
+    insert_trip_data_into_table = insert_into_staging_table.alias('insert_trip_data_into_table')
     load_baybike_data_into_dataframe = load_compressed_csv_file.alias(
         'load_baybike_data_into_dataframe'
     )
@@ -479,24 +550,50 @@ def trip_etl():
 
 
 @composite_solid(
-    input_defs=[InputDefinition('table_name', str)],
+    input_defs=[InputDefinition('trip_table_name', str)],
     output_defs=[OutputDefinition(name='trip_dataframe', dagster_type=TripDataFrame)],
 )
-def produce_trip_dataset(table_name: str) -> DataFrame:
-    load_entire_trip_table = download_table_as_dataframe.alias('load_entire_trip_table')
-    return preprocess_trip_dataset(load_entire_trip_table(table_name))
+def produce_trip_dataset(trip_table_name: str) -> DataFrame:
+    load_entire_trip_table = create_download_table_as_dataframe_solid(
+        'load_entire_trip_table', RawTripDataFrame
+    )
+    return preprocess_trip_dataset(load_entire_trip_table(trip_table_name))
 
 
-@composite_solid(output_defs=[OutputDefinition(str, 'table_name')])
+@composite_solid(output_defs=[OutputDefinition(str, 'weather_table_name')])
 def weather_etl():
-    insert_weather_report_into_table = insert_into_table.alias('insert_weather_report_into_table')
+    insert_weather_report_into_table = insert_into_staging_table.alias(
+        'insert_weather_report_into_table'
+    )
     return insert_weather_report_into_table(download_weather_report_from_weather_api())
 
 
 @composite_solid(
-    input_defs=[InputDefinition('table_name', str)],
+    input_defs=[InputDefinition('weather_table_name', str)],
     output_defs=[OutputDefinition(name='weather_dataframe', dagster_type=WeatherDataFrame)],
 )
-def produce_weather_dataset(table_name: str) -> DataFrame:
-    load_entire_weather_table = download_table_as_dataframe.alias('load_entire_weather_table')
-    return preprocess_weather_dataset(load_entire_weather_table(table_name))
+def produce_weather_dataset(weather_table_name: str) -> DataFrame:
+    load_entire_weather_table = create_download_table_as_dataframe_solid(
+        'load_entire_weather_table', DagsterPandasDataFrame
+    )
+    return preprocess_weather_dataset(load_entire_weather_table(weather_table_name))
+
+
+@composite_solid(
+    input_defs=[
+        InputDefinition('weather_table_name', str),
+        InputDefinition('trip_table_name', str),
+    ],
+)
+def train_daily_bike_supply_model(weather_table_name: str, trip_table_name: str):
+    upload_training_set_to_gcs = upload_pickled_object_to_gcs_bucket.alias(
+        'upload_training_set_to_gcs'
+    )
+    return train_lstm_model_and_upload_to_gcs(
+        upload_training_set_to_gcs(
+            produce_training_set(
+                transform_into_traffic_dataset(produce_trip_dataset(trip_table_name)),
+                produce_weather_dataset(weather_table_name),
+            )
+        )
+    )

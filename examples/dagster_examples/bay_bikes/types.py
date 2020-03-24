@@ -25,8 +25,8 @@ def compute_trip_dataframe_event_metadata(dataframe):
 
 TripDataFrameSchema = [
     PandasColumn.integer_column('bike_id', min_value=0),
-    PandasColumn.datetime_column('start_time', min_datetime=Timestamp(year=2018, month=1, day=1),),
-    PandasColumn.datetime_column('end_time', min_datetime=Timestamp(year=2018, month=1, day=1),),
+    PandasColumn.datetime_column('start_time', min_datetime=Timestamp(year=2017, month=1, day=1),),
+    PandasColumn.datetime_column('end_time', min_datetime=Timestamp(year=2017, month=1, day=1),),
     PandasColumn.string_column('interval_date'),
 ]
 
@@ -123,7 +123,6 @@ WeatherDataFrameSchema = [
         'visibility', min_value=0.0, max_value=10.0, expected_dtypes={'int64', 'float64'}
     ),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
-    PandasColumn.boolean_column('didRain', non_nullable=True),
 ]
 
 

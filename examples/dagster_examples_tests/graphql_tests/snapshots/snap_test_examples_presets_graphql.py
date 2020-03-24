@@ -488,40 +488,37 @@ snapshots['test_presets_on_examples 6'] = {
     config:
       mount_location: /tmp
 solids:
-  produce_training_set:
-    config:
-      memory_length: 1
-  produce_trip_dataset:
+  train_daily_bike_supply_model:
     inputs:
-      table_name:
-        value: trips
+      trip_table_name: trips_staging
+      weather_table_name: weather_staging
     solids:
-      load_entire_trip_table:
+      produce_training_set:
         config:
-          index_label: uuid
-  produce_weather_dataset:
-    inputs:
-      table_name:
-        value: weather
-    solids:
-      load_entire_weather_table:
+          memory_length: 1
+      produce_weather_dataset:
+        solids:
+          load_entire_weather_table:
+            config:
+              subsets:
+              - time
+      train_lstm_model_and_upload_to_gcs:
         config:
-          index_label: uuid
-          subsets:
-          - time
-  train_lstm_model:
-    config:
-      model_trainig_config:
-        num_epochs: 200
-      timeseries_train_test_breakpoint: 50
-  upload_training_set_to_gcs:
-    inputs:
-      bucket_name: dagster-scratch-ccdfe1e
-      file_name: training_data
+          model_trainig_config:
+            num_epochs: 200
+          timeseries_train_test_breakpoint: 10
+        inputs:
+          bucket_name: dagster-scratch-ccdfe1e
+      upload_training_set_to_gcs:
+        inputs:
+          bucket_name: dagster-scratch-ccdfe1e
+          file_name: training_data
 ''',
                 'mode': 'development',
-                'name': 'produce_trip_dataset* produce_weather_dataset*',
-                'solidSubset': None
+                'name': 'train_daily_bike_supply_model',
+                'solidSubset': [
+                    'train_daily_bike_supply_model'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -547,21 +544,21 @@ solids:
           base_url:
             value: https://s3.amazonaws.com/baywheels-data
           file_name:
-            value: 201801-fordgobike-tripdata.csv.zip
+            value: 202001-baywheels-tripdata.csv.zip
       insert_trip_data_into_table:
-        config:
-          index_label: uuid
         inputs:
           table_name:
-            value: trips
+            value: trips_staging
       load_baybike_data_into_dataframe:
         inputs:
           target_csv_file_in_archive:
-            value: 201801-fordgobike-tripdata.csv
+            value: 202001-baywheels-tripdata.csv
 ''',
                 'mode': 'development',
                 'name': 'trip_etl',
-                'solidSubset': None
+                'solidSubset': [
+                    'trip_etl'
+                ]
             },
             {
                 '__typename': 'PipelinePreset',
@@ -587,15 +584,15 @@ solids:
           epoch_date:
             value: 1514851200
       insert_weather_report_into_table:
-        config:
-          index_label: uuid
         inputs:
           table_name:
-            value: weather
+            value: weather_staging
 ''',
                 'mode': 'development',
                 'name': 'weather_etl',
-                'solidSubset': None
+                'solidSubset': [
+                    'weather_etl'
+                ]
             }
         ]
     }

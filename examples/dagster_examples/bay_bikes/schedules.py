@@ -44,6 +44,32 @@ def daily_weather_ingest_schedule(date):
     )
 
 
+@daily_schedule(
+    pipeline_name='daily_weather_pipeline',
+    start_date=datetime(year=2020, month=1, day=1),
+    execution_time=(now + timedelta(minutes=1)).time(),
+    mode='development',
+    environment_vars={'DARK_SKY_API_KEY': os.environ.get('DARK_SKY_API_KEY', '')},
+)
+def daily_weather_schedule(date):
+    unix_seconds_since_epoch = int((date - datetime(year=1970, month=1, day=1)).total_seconds())
+    return {
+        'resources': weather_etl_environment['resources'],
+        'solids': {
+            'weather_etl': {
+                'solids': {
+                    'download_weather_report_from_weather_api': {
+                        'inputs': {'epoch_date': {'value': unix_seconds_since_epoch}}
+                    },
+                    'insert_weather_report_into_table': {
+                        'inputs': {'table_name': {'value': 'weather_staging'}}
+                    },
+                },
+            }
+        },
+    }
+
+
 @monthly_schedule(
     pipeline_name='generate_training_set_and_train_model',
     start_date=datetime(year=2018, month=1, day=1),
@@ -80,4 +106,4 @@ def monthly_trip_ingest_schedule(date):
 
 @schedules
 def define_scheduler():
-    return [daily_weather_ingest_schedule, monthly_trip_ingest_schedule]
+    return [daily_weather_ingest_schedule, daily_weather_schedule, monthly_trip_ingest_schedule]

@@ -137,7 +137,6 @@ def test_download_weather_report_from_weather_api_200(mocker, setup_dark_sky, mo
     )
     assert isinstance(solid_result, DataFrame)
     assert solid_result['time'][0] == START_TIME
-    assert 'uuid' in solid_result.columns
 
 
 # pylint: disable=unused-argument
@@ -164,17 +163,10 @@ def compose_training_data_env_dict():
         },
         "solids": {
             "produce_training_set": {"config": {"memory_length": 1}},
-            "produce_trip_dataset": {
-                "solids": {"load_entire_trip_table": {"config": {"index_label": "uuid"},}},
-                "inputs": {"table_name": "trips"},
-            },
+            "produce_trip_dataset": {"inputs": {"trip_table_name": "trips"},},
             "produce_weather_dataset": {
-                "solids": {
-                    "load_entire_weather_table": {
-                        "config": {"index_label": "uuid", "subsets": ["time"]},
-                    }
-                },
-                "inputs": {"table_name": "weather"},
+                "solids": {"load_entire_weather_table": {"config": {"subsets": ["time"]},}},
+                "inputs": {"weather_table_name": "weather"},
             },
             "upload_training_set_to_gcs": {
                 "inputs": {"bucket_name": "dagster-scratch-ccdfe1e", "file_name": "training_data",}
@@ -246,6 +238,7 @@ def test_generate_training_set(mocker):
             'precipIntensity': 0.0007,
             'precipIntensityMax': 0.0019,
             'precipProbability': 0.05,
+            'precipType': 'rain',
             'temperatureHigh': 56.71,
             'temperatureHighTime': 1546294020,
             'temperatureLow': 44.75,
@@ -262,7 +255,6 @@ def test_generate_training_set(mocker):
             'uvIndexTime': 1546287180,
             'visibility': 10,
             'ozone': 314.4,
-            'didRain': True,
         },
         {
             'time': Timestamp('2019-07-31 00:00:00'),
@@ -273,6 +265,7 @@ def test_generate_training_set(mocker):
             'precipIntensity': 0.0005,
             'precipIntensityMax': 0.0016,
             'precipProbability': 0.02,
+            'precipType': 'sunny',
             'temperatureHigh': 55.91,
             'temperatureHighTime': 1546382040,
             'temperatureLow': 41.18,
@@ -289,7 +282,6 @@ def test_generate_training_set(mocker):
             'uvIndexTime': 1546373580,
             'visibility': 10,
             'ozone': 305.3,
-            'didRain': False,
         },
     ]
     weather_dataset = test_pipeline_result.output_for_solid(
@@ -326,8 +318,6 @@ def test_generate_training_set(mocker):
                     1546373580.0,
                     10.0,
                     305.3,
-                    1.0,
-                    0.0,
                 ],
                 [
                     1546269960.0,
@@ -351,8 +341,6 @@ def test_generate_training_set(mocker):
                     1546287180.0,
                     10.0,
                     314.4,
-                    0.0,
-                    1.0,
                 ],
             ]
         ],
@@ -402,10 +390,7 @@ def environment_dictionary():
                     'load_baybike_data_into_dataframe': {
                         'inputs': {'target_csv_file_in_archive': {'value': '',}}
                     },
-                    'insert_trip_data_into_table': {
-                        'config': {'index_label': 'uuid'},
-                        'inputs': {'table_name': 'test_trips'},
-                    },
+                    'insert_trip_data_into_table': {'inputs': {'table_name': 'test_trips'},},
                 }
             }
         },
@@ -425,7 +410,7 @@ def test_monthly_trip_pipeline(mocker):
             'dagster_examples.bay_bikes.solids._download_zipfile_from_url',
             side_effect=partial(mock_download_zipfile, tmp_dir, FAKE_TRIP_DATA),
         )
-        to_sql_call = mocker.patch('dagster_examples.bay_bikes.solids.DataFrame.to_sql')
+        mocker.patch('dagster_examples.bay_bikes.solids._create_and_load_staging_table')
         env_dictionary['resources']['volume']['config']['mount_location'] = tmp_dir
         # Done because we are zipping the file in the tmpdir
         env_dictionary['solids']['trip_etl']['solids']['load_baybike_data_into_dataframe'][
@@ -444,6 +429,18 @@ def test_monthly_trip_pipeline(mocker):
         download_zipfile.assert_called_with(
             'https://foo.com/data.csv.zip', os.path.join(tmp_dir, FAKE_ZIPFILE_NAME), 8192
         )
-        to_sql_call.assert_called_with(
-            'test_trips', mocker.ANY, if_exists='append', index=False, index_label='uuid'
+        materialization_events = result.result_for_solid(
+            'insert_trip_data_into_table'
+        ).materialization_events_during_compute
+        assert len(materialization_events) == 1
+        assert materialization_events[0].event_specific_data.materialization.label == 'test_trips'
+        assert (
+            materialization_events[0].event_specific_data.materialization.description
+            == 'Table test_trips created in database test'
         )
+        metadata_entries = materialization_events[
+            0
+        ].event_specific_data.materialization.metadata_entries
+        assert len(metadata_entries) == 1
+        assert metadata_entries[0].label == 'num rows inserted'
+        assert metadata_entries[0].entry_data.text == "2"

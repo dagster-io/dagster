@@ -50,8 +50,6 @@ FEATURE_COLUMNS = [
     'uvIndexTime',
     'visibility',
     'ozone',
-    'didRain_False',
-    'didRain_True',
 ]
 
 LABEL_COLUMN = 'peak_traffic_load'
