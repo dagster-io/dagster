@@ -84,7 +84,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
 
     try:
         repository = graphene_info.context.get_repository()
-        schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
+        schedule_context = ScheduleExecutionContext(graphene_info.context.instance, repository)
         schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
         tick = graphene_info.context.instance.create_schedule_tick(
             repository,

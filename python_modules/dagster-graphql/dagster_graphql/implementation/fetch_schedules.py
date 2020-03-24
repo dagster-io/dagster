@@ -42,7 +42,9 @@ def get_schedule_or_error(graphene_info, schedule_name):
 
 
 def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
-    schedule_context = ScheduleExecutionContext(graphene_info.context.instance)
+    schedule_context = ScheduleExecutionContext(
+        graphene_info.context.instance, graphene_info.context.get_repository()
+    )
 
     # Get environment_dict
     with user_code_error_boundary(
