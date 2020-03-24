@@ -192,7 +192,9 @@ class DauphinQuery(dauphin.ObjectType):
         definition = None
 
         for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(pipeline.get_pipeline_snapshot(), pipeline):
+            for handle in build_dauphin_solid_handles(
+                pipeline.get_pipeline_index(), pipeline.get_pipeline_index().dep_structure_index
+            ):
                 if handle.handleID.definition_name == name:
                     if definition is None:
                         definition = handle.solid.resolve_definition(graphene_info)
@@ -208,8 +210,10 @@ class DauphinQuery(dauphin.ObjectType):
         definitions = []
 
         for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(pipeline.get_pipeline_snapshot(), pipeline):
-                definition = handle.solid.resolve_definition(graphene_info)
+            for handle in build_dauphin_solid_handles(
+                pipeline.get_pipeline_index(), pipeline.get_pipeline_index().dep_structure_index
+            ):
+                definition = handle.solid.get_dauphin_solid_definition()
                 if definition.name not in inv_by_def_name:
                     definitions.append(definition)
                 inv_by_def_name[definition.name].append(

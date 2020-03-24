@@ -53,6 +53,16 @@ fragment SolidFragment on Solid {
       __typename
     }
     ... on SolidDefinition {
+      inputDefinitions {
+        name
+        description
+        type { key }
+      }
+      outputDefinitions {
+        name
+        description
+        type { key }
+      }
       configField {
         ...ConfigFieldFragment
         __typename
