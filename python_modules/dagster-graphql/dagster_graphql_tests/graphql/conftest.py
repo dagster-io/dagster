@@ -153,7 +153,6 @@ fragment ConfigFieldFragment on ConfigTypeField {
         name
         description
         isOptional
-        defaultValue
         configType {
           key 
           description
@@ -162,7 +161,6 @@ fragment ConfigFieldFragment on ConfigTypeField {
               name
               description
               isOptional
-              defaultValue
               configType {
                 key 
                 description

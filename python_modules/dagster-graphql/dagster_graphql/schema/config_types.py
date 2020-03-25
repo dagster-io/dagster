@@ -230,7 +230,6 @@ class DauphinConfigTypeField(dauphin.ObjectType):
     description = dauphin.String()
     config_type = dauphin.NonNull('ConfigType')
     config_type_key = dauphin.NonNull(dauphin.String)
-    default_value = dauphin.String()
     is_optional = dauphin.NonNull(dauphin.Boolean)
 
     def resolve_config_type_key(self, _):
@@ -244,7 +243,6 @@ class DauphinConfigTypeField(dauphin.ObjectType):
         super(DauphinConfigTypeField, self).__init__(
             name=field_snap.name,
             description=field_snap.description,
-            default_value=field_snap.default_value_as_str if field_snap.default_provided else None,
             is_optional=not field_snap.is_required,
         )
 

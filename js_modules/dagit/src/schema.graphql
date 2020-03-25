@@ -72,7 +72,6 @@ type ConfigTypeField {
   description: String
   configType: ConfigType!
   configTypeKey: String!
-  defaultValue: String
   isOptional: Boolean!
 }
 

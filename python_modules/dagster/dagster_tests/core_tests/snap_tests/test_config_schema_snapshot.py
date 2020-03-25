@@ -67,7 +67,6 @@ def test_field_things():
     assert field_snap_dict['opt'].is_required is False
     assert field_snap_dict['opt_with_default'].is_required is False
     assert field_snap_dict['opt_with_default'].default_provided is True
-    assert field_snap_dict['opt_with_default'].default_value_as_str == '2'
 
     assert field_snap_dict['req_with_desc'].is_required is True
     assert field_snap_dict['req_with_desc'].description == 'A desc'
