@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as qs from "query-string";
-import * as yaml from "yaml";
 import gql from "graphql-tag";
 import {
   Button,
@@ -27,7 +26,8 @@ import {
   handleExecutionResult,
   START_PIPELINE_EXECUTION_MUTATION,
   DELETE_MUTATION,
-  CANCEL_MUTATION
+  CANCEL_MUTATION,
+  getReexecutionVariables
 } from "./RunUtils";
 import { RunTag } from "./RunTag";
 import { formatElapsedTime, unixTimestampToString } from "../Util";
@@ -52,6 +52,7 @@ const TOOLTIP_MESSAGE_PIPELINE_MISSING =
   `This pipeline is not present in the currently loaded repository, ` +
   `so dagit can't browse the pipeline solids, but you can still view the logs.`;
 
+// Avoid fetching envYaml on load in Runs page. It is slow.
 const PipelineEnvironmentYamlQuery = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
@@ -383,22 +384,10 @@ const RunActionsMenu: React.FunctionComponent<{
             icon="repeat"
             onClick={async () => {
               const result = await reexecute({
-                variables: {
-                  executionParams: {
-                    mode: run.mode,
-                    environmentConfigData: yaml.parse(envYaml),
-                    selector: {
-                      name: run.pipeline.name,
-                      solidSubset:
-                        run.pipeline.__typename === "Pipeline"
-                          ? run.pipeline.solids.map(s => s.name)
-                          : []
-                    },
-                    executionMetadata: {
-                      tags: [{ key: "dagster/parent_run_id", value: run.runId }]
-                    }
-                  }
-                }
+                variables: getReexecutionVariables({
+                  run,
+                  envYaml
+                })
               });
               handleExecutionResult(run.pipeline.name, result, {
                 openInNewWindow: false

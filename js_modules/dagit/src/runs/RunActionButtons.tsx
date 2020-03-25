@@ -12,6 +12,7 @@ import { IStepState } from "../RunMetadataProvider";
 import { formatStepKey } from "../Util";
 import { LaunchButtonGroup } from "../execute/PipelineExecutionButtonGroup";
 
+// Descriptions of buttons
 const REEXECUTE_DESCRIPTION = "Re-execute the pipeline run from scratch";
 
 const REEXECUTE_PIPELINE_UNKNOWN =
@@ -29,6 +30,21 @@ const REEXECUTE_SINGLE_STEP_NOT_DONE =
   "Wait for this step to finish to re-execute it.";
 const REEXECUTE_SINGLE_STEP =
   "Re-run just this step with existing configuration.";
+
+// Buttons using RunActionButtons
+const START_REEXECUTE_TITLE = "Re-execute";
+const LAUNCH_REEXECUTE_TITLE = "Launch Re-execution";
+
+const START_RETRY_TITLE = "Resume / Retry";
+const LAUNCH_RETRY_TITLE = "Launch Resume / Retry";
+const RETRY_DISABLED_TITLE = "Resume / Retry";
+const CANCEL_TITLE = "Terminate";
+
+const getTitleForStartReexecuteSingleStep = (stepLabel: string) =>
+  `Re-execute ${stepLabel}`;
+
+const getTitleForLaunchReexecuteSingleStep = (stepLabel: string) =>
+  `Re-launch ${stepLabel}`;
 
 interface RunActionButtonsRun {
   runId: string;
@@ -60,7 +76,7 @@ const CancelRunButton: React.FunctionComponent<{
     <Button
       icon={IconNames.STOP}
       small={true}
-      text="Terminate"
+      text={CANCEL_TITLE}
       intent="warning"
       disabled={inFlight}
       onClick={async () => {
@@ -120,18 +136,14 @@ export function ReexecuteSingleStepButton(props: ReexecuteButtonProps) {
     >
       <LaunchButtonGroup small={true} onChange={onChangeExecutionType}>
         <ExecutionStartButton
-          title={`Re-execute ${
-            stepLabel.length > 30 ? stepLabel.slice(0, 27) + "…" : stepLabel
-          }`}
+          title={getTitleForStartReexecuteSingleStep(stepLabel)}
           icon={IconNames.REPEAT}
           small={true}
           disabled={stepInFlight || !artifactsPersisted}
           onClick={onExecute}
         />
         <ExecutionStartButton
-          title={`Re-launch ${
-            stepLabel.length > 30 ? stepLabel.slice(0, 27) + "…" : stepLabel
-          }`}
+          title={getTitleForLaunchReexecuteSingleStep(stepLabel)}
           icon={IconNames.REPEAT}
           small={true}
           disabled={stepInFlight || !artifactsPersisted}
@@ -170,14 +182,14 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
       >
         <LaunchButtonGroup small={true} onChange={updateState}>
           <ExecutionStartButton
-            title="Re-execute"
+            title={START_REEXECUTE_TITLE}
             icon={IconNames.REPEAT}
             small={true}
             disabled={isUnknown}
             onClick={() => onExecute()}
           />
           <ExecutionStartButton
-            title="Launch Re-execution"
+            title={LAUNCH_REEXECUTE_TITLE}
             icon={IconNames.REPEAT}
             small={true}
             disabled={isUnknown}
@@ -203,14 +215,14 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
           >
             <LaunchButtonGroup small={true} onChange={updateState}>
               <ExecutionStartButton
-                title="Resume / Retry"
+                title={START_RETRY_TITLE}
                 icon={IconNames.REPEAT}
                 small={true}
                 disabled={isUnknown}
                 onClick={() => onExecute(undefined, true)}
               />
               <ExecutionStartButton
-                title="Launch Resume / Retry"
+                title={LAUNCH_RETRY_TITLE}
                 icon={IconNames.REPEAT}
                 small={true}
                 disabled={isUnknown}
@@ -225,7 +237,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
             position={Position.BOTTOM}
           >
             <ExecutionStartButton
-              title="Resume / Retry"
+              title={RETRY_DISABLED_TITLE}
               icon={IconNames.DISABLE}
               small={true}
               disabled

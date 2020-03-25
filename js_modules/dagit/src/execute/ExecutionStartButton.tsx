@@ -159,7 +159,9 @@ export default class ExecutionStartButton extends React.Component<
                   iconSize={iconSize}
                   style={{ textAlign: "center", marginRight: 5 }}
                 />
-                {this.props.title}
+                <ExecutionStartButtonTextContainer>
+                  {this.props.title}
+                </ExecutionStartButtonTextContainer>
               </ExecutionStartButtonContainer>
             </ShortcutHandler>
           );
@@ -266,4 +268,11 @@ const ExecutionStartButtonContainer = styled(ButtonContainer)`
     padding: 0 25px;
     min-height: 0;
   }
+`;
+
+const ExecutionStartButtonTextContainer = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
 `;

@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as yaml from "yaml";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { useMutation } from "react-apollo";
@@ -19,7 +18,8 @@ import LogsToolbar from "./LogsToolbar";
 import {
   handleExecutionResult,
   START_PIPELINE_EXECUTION_MUTATION,
-  LAUNCH_PIPELINE_EXECUTION_MUTATION
+  LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  getReexecutionVariables
 } from "./RunUtils";
 import { StartPipelineExecutionVariables } from "./types/StartPipelineExecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
@@ -135,45 +135,6 @@ export class Run extends React.Component<IRunProps, IRunState> {
       this.setState({ highlightedError: errorNode.error });
     }
   };
-
-  getExecutionVariables = (stepKey?: string, resumeRetry?: boolean) => {
-    const { run } = this.props;
-
-    if (!run || run.pipeline.__typename === "UnknownPipeline") {
-      return undefined;
-    }
-
-    const executionParams = {
-      mode: run.mode,
-      environmentConfigData: yaml.parse(run.environmentConfigYaml),
-      selector: {
-        name: run.pipeline.name,
-        solidSubset: run.pipeline.solids.map(s => s.name)
-      }
-    };
-    const reexecutionTag = { key: "dagster/parent_run_id", value: run.runId };
-
-    // single step re-execution
-    if (stepKey && run.executionPlan) {
-      const step = run.executionPlan.steps.find(s => s.key === stepKey);
-      if (!step) return;
-      executionParams["stepKeys"] = [stepKey];
-      executionParams["retryRunId"] = run.runId;
-    } else {
-      // only copy tags over or pass parent_run_id
-      // on full resume-retry or full retry
-      executionParams["executionMetadata"] = {
-        tags: run.tags
-          .map(tag => ({ value: tag.value, key: tag.key }))
-          .concat(reexecutionTag)
-      };
-      if (resumeRetry) {
-        executionParams["retryRunId"] = run.runId;
-      }
-    }
-    return { executionParams };
-  };
-
   render() {
     const { client, run } = this.props;
     const { logsFilter, highlightedError } = this.state;
@@ -205,7 +166,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
               logsFilter={logsFilter}
               onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
               onShowStateDetails={this.onShowStateDetails}
-              getExecutionVariables={this.getExecutionVariables}
+              getExecutionVariables={getReexecutionVariables}
             />
           )}
         </LogsProvider>
@@ -225,10 +186,11 @@ interface RunWithDataProps {
     stepKey: string,
     logs: RunPipelineRunEventFragment[]
   ) => void;
-  getExecutionVariables: (
-    stepKey?: string,
-    resumeRetry?: boolean
-  ) => StartPipelineExecutionVariables | undefined;
+  getExecutionVariables: (input: {
+    run: RunFragment;
+    stepKey?: string;
+    resumeRetry?: boolean;
+  }) => StartPipelineExecutionVariables | undefined;
 }
 
 const RunWithData = ({
@@ -255,7 +217,11 @@ const RunWithData = ({
   };
   const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getExecutionVariables(stepKey, resumeRetry);
+    const variables = getExecutionVariables({
+      run,
+      stepKey,
+      resumeRetry
+    });
     const result = await startPipelineExecution({ variables });
     handleExecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
@@ -263,7 +229,11 @@ const RunWithData = ({
   };
   const onLaunch = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getExecutionVariables(stepKey, resumeRetry);
+    const variables = getExecutionVariables({
+      run,
+      stepKey,
+      resumeRetry
+    });
     const result = await launchPipelineExecution({ variables });
     handleExecutionResult(run.pipeline.name, result, {
       openInNewWindow: false

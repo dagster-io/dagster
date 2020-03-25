@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as yaml from "yaml";
 
 import { Colors, Spinner } from "@blueprintjs/core";
 
@@ -7,6 +8,8 @@ import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
+import { RunTableRunFragment } from "./types/RunTableRunFragment";
+import { RunFragment } from "../runs/types/RunFragment";
 
 export type IRunStatus =
   | "SUCCESS"
@@ -63,6 +66,94 @@ export function handleExecutionResult(
     }
 
     showCustomAlert({ body: message });
+  }
+}
+
+function getExecutionMetadata(run: RunFragment | RunTableRunFragment) {
+  return {
+    tags: [
+      ...run.tags.map(tag => ({
+        key: tag.key,
+        value: tag.value
+      })),
+      {
+        key: "dagster/parent_run_id",
+        value: run.runId
+      },
+      // set root_run_id to be the root run id
+      ...(!run.tags.some(tag => tag.key === "dagster/root_run_id")
+        ? [
+            {
+              key: "dagster/root_run_id",
+              value: run.runId
+            }
+          ]
+        : [])
+    ]
+  };
+}
+
+function isRunFragment(
+  run: RunFragment | RunTableRunFragment
+): run is RunFragment {
+  return (run as RunFragment).environmentConfigYaml !== undefined;
+}
+
+export function getReexecutionVariables(input: {
+  run: RunFragment | RunTableRunFragment;
+  envYaml?: string;
+  stepKey?: string;
+  resumeRetry?: boolean;
+}) {
+  const { run, envYaml, stepKey, resumeRetry } = input;
+
+  if (isRunFragment(run)) {
+    if (!run || run.pipeline.__typename === "UnknownPipeline") {
+      return undefined;
+    }
+
+    const executionParams = {
+      mode: run.mode,
+      environmentConfigData: yaml.parse(run.environmentConfigYaml),
+      selector: {
+        name: run.pipeline.name,
+        solidSubset: run.pipeline.solids.map(s => s.name)
+      }
+    };
+
+    // single step re-execution
+    if (stepKey && run.executionPlan) {
+      const step = run.executionPlan.steps.find(s => s.key === stepKey);
+      if (!step) return;
+      executionParams["stepKeys"] = [stepKey];
+      executionParams["retryRunId"] = run.runId;
+    } else {
+      // only pass executionMetadata (e.g. tags) over copy
+      // on full resume-retry or full retry
+      executionParams["executionMetadata"] = getExecutionMetadata(run);
+      if (resumeRetry) {
+        executionParams["retryRunId"] = run.runId;
+      }
+    }
+    return { executionParams };
+  } else {
+    if (!envYaml) {
+      return undefined;
+    }
+    return {
+      executionParams: {
+        mode: run.mode,
+        environmentConfigData: yaml.parse(envYaml),
+        selector: {
+          name: run.pipeline.name,
+          solidSubset:
+            run.pipeline.__typename === "Pipeline"
+              ? run.pipeline.solids.map(s => s.name)
+              : []
+        },
+        executionMetadata: getExecutionMetadata(run)
+      }
+    };
   }
 }
 

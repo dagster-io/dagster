@@ -10,6 +10,10 @@ PARTITION_NAME_TAG = '{prefix}partition'.format(prefix=SYSTEM_TAG_PREFIX)
 
 PARTITION_SET_TAG = '{prefix}partition_set'.format(prefix=SYSTEM_TAG_PREFIX)
 
+PARENT_RUN_ID_TAG = '{prefix}parent_run_id'.format(prefix=SYSTEM_TAG_PREFIX)
+
+ROOT_RUN_ID_TAG = '{prefix}root_run_id'.format(prefix=SYSTEM_TAG_PREFIX)
+
 
 def check_tags(obj, name):
     check.opt_dict_param(obj, name, key_type=str, value_type=str)
