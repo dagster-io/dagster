@@ -22,7 +22,11 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.types.dagster_type import DagsterType, PythonObjectDagsterType
+from dagster.core.types.dagster_type import (
+    DagsterType,
+    PythonObjectDagsterType,
+    resolve_dagster_type,
+)
 
 
 class BarObj(object):
@@ -585,3 +589,16 @@ def test_contextual_type_check():
         bar(return_one())
 
     assert execute_pipeline(fancy_pipeline).success
+
+
+def test_type_equality():
+    assert resolve_dagster_type(int) == resolve_dagster_type(int)
+    assert not (resolve_dagster_type(int) != resolve_dagster_type(int))
+
+    assert resolve_dagster_type(List[int]) == resolve_dagster_type(List[int])
+    assert not (resolve_dagster_type(List[int]) != resolve_dagster_type(List[int]))
+
+    assert resolve_dagster_type(Optional[List[int]]) == resolve_dagster_type(Optional[List[int]])
+    assert not (
+        resolve_dagster_type(Optional[List[int]]) != resolve_dagster_type(Optional[List[int]])
+    )

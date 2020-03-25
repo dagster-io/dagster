@@ -538,3 +538,12 @@ def test_solid_returns_iterator():
         ),
     ):
         result = execute_solid(return_iterator)
+
+
+def test_input_default():
+    @lambda_solid
+    def foo(bar='ok'):
+        return bar
+
+    result = execute_solid(foo)
+    assert result.output_value() == 'ok'

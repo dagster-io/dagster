@@ -139,7 +139,7 @@ def execute_solids_within_pipeline(
         inputs (Optional[Dict[str, Dict[str, Any]]]): A dict keyed on solid names, whose values are
             dicts of input names to input values, used to pass input values to the solids directly.
             You may also use the ``environment_dict`` to configure any inputs that are configurable.
-        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+        environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
@@ -174,7 +174,7 @@ def execute_solid_within_pipeline(
         inputs (Optional[Dict[str, Any]]): A dict of input names to input values, used to
             pass input values to the solid directly. You may also use the ``environment_dict`` to
             configure any inputs that are configurable.
-        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+        environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
@@ -231,7 +231,7 @@ def execute_solid(
         input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
             pass inputs to the solid directly. You may also use the ``environment_dict`` to
             configure any inputs that are configurable.
-        environment_dict (Optional[dict]): The enviroment configuration that parameterizes this
+        environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.

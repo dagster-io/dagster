@@ -312,6 +312,11 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ENGINE_EVENT
 
     @property
+    def step_input_data(self):
+        _assert_type('step_input_data', DagsterEventType.STEP_INPUT, self.event_type)
+        return self.event_specific_data
+
+    @property
     def step_output_data(self):
         _assert_type('step_output_data', DagsterEventType.STEP_OUTPUT, self.event_type)
         return self.event_specific_data

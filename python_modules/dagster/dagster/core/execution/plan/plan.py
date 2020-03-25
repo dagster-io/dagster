@@ -238,6 +238,14 @@ def get_step_input(
                 config_data=parent_input.config_data,
             )
 
+    if solid.definition.input_has_default(input_name):
+        return StepInput(
+            name=input_name,
+            dagster_type=input_def.dagster_type,
+            source_type=StepInputSourceType.DEFAULT_VALUE,
+            config_data=solid.definition.default_value_for_input(input_name),
+        )
+
     # At this point we have an input that is not hooked up to
     # the output of another solid or provided via environment config.
 

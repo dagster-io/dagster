@@ -159,7 +159,7 @@ def _input_values_from_intermediates_manager(step_context):
                 dagster_type=step_input.dagster_type,
             )
 
-        else:  # is from config
+        elif step_input.is_from_config:
 
             def _generate_error_boundary_msg_for_step_input(_context, _input):
                 return lambda: '''Error occurred during input hydration:
@@ -181,6 +181,13 @@ def _input_values_from_intermediates_manager(step_context):
                 input_value = step_input.dagster_type.input_hydration_config.construct_from_config_value(
                     step_context, step_input.config_data
                 )
+
+        elif step_input.is_from_default_value:
+            input_value = step_input.config_data
+
+        else:
+            check.failed('Unhandled step_input type!')
+
         input_values[step_input.name] = input_value
 
     return input_values

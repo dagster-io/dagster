@@ -124,6 +124,14 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
     def resolve_output_to_origin(self, output_name, handle):
         raise NotImplementedError()
 
+    @abstractmethod
+    def input_has_default(self, input_name):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def default_value_for_input(self, input_name):
+        raise NotImplementedError()
+
     def all_input_output_types(self):
         for input_def in self._input_defs:
             yield input_def.dagster_type
@@ -181,7 +189,7 @@ class SolidDefinition(ISolidDefinition):
 
             This value can be any of:
 
-            1. A Python primitive type that resolves to a Dagster config type 
+            1. A Python primitive type that resolves to a Dagster config type
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 
@@ -286,6 +294,12 @@ class SolidDefinition(ISolidDefinition):
 
     def resolve_output_to_origin(self, output_name, handle):
         return self.output_def_named(output_name), handle
+
+    def input_has_default(self, input_name):
+        return self.input_def_named(input_name).has_default_value
+
+    def default_value_for_input(self, input_name):
+        return self.input_def_named(input_name).default_value
 
 
 class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
@@ -485,6 +499,12 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
                 return mapping
         return None
 
+    def get_input_mapping(self, input_name):
+        for mapping in self._input_mappings:
+            if mapping.definition.name == input_name:
+                return mapping
+        return None
+
     def resolve_output_to_origin(self, output_name, handle):
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, 'Can only resolve outputs for valid output names')
@@ -493,6 +513,28 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
             mapping.output_name,
             SolidHandle(mapped_solid.name, mapped_solid.definition.name, handle),
         )
+
+    def input_has_default(self, input_name):
+        # base case
+        if self.input_def_named(input_name).has_default_value:
+            return True
+
+        mapping = self.get_input_mapping(input_name)
+        check.invariant(mapping, 'Can only resolve inputs for valid input names')
+        mapped_solid = self.solid_named(mapping.solid_name)
+
+        return mapped_solid.definition.input_has_default(mapping.input_name)
+
+    def default_value_for_input(self, input_name):
+        # base case
+        if self.input_def_named(input_name).has_default_value:
+            return self.input_def_named(input_name).default_value
+
+        mapping = self.get_input_mapping(input_name)
+        check.invariant(mapping, 'Can only resolve inputs for valid input names')
+        mapped_solid = self.solid_named(mapping.solid_name)
+
+        return mapped_solid.definition.default_value_for_input(mapping.input_name)
 
     def all_runtime_types(self):
         rename_warning(
@@ -544,7 +586,6 @@ def _validate_in_mappings(input_mappings, solid_dict, name):
                 )
 
             target_input = target_solid.input_def_named(mapping.input_name)
-
             if target_input.dagster_type != mapping.definition.dagster_type:
                 raise DagsterInvalidDefinitionError(
                     "In CompositeSolid '{name}' input "

@@ -123,6 +123,7 @@ class StepInputSourceType(Enum):
     SINGLE_OUTPUT = 'SINGLE_OUTPUT'
     MULTIPLE_OUTPUTS = 'MULTIPLE_OUTPUTS'
     CONFIG = 'CONFIG'
+    DEFAULT_VALUE = 'DEFAULT_VALUE'
 
 
 class StepInput(
@@ -166,6 +167,14 @@ class StepInput(
     @property
     def is_from_single_output(self):
         return self.source_type == StepInputSourceType.SINGLE_OUTPUT
+
+    @property
+    def is_from_config(self):
+        return self.source_type == StepInputSourceType.CONFIG
+
+    @property
+    def is_from_default_value(self):
+        return self.source_type == StepInputSourceType.DEFAULT_VALUE
 
     @property
     def is_from_multiple_outputs(self):

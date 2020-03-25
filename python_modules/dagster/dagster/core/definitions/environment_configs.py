@@ -158,8 +158,10 @@ def get_inputs_field(solid, handle, dependency_structure):
             if not dependency_structure.has_deps(inp_handle) and not solid.container_maps_input(
                 name
             ):
+
                 inputs_field_fields[name] = Field(
-                    inp.dagster_type.input_hydration_config.schema_type
+                    inp.dagster_type.input_hydration_config.schema_type,
+                    is_required=(not solid.definition.input_has_default(name)),
                 )
 
     if not inputs_field_fields:

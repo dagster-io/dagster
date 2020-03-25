@@ -60,7 +60,15 @@ def _infer_inputs_from_params(params, decorator_name, solid_name):
     input_defs = []
     for param in params:
         try:
-            input_defs.append(InputDefinition(param.name, _input_param_type(param.annotation)))
+            if param.default is not funcsigs.Parameter.empty:
+                input_def = InputDefinition(
+                    param.name, _input_param_type(param.annotation), default_value=param.default
+                )
+            else:
+                input_def = InputDefinition(param.name, _input_param_type(param.annotation))
+
+            input_defs.append(input_def)
+
         except CheckError as type_error:
             six.raise_from(
                 DagsterInvalidDefinitionError(

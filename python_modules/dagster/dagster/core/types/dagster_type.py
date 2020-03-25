@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from enum import Enum as PythonEnum
 from functools import partial
 
@@ -179,6 +180,9 @@ class DagsterType(object):
         else:
             return False
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     @staticmethod
     def from_builtin_enum(builtin_enum):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'must be member of BuiltinEnum')
@@ -207,6 +211,10 @@ class DagsterType(object):
     @property
     def type_param_keys(self):
         return []
+
+    @property
+    def is_nothing(self):
+        return self.kind == DagsterTypeKind.NOTHING
 
 
 def _validate_type_check_fn(fn, name):
@@ -250,7 +258,11 @@ class BuiltinScalarDagsterType(DagsterType):
             **kwargs
         )
 
-    def type_check_method(self, _context, _value):
+    def type_check_fn(self, _context, value):
+        return self.type_check_scalar_value(value)
+
+    @abstractmethod
+    def type_check_scalar_value(self, _value):
         raise NotImplementedError()
 
 
@@ -260,10 +272,10 @@ class _Int(BuiltinScalarDagsterType):
             name='Int',
             input_hydration_config=BuiltinSchemas.INT_INPUT,
             output_materialization_config=BuiltinSchemas.INT_OUTPUT,
-            type_check_fn=self.type_check_method,
+            type_check_fn=self.type_check_fn,
         )
 
-    def type_check_method(self, _context, value):
+    def type_check_scalar_value(self, value):
         return _fail_if_not_of_type(value, six.integer_types, 'int')
 
 
@@ -287,10 +299,10 @@ class _String(BuiltinScalarDagsterType):
             name='String',
             input_hydration_config=BuiltinSchemas.STRING_INPUT,
             output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
-            type_check_fn=self.type_check_method,
+            type_check_fn=self.type_check_fn,
         )
 
-    def type_check_method(self, _context, value):
+    def type_check_scalar_value(self, value):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
@@ -300,10 +312,10 @@ class _Path(BuiltinScalarDagsterType):
             name='Path',
             input_hydration_config=BuiltinSchemas.PATH_INPUT,
             output_materialization_config=BuiltinSchemas.PATH_OUTPUT,
-            type_check_fn=self.type_check_method,
+            type_check_fn=self.type_check_fn,
         )
 
-    def type_check_method(self, _context, value):
+    def type_check_scalar_value(self, value):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
@@ -313,10 +325,10 @@ class _Float(BuiltinScalarDagsterType):
             name='Float',
             input_hydration_config=BuiltinSchemas.FLOAT_INPUT,
             output_materialization_config=BuiltinSchemas.FLOAT_OUTPUT,
-            type_check_fn=self.type_check_method,
+            type_check_fn=self.type_check_fn,
         )
 
-    def type_check_method(self, _context, value):
+    def type_check_scalar_value(self, value):
         return _fail_if_not_of_type(value, float, 'float')
 
 
@@ -326,10 +338,10 @@ class _Bool(BuiltinScalarDagsterType):
             name='Bool',
             input_hydration_config=BuiltinSchemas.BOOL_INPUT,
             output_materialization_config=BuiltinSchemas.BOOL_OUTPUT,
-            type_check_fn=self.type_check_method,
+            type_check_fn=self.type_check_fn,
         )
 
-    def type_check_method(self, _context, value):
+    def type_check_scalar_value(self, value):
         return _fail_if_not_of_type(value, bool, 'bool')
 
 
@@ -779,7 +791,7 @@ def construct_dagster_type_dictionary(solid_defs):
     for solid_def in solid_defs:
         for dagster_type in solid_def.all_dagster_types():
             # We don't do uniqueness check on key because with classes
-            # like Array, Noneable, etc, those are ephemeral objectds
+            # like Array, Noneable, etc, those are ephemeral objects
             # and it is perfectly fine to have many of them.
             type_dict_by_key[dagster_type.key] = dagster_type
 
