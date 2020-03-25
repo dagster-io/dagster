@@ -265,11 +265,11 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
     pipeline_ref = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
 
     execution_plan = None
     if isinstance(pipeline_ref, DauphinPipeline):
+        pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
         execution_plan = create_execution_plan(
             pipeline_def, run.environment_dict, RunConfig(mode=run.mode)
         )
