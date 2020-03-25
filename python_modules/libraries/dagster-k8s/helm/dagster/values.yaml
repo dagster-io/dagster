@@ -164,6 +164,10 @@ redis:
   host: ""
   # Redis port
   port: 6379
+  # Set DB number for Redis broker DB (default 0)
+  brokerDbNumber:
+  # Set DB number for Redis backend DB (default 0)
+  backendDbNumber:
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers

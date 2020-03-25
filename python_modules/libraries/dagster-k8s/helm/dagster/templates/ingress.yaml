@@ -7,7 +7,7 @@ metadata:
     {{- include "dagster.labels" . | nindent 4 }}
   annotations:
     {{- range $key, $value := .Values.ingress.annotations }}
-    {{ $key }}: {{ $value | quote }}
+    {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
   # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml

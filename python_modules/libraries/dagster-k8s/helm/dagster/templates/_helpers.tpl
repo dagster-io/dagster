@@ -130,12 +130,14 @@ Celery options
 {{- if .Values.rabbitmq.enabled -}}
 "pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
 {{- else if .Values.redis.enabled -}}
-"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/0"
+"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.brokerDbNumber | default 0}}"
 {{- end -}}
 {{- end -}}
 
 {{- define "dagster.celery.backend_url" -}}
-{{- if .Values.redis.enabled -}}
-"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/0"
+{{- if .Values.rabbitmq.enabled -}}
+"amqp"
+{{- else if .Values.redis.enabled -}}
+"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}"
 {{- end -}}
 {{- end -}}
