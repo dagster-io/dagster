@@ -111,8 +111,7 @@ You'll first need to need to add S3 storage to your :py:class:`ModeDefinition`:
 
 .. code-block:: python
 
-    from dagster_aws.s3.resources import s3_resource
-    from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+    from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
     from dagster import ModeDefinition
 
     prod_mode = ModeDefinition(

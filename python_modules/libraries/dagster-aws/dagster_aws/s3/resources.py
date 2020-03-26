@@ -32,7 +32,7 @@ def s3_resource(context):
         .. code-block:: python
 
             from dagster import ModeDefinition, execute_solid, solid
-            from dagster_aws import s3_resource
+            from dagster_aws.s3 import s3_resource
 
             @solid(required_resource_keys={'s3'})
             def example_s3_solid(context):

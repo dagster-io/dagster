@@ -196,7 +196,7 @@ def cloudwatch_logger(init_context):
         .. code-block:: python
 
             from dagster import ModeDefinition, execute_pipeline, pipeline, solid
-            from dagster_aws import cloudwatch_logger
+            from dagster_aws.cloudwatch import cloudwatch_logger
 
             @solid
             def hello_cloudwatch(context):

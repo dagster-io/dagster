@@ -1,4 +1,4 @@
-from dagster_aws.emr.solids import EmrRunJobFlowSolidDefinition
+from dagster_aws.emr import EmrRunJobFlowSolidDefinition
 from moto import mock_emr
 
 from dagster import execute_pipeline, pipeline

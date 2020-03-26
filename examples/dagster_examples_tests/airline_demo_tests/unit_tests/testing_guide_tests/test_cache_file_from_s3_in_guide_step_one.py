@@ -2,7 +2,7 @@ import os
 import shutil
 
 import boto3
-from dagster_aws import S3Coordinate
+from dagster_aws.s3 import S3Coordinate
 
 from dagster import execute_pipeline, pipeline, solid
 from dagster.seven import mock

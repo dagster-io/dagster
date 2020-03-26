@@ -6,15 +6,15 @@ dagster_aws
 S3
 --
 
-.. autoclass:: S3ComputeLogManager
+.. autoclass:: dagster_aws.s3.S3ComputeLogManager
 
-.. autoclass:: S3FileCache
+.. autoclass:: dagster_aws.s3.S3FileCache
   :members:
 
-.. autodata:: s3_resource
+.. autodata:: dagster_aws.s3.s3_resource
   :annotation: ResourceDefinition
 
-.. autodata:: S3Coordinate
+.. autodata:: dagster_aws.s3.S3Coordinate
   :annotation: DagsterType
 
   A :py:class:`dagster.DagsterType` intended to make it easier to pass information about files on S3
@@ -31,10 +31,10 @@ S3
             key: my-key
 
 
-.. autodata:: s3_system_storage
+.. autodata:: dagster_aws.s3.s3_system_storage
   :annotation: SystemStorageDefinition
 
-.. autodata:: s3_plus_default_storage_defs
+.. autodata:: dagster_aws.s3.s3_plus_default_storage_defs
   :annotation: List[SystemStorageDefinition]
 
   The default system storages available on any :py:class:`~dagster.ModeDefinition` that does not
@@ -42,30 +42,37 @@ S3
   :py:class:`s3_system_storage`.
 
 
+Testing
+^^^^^^^
+
+.. autoclass:: dagster_aws.s3.S3FakeSession
+  :members:
+
+.. autofunction:: dagster_aws.s3.create_s3_fake_resource
+
+
 Redshift
 --------
-.. autodata:: redshift_resource
+.. autodata:: dagster_aws.redshift.redshift_resource
+  :annotation: ResourceDefinition
+
+
+Testing
+^^^^^^^
+
+.. autodata:: dagster_aws.redshift.fake_redshift_resource
   :annotation: ResourceDefinition
 
 
 CloudWatch
 ----------
 
-.. autodata:: cloudwatch_logger
+.. autodata:: dagster_aws.cloudwatch.cloudwatch_logger
   :annotation: LoggerDefinition
 
 
-Testing
--------
-.. autoclass:: S3FakeSession
-  :members:
-
-.. autofunction:: create_s3_fake_resource
-
-.. autodata:: fake_redshift_resource
-  :annotation: ResourceDefinition
-
 -----
+
 
 CLI
 ---

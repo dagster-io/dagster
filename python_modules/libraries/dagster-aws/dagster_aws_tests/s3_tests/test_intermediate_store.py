@@ -3,9 +3,7 @@ import os
 from collections import OrderedDict
 
 import pytest
-from dagster_aws.s3.intermediate_store import S3IntermediateStore
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3 import S3IntermediateStore, s3_plus_default_storage_defs, s3_resource
 
 from dagster import (
     Bool,

@@ -3,7 +3,7 @@ import sys
 
 import boto3
 import six
-from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
+from dagster_aws.s3 import S3ComputeLogManager
 from moto import mock_s3
 
 from dagster import DagsterEventType, RunConfig, execute_pipeline, pipeline, seven, solid

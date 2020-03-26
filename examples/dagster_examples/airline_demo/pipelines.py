@@ -1,13 +1,13 @@
 '''Pipeline definitions for the airline_demo.
 '''
-from dagster_aws import (
+from dagster_aws.emr import emr_pyspark_resource
+from dagster_aws.s3 import (
     S3FileHandle,
     file_handle_to_s3,
     s3_file_cache,
     s3_plus_default_storage_defs,
     s3_resource,
 )
-from dagster_aws.emr import emr_pyspark_resource
 from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline

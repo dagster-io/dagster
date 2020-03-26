@@ -1,9 +1,7 @@
 import sys
 import zipfile
 
-from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.s3_fake_resource import create_s3_fake_resource
-from dagster_aws.s3.system_storage import s3_system_storage
+from dagster_aws.s3 import S3FileHandle, create_s3_fake_resource, s3_system_storage
 from dagster_examples.airline_demo.unzip_file_handle import unzip_file_handle
 
 from dagster import (

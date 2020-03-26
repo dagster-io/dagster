@@ -107,7 +107,7 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
     @classmethod
     def compatible_with_storage_def(cls, system_storage_def):
         try:
-            from dagster_aws.s3.system_storage import s3_system_storage
+            from dagster_aws.s3 import s3_system_storage
 
             return system_storage_def is s3_system_storage
         except ImportError:

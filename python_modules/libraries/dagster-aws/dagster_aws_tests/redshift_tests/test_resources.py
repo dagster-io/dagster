@@ -1,5 +1,4 @@
-from dagster_aws import fake_redshift_resource, redshift_resource
-from dagster_aws.redshift.resources import FakeRedshiftResource
+from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
 
 from dagster import ModeDefinition, execute_solid, solid
 from dagster.seven import mock

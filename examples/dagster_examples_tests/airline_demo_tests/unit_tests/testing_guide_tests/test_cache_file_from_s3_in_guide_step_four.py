@@ -1,4 +1,4 @@
-from dagster_aws import S3Coordinate, S3FakeSession, S3FileCache
+from dagster_aws.s3 import S3Coordinate, S3FakeSession, S3FileCache
 
 from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name

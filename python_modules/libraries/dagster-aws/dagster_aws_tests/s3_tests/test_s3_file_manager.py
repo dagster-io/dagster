@@ -1,9 +1,12 @@
 import os
 import uuid
 
-from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
-from dagster_aws.s3.s3_fake_resource import create_s3_fake_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3 import (
+    S3FileHandle,
+    S3FileManager,
+    create_s3_fake_resource,
+    s3_plus_default_storage_defs,
+)
 
 from dagster import (
     InputDefinition,

@@ -1,7 +1,6 @@
 import io
 
-from dagster_aws.s3.file_cache import S3FileCache, S3FileHandle
-from dagster_aws.s3.s3_fake_resource import S3FakeSession
+from dagster_aws.s3 import S3FakeSession, S3FileCache, S3FileHandle
 
 
 def test_s3_file_cache_file_not_present():

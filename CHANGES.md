@@ -1,5 +1,16 @@
 # Changelog
 
+## Upcoming (0.7.6)
+
+**Breaking Changes**
+
+- The `dagster_aws` imports have been reorganized; you should now import resources from
+  `dagster_aws.<AWS service name>`. `dagster_aws` provides `s3`, `emr`, `redshift`, and `cloudwatch`
+  modules.
+- The `dagster_aws` S3 resource no longer attempts to model the underlying boto3 API, and you can
+  now just use any boto3 S3 API directly on a S3 resource, e.g.
+  `context.resources.s3.list_objects_v2`. (#2292)
+
 ## 0.7.5
 
 **New**
@@ -30,7 +41,7 @@
   progress of starting execution.
 - Markers emitted by the underlying execution engines are now visualized in the Dagit execution
   timeline.
-  
+
 **Bugfix**
 
 - Resume/retry now works as expected in the presence of solids that yield optional outputs.
@@ -39,17 +50,21 @@
 - Fixed an issue with attempting to set `threads_per_worker` on Dask distributed clusters.
 
 **dagster-postgres**
+
 - All postgres config may now be set using environment variables in config.
 
 **dagster-aws**
+
 - The `s3_resource` now exposes a `list_objects_v2` method corresponding to the underlying boto3
   API. (Thanks, @basilvetas!)
 - Added the `redshift_resource` to access Redshift databases.
 
 **dagster-k8s**
-  - The `K8sRunLauncher` config now includes the `load_kubeconfig` and `kubeconfig_file` options.
+
+- The `K8sRunLauncher` config now includes the `load_kubeconfig` and `kubeconfig_file` options.
 
 **Documentation**
+
 - Fixes and improvements.
 
 **Dependencies**

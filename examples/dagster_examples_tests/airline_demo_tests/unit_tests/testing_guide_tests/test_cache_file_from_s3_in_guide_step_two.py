@@ -1,7 +1,7 @@
 import os
 
 import boto3
-from dagster_aws import S3Coordinate
+from dagster_aws.s3 import S3Coordinate
 
 from dagster import ModeDefinition, pipeline, solid
 from dagster.core.storage.file_cache import FSFileCache, fs_file_cache

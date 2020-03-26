@@ -1,6 +1,6 @@
 import os
 
-from dagster_aws import S3Coordinate, S3FakeSession
+from dagster_aws.s3 import S3Coordinate, S3FakeSession
 
 from dagster import ModeDefinition, solid
 from dagster.core.storage.file_cache import FSFileCache

@@ -5,8 +5,7 @@ import os
 import shutil
 
 import six
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.utils import S3Logger
+from dagster_aws.s3 import S3Logger, s3_resource
 from dagster_snowflake import snowflake_resource
 from dagster_spark import create_spark_solid, spark_resource
 
