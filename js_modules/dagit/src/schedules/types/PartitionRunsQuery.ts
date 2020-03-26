@@ -19,10 +19,23 @@ export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_tag
   value: string;
 }
 
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError {
+  __typename: "PythonError";
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
+  __typename: "PipelineRunStatsSnapshot";
+  startTime: number | null;
+  endTime: number | null;
+}
+
+export type PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError | PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot;
+
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
   tags: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
+  stats: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   status: PipelineRunStatus;
 }
 

@@ -40,6 +40,7 @@ import {
   Tag
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
+import { Line } from "react-chartjs-2";
 
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useState } from "react";
@@ -133,8 +134,6 @@ const RenderEventSpecificData: React.FunctionComponent<{
         </a>
       );
   }
-
-  return null;
 };
 
 const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
@@ -332,9 +331,69 @@ const PartitionTable: React.FunctionComponent<{
     runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
   });
 
+  const latestRunByPartition: {
+    [key: string]: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results | null;
+  } = {};
+
+  for (const partition in runsByPartition) {
+    if (runsByPartition[partition].length > 0) {
+      latestRunByPartition[partition] =
+        runsByPartition[partition][runsByPartition[partition].length - 1];
+    } else {
+      latestRunByPartition[partition] = null;
+    }
+  }
+
+  const pipelineExecutionTimeByPartition: {
+    x: string;
+    y: number | null;
+  }[] = [];
+  for (const partition in latestRunByPartition) {
+    const latestRun = latestRunByPartition[partition];
+    if (!latestRun) {
+      pipelineExecutionTimeByPartition.push({
+        x: partition,
+        y: null
+      });
+      continue;
+    }
+
+    const { stats } = latestRun;
+    if (
+      stats.__typename == "PipelineRunStatsSnapshot" &&
+      stats.endTime &&
+      stats.startTime
+    ) {
+      const duration = stats.endTime - stats.startTime;
+      pipelineExecutionTimeByPartition.push({
+        x: partition,
+        y: duration
+      });
+    } else {
+      pipelineExecutionTimeByPartition.push({
+        x: partition,
+        y: null
+      });
+    }
+  }
+
+  const state: any = {
+    labels: pipelineExecutionTimeByPartition.map(i => i.x),
+    datasets: [
+      {
+        label: "Pipeline Execution Time",
+        data: pipelineExecutionTimeByPartition.map(i => i.y)
+      }
+    ]
+  };
+
   return (
     <>
       <Header>{`Partition Set: ${partitionSet.name}`}</Header>
+
+      <RowContainer style={{ marginBottom: 20 }}>
+        <Line data={state} height={50} />
+      </RowContainer>
       {Object.keys(runsByPartition).map(partition => (
         <RowContainer
           key={partition}
@@ -440,6 +499,13 @@ export const PARTITION_RUNS_QUERY = gql`
           tags {
             key
             value
+          }
+          stats {
+            __typename
+            ... on PipelineRunStatsSnapshot {
+              startTime
+              endTime
+            }
           }
           status
         }
