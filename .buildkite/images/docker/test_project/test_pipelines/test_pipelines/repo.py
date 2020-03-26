@@ -14,6 +14,7 @@ from dagster import (
     OutputDefinition,
     RepositoryDefinition,
     String,
+    default_executors,
     lambda_solid,
     pipeline,
     solid,
@@ -47,6 +48,24 @@ def error_solid():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+def define_demo_pipeline_celery():
+    from dagster_celery import celery_executor
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                system_storage_defs=s3_plus_default_storage_defs,
+                resource_defs={'s3': s3_resource},
+                executor_defs=default_executors + [celery_executor],
+            )
+        ]
+    )
+    def demo_pipeline_celery():
+        count_letters(multiply_the_word())
+
+    return demo_pipeline_celery
 
 
 @pipeline(
@@ -98,5 +117,6 @@ def optional_outputs():
 def define_demo_execution_repo():
     return RepositoryDefinition(
         name='demo_execution_repo',
-        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs],
+        pipeline_dict={'demo_pipeline_celery': define_demo_pipeline_celery,},
+        pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],
     )

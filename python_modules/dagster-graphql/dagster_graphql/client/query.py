@@ -146,38 +146,24 @@ fragment stepEventFragment on StepEvent {
 }
 '''
 
-LOG_MESSAGE_EVENT_FRAGMENT = '''
-fragment logMessageEventFragment on LogMessageEvent {
+MESSAGE_EVENT_FRAGMENTS = (
+    '''
+fragment messageEventFragment on MessageEvent {
   runId
   message
   timestamp
   level
-  step {
-    key
-    inputs {
-      name
-      type {
-        key
-      }
-      dependsOn {
-        key
-      }
-    }
-    outputs {
-      name
-      type {
-        key
-      }
-    }
-    solidHandleID
-    kind
-    metadata {
-      key
-      value
+  ...stepEventFragment
+  ... on PipelineInitFailureEvent {
+    initError: error {
+      ...errorFragment
     }
   }
 }
 '''
+    + STEP_EVENT_FRAGMENTS
+)
+
 
 START_PIPELINE_EXECUTION_RESULT_FRAGMENT = (
     '''
@@ -219,8 +205,7 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 			logs {
 				nodes {
 					__typename
-					...stepEventFragment
-					...logMessageEventFragment
+	        ...messageEventFragment
 				}
 				pageInfo {
 					lastCursor
@@ -236,8 +221,7 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 	}
 }
 '''
-    + STEP_EVENT_FRAGMENTS
-    + LOG_MESSAGE_EVENT_FRAGMENT
+    + MESSAGE_EVENT_FRAGMENTS
 )
 
 START_PIPELINE_EXECUTION_MUTATION = (
@@ -418,7 +402,7 @@ mutation(
 '''
 
 SUBSCRIPTION_QUERY = (
-    STEP_EVENT_FRAGMENTS
+    MESSAGE_EVENT_FRAGMENTS
     + '''
 subscription subscribeTest($runId: ID!) {
     pipelineRunLogs(runId: $runId) {
@@ -429,32 +413,7 @@ subscription subscribeTest($runId: ID!) {
             },
             messages {
                 __typename
-                ...stepEventFragment
-
-                ... on MessageEvent {
-                    message
-                    step { key solidHandleID }
-                    level
-                }
-
-                # only include here because unstable between runs
-                ... on StepMaterializationEvent {
-                    materialization {
-                        label
-                        description
-                        metadataEntries {
-                            __typename
-                            ...eventMetadataEntryFragment
-                        }
-                    }
-                }
-                ... on ExecutionStepFailureEvent {
-                    step { key kind }
-                    error {
-                        message
-                        stack
-                    }
-                }
+                ...messageEventFragment
             }
         }
         ... on PipelineRunLogsSubscriptionFailure {

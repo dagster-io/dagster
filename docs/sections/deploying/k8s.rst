@@ -33,6 +33,11 @@ capitalized nouns are Kubernetes objects):
 
 All of the parameters for this chart live in the ``values.yaml`` file.
 
+To leverage the Celery infrastructure when executing a pipeline, you can use ``get_celery_engine_config``
+from ``dagster_k8s`` to select the celery engine and have it properly configured for use inside the
+kubernetes cluster.
+
+
 K8sRunLauncher
 ^^^^^^^^^^^^^^
 
@@ -49,7 +54,7 @@ single-process executor, the multiprocess executor, or the dagster-celery execut
 
 A concrete :py:class:`~dagster.RunLauncher`, in this case the
 :py:class:`~dagster_k8s.K8sRunLauncher`, can be configured on the Dagster instance using a
-config block such as the following:
+config block such as below. Note that when using the helm chart, this is configured for you.
 
 .. code-block:: yaml
 
