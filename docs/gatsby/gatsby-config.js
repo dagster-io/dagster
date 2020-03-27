@@ -97,6 +97,12 @@ module.exports = {
         display: "minimal-ui",
         icon: "src/images/logo.png"
       }
+    },
+    {
+      resolve: `gatsby-plugin-google-analytics`,
+      options: {
+        trackingId: "UA-138684758-1"
+      }
     }
   ]
 };

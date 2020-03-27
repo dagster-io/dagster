@@ -75,6 +75,7 @@
     "gatsby-plugin-algolia": "^0.5.0",
     "gatsby-plugin-alias-imports": "^1.0.5",
     "gatsby-plugin-exclude": "^1.0.2",
+    "gatsby-plugin-google-analytics": "^2.2.2",
     "gatsby-plugin-manifest": "^2.2.41",
     "gatsby-plugin-offline": "^3.0.35",
     "gatsby-plugin-react-helmet": "^3.1.22",
