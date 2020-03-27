@@ -7,6 +7,7 @@ import yaml
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
@@ -102,3 +103,17 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
             str: The environment dict as YAML.
         '''
         return yaml.dump(self.environment_dict, default_flow_style=False)
+
+    def with_additional_config(self, environment_dict):
+        '''return a new PresetDefinition with additional config merged in to the existing config'''
+
+        check.opt_nullable_dict_param(environment_dict, 'environment_dict')
+        if environment_dict is None:
+            return self
+        else:
+            return PresetDefinition(
+                name=self.name,
+                solid_subset=self.solid_subset,
+                mode=self.mode,
+                environment_dict=merge_dicts(self.environment_dict, environment_dict),
+            )

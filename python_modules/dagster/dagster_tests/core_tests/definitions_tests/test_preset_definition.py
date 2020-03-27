@@ -34,6 +34,11 @@ def test_presets():
                 environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
                 solid_subset=['can_fail'],
             ),
+            PresetDefinition.from_files(
+                'passing_overide_to_fail',
+                environment_files=[file_relative_path(__file__, 'pass_env.yaml')],
+                solid_subset=['can_fail'],
+            ).with_additional_config({'solids': {'can_fail': {'config': {'error': True}}}}),
             PresetDefinition(
                 'passing_direct_dict',
                 environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
@@ -64,15 +69,23 @@ def test_presets():
     assert execute_pipeline_with_preset(pipeline, 'passing').success
 
     assert execute_pipeline_with_preset(pipeline, 'passing_direct_dict').success
+    assert (
+        execute_pipeline_with_preset(pipeline, 'failing_1', raise_on_error=False).success == False
+    )
 
-    with pytest.raises(Exception):
-        execute_pipeline_with_preset(pipeline, 'failing_1')
+    assert (
+        execute_pipeline_with_preset(pipeline, 'failing_2', raise_on_error=False).success == False
+    )
 
-    with pytest.raises(Exception):
-        execute_pipeline_with_preset(pipeline, 'failing_2')
+    with pytest.raises(DagsterInvariantViolationError, match='Could not find preset'):
+        execute_pipeline_with_preset(pipeline, 'not_failing', raise_on_error=False)
 
-    with pytest.raises(Exception, match="Could not find preset"):
-        execute_pipeline_with_preset(pipeline, 'not_failing')
+    assert (
+        execute_pipeline_with_preset(
+            pipeline, 'passing_overide_to_fail', raise_on_error=False
+        ).success
+        == False
+    )
 
 
 def test_invalid_preset():
