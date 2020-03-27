@@ -78,8 +78,7 @@ class RunConfig(
         Returns:
             RunConfig: The extended RunConfig.
         '''
-        new_tags = merge_dicts(self.tags, new_tags)
-        return RunConfig(**merge_dicts(self._asdict(), {'tags': new_tags}))
+        return self._replace(tags=merge_dicts(self.tags, new_tags))
 
     def with_mode(self, mode):
         '''Extend an existing RunConfig with a different mode.

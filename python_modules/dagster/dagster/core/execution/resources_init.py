@@ -13,7 +13,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.utils import EventGenerationManager, ensure_gen, merge_dicts
+from dagster.utils import EventGenerationManager, ensure_gen
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
 
@@ -40,11 +40,7 @@ def resource_initialization_event_generator(
 
     if execution_plan.step_key_for_single_step_plans():
         step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
-        resource_log_manager = DagsterLogManager(
-            pipeline_run.run_id,
-            merge_dicts(log_manager.logging_tags, step.logging_tags),
-            log_manager.loggers,
-        )
+        resource_log_manager = log_manager.with_tags(**step.logging_tags)
     else:
         resource_log_manager = log_manager
 
@@ -64,12 +60,17 @@ def resource_initialization_event_generator(
         for resource_name, resource_def in sorted(mode_definition.resource_defs.items()):
             if not resource_name in resource_keys_to_init:
                 continue
+
             resource_context = InitResourceContext(
                 pipeline_def=pipeline_def,
                 resource_def=resource_def,
                 resource_config=environment_config.resources.get(resource_name, {}).get('config'),
                 run_id=pipeline_run.run_id,
-                log_manager=resource_log_manager,
+                # Add tags with information about the resource
+                log_manager=resource_log_manager.with_tags(
+                    resource_name=resource_name,
+                    resource_fn_name=str(resource_def.resource_fn.__name__),
+                ),
             )
             manager = single_resource_generation_manager(
                 resource_context, resource_name, resource_def

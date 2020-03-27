@@ -14,7 +14,6 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.utils import merge_dicts
 
 
 class SystemPipelineExecutionContextData(
@@ -103,11 +102,7 @@ class SystemPipelineExecutionContext(object):
         check.inst_param(step, 'step', ExecutionStep)
 
         return SystemStepExecutionContext(
-            self._pipeline_context_data,
-            DagsterLogManager(
-                self.run_id, merge_dicts(self.logging_tags, step.logging_tags), self.log.loggers
-            ),
-            step,
+            self._pipeline_context_data, self._log_manager.with_tags(**step.logging_tags), step,
         )
 
     def for_type(self, dagster_type):

@@ -5,7 +5,7 @@ from collections import OrderedDict, namedtuple
 
 from dagster import check, seven
 from dagster.core.utils import make_new_run_id
-from dagster.utils import frozendict
+from dagster.utils import frozendict, merge_dicts
 
 DAGSTER_META_KEY = 'dagster_meta'
 
@@ -46,6 +46,7 @@ def construct_log_string(synth_props, logging_tags, message_props):
         'logging_tags',  #          separately included
         'message',  #               dupe
         'pipeline_name',  #         separately included
+        'resource_name',  #         separately included
         'pipeline',  #              dupe
         'solid_handle',  #          we have solid and solid_definition keys
         'step_kind_value',  #       can be inferred from step_key
@@ -82,11 +83,17 @@ def construct_log_string(synth_props, logging_tags, message_props):
     ]
     log_props_str = '\n' + '\n'.join(log_props_list) if log_props_list else ''
 
+    log_source_prefix = (
+        'resource:%s' % log_props['resource_name']
+        if 'resource_name' in log_props
+        else log_props.get('pipeline_name', 'system')
+    )
+
     prefix = ' - '.join(
         filter(
             None,
             (
-                log_props.get('pipeline_name', 'system'),
+                log_source_prefix,
                 synth_props.get('run_id'),
                 log_props.get('event_type_value'),
                 synth_props.get('orig_message'),
@@ -143,6 +150,19 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
             logging_tags=check.dict_param(logging_tags, 'logging_tags'),
             loggers=check.list_param(loggers, 'loggers', of_type=logging.Logger),
         )
+
+    def with_tags(self, **new_tags):
+        '''Add new tags in "new_tags" to the set of tags attached to this log manager instance, and
+        return a new DagsterLogManager with the merged set of tags.
+
+        Args:
+            tags (Dict[str,str]): Dictionary of tags
+
+        Returns:
+            DagsterLogManager: a new DagsterLogManager namedtuple with updated tags for the same
+                run ID and loggers.
+        '''
+        return self._replace(logging_tags=merge_dicts(self.logging_tags, new_tags))
 
     def _prepare_message(self, orig_message, message_props):
         check.str_param(orig_message, 'orig_message')
