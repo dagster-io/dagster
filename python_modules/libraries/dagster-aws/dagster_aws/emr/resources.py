@@ -267,12 +267,13 @@ def emr_pyspark_resource(init_context):
     When running locally, this will use the standard pyspark resource, which will bring up Spark
     locally and execute your code. In "prod" mode, for each pyspark solid, the EMR resource will:
 
-    1. Sync your code to a zip file on S3, including a code-generated `main.py` to kickstart
-       execution;
-    2. If a requirements.txt file is present (or specified via resource configuration), Python
-       requirements will be installed on EMR prior to job execution;
+    1. Sync your code to a zip file on S3, including a code-generated ``main.py`` to kickstart
+       execution.
+    2. If a ``requirements.txt`` file is present (or specified via resource configuration), Python
+       requirements will be installed on EMR prior to job execution.
     3. An EMR job will be constructed for the solid and execution invoked. Job logs will be
-    retrieved and logged if configured via `wait_for_logs`.
+       retrieved and logged if configured via ``wait_for_logs``.
+
 
     This resource (currently) assumes you've configured your EMR cluster to run Python 3 with:
     https://aws.amazon.com/premiumsupport/knowledge-center/emr-pyspark-python-3x/
