@@ -748,6 +748,17 @@ def test_schedules_start_and_stop(_patch_scheduler_instance):
     assert 'Stopped schedule foo_schedule\n' == result.output
 
 
+def test_schedules_start_empty(_patch_scheduler_instance):
+    runner = CliRunner()
+
+    result = runner.invoke(
+        schedule_start_command, ['-y', file_relative_path(__file__, 'repository_file.yaml')],
+    )
+
+    assert result.exit_code == 0
+    assert 'Noop: dagster schedule start was called without any arguments' in result.output
+
+
 def test_schedules_start_all(_patch_scheduler_instance):
     runner = CliRunner()
 

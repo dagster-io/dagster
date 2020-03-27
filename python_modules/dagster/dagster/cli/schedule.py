@@ -241,11 +241,17 @@ def extract_schedule_name(schedule_name):
 
 
 @click.command(name='start', help="Start an existing schedule")
-@click.argument('schedule_name', nargs=-1)
+@click.argument('schedule_name', nargs=-1)  # , required=True)
 @click.option('--start-all', help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
 def schedule_start_command(schedule_name, start_all, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
+    if schedule_name is None and start_all is False:
+        print(
+            'Noop: dagster schedule start was called without any arguments specifying which '
+            'schedules to start. Pass a schedule name or the --start-all flag to start schedules.'
+        )
+        return
     return execute_start_command(schedule_name, start_all, kwargs, click.echo)
 
 
