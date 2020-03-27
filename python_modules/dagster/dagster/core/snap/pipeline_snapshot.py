@@ -39,6 +39,14 @@ class PipelineIndex:
     def name(self):
         return self.pipeline_snapshot.name
 
+    @property
+    def description(self):
+        return self.pipeline_snapshot.description
+
+    @property
+    def tags(self):
+        return self.pipeline_snapshot.tags
+
     def get_solid_def_snap(self, solid_def_name):
         check.str_param(solid_def_name, 'solid_def_name')
         return self._solid_defs_snaps_index[solid_def_name]

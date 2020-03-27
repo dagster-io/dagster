@@ -1,6 +1,6 @@
 import sys
 
-from dagster_graphql.schema.pipelines import DauphinPipeline
+from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
@@ -9,6 +9,14 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
+
+
+@capture_dauphin_error
+def get_pipeline_snapshot_or_error(graphene_info, subset_id):
+    check.str_param(subset_id, 'subset_id')
+    selector = ExecutionSelector(subset_id)
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
+    return DauphinPipelineSnapshot(pipeline_def.get_pipeline_index())
 
 
 @capture_dauphin_error

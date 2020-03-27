@@ -413,6 +413,18 @@ type InvalidSubsetError implements Error {
   pipeline: Pipeline!
 }
 
+interface IPipelineSnapshot {
+  name: String!
+  description: String
+  runtimeTypes: [RuntimeType!]!
+  solids: [Solid!]!
+  runs: [PipelineRun!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+}
+
 interface ISolidDefinition {
   name: String!
   description: String
@@ -636,7 +648,7 @@ type PartitionSets {
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
 
-type Pipeline implements SolidContainer & PipelineReference {
+type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot {
   solids: [Solid!]!
   name: String!
   description: String
@@ -644,9 +656,9 @@ type Pipeline implements SolidContainer & PipelineReference {
   runs: [PipelineRun!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
-  presets: [PipelinePreset!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  presets: [PipelinePreset!]!
 }
 
 interface PipelineConfigValidationError {
@@ -782,6 +794,18 @@ enum PipelineRunStatus {
   FAILURE
 }
 
+type PipelineSnapshot {
+  name: String!
+  description: String
+  runtimeTypes: [RuntimeType!]!
+  solids: [Solid!]!
+  runs: [PipelineRun!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+}
+
 union PipelinesOrError = PipelineConnection | PythonError
 
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
@@ -831,6 +855,7 @@ type Query {
   pipeline(params: ExecutionSelector!): Pipeline!
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
+  pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
