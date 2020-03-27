@@ -54,7 +54,15 @@ def backfill_should_execute(context, partition_set_def):
 
     available_partitions = set([partition.name for partition in partition_set_def.get_partitions()])
     satisfied_partitions = set(runs_by_partition.keys())
-    return bool(available_partitions.difference(satisfied_partitions))
+
+    # We only execute the scheduled run if there is a partition available to be run.
+    # In the case that there are no partitions left, the schedule stops itself by calling the
+    # stop_schedule method available on the instance.
+    is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
+    if not is_remaining_partitions:
+        context.instance.stop_schedule(context.repository, 'unreliable_weekly')
+
+    return is_remaining_partitions
 
 
 def backfill_test_schedule():
