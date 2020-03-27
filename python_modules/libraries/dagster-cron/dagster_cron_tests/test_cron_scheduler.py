@@ -1,12 +1,13 @@
 import os
 import sys
 
+import pytest
 from dagster_cron import SystemCronScheduler
 
 from dagster import ScheduleDefinition, check
 from dagster.core.definitions import RepositoryDefinition
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.scheduler import Schedule, SchedulerHandle
+from dagster.core.scheduler import Schedule, ScheduleStatus, SchedulerHandle
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -170,6 +171,81 @@ def test_start_and_stop_schedule():
         assert "{}.{}.sh".format(repository.name, schedule_def.name) not in os.listdir(
             os.path.join(tempdir, 'schedules', 'scripts')
         )
+
+
+def test_start_schedule_fails():
+    with TemporaryDirectory() as tempdir:
+        repository = RepositoryDefinition(name="test_repository")
+        instance = define_scheduler_instance(tempdir)
+        scheduler_handle = define_scheduler()
+        assert scheduler_handle
+
+        # Initialize scheduler
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            repository=repository,
+            instance=instance,
+        )
+
+        schedule_def = scheduler_handle.get_schedule_def_by_name(
+            "no_config_pipeline_every_min_schedule"
+        )
+
+        def raises(*args, **kwargs):
+            raise Exception('Patch')
+
+        instance._scheduler._start_cron_job = raises  # pylint: disable=protected-access
+        with pytest.raises(Exception, match='Patch'):
+            instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+
+        schedule = instance.get_schedule_by_name(repository, schedule_def.name)
+
+        assert schedule.status == ScheduleStatus.STOPPED
+
+
+def test_stop_schedule_fails():
+    with TemporaryDirectory() as tempdir:
+        repository = RepositoryDefinition(name="test_repository")
+        instance = define_scheduler_instance(tempdir)
+        scheduler_handle = define_scheduler()
+        assert scheduler_handle
+
+        # Initialize scheduler
+        scheduler_handle.up(
+            python_path=sys.executable,
+            repository_path="",
+            repository=repository,
+            instance=instance,
+        )
+
+        schedule_def = scheduler_handle.get_schedule_def_by_name(
+            "no_config_pipeline_every_min_schedule"
+        )
+
+        def raises(*args, **kwargs):
+            raise Exception('Patch')
+
+        instance._scheduler._end_cron_job = raises  # pylint: disable=protected-access
+
+        schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+
+        check.inst_param(schedule, 'schedule', Schedule)
+        assert "/bin/python" in schedule.python_path
+
+        assert 'schedules' in os.listdir(tempdir)
+
+        assert "{}.{}.sh".format(repository.name, schedule_def.name) in os.listdir(
+            os.path.join(tempdir, 'schedules', 'scripts')
+        )
+
+        # End schedule
+        with pytest.raises(Exception, match='Patch'):
+            instance.stop_schedule(repository, "no_config_pipeline_every_min_schedule")
+
+        schedule = instance.get_schedule_by_name(repository, schedule_def.name)
+
+        assert schedule.status == ScheduleStatus.RUNNING
 
 
 def test_wipe():

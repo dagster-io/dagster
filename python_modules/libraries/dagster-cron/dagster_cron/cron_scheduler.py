@@ -51,8 +51,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             )
 
         started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
-        instance.update_schedule(repository, started_schedule)
         self._start_cron_job(instance, repository, started_schedule)
+        instance.update_schedule(repository, started_schedule)
 
         return started_schedule
 
@@ -72,8 +72,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             )
 
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        instance.update_schedule(repository, stopped_schedule)
         self._end_cron_job(instance, repository, stopped_schedule)
+        instance.update_schedule(repository, stopped_schedule)
 
         return stopped_schedule
 
