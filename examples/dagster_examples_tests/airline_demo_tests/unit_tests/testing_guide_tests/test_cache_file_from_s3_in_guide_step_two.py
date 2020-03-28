@@ -1,7 +1,9 @@
 import os
 
 import boto3
-from dagster_aws.s3 import S3Coordinate
+from dagster_aws.s3.solids import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
+    S3Coordinate,
+)
 
 from dagster import ModeDefinition, pipeline, solid
 from dagster.core.storage.file_cache import FSFileCache, fs_file_cache

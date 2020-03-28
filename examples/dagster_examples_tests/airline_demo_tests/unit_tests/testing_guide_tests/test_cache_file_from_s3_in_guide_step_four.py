@@ -1,4 +1,7 @@
-from dagster_aws.s3 import S3Coordinate, S3FakeSession, S3FileCache
+# https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
+from dagster_aws.s3.file_cache import S3FileCache
+from dagster_aws.s3.s3_fake_resource import S3FakeSession
+from dagster_aws.s3.solids import S3Coordinate
 
 from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name
@@ -11,7 +14,8 @@ def cache_file_from_s3(context, s3_coord: S3Coordinate) -> FileHandle:
     target_key = s3_coord['key'].split('/')[-1]
 
     with get_temp_file_name() as tmp_file:
-        context.resources.s3.download_file(
+        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
+        context.resources.s3.session.download_file(
             Bucket=s3_coord['bucket'], Key=s3_coord['key'], Filename=tmp_file
         )
 

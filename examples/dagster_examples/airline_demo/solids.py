@@ -4,7 +4,9 @@ import os
 import re
 
 import dagster_pyspark
-from dagster_aws.s3 import S3Coordinate
+from dagster_aws.s3.solids import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
+    S3Coordinate,
+)
 from dagster_pyspark import pyspark_solid
 from dagstermill import define_dagstermill_solid
 from pyspark.sql import DataFrame

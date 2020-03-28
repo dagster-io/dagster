@@ -61,3 +61,8 @@ class S3FakeSession(object):
         self.mock_extras.download_file(*args, **kwargs)
         with open(Filename, 'wb') as ff:
             ff.write(self._get_byte_stream(Bucket, Key).read())
+
+    # https://github.com/dagster-io/dagster/issues/2326 backcompat; remove on next PyPI release
+    @property
+    def session(self):
+        return self
