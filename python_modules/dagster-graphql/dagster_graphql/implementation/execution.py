@@ -82,6 +82,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(schedule_name, 'schedule_name')
 
+    tick = None
     try:
         repository = graphene_info.context.get_repository()
         schedule_context = ScheduleExecutionContext(graphene_info.context.instance, repository)
@@ -122,9 +123,9 @@ def start_scheduled_execution(graphene_info, schedule_name):
         # Launch run if run launcher is defined
         run_launcher = graphene_info.context.instance.run_launcher
         if run_launcher:
-            result = launch_pipeline_execution(graphene_info, execution_params)
+            result = _launch_pipeline_execution(graphene_info, execution_params)
         else:
-            result = start_pipeline_execution(graphene_info, execution_params)
+            result = _start_pipeline_execution(graphene_info, execution_params)
 
         run = result.run
         graphene_info.context.instance.update_schedule_tick(
@@ -135,15 +136,21 @@ def start_scheduled_execution(graphene_info, schedule_name):
 
     except Exception as exc:  # pylint: disable=broad-except
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        graphene_info.context.instance.update_schedule_tick(
-            repository, tick.with_status(ScheduleTickStatus.FAILURE, error=error_data),
-        )
+
+        if tick:
+            graphene_info.context.instance.update_schedule_tick(
+                repository, tick.with_status(ScheduleTickStatus.FAILURE, error=error_data),
+            )
 
         raise exc
 
 
 @capture_dauphin_error
 def start_pipeline_execution(graphene_info, execution_params):
+    return _start_pipeline_execution(graphene_info, execution_params)
+
+
+def _start_pipeline_execution(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
@@ -203,6 +210,10 @@ def _create_pipeline_run(instance, pipeline, execution_params):
 
 @capture_dauphin_error
 def launch_pipeline_execution(graphene_info, execution_params):
+    return _launch_pipeline_execution(graphene_info, execution_params)
+
+
+def _launch_pipeline_execution(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
