@@ -55,9 +55,12 @@ def get_jaffle_pipelines():
 
 
 def get_bay_bikes_pipelines():
-    from dagster_examples.bay_bikes.pipelines import generate_training_set_and_train_model
+    from dagster_examples.bay_bikes.pipelines import (
+        daily_weather_pipeline,
+        generate_training_set_and_train_model,
+    )
 
-    return [generate_training_set_and_train_model]
+    return [generate_training_set_and_train_model, daily_weather_pipeline]
 
 
 def define_demo_repo():

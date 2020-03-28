@@ -92,10 +92,11 @@ def backfill_test_schedule():
 def get_bay_bikes_schedules():
     from dagster_examples.bay_bikes.schedules import (
         daily_weather_ingest_schedule,
+        daily_weather_schedule,
         monthly_trip_ingest_schedule,
     )
 
-    return [daily_weather_ingest_schedule, monthly_trip_ingest_schedule]
+    return [daily_weather_ingest_schedule, daily_weather_schedule, monthly_trip_ingest_schedule]
 
 
 def get_toys_schedules():

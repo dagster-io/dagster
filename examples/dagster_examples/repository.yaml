@@ -1,0 +1,6 @@
+repository:
+  module: dagster_examples
+  fn: define_demo_repo
+scheduler:
+  file: schedules.py
+  fn: define_scheduler

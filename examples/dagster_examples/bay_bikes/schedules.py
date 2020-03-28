@@ -8,9 +8,11 @@ from dagster.core.definitions.decorators import monthly_schedule
 from dagster.utils.merger import dict_merge
 
 weather_etl_environment = generate_training_set_and_train_model.get_preset(
-    'weather_etl'
+    'prod_weather_etl'
 ).environment_dict
-trip_etl_environment = generate_training_set_and_train_model.get_preset('trip_etl').environment_dict
+trip_etl_environment = generate_training_set_and_train_model.get_preset(
+    'prod_trip_etl'
+).environment_dict
 
 now = datetime.now()
 
@@ -20,8 +22,13 @@ now = datetime.now()
     start_date=datetime(year=2019, month=1, day=1),
     execution_time=(now + timedelta(minutes=1)).time(),
     solid_subset=['weather_etl'],
-    mode='development',
-    environment_vars={'DARK_SKY_API_KEY': os.environ.get('DARK_SKY_API_KEY', '')},
+    mode='production',
+    environment_vars={
+        'POSTGRES_USERNAME': os.environ.get('POSTGRES_USERNAME', ''),
+        'POSTGRES_PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        'POSTGRES_HOST': os.environ.get('POSTGRES_HOST', ''),
+        'POSTGRES_DB': os.environ.get('POSTGRES_DB', ''),
+    },
 )
 def daily_weather_ingest_schedule(date):
     unix_seconds_since_epoch = int((date - datetime(year=1970, month=1, day=1)).total_seconds())
@@ -48,8 +55,14 @@ def daily_weather_ingest_schedule(date):
     pipeline_name='daily_weather_pipeline',
     start_date=datetime(year=2020, month=1, day=1),
     execution_time=(now + timedelta(minutes=1)).time(),
-    mode='development',
-    environment_vars={'DARK_SKY_API_KEY': os.environ.get('DARK_SKY_API_KEY', '')},
+    mode='production',
+    environment_vars={
+        'DARK_SKY_API_KEY': os.environ.get('DARK_SKY_API_KEY', ''),
+        'POSTGRES_USERNAME': os.environ.get('POSTGRES_USERNAME', ''),
+        'POSTGRES_PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        'POSTGRES_HOST': os.environ.get('POSTGRES_HOST', ''),
+        'POSTGRES_DB': os.environ.get('POSTGRES_DB', ''),
+    },
 )
 def daily_weather_schedule(date):
     unix_seconds_since_epoch = int((date - datetime(year=1970, month=1, day=1)).total_seconds())
@@ -76,7 +89,13 @@ def daily_weather_schedule(date):
     execution_time=(now + timedelta(minutes=1)).time(),
     execution_day_of_month=now.day,
     solid_subset=['trip_etl'],
-    mode='development',
+    mode='production',
+    environment_vars={
+        'POSTGRES_USERNAME': os.environ.get('POSTGRES_USERNAME', ''),
+        'POSTGRES_PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
+        'POSTGRES_HOST': os.environ.get('POSTGRES_HOST', ''),
+        'POSTGRES_DB': os.environ.get('POSTGRES_DB', ''),
+    },
 )
 def monthly_trip_ingest_schedule(date):
     return dict_merge(

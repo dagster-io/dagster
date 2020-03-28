@@ -396,6 +396,90 @@ snapshots['test_presets_on_examples 3'] = {
 
 snapshots['test_presets_on_examples 4'] = {
     'pipeline': {
+        'name': 'daily_weather_pipeline',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+  postgres_db:
+    config:
+      db_name: test
+      hostname: localhost
+      password: test
+      username: test
+  volume:
+    config:
+      mount_location: /tmp
+solids:
+  weather_etl:
+    solids:
+      download_weather_report_from_weather_api:
+        inputs:
+          epoch_date:
+            value: 1514851200
+      insert_weather_report_into_table:
+        inputs:
+          table_name:
+            value: weather_staging
+''',
+                'mode': 'development',
+                'name': 'dev_weather_etl',
+                'solidSubset': [
+                    'weather_etl'
+                ]
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+  postgres_db:
+    config:
+      db_name:
+        env: POSTGRES_DB
+      hostname:
+        env: POSTGRES_HOST
+      password:
+        env: POSTGRES_PASSWORD
+      username:
+        env: POSTGRES_USERNAME
+  volume:
+    config:
+      mount_location: /tmp
+solids:
+  weather_etl:
+    solids:
+      download_weather_report_from_weather_api:
+        inputs:
+          epoch_date:
+            value: 1514851200
+      insert_weather_report_into_table:
+        inputs:
+          table_name:
+            value: weather_staging
+''',
+                'mode': 'production',
+                'name': 'prod_weather_etl',
+                'solidSubset': [
+                    'weather_etl'
+                ]
+            }
+        ]
+    }
+}
+
+snapshots['test_presets_on_examples 5'] = {
+    'pipeline': {
         'name': 'error_monster',
         'presets': [
             {
@@ -426,7 +510,7 @@ solids:
     }
 }
 
-snapshots['test_presets_on_examples 5'] = {
+snapshots['test_presets_on_examples 6'] = {
     'pipeline': {
         'name': 'event_ingest_pipeline',
         'presets': [
@@ -467,7 +551,7 @@ solids:
     }
 }
 
-snapshots['test_presets_on_examples 6'] = {
+snapshots['test_presets_on_examples 7'] = {
     'pipeline': {
         'name': 'generate_training_set_and_train_model',
         'presets': [
@@ -515,7 +599,7 @@ solids:
           file_name: training_data
 ''',
                 'mode': 'development',
-                'name': 'train_daily_bike_supply_model',
+                'name': 'dev_train_daily_bike_supply_model',
                 'solidSubset': [
                     'train_daily_bike_supply_model'
                 ]
@@ -555,7 +639,7 @@ solids:
             value: 202001-baywheels-tripdata.csv
 ''',
                 'mode': 'development',
-                'name': 'trip_etl',
+                'name': 'dev_trip_etl',
                 'solidSubset': [
                     'trip_etl'
                 ]
@@ -589,7 +673,154 @@ solids:
             value: weather_staging
 ''',
                 'mode': 'development',
-                'name': 'weather_etl',
+                'name': 'dev_weather_etl',
+                'solidSubset': [
+                    'weather_etl'
+                ]
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+  postgres_db:
+    config:
+      db_name:
+        env: POSTGRES_DB
+      hostname:
+        env: POSTGRES_HOST
+      password:
+        env: POSTGRES_PASSWORD
+      username:
+        env: POSTGRES_USERNAME
+  volume:
+    config:
+      mount_location: /tmp
+solids:
+  train_daily_bike_supply_model:
+    inputs:
+      trip_table_name: trips_staging
+      weather_table_name: weather_staging
+    solids:
+      produce_training_set:
+        config:
+          memory_length: 1
+      produce_weather_dataset:
+        solids:
+          load_entire_weather_table:
+            config:
+              subsets:
+              - time
+      train_lstm_model_and_upload_to_gcs:
+        config:
+          model_trainig_config:
+            num_epochs: 200
+          timeseries_train_test_breakpoint: 10
+        inputs:
+          bucket_name: dagster-scratch-ccdfe1e
+      upload_training_set_to_gcs:
+        inputs:
+          bucket_name: dagster-scratch-ccdfe1e
+          file_name: training_data
+''',
+                'mode': 'production',
+                'name': 'prod_train_daily_bike_supply_model',
+                'solidSubset': [
+                    'train_daily_bike_supply_model'
+                ]
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+  postgres_db:
+    config:
+      db_name:
+        env: POSTGRES_DB
+      hostname:
+        env: POSTGRES_HOST
+      password:
+        env: POSTGRES_PASSWORD
+      username:
+        env: POSTGRES_USERNAME
+  volume:
+    config:
+      mount_location: /tmp
+solids:
+  trip_etl:
+    solids:
+      download_baybike_zipfile_from_url:
+        inputs:
+          base_url:
+            value: https://s3.amazonaws.com/baywheels-data
+          file_name:
+            value: 202001-baywheels-tripdata.csv.zip
+      insert_trip_data_into_table:
+        inputs:
+          table_name:
+            value: trips_staging
+      load_baybike_data_into_dataframe:
+        inputs:
+          target_csv_file_in_archive:
+            value: 202001-baywheels-tripdata.csv
+''',
+                'mode': 'production',
+                'name': 'prod_trip_etl',
+                'solidSubset': [
+                    'trip_etl'
+                ]
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  credentials_vault:
+    config:
+      environment_variable_names:
+      - DARK_SKY_API_KEY
+      - POSTGRES_USERNAME
+      - POSTGRES_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+  postgres_db:
+    config:
+      db_name:
+        env: POSTGRES_DB
+      hostname:
+        env: POSTGRES_HOST
+      password:
+        env: POSTGRES_PASSWORD
+      username:
+        env: POSTGRES_USERNAME
+  volume:
+    config:
+      mount_location: /tmp
+solids:
+  weather_etl:
+    solids:
+      download_weather_report_from_weather_api:
+        inputs:
+          epoch_date:
+            value: 1514851200
+      insert_weather_report_into_table:
+        inputs:
+          table_name:
+            value: weather_staging
+''',
+                'mode': 'production',
+                'name': 'prod_weather_etl',
                 'solidSubset': [
                     'weather_etl'
                 ]
@@ -598,7 +829,7 @@ solids:
     }
 }
 
-snapshots['test_presets_on_examples 7'] = {
+snapshots['test_presets_on_examples 8'] = {
     'pipeline': {
         'name': 'jaffle_pipeline',
         'presets': [
@@ -606,7 +837,7 @@ snapshots['test_presets_on_examples 7'] = {
     }
 }
 
-snapshots['test_presets_on_examples 8'] = {
+snapshots['test_presets_on_examples 9'] = {
     'pipeline': {
         'name': 'log_spew',
         'presets': [
@@ -614,7 +845,7 @@ snapshots['test_presets_on_examples 8'] = {
     }
 }
 
-snapshots['test_presets_on_examples 9'] = {
+snapshots['test_presets_on_examples 10'] = {
     'pipeline': {
         'name': 'many_events',
         'presets': [
@@ -622,7 +853,7 @@ snapshots['test_presets_on_examples 9'] = {
     }
 }
 
-snapshots['test_presets_on_examples 10'] = {
+snapshots['test_presets_on_examples 11'] = {
     'pipeline': {
         'name': 'pandas_hello_world_pipeline',
         'presets': [
@@ -666,7 +897,7 @@ snapshots['test_presets_on_examples 10'] = {
     }
 }
 
-snapshots['test_presets_on_examples 11'] = {
+snapshots['test_presets_on_examples 12'] = {
     'pipeline': {
         'name': 'pandas_hello_world_pipeline_with_read_csv',
         'presets': [
@@ -674,7 +905,7 @@ snapshots['test_presets_on_examples 11'] = {
     }
 }
 
-snapshots['test_presets_on_examples 12'] = {
+snapshots['test_presets_on_examples 13'] = {
     'pipeline': {
         'name': 'pyspark_pagerank',
         'presets': [
@@ -682,7 +913,7 @@ snapshots['test_presets_on_examples 12'] = {
     }
 }
 
-snapshots['test_presets_on_examples 13'] = {
+snapshots['test_presets_on_examples 14'] = {
     'pipeline': {
         'name': 'sleepy_pipeline',
         'presets': [
@@ -708,7 +939,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 14'] = {
+snapshots['test_presets_on_examples 15'] = {
     'pipeline': {
         'name': 'stdout_spew_pipeline',
         'presets': [
@@ -716,7 +947,7 @@ snapshots['test_presets_on_examples 14'] = {
     }
 }
 
-snapshots['test_presets_on_examples 15'] = {
+snapshots['test_presets_on_examples 16'] = {
     'pipeline': {
         'name': 'unreliable_pipeline',
         'presets': [
