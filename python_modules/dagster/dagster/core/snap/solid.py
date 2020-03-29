@@ -33,6 +33,7 @@ def build_solid_definitions_snapshot(pipeline_def):
     )
 
 
+@whitelist_for_serdes
 class SolidDefinitionsSnapshot(
     namedtuple('_SolidDefinitionsSnapshot', 'solid_def_snaps composite_solid_def_snaps')
 ):

@@ -10,6 +10,10 @@ from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
+def serialize_rt(value):
+    return deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(value))
+
+
 def test_empty_pipeline_snap_props():
     @solid
     def noop_solid(_):
@@ -24,6 +28,8 @@ def test_empty_pipeline_snap_props():
     assert pipeline_snapshot.name == 'noop_pipeline'
     assert pipeline_snapshot.description is None
     assert pipeline_snapshot.tags == {}
+
+    assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
 
 def test_pipeline_snap_all_props():
