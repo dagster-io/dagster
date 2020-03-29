@@ -14,7 +14,11 @@ def serialize_rt(value):
     return deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(value))
 
 
-def test_empty_pipeline_snap_props():
+def serialize_pp(value):
+    return serialize_dagster_namedtuple(value, indent=2, separators=(',', ': '))
+
+
+def get_noop_pipeline():
     @solid
     def noop_solid(_):
         pass
@@ -23,7 +27,16 @@ def test_empty_pipeline_snap_props():
     def noop_pipeline():
         noop_solid()
 
-    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    return noop_pipeline
+
+
+def test_empty_pipeline_snap_snapshot(snapshot):
+    snapshot.assert_match(serialize_pp(PipelineSnapshot.from_pipeline_def(get_noop_pipeline())))
+
+
+def test_empty_pipeline_snap_props():
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(get_noop_pipeline())
 
     assert pipeline_snapshot.name == 'noop_pipeline'
     assert pipeline_snapshot.description is None
@@ -32,7 +45,7 @@ def test_empty_pipeline_snap_props():
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
 
-def test_pipeline_snap_all_props():
+def test_pipeline_snap_all_props(snapshot):
     @solid
     def noop_solid(_):
         pass
@@ -46,6 +59,8 @@ def test_pipeline_snap_all_props():
     assert pipeline_snapshot.name == 'noop_pipeline'
     assert pipeline_snapshot.description == 'desc'
     assert pipeline_snapshot.tags == {'key': 'value'}
+
+    snapshot.assert_match(serialize_pp(PipelineSnapshot.from_pipeline_def(noop_pipeline)))
 
 
 def test_noop_deps_snap():

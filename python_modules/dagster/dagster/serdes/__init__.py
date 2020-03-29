@@ -82,13 +82,19 @@ def _pack_value(val, enum_map, tuple_map):
     return val
 
 
-def _serialize_dagster_namedtuple(nt, enum_map, tuple_map):
-    return seven.json.dumps(_pack_value(nt, enum_map, tuple_map))
+def _serialize_dagster_namedtuple(nt, enum_map, tuple_map, **json_kwargs):
+    return seven.json.dumps(_pack_value(nt, enum_map, tuple_map), **json_kwargs)
 
 
-def serialize_dagster_namedtuple(nt):
+def serialize_value(nt):
+    return seven.json.dumps(
+        _pack_value(nt, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
+    )
+
+
+def serialize_dagster_namedtuple(nt, **json_kwargs):
     return _serialize_dagster_namedtuple(
-        nt, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP
+        nt, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP, **json_kwargs
     )
 
 

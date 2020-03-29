@@ -81,7 +81,7 @@ def _compute_fields_hash(fields, description):
         field = fields[field_name]
         _add_hash(m, ':fieldname:' + field_name)
         if field.default_provided:
-            _add_hash(m, ':default_value: ' + field.default_value_as_str)
+            _add_hash(m, ':default_value: ' + field.default_value_as_json_str)
         _add_hash(m, ':is_required: ' + str(field.is_required))
         _add_hash(m, ':type_key: ' + field.config_type.key)
         if field.description:

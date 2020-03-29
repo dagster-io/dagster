@@ -15,6 +15,7 @@ def post_process_config(config_type, config_value):
     ctx = ValidationContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
+        do_post_process=True,
     )
     return _recursively_process_config(ctx, config_value)
 
@@ -23,15 +24,18 @@ def resolve_defaults(config_type, config_value):
     ctx = ValidationContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
+        do_post_process=False,
     )
 
-    return _recursively_resolve_defaults(ctx, config_value)
+    return _recursively_process_config(ctx, config_value)
 
 
 def _recursively_process_config(context, config_value):
     evr = _recursively_resolve_defaults(context, config_value)
 
     if evr.success:
+        if not context.do_post_process:
+            return evr
         return _post_process(context, evr.value)
     else:
         return evr

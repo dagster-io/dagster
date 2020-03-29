@@ -65,7 +65,10 @@ class ConfigTypeSnap(
             else check.list_param(enum_values, 'enum_values', of_type=ConfigEnumValueSnap),
             fields=None
             if fields is None
-            else check.list_param(fields, 'field', of_type=ConfigFieldSnap),
+            else sorted(
+                check.list_param(fields, 'field', of_type=ConfigFieldSnap),
+                key=lambda item: item.name,
+            ),
             description=check.opt_str_param(description, 'description'),
         )
 

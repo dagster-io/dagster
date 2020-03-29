@@ -1,6 +1,7 @@
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.serdes import serialize_value
 from dagster.utils import is_enum_value
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
@@ -314,8 +315,9 @@ class Field(object):
         return self._default_value
 
     @property
-    def default_value_as_str(self):
-        return str(self.default_value)
+    def default_value_as_json_str(self):
+        check.invariant(self.default_provided, 'Asking for default value when none was provided')
+        return serialize_value(self.default_value)
 
     def __repr__(self):
         return ('Field({config_type}, default={default}, is_required={is_required})').format(

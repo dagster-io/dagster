@@ -48,6 +48,7 @@ def validate_config(config_type, config_value):
     context = ValidationContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
+        do_post_process=False,
     )
 
     return _validate_config(context, config_value)
