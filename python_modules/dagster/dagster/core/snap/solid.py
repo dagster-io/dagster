@@ -8,7 +8,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 from .config_types import ConfigFieldSnap, snap_from_field
 from .dep_snapshot import (

@@ -23,10 +23,10 @@ from dagster.core.execution.resources_init import (
     resource_initialization_event_generator,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.serdes import unpack_value
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
+from dagster.serdes import unpack_value
 from dagster.utils import EventGenerationManager
 
 from .context import DagstermillExecutionContext

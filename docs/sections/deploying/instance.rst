@@ -80,7 +80,7 @@ In less ephemeral deployments, you will typically want to configure some or all 
 When you configure an instance, you can select the the implementation of its constituent components.
 
 Each of these components makes use of common plugin machinery, the
-:py:class:`~dagster.core.serdes.ConfigurableClass`. This lets you specify what class to instantiate
+:py:class:`~dagster.serdes.ConfigurableClass`. This lets you specify what class to instantiate
 for each of the instance's components (the ``module`` and ``class`` fields), as well as what values
 to instantiate them with (the ``config`` field). Users can write their own classes to implement any
 of this functionality and use the ``dagster.yaml`` file to tell Dagit to use the custom classes.

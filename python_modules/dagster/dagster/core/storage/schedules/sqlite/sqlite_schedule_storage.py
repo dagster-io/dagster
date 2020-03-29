@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
 from ...sql import check_alembic_revision, create_engine, get_alembic_config, stamp_alembic_rev

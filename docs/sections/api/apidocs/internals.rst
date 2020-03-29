@@ -70,7 +70,7 @@ Instance
 .. autoclass:: InstanceRef
    :members:
 
-.. currentmodule:: dagster.core.serdes
+.. currentmodule:: dagster.serdes
 
 .. autoclass:: ConfigurableClass
    :members:

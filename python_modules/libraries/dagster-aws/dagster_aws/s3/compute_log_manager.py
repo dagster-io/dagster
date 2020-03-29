@@ -2,7 +2,6 @@ import os
 from contextlib import contextmanager
 
 from dagster import Field, check, seven
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -10,6 +9,7 @@ from dagster.core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
 
 from .utils import create_s3_session

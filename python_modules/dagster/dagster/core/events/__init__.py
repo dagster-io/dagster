@@ -18,7 +18,7 @@ from dagster.core.execution.context.system import (
 )
 from dagster.core.execution.plan.objects import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
+from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.timing import format_duration
 

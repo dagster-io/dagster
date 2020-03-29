@@ -21,9 +21,9 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
-from dagster.core.serdes import serialize_dagster_namedtuple
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .fetch_pipelines import (

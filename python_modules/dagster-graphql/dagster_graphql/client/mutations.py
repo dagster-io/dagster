@@ -3,7 +3,7 @@ from dagster_graphql.cli import execute_query
 from dagster.core.errors import DagsterError
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.instance import DagsterInstance
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .query import EXECUTE_PLAN_MUTATION, RAW_EXECUTE_PLAN_MUTATION
 from .util import HANDLED_EVENTS, dagster_event_from_dict

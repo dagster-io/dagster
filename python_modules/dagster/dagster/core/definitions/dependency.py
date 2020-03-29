@@ -5,7 +5,7 @@ import six
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import camelcase, frozentags
 
 from .input import InputDefinition

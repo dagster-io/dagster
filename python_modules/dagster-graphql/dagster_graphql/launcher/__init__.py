@@ -10,8 +10,8 @@ from requests import RequestException
 from dagster import Bool, Field, check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.launcher import RunLauncher
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 
 

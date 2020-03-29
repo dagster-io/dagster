@@ -11,12 +11,12 @@ from dagster import (
     solid,
 )
 from dagster.config.field import resolve_to_config_type
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.snap.config_types import (
     ConfigTypeKind,
     build_config_schema_snapshot,
     snap_from_config_type,
 )
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def snap_from_dagster_type(dagster_type):

@@ -6,8 +6,8 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import json
 
 BACKOFF_LIMIT = 4
@@ -34,7 +34,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret
 
-    As always when using a :py:class:`~dagster.core.serdes.ConfigurableClass`, the values
+    As always when using a :py:class:`~dagster.serdes.ConfigurableClass`, the values
     under the ``config`` key of this YAML block will be passed to the constructor. The full list
     of acceptable values is given below by the constructor args.
 

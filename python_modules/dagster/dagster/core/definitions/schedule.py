@@ -5,9 +5,9 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
-from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME

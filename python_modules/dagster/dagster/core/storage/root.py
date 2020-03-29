@@ -1,7 +1,7 @@
 import os
 
 from dagster import check
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 
 class LocalArtifactStorage(ConfigurableClass):

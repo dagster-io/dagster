@@ -5,7 +5,7 @@ from enum import Enum
 import pytest
 
 from dagster.check import ParameterCheckError
-from dagster.core.serdes import (
+from dagster.serdes import (
     _deserialize_json_to_dagster_namedtuple,
     _pack_value,
     _serialize_dagster_namedtuple,

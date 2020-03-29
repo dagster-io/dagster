@@ -9,9 +9,9 @@ from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.instance import DagsterInstance
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 TEST_TIMEOUT = 5
 

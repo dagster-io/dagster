@@ -3,7 +3,7 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 from .utils import DEFAULT_OUTPUT
 

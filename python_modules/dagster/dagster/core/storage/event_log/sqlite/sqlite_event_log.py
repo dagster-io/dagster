@@ -11,7 +11,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
 from ...pipeline_run import PipelineRunStatus

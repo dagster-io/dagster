@@ -9,8 +9,8 @@ from watchdog.observers.polling import PollingObserver
 
 from dagster import check
 from dagster.core.execution.compute_logs import mirror_stream_to_file
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, touch_file
 
 from .compute_log_manager import (

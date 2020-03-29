@@ -3,7 +3,7 @@ from collections import defaultdict, namedtuple
 from dagster import check
 from dagster.core.definitions.container import IContainSolids
 from dagster.core.definitions.dependency import Solid, SolidInputHandle
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 
 def build_solid_invocation_snap(icontains_solids, solid):

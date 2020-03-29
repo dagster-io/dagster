@@ -1,7 +1,7 @@
 import traceback
 from collections import namedtuple
 
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

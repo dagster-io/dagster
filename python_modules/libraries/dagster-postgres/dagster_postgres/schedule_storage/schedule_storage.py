@@ -3,9 +3,9 @@ from contextlib import contextmanager
 import sqlalchemy as db
 
 from dagster import check
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import pg_config, pg_url_from_config
 

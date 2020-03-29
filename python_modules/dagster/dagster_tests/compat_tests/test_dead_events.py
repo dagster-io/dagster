@@ -1,6 +1,6 @@
 from os import path
 
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
 def test_dead_events():

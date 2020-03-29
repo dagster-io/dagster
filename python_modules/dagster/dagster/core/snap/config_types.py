@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.config.field import Field
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 
 

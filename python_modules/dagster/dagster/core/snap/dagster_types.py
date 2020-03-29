@@ -2,8 +2,8 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster.serdes import whitelist_for_serdes
 
 
 def build_dagster_type_namespace_snapshot(pipeline_def):

@@ -19,9 +19,9 @@ from dagster import (
 )
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.serdes import pack_value
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.serdes import pack_value
 from dagster.utils import safe_tempfile_path
 
 

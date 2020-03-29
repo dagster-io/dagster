@@ -1,5 +1,4 @@
 from dagster import InputDefinition, Nothing, OutputDefinition, pipeline, solid
-from dagster.core.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.core.snap.dep_snapshot import (
     DependencyStructureIndex,
     InputHandle,
@@ -8,6 +7,7 @@ from dagster.core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_icontains_solids,
 )
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
 def test_empty_pipeline_snap_props():

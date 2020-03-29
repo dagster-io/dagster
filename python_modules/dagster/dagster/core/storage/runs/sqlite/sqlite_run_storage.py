@@ -5,7 +5,7 @@ import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
 

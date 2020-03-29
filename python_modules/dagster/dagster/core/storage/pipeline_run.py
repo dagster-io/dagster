@@ -3,7 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.execution.config import IRunConfig
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 from .tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG, SCHEDULE_NAME_TAG
 

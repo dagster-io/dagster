@@ -4,8 +4,8 @@ from enum import Enum
 from dagster import check
 from dagster.core.definitions import Materialization, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
-from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.dagster_type import DagsterType
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.error import SerializableErrorInfo

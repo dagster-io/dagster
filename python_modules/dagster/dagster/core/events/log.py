@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.events import DagsterEvent
 from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.serdes import (
+from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
     whitelist_for_serdes,

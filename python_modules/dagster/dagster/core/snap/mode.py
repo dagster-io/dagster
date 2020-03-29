@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
-from dagster.core.serdes import whitelist_for_serdes
+from dagster.serdes import whitelist_for_serdes
 
 from .config_types import ConfigFieldSnap, snap_from_field
 

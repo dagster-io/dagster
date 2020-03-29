@@ -2,8 +2,8 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.serdes import whitelist_for_serdes
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import rename_warning
 
 from .container import IContainSolids, create_execution_structure, validate_dependency_dict

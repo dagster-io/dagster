@@ -8,18 +8,18 @@ import sqlalchemy as db
 
 from dagster import check
 from dagster.core.events.log import EventRecord
-from dagster.core.serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-    deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
-)
 from dagster.core.storage.event_log import (
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.serdes import (
+    ConfigurableClass,
+    ConfigurableClassData,
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+)
 
 from ..pynotify import await_pg_notifications
 from ..utils import pg_config, pg_url_from_config

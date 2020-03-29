@@ -8,7 +8,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import InstanceRef
-from dagster.core.serdes import serialize_dagster_namedtuple
+from dagster.serdes import serialize_dagster_namedtuple
 from dagster.seven import is_module_available
 
 from .engine import DELEGATE_MARKER, CeleryEngine

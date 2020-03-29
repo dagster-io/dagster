@@ -9,7 +9,7 @@ from crontab import CronTab
 from dagster import DagsterInstance, DagsterInvariantViolationError, check, seven, utils
 from dagster.core.definitions import RepositoryDefinition
 from dagster.core.scheduler import ScheduleStatus, Scheduler
-from dagster.core.serdes import ConfigurableClass
+from dagster.serdes import ConfigurableClass
 
 
 class SystemCronScheduler(Scheduler, ConfigurableClass):
