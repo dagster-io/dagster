@@ -4,13 +4,8 @@ import styled from "styled-components/macro";
 import { useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
-import {
-  ILogFilter,
-  LogsProvider,
-  GetDefaultLogFilter,
-  structuredFieldsFromLogFilter
-} from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
+import { LogsProvider, GetDefaultLogFilter, LogFilter } from "./LogsProvider";
 import { RunFragment } from "./types/RunFragment";
 import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
@@ -36,16 +31,16 @@ import PythonErrorInfo from "../PythonErrorInfo";
 import { NonIdealState } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 
-interface IRunProps {
+interface RunProps {
   client: ApolloClient<any>;
   run?: RunFragment;
 }
 
-interface IRunState {
-  logsFilter: ILogFilter;
+interface RunState {
+  logsFilter: LogFilter;
 }
 
-export class Run extends React.Component<IRunProps, IRunState> {
+export class Run extends React.Component<RunProps, RunState> {
   static fragments = {
     RunFragment: gql`
       fragment RunFragment on PipelineRun {
@@ -118,7 +113,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
     `
   };
 
-  state: IRunState = {
+  state: RunState = {
     logsFilter: GetDefaultLogFilter()
   };
 
@@ -175,9 +170,9 @@ interface ReexecuteWithDataProps {
   run?: RunFragment;
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
-  logsFilter: ILogFilter;
+  logsFilter: LogFilter;
   logsLoading: boolean;
-  onSetLogsFilter: (v: ILogFilter) => void;
+  onSetLogsFilter: (v: LogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
     logs: RunPipelineRunEventFragment[]
@@ -205,7 +200,9 @@ const ReexecuteWithData = ({
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
+  const selectedStep =
+    logsFilter.values.find(v => v.token === "step")?.value || null;
+
   const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
@@ -270,7 +267,10 @@ const ReexecuteWithData = ({
                 metadata={metadata}
                 selectedStep={selectedStep}
                 onApplyStepFilter={stepKey =>
-                  onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
+                  onSetLogsFilter({
+                    ...logsFilter,
+                    values: [{ token: "step", value: stepKey }]
+                  })
                 }
               />
             ) : (
@@ -283,11 +283,11 @@ const ReexecuteWithData = ({
           second={
             <LogsContainer>
               <LogsToolbar
-                showSpinner={false}
-                onSetFilter={onSetLogsFilter}
                 filter={logsFilter}
-                filterStep={selectedStep}
-                filterStepState={
+                onSetFilter={onSetLogsFilter}
+                steps={Object.keys(metadata.steps)}
+                selectedStep={selectedStep}
+                selectedStepState={
                   (selectedStep && metadata.steps[selectedStep]?.state) ||
                   IStepState.PREPARING
                 }

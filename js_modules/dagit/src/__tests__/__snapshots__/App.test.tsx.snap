@@ -9246,7 +9246,7 @@ exports[`renders solids explorer 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 lmJNYj"
+                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 kMfsYz"
                 onBlur={[Function]}
                 onClick={[Function]}
               >

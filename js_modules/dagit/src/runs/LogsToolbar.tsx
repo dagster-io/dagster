@@ -1,68 +1,70 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import {
-  Spinner,
-  Intent,
-  Colors,
-  Button,
-  ButtonGroup,
-  InputGroup,
-  Icon
-} from "@blueprintjs/core";
+import { Colors, Button, ButtonGroup } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ILogFilter, LogLevel } from "./LogsProvider";
+import {
+  LogLevel,
+  LogFilterValue,
+  GetFilterProviders,
+  LogFilter
+} from "./LogsProvider";
 import { ComputeLogLink } from "./ComputeLogModal";
 import { IStepState } from "../RunMetadataProvider";
+import {
+  TokenizingField,
+  TokenizingFieldValue,
+  SuggestionProvider
+} from "../TokenizingField";
 
 interface ILogsToolbarProps {
-  filter: ILogFilter;
-  filterStep: string | null;
-  filterStepState: IStepState;
-  onSetFilter: (filter: ILogFilter) => void;
-  showSpinner: boolean;
+  steps: string[];
+  filter: LogFilter;
+  selectedStep: string | null;
+  selectedStepState: IStepState;
+  onSetFilter: (filter: LogFilter) => void;
 }
 
-const FilterSpinner = <Spinner intent={Intent.NONE} size={16} />;
+const suggestionProvidersFilter = (
+  suggestionProviders: SuggestionProvider[],
+  values: TokenizingFieldValue[]
+) => {
+  // This filters down autocompletion suggestion providers based on what you've already typed.
+  // It allows us to remove all autocompletions for "step:" if values already contains a step.
+  const usedTokens = values.map(v => v.token).filter(Boolean);
+  const singleUseTokens = ["step", "type"];
+
+  return suggestionProviders.filter(
+    ({ token }) =>
+      !singleUseTokens.includes(token) || !usedTokens.includes(token)
+  );
+};
 
 export default class LogsToolbar extends React.PureComponent<
   ILogsToolbarProps
 > {
   render() {
     const {
+      steps,
       filter,
-      filterStep,
-      filterStepState,
-      onSetFilter,
-      showSpinner
+      selectedStep,
+      selectedStepState,
+      onSetFilter
     } = this.props;
 
     return (
       <LogsToolbarContainer>
-        <FilterInputGroup
-          leftIcon="filter"
-          placeholder="Filter logs..."
-          className={filterStep ? "has-step" : ""}
-          small={true}
-          value={filter.text}
-          spellCheck={false}
-          rightElement={
-            showSpinner ? (
-              FilterSpinner
-            ) : filter.text.length ? (
-              <Icon
-                color={Colors.GRAY1}
-                icon={IconNames.SMALL_CROSS}
-                style={{ padding: 4 }}
-                onClick={() => onSetFilter({ ...filter, text: "" })}
-              />
-            ) : (
-              undefined
-            )
+        <FilterTokenizingField
+          values={filter.values}
+          onChangeBeforeCommit
+          onChange={(values: LogFilterValue[]) =>
+            onSetFilter({ ...filter, values })
           }
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            onSetFilter({ ...filter, text: e.target.value })
-          }
+          className={selectedStep ? "has-step" : ""}
+          suggestionProviders={GetFilterProviders(steps)}
+          suggestionProvidersFilter={suggestionProvidersFilter}
+          loading={false}
         />
+
         <LogsToolbarDivider />
         <ButtonGroup>
           {Object.keys(LogLevel).map(level => (
@@ -84,12 +86,10 @@ export default class LogsToolbar extends React.PureComponent<
             />
           ))}
         </ButtonGroup>
-        {filterStep && <LogsToolbarDivider />}
-        {filterStep && (
-          <ComputeLogLink stepKey={filterStep} runState={filterStepState}>
-            <Button icon={"console"} small>
-              View Raw Step Output
-            </Button>
+        {selectedStep && <LogsToolbarDivider />}
+        {selectedStep && (
+          <ComputeLogLink stepKey={selectedStep} runState={selectedStepState}>
+            View Raw Step Output
           </ComputeLogLink>
         )}
         <div style={{ minWidth: 15, flex: 1 }} />
@@ -125,15 +125,19 @@ const LogsToolbarDivider = styled.div`
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
 `;
 
-const FilterInputGroup = styled(InputGroup)`
-  flex: 2;
-  max-width: 375px;
-  min-width: 100px;
-  & input {
-    padding-right: 22px !important;
-  }
+const FilterTokenizingField = styled(TokenizingField)`
+  height: 20px;
+  min-width: 200px;
+  max-width: 800px;
   &.has-step {
     box-shadow: 0 0 0 2px ${Colors.GOLD3};
     border-radius: 3px;
+  }
+  &.bp3-tag-input {
+    min-height: 26px;
+  }
+  &.bp3-tag-input .bp3-tag-input-values {
+    height: 23px;
+    margin-top: 3px;
   }
 `;

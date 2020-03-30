@@ -1,6 +1,7 @@
 import React from "react";
 import { TagInput, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
 import styled from "styled-components/macro";
+import { isEqual } from "lodash";
 
 export interface SuggestionProvider {
   token: string;
@@ -26,13 +27,17 @@ interface TokenizingFieldProps {
   values: TokenizingFieldValue[];
   maxValues?: number;
   onChange: (values: TokenizingFieldValue[]) => void;
+  onChangeBeforeCommit?: boolean;
+
+  placeholder?: string;
+  loading?: boolean;
+  className?: string;
+
   suggestionProviders: SuggestionProvider[];
   suggestionProvidersFilter?: (
     suggestionProvider: SuggestionProvider[],
     values: TokenizingFieldValue[]
   ) => SuggestionProvider[];
-  placeholder?: string;
-  loading?: boolean;
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
@@ -43,6 +48,7 @@ export function tokenizedValuesFromString(
   str: string,
   providers: SuggestionProvider[]
 ) {
+  if (str === "") return [];
   const tokens = str.split(",");
   return tokens.map(token => tokenizedValueFromString(token, providers));
 }
@@ -72,17 +78,25 @@ input also allows for freeform typing (`value` items with no token value) */
 export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   suggestionProviders,
   suggestionProvidersFilter,
-  values,
+  values: externalValues,
   maxValues,
   onChange,
+  onChangeBeforeCommit,
   placeholder,
-  loading
+  loading,
+  className
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>("");
-  const atMaxValues =
-    maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
+
+  const values = [...externalValues];
+  const typedValue = tokenizedValueFromString(typed, suggestionProviders);
+  if (isEqual(typedValue, values[values.length - 1])) {
+    values.pop();
+  }
+
+  const atMaxValues = maxValues !== undefined && values.length >= maxValues;
 
   const filteredSuggestionProviders = suggestionProvidersFilter
     ? suggestionProvidersFilter(suggestionProviders, values)
@@ -109,7 +123,8 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       .values()
       .filter(suggestionNotUsed)
       .map(v => ({ text: `${provider.token}:${v}`, final: true }))
-      .filter(suggestionMatchesTypedText);
+      .filter(suggestionMatchesTypedText)
+      .slice(0, 6); // never show too many suggestions for one provider
   };
 
   if (parts.length === 1) {
@@ -136,7 +151,9 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   // Truncate suggestions to the ones currently matching the typed text,
   // and always sort them in alphabetical order.
   suggestions = suggestions.sort((a, b) => a.text.localeCompare(b.text));
-
+  if (atMaxValues) {
+    suggestions = [];
+  }
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
   // us to relocate it if it's moved and the index allows us to keep selection
@@ -194,11 +211,11 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (str.endsWith(":")) return;
     if (str === "") return;
 
+    setTyped("");
     onChange([
       ...values,
       tokenizedValueFromString(str, filteredSuggestionProviders)
     ]);
-    setTyped("");
   };
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
@@ -257,7 +274,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     <Popover
       minimal={true}
       isOpen={open && suggestions.length > 0 && !atMaxValues}
-      position={"bottom"}
+      position={"bottom-left"}
       content={
         suggestions.length > 0 ? (
           <StyledMenu>
@@ -282,6 +299,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       }
     >
       <StyledTagInput
+        className={className}
         values={values.map(v => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
         onRemove={(_, idx) => {
@@ -289,7 +307,17 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
           next.splice(idx, 1);
           onChange(next);
         }}
-        onInputChange={e => setTyped(e.currentTarget.value)}
+        onInputChange={e => {
+          setTyped(e.currentTarget.value);
+
+          if (onChangeBeforeCommit) {
+            const tokenized = tokenizedValueFromString(
+              e.currentTarget.value,
+              filteredSuggestionProviders
+            );
+            onChange([...values, tokenized]);
+          }
+        }}
         inputProps={{
           onFocus: () => setOpen(true),
           onBlur: () => setOpen(false)
@@ -313,7 +341,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 };
 
 const StyledTagInput = styled(TagInput)`
-  width: 400px;
+  min-width: 400px;
   input {
     font-size: 12px;
   }

@@ -8,6 +8,10 @@ import { RunPipelineRunEventFragment } from "./types/RunPipelineRunEventFragment
 import { PipelineRunStatus } from "../types/globalTypes";
 import { PipelineRunLogsSubscriptionStatusFragment } from "./types/PipelineRunLogsSubscriptionStatusFragment";
 import { PipelineRunLogsSubscription } from "./types/PipelineRunLogsSubscription";
+import {
+  TokenizingFieldValue,
+  tokenizedValuesFromString
+} from "../TokenizingField";
 
 export enum LogLevel {
   DEBUG = "DEBUG",
@@ -18,47 +22,57 @@ export enum LogLevel {
   EVENT = "EVENT" // structured events
 }
 
+export function GetFilterProviders(stepNames: string[] = []) {
+  return [
+    {
+      token: "step",
+      values: () => stepNames
+    },
+    {
+      token: "type",
+      values: () => [
+        "expectation",
+        "materialization",
+        "engine",
+        "input",
+        "output",
+        "pipeline"
+      ]
+    }
+  ];
+}
+
 export const GetDefaultLogFilter = () => {
-  const { q } = querystring.parse(window.location.search);
+  const query = querystring.parse(window.location.search);
+  const q = typeof query.q === "string" ? query.q : "";
 
   return {
+    since: 0,
+    values: tokenizedValuesFromString(q, GetFilterProviders()),
     levels: Object.assign(
       Object.keys(LogLevel).reduce(
         (dict, key) => ({ ...dict, [key]: true }),
         {}
       ),
       { [LogLevel.DEBUG]: false }
-    ),
-    text: typeof q === "string" ? q : "",
-    since: 0
-  };
+    )
+  } as LogFilter;
 };
 
-export const structuredFieldsFromLogFilter = (filter: ILogFilter) => {
-  const textLower = filter.text.toLowerCase();
-  // step: sum_solid
-  const step =
-    (textLower.startsWith("step:") && filter.text.substr(5).trim()) || null;
+export interface LogFilterValue extends TokenizingFieldValue {
+  token?: "step" | "type";
+}
 
-  // type: materialization or type: step start
-  const type =
-    (textLower.startsWith("type:") &&
-      textLower.substr(5).replace(/[ _-]/g, "")) ||
-    null;
-
-  return { step, type };
-};
-
-export interface ILogFilter {
-  text: string;
+export interface LogFilter {
+  values: LogFilterValue[];
   levels: { [key: string]: boolean };
   since: number;
 }
 
-interface ILogsFilterProviderProps {
+interface LogsFilterProviderProps {
   client: ApolloClient<any>;
   runId: string;
-  filter: ILogFilter;
+  filter: LogFilter;
   children: (props: {
     allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
     filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
@@ -66,15 +80,15 @@ interface ILogsFilterProviderProps {
   }) => React.ReactChild;
 }
 
-interface ILogsFilterProviderState {
+interface LogsFilterProviderState {
   nodes: (RunPipelineRunEventFragment & { clientsideKey: string })[] | null;
 }
 
 export class LogsProvider extends React.Component<
-  ILogsFilterProviderProps,
-  ILogsFilterProviderState
+  LogsFilterProviderProps,
+  LogsFilterProviderState
 > {
-  state: ILogsFilterProviderState = {
+  state: LogsFilterProviderState = {
     nodes: null
   };
 
@@ -84,7 +98,7 @@ export class LogsProvider extends React.Component<
     this.subscribeToRun();
   }
 
-  componentDidUpdate(prevProps: ILogsFilterProviderProps) {
+  componentDidUpdate(prevProps: LogsFilterProviderProps) {
     if (prevProps.runId !== this.props.runId) {
       this.subscribeToRun();
     }
@@ -206,22 +220,25 @@ export class LogsProvider extends React.Component<
     }
 
     const { filter } = this.props;
-    const textLower = filter.text.toLowerCase();
-    const { type, step } = structuredFieldsFromLogFilter(filter);
 
     const filteredNodes = nodes.filter(node => {
       const l = node.__typename === "LogMessageEvent" ? node.level : "EVENT";
+
       if (!filter.levels[l]) return false;
       if (filter.since && Number(node.timestamp) < filter.since) return false;
 
-      if (step) {
-        return node.step && node.step.key === step;
-      } else if (type) {
-        return node.__typename.toLowerCase().includes(type);
-      } else if (textLower) {
-        return node.message.toLowerCase().includes(textLower);
-      }
-      return true;
+      return (
+        filter.values.length === 0 ||
+        filter.values.every(f => {
+          if (f.token === "step") {
+            return node.step && node.step.key === f.value;
+          }
+          if (f.token === "type") {
+            return node.__typename.toLowerCase().includes(f.value);
+          }
+          return node.message.toLowerCase().includes(f.value.toLowerCase());
+        })
+      );
     });
 
     return this.props.children({
