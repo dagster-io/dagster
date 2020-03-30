@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { ExecutionSelector, EvaluationErrorReason, StepKind } from "./../../types/globalTypes";
+import { ExecutionSelector, EvaluationErrorReason } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PreviewConfigQuery
@@ -44,43 +44,8 @@ export interface PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidati
 
 export type PreviewConfigQuery_isPipelineConfigValid = PreviewConfigQuery_isPipelineConfigValid_InvalidSubsetError | PreviewConfigQuery_isPipelineConfigValid_PipelineConfigValidationInvalid;
 
-export interface PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid {
-  __typename: "PipelineConfigValidationInvalid";
-}
-
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
-}
-
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs_type;
-}
-
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn {
-  __typename: "ExecutionStep";
-  key: string;
-  outputs: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn_outputs[];
-}
-
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs {
-  __typename: "ExecutionStepInput";
-  dependsOn: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs_dependsOn[];
-}
-
-export interface PreviewConfigQuery_executionPlan_ExecutionPlan_steps {
-  __typename: "ExecutionStep";
-  key: string;
-  kind: StepKind;
-  inputs: PreviewConfigQuery_executionPlan_ExecutionPlan_steps_inputs[];
-}
-
 export interface PreviewConfigQuery_executionPlan_ExecutionPlan {
-  __typename: "ExecutionPlan";
-  steps: PreviewConfigQuery_executionPlan_ExecutionPlan_steps[];
-  artifactsPersisted: boolean;
+  __typename: "ExecutionPlan" | "PipelineConfigValidationInvalid";
 }
 
 export interface PreviewConfigQuery_executionPlan_PipelineNotFoundError {
@@ -106,7 +71,7 @@ export interface PreviewConfigQuery_executionPlan_PythonError {
   cause: PreviewConfigQuery_executionPlan_PythonError_cause | null;
 }
 
-export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_PipelineConfigValidationInvalid | PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError | PreviewConfigQuery_executionPlan_InvalidSubsetError | PreviewConfigQuery_executionPlan_PythonError;
+export type PreviewConfigQuery_executionPlan = PreviewConfigQuery_executionPlan_ExecutionPlan | PreviewConfigQuery_executionPlan_PipelineNotFoundError | PreviewConfigQuery_executionPlan_InvalidSubsetError | PreviewConfigQuery_executionPlan_PythonError;
 
 export interface PreviewConfigQuery {
   isPipelineConfigValid: PreviewConfigQuery_isPipelineConfigValid;

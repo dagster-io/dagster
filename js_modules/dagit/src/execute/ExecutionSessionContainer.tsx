@@ -25,7 +25,8 @@ import {
 import { ConfigEditorEnvironmentSchemaFragment } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
 import {
   PreviewConfigQuery,
-  PreviewConfigQueryVariables
+  PreviewConfigQueryVariables,
+  PreviewConfigQuery_executionPlan
 } from "./types/PreviewConfigQuery";
 import {
   ExecutionSessionContainerFragment,
@@ -41,6 +42,7 @@ import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
 import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
+import { ValidationResult } from "../configeditor/codemirror-yaml/mode";
 
 type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags;
 
@@ -58,8 +60,10 @@ interface IExecutionSessionContainerProps {
 }
 
 interface IExecutionSessionContainerState {
+  plan: PreviewConfigQuery_executionPlan | null;
+  validationResult: ValidationResult | null;
+
   editorHelpContext: ConfigEditorHelpContext | null;
-  preview: PreviewConfigQuery | null;
   showWhitespace: boolean;
   tagEditorOpen: boolean;
 }
@@ -115,11 +119,15 @@ export default class ExecutionSessionContainer extends React.Component<
   };
 
   state: IExecutionSessionContainerState = {
-    preview: null,
+    plan: null,
+    validationResult: null,
+
     showWhitespace: true,
     editorHelpContext: null,
     tagEditorOpen: false
   };
+
+  editor = React.createRef<ConfigEditor>();
 
   mounted = false;
 
@@ -238,7 +246,8 @@ export default class ExecutionSessionContainer extends React.Component<
   render() {
     const { currentSession, onCreateSession } = this.props;
     const {
-      preview,
+      plan,
+      validationResult,
       editorHelpContext,
       showWhitespace,
       tagEditorOpen
@@ -321,6 +330,7 @@ export default class ExecutionSessionContainer extends React.Component<
               <ApolloConsumer>
                 {client => (
                   <ConfigEditor
+                    ref={this.editor}
                     readOnly={false}
                     environmentSchema={environmentSchema}
                     configCode={currentSession.environmentConfigYaml}
@@ -331,10 +341,11 @@ export default class ExecutionSessionContainer extends React.Component<
                       }
                     }}
                     showWhitespace={showWhitespace}
-                    checkConfig={async environmentConfigData => {
+                    checkConfig={async configJSON => {
                       if (!currentSession.mode || modeError) {
                         return {
                           isValid: false,
+                          document: configJSON,
                           errors: [
                             // FIXME this should be specific -- we should have an enumerated
                             // validation error when there is no mode provided
@@ -353,7 +364,7 @@ export default class ExecutionSessionContainer extends React.Component<
                         fetchPolicy: "no-cache",
                         query: PREVIEW_CONFIG_QUERY,
                         variables: {
-                          environmentConfigData,
+                          environmentConfigData: configJSON,
                           pipeline: {
                             name: pipeline.name,
                             solidSubset: currentSession.solidSubset
@@ -362,14 +373,19 @@ export default class ExecutionSessionContainer extends React.Component<
                         }
                       });
 
-                      if (this.mounted) {
-                        this.setState({ preview: data });
-                      }
-
-                      return responseToValidationResult(
-                        environmentConfigData,
+                      const validationResult = responseToValidationResult(
+                        configJSON,
                         data.isPipelineConfigValid
                       );
+
+                      if (this.mounted) {
+                        this.setState({
+                          plan: data.executionPlan,
+                          validationResult: validationResult
+                        });
+                      }
+
+                      return validationResult;
                     }}
                   />
                 )}
@@ -378,16 +394,25 @@ export default class ExecutionSessionContainer extends React.Component<
           </>
         }
         second={
-          <RunPreview
-            plan={preview?.executionPlan}
-            validation={preview?.isPipelineConfigValid}
-            toolbarActions={
-              <PipelineExecutionButtonGroup
-                pipelineName={pipeline.name}
-                getVariables={this.buildExecutionVariables}
-              />
-            }
-          />
+          environmentSchema ? (
+            <RunPreview
+              plan={plan}
+              environmentSchema={environmentSchema}
+              validationResult={validationResult}
+              onHighlightValidationError={error =>
+                this.editor.current?.moveCursorToValidationError(error)
+              }
+              actions={
+                <PipelineExecutionButtonGroup
+                  pipelineName={pipeline.name}
+                  getVariables={this.buildExecutionVariables}
+                  disabled={plan?.__typename !== "ExecutionPlan"}
+                />
+              }
+            />
+          ) : (
+            <div />
+          )
         }
       />
     );
@@ -414,7 +439,7 @@ export const ExecutionSessionContainerError: React.FunctionComponent<ExecutionSe
           {props.children}
         </>
       }
-      second={<RunPreview />}
+      second={<div />}
     />
   );
 };
@@ -431,7 +456,6 @@ const PREVIEW_CONFIG_QUERY = gql`
       mode: $mode
     ) {
       ...ConfigEditorValidationFragment
-      ...RunPreviewConfigValidationFragment
     }
     executionPlan(
       pipeline: $pipeline
@@ -441,7 +465,6 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...RunPreviewExecutionPlanResultFragment
     }
   }
-  ${RunPreview.fragments.RunPreviewConfigValidationFragment}
   ${RunPreview.fragments.RunPreviewExecutionPlanResultFragment}
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;

@@ -1,5 +1,6 @@
 import * as React from "react";
 import { createGlobalStyle } from "styled-components/macro";
+import * as yaml from "yaml";
 import "codemirror";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
@@ -24,8 +25,10 @@ import {
 } from "./types/ConfigEditorEnvironmentSchemaFragment";
 import "./codemirror-yaml/mode";
 import {
-  LintJson as YamlModeLintJson,
-  expandAutocompletionContextAtCursor
+  ValidationError as YamlModeValidationError,
+  ValidateFunction as YamlModeValidateFunction,
+  expandAutocompletionContextAtCursor,
+  validationErrorToCodemirrorError
 } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
@@ -37,13 +40,14 @@ export function isHelpContextEqual(
 }
 
 interface ConfigEditorProps {
-  checkConfig: YamlModeLintJson;
   configCode: string;
-  onConfigChange: (newValue: string) => void;
-  onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
-  environmentSchema?: ConfigEditorEnvironmentSchemaFragment;
   readOnly: boolean;
   showWhitespace: boolean;
+  environmentSchema?: ConfigEditorEnvironmentSchemaFragment;
+
+  checkConfig: YamlModeValidateFunction;
+  onConfigChange: (newValue: string) => void;
+  onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
 }
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
@@ -93,6 +97,51 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     if (prevProps.environmentSchema === this.props.environmentSchema) return;
     this.performInitialPass();
   }
+
+  shouldComponentUpdate(prevProps: ConfigEditorProps) {
+    // Unfortunately, updates to the ConfigEditor clear the linter highlighting for
+    // unknown reasons and they're recalculated asynchronously. To prevent flickering,
+    // only update if our input has meaningfully changed.
+    return (
+      prevProps.configCode !== this.props.configCode ||
+      prevProps.readOnly !== this.props.readOnly ||
+      prevProps.showWhitespace !== this.props.showWhitespace
+    );
+  }
+
+  // Public API
+
+  moveCursor = (line: number, ch: number) => {
+    if (!this._editor) return;
+    this._editor.setCursor(line, ch, { scroll: false });
+    const { clientHeight } = this._editor.getScrollInfo();
+    const { left, top } = this._editor.cursorCoords(true, "local");
+    const offsetFromTop = 20;
+
+    this._editor?.scrollIntoView({
+      left: left,
+      right: left,
+      top: top - offsetFromTop,
+      bottom: top + (clientHeight - offsetFromTop)
+    });
+    this._editor.focus();
+  };
+
+  moveCursorToValidationError = (err: YamlModeValidationError) => {
+    if (!this._editor) return;
+    const codeMirrorDoc = this._editor.getDoc();
+    const yamlDoc = yaml.parseDocument(this.props.configCode);
+    const lintError = validationErrorToCodemirrorError(
+      err,
+      yamlDoc,
+      codeMirrorDoc
+    );
+    if (lintError) {
+      this.moveCursor(lintError.from.line, lintError.from.ch);
+    }
+  };
+
+  // End Public API
 
   performInitialPass() {
     // update the gutter and redlining
