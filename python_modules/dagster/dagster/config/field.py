@@ -236,6 +236,11 @@ class Field(object):
         check.opt_bool_param(is_optional, 'is_optional')
         check.opt_bool_param(is_required, 'is_required')
 
+        if default_value != FIELD_NO_DEFAULT_PROVIDED:
+            check.param_invariant(
+                not (callable(default_value)), 'default_value', 'default_value cannot be a callable'
+            )
+
         canonical_is_required = canonicalize_backcompat_args(
             new_val=is_required,
             new_arg='is_required',
@@ -255,9 +260,7 @@ class Field(object):
 
         # check explicit default value
         if self.default_provided:
-            # invoke through property in case it is callable
-            value = self.default_value
-            evr = validate_config(self.config_type, value)
+            evr = validate_config(self.config_type, default_value)
             if not evr.success:
                 raise DagsterInvalidConfigError(
                     'Invalid default_value for Field.', evr.errors, default_value,
@@ -294,20 +297,11 @@ class Field(object):
     @property
     def default_value(self):
         check.invariant(self.default_provided, 'Asking for default value when none was provided')
-
-        if callable(self._default_value):
-            return self._default_value()
-
         return self._default_value
 
     @property
     def default_value_as_str(self):
-        check.invariant(self.default_provided, 'Asking for default value when none was provided')
-
-        if callable(self._default_value):
-            return repr(self._default_value)
-
-        return str(self._default_value)
+        return str(self.default_value)
 
     def __repr__(self):
         return ('Field({config_type}, default={default}, is_required={is_required})').format(

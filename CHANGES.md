@@ -4,6 +4,7 @@
 
 **Breaking Changes**
 
+- `default_value` in `Field` no longer accepts callables.
 - The `dagster_aws` imports have been reorganized; you should now import resources from
   `dagster_aws.<AWS service name>`. `dagster_aws` provides `s3`, `emr`, `redshift`, and `cloudwatch`
   modules.
