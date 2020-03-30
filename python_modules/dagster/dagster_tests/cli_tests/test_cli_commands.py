@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import string
+from contextlib import contextmanager
 
 import mock
 import pytest
@@ -1069,3 +1070,83 @@ def run_launch(execution_args, expected_count=None):
 def test_launch_pipeline():
     for cli_args in valid_cli_args():
         run_launch(cli_args, expected_count=1)
+
+
+@contextmanager
+def mocked_instance():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=InMemoryRunLauncher(),
+        )
+        with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
+            _instance.return_value = instance
+            yield instance
+
+
+def test_tags_pipeline():
+    runner = CliRunner()
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-y',
+                file_relative_path(__file__, 'repository_module.yaml'),
+                '--tags',
+                '{ "foo": "bar" }',
+                'hello_cereal_pipeline',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert len(run.tags) == 1
+        assert run.tags.get('foo') == 'bar'
+
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_execute_command,
+            [
+                '-y',
+                file_relative_path(__file__, '../repository.yaml'),
+                '-p',
+                'add',
+                '--tags',
+                '{ "foo": "bar" }',
+                'multi_mode_with_resources',  # pipeline name
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.get_runs()
+        assert len(runs) == 1
+        run = runs[0]
+        assert len(run.tags) == 1
+        assert run.tags.get('foo') == 'bar'
+
+    with mocked_instance() as instance:
+        result = runner.invoke(
+            pipeline_backfill_command,
+            [
+                '-y',
+                file_relative_path(__file__, 'repository_file.yaml'),
+                '--noprompt',
+                '--partition-set',
+                'baz_partitions',
+                '--partitions',
+                'c',
+                '--tags',
+                '{ "foo": "bar" }',
+                'baz',
+            ],
+        )
+        assert result.exit_code == 0
+        runs = instance.run_launcher.queue()
+        assert len(runs) == 1
+        run = runs[0]
+        assert len(run.tags) >= 1
+        assert run.tags.get('foo') == 'bar'

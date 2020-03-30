@@ -25,8 +25,9 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id, make_new_run_id
-from dagster.seven import IS_WINDOWS
+from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.indenting_printer import IndentingPrinter
 from dagster.visualize import build_graphviz_graph
 
@@ -302,6 +303,7 @@ def pipeline_graphviz_command(only_solids, **kwargs):
 @click.option(
     '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
+@click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @telemetry_wrapper
 def pipeline_execute_command(env, preset, mode, **kwargs):
     check.invariant(isinstance(env, tuple))
@@ -312,25 +314,31 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
         return execute_execute_command_with_preset(preset, kwargs, mode)
 
     env = list(env)
+    tags = get_tags_from_args(kwargs)
 
-    execute_execute_command(env, kwargs, mode)
+    execute_execute_command(env, kwargs, mode, tags)
 
 
-def execute_execute_command(env, cli_args, mode=None):
+def execute_execute_command(env, cli_args, mode=None, tags=None):
     pipeline = create_pipeline_from_cli_args(cli_args)
-    return do_execute_command(pipeline, env, mode)
+    return do_execute_command(pipeline, env, mode, tags)
 
 
 def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
     cli_args.pop('pipeline_name')
+    tags = get_tags_from_args(cli_args)
 
     return execute_pipeline_with_preset(
-        pipeline, preset_name, instance=DagsterInstance.get(), raise_on_error=False
+        pipeline,
+        preset_name,
+        instance=DagsterInstance.get(),
+        raise_on_error=False,
+        run_config=RunConfig(tags=tags),
     )
 
 
-def do_execute_command(pipeline, env_file_list, mode=None):
+def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
@@ -339,7 +347,7 @@ def do_execute_command(pipeline, env_file_list, mode=None):
     return execute_pipeline(
         pipeline,
         environment_dict=environment_dict,
-        run_config=RunConfig(mode=mode),
+        run_config=RunConfig(mode=mode, tags=tags),
         instance=DagsterInstance.get(),
         raise_on_error=False,
     )
@@ -382,6 +390,7 @@ def do_execute_command(pipeline, env_file_list, mode=None):
 @click.option(
     '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
 )
+@click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @telemetry_wrapper
 def pipeline_launch_command(env, preset_name, mode, **kwargs):
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
@@ -401,6 +410,8 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
     else:
         preset = None
 
+    run_tags = get_tags_from_args(kwargs)
+
     run = PipelineRun(
         pipeline_name=pipeline.name,
         run_id=make_new_run_id(),
@@ -408,6 +419,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         status=PipelineRunStatus.NOT_STARTED,
+        tags=run_tags,
     )
 
     return instance.launch_run(run)
@@ -478,6 +490,20 @@ def get_backfill_priority_from_args(kwargs):
     if kwargs.get('celery_base_priority') is None:
         return None
     return int(kwargs.get('celery_base_priority'))
+
+
+def get_tags_from_args(kwargs):
+    if kwargs.get('tags') is None:
+        return {}
+    try:
+        return json.loads(kwargs.get('tags'))
+    except JSONDecodeError:
+        raise click.UsageError(
+            'Invalid JSON-string given for `--tags`: {}\n\n{}'.format(
+                kwargs.get('tags'),
+                serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
+            )
+        )
 
 
 def print_partition_format(partitions, indent_level):
@@ -585,6 +611,7 @@ def get_partition_sets_for_handle(handle):
         'dagster pipeline backfill log_daily_stats --celery-base-priority -3'
     ),
 )
+@click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @click.option('--noprompt', is_flag=True)
 def pipeline_backfill_command(**kwargs):
     execute_backfill_command(kwargs, click.echo)
@@ -664,7 +691,12 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
 
         print_fn('Launching runs... ')
         backfill_id = make_new_backfill_id()
-        run_tags = PipelineRun.tags_for_backfill_id(backfill_id)
+
+        run_tags = merge_dicts(
+            PipelineRun.tags_for_backfill_id(backfill_id), get_tags_from_args(cli_args),
+        )
+
+        # for backwards compatibility - remove once prezi switched over to using tags argument
         if celery_priority is not None:
             run_tags['dagster-celery/run_priority'] = celery_priority
 
