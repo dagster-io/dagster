@@ -23,8 +23,6 @@ import {
 } from "./RunUtils";
 import { StartPipelineExecutionVariables } from "./types/StartPipelineExecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
-import InfoModal from "../InfoModal";
-import PythonErrorInfo from "../PythonErrorInfo";
 import { RunContext } from "./RunContext";
 
 import {
@@ -33,6 +31,8 @@ import {
 } from "./types/RunPipelineRunEventFragment";
 import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
 import { RunActionButtons } from "./RunActionButtons";
+import { showCustomAlert } from "../CustomAlertProvider";
+import PythonErrorInfo from "../PythonErrorInfo";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -41,7 +41,6 @@ interface IRunProps {
 
 interface IRunState {
   logsFilter: ILogFilter;
-  highlightedError?: { message: string; stack: string[] };
 }
 
 export class Run extends React.Component<IRunProps, IRunState> {
@@ -116,8 +115,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
   };
 
   state: IRunState = {
-    logsFilter: GetDefaultLogFilter(),
-    highlightedError: undefined
+    logsFilter: GetDefaultLogFilter()
   };
 
   onShowStateDetails = (
@@ -132,25 +130,19 @@ export class Run extends React.Component<IRunProps, IRunState> {
     ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
 
     if (errorNode) {
-      this.setState({ highlightedError: errorNode.error });
+      showCustomAlert({
+        body: <PythonErrorInfo error={errorNode} />
+      });
     }
   };
+
   render() {
     const { client, run } = this.props;
-    const { logsFilter, highlightedError } = this.state;
+    const { logsFilter } = this.state;
 
     return (
       <RunContext.Provider value={run}>
         {run && <RunStatusToPageAttributes run={run} />}
-        {highlightedError && (
-          <InfoModal
-            onRequestClose={() =>
-              this.setState({ highlightedError: undefined })
-            }
-          >
-            <PythonErrorInfo error={highlightedError} />
-          </InfoModal>
-        )}
 
         <LogsProvider
           client={client}

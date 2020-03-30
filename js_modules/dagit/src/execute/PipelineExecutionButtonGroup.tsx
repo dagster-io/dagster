@@ -33,13 +33,16 @@ const RUN_LAUNCHER_QUERY = gql`
   }
 `;
 
-export const PipelineExecutionButtonGroup = (props: {
+interface PipelineExecutionButtonGroupProps {
+  disabled?: boolean;
   getVariables: () =>
     | undefined
     | StartPipelineExecutionVariables
     | LaunchPipelineExecutionVariables;
   pipelineName: string;
-}) => {
+}
+
+export const PipelineExecutionButtonGroup: React.FunctionComponent<PipelineExecutionButtonGroupProps> = props => {
   const [startPipelineExecution] = useMutation(
     START_PIPELINE_EXECUTION_MUTATION
   );
@@ -81,6 +84,7 @@ export const PipelineExecutionButtonGroup = (props: {
         shortcutLabel={`⌥G`}
         shortcutFilter={e => e.keyCode === 71 && e.altKey}
         onClick={onExecute}
+        disabled={props.disabled}
       />
       <ExecutionStartButton
         title="Launch Execution"
@@ -90,6 +94,7 @@ export const PipelineExecutionButtonGroup = (props: {
         shortcutLabel={`⌥L`}
         shortcutFilter={e => e.keyCode === 76 && e.altKey}
         onClick={onLaunch}
+        disabled={props.disabled}
       />
     </LaunchButtonGroup>
   );

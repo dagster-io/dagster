@@ -661,15 +661,19 @@ type CodemirrorLintError = {
 export type ValidationResult =
   | {
       isValid: true;
+      document: object;
     }
   | {
       isValid: false;
       errors: Array<ValidationError>;
+      document: object;
     };
 
-export type LintJson = (json: object) => Promise<ValidationResult>;
+export type ValidateFunction = (
+  configJSON: object
+) => Promise<ValidationResult>;
 
-type ValidationError = {
+export type ValidationError = {
   message: string;
   path: Array<string>;
   reason: string;
@@ -707,7 +711,7 @@ CodeMirror.registerHelper(
   "yaml",
   async (
     text: string,
-    { checkConfig }: { checkConfig: LintJson },
+    { checkConfig }: { checkConfig: ValidateFunction },
     editor: any
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
@@ -716,12 +720,12 @@ CodeMirror.registerHelper(
     // and returns 20,000+ errors. The library does not have a "bail out" option but we need one.
     // However we can't switch libraries because we need the structured document model this returns.
     // (It's not just text parsed to plain JS objects.)
-    const doc = yaml.parseDocument(text);
+    const yamlDoc = yaml.parseDocument(text);
     const lints: Array<CodemirrorLintError> = [];
-    const lintingTruncated = doc.errors.length > 10;
+    const lintingTruncated = yamlDoc.errors.length > 10;
     let lastMarkLocation: CodeMirror.Position | undefined;
 
-    doc.errors.slice(0, 10).forEach(error => {
+    yamlDoc.errors.slice(0, 10).forEach(error => {
       const from = codeMirrorDoc.posFromIndex(
         error.source.range ? error.source.range.start : 0
       ) as CodeMirror.Position;
@@ -748,7 +752,7 @@ CodeMirror.registerHelper(
         ch: 0
       };
       lints.push({
-        message: `${doc.errors.length -
+        message: `${yamlDoc.errors.length -
           lints.length} more errors - bailed out.`,
         severity: "warning",
         type: "syntax",
@@ -757,23 +761,19 @@ CodeMirror.registerHelper(
       });
     }
 
-    if (doc.errors.length === 0) {
-      const json = doc.toJSON() || {};
+    if (yamlDoc.errors.length === 0) {
+      const json = yamlDoc.toJSON() || {};
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
         validationResult.errors.forEach(error => {
-          const part =
-            error.reason === "RUNTIME_TYPE_MISMATCH" ? "value" : "key";
-          const range = findRangeInDocumentFromPath(doc, error.path, part);
-          lints.push({
-            message: error.message,
-            severity: "error",
-            type: "syntax",
-            from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as any,
-            to: codeMirrorDoc.posFromIndex(
-              range ? range.end : Number.MAX_SAFE_INTEGER
-            ) as any
-          });
+          const lint = validationErrorToCodemirrorError(
+            error,
+            yamlDoc,
+            codeMirrorDoc
+          );
+          if (lint) {
+            lints.push(lint);
+          }
         });
       }
     }
@@ -781,6 +781,25 @@ CodeMirror.registerHelper(
     return lints;
   }
 );
+
+export function validationErrorToCodemirrorError(
+  error: ValidationError,
+  yamlDoc: yaml.ast.Document,
+  codeMirrorDoc: any
+): CodemirrorLintError | null {
+  const part = error.reason === "RUNTIME_TYPE_MISMATCH" ? "value" : "key";
+  const range = findRangeInDocumentFromPath(yamlDoc, error.path, part);
+  if (range === null) return null;
+  return {
+    message: error.message,
+    severity: "error",
+    type: "syntax",
+    from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as any,
+    to: codeMirrorDoc.posFromIndex(
+      range ? range.end : Number.MAX_SAFE_INTEGER
+    ) as any
+  };
+}
 
 function findRangeInDocumentFromPath(
   doc: yaml.ast.Document,
