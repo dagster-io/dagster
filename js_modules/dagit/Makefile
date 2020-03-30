@@ -14,7 +14,7 @@ ts:
 	yarn run ts
 
 prettier:
-	yarn run prettier --write "./src/**/*.tsx"
+	yarn prettier
 
 test:
 	yarn run test
