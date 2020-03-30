@@ -63,12 +63,12 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   }
 `;
 
-export async function responseToValidationResult(
-  config: object,
+export function responseToValidationResult(
+  configJSON: object,
   response: ConfigEditorValidationFragment
-): Promise<ValidationResult> {
+): ValidationResult {
   if (response.__typename !== "PipelineConfigValidationInvalid") {
-    return { isValid: true };
+    return { isValid: true, document: configJSON };
   }
 
   const errors = response.errors.map(({ message, reason, stack }) => ({
@@ -84,12 +84,12 @@ export async function responseToValidationResult(
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first
   // element of the top dict.
-  const topLevelKey = Object.keys(config);
+  const topLevelKey = Object.keys(configJSON);
   errors.forEach(error => {
     if (error.path.length === 0 && topLevelKey.length) {
       error.path = [topLevelKey[0]];
     }
   });
 
-  return { isValid: false, errors: errors };
+  return { isValid: false, errors, document: configJSON };
 }
