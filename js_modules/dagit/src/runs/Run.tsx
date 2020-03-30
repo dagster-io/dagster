@@ -4,13 +4,8 @@ import styled from "styled-components/macro";
 import { useMutation } from "react-apollo";
 import ApolloClient from "apollo-client";
 
-import {
-  ILogFilter,
-  LogsProvider,
-  GetDefaultLogFilter,
-  structuredFieldsFromLogFilter
-} from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
+import { LogFilter, LogsProvider, GetDefaultLogFilter } from "./LogsProvider";
 import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
 import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
@@ -40,7 +35,7 @@ interface IRunProps {
 }
 
 interface IRunState {
-  logsFilter: ILogFilter;
+  logsFilter: LogFilter;
   highlightedError?: { message: string; stack: string[] };
 }
 
@@ -179,9 +174,9 @@ interface RunWithDataProps {
   run?: RunFragment;
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
-  logsFilter: ILogFilter;
+  logsFilter: LogFilter;
   logsLoading: boolean;
-  onSetLogsFilter: (v: ILogFilter) => void;
+  onSetLogsFilter: (v: LogFilter) => void;
   onShowStateDetails: (
     stepKey: string,
     logs: RunPipelineRunEventFragment[]
@@ -209,7 +204,9 @@ const RunWithData = ({
     LAUNCH_PIPELINE_EXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
+  const selectedStep =
+    logsFilter.values.find(v => v.token === "step")?.value || null;
+
   const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
     __typename: "ExecutionPlan",
     steps: [],
@@ -277,16 +274,19 @@ const RunWithData = ({
               metadata={metadata}
               selectedStep={selectedStep}
               onApplyStepFilter={stepKey =>
-                onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
+                onSetLogsFilter({
+                  ...logsFilter,
+                  values: [{ token: "step", value: stepKey }]
+                })
               }
             />
           }
           second={
             <LogsContainer>
               <LogsToolbar
-                showSpinner={false}
                 onSetFilter={onSetLogsFilter}
                 filter={logsFilter}
+                steps={Object.keys(metadata.steps)}
                 filterStep={selectedStep}
                 filterStepState={
                   (selectedStep && metadata.steps[selectedStep]?.state) ||

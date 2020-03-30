@@ -1,68 +1,80 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import {
-  Spinner,
-  Intent,
-  Colors,
-  Button,
-  ButtonGroup,
-  InputGroup,
-  Icon
-} from "@blueprintjs/core";
+import { Colors, Button, ButtonGroup } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { ILogFilter, LogLevel } from "./LogsProvider";
+import {
+  LogFilter,
+  LogLevel,
+  LogFilterValue,
+  GetFilterProviders
+} from "./LogsProvider";
 import { ComputeLogLink } from "./ComputeLogModal";
 import { IStepState } from "../RunMetadataProvider";
+import {
+  TokenizingField,
+  TokenizingFieldValue,
+  SuggestionProvider
+} from "../TokenizingField";
 
 interface ILogsToolbarProps {
-  filter: ILogFilter;
+  steps: string[];
+  filter: LogFilter;
   filterStep: string | null;
   filterStepState: IStepState;
-  onSetFilter: (filter: ILogFilter) => void;
-  showSpinner: boolean;
+  onSetFilter: (filter: LogFilter) => void;
 }
 
-const FilterSpinner = <Spinner intent={Intent.NONE} size={16} />;
+const suggestionProvidersFilter = (
+  suggestionProviders: SuggestionProvider[],
+  values: TokenizingFieldValue[]
+) => {
+  const tokens: string[] = [];
+  for (const { token } of values) {
+    if (token) {
+      tokens.push(token);
+    }
+  }
+
+  // If id is set, then no other filters can be set
+  if (tokens.includes("id")) {
+    return [];
+  }
+
+  // Can only have one filter value for pipeline, status, or id
+  const limitedTokens = new Set<string>(["id", "pipeline", "status"]);
+  const presentLimitedTokens = tokens.filter(token => limitedTokens.has(token));
+
+  return suggestionProviders.filter(
+    provider => !presentLimitedTokens.includes(provider.token)
+  );
+};
 
 export default class LogsToolbar extends React.PureComponent<
   ILogsToolbarProps
 > {
   render() {
     const {
+      steps,
       filter,
       filterStep,
       filterStepState,
-      onSetFilter,
-      showSpinner
+      onSetFilter
     } = this.props;
 
     return (
       <LogsToolbarContainer>
-        <FilterInputGroup
-          leftIcon="filter"
-          placeholder="Filter logs..."
+        <FilterTokenizingField
+          values={filter.values}
+          onChange={(values: LogFilterValue[]) =>
+            onSetFilter({ ...filter, values })
+          }
           className={filterStep ? "has-step" : ""}
-          small={true}
-          value={filter.text}
-          spellCheck={false}
-          rightElement={
-            showSpinner ? (
-              FilterSpinner
-            ) : filter.text.length ? (
-              <Icon
-                color={Colors.GRAY1}
-                icon={IconNames.SMALL_CROSS}
-                style={{ padding: 4 }}
-                onClick={() => onSetFilter({ ...filter, text: "" })}
-              />
-            ) : (
-              undefined
-            )
-          }
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            onSetFilter({ ...filter, text: e.target.value })
-          }
+          suggestionProviders={GetFilterProviders(steps)}
+          suggestionProvidersFilter={suggestionProvidersFilter}
+          loading={false}
+          maxValues={1}
         />
+
         <LogsToolbarDivider />
         <ButtonGroup>
           {Object.keys(LogLevel).map(level => (
@@ -123,15 +135,19 @@ const LogsToolbarDivider = styled.div`
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
 `;
 
-const FilterInputGroup = styled(InputGroup)`
+const FilterTokenizingField = styled(TokenizingField)`
   flex: 2;
-  max-width: 375px;
+  height: 20px;
   min-width: 100px;
-  & input {
-    padding-right: 22px !important;
-  }
   &.has-step {
     box-shadow: 0 0 0 2px ${Colors.GOLD3};
     border-radius: 3px;
+  }
+  &.bp3-tag-input {
+    min-height: 26px;
+  }
+  &.bp3-tag-input .bp3-tag-input-values {
+    height: 23px;
+    margin-top: 3px;
   }
 `;

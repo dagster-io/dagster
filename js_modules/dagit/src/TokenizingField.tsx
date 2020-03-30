@@ -33,6 +33,7 @@ interface TokenizingFieldProps {
   ) => SuggestionProvider[];
   placeholder?: string;
   loading?: boolean;
+  className?: string;
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
@@ -43,6 +44,7 @@ export function tokenizedValuesFromString(
   str: string,
   providers: SuggestionProvider[]
 ) {
+  if (str === "") return [];
   const tokens = str.split(",");
   return tokens.map(token => tokenizedValueFromString(token, providers));
 }
@@ -76,13 +78,13 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   maxValues,
   onChange,
   placeholder,
-  loading
+  loading,
+  className
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>("");
-  const atMaxValues =
-    maxValues !== undefined && values.filter(v => v.token).length >= maxValues;
+  const atMaxValues = maxValues !== undefined && values.length >= maxValues;
 
   const filteredSuggestionProviders = suggestionProvidersFilter
     ? suggestionProvidersFilter(suggestionProviders, values)
@@ -136,7 +138,9 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   // Truncate suggestions to the ones currently matching the typed text,
   // and always sort them in alphabetical order.
   suggestions = suggestions.sort((a, b) => a.text.localeCompare(b.text));
-
+  if (atMaxValues) {
+    suggestions = [];
+  }
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
   // us to relocate it if it's moved and the index allows us to keep selection
@@ -282,6 +286,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       }
     >
       <StyledTagInput
+        className={className}
         values={values.map(v => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
         onRemove={(_, idx) => {
