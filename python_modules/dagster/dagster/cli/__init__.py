@@ -7,6 +7,7 @@ from ..core.instance import DagsterInstance
 from ..version import __version__
 from .instance import instance_cli
 from .pipeline import pipeline_cli
+from .repository import repository_cli
 from .run import run_cli
 from .schedule import schedule_cli
 
@@ -14,6 +15,7 @@ from .schedule import schedule_cli
 def create_dagster_cli():
     commands = {
         'pipeline': pipeline_cli,
+        'repository': repository_cli,
         'run': run_cli,
         'instance': instance_cli,
         'schedule': schedule_cli,
