@@ -59,7 +59,7 @@ on which the Dask scheduler is running.
 
 You'll also need a persistent shared storage, which should be attached to a pipeline
 :py:class:`~dagster.ModeDefinition` along with any resources on which it depends. (Here, we use the
-:py:data:`~dagster_aws.s3_system_storage`)
+:py:data:`~dagster_aws.s3_system_storage`) 
 
 For distributing task execution on a Dask cluster, you must provide a config block that includes the
 address/port of the Dask scheduler:
@@ -71,6 +71,18 @@ address/port of the Dask scheduler:
 Since Dask will invoke your pipeline code on the cluster workers, you must ensure that the latest
 version of your Python code is available to all of the Dask workers. Ideally, you'll package this as
 a Python module, and target your ``repository.yaml`` at this module.
+
+If you want Dask to share the ``DAGSTER_HOME`` environment variable with spawned workers, then you can 
+edit Dask's ``jobqueue.yaml`` configuration file. Using SGE as an example:
+
+.. code-block:: YAML
+
+  jobqueue:
+    sge:
+      name: dask-worker
+      # ...
+      job-extra: ['-v DAGSTER_HOME=/path/to/dagster']
+
 
 Managing compute resources with Dask
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
