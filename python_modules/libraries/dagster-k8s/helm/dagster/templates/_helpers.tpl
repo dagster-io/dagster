@@ -24,6 +24,21 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
+# Dagit image e.g. repo/foo:bar
+{{- define "dagster.dagit_image" -}}
+{{ required "Dagit image repository .Values.dagit.image.repository is required" .Values.dagit.image.repository -}}
+:
+{{- required "Dagit image tag .Values.dagit.image.tag is required" .Values.dagit.image.tag }}
+{{- end -}}
+
+# Dagster job image e.g. repo/foo:bar
+{{- define "dagster.job_image" -}}
+{{ required "Job runner image repository .Values.job_runner.image.repository is required" .Values.job_runner.image.repository -}}
+:
+{{- required "Job runner image tag .Values.job_runner.image.tag is required" .Values.job_runner.image.tag }}
+{{- end -}}
+
+
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}

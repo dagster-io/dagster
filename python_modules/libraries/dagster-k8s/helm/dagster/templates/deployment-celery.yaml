@@ -37,7 +37,7 @@ spec:
           securityContext:
             {{- toYaml .Values.celery.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
-          image: "{{ .Values.job_runner.image.repository }}:{{ .Values.job_runner.image.tag }}"
+          image: "{{ template "dagster.job_image" . }}"
           command: ["dagster-celery"]
           args: ["worker", "start", "-y", "{{ .Values.dagster_home }}/celery-config.yaml"]
           env:

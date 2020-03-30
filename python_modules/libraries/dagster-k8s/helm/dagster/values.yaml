@@ -10,10 +10,10 @@ dagster_home: "/opt/dagster/dagster_home"
 ####################################################################################################
 dagit:
   replicaCount: 1
-  # Dagit image repository and tag to deploy
+  # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster.io/dagster-docker-buildkite"
-    tag: "py37-latest"
+    repository: ""
+    tag: ""
 
   service:
     type: ClusterIP
@@ -57,10 +57,10 @@ dagit:
 # Job Runner: Configuration for the celery/job containers, which together handle physical execution
 ####################################################################################################
 job_runner:
-  # The Dagster K8sRunLauncher will invoke job executions in containers running this image
+  # REQUIRED: The Dagster K8sRunLauncher will invoke job executions in containers running this image
   image:
-    repository: "dagster.io/dagster-docker-buildkite"
-    tag: "py37-latest"
+    repository: ""
+    tag: ""
   # Can be set to override the default dagster home on the celery/job containers
   dagster_home: ""
   # Additional environment variables to set on the celery/job containers

@@ -34,7 +34,7 @@ data:
             {{- toYaml . | nindent 10 }}
         {{- end }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
-        job_image: "{{ .Values.job_runner.image.repository }}:{{ .Values.job_runner.image.tag }}"
+        job_image: "{{ template "dagster.job_image" . }}"
         dagster_home: "{{ template "dagster.dagit.dagster_home" .}}"
         instance_config_map: "{{ template "dagster.fullname" .}}-instance"
         postgres_password_secret: "{{ template "dagster.fullname" .}}-postgresql-secret"
