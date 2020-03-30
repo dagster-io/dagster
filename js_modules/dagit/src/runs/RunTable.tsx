@@ -113,7 +113,7 @@ export class RunTable extends React.Component<RunTableProps> {
           <NonIdealState
             icon="history"
             title="Pipeline Runs"
-            description="No runs to display. Use the Execute tab to start a pipeline."
+            description="No runs to display. Use the Playground to start a pipeline."
           />
         </div>
       );
@@ -365,7 +365,7 @@ const RunActionsMenu: React.FunctionComponent<{
           <MenuDivider />
 
           <MenuItem
-            text="Open in Execute Tab..."
+            text="Open in Playground..."
             disabled={!infoReady}
             icon="edit"
             target="_blank"

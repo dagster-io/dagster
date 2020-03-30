@@ -260,7 +260,7 @@ export const ScheduleRow: React.FunctionComponent<{
               />
               {environmentConfigYaml !== null ? (
                 <MenuItem
-                  text="Open in Execute Tab..."
+                  text="Open in Playground..."
                   icon="edit"
                   target="_blank"
                   href={`/playground/${pipelineName}/setup?${qs.stringify({
@@ -271,7 +271,7 @@ export const ScheduleRow: React.FunctionComponent<{
                 />
               ) : (
                 <MenuItem
-                  text="Open in Execute Tab..."
+                  text="Open in Playground..."
                   icon="edit"
                   disabled={true}
                 />
