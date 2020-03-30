@@ -85,7 +85,9 @@ sanity_check:
 rebuild_dagit: sanity_check
 	cd js_modules/dagit/; yarn install --offline && yarn build-for-python
 
-dev_install: install_dev_python_modules rebuild_dagit
+dev_install: install_dev_python_modules_verbose rebuild_dagit
+
+dev_install_quiet: install_dev_python_modules rebuild_dagit
 
 graphql_tests:
 	pytest examples/dagster_examples_tests/graphql_tests/ python_modules/dagster-graphql/dagster_graphql_tests/graphql/ -s -vv
