@@ -12,7 +12,7 @@
     },
     "eslint": {
       "type": "eslint",
-      "include": "(\\.(ts|tsx)$)",
+      "include": "(js_modules/dagit/.*\\.(ts|tsx)$)",
       "flags": ["--resolve-plugins-relative-to", "./js_modules/dagit"],
       "eslint.cwd": "./js_modules/dagit",
       "eslint.config": "./js_modules/dagit/.eslintrc.js"
