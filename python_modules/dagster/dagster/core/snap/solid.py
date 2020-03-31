@@ -40,13 +40,17 @@ class SolidDefinitionsSnapshot(
     def __new__(cls, solid_def_snaps, composite_solid_def_snaps):
         return super(SolidDefinitionsSnapshot, cls).__new__(
             cls,
-            solid_def_snaps=check.list_param(
-                solid_def_snaps, 'solid_def_snaps', of_type=SolidDefSnap
+            solid_def_snaps=sorted(
+                check.list_param(solid_def_snaps, 'solid_def_snaps', of_type=SolidDefSnap),
+                key=lambda solid_def: solid_def.name,
             ),
-            composite_solid_def_snaps=check.list_param(
-                composite_solid_def_snaps,
-                'composite_solid_def_snaps',
-                of_type=CompositeSolidDefSnap,
+            composite_solid_def_snaps=sorted(
+                check.list_param(
+                    composite_solid_def_snaps,
+                    'composite_solid_def_snaps',
+                    of_type=CompositeSolidDefSnap,
+                ),
+                key=lambda comp_def: comp_def.name,
             ),
         )
 

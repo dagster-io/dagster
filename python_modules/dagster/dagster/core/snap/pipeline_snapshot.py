@@ -1,8 +1,9 @@
+import hashlib
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 
 from .config_types import ConfigSchemaSnapshot, build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
@@ -58,6 +59,13 @@ class PipelineIndex:
     def get_dagster_type_snaps(self):
         dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
         return list(dt_namespace.all_dagster_type_snaps_by_key.values())
+
+
+def create_pipeline_snapshot_id(snapshot):
+    json_rep = serialize_dagster_namedtuple(snapshot)
+    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
+    m.update(json_rep.encode())
+    return m.hexdigest()
 
 
 @whitelist_for_serdes

@@ -66,8 +66,7 @@ class ConfigTypeSnap(
             fields=None
             if fields is None
             else sorted(
-                check.list_param(fields, 'field', of_type=ConfigFieldSnap),
-                key=lambda item: item.name,
+                check.list_param(fields, 'field', of_type=ConfigFieldSnap), key=lambda ct: ct.name
             ),
             description=check.opt_str_param(description, 'description'),
         )

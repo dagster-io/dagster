@@ -52,8 +52,11 @@ class DependencyStructureSnapshot(
     def __new__(cls, solid_invocation_snaps):
         return super(DependencyStructureSnapshot, cls).__new__(
             cls,
-            check.list_param(
-                solid_invocation_snaps, 'solid_invocation_snaps', of_type=SolidInvocationSnap
+            sorted(
+                check.list_param(
+                    solid_invocation_snaps, 'solid_invocation_snaps', of_type=SolidInvocationSnap
+                ),
+                key=lambda si: si.solid_name,
             ),
         )
 

@@ -6,7 +6,7 @@ from dagster.core.snap.dep_snapshot import (
     SolidInvocationSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 
@@ -34,7 +34,7 @@ def test_empty_pipeline_snap_snapshot(snapshot):
     snapshot.assert_match(serialize_pp(PipelineSnapshot.from_pipeline_def(get_noop_pipeline())))
 
 
-def test_empty_pipeline_snap_props():
+def test_empty_pipeline_snap_props(snapshot):
 
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(get_noop_pipeline())
 
@@ -43,6 +43,9 @@ def test_empty_pipeline_snap_props():
     assert pipeline_snapshot.tags == {}
 
     assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
+
+    snapshot.assert_match(serialize_pp(pipeline_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
 
 
 def test_pipeline_snap_all_props(snapshot):
@@ -60,7 +63,10 @@ def test_pipeline_snap_all_props(snapshot):
     assert pipeline_snapshot.description == 'desc'
     assert pipeline_snapshot.tags == {'key': 'value'}
 
-    snapshot.assert_match(serialize_pp(PipelineSnapshot.from_pipeline_def(noop_pipeline)))
+    assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
+
+    snapshot.assert_match(serialize_pp(pipeline_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
 
 
 def test_noop_deps_snap():
@@ -79,7 +85,7 @@ def test_noop_deps_snap():
     assert isinstance(invocations[0], SolidInvocationSnap)
 
 
-def test_two_invocations_deps_snap():
+def test_two_invocations_deps_snap(snapshot):
     @solid
     def noop_solid(_):
         pass
@@ -94,6 +100,12 @@ def test_two_invocations_deps_snap():
     )
     assert index.get_invocation('one')
     assert index.get_invocation('two')
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(two_solid_pipeline)
+    assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
+
+    snapshot.assert_match(serialize_pp(pipeline_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
 
 
 def test_basic_dep():
@@ -122,7 +134,7 @@ def test_basic_dep():
     assert outputs[0].output_name == 'result'
 
 
-def test_basic_dep_fan_out():
+def test_basic_dep_fan_out(snapshot):
     @solid
     def return_one(_):
         return 1
@@ -159,8 +171,14 @@ def test_basic_dep_fan_out():
         == dep_structure_snapshot
     )
 
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(single_dep_pipeline)
+    assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
 
-def test_basic_fan_in():
+    snapshot.assert_match(serialize_pp(pipeline_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+
+
+def test_basic_fan_in(snapshot):
     @solid(output_defs=[OutputDefinition(Nothing)])
     def return_nothing(_):
         return None
@@ -190,3 +208,9 @@ def test_basic_fan_in():
         deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(dep_structure_snapshot))
         == dep_structure_snapshot
     )
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(fan_in_test)
+    assert pipeline_snapshot == serialize_rt(pipeline_snapshot)
+
+    snapshot.assert_match(serialize_pp(pipeline_snapshot))
+    snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
