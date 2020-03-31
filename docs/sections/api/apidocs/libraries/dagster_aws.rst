@@ -72,8 +72,6 @@ EMR
 
 .. autoclass:: dagster_aws.emr.EmrJobRunner
 
-.. autodata:: dagster_aws.emr.create_emr_run_job_flow_solid
-
 .. autoclass:: dagster_aws.emr.EmrError
 
 .. autodata:: dagster_aws.emr.EmrClusterState
