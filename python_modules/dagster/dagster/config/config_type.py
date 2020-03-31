@@ -117,6 +117,9 @@ class Float(BuiltinConfigScalar):
     def __init__(self):
         super(Float, self).__init__(description='')
 
+    def post_process(self, value):
+        return float(value)
+
 
 class Any(ConfigType):
     def __init__(self):

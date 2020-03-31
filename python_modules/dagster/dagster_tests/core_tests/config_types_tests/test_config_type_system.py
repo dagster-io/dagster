@@ -8,6 +8,7 @@ from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
+    Float,
     Int,
     List,
     ModeDefinition,
@@ -38,6 +39,20 @@ def test_int_field():
     assert validate_config(config_field.config_type, {'int_field': 1}).value == {'int_field': 1}
 
 
+def test_float_field():
+    config_field = convert_potential_field({'float_field': Float})
+    assert validate_config(config_field.config_type, {'float_field': 1.0}).value == {
+        'float_field': 1.0
+    }
+    assert process_config(config_field.config_type, {'float_field': 1.0}).value == {
+        'float_field': 1.0
+    }
+    assert validate_config(config_field.config_type, {'float_field': 1}).value == {'float_field': 1}
+    assert process_config(config_field.config_type, {'float_field': 1}).value == {
+        'float_field': 1.0
+    }
+
+
 def assert_config_value_success(config_type, config_value, expected):
     result = process_config(config_type, config_value)
     assert result.success
@@ -61,6 +76,20 @@ def test_default_arg():
     )
 
     assert_config_value_success(config_field.config_type, {}, {'int_field': 2})
+
+
+def test_default_float_arg():
+    config_field = convert_potential_field(
+        {'float_field': Field(Float, default_value=2.0, is_required=False)}
+    )
+
+    assert_config_value_success(config_field.config_type, {}, {'float_field': 2.0})
+
+    config_field = convert_potential_field(
+        {'float_field': Field(Float, default_value=2, is_required=False)}
+    )
+
+    assert_config_value_success(config_field.config_type, {}, {'float_field': 2})
 
 
 def _single_required_string_config_dict():

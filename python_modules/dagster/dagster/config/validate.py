@@ -25,6 +25,8 @@ from .post_process import post_process_config
 from .stack import EvaluationStack
 from .traversal_context import TraversalContext, TraversalType
 
+VALID_FLOAT_TYPES = tuple(list(six.integer_types) + [float])
+
 
 def is_config_scalar_valid(config_type, config_value):
     check.inst_param(config_type, 'config_type', ConfigType)
@@ -35,7 +37,7 @@ def is_config_scalar_valid(config_type, config_value):
     elif isinstance(config_type, Bool):
         return isinstance(config_value, bool)
     elif isinstance(config_type, Float):
-        return isinstance(config_value, float)
+        return isinstance(config_value, VALID_FLOAT_TYPES)
     elif isinstance(config_type, ConfigScalar):
         # TODO: remove (disallow custom scalars)
         # https://github.com/dagster-io/dagster/issues/1991
