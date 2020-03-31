@@ -1,8 +1,8 @@
 from collections import defaultdict, namedtuple
 
 from dagster import check
-from dagster.core.definitions.container import IContainSolids
 from dagster.core.definitions.dependency import Solid, SolidInputHandle
+from dagster.core.definitions.solid_container import IContainSolids
 from dagster.serdes import whitelist_for_serdes
 
 

@@ -1,5 +1,4 @@
 from .config import ConfigMapping
-from .container import IContainSolids, create_execution_structure
 from .decorators import (
     composite_solid,
     daily_schedule,
@@ -59,4 +58,5 @@ from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
+from .solid_container import IContainSolids, create_execution_structure
 from .system_storage import SystemStorageData, SystemStorageDefinition, system_storage

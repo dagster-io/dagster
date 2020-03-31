@@ -10,10 +10,10 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
 from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
 
-from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import SolidHandle
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
+from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .utils import check_valid_name, validate_tags
 
 

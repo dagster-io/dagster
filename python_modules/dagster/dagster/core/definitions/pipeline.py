@@ -6,7 +6,6 @@ from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_t
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import rename_warning
 
-from .container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
@@ -16,6 +15,7 @@ from .dependency import (
 from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
+from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
 from .utils import validate_tags
 
 
