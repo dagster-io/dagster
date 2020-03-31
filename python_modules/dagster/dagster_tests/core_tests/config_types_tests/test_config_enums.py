@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     Enum,
     EnumValue,
     Field,
@@ -118,29 +119,95 @@ def test_native_enum_dagster_enum_from_classmethod():
     assert called['yup']
 
 
-def test_native_enum_dagster_enum_from_classmethod_default_value():
+def test_native_enum_not_allowed_as_default_value():
     dagster_enum = Enum.from_python_enum(NativeEnum)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @solid(config=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
+        def _enum_direct(_):
+            pass
+
+    assert str(exc_info.value) == (
+        "You have passed into a python enum value as the default value into "
+        "of a config enum type NativeEnum. You must pass in the underlying string "
+        "represention as the default value. One of ['FOO', 'BAR']."
+    )
+
+
+def test_list_enum_with_default_value():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+
     called = {}
 
-    @solid(config=Field(dagster_enum, is_required=False, default_value='BAR'))
-    def enum_name_as_str(context):
-        assert context.solid_config == NativeEnum.BAR
-        called['str'] = True
-
-    @solid(config=Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR))
-    def enum_direct(context):
-        assert context.solid_config == NativeEnum.BAR
-        called['enum'] = True
+    @solid(config=Field([dagster_enum], is_required=False, default_value=['BAR']))
+    def enum_list(context):
+        assert context.solid_config == [NativeEnum.BAR]
+        called['yup'] = True
 
     @pipeline
-    def test():
-        enum_direct()
-        enum_name_as_str()
+    def enum_list_pipeline():
+        enum_list()
 
-    result = execute_pipeline(test)
+    result = execute_pipeline(enum_list_pipeline)
+
     assert result.success
-    assert called['str']
-    assert called['enum']
+    assert called['yup']
+
+
+def test_dict_enum_with_default():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+
+    called = {}
+
+    @solid(config={'enum': Field(dagster_enum, is_required=False, default_value='BAR')})
+    def enum_dict(context):
+        assert context.solid_config['enum'] == NativeEnum.BAR
+        called['yup'] = True
+
+    @pipeline
+    def enum_dict_pipeline():
+        enum_dict()
+
+    result = execute_pipeline(enum_dict_pipeline)
+
+    assert result.success
+    assert called['yup']
+
+
+def test_list_enum_with_bad_default_value():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+
+    with pytest.raises(DagsterInvalidConfigError) as exc_info:
+
+        @solid(config=Field([dagster_enum], is_required=False, default_value=[NativeEnum.BAR]))
+        def _bad_enum_list(_):
+            pass
+
+    # This error message is bad
+    # https://github.com/dagster-io/dagster/issues/2339
+    assert 'Invalid default_value for Field.' in str(exc_info.value)
+    assert 'Error 1: Value at path root[0] for enum type NativeEnum must be a string' in str(
+        exc_info.value
+    )
+
+
+def test_dict_enum_with_bad_default():
+    dagster_enum = Enum.from_python_enum(NativeEnum)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
+
+        @solid(
+            config={'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)}
+        )
+        def _enum_bad_dict(_):
+            pass
+
+    assert str(exc_info.value) == (
+        "You have passed into a python enum value as the default value into "
+        "of a config enum type NativeEnum. You must pass in the underlying string "
+        "represention as the default value. One of ['FOO', 'BAR']."
+    )
 
 
 def test_native_enum_classmethod_creates_all_values():

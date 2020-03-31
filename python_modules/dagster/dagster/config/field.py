@@ -1,10 +1,11 @@
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster.utils import is_enum_value
 from dagster.utils.backcompat import canonicalize_backcompat_args
 from dagster.utils.typing_api import is_typing_type
 
-from .config_type import Array, ConfigAnyInstance, ConfigType
+from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
 
 
@@ -227,7 +228,7 @@ class Field(object):
         description=None,
     ):
         from .validate import validate_config
-        from .post_process import post_process_config
+        from .post_process import resolve_defaults
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
@@ -256,10 +257,23 @@ class Field(object):
                 'default_value',
                 'required arguments should not specify default values',
             )
+
         self._default_value = default_value
 
         # check explicit default value
         if self.default_provided:
+            if self.config_type.kind == ConfigTypeKind.ENUM and is_enum_value(default_value):
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'You have passed into a python enum value as the default value '
+                        'into of a config enum type {name}. You must pass in the underlying '
+                        'string represention as the default value. One of {value_set}.'
+                    ).format(
+                        value_set=[ev.config_value for ev in self.config_type.enum_values],
+                        name=self.config_type.given_name,
+                    )
+                )
+
             evr = validate_config(self.config_type, default_value)
             if not evr.success:
                 raise DagsterInvalidConfigError(
@@ -272,8 +286,8 @@ class Field(object):
 
             # on implicitly optional - set the default value
             # by resolving the defaults of the type
-            if not canonical_is_required and self._default_value == FIELD_NO_DEFAULT_PROVIDED:
-                evr = post_process_config(self.config_type, None)
+            if not canonical_is_required and not self.default_provided:
+                evr = resolve_defaults(self.config_type, None)
                 if not evr.success:
                     raise DagsterInvalidConfigError(
                         'Unable to resolve implicit default_value for Field.', evr.errors, None,

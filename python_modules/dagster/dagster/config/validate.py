@@ -1,5 +1,3 @@
-from enum import Enum
-
 import six
 
 from dagster import check
@@ -290,9 +288,6 @@ def validate_enum_config(context, config_value):
     check.inst_param(context, 'context', ValidationContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.ENUM)
     check.not_none_param(config_value, 'config_value')
-
-    if isinstance(config_value, Enum):
-        config_value = config_value.name
 
     if not isinstance(config_value, six.string_types):
         return EvaluateValueResult.for_error(create_enum_type_mismatch_error(context, config_value))
