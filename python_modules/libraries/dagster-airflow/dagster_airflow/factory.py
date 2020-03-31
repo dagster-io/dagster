@@ -47,6 +47,24 @@ def _rename_for_airflow(name):
     return re.sub(r'[^\w\-\.]', '_', name)[:AIRFLOW_MAX_DAG_NAME_LEN]
 
 
+class DagsterOperatorInvocationArgs(
+    namedtuple(
+        'DagsterOperatorInvocationArgs',
+        'handle pipeline_name environment_dict mode step_keys instance_ref',
+    )
+):
+    def __new__(cls, handle, pipeline_name, environment_dict, mode, step_keys, instance_ref):
+        return super(DagsterOperatorInvocationArgs, cls).__new__(
+            cls,
+            handle=handle,
+            pipeline_name=pipeline_name,
+            environment_dict=environment_dict,
+            mode=mode,
+            step_keys=step_keys,
+            instance_ref=instance_ref,
+        )
+
+
 class DagsterOperatorParameters(
     namedtuple(
         '_DagsterOperatorParameters',
@@ -86,10 +104,7 @@ class DagsterOperatorParameters(
 
     @property
     def invocation_args(self):
-        InvocationArgs = namedtuple(
-            'InvocationArgs', 'handle pipeline_name environment_dict mode step_keys instance_ref',
-        )
-        invocation_args = InvocationArgs(
+        return DagsterOperatorInvocationArgs(
             handle=self.handle,
             pipeline_name=self.pipeline_name,
             environment_dict=self.environment_dict,
@@ -97,7 +112,6 @@ class DagsterOperatorParameters(
             step_keys=self.step_keys,
             instance_ref=self.instance_ref,
         )
-        return invocation_args
 
 
 def _make_airflow_dag(
