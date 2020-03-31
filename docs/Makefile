@@ -123,7 +123,7 @@ linkcheck:
 	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $(BUILDDIR)/linkcheck
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
-	      "or in $(BUILDDIR)/linkcheck/output.
+	      "or in $(BUILDDIR)/linkcheck/output.txt"
 
 doctest:
 	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
@@ -132,6 +132,12 @@ doctest:
 
 livehtml:
 	sphinx-autobuild -a -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+
+gatsby:
+	cd gatsby && yarn install && yarn sphinx -v latest && yarn build && cd ..
+
+livegatsby:
+	cd gatsby && yarn install && yarn sphinx -v latest && yarn develop
 
 buildnext:
 	make clean && make json

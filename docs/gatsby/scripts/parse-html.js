@@ -20,6 +20,10 @@ const rewriteLinks = (node, version) => {
     .replace(modulesRegex, `/${version}/_modules/`)
     .replace("/sections/", `/${version}/`);
 
+  if (url.startsWith("sections/")) {
+    url = url.slice(9, Infinity);
+  }
+
   node.properties.href = url;
 };
 
