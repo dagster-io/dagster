@@ -15,6 +15,12 @@ module.exports = {
     author: "@dagster"
   },
   plugins: [
+    {
+      resolve: `gatsby-plugin-google-analytics`,
+      options: {
+        trackingId: "UA-138684758-1"
+      }
+    },
     "gatsby-plugin-react-helmet",
     {
       resolve: `gatsby-plugin-algolia`,
@@ -96,12 +102,6 @@ module.exports = {
         theme_color: "#663399",
         display: "minimal-ui",
         icon: "src/images/logo.png"
-      }
-    },
-    {
-      resolve: `gatsby-plugin-google-analytics`,
-      options: {
-        trackingId: "UA-138684758-1"
       }
     }
   ]
