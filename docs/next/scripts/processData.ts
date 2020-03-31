@@ -80,16 +80,18 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
       [key: string]: (number | string)[];
     };
   } = data.objects;
+
+  const objectNames: {
+    [key: number]: string[];
+  } = data.objnames;
+
   for (const module in objects) {
     for (const object in objects[module]) {
       const objProperties = objects[module][object];
       const docNamesIndex: number = objProperties[0] as number;
       const typeIndex: number = objProperties[1] as number;
+      const type = objectNames[typeIndex][1];
       const alias: string = objProperties[3] as string;
-      const objectNames: {
-        [key: number]: string[];
-      } = data.objnames;
-
       const relativePath = data.docnames[docNamesIndex].replace(
         "sections/api/apidocs/",
         ""
@@ -101,10 +103,11 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
           : relativePath + "#" + alias;
 
       const record = {
+        objectID: `${module}.${object}.${type}.${alias}`,
         module,
         object,
         path,
-        type: objectNames[typeIndex][1],
+        type,
         alias
       };
       records.push(record);
