@@ -1,7 +1,5 @@
 from enum import Enum as PythonEnum
 
-import six
-
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.serdes import whitelist_for_serdes
@@ -83,9 +81,6 @@ class ConfigScalar(ConfigType):
             key, given_name=given_name, kind=ConfigTypeKind.SCALAR, **kwargs
         )
 
-    def is_config_scalar_valid(self, _config_value):
-        check.not_implemented('must implement')
-
 
 class BuiltinConfigScalar(ConfigScalar):
     def __init__(self, description=None):
@@ -98,13 +93,9 @@ class Int(BuiltinConfigScalar):
     def __init__(self):
         super(Int, self).__init__(description='')
 
-    def is_config_scalar_valid(self, config_value):
-        return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
-
 
 class _StringishBuiltin(BuiltinConfigScalar):
-    def is_config_scalar_valid(self, config_value):
-        return isinstance(config_value, six.string_types)
+    pass
 
 
 class String(_StringishBuiltin):
@@ -121,16 +112,10 @@ class Bool(BuiltinConfigScalar):
     def __init__(self):
         super(Bool, self).__init__(description='')
 
-    def is_config_scalar_valid(self, config_value):
-        return isinstance(config_value, bool)
-
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
         super(Float, self).__init__(description='')
-
-    def is_config_scalar_valid(self, config_value):
-        return isinstance(config_value, float)
 
 
 class Any(ConfigType):

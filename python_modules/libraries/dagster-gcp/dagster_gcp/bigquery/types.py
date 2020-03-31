@@ -121,7 +121,7 @@ class _Dataset(ConfigScalar):
     def __init__(self):
         super(_Dataset, self).__init__(key=type(self).__name__, given_name=type(self).__name__)
 
-    def is_config_scalar_valid(self, config_value):
+    def is_custom_config_scalar_valid(self, config_value):
         if not isinstance(config_value, six.string_types):
             return False
 
@@ -132,7 +132,7 @@ class _Table(ConfigScalar):
     def __init__(self):
         super(_Table, self).__init__(key=type(self).__name__, given_name=type(self).__name__)
 
-    def is_config_scalar_valid(self, config_value):
+    def is_custom_config_scalar_valid(self, config_value):
         if not isinstance(config_value, six.string_types):
             return False
 

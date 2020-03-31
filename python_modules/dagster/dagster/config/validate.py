@@ -41,7 +41,7 @@ def is_config_scalar_valid(config_type, config_value):
     elif isinstance(config_type, ConfigScalar):
         # TODO: remove (disallow custom scalars)
         # https://github.com/dagster-io/dagster/issues/1991
-        return config_type.is_config_scalar_valid(config_value)
+        return config_type.is_custom_config_scalar_valid(config_value)
     else:
         check.failed('Not a supported scalar {}'.format(config_type))
 
