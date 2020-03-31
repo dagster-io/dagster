@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from collections import defaultdict
 
 import six
 import sqlalchemy as db
@@ -7,6 +8,7 @@ from dagster import check, seven
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
@@ -154,6 +156,63 @@ class SqlEventLogStorage(EventLogStorage):
             )
         except (seven.JSONDecodeError, check.CheckError) as err:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+
+    def get_step_stats_for_run(self, run_id):
+        check.str_param(run_id, 'run_id')
+
+        STEP_STATS_EVENT_TYPES = [
+            DagsterEventType.STEP_START.value,
+            DagsterEventType.STEP_SUCCESS.value,
+            DagsterEventType.STEP_SKIPPED.value,
+            DagsterEventType.STEP_FAILURE.value,
+        ]
+
+        query = (
+            db.select(
+                [
+                    SqlEventLogStorageTable.c.step_key,
+                    SqlEventLogStorageTable.c.dagster_event_type,
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label('timestamp'),
+                ]
+            )
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(SqlEventLogStorageTable.c.step_key != None)
+            .where(SqlEventLogStorageTable.c.dagster_event_type.in_(STEP_STATS_EVENT_TYPES))
+            .group_by(
+                SqlEventLogStorageTable.c.step_key, SqlEventLogStorageTable.c.dagster_event_type,
+            )
+        )
+
+        with self.connect(run_id) as conn:
+            results = conn.execute(query).fetchall()
+
+        by_step_key = defaultdict(dict)
+        for result in results:
+            step_key = result.step_key
+            if result.dagster_event_type == DagsterEventType.STEP_START.value:
+                by_step_key[step_key]['start_time'] = (
+                    datetime_as_float(result.timestamp) if result.timestamp else None
+                )
+            if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
+                by_step_key[step_key]['end_time'] = (
+                    datetime_as_float(result.timestamp) if result.timestamp else None
+                )
+                by_step_key[step_key]['status'] = DagsterEventType.STEP_FAILURE
+            if result.dagster_event_type == DagsterEventType.STEP_SUCCESS.value:
+                by_step_key[step_key]['end_time'] = (
+                    datetime_as_float(result.timestamp) if result.timestamp else None
+                )
+                by_step_key[step_key]['status'] = DagsterEventType.STEP_SUCCESS
+            if result.dagster_event_type == DagsterEventType.STEP_SKIPPED.value:
+                by_step_key[step_key]['end_time'] = (
+                    datetime_as_float(result.timestamp) if result.timestamp else None
+                )
+                by_step_key[step_key]['status'] = DagsterEventType.STEP_SKIPPED
+
+        return [
+            RunStepKeyStatsSnapshot(run_id=run_id, step_key=step_key, **value)
+            for step_key, value in by_step_key.items()
+        ]
 
     def wipe(self):
         '''Clears the event log storage.'''
