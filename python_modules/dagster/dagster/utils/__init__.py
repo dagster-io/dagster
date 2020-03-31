@@ -414,3 +414,7 @@ def utc_datetime_from_timestamp(timestamp):
         tz = pytz.utc
 
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
+
+
+def is_enum_value(value):
+    return False if value is None else issubclass(value.__class__, Enum)
