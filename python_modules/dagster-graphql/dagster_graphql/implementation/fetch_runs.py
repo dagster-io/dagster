@@ -104,3 +104,8 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
 def get_stats(graphene_info, run_id):
     stats = graphene_info.context.instance.get_run_stats(run_id)
     return graphene_info.schema.type_named('PipelineRunStatsSnapshot')(stats)
+
+
+def get_step_stats(graphene_info, run_id):
+    step_stats = graphene_info.context.instance.get_run_step_stats(run_id)
+    return [graphene_info.schema.type_named('PipelineRunStepStats')(stats) for stats in step_stats]

@@ -4,7 +4,10 @@ import pyrsistent
 import six
 
 from dagster.core.events.log import EventRecord
-from dagster.core.execution.stats import build_stats_from_events
+from dagster.core.execution.stats import (
+    build_run_stats_from_events,
+    build_run_step_stats_from_events,
+)
 
 
 class EventLogSequence(pyrsistent.CheckedPVector):
@@ -35,8 +38,11 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
 
     def get_stats_for_run(self, run_id):
         '''Get a summary of events that have ocurred in a run.'''
+        return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
-        return build_stats_from_events(run_id, self.get_logs_for_run(run_id))
+    def get_step_stats_for_run(self, run_id):
+        '''Get per-step stats for a pipeline run.'''
+        return build_run_step_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
     @abstractmethod
     def store_event(self, event):

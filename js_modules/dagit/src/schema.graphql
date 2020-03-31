@@ -729,6 +729,7 @@ type PipelineRun {
   status: PipelineRunStatus!
   pipeline: PipelineReference!
   stats: PipelineRunStatsOrError!
+  stepStats: [PipelineRunStepStats!]!
   logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
@@ -792,6 +793,14 @@ enum PipelineRunStatus {
   STARTED
   SUCCESS
   FAILURE
+}
+
+type PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: String!
+  startTime: Float
+  endTime: Float
 }
 
 type PipelineSnapshot {

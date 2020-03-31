@@ -8,7 +8,7 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_def_from_selector,
     get_pipeline_reference_or_raise,
 )
-from dagster_graphql.implementation.fetch_runs import get_stats
+from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
 
 from dagster import RunConfig, check, seven
 from dagster.core.definitions.events import (
@@ -26,6 +26,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import (
     PipelineRun,
@@ -75,6 +76,27 @@ class DauphinPipelineRunStatsOrError(dauphin.Union):
         types = ('PipelineRunStatsSnapshot', 'PythonError')
 
 
+class DauphinPipelineRunStepStats(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PipelineRunStepStats'
+
+    runId = dauphin.NonNull(dauphin.String)
+    stepKey = dauphin.NonNull(dauphin.String)
+    status = dauphin.NonNull(dauphin.String)
+    startTime = dauphin.Field(dauphin.Float)
+    endTime = dauphin.Field(dauphin.Float)
+
+    def __init__(self, stats):
+        self._stats = check.inst_param(stats, 'stats', RunStepKeyStatsSnapshot)
+        super(DauphinPipelineRunStepStats, self).__init__(
+            runId=stats.run_id,
+            stepKey=stats.step_key,
+            status=stats.status,
+            startTime=stats.start_time,
+            endTime=stats.end_time,
+        )
+
+
 class DauphinPipelineRun(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineRun'
@@ -83,6 +105,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
     stats = dauphin.NonNull('PipelineRunStatsOrError')
+    stepStats = dauphin.non_null_list('PipelineRunStepStats')
     logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
         dauphin.NonNull('ComputeLogs'),
@@ -113,6 +136,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
+
+    def resolve_stepStats(self, graphene_info):
+        return get_step_stats(graphene_info, self.run_id)
 
     def resolve_computeLogs(self, graphene_info, stepKey):
         return graphene_info.schema.type_named('ComputeLogs')(runId=self.run_id, stepKey=stepKey)
