@@ -47,6 +47,7 @@ const SUBTREE: {
   [key: string]: {
     name: string;
     path: string;
+    isAbsolutePath?: boolean;
   }[];
 } = {
   Install: [
@@ -161,6 +162,36 @@ const SUBTREE: {
       name: "Scheduling pipeline runs"
     }
   ],
+  Community: [
+    {
+      path: "/index",
+      name: "Community"
+    },
+    {
+      path: "/code_of_conduct",
+      name: "Code of Conduct"
+    },
+    {
+      path: "/contributing",
+      name: "Contributing"
+    },
+    {
+      path:
+        "https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU",
+      isAbsolutePath: true,
+      name: "Slack"
+    },
+    {
+      path: "https://www.github.com/dagster-io/dagster/",
+      isAbsolutePath: true,
+      name: "Github"
+    },
+    {
+      path: "https://stackoverflow.com/questions/tagged/dagster",
+      isAbsolutePath: true,
+      name: "Stack Overflow"
+    }
+  ],
   "API Docs": API_DOCS_PAGES
 };
 
@@ -240,18 +271,25 @@ const Sidebar = () => {
           {selectedSection?.name &&
             SUBTREE[selectedSection.name] &&
             SUBTREE[selectedSection.name].map((i: any) => {
-              const subsectionPath = selectedSection.path + i.path;
+              let subsectionPath = "";
               let subSelected = false;
-              if (router.pathname.includes(subsectionPath)) {
-                subSelected = true;
+
+              if (i.isAbsolutePath === true) {
+                subsectionPath = i.path;
+              } else {
+                subsectionPath = selectedSection.path + i.path;
+                if (router.pathname.includes(subsectionPath)) {
+                  subSelected = true;
+                }
+                // Handle dynamic docs
+                if (
+                  router.query.page instanceof Array &&
+                  "/" + router.query.page.join("/") === i.path
+                ) {
+                  subSelected = true;
+                }
               }
-              // Handle dynamic docs
-              if (
-                router.query.page instanceof Array &&
-                "/" + router.query.page.join("/") === i.path
-              ) {
-                subSelected = true;
-              }
+
               return (
                 <a
                   href={subsectionPath}
