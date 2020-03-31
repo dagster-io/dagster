@@ -51,25 +51,30 @@ class ScheduleDefinition(object):
     '''Define a schedule that targets a pipeline
 
     Args:
-        name (str): The name of the schedule.
-        cron_schedule (str): A valid cron string for the schedule
-        pipeline_name (str): The name of the pipeline definition
-        environment_dict (Optional[dict]): (deprecated) The environment config that parameterizes
-            this execution, as a dict.
-        environment_dict_fn (Callable[ScheduleExecutionContext, [Dict]]): A function that takes a
+        name (str): The name of the schedule to create.
+        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g., 
+            '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
+        pipeline_name (str): The name of the pipeline to execute when the schedule runs.
+        environment_dict (Optional[Dict]): The environment config that parameterizes this execution,
+            as a dict.
+        environment_dict_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
             ScheduleExecutionContext object and returns the environment configuration that
-            parameterizes this execution, as a dict.
-        tags (Optional[dict[str, str]]]): (deprecated) A dictionary of tags (key value pairs) that
-            will be added to the generated run.
-        tags_fn (Callable[ScheduleExecutionContext, Optional[dict[str, str]]]): A function that
-            takes a ScheduleExecutionContext object and returns a dictionary of tags (key value
-            pairs) that will be added to the generated run.
-        solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
-            unaliased solids or of their aliases if aliased) to execute with this schedule.
+            parameterizes this execution, as a dict. You may set only one of ``environment_dict``
+            and ``environment_dict_fn``.
+        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
+            to the scheduled runs.
+        tags_fn (Optional[Callable[[ScheduleExecutionContext], Optional[Dict[str, str]]]]): A function
+            that generates tags to attach to the schedules runs. Takes a
+            :py:class:`~dagster.ScheduleExecutionContext` and returns a dictionary of tags (string
+            key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
+        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
+            (names of unaliased solids or aliases of aliased solids) to execute when the schedule
+            runs.
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
-        should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): Function that takes a
-            ScheduleExecutionContext object and runs at schedule execution time that determines
-            whether a schedule should execute. Defaults to a function that always returns ``True``.
+        should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
+            schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
     '''
