@@ -636,6 +636,29 @@ def gatsby_docs_build_tests():
     return tests
 
 
+def next_docs_build_tests():
+    tests = []
+    for version in [SupportedPython.V3_7]:
+        tests.append(
+            StepBuilder("next docs build tests")
+            .run(
+                "pip install -r bin/requirements.txt -qqq",
+                "pip install -r bin/dev-requirements.txt -qqq",
+                "pip install -r .read-the-docs-requirements.txt -qqq",
+                "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+                "cd docs",
+                "make buildnext",
+                "cd next",
+                "yarn build",
+                "yarn next export",
+            )
+            .on_integration_image(version)
+            .build()
+        )
+
+    return tests
+
+
 def releasability_tests():
     tests = []
     for version in [SupportedPython.V3_7]:
@@ -728,6 +751,7 @@ if __name__ == "__main__":
     steps += releasability_tests()
 
     steps += gatsby_docs_build_tests()
+    steps += next_docs_build_tests()
 
     if DO_COVERAGE:
         steps += [wait_step(), coverage_step()]

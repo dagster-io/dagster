@@ -14,6 +14,7 @@
     "algoliasearch": "^4.1.0",
     "axios": "^0.19.2",
     "axios-hooks": "^1.9.0",
+    "fast-glob": "^3.2.2",
     "next": "^9.3.1",
     "node-sass": "^4.13.1",
     "parse5": "^5.1.1",
@@ -23,7 +24,7 @@
     "react-syntax-highlighter": "^12.2.1",
     "react-use": "^13.27.0",
     "remark-macro": "^1.0.7",
-    "ts-node": "^8.8.1",
+    "ts-node": "^8.8.2",
     "unist-util-visit": "^2.0.2",
     "use-http": "^0.4.1",
     "walk-parse5": "^2.0.0"
@@ -32,7 +33,7 @@
     "dev": "next",
     "build": "next build",
     "start": "next start",
-    "process": "ts-node -O '{\"module\": \"commonjs\"}' scripts/processData.ts"
+    "process": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/processData.ts"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^2.1.0",

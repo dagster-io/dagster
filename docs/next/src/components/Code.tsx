@@ -16,7 +16,7 @@ const Code: React.FunctionComponent<CodeProps> = ({
   startLine = '1',
   ...props
 }) => {
-  const language = className.replace(/language-/, '');
+  const language = className ? className.replace(/language-/, '') : 'text';
 
   const emphasizeLines = props['emphasize-lines'];
   const rangesToEmphasize = emphasizeLines
@@ -25,7 +25,7 @@ const Code: React.FunctionComponent<CodeProps> = ({
         .map((s) => s.trim())
         .map((s) => s.split('-').map((e) => parseInt(e)))
     : [];
-    
+
   return (
     <SyntaxHighlighter
       language={language}

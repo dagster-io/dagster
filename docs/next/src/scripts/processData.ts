@@ -1,12 +1,8 @@
 import fg from 'fast-glob';
 import path from 'path';
 import { promises as fs } from 'fs';
-import parse5 from 'parse5';
-import { parse } from 'querystring';
 import algoliasearch from 'algoliasearch';
 import data from '../data/searchindex.json';
-
-// Environment Variables
 
 // Folder paths
 const DATA_PATH = path.join(__dirname, '../data');
@@ -34,6 +30,7 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
       await fs.writeFile(entry, JSON.stringify(fileData), 'utf8');
     }
   }
+  console.log('✅ Re-wrote all relative links');
 })();
 
 (async () => {
@@ -53,21 +50,19 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
     path.join(MODULE_PATH, 'searchindex.json'),
     JSON.stringify(index),
   );
+
+  console.log('✅ Generated list of all list and module files');
 })();
 
 (async () => {
-  const {
-    NEXT_ALGOLIA_APP_ID,
-    NEXT_ALGOLIA_API_KEY,
-    NEXT_ALGOLIA_ADMIN_KEY,
-  } = process.env;
+  const { NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY } = process.env;
 
   if (!NEXT_ALGOLIA_APP_ID) {
     console.error('Environment variable NEXT_ALGOLIA_APP_ID not set');
-    process.exit(1);
+    return;
   } else if (!NEXT_ALGOLIA_ADMIN_KEY) {
     console.error('Environment variable NEXT_ALGOLIA_ADMIN_KEY not set');
-    process.exit(1);
+    return;
   }
 
   /* Setup index */
@@ -115,4 +110,5 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
   }
 
   index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
+  console.log('✅ Updated Algolia index');
 })();

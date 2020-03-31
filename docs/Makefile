@@ -144,7 +144,7 @@ buildnext:
 	rm -rf next/src/data
 	mkdir next/src/data
 	cp _build/json/searchindex.json next/src/data/searchindex.json
-	cp -r _build/json/sections/api/apidocs/ next/src/data
+	cp -r _build/json/sections/api/apidocs/. next/src/data
 	cp -r _build/json/_modules next/src/data
 	find next/src/data -type f -name "*.fjson" -print0 | xargs -0 rename "s/.fjson$$/.json/"
 	find next/src/data -name "*.fjson" -type f -delete
