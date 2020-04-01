@@ -131,6 +131,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
                         hasNextPage={hasNextPage}
                         pushCursor={pushCursor}
                         popCursor={popCursor}
+                        setCursor={setCursor}
                       />
                     </>
                   ) : null}
@@ -364,6 +365,7 @@ const PartitionTable: React.FunctionComponent<{
   cronSchedule: string;
   pushCursor: (nextCursor: string) => void;
   popCursor: () => void;
+  setCursor: (cursor: string | undefined) => void;
 }> = ({
   partitionSet,
   displayed,
@@ -371,7 +373,8 @@ const PartitionTable: React.FunctionComponent<{
   hasNextPage,
   hasPrevPage,
   pushCursor,
-  popCursor
+  popCursor,
+  setCursor
 }) => {
   const { data }: { data?: PartitionRunsQuery } = useQuery(
     PARTITION_RUNS_QUERY,
@@ -414,21 +417,38 @@ const PartitionTable: React.FunctionComponent<{
     }
   }
 
+  const stepExecutionTimesByPartition: {
+    [stepKey: string]: {
+      x: string;
+      y: number | null;
+    }[];
+  } = {};
+
   const pipelineExecutionTimeByPartition: {
     x: string;
     y: number | null;
   }[] = [];
+
   for (const partition in latestRunByPartition) {
     const latestRun = latestRunByPartition[partition];
     if (!latestRun) {
-      pipelineExecutionTimeByPartition.push({
-        x: partition,
-        y: null
-      });
       continue;
     }
 
-    const { stats } = latestRun;
+    const { stats, stepStats } = latestRun;
+    for (const stat of stepStats) {
+      if (stat.endTime && stat.startTime) {
+        const duration = stat.endTime - stat.startTime;
+        if (!stepExecutionTimesByPartition[stat.stepKey]) {
+          stepExecutionTimesByPartition[stat.stepKey] = [];
+        }
+
+        stepExecutionTimesByPartition[stat.stepKey].push({
+          x: partition,
+          y: duration
+        });
+      }
+    }
     if (
       stats.__typename === "PipelineRunStatsSnapshot" &&
       stats.endTime &&
@@ -439,22 +459,24 @@ const PartitionTable: React.FunctionComponent<{
         x: partition,
         y: duration
       });
-    } else {
-      pipelineExecutionTimeByPartition.push({
-        x: partition,
-        y: null
-      });
     }
   }
 
+  const datasets = [];
+  datasets.push({
+    label: "Pipeline Execution Time",
+    data: pipelineExecutionTimeByPartition
+  });
+  for (const stepKey in stepExecutionTimesByPartition) {
+    datasets.push({
+      label: stepKey,
+      data: stepExecutionTimesByPartition[stepKey]
+    });
+  }
+
   const state: any = {
-    labels: pipelineExecutionTimeByPartition.map(i => i.x),
-    datasets: [
-      {
-        label: "Pipeline Execution Time",
-        data: pipelineExecutionTimeByPartition.map(i => i.y)
-      }
-    ]
+    labels: partitionSet.partitions.results.map(partition => partition.name),
+    datasets
   };
 
   return (
@@ -463,9 +485,33 @@ const PartitionTable: React.FunctionComponent<{
       <Divider />
       <ParitionsTableControls>
         <ButtonGroup>
-          <Button onClick={() => setPageSize(7)}>Week</Button>
-          <Button onClick={() => setPageSize(31)}>Month</Button>
-          <Button onClick={() => setPageSize(365)}>Year</Button>
+          <Button
+            onClick={() => {
+              setPageSize(7);
+            }}
+          >
+            Week
+          </Button>
+          <Button
+            onClick={() => {
+              if (displayed && displayed.length < 31) {
+                setCursor(undefined);
+              }
+              setPageSize(31);
+            }}
+          >
+            Month
+          </Button>
+          <Button
+            onClick={() => {
+              if (displayed && displayed.length < 365) {
+                setCursor(undefined);
+              }
+              setPageSize(365);
+            }}
+          >
+            Year
+          </Button>
         </ButtonGroup>
 
         <ButtonGroup>
@@ -608,6 +654,12 @@ export const PARTITION_RUNS_QUERY = gql`
               startTime
               endTime
             }
+          }
+          stepStats {
+            __typename
+            stepKey
+            startTime
+            endTime
           }
           status
         }

@@ -31,11 +31,19 @@ export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_sta
 
 export type PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError | PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot;
 
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats {
+  __typename: "PipelineRunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
   tags: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   stats: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats;
+  stepStats: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats[];
   status: PipelineRunStatus;
 }
 
