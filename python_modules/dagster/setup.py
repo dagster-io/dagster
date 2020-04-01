@@ -74,6 +74,7 @@ def _do_setup(name='dagster'):
             'PyYAML',
             # core (not explicitly expressed atm)
             'alembic>=1.2.1',
+            'docker',
             'gevent',
             'pyrsistent>=0.14.8',
             'python-dateutil',

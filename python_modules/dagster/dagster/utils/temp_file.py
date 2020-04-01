@@ -63,10 +63,10 @@ def get_temp_file_names(number):
 
 
 @contextmanager
-def get_temp_dir():
+def get_temp_dir(in_directory=None):
     temp_dir = None
     try:
-        temp_dir = tempfile.mkdtemp()
+        temp_dir = tempfile.mkdtemp(dir=in_directory)
         yield temp_dir
     finally:
         if temp_dir:
