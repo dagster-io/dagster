@@ -16,6 +16,12 @@ class RepositorySnapshot(namedtuple('_RepositorySnapshot', 'name pipeline_snapsh
             ),
         )
 
+    def get_pipeline_snapshot(self, pipeline_name):
+        for pipeline in self.pipeline_snapshots:
+            if pipeline.name == pipeline_name:
+                return pipeline
+        check.failed('pipeline not found')
+
     @staticmethod
     def from_repository_definition(repository_definition):
         check.inst_param(repository_definition, 'repository_definition', RepositoryDefinition)

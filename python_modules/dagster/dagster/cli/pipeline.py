@@ -18,10 +18,13 @@ from dagster import (
     execute_pipeline_with_preset,
 )
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
-from dagster.core.definitions import ExecutionTargetHandle, Solid
+from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
+from dagster.core.definitions import ExecutionTargetHandle
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.dep_snapshot import SolidInvocationSnap
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id, make_new_run_id
@@ -182,45 +185,45 @@ def get_partitioned_pipeline_instructions(command_name):
     ),
 )
 @click.option('--verbose', is_flag=True)
+@click.option('--image', type=click.STRING, help="Built image name:tag that holds user code.")
 @pipeline_target_command
 def pipeline_print_command(verbose, **cli_args):
     return execute_print_command(verbose, cli_args, click.echo)
 
 
 def execute_print_command(verbose, cli_args, print_fn):
-    pipeline = create_pipeline_from_cli_args(cli_args)
+    pipeline_snapshot = get_pipeline_snapshot_from_cli_args(cli_args)
 
     if verbose:
-        print_pipeline(pipeline, print_fn=print_fn)
+        print_pipeline(pipeline_snapshot, print_fn=print_fn)
     else:
-        print_solids(pipeline, print_fn=print_fn)
+        print_solids(pipeline_snapshot, print_fn=print_fn)
 
 
-def print_solids(pipeline, print_fn):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def print_solids(pipeline_snapshot, print_fn):
+    check.inst_param(pipeline_snapshot, 'pipeline', PipelineSnapshot)
     check.callable_param(print_fn, 'print_fn')
 
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
-    printer.line('Pipeline: {name}'.format(name=pipeline.name))
+    printer.line('Pipeline: {name}'.format(name=pipeline_snapshot.name))
 
     printer.line('Solids:')
-    for solid in pipeline.solids:
+    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
         with printer.with_indent():
-            printer.line('Solid: {name}'.format(name=solid.name))
+            printer.line('Solid: {name}'.format(name=solid.solid_name))
 
 
-def print_pipeline(pipeline, print_fn):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def print_pipeline(pipeline_snapshot, print_fn):
+    check.inst_param(pipeline_snapshot, 'pipeline', PipelineSnapshot)
     check.callable_param(print_fn, 'print_fn')
-
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
-    printer.line('Pipeline: {name}'.format(name=pipeline.name))
-    print_description(printer, pipeline.description)
+    printer.line('Pipeline: {name}'.format(name=pipeline_snapshot.name))
+    print_description(printer, pipeline_snapshot.description)
 
     printer.line('Solids:')
-    for solid in pipeline.solids:
+    for solid in pipeline_snapshot.dep_structure_snapshot.solid_invocation_snaps:
         with printer.with_indent():
-            print_solid(printer, solid)
+            print_solid(printer, pipeline_snapshot, solid)
 
 
 def print_description(printer, desc):
@@ -231,24 +234,21 @@ def print_description(printer, desc):
                 printer.line(format_description(desc, printer.current_indent_str))
 
 
-def print_solid(printer, solid):
-    check.inst_param(solid, 'solid', Solid)
-    printer.line('Solid: {name}'.format(name=solid.name))
-
+def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
+    check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+    check.inst_param(solid_invocation_snap, 'solid_invocation_snap', SolidInvocationSnap)
+    printer.line('Solid: {name}'.format(name=solid_invocation_snap.solid_name))
     with printer.with_indent():
-        print_inputs(printer, solid)
+        printer.line('Inputs:')
+        for input_dep_snap in solid_invocation_snap.input_dep_snaps:
+            with printer.with_indent():
+                printer.line('Input: {name}'.format(name=input_dep_snap.input_name))
 
         printer.line('Outputs:')
-
-        for name in solid.definition.output_dict.keys():
-            printer.line(name)
-
-
-def print_inputs(printer, solid):
-    printer.line('Inputs:')
-    for name in solid.definition.input_dict.keys():
-        with printer.with_indent():
-            printer.line('Input: {name}'.format(name=name))
+        for output_def_snap in pipeline_snapshot.get_solid_def_snap(
+            solid_invocation_snap.solid_def_name
+        ).output_def_snaps:
+            printer.line(output_def_snap.name)
 
 
 @click.command(

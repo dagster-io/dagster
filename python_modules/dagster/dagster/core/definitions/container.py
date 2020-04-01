@@ -33,7 +33,6 @@ def get_container_snapshot(image):
 
         with open(os.path.join(tmp_dir, output_file_name), 'r') as fp:
             snapshot = deserialize_json_to_dagster_namedtuple(fp.read())
-
         if not isinstance(snapshot, RepositorySnapshot):
             raise DagsterInvariantViolationError(
                 "Deserialized snapshot is of type {received} must be a RepositorySnapshot".format(
