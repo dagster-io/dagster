@@ -327,8 +327,11 @@ const PartitionTable: React.FunctionComponent<{
 
   runs.forEach(run => {
     const tagKV = run.tags.find(tagKV => tagKV.key === "dagster/partition");
-    // need to defend against mis match in partitions here
-    runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
+    // need to potentially handle un-matched partitions here
+    // the current behavior is to just ignore them
+    if (runsByPartition[tagKV!.value]) {
+      runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
+    }
   });
 
   const latestRunByPartition: {
