@@ -37,7 +37,8 @@ import {
   Intent,
   Callout,
   Code,
-  Tag
+  Tag,
+  AnchorButton
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Line } from "react-chartjs-2";
@@ -108,7 +109,8 @@ const RenderEventSpecificData: React.FunctionComponent<{
   switch (data.__typename) {
     case "ScheduleTickFailureData":
       return (
-        <a
+        <AnchorButton
+          minimal={true}
           onClick={() =>
             showCustomAlert({
               title: "Schedule Response",
@@ -123,15 +125,18 @@ const RenderEventSpecificData: React.FunctionComponent<{
           <Tag fill={true} minimal={true} intent={Intent.DANGER}>
             See Error
           </Tag>
-        </a>
+        </AnchorButton>
       );
     case "ScheduleTickSuccessData":
       return (
-        <a href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}>
+        <AnchorButton
+          minimal={true}
+          href={`/runs/${data.run?.pipeline.name}/${data.run?.runId}`}
+        >
           <Tag fill={true} minimal={true} intent={Intent.SUCCESS}>
             Run {data.run?.runId}
           </Tag>
-        </a>
+        </AnchorButton>
       );
   }
 };
@@ -363,7 +368,7 @@ const PartitionTable: React.FunctionComponent<{
 
     const { stats } = latestRun;
     if (
-      stats.__typename == "PipelineRunStatsSnapshot" &&
+      stats.__typename === "PipelineRunStatsSnapshot" &&
       stats.endTime &&
       stats.startTime
     ) {
