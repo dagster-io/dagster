@@ -123,20 +123,36 @@ class MultipleStepOutputsListWrapper(list):
     pass
 
 
+def _generate_error_boundary_msg_for_step_input(context, input_):
+    return lambda: '''Error occurred during input hydration:
+    input name: "{input_}"
+    step key: "{key}"
+    solid invocation: "{solid}"
+    solid definition: "{solid_def}"
+    '''.format(
+        input_=input_.name,
+        key=context.step.key,
+        solid_def=context.solid_def.name,
+        solid=context.solid.name,
+    )
+
+
 def _input_values_from_intermediates_manager(step_context):
     step = step_context.step
 
-    input_values = {}
     for step_input in step.step_inputs:
         if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
 
         if step_input.is_from_multiple_outputs:
-            if hasattr(step_input.dagster_type, 'inner_type'):
+            if (
+                step_input.dagster_type.kind == DagsterTypeKind.LIST
+                or step_input.dagster_type.kind == DagsterTypeKind.NULLABLE
+            ):
                 dagster_type = step_input.dagster_type.inner_type
             else:  # This is the case where the fan-in is typed Any
                 dagster_type = step_input.dagster_type
-            _input_value = [
+            input_value = [
                 step_context.intermediates_manager.get_intermediate(
                     context=step_context,
                     step_output_handle=source_handle,
@@ -147,10 +163,8 @@ def _input_values_from_intermediates_manager(step_context):
             # When we're using an object store-backed intermediate store, we wrap the
             # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
             # so we can yield the relevant object store events and unpack the values in the caller
-            if all((isinstance(x, ObjectStoreOperation) for x in _input_value)):
-                input_value = MultipleStepOutputsListWrapper(_input_value)
-            else:
-                input_value = _input_value
+            if all((isinstance(x, ObjectStoreOperation) for x in input_value)):
+                input_value = MultipleStepOutputsListWrapper(input_value)
 
         elif step_input.is_from_single_output:
             input_value = step_context.intermediates_manager.get_intermediate(
@@ -160,20 +174,6 @@ def _input_values_from_intermediates_manager(step_context):
             )
 
         elif step_input.is_from_config:
-
-            def _generate_error_boundary_msg_for_step_input(_context, _input):
-                return lambda: '''Error occurred during input hydration:
-                input name: "{input}"
-                step key: "{key}"
-                solid invocation: "{solid}"
-                solid definition: "{solid_def}"
-                '''.format(
-                    input=_input.name,
-                    key=_context.step.key,
-                    solid_def=_context.solid_def.name,
-                    solid=_context.solid.name,
-                )
-
             with user_code_error_boundary(
                 DagsterInputHydrationConfigError,
                 msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
@@ -188,9 +188,7 @@ def _input_values_from_intermediates_manager(step_context):
         else:
             check.failed('Unhandled step_input type!')
 
-        input_values[step_input.name] = input_value
-
-    return input_values
+        yield step_input.name, input_value
 
 
 def dagster_event_sequence_for_step(step_context, retries):
@@ -529,7 +527,7 @@ def _core_dagster_event_sequence_for_step(step_context, retries):
         yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
-    for input_name, input_value in _input_values_from_intermediates_manager(step_context).items():
+    for input_name, input_value in _input_values_from_intermediates_manager(step_context):
         if isinstance(input_value, ObjectStoreOperation):
             yield DagsterEvent.object_store_operation(
                 step_context, ObjectStoreOperation.serializable(input_value, value_name=input_name)
