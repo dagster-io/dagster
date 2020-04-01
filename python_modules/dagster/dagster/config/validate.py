@@ -23,7 +23,7 @@ from .errors import (
 from .evaluate_value_result import EvaluateValueResult
 from .post_process import post_process_config
 from .stack import EvaluationStack
-from .validation_context import ValidationContext
+from .traversal_context import TraversalContext
 
 
 def is_config_scalar_valid(config_type, config_value):
@@ -45,7 +45,7 @@ def is_config_scalar_valid(config_type, config_value):
 
 
 def validate_config(config_type, config_value):
-    context = ValidationContext(
+    context = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
         do_post_process=False,
@@ -55,7 +55,7 @@ def validate_config(config_type, config_value):
 
 
 def _validate_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     kind = context.config_type.kind
 
@@ -93,7 +93,7 @@ def _validate_config(context, config_value):
 
 
 def _validate_scalar_union_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.SCALAR_UNION, 'context')
     check.not_none_param(config_value, 'config_value')
 
@@ -122,7 +122,7 @@ def _validate_empty_selector_config(context):
 
 
 def validate_selector_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.SELECTOR, 'selector_type')
     check.not_none_param(config_value, 'config_value')
 
@@ -176,7 +176,7 @@ def validate_selector_config(context, config_value):
 
 
 def _validate_shape_config(context, config_value, check_for_extra_incoming_fields):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.not_none_param(config_value, 'config_value')
     check.bool_param(check_for_extra_incoming_fields, 'check_for_extra_incoming_fields')
 
@@ -217,7 +217,7 @@ def _validate_shape_config(context, config_value, check_for_extra_incoming_field
 
 
 def validate_permissive_shape_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.PERMISSIVE_SHAPE)
     check.not_none_param(config_value, 'config_value')
 
@@ -225,7 +225,7 @@ def validate_permissive_shape_config(context, config_value):
 
 
 def validate_shape_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.STRICT_SHAPE)
     check.not_none_param(config_value, 'config_value')
 
@@ -262,7 +262,7 @@ def _compute_missing_fields_error(context, field_defs, incoming_fields):
 
 
 def validate_array_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY)
     check.not_none_param(config_value, 'config_value')
 
@@ -286,7 +286,7 @@ def validate_array_config(context, config_value):
 
 
 def validate_enum_config(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.invariant(context.config_type.kind == ConfigTypeKind.ENUM)
     check.not_none_param(config_value, 'config_value')
 

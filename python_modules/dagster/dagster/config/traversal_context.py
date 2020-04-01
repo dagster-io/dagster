@@ -7,9 +7,9 @@ from dagster.config.field import Field
 from .stack import EvaluationStack
 
 
-class ValidationContext(namedtuple('_ValidationContext', 'config_type stack do_post_process')):
+class TraversalContext(namedtuple('_TraversalContext', 'config_type stack do_post_process')):
     def __new__(cls, config_type, stack, do_post_process):
-        return super(ValidationContext, cls).__new__(
+        return super(TraversalContext, cls).__new__(
             cls,
             check.inst_param(config_type, 'config_type', ConfigType),
             check.inst_param(stack, 'stack', EvaluationStack),
@@ -18,7 +18,7 @@ class ValidationContext(namedtuple('_ValidationContext', 'config_type stack do_p
 
     def for_array(self, index):
         check.int_param(index, 'index')
-        return ValidationContext(
+        return TraversalContext(
             config_type=self.config_type.inner_type,
             stack=self.stack.for_array_index(index),
             do_post_process=self.do_post_process,
@@ -27,7 +27,7 @@ class ValidationContext(namedtuple('_ValidationContext', 'config_type stack do_p
     def for_field(self, field_def, key):
         check.inst_param(field_def, 'field_def', Field)
         check.str_param(key, 'key')
-        return ValidationContext(
+        return TraversalContext(
             config_type=field_def.config_type,
             stack=self.stack.for_field(key, field_def),
             do_post_process=self.do_post_process,
@@ -37,7 +37,7 @@ class ValidationContext(namedtuple('_ValidationContext', 'config_type stack do_p
         return self._replace(config_type=self.config_type.inner_type)
 
     def for_new_config_type(self, config_type):
-        return ValidationContext(
+        return TraversalContext(
             config_type=config_type,
             stack=self.stack.for_new_type(config_type),
             do_post_process=self.do_post_process,

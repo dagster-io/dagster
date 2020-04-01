@@ -7,8 +7,8 @@ from dagster.utils.error import SerializableErrorInfo
 from .config_type import ConfigType, ConfigTypeKind
 from .field import check_field_param
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
+from .traversal_context import TraversalContext
 from .type_printer import print_config_type_to_string
-from .validation_context import ValidationContext
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -100,7 +100,7 @@ def _get_type_msg(type_in_context):
 
 
 def create_dict_type_mismatch_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     path_msg, _path = get_friendly_path_info(context.stack)
 
@@ -118,7 +118,7 @@ def create_dict_type_mismatch_error(context, config_value):
 
 
 def create_fields_not_defined_error(context, undefined_fields):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check_config_type_in_context_has_fields(context, 'context')
     check.list_param(undefined_fields, 'undefined_fields', of_type=str)
 
@@ -141,7 +141,7 @@ def create_fields_not_defined_error(context, undefined_fields):
 
 
 def create_enum_type_mismatch_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
@@ -154,7 +154,7 @@ def create_enum_type_mismatch_error(context, config_value):
 
 
 def create_enum_value_missing_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
@@ -173,7 +173,7 @@ def check_config_type_in_context_has_fields(context, param_name):
 
 
 def create_field_not_defined_error(context, received_field):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check_config_type_in_context_has_fields(context, 'context')
     check.str_param(received_field, 'received_field')
 
@@ -190,7 +190,7 @@ def create_field_not_defined_error(context, received_field):
 
 
 def create_array_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.param_invariant(context.config_type.kind == ConfigTypeKind.ARRAY, 'config_type')
 
     return EvaluationError(
@@ -205,7 +205,7 @@ def create_array_error(context, config_value):
 
 
 def create_missing_required_field_error(context, expected_field):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check_config_type_in_context_has_fields(context, 'context')
 
     return EvaluationError(
@@ -226,7 +226,7 @@ def create_missing_required_field_error(context, expected_field):
 
 
 def create_missing_required_fields_error(context, missing_fields):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check_config_type_in_context_has_fields(context, 'context')
 
     missing_fields = sorted(missing_fields)
@@ -245,7 +245,7 @@ def create_missing_required_fields_error(context, missing_fields):
 
 
 def create_scalar_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
@@ -262,7 +262,7 @@ def create_scalar_error(context, config_value):
 
 
 def create_selector_multiple_fields_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     defined_fields = sorted(list(context.config_type.fields.keys()))
     incoming_fields = sorted(list(config_value.keys()))
@@ -285,7 +285,7 @@ def create_selector_multiple_fields_error(context, config_value):
 
 
 def create_selector_multiple_fields_no_field_selected_error(context):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     defined_fields = sorted(list(context.config_type.fields.keys()))
 
@@ -301,7 +301,7 @@ def create_selector_multiple_fields_no_field_selected_error(context):
 
 
 def create_selector_type_error(context, config_value):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
@@ -316,7 +316,7 @@ def create_selector_type_error(context, config_value):
 
 
 def create_selector_unspecified_value_error(context):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     defined_fields = sorted(list(context.config_type.fields.keys()))
 
@@ -331,7 +331,7 @@ def create_selector_unspecified_value_error(context):
 
 
 def create_none_not_allowed_error(context):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
 
     return EvaluationError(
         stack=context.stack,
@@ -344,7 +344,7 @@ def create_none_not_allowed_error(context):
 
 
 def create_failed_post_processing_error(context, original_value, error_data):
-    check.inst_param(context, 'context', ValidationContext)
+    check.inst_param(context, 'context', TraversalContext)
     check.inst_param(error_data, 'error_data', SerializableErrorInfo)
 
     return EvaluationError(

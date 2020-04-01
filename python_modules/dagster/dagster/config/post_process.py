@@ -8,11 +8,11 @@ from .config_type import ConfigType, ConfigTypeKind
 from .errors import create_failed_post_processing_error
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
-from .validation_context import ValidationContext
+from .traversal_context import TraversalContext
 
 
 def post_process_config(config_type, config_value):
-    ctx = ValidationContext(
+    ctx = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
         do_post_process=True,
@@ -21,7 +21,7 @@ def post_process_config(config_type, config_value):
 
 
 def resolve_defaults(config_type, config_value):
-    ctx = ValidationContext(
+    ctx = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
         do_post_process=False,
