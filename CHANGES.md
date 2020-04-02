@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming (0.7.6)
+## 0.7.6
 
 **Breaking Changes**
 
@@ -13,6 +13,44 @@
 - The `dagster_aws` S3 resource no longer attempts to model the underlying boto3 API, and you can
   now just use any boto3 S3 API directly on a S3 resource, e.g.
   `context.resources.s3.list_objects_v2`. (#2292)
+
+**New**
+
+- New `Playground` view in `dagit` showing an interactive config map
+- Improved storage and UI for showing schedule attempts
+- Added the ability to set default values in `InputDefinition`
+- Added CLI command `dagster pipeline launch` to launch runs using a configured `RunLauncher`
+- Added ability to specify pipeline run tags using the CLI
+- Added a `pdb` utility to `SolidExecutionContext` to help with debugging, available within a solid as `context.pdb`
+- Added `PresetDefinition.with_additional_config` to allow for config overrides
+- Added resource name to log messages generated during resource initialization
+- Added grouping tags for runs that have been retried / reexecuted.
+
+**Bugfix**
+
+- Fixed a bug where date range partitions with a specified end date was clipping the last day
+- Fixed an issue where some schedule attempts that failed to start would be marked running forever.
+- Fixed the `@weekly` partitioned schedule decorator
+- Fixed timezone inconsistencies between the runs view and the schedules view
+- Integers are now accepted as valid values for Float config fields
+- Fixed an issue when executing dagstermill solids with config that contained quote characters.
+
+**dagstermill**
+
+- The Jupyter kernel to use may now be specified when creating dagster notebooks with the --kernel flag.
+
+**dagster-dbt**
+
+- `dbt_solid` now has a `Nothing` input to allow for sequencing
+
+**dagster-k8s**
+
+- Added `get_celery_engine_config` to select celery engine, leveraging Celery infrastructure
+
+**Documentation**
+
+- Improvements to the airline and bay bikes demos
+- Improvements to our dask deployment docs (Thanks jswaney!!)
 
 ## 0.7.5
 
