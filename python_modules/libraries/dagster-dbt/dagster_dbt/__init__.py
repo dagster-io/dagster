@@ -95,6 +95,7 @@ def create_dbt_run_solid(project_dir, name=None, profiles_dir=None, dbt_executab
 
     @solid(
         name=name if name else os.path.basename(project_dir),
+        input_defs=[InputDefinition('run_after', Nothing)],
         config={
             'dbt_executable': Field(
                 Path,
