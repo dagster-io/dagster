@@ -33,8 +33,6 @@ setup(
             'geopandas',
             'google-api-python-client',
             'google-cloud-storage',
-            # TODO: Unpin grpcio when their release is stable. Dagster issue with link to grpcio issue here: https://github.com/dagster-io/dagster/issues/2342
-            'grpcio <= 1.27.2',
             'keras',
             'matplotlib==3.0.2; python_version >= "3.5"',
             'matplotlib==2.2.4; python_version < "3.5"',
