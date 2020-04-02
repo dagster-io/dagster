@@ -1,53 +1,75 @@
 import copy
 import os
+import subprocess
 
 import click
 import nbformat
 from papermill.iorw import load_notebook_node, write_ipynb
 
+from dagster import check
+from dagster.seven.json import loads
 from dagster.utils import mkdir_p, safe_isfile
 
 
-def get_notebook_scaffolding():
-    first_cell_source = '"import dagstermill"'
-
-    starting_notebook_init = '''
-    {{
-    "cells": [
-    {{
-    "cell_type": "code",
-    "execution_count": null,
-    "metadata": {{}},
-    "outputs": [],
-    "source": [
-        {first_cell_source}
-    ]
-    }},
-    {{
-    "cell_type": "code",
-    "execution_count": null,
-    "metadata": {{
-        "tags": [
-        "parameters"
-        ]
-    }},
-    "outputs": [],
-    "source": [
-        "context = dagstermill.get_context()"
-    ]
-    }}
-    ],
-    "metadata": {{
-    "celltoolbar": "Tags"
-    }},
-    "nbformat": 4,
-    "nbformat_minor": 2
-    }}'''
-    return starting_notebook_init.format(first_cell_source=first_cell_source)
+def get_import_cell():
+    return nbformat.v4.new_code_cell(source='import dagstermill')
 
 
-@click.command(name='register-notebook', help=('Registers repository in existing notebook'))
-@click.option('--notebook', '-note', type=click.Path(exists=True), help='Path to notebook')
+def get_parameters_cell():
+    parameters_cell = nbformat.v4.new_code_cell(source='context = dagstermill.get_context()')
+    parameters_cell.metadata['tags'] = ['parameters']
+    return parameters_cell
+
+
+def get_kernelspec(kernel):
+    kernelspecs = loads(subprocess.check_output(['jupyter', 'kernelspec', 'list', '--json']))
+
+    check.invariant(len(kernelspecs['kernelspecs']) > 0, 'No available Jupyter kernelspecs!')
+
+    if kernel is None:
+        if 'dagster' in kernelspecs['kernelspecs']:
+            kernel = 'dagster'
+        elif 'python3' in kernelspecs['kernelspecs']:
+            kernel = 'python3'
+        elif 'python' in kernelspecs['kernelspecs']:
+            kernel = 'python'
+        else:
+            kernel = list(kernelspecs['kernelspecs'].keys())[0]
+        print('No kernel specified, defaulting to \'{kernel}\''.format(kernel=kernel))
+
+    check.invariant(
+        kernel in kernelspecs['kernelspecs'],
+        'Could not find kernel \'{kernel}\': available kernels are [{kernels}]'.format(
+            kernel=kernel,
+            kernels=', '.join(['\'{k}\''.format(k=k) for k in kernelspecs['kernelspecs']]),
+        ),
+    )
+
+    return {
+        'name': kernel,
+        'language': kernelspecs['kernelspecs'][kernel]['spec']['language'],
+        'display_name': kernelspecs['kernelspecs'][kernel]['spec']['display_name'],
+    }
+
+
+def get_notebook_scaffolding(kernelspec):
+    check.dict_param(kernelspec, 'kernelspec', key_type=str, value_type=str)
+
+    notebook = nbformat.v4.new_notebook()
+
+    notebook.cells = [get_import_cell(), get_parameters_cell()]
+
+    metadata = {'celltoolbar': 'Tags', 'kernelspec': kernelspec}
+
+    notebook.metadata = metadata
+
+    return nbformat.writes(notebook)
+
+
+@click.command(
+    name='register-notebook', help=('Scaffolds existing notebook for dagstermill compatibility')
+)
+@click.option('--notebook', '-note', type=click.Path(exists=True), help='Path to existing notebook')
 def retroactively_scaffold_notebook(notebook):
     execute_retroactive_scaffold(notebook)
 
@@ -55,30 +77,31 @@ def retroactively_scaffold_notebook(notebook):
 def execute_retroactive_scaffold(notebook_path):
     nb = load_notebook_node(notebook_path)
     new_nb = copy.deepcopy(nb)
-
-    import_cell_source = 'import dagstermill'
-    import_cell = nbformat.v4.new_code_cell(source=import_cell_source)
-
-    parameters_cell_source = 'context = dagstermill.get_context()'
-    parameters_cell = nbformat.v4.new_code_cell(source=parameters_cell_source)
-    parameters_cell.metadata['tags'] = ['parameters']
-
-    new_nb.cells = [import_cell, parameters_cell] + nb.cells
+    new_nb.cells = [get_import_cell(), get_parameters_cell()] + nb.cells
     write_ipynb(new_nb, notebook_path)
 
 
 @click.command(name='create-notebook', help=('Creates new dagstermill notebook.'))
-@click.option('--notebook', '-note', type=click.Path(), help="Name of notebook")
+@click.option('--notebook', '-note', type=click.Path(), help='Name of notebook')
 @click.option(
     '--force-overwrite',
     is_flag=True,
-    help="Will force overwrite any existing notebook or file with the same name.",
+    help='Will force overwrite any existing notebook or file with the same name.',
 )
-def create_notebook(notebook, force_overwrite):
-    execute_create_notebook(notebook, force_overwrite)
+@click.option(
+    '--kernel',
+    type=click.STRING,
+    help=(
+        'Specify an existing Jupyter kernel to use. (Run `jupyter kernelspec list` to view '
+        'available kernels.) By default a kernel called \'dagster\' will be used, if available, '
+        'then one called \'python3\', then \'python\', and then the first available kernel.'
+    ),
+)
+def create_notebook(notebook, force_overwrite, kernel):
+    execute_create_notebook(notebook, force_overwrite, kernel)
 
 
-def execute_create_notebook(notebook, force_overwrite):
+def execute_create_notebook(notebook, force_overwrite, kernel):
     notebook_path = os.path.join(
         os.getcwd(), notebook if notebook.endswith('.ipynb') else notebook + ".ipynb"
     )
@@ -97,7 +120,7 @@ def execute_create_notebook(notebook, force_overwrite):
         )
 
     with open(notebook_path, 'w') as f:
-        f.write(get_notebook_scaffolding())
+        f.write(get_notebook_scaffolding(get_kernelspec(kernel)))
         click.echo("Created new dagstermill notebook at {path}".format(path=notebook_path))
 
 

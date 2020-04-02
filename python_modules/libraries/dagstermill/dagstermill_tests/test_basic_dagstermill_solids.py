@@ -15,6 +15,27 @@ from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
+try:
+    import dagster_pandas as _
+
+    DAGSTER_PANDAS_PRESENT = True
+except ImportError:
+    DAGSTER_PANDAS_PRESENT = False
+
+try:
+    import sklearn as _
+
+    SKLEARN_PRESENT = True
+except ImportError:
+    SKLEARN_PRESENT = False
+
+try:
+    import matplotlib as _
+
+    MATPLOTLIB_PRESENT = True
+except ImportError:
+    MATPLOTLIB_PRESENT = False
+
 
 def get_path(materialization_event):
     for (
@@ -146,6 +167,10 @@ def test_error_notebook():
 
 @pytest.mark.nettest
 @pytest.mark.notebook_test
+@pytest.mark.skipif(
+    not (DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT),
+    reason='tutorial_pipeline reqs not present: dagster_pandas, sklearn, matplotlib',
+)
 def test_tutorial_pipeline():
     with exec_for_test(
         'define_tutorial_pipeline', {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}}

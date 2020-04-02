@@ -3,45 +3,54 @@
 import contextlib
 import json
 import os
+import re
 import sys
 
+import pytest
 from click.testing import CliRunner
 from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
+from dagster.check import CheckError
 from dagster.utils import file_relative_path, pushd
 
-EXPECTED_OUTPUT = '''
-    {
-    "cells": [
-    {
-    "cell_type": "code",
-    "execution_count": null,
-    "metadata": {},
-    "outputs": [],
-    "source": [
-        "import dagstermill"
+EXPECTED_OUTPUT = '''{{
+ "cells": [
+  {{
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {{}},
+   "outputs": [],
+   "source": [
+    "import dagstermill"
+   ]
+  }},
+  {{
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {{
+    "tags": [
+     "parameters"
     ]
-    },
-    {
-    "cell_type": "code",
-    "execution_count": null,
-    "metadata": {
-        "tags": [
-        "parameters"
-        ]
-    },
-    "outputs": [],
-    "source": [
-        "context = dagstermill.get_context()"
-    ]
-    }
-    ],
-    "metadata": {
-    "celltoolbar": "Tags"
-    },
-    "nbformat": 4,
-    "nbformat_minor": 2
-    }'''
+   }},
+   "outputs": [],
+   "source": [
+    "context = dagstermill.get_context()"
+   ]
+  }}
+ ],
+ "metadata": {{
+  "celltoolbar": "Tags",
+  "kernelspec": {{
+   "display_name": "dagster",
+   "language": "python",
+   "name": "dagster"
+  }}
+ }},
+ "nbformat": 4,
+ "nbformat_minor": {minor_version}
+}}'''.format(
+    minor_version=('4' if sys.version_info.major >= 3 else '2')
+)
 
 EXPECTED_IMPORT_STATEMENT = 'from dagstermill.examples.repository import define_example_repository'
 
@@ -53,9 +62,14 @@ def check_notebook_expected_output(notebook_path, expected_output):
 
 
 @contextlib.contextmanager
-def scaffold(notebook_name=None):
+def scaffold(notebook_name=None, kernel=None):
     runner = CliRunner()
-    args_ = [] + (['--notebook', notebook_name] if notebook_name else []) + ['--force-overwrite']
+    args_ = (
+        []
+        + (['--notebook', notebook_name] if notebook_name else [])
+        + ['--force-overwrite']
+        + (['--kernel', kernel] if kernel else [])
+    )
 
     res = runner.invoke(create_notebook, args_)
     if res.exception:
@@ -77,6 +91,19 @@ def test_scaffold():
             check_notebook_expected_output(
                 notebook_path + '.ipynb', expected_output=EXPECTED_OUTPUT
             )
+
+        with scaffold(
+            notebook_name='notebooks/cli_test_scaffold', kernel='dagster'
+        ) as notebook_path:
+            check_notebook_expected_output(
+                notebook_path + '.ipynb', expected_output=EXPECTED_OUTPUT
+            )
+
+        with pytest.raises(
+            CheckError, match=re.escape('Could not find kernel \'foobar\': available kernels are')
+        ):
+            with scaffold(notebook_name='notebooks/cli_test_scaffold', kernel='foobar') as _:
+                pass
 
 
 def test_invalid_filename_example():
