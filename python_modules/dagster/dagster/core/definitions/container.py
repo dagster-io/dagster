@@ -1,7 +1,6 @@
 import os
+import warnings
 from uuid import uuid4
-
-from docker.client import from_env
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.core.snap.repository_snapshot import RepositorySnapshot
@@ -14,6 +13,14 @@ DEFAULT_MODE = 'rw'
 
 
 def run_serialized_container_command(image, command, volumes):
+    try:
+        from docker.client import from_env
+    except ImportError:
+        warnings.warn(
+            "Cannot load docker environment without the python package docker. Ensure that dagster[docker] or the python package docker is installed."
+        )
+        raise
+
     client = from_env()
     client.containers.run(image, command=command, detach=False, volumes=volumes, auto_remove=True)
 

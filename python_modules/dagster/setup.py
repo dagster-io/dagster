@@ -74,7 +74,6 @@ def _do_setup(name='dagster'):
             'PyYAML',
             # core (not explicitly expressed atm)
             'alembic>=1.2.1',
-            'docker',
             'gevent',
             'pyrsistent>=0.14.8',
             'python-dateutil',
@@ -90,6 +89,7 @@ def _do_setup(name='dagster'):
             'pywin32 != 226; platform_system=="Windows"',
             'pytz',
         ],
+        extras_require={'docker': ['docker'],},
         entry_points={'console_scripts': ['dagster = dagster.cli:main']},
     )
 
