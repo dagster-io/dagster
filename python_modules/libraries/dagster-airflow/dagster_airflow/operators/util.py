@@ -5,6 +5,7 @@ import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster_graphql.client.mutations import execute_execute_plan_mutation
 from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
+from dagster_graphql.client.util import construct_variables
 
 from dagster import DagsterEventType, check, seven
 from dagster.core.definitions.pipeline import ExecutionSelector
@@ -29,37 +30,6 @@ def check_events_for_skips(events):
     skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
     if skipped:
         raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
-
-
-def construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys):
-    check.str_param(mode, 'mode')
-    # env dict could be either string 'REDACTED' or dict
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.str_param(run_id, 'run_id')
-    check.opt_str_param(ts, 'ts')
-    check.list_param(step_keys, 'step_keys', of_type=str)
-
-    variables = {
-        'executionParams': {
-            'environmentConfigData': environment_dict,
-            'mode': mode,
-            'selector': {'name': pipeline_name},
-            'executionMetadata': {'runId': run_id},
-            'stepKeys': step_keys,
-        }
-    }
-
-    # If an Airflow timestamp string is provided, stash it (and the converted version) in tags
-    if ts is not None:
-        variables['executionParams']['executionMetadata']['tags'] = [
-            {'key': 'airflow_ts', 'value': ts},
-            {
-                'key': 'execution_epoch_time',
-                'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
-            },
-        ]
-
-    return variables
 
 
 def parse_raw_res(raw_res):
@@ -176,12 +146,13 @@ def invoke_steps_within_python_operator(
 
     run_id = dag_run.run_id
 
-    # TODO: https://github.com/dagster-io/dagster/issues/1342
-    redacted = construct_variables(mode, 'REDACTED', pipeline_name, run_id, ts, step_keys)
+    variables = construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys)
+    variables = add_airflow_tags(variables, ts)
+
     logging.info(
         'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
         + 'with variables:\n'
-        + seven.json.dumps(redacted, indent=2)
+        + seven.json.dumps(variables, indent=2)
     )
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
     if instance:
@@ -198,11 +169,25 @@ def invoke_steps_within_python_operator(
             )
         )
 
-    events = execute_execute_plan_mutation(
-        handle,
-        construct_variables(mode, environment_dict, pipeline_name, run_id, ts, step_keys),
-        instance_ref=instance_ref,
-    )
+    events = execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref,)
     check_events_for_failures(events)
     check_events_for_skips(events)
     return events
+
+
+def add_airflow_tags(variables, ts):
+    check.dict_param(variables, 'variables')
+    check.opt_str_param(ts, 'ts')
+
+    # If an Airflow timestamp string is provided, stash it (and the converted version) in tags
+    if ts is not None:
+        tags = [
+            {'key': 'airflow_ts', 'value': ts},
+            {
+                'key': 'execution_epoch_time',
+                'value': '%f' % convert_airflow_datestr_to_epoch_ts(ts),
+            },
+        ]
+        variables['executionParams']['executionMetadata']['tags'] = tags
+
+    return variables

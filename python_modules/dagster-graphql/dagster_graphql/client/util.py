@@ -240,3 +240,23 @@ def execution_params_from_pipeline_run(run):
         execution_metadata=ExecutionMetadata(run_id=run.run_id, tags=run.tags),
         previous_run_id=run.previous_run_id,
     )
+
+
+def construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys):
+    check.str_param(mode, 'mode')
+    check.dict_param(environment_dict, 'environment_dict')
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.str_param(run_id, 'run_id')
+    check.list_param(step_keys, 'step_keys', of_type=str)
+
+    variables = {
+        'executionParams': {
+            'environmentConfigData': environment_dict,
+            'mode': mode,
+            'selector': {'name': pipeline_name},
+            'executionMetadata': {'runId': run_id},
+            'stepKeys': step_keys,
+        }
+    }
+
+    return variables

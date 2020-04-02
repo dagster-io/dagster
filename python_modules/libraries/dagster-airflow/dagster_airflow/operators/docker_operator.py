@@ -7,6 +7,7 @@ from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
+from dagster_graphql.client.util import construct_variables
 from docker import APIClient, from_env
 
 from dagster import seven
@@ -17,9 +18,9 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
+    add_airflow_tags,
     check_events_for_failures,
     check_events_for_skips,
-    construct_variables,
     get_aws_environment,
     parse_raw_res,
 )
@@ -227,23 +228,15 @@ class DagsterDockerOperator(ModifiedDockerOperator):
 
     @property
     def query(self):
-        # TODO: https://github.com/dagster-io/dagster/issues/1342
-        redacted = construct_variables(
-            self.mode, 'REDACTED', self.pipeline_name, self.run_id, self.airflow_ts, self.step_keys
+        variables = construct_variables(
+            self.mode, self.environment_dict, self.pipeline_name, self.run_id, self.step_keys,
         )
+        variables = add_airflow_tags(variables, self.airflow_ts)
+
         self.log.info(
             'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
             + 'with variables:\n'
-            + seven.json.dumps(redacted, indent=2)
-        )
-
-        variables = construct_variables(
-            self.mode,
-            self.environment_dict,
-            self.pipeline_name,
-            self.run_id,
-            self.airflow_ts,
-            self.step_keys,
+            + seven.json.dumps(variables, indent=2)
         )
 
         return 'dagster-graphql -v \'{variables}\' -t \'{query}\''.format(
