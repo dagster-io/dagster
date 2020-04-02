@@ -6,6 +6,7 @@ from docker.client import from_env
 from dagster import DagsterInvariantViolationError, check
 from dagster.core.snap.repository_snapshot import RepositorySnapshot
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.seven import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
 
 DEFAULT_INTERNAL_VOLUME = '/data'
@@ -20,7 +21,7 @@ def run_serialized_container_command(image, command, volumes):
 def get_container_snapshot(image):
     check.str_param(image, 'image')
     # Done to avoid memory leaks
-    with get_temp_dir(in_directory='/tmp') as tmp_dir:
+    with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:
         # TODO: Add better error handling when we move towards integrating with dagit.
         output_file_name = "{}.json".format(uuid4())
         run_serialized_container_command(
