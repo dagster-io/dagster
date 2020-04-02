@@ -38,7 +38,7 @@ def test_container_snapshot_provider(mocker):
     execute_container_mock.assert_called_with(
         image="foo:latest",
         command='dagster repository snapshot {}'.format(
-            os.path.join(os.path.sep, 'data', 'asuperuniqueid.json')
+            os.path.join('/data', 'asuperuniqueid.json')
         ),
         volumes=mocker.ANY,
     )
