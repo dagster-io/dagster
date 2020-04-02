@@ -23,7 +23,7 @@ from .errors import (
 from .evaluate_value_result import EvaluateValueResult
 from .post_process import post_process_config
 from .stack import EvaluationStack
-from .traversal_context import TraversalContext
+from .traversal_context import TraversalContext, TraversalType
 
 
 def is_config_scalar_valid(config_type, config_value):
@@ -48,7 +48,7 @@ def validate_config(config_type, config_value):
     context = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
-        do_post_process=False,
+        traversal_type=TraversalType.VALIDATE,
     )
 
     return _validate_config(context, config_value)

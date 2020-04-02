@@ -8,14 +8,14 @@ from .config_type import ConfigType, ConfigTypeKind
 from .errors import create_failed_post_processing_error
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
-from .traversal_context import TraversalContext
+from .traversal_context import TraversalContext, TraversalType
 
 
 def post_process_config(config_type, config_value):
     ctx = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
-        do_post_process=True,
+        traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
     )
     return _recursively_process_config(ctx, config_value)
 
@@ -24,7 +24,7 @@ def resolve_defaults(config_type, config_value):
     ctx = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(config_type=config_type, entries=[]),
-        do_post_process=False,
+        traversal_type=TraversalType.RESOLVE_DEFAULTS,
     )
 
     return _recursively_process_config(ctx, config_value)
