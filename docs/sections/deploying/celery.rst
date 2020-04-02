@@ -89,7 +89,7 @@ this file at ``$DAGSTER_HOME/dagster.yaml`` when the ``DAGSTER_HOME`` environmen
   :language: YAML
 
 **The same instance config must be present in Dagit's environment and in the
-workers' environments.** If you haven't already, please read about 
+workers' environments.** If you haven't already, please read about
 `the Dagster instance <instance.html>`_.
 
 2. Persistent system storage
@@ -172,3 +172,5 @@ Broker and backend
 At the moment, dagster-celery is tested using the RabbitMQ broker and the default RPC backend. At
 least one team is running dagster-celery using SQS as the broker, and we intend to expand the
 scope of broker/backend matrix testing, probably starting with the Postgres backend.
+
+Note that when using a ``broker_url`` with a password in it you likely want to url encode it.
