@@ -37,7 +37,9 @@ def test_container_snapshot_provider(mocker):
     snapshot = get_container_snapshot("foo:latest")
     execute_container_mock.assert_called_with(
         image="foo:latest",
-        command='dagster repository snapshot /data/asuperuniqueid.json',
+        command='dagster repository snapshot {}'.format(
+            os.path.join('/data', 'asuperuniqueid.json')
+        ),
         volumes=mocker.ANY,
     )
     assert isinstance(snapshot, RepositorySnapshot)
