@@ -13,6 +13,7 @@ from dagster import (
     SolidDefinition,
     TypeCheck,
     check,
+    seven,
 )
 from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
@@ -302,7 +303,7 @@ class Manager(object):
 
     def load_parameter(self, input_name, input_value):
         input_def = self.solid_def.input_def_named(input_name)
-        return read_value(input_def.dagster_type, input_value)
+        return read_value(input_def.dagster_type, seven.json.loads(input_value))
 
 
 MANAGER_FOR_NOTEBOOK_INSTANCE = Manager()

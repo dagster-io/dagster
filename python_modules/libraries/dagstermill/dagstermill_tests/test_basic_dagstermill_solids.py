@@ -94,6 +94,39 @@ def test_hello_world_with_config():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_with_config_escape():
+    with exec_for_test(
+        'define_hello_world_config_pipeline',
+        env={'solids': {'hello_world_config': {'config': {'greeting': "'"}}}},
+    ) as result:
+        assert result.success
+
+    with exec_for_test(
+        'define_hello_world_config_pipeline',
+        env={'solids': {'hello_world_config': {'config': {'greeting': '"'}}}},
+    ) as result:
+        assert result.success
+
+    with exec_for_test(
+        'define_hello_world_config_pipeline',
+        env={'solids': {'hello_world_config': {'config': {'greeting': '\\'}}}},
+    ) as result:
+        assert result.success
+
+    with exec_for_test(
+        'define_hello_world_config_pipeline',
+        env={'solids': {'hello_world_config': {'config': {'greeting': '}'}}}},
+    ) as result:
+        assert result.success
+
+    with exec_for_test(
+        'define_hello_world_config_pipeline',
+        env={'solids': {'hello_world_config': {'config': {'greeting': '\n'}}}},
+    ) as result:
+        assert result.success
+
+
+@pytest.mark.notebook_test
 def test_reexecute_result_notebook():
     with exec_for_test('define_hello_world_pipeline') as result:
         assert result.success

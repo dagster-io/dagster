@@ -17,7 +17,13 @@ INJECTED_BOILERPLATE = '''
 # Injected parameters
 from dagster import seven as __dm_seven
 import dagstermill as __dm_dagstermill
-context = __dm_dagstermill._reconstitute_pipeline_context(**__dm_seven.json.loads('{pipeline_context_args}'))
+context = __dm_dagstermill._reconstitute_pipeline_context(
+    **{{
+        key: __dm_seven.json.loads(value)
+        for key, value
+        in {pipeline_context_args}.items()
+    }}
+)
 '''
 
 
@@ -41,15 +47,16 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
             **context_args
         )
 
-        content = INJECTED_BOILERPLATE.format(
-            pipeline_context_args=seven.json.dumps(pipeline_context_args)
-        )
+        for key in pipeline_context_args:
+            pipeline_context_args[key] = seven.json.dumps(pipeline_context_args[key])
+
+        content = INJECTED_BOILERPLATE.format(pipeline_context_args=pipeline_context_args)
 
         for name, val in parameters.items():
             if name in RESERVED_INPUT_NAMES:
                 continue
-            dm_unmarshal_call = '__dm_dagstermill._load_parameter("{name}", {val})'.format(
-                name=name, val='"{val}"'.format(val=val) if isinstance(val, str) else val
+            dm_unmarshal_call = '__dm_dagstermill._load_parameter(\'{name}\', \'{val}\')'.format(
+                name=name, val=seven.json.dumps(val)
             )
             content += '{}\n'.format(cls.assign(name, dm_unmarshal_call))
 
