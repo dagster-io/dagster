@@ -1,12 +1,13 @@
 '''Pipeline definitions for the airline_demo.
 '''
-# https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
 from dagster_aws.emr import emr_pyspark_resource
-from dagster_aws.s3.file_cache import s3_file_cache
-from dagster_aws.s3.file_manager import S3FileHandle
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.solids import file_handle_to_s3
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3 import (
+    S3FileHandle,
+    file_handle_to_s3,
+    s3_file_cache,
+    s3_plus_default_storage_defs,
+    s3_resource,
+)
 from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline

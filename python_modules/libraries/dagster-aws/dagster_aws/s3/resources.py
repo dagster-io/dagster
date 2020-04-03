@@ -78,10 +78,6 @@ def s3_resource(context):
     region_name = context.resource_config.get('region_name')
     endpoint_url = context.resource_config.get('endpoint_url')
 
-    s3 = create_s3_session(
+    return create_s3_session(
         signed=not use_unsigned_session, region_name=region_name, endpoint_url=endpoint_url
     )
-
-    # https://github.com/dagster-io/dagster/issues/2326 backcompat; remove on next PyPI release
-    s3.session = s3
-    return s3

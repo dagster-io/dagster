@@ -49,8 +49,7 @@ def test_cache_file_from_s3_basic():
         )
 
         # assert the download occured
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session.session.download_file.call_count == 1
+        assert s3_session.download_file.call_count == 1
 
         assert solid_result.success
 
@@ -90,8 +89,7 @@ def test_cache_file_from_s3_specify_target_key():
         )
 
         # assert the download occured
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session.session.download_file.call_count == 1
+        assert s3_session.download_file.call_count == 1
         assert solid_result.success
         assert isinstance(solid_result.output_value(), LocalFileHandle)
         assert 'specified-file-key' in solid_result.output_value().path_desc
@@ -119,8 +117,7 @@ def test_cache_file_from_s3_skip_download():
         )
 
         # assert the download occured
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session_one.session.download_file.call_count == 1
+        assert s3_session_one.download_file.call_count == 1
 
         s3_session_two = mock.MagicMock()
         execute_solid(
@@ -142,8 +139,7 @@ def test_cache_file_from_s3_skip_download():
         )
 
         # assert the download did not occur because file is already there
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session_two.session.download_file.call_count == 0
+        assert s3_session_two.download_file.call_count == 0
 
 
 def test_cache_file_from_s3_overwrite():
@@ -170,8 +166,7 @@ def test_cache_file_from_s3_overwrite():
         )
 
         # assert the download occured
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session_one.session.download_file.call_count == 1
+        assert s3_session_one.download_file.call_count == 1
 
         s3_session_two = mock.MagicMock()
         execute_solid(
@@ -195,8 +190,7 @@ def test_cache_file_from_s3_overwrite():
         )
 
         # assert the download did not occur because file is already there
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session_two.session.download_file.call_count == 0
+        assert s3_session_two.download_file.call_count == 0
 
 
 def test_missing_resources():

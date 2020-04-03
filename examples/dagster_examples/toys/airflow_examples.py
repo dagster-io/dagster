@@ -1,9 +1,7 @@
 # pylint:disable=no-member
 from collections import defaultdict
 
-# https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-from dagster_aws.s3.resources import s3_resource
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 

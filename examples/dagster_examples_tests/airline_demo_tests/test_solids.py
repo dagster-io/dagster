@@ -8,10 +8,7 @@ those tests that don't require Spark, `pytest -m "not spark"`.
 """
 
 import pytest
-from dagster_aws.s3.resources import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-    s3_resource,
-)
-from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
+from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_examples.airline_demo.solids import sql_solid
 from dagster_pyspark import pyspark_resource
 

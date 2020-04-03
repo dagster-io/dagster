@@ -2,9 +2,7 @@ import os
 import shutil
 
 import boto3
-from dagster_aws.s3.solids import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-    S3Coordinate,
-)
+from dagster_aws.s3 import S3Coordinate
 
 from dagster import execute_pipeline, pipeline, solid
 from dagster.seven import mock

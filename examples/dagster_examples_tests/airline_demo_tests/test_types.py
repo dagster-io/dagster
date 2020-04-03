@@ -2,9 +2,7 @@ import os
 
 import botocore
 import pyspark
-from dagster_aws.s3.intermediate_store import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-    S3IntermediateStore,
-)
+from dagster_aws.s3 import S3IntermediateStore
 from dagster_examples.airline_demo.solids import ingest_csv_file_handle_to_spark
 from dagster_pyspark import DataFrame
 from pyspark.sql import Row, SparkSession

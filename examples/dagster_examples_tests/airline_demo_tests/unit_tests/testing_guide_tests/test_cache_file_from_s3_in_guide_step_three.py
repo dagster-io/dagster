@@ -1,8 +1,6 @@
 import os
 
-# https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-from dagster_aws.s3.s3_fake_resource import S3FakeSession
-from dagster_aws.s3.solids import S3Coordinate
+from dagster_aws.s3 import S3Coordinate, S3FakeSession
 
 from dagster import ModeDefinition, solid
 from dagster.core.storage.file_cache import FSFileCache
@@ -17,8 +15,7 @@ def cache_file_from_s3(context, s3_coord: S3Coordinate) -> str:
     target_key = s3_coord['key'].split('/')[-1]
 
     with get_temp_file_name() as tmp_file:
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        context.resources.s3.session.download_file(
+        context.resources.s3.download_file(
             Bucket=s3_coord['bucket'], Key=s3_coord['key'], Filename=tmp_file
         )
 
@@ -42,8 +39,7 @@ def test_cache_file_from_s3_step_three_mock():
             input_values={'s3_coord': {'bucket': 'some-bucket', 'key': 'some-key'}},
         )
 
-        # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
-        assert s3_session.session.download_file.call_count == 1
+        assert s3_session.download_file.call_count == 1
 
         assert os.path.exists(os.path.join(temp_dir, 'some-key'))
 

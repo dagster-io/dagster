@@ -5,10 +5,7 @@ import os
 import shutil
 
 import six
-from dagster_aws.s3.resources import (  # https://github.com/dagster-io/dagster/issues/2326 Change import after next release to PyPI
-    s3_resource,
-)
-from dagster_aws.s3.utils import S3Logger
+from dagster_aws.s3 import S3Logger, s3_resource
 from dagster_snowflake import snowflake_resource
 from dagster_spark import create_spark_solid, spark_resource
 
@@ -114,9 +111,8 @@ def download_from_s3_to_file(context):
         context.solid_config.get(k) for k in ('bucket', 'key', 'target_folder', 'skip_if_present')
     )
 
-    # https://github.com/dagster-io/dagster/issues/2326 Remove .session on next PyPI release
     return _download_from_s3_to_file(
-        context.resources.s3.session, context, bucket, key, target_folder, skip_if_present
+        context.resources.s3, context, bucket, key, target_folder, skip_if_present
     )
 
 
