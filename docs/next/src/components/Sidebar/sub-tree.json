@@ -1,0 +1,143 @@
+{
+  "Install": [
+    {
+      "name": "Quick Start",
+      "path": "/index"
+    },
+    {
+      "name": "Dagster Package",
+      "path": "/packages"
+    },
+    {
+      "name": "Python",
+      "path": "/python"
+    },
+    {
+      "name": "Telemetry",
+      "path": "/telemetry"
+    }
+  ],
+  "Tutorial": [
+    {
+      "name": "Hello, cereal!",
+      "path": "/index"
+    },
+    {
+      "path": "/hello_solid",
+      "name": "Hello, solid!"
+    },
+    {
+      "path": "/hello_pipeline",
+      "name": "Hello, pipeline!"
+    },
+    {
+      "path": "/execute_pipeline",
+      "name": "Executing our first pipeline"
+    },
+    {
+      "path": "/testing",
+      "name": "Testing solids and pipelines"
+    },
+    {
+      "path": "/hello_dag",
+      "name": "Connecting solids together"
+    },
+    {
+      "path": "/inputs",
+      "name": "Parametrizing solids with inputs"
+    },
+    {
+      "path": "/dagit_config_editor",
+      "name": "Using the Dagit config editor"
+    },
+    {
+      "path": "/typed_inputs",
+      "name": "Type-checking inputs"
+    },
+    {
+      "path": "/config",
+      "name": "Parametrizing solids with config"
+    },
+    {
+      "path": "/types",
+      "name": "User-defined types"
+    },
+    {
+      "path": "/metadata",
+      "name": "Metadata and custom type checks"
+    },
+    {
+      "path": "/expectations",
+      "name": "Expectations"
+    },
+    {
+      "path": "/multiple_outputs",
+      "name": "Multiple and conditional outputs"
+    },
+    {
+      "path": "/reusable",
+      "name": "Reusable solids"
+    },
+    {
+      "path": "/composite_solids",
+      "name": "Composing solids"
+    },
+    {
+      "path": "/materializations",
+      "name": "Materializations"
+    },
+    {
+      "path": "/intermediates",
+      "name": "Intermediates"
+    },
+    {
+      "path": "/resources",
+      "name": "Parametrizing pipelines with resources"
+    },
+    {
+      "path": "/modes",
+      "name": "Pipeline modes"
+    },
+    {
+      "path": "/presets",
+      "name": "Pipeline config presets"
+    },
+    {
+      "path": "/repos",
+      "name": "Organizing pipelines in repositories"
+    },
+    {
+      "path": "/scheduler",
+      "name": "Scheduling pipeline runs"
+    }
+  ],
+  "Community": [
+    {
+      "path": "/index",
+      "name": "Community"
+    },
+    {
+      "path": "/code_of_conduct",
+      "name": "Code of Conduct"
+    },
+    {
+      "path": "/contributing",
+      "name": "Contributing"
+    },
+    {
+      "path": "https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU",
+      "isAbsolutePath": true,
+      "name": "Slack"
+    },
+    {
+      "path": "https://www.github.com/dagster-io/dagster/",
+      "isAbsolutePath": true,
+      "name": "Github"
+    },
+    {
+      "path": "https://stackoverflow.com/questions/tagged/dagster",
+      "isAbsolutePath": true,
+      "name": "Stack Overflow"
+    }
+  ]
+}

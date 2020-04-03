@@ -1,0 +1,28 @@
+{
+  "contents": [
+    {
+      "name": "Install",
+      "path": "/docs/install"
+    },
+    {
+      "name": "Tutorial",
+      "path": "/docs/tutorial"
+    },
+    {
+      "name": "Learn",
+      "path": "/docs/learn"
+    },
+    {
+      "name": "API Docs",
+      "path": "/docs/apidocs"
+    },
+    {
+      "name": "Deploying",
+      "path": "/docs/deploying"
+    },
+    {
+      "name": "Community",
+      "path": "/docs/community"
+    }
+  ]
+}

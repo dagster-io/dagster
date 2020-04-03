@@ -1,21 +1,21 @@
-import fg from "fast-glob";
-import path from "path";
-import { promises as fs } from "fs";
-import parse5 from "parse5";
-import { parse } from "querystring";
-import algoliasearch from "algoliasearch";
-import data from "../data/searchindex.json";
+import fg from 'fast-glob';
+import path from 'path';
+import { promises as fs } from 'fs';
+import parse5 from 'parse5';
+import { parse } from 'querystring';
+import algoliasearch from 'algoliasearch';
+import data from '../data/searchindex.json';
 
 // Environment Variables
 
 // Folder paths
-const DATA_PATH = path.join(__dirname, "../data");
-const MODULE_PATH = path.join(DATA_PATH, "_modules");
+const DATA_PATH = path.join(__dirname, '../data');
+const MODULE_PATH = path.join(DATA_PATH, '_modules');
 
 (async () => {
   /* Generate list of all module files */
-  const glob = path.join(DATA_PATH, "/**/*.json");
-  const excludeGlob = path.join(MODULE_PATH, "/**/*.json");
+  const glob = path.join(DATA_PATH, '/**/*.json');
+  const excludeGlob = path.join(MODULE_PATH, '/**/*.json');
   const entries = await fg([glob], { ignore: [excludeGlob] });
 
   for (const entry of entries) {
@@ -24,34 +24,34 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
     const body: string = fileData.body;
     if (body) {
       const transformed = body
-        .replace(/href="\.\.\/.*?(\/#.*?)"/g, match => {
-          return match.replace("/#", "#");
+        .replace(/href="\.\.\/.*?(\/#.*?)"/g, (match) => {
+          return match.replace('/#', '#');
         })
         .replace(/href="(\.\.\/)[^.]/g, (match, p1) => {
-          return match.replace(p1, "");
+          return match.replace(p1, '');
         });
       fileData.body = transformed;
-      await fs.writeFile(entry, JSON.stringify(fileData), "utf8");
+      await fs.writeFile(entry, JSON.stringify(fileData), 'utf8');
     }
   }
 })();
 
 (async () => {
   /* Generate list of all module files */
-  const glob = path.join(MODULE_PATH, "/**/*.json");
-  const rootGlob = path.join(MODULE_PATH, "/*.json");
+  const glob = path.join(MODULE_PATH, '/**/*.json');
+  const rootGlob = path.join(MODULE_PATH, '/*.json');
   const entries = await fg([glob]);
   const excludeEntries = await fg([rootGlob]);
   const relativeEntries = entries
-    .filter(i => !excludeEntries.includes(i))
-    .map(i => path.relative(MODULE_PATH, i).replace(".json", ""));
+    .filter((i) => !excludeEntries.includes(i))
+    .map((i) => path.relative(MODULE_PATH, i).replace('.json', ''));
 
   const index = {
-    docnames: relativeEntries
+    docnames: relativeEntries,
   };
   await fs.writeFile(
-    path.join(MODULE_PATH, "searchindex.json"),
-    JSON.stringify(index)
+    path.join(MODULE_PATH, 'searchindex.json'),
+    JSON.stringify(index),
   );
 })();
 
@@ -59,20 +59,20 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
   const {
     NEXT_ALGOLIA_APP_ID,
     NEXT_ALGOLIA_API_KEY,
-    NEXT_ALGOLIA_ADMIN_KEY
+    NEXT_ALGOLIA_ADMIN_KEY,
   } = process.env;
 
   if (!NEXT_ALGOLIA_APP_ID) {
-    console.error("Environment variable NEXT_ALGOLIA_APP_ID not set");
+    console.error('Environment variable NEXT_ALGOLIA_APP_ID not set');
     process.exit(1);
   } else if (!NEXT_ALGOLIA_ADMIN_KEY) {
-    console.error("Environment variable NEXT_ALGOLIA_ADMIN_KEY not set");
+    console.error('Environment variable NEXT_ALGOLIA_ADMIN_KEY not set');
     process.exit(1);
   }
 
   /* Setup index */
   const client = algoliasearch(NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY);
-  const index = client.initIndex("docs");
+  const index = client.initIndex('docs');
   const records = [];
 
   const objects: {
@@ -93,14 +93,14 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
       const type = objectNames[typeIndex][1];
       const alias: string = objProperties[3] as string;
       const relativePath = data.docnames[docNamesIndex].replace(
-        "sections/api/apidocs/",
-        ""
+        'sections/api/apidocs/',
+        '',
       );
 
       const path =
-        alias === ""
+        alias === ''
           ? relativePath + `#${module}.${object}`
-          : relativePath + "#" + alias;
+          : relativePath + '#' + alias;
 
       const record = {
         objectID: `${module}.${object}.${type}.${alias}`,
@@ -108,7 +108,7 @@ const MODULE_PATH = path.join(DATA_PATH, "_modules");
         object,
         path,
         type,
-        alias
+        alias,
       };
       records.push(record);
     }

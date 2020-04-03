@@ -1,7 +1,0 @@
-<h1 id="hello-pipeline">Hello, pipeline!</h1>
-<p>To execute our solid, we'll embed it in an equally simple pipeline.</p>
-<p>A pipeline is a set of solids arranged into a DAG (or <a href="https://en.wikipedia.org/wiki/Directed_acyclic_graph">directed acyclic graph</a>) of computation. You'll typically define pipelines by annotating ordinary Python functions with the :py<code class="interpreted-text" role="func">@pipeline &lt;pipeline&gt;</code> decorator.</p>
-<div class="literalinclude" data-linenos="" data-lineno-start="21" data-lines="21-23" data-caption="hello_cereal.py" data-language="python">
-<p>../../../examples/dagster_examples/intro_tutorial/hello_cereal.py</p>
-</div>
-<p>Here you'll see that we call <code>hello_cereal()</code>. This call doesn't actually execute the solid -- within the body of functions decorated with :py<code class="interpreted-text" role="func">@pipeline &lt;pipeline&gt;</code>, we use function calls to indicate the dependency structure of the solids making up the pipeline. Here, we indicate that the execution of <code>hello_cereal</code> doesn't depend on any other solids by calling it with no arguments.</p>

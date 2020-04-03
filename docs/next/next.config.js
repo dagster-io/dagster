@@ -1,25 +1,26 @@
-// const withSass = require("@zeit/next-sass");
-// const tailwindCss = require("tailwindcss");
 const ExtraWatchPlugin = require('extra-watch-webpack-plugin');
 const path = require('path');
-const emoji = require('remark-emoji');
 const visit = require('unist-util-visit');
 const fs = require('fs');
+const limitSnippetLines = require('./snippet-engine/functions/limitSnippetLines');
+const TSConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
-// TODO: Extract to it's own file
+const setUpAbsoluteImports = (config) => {
+  if (config.resolve.plugins) {
+    config.resolve.plugins.push(new TSConfigPathsPlugin());
+  } else {
+    config.resolve.plugins = [new TSConfigPathsPlugin()];
+  }
+};
+
+const DIRECTIVE_PATTERN = 'literalinclude';
+
 const transform = () => (tree) => {
   const visitor = (node) => {
-    const { children } = node;
-    if (
-      children.length >= 1
-      && children[0].value
-      && children[0].value.includes('::literalinclude')
-    ) {
-      const { value } = children[0];
-      const data = value.replace('::literalinclude', '').trim();
-      const values = data
-        .split(' ')
-        .map((i) => i.substring(1, i.length - 1).split(':'));
+    const { value, meta } = node;
+    if (meta === DIRECTIVE_PATTERN) {
+      const data = value.trim();
+      const values = data.split('\n').map((i) => i.trim().split(':'));
 
       const map = {};
       for (const val of values) {
@@ -27,31 +28,27 @@ const transform = () => (tree) => {
       }
 
       const { DAGSTER_REPO } = process.env;
+
       if (!DAGSTER_REPO) {
-        node.type = 'code';
-        node.children = undefined;
-        node.lang = 'js';
-        node.value = 'Unable to produce literal include: Environment variable $DAGSTER_REPO is not set';
+        node.value =
+          'Unable to produce literal include: Environment variable $DAGSTER_REPO is not set';
         return;
       }
 
       const root = path.join(DAGSTER_REPO, '/examples/dagster_examples/');
       const filePath = path.join(root, map.file);
       const content = fs.readFileSync(filePath).toString();
-
-      node.type = 'code';
-      node.children = undefined;
-      node.lang = 'js';
-      node.value = content;
+      node.value = limitSnippetLines(content, map.lines);
     }
   };
-  visit(tree, 'paragraph', visitor);
+
+  visit(tree, 'code', visitor);
 };
 
 const withMDX = require('@next/mdx')({
   extension: /\.mdx?$/,
   options: {
-    remarkPlugins: [emoji, transform],
+    remarkPlugins: [transform],
   },
 });
 
@@ -63,7 +60,7 @@ module.exports = withMDX({
         dirs: [path.join(config.context, 'pages')],
       }),
     );
-
+    setUpAbsoluteImports(config);
     return config;
   },
 });
