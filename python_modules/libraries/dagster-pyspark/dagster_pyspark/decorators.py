@@ -24,7 +24,7 @@ def pyspark_solid(
     required_resource_keys.add(pyspark_resource_key)
 
     # nonlocal keyword not available in Python 2
-    non_local = {'name': name, 'required_resource_keys': required_resource_keys}
+    non_local = {'required_resource_keys': required_resource_keys}
 
     # Handle when we're called bare without arguments (e.g. name is actually the callable, not the
     # solid name)
@@ -32,9 +32,7 @@ def pyspark_solid(
 
         @wraps(name)
         def new_compute_fn(context, *args, **kwargs):
-            return context.resources.pyspark.get_compute_fn(fn=name, solid_name=name.__name__)(
-                context, *args, **kwargs
-            )
+            return context.resources.pyspark.get_compute_fn(name)(context, *args, **kwargs)
 
         # py2 compat - fixed in functools on py3
         # See: https://bugs.python.org/issue17482
@@ -45,8 +43,6 @@ def pyspark_solid(
         )
 
     def wrap(fn):
-        name = non_local['name'] or fn.__name__
-
         @wraps(fn)
         def new_compute_fn(context, *args, **kwargs):
             from .resources import PySparkResourceDefinition
@@ -55,7 +51,7 @@ def pyspark_solid(
                 getattr(context.resources, pyspark_resource_key), PySparkResourceDefinition
             )
 
-            return spark.get_compute_fn(fn, name)(context, *args, **kwargs)
+            return spark.get_compute_fn(fn)(context, *args, **kwargs)
 
         # py2 compat - fixed in functools on py3
         # See: https://bugs.python.org/issue17482

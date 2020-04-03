@@ -34,12 +34,12 @@ class PySparkResourceDefinition(six.with_metaclass(abc.ABCMeta)):
         self._spark_session.stop()
 
     @abc.abstractmethod
-    def get_compute_fn(self, fn, solid_name):
+    def get_compute_fn(self, fn):
         pass
 
 
 class SystemPySparkResource(PySparkResourceDefinition):
-    def get_compute_fn(self, fn, solid_name):
+    def get_compute_fn(self, fn):
         return fn
 
 
@@ -68,7 +68,7 @@ class FakePySparkResource(PySparkResourceDefinition):
     def __init__(self):  # pylint: disable=super-init-not-called
         pass
 
-    def get_compute_fn(self, fn, solid_name):
+    def get_compute_fn(self, fn):
         return fn
 
 

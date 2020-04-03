@@ -30,7 +30,7 @@ class EmrPySparkResource(PySparkResourceDefinition):
         # Construct the SparkSession
         super(EmrPySparkResource, self).__init__(self.config.get('spark_conf'))
 
-    def get_compute_fn(self, fn, solid_name):
+    def get_compute_fn(self, fn):
         '''Construct new compute function for EMR pyspark execution. In the scenario where we are
         running on a Dagster box, we will (1) sync the client code to an S3 staging bucket, and then
         (2) invoke execution via the EMR APIs.
@@ -44,8 +44,8 @@ class EmrPySparkResource(PySparkResourceDefinition):
             return fn
 
         def new_compute_fn(context, *args, **kwargs):  # pylint: disable=unused-argument
-            self._sync_code_to_s3(context, solid_name)
-            step_defs = self._get_execute_steps(context, solid_name)
+            self._sync_code_to_s3(context, context.solid.name)
+            step_defs = self._get_execute_steps(context, context.solid.name)
             step_ids = self.emr_job_runner.add_job_flow_steps(
                 context, self.config['cluster_id'], step_defs
             )

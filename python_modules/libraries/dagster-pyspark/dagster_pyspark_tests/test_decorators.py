@@ -91,3 +91,23 @@ def test_default_pyspark_decorator():
         last_pyspark_job()
 
     assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
+
+
+def test_aliased_pyspark_solid():
+    @pyspark_solid
+    def pyspark_job(context):
+        list_p = [('Michelle', 19), ('Austin', 29), ('Lydia', 35)]
+        rdd = context.resources.pyspark.spark_context.parallelize(list_p)
+        res = rdd.take(2)
+        for name, age in res:
+            print('%s: %d' % (name, age))
+        return context.solid.name
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'pyspark': pyspark_resource})])
+    def pipe():
+        pyspark_job.alias('new_pyspark_solid')()
+
+    res = execute_pipeline(pipe)
+    assert res.success
+
+    assert res.result_for_solid('new_pyspark_solid').output_value() == 'new_pyspark_solid'
