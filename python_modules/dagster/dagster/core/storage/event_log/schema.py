@@ -10,4 +10,5 @@ SqlEventLogStorageTable = db.Table(
     db.Column('event', db.Text, nullable=False),
     db.Column('dagster_event_type', db.Text),
     db.Column('timestamp', db.types.TIMESTAMP),
+    db.Column('step_key', db.String),
 )

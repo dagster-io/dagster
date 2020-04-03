@@ -54,10 +54,43 @@ class SqlEventLogStorage(EventLogStorage):
             event=serialize_dagster_namedtuple(event),
             dagster_event_type=dagster_event_type,
             timestamp=utc_datetime_from_timestamp(event.timestamp),
+            step_key=event.step_key,
         )
 
         with self.connect(run_id) as conn:
             conn.execute(event_insert)
+
+    def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
+        check.str_param(run_id, 'run_id')
+        check.int_param(cursor, 'cursor')
+        check.invariant(
+            cursor >= -1,
+            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+        )
+
+        # cursor starts at 0 & auto-increment column starts at 1 so adjust
+        cursor = cursor + 1
+
+        query = (
+            db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(SqlEventLogStorageTable.c.id > cursor)
+            .order_by(SqlEventLogStorageTable.c.id.asc())
+        )
+
+        with self.connect(run_id) as conn:
+            results = conn.execute(query).fetchall()
+
+        events = {}
+        try:
+            for (record_id, json_str,) in results:
+                events[record_id] = check.inst_param(
+                    deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
+                )
+        except (seven.JSONDecodeError, check.CheckError) as err:
+            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
+
+        return events
 
     def get_logs_for_run(self, run_id, cursor=-1):
         '''Get all of the logs corresponding to a run.
@@ -74,31 +107,8 @@ class SqlEventLogStorage(EventLogStorage):
             'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
         )
 
-        # cursor starts at 0 & auto-increment column starts at 1 so adjust
-        cursor = cursor + 1
-
-        query = (
-            db.select([SqlEventLogStorageTable.c.event])
-            .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .where(SqlEventLogStorageTable.c.id > cursor)
-            .order_by(SqlEventLogStorageTable.c.id.asc())
-        )
-
-        with self.connect(run_id) as conn:
-            results = conn.execute(query).fetchall()
-
-        events = []
-        try:
-            for (json_str,) in results:
-                events.append(
-                    check.inst_param(
-                        deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
-                    )
-                )
-        except (seven.JSONDecodeError, check.CheckError) as err:
-            six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
-
-        return events
+        events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor)
+        return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):
         check.str_param(run_id, 'run_id')
@@ -166,3 +176,35 @@ class SqlEventLogStorage(EventLogStorage):
     @property
     def is_persistent(self):
         return True
+
+    def update_event_log_record(self, record_id, event):
+        ''' Utility method for migration scripts to update SQL representation of event records. '''
+        check.int_param(record_id, 'record_id')
+        check.inst_param(event, 'event', EventRecord)
+        dagster_event_type = None
+        if event.is_dagster_event:
+            dagster_event_type = event.dagster_event.event_type_value
+        with self.connect(run_id=event.run_id) as conn:
+            conn.execute(
+                SqlEventLogStorageTable.update()  # pylint: disable=no-value-for-parameter
+                .where(SqlEventLogStorageTable.c.id == record_id)
+                .values(
+                    event=serialize_dagster_namedtuple(event),
+                    dagster_event_type=dagster_event_type,
+                    timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    step_key=event.step_key,
+                )
+            )
+
+    def get_event_log_table_data(self, run_id, record_id):
+        ''' Utility method to test representation of the record in the SQL table.  Returns all of
+        the columns stored in the event log storage (as opposed to the deserialized `EventRecord`).
+        This allows checking that certain fields are extracted to support performant lookups (e.g.
+        extracting `step_key` for fast filtering)'''
+        with self.connect(run_id=run_id) as conn:
+            query = (
+                db.select([SqlEventLogStorageTable])
+                .where(SqlEventLogStorageTable.c.id == record_id)
+                .order_by(SqlEventLogStorageTable.c.id.asc())
+            )
+            return conn.execute(query).fetchone()

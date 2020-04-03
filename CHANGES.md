@@ -1,5 +1,23 @@
 # Changelog
 
+## (Future) 0.7.7
+
+**Breaking Changes**
+
+- The default sqlite and `dagster-postgres` implementations have been altered to extract the
+  event `step_key` field as a column, to enable faster per-step queries. You will need to run
+  `dagster instance migrate` to update the schema. You may optionally migrate your historical event
+  log data to extract the `step_key` using the `migrate_event_log_data` function. This will ensure
+  that your historical event log data will be captured in future step-key based views. This
+  `event_log` data migration can be invoked as follows:
+
+  ```python
+  from dagster.core.storage.event_log.migration import migrate_event_log_data
+  from dagster import DagsterInstance
+
+  migrate_event_log_data(instance=DagsterInstance.get())
+  ```
+
 ## 0.7.6
 
 **Breaking Changes**
