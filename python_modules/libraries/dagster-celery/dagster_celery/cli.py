@@ -6,6 +6,7 @@ import click
 from celery.utils.nodenames import default_nodename, host_format
 
 from dagster import check
+from dagster.config.post_process import post_process_config
 from dagster.config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.instance import DagsterInstance
@@ -74,7 +75,7 @@ def get_config_dir(config_yaml=None):
             config_value,
         )
 
-    validated_config = validate_config(config_type, config_value).value
+    validated_config = post_process_config(config_type, config_value).value
     with open(config_path, 'w') as fd:
         if 'broker' in validated_config and validated_config['broker']:
             fd.write(
