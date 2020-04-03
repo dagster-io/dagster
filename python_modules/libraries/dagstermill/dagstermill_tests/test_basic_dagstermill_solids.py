@@ -94,6 +94,37 @@ def test_hello_world_with_config():
 
 
 @pytest.mark.notebook_test
+def test_hello_world_with_output_notebook():
+    with exec_for_test('define_hello_world_with_output_notebook_pipeline') as result:
+        assert result.success
+        materializations = [
+            x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+        ]
+        assert len(materializations) == 1
+
+        assert result.result_for_solid('hello_world_with_output_notebook').success
+        assert (
+            'notebook' in result.result_for_solid('hello_world_with_output_notebook').output_values
+        )
+        assert os.path.exists(
+            result.result_for_solid('hello_world_with_output_notebook')
+            .output_values['notebook']
+            .path_desc
+        )
+        assert (
+            materializations[0]
+            .event_specific_data.materialization.metadata_entries[0]
+            .entry_data.path
+            == result.result_for_solid('hello_world_with_output_notebook')
+            .output_values['notebook']
+            .path_desc
+        )
+
+        assert result.result_for_solid('load_notebook_solid').success
+        assert result.result_for_solid('load_notebook_solid').output_value() is True
+
+
+@pytest.mark.notebook_test
 def test_hello_world_with_config_escape():
     with exec_for_test(
         'define_hello_world_config_pipeline',
@@ -160,7 +191,6 @@ def test_hello_world_explicit_yield():
             x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
         ]
         assert len(materializations) == 2
-        assert get_path(materializations[0]).startswith('/tmp/dagstermill/')
         assert get_path(materializations[1]) == '/path/to/file'
 
 

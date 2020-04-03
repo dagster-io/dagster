@@ -11,6 +11,9 @@ S3
 .. autoclass:: dagster_aws.s3.S3FileCache
   :members:
 
+.. autoclass:: dagster_aws.s3.S3FileHandle
+  :members:
+
 .. autodata:: dagster_aws.s3.s3_resource
   :annotation: ResourceDefinition
 

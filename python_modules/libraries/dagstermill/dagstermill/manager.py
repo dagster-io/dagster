@@ -182,7 +182,7 @@ class Manager(object):
                 the context.
 
         Returns:
-            :class:`dagstermill.DagstermillExecutionContext`
+            :py:class:`~dagstermill.DagstermillExecutionContext`
         '''
         check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)

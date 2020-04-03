@@ -7,6 +7,7 @@ import dagstermill
 from dagster import (
     DependencyDefinition,
     Field,
+    FileHandle,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -70,6 +71,28 @@ def define_hello_world_config_solid():
 def define_hello_world_config_pipeline():
     return PipelineDefinition(
         name='hello_world_config_pipeline', solid_defs=[define_hello_world_config_solid()]
+    )
+
+
+def define_hello_world_with_output_notebook_solid():
+    return dagstermill.define_dagstermill_solid(
+        'hello_world_with_output_notebook', nb_test_path('hello_world'), output_notebook='notebook',
+    )
+
+
+def define_hello_world_with_output_notebook_pipeline():
+    @solid(input_defs=[InputDefinition('notebook', dagster_type=FileHandle)])
+    def load_notebook_solid(_, notebook):
+        return os.path.exists(notebook.path_desc)
+
+    return PipelineDefinition(
+        name='hello_world_with_output_notebook_pipeline',
+        solid_defs=[define_hello_world_with_output_notebook_solid(), load_notebook_solid],
+        dependencies={
+            'load_notebook_solid': {
+                'notebook': DependencyDefinition('hello_world_with_output_notebook', 'notebook')
+            }
+        },
     )
 
 

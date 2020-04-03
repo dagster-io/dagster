@@ -25,6 +25,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
+from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
 
@@ -142,9 +143,10 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     return parameters
 
 
-def _dm_solid_compute(name, notebook_path):
+def _dm_solid_compute(name, notebook_path, output_notebook=None):
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
+    check.opt_str_param(output_notebook, 'output_notebook')
 
     def _t_fn(compute_context, inputs):
         check.inst_param(compute_context, 'compute_context', SolidExecutionContext)
@@ -156,65 +158,93 @@ def _dm_solid_compute(name, notebook_path):
 
         system_compute_context = compute_context.get_system_context()
 
-        base_dir = '/tmp/dagstermill/{run_id}/'.format(run_id=compute_context.run_id)
-        output_notebook_dir = os.path.join(base_dir, 'output_notebooks/')
-        mkdir_p(output_notebook_dir)
+        with seven.TemporaryDirectory() as output_notebook_dir:
+            with safe_tempfile_path() as output_log_path:
 
-        temp_path = os.path.join(
-            output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
-        )
+                parameterized_notebook_path = os.path.join(
+                    output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
+                )
 
-        with safe_tempfile_path() as output_log_path:
-            # Scaffold the registration here
-            nb = load_notebook_node(notebook_path)
-            nb_no_parameters = replace_parameters(
-                system_compute_context,
-                nb,
-                get_papermill_parameters(system_compute_context, inputs, output_log_path),
+                executed_notebook_path = os.path.join(
+                    output_notebook_dir, '{prefix}-out.ipynb'.format(prefix=str(uuid.uuid4()))
+                )
+
+                # Scaffold the registration here
+                nb = load_notebook_node(notebook_path)
+                nb_no_parameters = replace_parameters(
+                    system_compute_context,
+                    nb,
+                    get_papermill_parameters(system_compute_context, inputs, output_log_path),
+                )
+                write_ipynb(nb_no_parameters, parameterized_notebook_path)
+
+                with user_code_error_boundary(
+                    DagstermillExecutionError,
+                    lambda: (
+                        'Error occurred during the execution of Dagstermill solid '
+                        '{solid_name}: {notebook_path}'.format(
+                            solid_name=name, notebook_path=notebook_path
+                        )
+                    ),
+                ):
+                    try:
+                        papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
+                        papermill.execute_notebook(
+                            input_path=parameterized_notebook_path,
+                            output_path=executed_notebook_path,
+                            engine_name='dagstermill',
+                            log_output=True,
+                        )
+
+                    except Exception as exc:  # pylint: disable=broad-except
+                        try:
+                            with open(executed_notebook_path, 'r') as fd:
+                                executed_notebook_file_handle = compute_context.file_manager.write(
+                                    fd, mode='w'
+                                )
+                                executed_notebook_materialization_path = (
+                                    executed_notebook_file_handle.path_desc
+                                )
+                        except Exception:  # pylint: disable=broad-except
+                            executed_notebook_materialization_path = executed_notebook_path
+
+                        yield Materialization(
+                            label='output_notebook',
+                            description='Location of output notebook in file manager',
+                            metadata_entries=[
+                                EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                            ],
+                        )
+                        raise exc
+
+            system_compute_context.log.debug(
+                'Notebook execution complete for {name} at {executed_notebook_path}.'.format(
+                    name=name, executed_notebook_path=executed_notebook_path,
+                )
             )
-            intermediate_path = os.path.join(
-                output_notebook_dir, '{prefix}-inter.ipynb'.format(prefix=str(uuid.uuid4()))
-            )
-            write_ipynb(nb_no_parameters, intermediate_path)
 
-            with user_code_error_boundary(
-                DagstermillExecutionError,
-                lambda: (
-                    'Error occurred during the execution of Dagstermill solid '
-                    '{solid_name}: {notebook_path}'.format(
-                        solid_name=name, notebook_path=notebook_path
-                    )
-                ),
-            ):
-                try:
-                    papermill_engines.register('dagstermill', DagstermillNBConvertEngine)
-                    papermill.execute_notebook(
-                        intermediate_path, temp_path, engine_name='dagstermill', log_output=True
-                    )
-                except Exception as exc:
-                    yield Materialization(
-                        label='output_notebook',
-                        description='Location of output notebook on the filesystem',
-                        metadata_entries=[EventMetadataEntry.fspath(temp_path)],
-                    )
-                    raise exc
+            try:
+                with open(executed_notebook_path, 'r') as fd:
+                    executed_notebook_file_handle = compute_context.file_manager.write(fd, mode='w')
+                    executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
+            except Exception:  # pylint: disable=broad-except
+                executed_notebook_materialization_path = executed_notebook_path
+
+            yield Materialization(
+                label='output_notebook',
+                description='Location of output notebook in file manager',
+                metadata_entries=[
+                    EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                ],
+            )
+
+            if output_notebook is not None:
+                yield Output(executed_notebook_file_handle, output_notebook)
 
             # deferred import for perf
             import scrapbook
 
-            output_nb = scrapbook.read_notebook(temp_path)
-
-            system_compute_context.log.debug(
-                'Notebook execution complete for {name}. Data is {data}'.format(
-                    name=name, data=output_nb.scraps
-                )
-            )
-
-            yield Materialization(
-                label='output_notebook',
-                description='Location of output notebook on the filesystem',
-                metadata_entries=[EventMetadataEntry.fspath(temp_path)],
-            )
+            output_nb = scrapbook.read_notebook(executed_notebook_path)
 
             for (output_name, output_def) in system_compute_context.solid_def.output_dict.items():
                 data_dict = output_nb.scraps.data_dict
@@ -238,18 +268,26 @@ def define_dagstermill_solid(
     output_defs=None,
     config=None,
     required_resource_keys=None,
+    output_notebook=None,
 ):
     '''Wrap a Jupyter notebook in a solid.
 
     Arguments:
         name (str): The name of the solid.
         notebook_path (str): Path to the backing notebook.
-        input_defs (Optional[list[:class:`dagster.InputDefinition`]]): The solid's inputs.
-        output_defs (Optional[list[:class:`dagster.OutputDefinition`]]): The solid's outputs.
-        required_resource_keys (Optional[set[str]]): The string names of any required resources.
+        input_defs (Optional[List[InputDefinition]]): The solid's inputs.
+        output_defs (Optional[List[OutputDefinition]]): The solid's outputs. Your notebook should
+            call :py:function:`~dagstermill.yield_result` to yield each of these outputs.
+        required_resource_keys (Optional[Set[str]]): The string names of any required resources.
+        output_notebook (Optional[str]): If set, will be used as the name of an injected output of
+            type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
+            addition to the :py:class:`~dagster.Materialization` that is always created). This
+            respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
+            the pipeline system storage, so, e.g., if :py:class:`~dagster_aws.s3.s3_system_storage`
+            is configured, the output will be a :py:class:`~dagster_aws.s3.S3FileHandle`.
 
     Returns:
-        :class:`dagster.SolidDefinition`
+        :py:class:`~dagster.SolidDefinition`
     '''
     check.str_param(name, 'name')
     check.str_param(notebook_path, 'notebook_path')
@@ -262,8 +300,13 @@ def define_dagstermill_solid(
     return SolidDefinition(
         name=name,
         input_defs=input_defs,
-        compute_fn=_dm_solid_compute(name, notebook_path),
-        output_defs=output_defs,
+        compute_fn=_dm_solid_compute(name, notebook_path, output_notebook),
+        output_defs=output_defs
+        + (
+            [OutputDefinition(dagster_type=FileHandle, name=output_notebook)]
+            if output_notebook
+            else []
+        ),
         config=check_user_facing_opt_config_param(config, 'config'),
         required_resource_keys=required_resource_keys,
         description='This solid is backed by the notebook at {path}'.format(path=notebook_path),
