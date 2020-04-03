@@ -36,8 +36,5 @@ if __name__ == "__main__":
             'python bin/publish.py publish --nightly --autoclean',
         )
         .build(),
-        StepBuilder('clean phabricator tags')
-        .run('git tag | grep phabricator | xargs -I {} git push -d origin {}')
-        .build(),
     ]
     print(yaml.dump({"env": {}, "steps": steps}, default_flow_style=False))
