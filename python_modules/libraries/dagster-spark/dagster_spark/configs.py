@@ -5,7 +5,7 @@ in a variety of deployment contexts. See the Spark documentation at
 https://spark.apache.org/docs/latest/submitting-applications.html for a more in-depth summary of
 Spark deployment contexts and configuration.
 '''
-from dagster import Field
+from dagster import Field, StringSource
 
 from .configs_spark import spark_config
 from .types import SparkDeployMode
@@ -19,7 +19,7 @@ def define_spark_config():
     '''
 
     master_url = Field(
-        str,
+        StringSource,
         description='The master URL for the cluster (e.g. spark://23.195.26.187:7077)',
         is_required=True,
     )
@@ -38,7 +38,7 @@ def define_spark_config():
     )
 
     application_jar = Field(
-        str,
+        StringSource,
         description='''Path to a bundled jar including your application and all
                         dependencies. The URL must be globally visible inside of your cluster, for
                         instance, an hdfs:// path or a file:// path that is present on all nodes.
@@ -47,13 +47,13 @@ def define_spark_config():
     )
 
     application_arguments = Field(
-        str,
+        StringSource,
         description='Arguments passed to the main method of your main class, if any',
         is_required=False,
     )
 
     spark_home = Field(
-        str,
+        StringSource,
         description='The path to your spark installation. Defaults to $SPARK_HOME at runtime if not provided.',
         is_required=False,
     )
