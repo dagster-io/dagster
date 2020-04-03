@@ -137,7 +137,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
-    def get_runs(self, filters=None, cursor=None, limit=None):
+    def _runs_query(self, filters=None, cursor=None, limit=None):
         filters = check.opt_inst_param(
             filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
         )
@@ -154,23 +154,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         query = self._add_filters_to_query(base_query, filters)
         query = self._add_cursor_limit_to_query(query, cursor, limit)
+
+        return query
+
+    def get_runs(self, filters=None, cursor=None, limit=None):
+        query = self._runs_query(filters, cursor, limit)
+
         rows = self.execute(query)
         return self._rows_to_runs(rows)
 
     def get_runs_count(self, filters=None):
-        filters = check.opt_inst_param(
-            filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
-        )
-
-        # If we have a tags filter, then we need to select from a joined table
-        if filters.tags:
-            subquery = db.select([1]).select_from(
-                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-            )
-        else:
-            subquery = db.select([1]).select_from(RunsTable)
-
-        subquery = self._add_filters_to_query(subquery, filters)
+        subquery = self._runs_query(filters=filters).alias('subquery')
 
         # We use an alias here because Postgres requires subqueries to be
         # aliased.
