@@ -10,7 +10,7 @@ from dagster_aws.s3 import (
 )
 from dagster_pyspark import pyspark_resource
 
-from dagster import ModeDefinition, PresetDefinition, composite_solid, file_relative_path, pipeline
+from dagster import ModeDefinition, PresetDefinition, composite_solid, pipeline
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
@@ -77,29 +77,29 @@ prod_mode = ModeDefinition(
     # ordered so the local is first and therefore the default
     mode_defs=[local_mode, test_mode, prod_mode],
     preset_defs=[
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             name='local_fast',
             mode='local',
-            environment_files=[
-                file_relative_path(__file__, 'environments/local_base.yaml'),
-                file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
+            pkg_resource_defs=[
+                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                ('dagster_examples.airline_demo.environments', 'local_fast_ingest.yaml'),
             ],
         ),
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             name='local_full',
             mode='local',
-            environment_files=[
-                file_relative_path(__file__, 'environments/local_base.yaml'),
-                file_relative_path(__file__, 'environments/local_full_ingest.yaml'),
+            pkg_resource_defs=[
+                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                ('dagster_examples.airline_demo.environments', 'local_full_ingest.yaml'),
             ],
         ),
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             name='prod_fast',
             mode='prod',
-            environment_files=[
-                file_relative_path(__file__, 'environments/prod_base.yaml'),
-                file_relative_path(__file__, 'environments/s3_storage.yaml'),
-                file_relative_path(__file__, 'environments/local_fast_ingest.yaml'),
+            pkg_resource_defs=[
+                ('dagster_examples.airline_demo.environments', 'prod_base.yaml'),
+                ('dagster_examples.airline_demo.environments', 's3_storage.yaml'),
+                ('dagster_examples.airline_demo.environments', 'local_fast_ingest.yaml'),
             ],
         ),
     ],
@@ -145,12 +145,12 @@ def process_delays_by_geo() -> S3FileHandle:
 @pipeline(
     mode_defs=[test_mode, local_mode, prod_mode],
     preset_defs=[
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             name='local',
             mode='local',
-            environment_files=[
-                file_relative_path(__file__, 'environments/local_base.yaml'),
-                file_relative_path(__file__, 'environments/local_warehouse.yaml'),
+            pkg_resource_defs=[
+                ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
             ],
         )
     ],

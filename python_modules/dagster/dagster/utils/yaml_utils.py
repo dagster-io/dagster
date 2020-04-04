@@ -1,3 +1,4 @@
+import functools
 import glob
 
 import yaml
@@ -23,11 +24,60 @@ def load_yaml_from_glob_list(glob_list):
 
 
 def merge_yamls(file_list):
+    '''Combine a list of YAML files into a dictionary.
+
+    Args:
+        file_list (List[str]): List of YAML filenames
+
+    Returns:
+        dict: Merged dictionary from combined YAMLs
+
+    Raises:
+        yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
+    '''
     check.list_param(file_list, 'file_list', of_type=str)
+
     merged = {}
+
     for yaml_file in file_list:
-        merged = dict_merge(load_yaml_from_path(yaml_file) or {}, merged)
+        yaml_dict = load_yaml_from_path(yaml_file) or {}
+
+        check.invariant(
+            isinstance(yaml_dict, dict),
+            (
+                'Expected YAML from file {yaml_file} to parse to dictionary, '
+                'instead got: "{yaml_dict}"'
+            ).format(yaml_file=yaml_file, yaml_dict=yaml_dict),
+        )
+        merged = dict_merge(yaml_dict, merged)
+
     return merged
+
+
+def merge_yaml_strings(yaml_strs):
+    '''Combine a list of YAML strings into a dictionary.
+
+    Args:
+        yaml_strs (List[str]): List of YAML strings
+
+    Returns:
+        dict: Merged dictionary from combined YAMLs
+
+    Raises:
+        yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
+    '''
+    check.list_param(yaml_strs, 'yaml_strs', of_type=str)
+
+    # Read YAML strings; reverse so that rightmost overrides leftmost
+    yaml_dicts = list(reversed([yaml.safe_load(y) for y in yaml_strs]))
+
+    for yaml_dict in yaml_dicts:
+        check.invariant(
+            isinstance(yaml_dict, dict),
+            'Expected YAML dictionary, instead got: "%s"' % str(yaml_dict),
+        )
+
+    return functools.reduce(dict_merge, yaml_dicts, {})
 
 
 def load_yaml_from_path(path):

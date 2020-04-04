@@ -2,13 +2,15 @@ import os
 from collections import namedtuple
 from glob import glob
 
+import pkg_resources
 import six
 import yaml
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
 from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
+from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -55,6 +57,13 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
                 unaliased solids or of their aliases if aliased) to execute with this preset.
             mode (Optional[str]): The mode to apply when executing this preset. (default:
                 'default')
+
+        Returns:
+            PresetDefinition: A PresetDefinition constructed from the provided YAML files.
+
+        Raises:
+            DagsterInvariantViolationError: When one of the YAML files is invalid and has a parse
+                error.
         '''
         check.str_param(name, 'name')
         environment_files = check.opt_list_param(environment_files, 'environment_files')
@@ -86,6 +95,101 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
             )
 
         return PresetDefinition(name, merged, solid_subset, mode)
+
+    @staticmethod
+    def from_yaml_strings(name, yaml_strings=None, solid_subset=None, mode=None):
+        '''Static constructor for presets from YAML strings.
+
+        Args:
+            name (str): The name of this preset. Must be unique in the presets defined on a given
+                pipeline.
+            yaml_strings (Optional[List[str]]): List of yaml strings to parse as the environment
+                config for this preset.
+            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
+                unaliased solids or of their aliases if aliased) to execute with this preset.
+            mode (Optional[str]): The mode to apply when executing this preset. (default:
+                'default')
+
+        Returns:
+            PresetDefinition: A PresetDefinition constructed from the provided YAML strings
+
+        Raises:
+            DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
+                parse error.
+        '''
+        check.str_param(name, 'name')
+        yaml_strings = check.opt_list_param(yaml_strings, 'yaml_strings', of_type=str)
+        solid_subset = check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str)
+        mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
+
+        try:
+            merged = merge_yaml_strings(yaml_strings)
+        except yaml.YAMLError as err:
+            six.raise_from(
+                DagsterInvariantViolationError(
+                    'Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} '
+                    'on preset "{name}".'.format(yaml_strings=yaml_strings, name=name)
+                ),
+                err,
+            )
+
+        return PresetDefinition(name, merged, solid_subset, mode)
+
+    @staticmethod
+    def from_pkg_resources(name, pkg_resource_defs=None, solid_subset=None, mode=None):
+        '''Load a preset from a package resource, using :py:func:`pkg_resources.resource_string`.
+
+        Example:
+
+        .. code-block:: python
+
+            PresetDefinition.from_pkg_resources(
+                name='local',
+                mode='local',
+                pkg_resource_defs=[
+                    ('dagster_examples.airline_demo.environments', 'local_base.yaml'),
+                    ('dagster_examples.airline_demo.environments', 'local_warehouse.yaml'),
+                ],
+            )
+
+
+        Args:
+            name (str): The name of this preset. Must be unique in the presets defined on a given
+                pipeline.
+            pkg_resource_defs (Optional[List[(str, str)]]): List of pkg_resource modules/files to
+                load as environment config for this preset.
+            solid_subset (Optional[List[str]]): The list of names of solid invocations (i.e., of
+                unaliased solids or of their aliases if aliased) to execute with this preset.
+            mode (Optional[str]): The mode to apply when executing this preset. (default:
+                'default')
+
+        Returns:
+            PresetDefinition: A PresetDefinition constructed from the provided YAML strings
+
+        Raises:
+            DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
+                parse error.
+        '''
+        pkg_resource_defs = check.opt_list_param(
+            pkg_resource_defs, 'pkg_resource_defs', of_type=tuple
+        )
+
+        try:
+            yaml_strings = [
+                six.ensure_str(pkg_resources.resource_string(*pkg_resource_def))
+                for pkg_resource_def in pkg_resource_defs
+            ]
+        except (ModuleNotFoundError, FileNotFoundError, UnicodeDecodeError) as err:
+            six.raise_from(
+                DagsterInvariantViolationError(
+                    'Encountered error attempting to parse yaml. Loading YAMLs from '
+                    'package resources {pkg_resource_defs} '
+                    'on preset "{name}".'.format(pkg_resource_defs=pkg_resource_defs, name=name)
+                ),
+                err,
+            )
+
+        return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_subset, mode)
 
     def __new__(cls, name, environment_dict=None, solid_subset=None, mode=None):
         return super(PresetDefinition, cls).__new__(

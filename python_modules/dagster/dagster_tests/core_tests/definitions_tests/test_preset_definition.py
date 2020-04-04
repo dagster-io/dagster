@@ -100,3 +100,53 @@ def test_invalid_preset():
             mode_defs=[ModeDefinition(name="mode_a")],
             preset_defs=[PresetDefinition(name="preset_b", mode="mode_b")],
         )
+
+
+def test_from_yaml_strings():
+    a = '''
+foo:
+  bar: 1
+baz: 3
+'''
+    b = '''
+foo:
+  one: "one"
+other: 4
+'''
+    c = '''
+final: "result"
+'''
+    preset = PresetDefinition.from_yaml_strings('passing', [a, b, c])
+    assert preset.environment_dict == {
+        'foo': {'bar': 1, 'one': 'one'},
+        'baz': 3,
+        'other': 4,
+        'final': 'result',
+    }
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Encountered error attempting to parse yaml'
+    ):
+        PresetDefinition.from_yaml_strings('failing', ['--- `'])
+
+    res = PresetDefinition.from_yaml_strings('empty')
+    assert res == PresetDefinition(
+        name='empty', environment_dict={}, solid_subset=None, mode='default'
+    )
+
+
+def test_from_pkg_resources():
+    good = ('dagster_tests.core_tests.definitions_tests', 'pass_env.yaml')
+    res = PresetDefinition.from_pkg_resources('pass', [good])
+    assert res.environment_dict == {'solids': {'can_fail': {'config': {'error': False}}}}
+
+    bad_defs = [
+        ('dagster_tests.core_tests.definitions_tests', 'does_not_exist.yaml'),
+        ('dagster_tests.core_tests.definitions_tests', 'bad_file_binary.yaml'),
+        ('dagster_tests.core_tests.does_not_exist', 'some_file.yaml'),
+    ]
+
+    for bad_def in bad_defs:
+        with pytest.raises(
+            DagsterInvariantViolationError, match='Encountered error attempting to parse yaml',
+        ):
+            PresetDefinition.from_pkg_resources('bad_def', [bad_def])
