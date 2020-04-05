@@ -123,22 +123,22 @@ class TestRunStorage:
         count = storage.get_runs_count(PipelineRunsFilter(pipeline_name='some_pipeline'))
         assert len(some_runs) == 2
         assert count == 2
-        assert any(x.run_id == one for x in some_runs)
-        assert any(x.run_id == two for x in some_runs)
+        assert some_runs[0].run_id == two
+        assert some_runs[1].run_id == one
 
         some_runs = storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
         count = storage.get_runs_count(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
         assert len(some_runs) == 2
         assert count == 2
-        assert any(x.run_id == one for x in some_runs)
-        assert any(x.run_id == three for x in some_runs)
+        assert some_runs[0].run_id == three
+        assert some_runs[1].run_id == one
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello'}))
         count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello'}))
         assert len(some_runs) == 2
         assert count == 2
-        assert any(x.run_id == one for x in some_runs)
-        assert any(x.run_id == two for x in some_runs)
+        assert some_runs[0].run_id == two
+        assert some_runs[1].run_id == one
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
         count = storage.get_runs_count(PipelineRunsFilter(tags={'tag': 'hello', 'tag2': 'world'}))
@@ -154,8 +154,8 @@ class TestRunStorage:
         )
         assert len(some_runs) == 2
         assert count == 2
-        assert any(x.run_id == one for x in some_runs)
-        assert any(x.run_id == two for x in some_runs)
+        assert some_runs[0].run_id == two
+        assert some_runs[1].run_id == one
 
         some_runs = storage.get_runs(
             PipelineRunsFilter(
@@ -265,8 +265,8 @@ class TestRunStorage:
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={'mytag2': 'world'}))
         assert len(some_runs) == 2
-        assert any(x.run_id == one for x in some_runs)
-        assert any(x.run_id == two for x in some_runs)
+        assert some_runs[0].run_id == two
+        assert some_runs[1].run_id == one
 
         some_runs = storage.get_runs(PipelineRunsFilter(tags={}))
         assert len(some_runs) == 3
