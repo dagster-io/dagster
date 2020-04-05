@@ -1,6 +1,6 @@
 import pytest
 from dagster_pandas.constraints import (
-    ColumnTypeConstraint,
+    ColumnDTypeInSetConstraint,
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
 )
@@ -31,7 +31,7 @@ from dagster.utils import safe_tempfile_path
 def test_create_pandas_dataframe_dagster_type():
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name='TestDataFrame',
-        columns=[PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
+        columns=[PandasColumn(name='foo', constraints=[ColumnDTypeInSetConstraint({'int64'})])],
     )
     assert isinstance(TestDataFrame, DagsterType)
 
@@ -104,7 +104,7 @@ def test_bad_dataframe_type_returns_bad_stuff():
 def test_dataframe_description_generation_just_type_constraint():
     TestDataFrame = create_dagster_pandas_dataframe_type(
         name='TestDataFrame',
-        columns=[PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
+        columns=[PandasColumn(name='foo', constraints=[ColumnDTypeInSetConstraint({'int64'})])],
     )
     assert TestDataFrame.description == "\n### Columns\n**foo**: `int64`\n\n"
 
@@ -123,7 +123,7 @@ def test_dataframe_description_generation_multi_constraints():
             PandasColumn(
                 name='foo',
                 constraints=[
-                    ColumnTypeConstraint('int64'),
+                    ColumnDTypeInSetConstraint({'int64'}),
                     InRangeColumnConstraint(0, 100, ignore_missing_vals=False),
                     NonNullableColumnConstraint(),
                 ],

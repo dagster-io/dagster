@@ -4,7 +4,7 @@ from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from dagster_pandas.constraints import (
     ColumnConstraint,
     ColumnConstraintViolationException,
-    ColumnTypeConstraint,
+    ColumnDTypeInSetConstraint,
 )
 from pandas import DataFrame, read_csv
 
@@ -34,7 +34,8 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
     name='CustomTripDataFrame',
     columns=[
         PandasColumn(
-            'amount_paid', constraints=[ColumnTypeConstraint('int64'), DivisibleByFiveConstraint()]
+            'amount_paid',
+            constraints=[ColumnDTypeInSetConstraint({'int64'}), DivisibleByFiveConstraint()],
         )
     ],
 )

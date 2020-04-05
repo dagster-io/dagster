@@ -139,23 +139,46 @@ class ColumnConstraint(Constraint):
         return zip(dataframe.index.tolist(), dataframe[column_name].tolist())
 
 
-class ColumnTypeConstraint(ColumnConstraint):
-    def __init__(self, expected_pandas_dtypes):
-        if isinstance(expected_pandas_dtypes, str):
-            expected_pandas_dtypes = {expected_pandas_dtypes}
-        self.expected_pandas_dtypes = check.set_param(
-            expected_pandas_dtypes, 'expected_pandas_dtype'
+class ColumnDTypeFnConstraint(ColumnConstraint):
+    def __init__(self, type_fn):
+        self.type_fn = check.callable_param(type_fn, 'type_fn')
+        description = "{fn} must evaluate to True for column dtypes".format(
+            fn=self.type_fn.__name__
         )
-        description = "Column dtype must be {}".format(self.expected_pandas_dtypes)
-        super(ColumnTypeConstraint, self).__init__(
+        super(ColumnDTypeFnConstraint, self).__init__(
             error_description=description, markdown_description=description
         )
 
     def validate(self, dataframe, column_name):
-        if str(dataframe[column_name].dtype) not in self.expected_pandas_dtypes:
+        recevied_dtypes = dataframe[column_name].dtype
+        if not self.type_fn(recevied_dtypes):
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
-                constraint_description=self.error_description,
+                constraint_description='{base_error_message}. Dtypes received: {received_dtypes}.'.format(
+                    base_error_message=self.error_description, received_dtypes=recevied_dtypes
+                ),
+                column_name=column_name,
+            )
+
+
+class ColumnDTypeInSetConstraint(ColumnConstraint):
+    def __init__(self, expected_dtype_set):
+        self.expected_dtype_set = check.set_param(expected_dtype_set, 'expected_dtype_set')
+        description = "Column dtype must be in the following set {}.".format(
+            self.expected_dtype_set
+        )
+        super(ColumnDTypeInSetConstraint, self).__init__(
+            error_description=description, markdown_description=description
+        )
+
+    def validate(self, dataframe, column_name):
+        recevied_dtypes = dataframe[column_name].dtype
+        if str(recevied_dtypes) not in self.expected_dtype_set:
+            raise ColumnConstraintViolationException(
+                constraint_name=self.name,
+                constraint_description='{base_error_message}. DTypes received: {recevied_dtypes}'.format(
+                    base_error_message=self.error_description, recevied_dtypes=recevied_dtypes
+                ),
                 column_name=column_name,
             )
 

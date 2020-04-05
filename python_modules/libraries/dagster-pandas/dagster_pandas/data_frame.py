@@ -1,5 +1,9 @@
 import pandas as pd
-from dagster_pandas.constraints import ColumnTypeConstraint, ConstraintViolationException
+from dagster_pandas.constraints import (
+    ColumnDTypeFnConstraint,
+    ColumnDTypeInSetConstraint,
+    ConstraintViolationException,
+)
 from dagster_pandas.validation import PandasColumn, validate_constraints
 
 from dagster import (
@@ -16,7 +20,7 @@ from dagster import (
 from dagster.config.field_utils import Selector
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
-CONSTRAINT_BLACKLIST = {ColumnTypeConstraint}
+CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 
 
 def dict_without_keys(ddict, *keys):
@@ -114,21 +118,18 @@ def _construct_constraint_list(constraints):
 
 
 def _build_column_header(column_name, constraints):
-    expected_column_types = None
-    column_type_constraint = [
-        constraint for constraint in constraints if isinstance(constraint, ColumnTypeConstraint)
-    ]
-    if column_type_constraint:
-        expected_types = tuple(column_type_constraint[0].expected_pandas_dtypes)
-        if expected_types:
-            expected_column_types = (
-                expected_types[0] if len(expected_types) == 1 else tuple(expected_types)
+    header = '**{column_name}**'.format(column_name=column_name)
+    for constraint in constraints:
+        if isinstance(constraint, ColumnDTypeInSetConstraint):
+            dtypes_tuple = tuple(constraint.expected_dtype_set)
+            return header + ": `{expected_dtypes}`".format(
+                expected_dtypes=dtypes_tuple if len(dtypes_tuple) > 1 else dtypes_tuple[0]
             )
-
-    column_header = '**{column_name}**'.format(column_name=column_name)
-    if expected_column_types:
-        column_header += ": `{expected_dtypes}`".format(expected_dtypes=expected_column_types)
-    return column_header
+        elif isinstance(constraint, ColumnDTypeFnConstraint):
+            return header + ": Validator `{expected_dtype_fn}`".format(
+                expected_dtype_fn=constraint.type_fn.__name__
+            )
+    return header
 
 
 def create_dagster_pandas_dataframe_description(description, columns):

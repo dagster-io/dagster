@@ -1,6 +1,7 @@
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnTypeConstraint,
+    ColumnDTypeFnConstraint,
+    ColumnDTypeInSetConstraint,
     Constraint,
     ConstraintViolationException,
     DataFrameConstraint,
@@ -9,6 +10,13 @@ from dagster_pandas.constraints import (
     UniqueColumnConstraint,
 )
 from pandas import DataFrame, Timestamp
+from pandas.core.dtypes.common import (
+    is_bool_dtype,
+    is_float_dtype,
+    is_integer_dtype,
+    is_numeric_dtype,
+    is_string_dtype,
+)
 
 from dagster import DagsterInvariantViolationError, check
 
@@ -68,7 +76,7 @@ class PandasColumn:
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=[ColumnTypeConstraint('bool')]
+            constraints=[ColumnDTypeFnConstraint(is_bool_dtype)]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
@@ -78,7 +86,6 @@ class PandasColumn:
     @staticmethod
     def numeric_column(
         name,
-        expected_dtypes,
         min_value=-float('inf'),
         max_value=float('inf'),
         non_nullable=False,
@@ -89,7 +96,7 @@ class PandasColumn:
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[
-                ColumnTypeConstraint(expected_dtypes),
+                ColumnDTypeFnConstraint(is_numeric_dtype),
                 InRangeColumnConstraint(
                     check.numeric_param(min_value, 'min_value'),
                     check.numeric_param(max_value, 'max_value'),
@@ -112,14 +119,19 @@ class PandasColumn:
         ignore_missing_vals=False,
         is_optional=False,
     ):
-        return PandasColumn.numeric_column(
-            name,
-            'int64',
-            min_value,
-            max_value,
-            non_nullable=non_nullable,
-            unique=unique,
-            ignore_missing_vals=ignore_missing_vals,
+        return PandasColumn(
+            name=check.str_param(name, 'name'),
+            constraints=[
+                ColumnDTypeFnConstraint(is_integer_dtype),
+                InRangeColumnConstraint(
+                    check.numeric_param(min_value, 'min_value'),
+                    check.numeric_param(max_value, 'max_value'),
+                    ignore_missing_vals=ignore_missing_vals,
+                ),
+            ]
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
             is_optional=is_optional,
         )
 
@@ -133,14 +145,19 @@ class PandasColumn:
         ignore_missing_vals=False,
         is_optional=False,
     ):
-        return PandasColumn.numeric_column(
-            name,
-            'float64',
-            min_value,
-            max_value,
-            non_nullable=non_nullable,
-            unique=unique,
-            ignore_missing_vals=ignore_missing_vals,
+        return PandasColumn(
+            name=check.str_param(name, 'name'),
+            constraints=[
+                ColumnDTypeFnConstraint(is_float_dtype),
+                InRangeColumnConstraint(
+                    check.numeric_param(min_value, 'min_value'),
+                    check.numeric_param(max_value, 'max_value'),
+                    ignore_missing_vals=ignore_missing_vals,
+                ),
+            ]
+            + _construct_keyword_constraints(
+                non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
+            ),
             is_optional=is_optional,
         )
 
@@ -157,7 +174,7 @@ class PandasColumn:
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[
-                ColumnTypeConstraint({'datetime64[ns]'}),
+                ColumnDTypeInSetConstraint({'datetime64[ns]'}),
                 InRangeColumnConstraint(
                     min_datetime, max_datetime, ignore_missing_vals=ignore_missing_vals
                 ),
@@ -174,7 +191,7 @@ class PandasColumn:
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
-            constraints=[ColumnTypeConstraint('object')]
+            constraints=[ColumnDTypeFnConstraint(is_string_dtype)]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
@@ -191,10 +208,11 @@ class PandasColumn:
         ignore_missing_vals=False,
         is_optional=False,
     ):
+        of_types = {of_types} if isinstance(of_types, str) else of_types
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[
-                ColumnTypeConstraint(of_types),
+                ColumnDTypeInSetConstraint(of_types),
                 CategoricalColumnConstraint(categories, ignore_missing_vals=ignore_missing_vals),
             ]
             + _construct_keyword_constraints(

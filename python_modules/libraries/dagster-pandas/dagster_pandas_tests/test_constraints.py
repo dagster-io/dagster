@@ -1,7 +1,7 @@
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnTypeConstraint,
+    ColumnDTypeInSetConstraint,
     ConstraintViolationException,
     InRangeColumnConstraint,
     MaxValueColumnConstraint,
@@ -52,10 +52,10 @@ def test_column_unique_constraint_ignore_nan():
 
 def test_column_type_constraint():
     test_dataframe = DataFrame({'foo': ['baz']})
-    assert ColumnTypeConstraint('object').validate(test_dataframe, 'foo') is None
+    assert ColumnDTypeInSetConstraint({'object'}).validate(test_dataframe, 'foo') is None
 
     with pytest.raises(ConstraintViolationException):
-        ColumnTypeConstraint('int64').validate(test_dataframe, 'foo')
+        ColumnDTypeInSetConstraint({'int64'}).validate(test_dataframe, 'foo')
 
 
 def test_non_nullable_column_constraint():

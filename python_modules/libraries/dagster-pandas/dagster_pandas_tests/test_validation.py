@@ -1,7 +1,8 @@
 import pytest
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
-    ColumnTypeConstraint,
+    ColumnDTypeFnConstraint,
+    ColumnDTypeInSetConstraint,
     ConstraintViolationException,
     InRangeColumnConstraint,
     NonNullableColumnConstraint,
@@ -14,7 +15,7 @@ from pandas import DataFrame
 
 def test_validate_constraints_ok():
     column_constraints = [
-        PandasColumn(name='foo', constraints=[ColumnTypeConstraint('object')]),
+        PandasColumn(name='foo', constraints=[ColumnDTypeInSetConstraint({'object'})]),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})
     assert validate_constraints(dataframe, pandas_columns=column_constraints) is None
@@ -22,7 +23,7 @@ def test_validate_constraints_ok():
 
 def test_missing_column_validation():
     column_constraints = [
-        PandasColumn(name='qux', constraints=[ColumnTypeConstraint('object')]),
+        PandasColumn(name='qux', constraints=[ColumnDTypeInSetConstraint({'object'})]),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})
     with pytest.raises(
@@ -33,7 +34,9 @@ def test_missing_column_validation():
 
 def test_missing_column_validation_with_optional_column():
     column_constraints = [
-        PandasColumn(name='qux', constraints=[ColumnTypeConstraint('object')], is_optional=True),
+        PandasColumn(
+            name='qux', constraints=[ColumnDTypeInSetConstraint({'object'})], is_optional=True
+        ),
     ]
     dataframe = DataFrame({'foo': ['bar', 'baz']})
     assert validate_constraints(dataframe, pandas_columns=column_constraints) is None
@@ -43,11 +46,11 @@ def test_missing_column_validation_with_optional_column():
     'column_constraints, dataframe',
     [
         (
-            [PandasColumn(name='foo', constraints=[ColumnTypeConstraint('int64')])],
+            [PandasColumn(name='foo', constraints=[ColumnDTypeInSetConstraint({'int64'})])],
             DataFrame({'foo': ['bar', 'baz']}),
         ),
         (
-            [PandasColumn(name='foo', constraints=[ColumnTypeConstraint('object')])],
+            [PandasColumn(name='foo', constraints=[ColumnDTypeInSetConstraint({'object'})])],
             DataFrame({'bar': ['bar', 'baz']}),
         ),
     ],
@@ -109,18 +112,14 @@ def has_constraints(column, constraints):
 @pytest.mark.parametrize(
     'composer, composer_args, expected_constraints',
     [
-        (PandasColumn.boolean_column, [], [ColumnTypeConstraint]),
-        (
-            PandasColumn.numeric_column,
-            [{'int64', 'float64'}],
-            [ColumnTypeConstraint, InRangeColumnConstraint],
-        ),
-        (PandasColumn.datetime_column, [], [ColumnTypeConstraint, InRangeColumnConstraint]),
-        (PandasColumn.string_column, [], [ColumnTypeConstraint]),
+        (PandasColumn.boolean_column, [], [ColumnDTypeFnConstraint]),
+        (PandasColumn.numeric_column, [], [ColumnDTypeFnConstraint, InRangeColumnConstraint]),
+        (PandasColumn.datetime_column, [], [ColumnDTypeInSetConstraint, InRangeColumnConstraint]),
+        (PandasColumn.string_column, [], [ColumnDTypeFnConstraint]),
         (
             PandasColumn.categorical_column,
             [{'a', 'b'}],
-            [ColumnTypeConstraint, CategoricalColumnConstraint],
+            [ColumnDTypeInSetConstraint, CategoricalColumnConstraint],
         ),
     ],
 )

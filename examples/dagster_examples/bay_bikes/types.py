@@ -119,9 +119,7 @@ WeatherDataFrameSchema = [
     PandasColumn.float_column('cloudCover', min_value=0.0, max_value=1.0),
     PandasColumn.integer_column('uvIndex', min_value=0, max_value=12),
     PandasColumn.integer_column('uvIndexTime', min_value=0),
-    PandasColumn.numeric_column(
-        'visibility', min_value=0.0, max_value=10.0, expected_dtypes={'int64', 'float64'}
-    ),
+    PandasColumn.numeric_column('visibility', min_value=0.0, max_value=10.0),
     PandasColumn.float_column('ozone', min_value=200.0, max_value=500.0),
 ]
 
