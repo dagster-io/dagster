@@ -51,22 +51,28 @@ class PandasColumn:
                 constraint.validate(dataframe, self.name)
 
     @staticmethod
-    def exists(name, non_nullable=False, unique=False, ignore_missing_vals=False):
+    def exists(
+        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
+    ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=_construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
     @staticmethod
-    def boolean_column(name, non_nullable=False, unique=False, ignore_missing_vals=False):
+    def boolean_column(
+        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
+    ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[ColumnTypeConstraint('bool')]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
     @staticmethod
@@ -78,6 +84,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
+        is_optional=False,
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -92,6 +99,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
     @staticmethod
@@ -102,6 +110,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
+        is_optional=False,
     ):
         return PandasColumn.numeric_column(
             name,
@@ -111,6 +120,7 @@ class PandasColumn:
             non_nullable=non_nullable,
             unique=unique,
             ignore_missing_vals=ignore_missing_vals,
+            is_optional=is_optional,
         )
 
     @staticmethod
@@ -121,6 +131,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
+        is_optional=False,
     ):
         return PandasColumn.numeric_column(
             name,
@@ -130,6 +141,7 @@ class PandasColumn:
             non_nullable=non_nullable,
             unique=unique,
             ignore_missing_vals=ignore_missing_vals,
+            is_optional=is_optional,
         )
 
     @staticmethod
@@ -140,6 +152,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
+        is_optional=False,
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -152,16 +165,20 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
     @staticmethod
-    def string_column(name, non_nullable=False, unique=False, ignore_missing_vals=False):
+    def string_column(
+        name, non_nullable=False, unique=False, ignore_missing_vals=False, is_optional=False
+    ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
             constraints=[ColumnTypeConstraint('object')]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
     @staticmethod
@@ -172,6 +189,7 @@ class PandasColumn:
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
+        is_optional=False,
     ):
         return PandasColumn(
             name=check.str_param(name, 'name'),
@@ -182,6 +200,7 @@ class PandasColumn:
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
+            is_optional=is_optional,
         )
 
 
