@@ -6,12 +6,10 @@ To execute our solid, we'll embed it in an equally simple pipeline.
 A pipeline is a set of solids arranged into a DAG (or href [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)) of
 computation. You'll typically define pipelines by annotating ordinary Python functions with the <PyObject module="dagster" object="pipeline" displayText="@pipeline" /> decorator.
 
-```python literalinclude
+```python literalinclude showLines startLine=21
 file:/intro_tutorial/hello_cereal.py
 caption:hello_cereal.py
-lineno-start:21
 lines:21-23
-emphasize-lines:55-59
 ```
 
 Here you'll see that we call `hello_cereal()`. This call doesn't

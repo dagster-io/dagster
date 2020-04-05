@@ -18,7 +18,8 @@ const DIRECTIVE_PATTERN = 'literalinclude';
 const transform = () => (tree) => {
   const visitor = (node) => {
     const { value, meta } = node;
-    if (meta === DIRECTIVE_PATTERN) {
+    const metaValues = meta ? meta.split(' ') : [];
+    if (metaValues.includes(DIRECTIVE_PATTERN)) {
       const data = value.trim();
       const values = data.split('\n').map((i) => i.trim().split(':'));
 
