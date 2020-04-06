@@ -180,7 +180,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
 
 # output version of input type DauphinExecutionSelector
-class DauphinExectionSelection(dauphin.ObjectType):
+class DauphinExecutionSelection(dauphin.ObjectType):
     class Meta(object):
         name = 'ExecutionSelection'
 
