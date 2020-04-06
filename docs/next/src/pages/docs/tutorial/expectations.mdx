@@ -20,22 +20,17 @@ learn more about your data (making your expectations more precise), and
 the process in the world that generates your data will shift (making
 some of your expectations invalid.)
 
-We've already encountered the
-:py`TypeCheck <dagster.TypeCheck>`{.interpreted-text role="class"}
-event, which is typically yielded by the type machinery (but can also be
-yielded manually from the body of a solid's compute function);
-:py`ExpectationResult <dagster.ExpectationResult>`{.interpreted-text
-role="class"} is another kind of structured side-channel result that a
-solid can yield. These extra events don't get passed to downstream
-solids and they aren't used to define the data dependencies of a
-pipeline DAG.
+We've already encountered the <PyObject module="dagster" object="TypeCheck" /> event,
+which is typically yielded by the type machinery (but can also be
+yielded manually from the body of a solid's compute function); <PyObject module="dagster" object="ExpectationResult" /> is
+another kind of structured side-channel result that a solid can yield.
+These extra events don't get passed to downstream solids and they aren't used to
+define the data dependencies of a pipeline DAG.
 
-```python literalinclude
+```python literalinclude startLine=91 emphasize-lines=1-3,31
 file:/intro_tutorial/custom_types_bad_5.py
 caption:custom_types_bad_5.py
-lineno-start:91
 lines:91-133
-emphasize-lines:1-3, 31
 ```
 
 Until now, every solid we've encountered has returned its result value,
@@ -54,12 +49,10 @@ cereal Strawberry Fruit Wheats (90 calories per serving).
 To fix this, we can cast `calories` to `int` during the hydration
 process:
 
-```python literalinclude
+```python literalinclude startLine=74 emphasize-lines=6
 file:/intro_tutorial/custom_types_5.py
 caption:custom_types_5.py
-lineno-start:74
 lines:74-83
-emphasize-lines:6
 ```
 
 Running this pipeline yields an <PyObject module="dagster" object="ExpectationResult" /> with

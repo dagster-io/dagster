@@ -7,9 +7,6 @@ import { MDXProvider } from '@mdx-js/react';
 const components = {
   pre: (props: any) => <div {...props} />,
   code: (props: any) => {
-    // To KR: Check out the props passed here to get an idea for
-    // how they are formatted
-    console.log(props);
     return <Code {...props} />;
   },
 };
