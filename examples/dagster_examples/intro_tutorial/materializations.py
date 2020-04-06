@@ -37,7 +37,7 @@ def sort_by_calories(context, cereals):
     )
     fieldnames = list(sorted_cereals[0].keys())
     sorted_cereals_csv_path = os.path.abspath(
-        'calories_sorted_{run_id}.csv'.format(run_id=context.run_id)
+        'output/calories_sorted_{run_id}.csv'.format(run_id=context.run_id)
     )
     with open(sorted_cereals_csv_path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames)

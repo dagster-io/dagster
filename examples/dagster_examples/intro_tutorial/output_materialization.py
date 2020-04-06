@@ -43,6 +43,7 @@ def less_simple_data_frame_output_materialization_config(
 ):
     # Materialize LessSimpleDataFrame into a csv file
     csv_path = os.path.abspath(config['csv']['path'])
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     with open(csv_path, 'w') as fd:
         fieldnames = list(value[0].keys())
         writer = csv.DictWriter(
@@ -132,8 +133,8 @@ if __name__ == '__main__':
                     'outputs': [
                         {
                             'result': {
-                                'csv': {'path': 'cereal_out.csv'},
-                                'json': {'path': 'cereal_out.json'},
+                                'csv': {'path': 'output/cereal_out.csv'},
+                                'json': {'path': 'output/cereal_out.json'},
                             }
                         }
                     ],

@@ -128,3 +128,6 @@ dask-worker-space
 
 # Codemod bookmarks
 .codemod.bookmark
+
+# Examples outputs
+examples/dagster_examples/*/output/
