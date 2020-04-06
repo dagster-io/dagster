@@ -4,15 +4,7 @@ import os
 from dagster_gcp import bigquery_resource, dataproc_resource
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 
-from dagster import (
-    InputDefinition,
-    ModeDefinition,
-    Nothing,
-    PresetDefinition,
-    file_relative_path,
-    pipeline,
-    solid,
-)
+from dagster import InputDefinition, ModeDefinition, Nothing, PresetDefinition, pipeline, solid
 
 PROJECT_ID = os.getenv('GCP_PROJECT_ID')
 DEPLOY_BUCKET_PREFIX = os.getenv('GCP_DEPLOY_BUCKET_PREFIX')
@@ -122,11 +114,10 @@ def explore_visits_by_hour(context):
         )
     ],
     preset_defs=[
-        PresetDefinition.from_files(
-            name='default',
-            mode='default',
-            environment_files=[
-                file_relative_path(__file__, 'environments/resources_pipeline.yaml')
+        PresetDefinition.from_pkg_resources(
+            'default',
+            pkg_resource_defs=[
+                ('dagster_examples.gcp_data_platform.environments', 'resources_pipeline.yaml'),
             ],
         )
     ],

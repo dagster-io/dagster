@@ -160,10 +160,11 @@ def explore_visits_by_hour(start):
         )
     ],
     preset_defs=[
-        PresetDefinition.from_files(
-            name='default',
-            mode='default',
-            environment_files=[file_relative_path(__file__, 'environments/default.yaml')],
+        PresetDefinition.from_pkg_resources(
+            'default',
+            pkg_resource_defs=[
+                ('dagster_examples.gcp_data_platform.environments', 'default.yaml'),
+            ],
         )
     ],
 )

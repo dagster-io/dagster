@@ -1,4 +1,4 @@
-from dagster import ModeDefinition, PresetDefinition, file_relative_path, pipeline
+from dagster import ModeDefinition, PresetDefinition, pipeline
 
 from ..common.resources import postgres_db_info_resource
 from .resources import credentials_vault, gcs_client, local_client, mount
@@ -28,75 +28,75 @@ MODES = [
 ]
 
 WEATHER_INGEST_PRESETS = [
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'dev_weather_etl',
         mode='development',
-        environment_files=[
-            file_relative_path(__file__, 'environments/dev_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/dev_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/weather.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
         ],
         solid_subset=['weather_etl'],
     ),
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'prod_weather_etl',
         mode='production',
-        environment_files=[
-            file_relative_path(__file__, 'environments/prod_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/prod_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/weather.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
         ],
         solid_subset=['weather_etl'],
     ),
 ]
 
 TRIP_INGEST_PRESETS = [
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'dev_trip_etl',
         mode='development',
-        environment_files=[
-            file_relative_path(__file__, 'environments/dev_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/dev_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/trips.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
         ],
         solid_subset=['trip_etl'],
     ),
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'prod_trip_etl',
         mode='production',
-        environment_files=[
-            file_relative_path(__file__, 'environments/prod_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/prod_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/trips.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
         ],
         solid_subset=['trip_etl'],
     ),
 ]
 
 TRAINING_PRESETS = [
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'dev_train_daily_bike_supply_model',
         mode='development',
-        environment_files=[
-            file_relative_path(__file__, 'environments/dev_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/dev_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/training.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'training.yaml'),
         ],
         solid_subset=['train_daily_bike_supply_model'],
     ),
-    PresetDefinition.from_files(
+    PresetDefinition.from_pkg_resources(
         'prod_train_daily_bike_supply_model',
         mode='production',
-        environment_files=[
-            file_relative_path(__file__, 'environments/prod_credentials_vault.yaml'),
-            file_relative_path(__file__, 'environments/prod_database_resources.yaml'),
-            file_relative_path(__file__, 'environments/file_system_resources.yaml'),
-            file_relative_path(__file__, 'environments/training.yaml'),
+        pkg_resource_defs=[
+            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
+            ('dagster_examples.bay_bikes.environments', 'training.yaml'),
         ],
         solid_subset=['train_daily_bike_supply_model'],
     ),

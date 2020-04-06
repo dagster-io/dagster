@@ -22,7 +22,6 @@ from dagster import (
     PresetDefinition,
     String,
     TypeCheck,
-    file_relative_path,
     pipeline,
     solid,
 )
@@ -149,10 +148,11 @@ def gunzipper(_, gzip_file):
         )
     ],
     preset_defs=[
-        PresetDefinition.from_files(
-            name='default',
-            mode='default',
-            environment_files=[file_relative_path(__file__, 'environments/default.yaml')],
+        PresetDefinition.from_pkg_resources(
+            'default',
+            pkg_resource_defs=[
+                ('dagster_examples.event_pipeline_demo.environments', 'default.yaml'),
+            ],
         )
     ],
 )
