@@ -16,7 +16,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.utils import script_relative_path
 
 
 class LocalSQLiteWarehouse(object):
@@ -153,11 +152,14 @@ def normalize_calories(context, cereals):
             },
             mode='unittest',
         ),
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             'dev',
-            environment_files=[
-                script_relative_path('presets_dev_warehouse.yaml'),
-                script_relative_path('presets_csv.yaml'),
+            pkg_resource_defs=[
+                (
+                    'dagster_examples.intro_tutorial',
+                    'presets_dev_warehouse.yaml',
+                ),
+                ('dagster_examples.intro_tutorial', 'presets_csv.yaml'),
             ],
             mode='dev',
         ),

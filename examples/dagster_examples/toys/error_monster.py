@@ -11,7 +11,6 @@ from dagster import (
     RetryRequested,
     String,
     execute_pipeline,
-    file_relative_path,
     pipeline,
     solid,
 )
@@ -108,9 +107,9 @@ def str_to_num(context, string):
         )
     ],
     preset_defs=[
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             'passing',
-            environment_files=[file_relative_path(__file__, 'environments/error.yaml')],
+            pkg_resource_defs=[('dagster_examples.toys.environments', 'error.yaml')],
             mode='errorable_mode',
         )
     ],

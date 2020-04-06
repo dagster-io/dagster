@@ -1,7 +1,7 @@
 import pandas as pd
 from dagster_pandas import DataFrame
 
-from dagster import Path, PresetDefinition, file_relative_path, pipeline, solid
+from dagster import Path, PresetDefinition, pipeline, solid
 
 
 @solid
@@ -33,16 +33,16 @@ def sum_sq_solid(_, sum_df: DataFrame, mult_df: DataFrame) -> DataFrame:
 
 @pipeline(
     preset_defs=[
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             'test',
-            environment_files=[
-                file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
+            pkg_resource_defs=[
+                ('dagster_examples.toys.environments', 'pandas_hello_world_test.yaml')
             ],
         ),
-        PresetDefinition.from_files(
+        PresetDefinition.from_pkg_resources(
             'prod',
-            environment_files=[
-                file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
+            pkg_resource_defs=[
+                ('dagster_examples.toys.environments', 'pandas_hello_world_prod.yaml')
             ],
         ),
     ]
