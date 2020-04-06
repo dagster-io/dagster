@@ -51,12 +51,14 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-pagerduty \
 				-e python_modules/libraries/dagster-papertrail \
 				-e python_modules/libraries/dagster-postgres \
+				-e python_modules/libraries/dagster-prometheus \
 				-e python_modules/libraries/dagster-spark \
 				-e python_modules/libraries/dagster-pyspark \
 				-e python_modules/libraries/dagster-slack \
 				-e python_modules/libraries/dagster-snowflake \
 				-e python_modules/libraries/dagster-ssh \
 				-e python_modules/libraries/dagster-twilio \
+				-e python_modules/libraries/lakehouse \
 				-e python_modules/automation \
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
