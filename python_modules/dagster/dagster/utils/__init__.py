@@ -21,6 +21,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, thread
 from dagster.seven.abc import Mapping
+from dagster.utils.merger import merge_dicts
 
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -128,15 +129,6 @@ def mkdir_p(path):
             pass
         else:
             raise
-
-
-def merge_dicts(left, right):
-    check.dict_param(left, 'left')
-    check.dict_param(right, 'right')
-
-    result = left.copy()
-    result.update(right)
-    return result
 
 
 class frozendict(dict):

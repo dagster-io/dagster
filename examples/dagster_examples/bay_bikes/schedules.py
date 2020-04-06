@@ -5,7 +5,7 @@ from dagster_examples.bay_bikes.pipelines import generate_training_set_and_train
 
 from dagster import daily_schedule, schedules
 from dagster.core.definitions.decorators import monthly_schedule
-from dagster.utils.merger import dict_merge
+from dagster.utils.merger import deep_merge_dicts
 
 weather_etl_environment = generate_training_set_and_train_model.get_preset(
     'prod_weather_etl'
@@ -32,11 +32,7 @@ now = datetime.now()
 )
 def daily_weather_ingest_schedule(date):
     unix_seconds_since_epoch = int((date - datetime(year=1970, month=1, day=1)).total_seconds())
-    return dict_merge(
-        {
-            'resources': weather_etl_environment['resources'],
-            'solids': {'weather_etl': weather_etl_environment['solids']['weather_etl']},
-        },
+    return deep_merge_dicts(
         {
             'solids': {
                 'weather_etl': {
@@ -47,6 +43,10 @@ def daily_weather_ingest_schedule(date):
                     },
                 }
             }
+        },
+        {
+            'resources': weather_etl_environment['resources'],
+            'solids': {'weather_etl': weather_etl_environment['solids']['weather_etl']},
         },
     )
 
@@ -98,11 +98,7 @@ def daily_weather_schedule(date):
     },
 )
 def monthly_trip_ingest_schedule(date):
-    return dict_merge(
-        {
-            'resources': trip_etl_environment['resources'],
-            'solids': {'trip_etl': trip_etl_environment['solids']['trip_etl']},
-        },
+    return deep_merge_dicts(
         {
             'solids': {
                 'trip_etl': {
@@ -119,6 +115,10 @@ def monthly_trip_ingest_schedule(date):
                     }
                 }
             }
+        },
+        {
+            'resources': trip_etl_environment['resources'],
+            'solids': {'trip_etl': trip_etl_environment['solids']['trip_etl']},
         },
     )
 

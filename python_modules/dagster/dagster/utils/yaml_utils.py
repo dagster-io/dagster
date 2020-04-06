@@ -5,7 +5,7 @@ import yaml
 
 from dagster import check
 
-from .merger import dict_merge
+from .merger import deep_merge_dicts
 
 
 def load_yaml_from_globs(*globs):
@@ -49,13 +49,13 @@ def merge_yamls(file_list):
                 'instead got: "{yaml_dict}"'
             ).format(yaml_file=yaml_file, yaml_dict=yaml_dict),
         )
-        merged = dict_merge(yaml_dict, merged)
+        merged = deep_merge_dicts(merged, yaml_dict)
 
     return merged
 
 
 def merge_yaml_strings(yaml_strs):
-    '''Combine a list of YAML strings into a dictionary.
+    '''Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
         yaml_strs (List[str]): List of YAML strings
@@ -68,8 +68,8 @@ def merge_yaml_strings(yaml_strs):
     '''
     check.list_param(yaml_strs, 'yaml_strs', of_type=str)
 
-    # Read YAML strings; reverse so that rightmost overrides leftmost
-    yaml_dicts = list(reversed([yaml.safe_load(y) for y in yaml_strs]))
+    # Read YAML strings.
+    yaml_dicts = list([yaml.safe_load(y) for y in yaml_strs])
 
     for yaml_dict in yaml_dicts:
         check.invariant(
@@ -77,7 +77,7 @@ def merge_yaml_strings(yaml_strs):
             'Expected YAML dictionary, instead got: "%s"' % str(yaml_dict),
         )
 
-    return functools.reduce(dict_merge, yaml_dicts, {})
+    return functools.reduce(deep_merge_dicts, yaml_dicts, {})
 
 
 def load_yaml_from_path(path):
