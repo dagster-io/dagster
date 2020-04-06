@@ -598,3 +598,23 @@ def test_composite_solid_composition_metadata():
         res.result_for_solid('metadata_composite').result_for_solid('metadata_solid').output_value()
         == 'quux'
     )
+
+
+def test_uninvoked_solid_fails():
+    with pytest.raises(DagsterInvalidDefinitionError, match=r'.*Did you forget parentheses?'):
+
+        @pipeline
+        def uninvoked_solid_pipeline():
+            add_one(return_one)
+
+        execute_pipeline(uninvoked_solid_pipeline)
+
+
+def test_uninvoked_aliased_solid_fails():
+    with pytest.raises(DagsterInvalidDefinitionError, match=r'.*Did you forget parentheses?'):
+
+        @pipeline
+        def uninvoked_aliased_solid_pipeline():
+            add_one(return_one.alias('something'))
+
+        execute_pipeline(uninvoked_aliased_solid_pipeline)

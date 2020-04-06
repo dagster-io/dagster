@@ -148,7 +148,7 @@ class CallableSolidNode(object):
         for idx, output_node in enumerate(args):
             if idx >= len(self.solid_def.input_defs):
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received too many inputs for solid '
+                    'In {source} {name}, received too many inputs for solid '
                     'invocation {solid_name}. Only {def_num} defined, received {arg_num}'.format(
                         source=current_context().source,
                         name=current_context().name,
@@ -161,7 +161,7 @@ class CallableSolidNode(object):
             input_name = self.solid_def.resolve_input_name_at_position(idx)
             if input_name is None:
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name} could not resolve input based on position at '
+                    'In {source} {name}, could not resolve input based on position at '
                     'index {idx} for solid invocation {solid_name}. Use keyword args instead, '
                     'available inputs are: {inputs}'.format(
                         idx=idx,
@@ -222,7 +222,7 @@ class CallableSolidNode(object):
 
             else:
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name} received a list containing invalid types for input '
+                    'In {source} {name}, received a list containing invalid types for input '
                     '"{input_name}" {arg_desc} in solid invocation {solid_name}. '
                     'Lists can only contain the output from previous solid invocations.'.format(
                         source=current_context().source,
@@ -237,7 +237,7 @@ class CallableSolidNode(object):
             map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
         ):
             raise DagsterInvalidDefinitionError(
-                'In {source} {name} received a tuple of multiple outputs for '
+                'In {source} {name}, received a tuple of multiple outputs for '
                 'input "{input_name}" {arg_desc} in solid invocation {solid_name}. '
                 'Must pass individual output, available from tuple: {options}'.format(
                     source=current_context().source,
@@ -248,10 +248,23 @@ class CallableSolidNode(object):
                     options=output_node._fields,
                 )
             )
-
+        elif isinstance(output_node, CallableSolidNode) or isinstance(
+            output_node, ISolidDefinition
+        ):
+            raise DagsterInvalidDefinitionError(
+                'In {source} {name}, received an un-invoked solid for input '
+                '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
+                'Did you forget parentheses?'.format(
+                    source=current_context().source,
+                    name=current_context().name,
+                    arg_desc=arg_desc,
+                    input_name=input_name,
+                    solid_name=solid_name,
+                )
+            )
         else:
             raise DagsterInvalidDefinitionError(
-                'In {source} {name} received invalid type {type} for input '
+                'In {source} {name}, received invalid type {type} for input '
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
                 'Must pass the output from previous solid invocations or inputs to the '
                 'composition function as inputs when invoking solids during composition.'.format(
