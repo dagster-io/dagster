@@ -25,7 +25,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Undefined field "nope" at document config root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }"',
+                    'message': 'Undefined field "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -37,7 +37,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                     'field': {
                         'name': 'solids'
                     },
-                    'message': 'Missing required field "solids" at document config root. Available Fields: "[\'execution\', \'loggers\', \'resources\', \'solids\', \'storage\']".',
+                    'message': 'Missing required field "solids" at the root. Available Fields: "[\'execution\', \'loggers\', \'resources\', \'solids\', \'storage\']".',
                     'reason': 'MISSING_REQUIRED_FIELD',
                     'stack': {
                         'entries': [

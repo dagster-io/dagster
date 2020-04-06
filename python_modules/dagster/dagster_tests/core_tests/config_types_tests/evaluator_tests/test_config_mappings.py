@@ -87,7 +87,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "solids" at document config root. Available Fields: '
+        'Missing required field "solids" at the root. Available Fields: '
         '''"['execution', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
@@ -96,7 +96,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "solids" at document config root. Available Fields: '
+        'Missing required field "solids" at the root. Available Fields: '
         '''"['execution', 'loggers', 'resources', 'solids', 'storage']".'''
     )
 
@@ -105,7 +105,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "do_stuff" at path root:solids Available Fields: '
+        'Missing required field "do_stuff" at path root:solids. Available Fields: '
         '''"['do_stuff']".'''
     )
 
@@ -115,7 +115,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert (
         exc_info.value.errors[0].message
-        == 'Missing required field "config" at path root:solids:do_stuff Available Fields: '
+        == 'Missing required field "config" at path root:solids:do_stuff. Available Fields: '
         '"[\'config\', \'outputs\']".'
     )
 
@@ -125,7 +125,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert (
         exc_info.value.errors[0].message
-        == 'Missing required field "override_str" at path root:solids:do_stuff:config Available '
+        == 'Missing required field "override_str" at path root:solids:do_stuff:config. Available '
         'Fields: "[\'override_str\']".'
     )
 
@@ -581,7 +581,7 @@ def test_wrap_all_config_one_input():
         )
     assert len(exc_info.value.errors) == 1
     assert (
-        'Invalid scalar at path root:solids:wrap_all_config_one_input:config:config_field_a value'
+        'Invalid scalar at path root:solids:wrap_all_config_one_input:config:config_field_a.'
         in exc_info.value.errors[0].message
     )
 
@@ -676,13 +676,13 @@ def test_wrap_all_config_and_inputs():
 
     assert len(exc_info.value.errors) == 2
     assert exc_info.value.errors[0].message == (
-        'Undefined field "this_key_doesnt_exist" at path root:solids:wrap_all:config '
-        'Expected: "{ config_field_a: String config_field_b: String }"'
+        'Undefined field "this_key_doesnt_exist" at path root:solids:wrap_all:config. '
+        'Expected: "{ config_field_a: String config_field_b: String }".'
     )
 
     assert (
         exc_info.value.errors[1].message
-        == 'Missing required field "config_field_b" at path root:solids:wrap_all:config '
+        == 'Missing required field "config_field_b" at path root:solids:wrap_all:config. '
         'Available Fields: "[\'config_field_a\', \'config_field_b\']".'
     )
 

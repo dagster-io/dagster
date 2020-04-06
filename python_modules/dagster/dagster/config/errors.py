@@ -129,8 +129,8 @@ def create_fields_not_defined_error(context, undefined_fields):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
         message=(
-            'Fields "{undefined_fields}" are not defined {path_msg} Available '
-            'fields: "{available_fields}"'
+            'Fields "{undefined_fields}" are not defined {path_msg}. Available '
+            'fields: "{available_fields}."'
         ).format(
             undefined_fields=undefined_fields,
             path_msg=get_friendly_path_msg(context.stack),
@@ -180,7 +180,7 @@ def create_field_not_defined_error(context, received_field):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
-        message='Undefined field "{received}" {path_msg} Expected: "{type_name}"'.format(
+        message='Undefined field "{received}" {path_msg}. Expected: "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=print_config_type_to_string(context.config_type, with_lines=False),
             received=received_field,
@@ -212,7 +212,7 @@ def create_missing_required_field_error(context, expected_field):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
         message=(
-            'Missing required field "{expected}" {path_msg} Available Fields: '
+            'Missing required field "{expected}" {path_msg}. Available Fields: '
             '"{available_fields}".'
         ).format(
             expected=expected_field,
@@ -250,8 +250,8 @@ def create_scalar_error(context, config_value):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message='Invalid scalar {path_msg} value "{config_value}" of type '
-        '"{type}" is not valid for expected type "{type_name}"'.format(
+        message='Invalid scalar {path_msg}. Value "{config_value}" of type '
+        '"{type}" is not valid for expected type "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=context.config_type.given_name,
             config_value=config_value,

@@ -138,7 +138,7 @@ def test_single_required_string_field_config_type():
         AssertionError,
         match=(
             re.escape(
-                'Missing required field "string_field" at document config root. Available Fields: '
+                'Missing required field "string_field" at the root. Available Fields: '
                 '"[\'string_field\']".'
             )
         ),
@@ -158,10 +158,7 @@ def test_single_required_string_field_config_type():
 def test_undefined_field_error():
     with pytest.raises(
         AssertionError,
-        match=(
-            'Undefined field "extra" at document config root. Expected: "{ string_field: '
-            'String }"'
-        ),
+        match=('Undefined field "extra" at the root. Expected: "{ string_field: ' 'String }".'),
     ):
         _validate(
             _single_required_string_config_dict(), {'string_field': 'value', 'extra': 'extra'}
@@ -321,21 +318,21 @@ def test_single_nested_config_undefined_errors():
 
     with pytest.raises(
         AssertionError,
-        match='Invalid scalar at path root:nested:int_field value "dkjfdk" of type .* is not valid for expected type "Int"',
+        match='Invalid scalar at path root:nested:int_field. Value "dkjfdk" of type .* is not valid for expected type "Int".',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 'dkjfdk'}})
 
     with pytest.raises(
         AssertionError,
         match=(
-            'Undefined field "not_a_field" at path root:nested Expected: ' '"{ int_field: Int }"'
+            'Undefined field "not_a_field" at path root:nested. Expected: ' '"{ int_field: Int }".'
         ),
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': 2, 'not_a_field': 1}})
 
     with pytest.raises(
         AssertionError,
-        match='Invalid scalar at path root:nested:int_field value "{\'too_nested\': \'dkjfdk\'}" of type .* is not valid for expected type "Int"',
+        match='Invalid scalar at path root:nested:int_field. Value "{\'too_nested\': \'dkjfdk\'}" of type .* is not valid for expected type "Int".',
     ):
         _validate(_single_nested_config(), {'nested': {'int_field': {'too_nested': 'dkjfdk'}}})
 
@@ -604,7 +601,7 @@ def test_no_env_missing_required_error_handling():
     assert len(pe.errors) == 1
 
     assert pe.errors[0].message == (
-        '''Missing required field "solids" at document config root. '''
+        '''Missing required field "solids" at the root. '''
         '''Available Fields: "['execution', 'loggers', '''
         ''''resources', 'solids', 'storage']".'''
     )
@@ -735,7 +732,7 @@ def test_required_resource_not_given():
     error = pe.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert (
-        error.message == 'Missing required field "required" at path root:resources '
+        error.message == 'Missing required field "required" at path root:resources. '
         'Available Fields: "[\'required\']".'
     )
 
@@ -762,7 +759,7 @@ def test_multilevel_good_error_handling_solids():
 
     assert len(missing_field_pe_info.value.errors) == 1
     assert missing_field_pe_info.value.errors[0].message == (
-        '''Missing required field "good_error_handling" at path root:solids '''
+        '''Missing required field "good_error_handling" at path root:solids. '''
         '''Available Fields: "['good_error_handling']".'''
     )
 
@@ -781,7 +778,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
     assert len(pe_info.value.errors) == 1
     assert pe_info.value.errors[0].message == (
-        '''Missing required field "config" at path root:solids:good_error_handling '''
+        '''Missing required field "config" at path root:solids:good_error_handling. '''
         '''Available Fields: "['config', 'outputs']".'''
     )
 
@@ -803,7 +800,7 @@ def test_multilevel_good_error_handling_config_solids_name_solids():
 def test_invalid_default_values():
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='value "3" of type .* is not valid for expected type "Int"',
+        match='Value "3" of type .* is not valid for expected type "Int"',
     ):
 
         @solid(config=Field(Int, default_value='3'))

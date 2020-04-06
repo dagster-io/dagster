@@ -86,7 +86,7 @@ def get_friendly_path_msg(stack):
 def get_friendly_path_info(stack):
     if not stack.entries:
         path = ''
-        path_msg = 'at document config root.'  # https://github.com/dagster-io/dagster/issues/2117
+        path_msg = 'at the root'
     else:
         comps = ['root']
         for entry in stack.entries:
