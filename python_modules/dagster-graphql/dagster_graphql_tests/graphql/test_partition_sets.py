@@ -47,7 +47,9 @@ GET_PARTITION_SET_QUERY = '''
                 solidSubset
                 mode
                 partitions {
-                    name
+                    results {
+                        name
+                    }
                 }
             }
         }

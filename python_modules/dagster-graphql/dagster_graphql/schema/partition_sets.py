@@ -46,6 +46,13 @@ class DauphinPartition(dauphin.ObjectType):
         ]
 
 
+class DauphinPartitions(dauphin.ObjectType):
+    class Meta(object):
+        name = 'Partitions'
+
+    results = dauphin.non_null_list('Partition')
+
+
 class DauphinPartitionSet(dauphin.ObjectType):
     class Meta(object):
         name = 'PartitionSet'
@@ -54,7 +61,9 @@ class DauphinPartitionSet(dauphin.ObjectType):
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
-    partitions = dauphin.non_null_list('Partition')
+    partitions = dauphin.Field(
+        dauphin.NonNull('Partitions'), cursor=dauphin.String(), limit=dauphin.Int(),
+    )
 
     def __init__(self, partition_set):
         self._partition_set = check.inst_param(
@@ -68,15 +77,28 @@ class DauphinPartitionSet(dauphin.ObjectType):
             mode=partition_set.mode,
         )
 
-    def resolve_partitions(self, graphene_info):
+    def resolve_partitions(self, graphene_info, **kwargs):
         partitions = self._partition_set.get_partitions()
 
-        return [
-            graphene_info.schema.type_named('Partition')(
-                partition=partition, partition_set=self._partition_set
+        cursor = kwargs.get("cursor")
+        limit = kwargs.get("limit")
+        if cursor and limit:
+            index = next(
+                (idx for (idx, partition) in enumerate(partitions) if partition.name == cursor),
+                None,
             )
-            for partition in partitions
-        ]
+            partitions = partitions[index : min(len(partitions), index + limit)]
+        elif limit:
+            partitions = partitions[: min(len(partitions), limit)]
+
+        return graphene_info.schema.type_named('Partitions')(
+            results=[
+                graphene_info.schema.type_named('Partition')(
+                    partition=partition, partition_set=self._partition_set
+                )
+                for partition in partitions
+            ]
+        )
 
 
 class DapuphinPartitionSetOrError(dauphin.Union):

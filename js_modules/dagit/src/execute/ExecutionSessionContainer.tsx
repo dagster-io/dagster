@@ -40,11 +40,11 @@ import { PipelineDetailsFragment } from "./types/PipelineDetailsFragment";
 import { ConfigEditorHelp } from "./ConfigEditorHelp";
 import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
-import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags } from "./types/ConfigPartitionsQuery";
+import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { ValidationResult } from "../configeditor/codemirror-yaml/mode";
 
-type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags;
+type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags;
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 

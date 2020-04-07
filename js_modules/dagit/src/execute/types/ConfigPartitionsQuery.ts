@@ -23,24 +23,29 @@ export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSetNotFoundE
   __typename: "PartitionSetNotFoundError" | "PythonError";
 }
 
-export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags {
+export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions {
+export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results {
   __typename: "Partition";
   name: string;
   solidSubset: string[] | null;
   environmentConfigYaml: string;
   mode: string;
-  tags: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_tags[];
+  tags: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags[];
+}
+
+export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions {
+  __typename: "Partitions";
+  results: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results[];
 }
 
 export interface ConfigPartitionsQuery_partitionSetOrError_PartitionSet {
   __typename: "PartitionSet";
-  partitions: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions[];
+  partitions: ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions;
 }
 
 export type ConfigPartitionsQuery_partitionSetOrError = ConfigPartitionsQuery_partitionSetOrError_PartitionSetNotFoundError | ConfigPartitionsQuery_partitionSetOrError_PartitionSet;

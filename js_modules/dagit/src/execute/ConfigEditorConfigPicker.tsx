@@ -10,7 +10,7 @@ import {
 } from "./types/ConfigPresetsQuery";
 import {
   ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions,
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results,
   ConfigPartitionsQuery_pipeline
 } from "./types/ConfigPartitionsQuery";
 import {
@@ -26,7 +26,7 @@ import { ShortcutHandler } from "../ShortcutHandler";
 
 type Preset = ConfigPresetsQuery_pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
-type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions;
+type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
 type Pipeline = ConfigPartitionsQuery_pipeline;
 type ConfigGenerator = Preset | PartitionSet;
 
@@ -141,7 +141,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
     const partitions: Partition[] =
       (data &&
         data.partitionSetOrError.__typename === "PartitionSet" &&
-        data.partitionSetOrError.partitions) ||
+        data.partitionSetOrError.partitions.results) ||
       [];
 
     return (
@@ -393,13 +393,15 @@ export const CONFIG_PARTITIONS_QUERY = gql`
       __typename
       ... on PartitionSet {
         partitions {
-          name
-          solidSubset
-          environmentConfigYaml
-          mode
-          tags {
-            key
-            value
+          results {
+            name
+            solidSubset
+            environmentConfigYaml
+            mode
+            tags {
+              key
+              value
+            }
           }
         }
       }

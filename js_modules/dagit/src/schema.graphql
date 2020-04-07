@@ -627,12 +627,16 @@ type Partition {
   tags: [PipelineTag!]!
 }
 
+type Partitions {
+  results: [Partition!]!
+}
+
 type PartitionSet {
   name: String!
   pipelineName: String!
   solidSubset: [String!]
   mode: String!
-  partitions: [Partition!]!
+  partitions(cursor: String, limit: Int): Partitions!
 }
 
 type PartitionSetNotFoundError implements Error {

@@ -12,7 +12,8 @@ import {
   ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData,
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results
 } from "./types/ScheduleRootQuery";
 import {
   PartitionRunsQuery,
@@ -38,66 +39,112 @@ import {
   Callout,
   Code,
   Tag,
-  AnchorButton
+  AnchorButton,
+  Button,
+  ButtonGroup
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Line } from "react-chartjs-2";
-
+import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useState } from "react";
+import * as querystring from "query-string";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
 
-export class ScheduleRoot extends React.Component<
-  RouteComponentProps<{ scheduleName: string }>
-> {
-  render() {
-    const { scheduleName } = this.props.match.params;
+type Partition = ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results;
 
-    return (
-      <Query
-        query={SCHEDULE_ROOT_QUERY}
-        variables={{
-          scheduleName,
-          limit: NUM_RUNS_TO_DISPLAY,
-          attemptsLimit: NUM_ATTEMPTS_TO_DISPLAY
-        }}
-        fetchPolicy="cache-and-network"
-        pollInterval={15 * 1000}
-        partialRefetch={true}
-      >
-        {(queryResult: QueryResult<ScheduleRootQuery, any>) => (
-          <Loading queryResult={queryResult} allowStaleData={true}>
-            {result => {
-              const { scheduleOrError } = result;
+export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
+  scheduleName: string;
+}>> = ({ match, location }) => {
+  const { scheduleName } = match.params;
 
-              if (scheduleOrError.__typename === "RunningSchedule") {
-                return (
-                  <ScrollContainer>
-                    <Header>Schedules</Header>
-                    <ScheduleRow schedule={scheduleOrError} />
-                    <TicksTable ticks={scheduleOrError.ticksList} />
-                    <AttemptsTable attemptList={scheduleOrError.attemptList} />
-                    {scheduleOrError.scheduleDefinition.partitionSet ? (
+  const { history } = React.useContext(RouterContext);
+  const qs = querystring.parse(location.search);
+
+  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
+  const [pageSize, setPageSize] = React.useState<number>(100);
+  const cursor = (qs.cursor as string) || undefined;
+
+  const setCursor = (cursor: string | undefined) => {
+    history.push({ search: `?${querystring.stringify({ ...qs, cursor })}` });
+  };
+  const popCursor = () => {
+    const nextStack = [...cursorStack];
+    setCursor(nextStack.pop());
+    setCursorStack(nextStack);
+  };
+  const pushCursor = (nextCursor: string) => {
+    if (cursor) setCursorStack([...cursorStack, cursor]);
+    setCursor(nextCursor);
+  };
+
+  return (
+    <Query
+      query={SCHEDULE_ROOT_QUERY}
+      variables={{
+        scheduleName,
+        limit: NUM_RUNS_TO_DISPLAY,
+        attemptsLimit: NUM_ATTEMPTS_TO_DISPLAY,
+        partitionsCursor: cursor,
+        partitionsLimit: pageSize + 1
+      }}
+      fetchPolicy="cache-and-network"
+      pollInterval={15 * 1000}
+      partialRefetch={true}
+    >
+      {(queryResult: QueryResult<ScheduleRootQuery, any>) => (
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {result => {
+            const { scheduleOrError } = result;
+
+            if (scheduleOrError.__typename === "RunningSchedule") {
+              const partitionSet =
+                scheduleOrError.scheduleDefinition.partitionSet;
+              const displayed = partitionSet?.partitions.results.slice(
+                0,
+                pageSize
+              );
+              const hasPrevPage = !!cursor;
+              const hasNextPage =
+                partitionSet?.partitions.results.length === pageSize + 1;
+
+              return (
+                <ScrollContainer>
+                  <Header>Schedules</Header>
+                  <ScheduleRow schedule={scheduleOrError} />
+                  <TicksTable ticks={scheduleOrError.ticksList} />
+                  <AttemptsTable attemptList={scheduleOrError.attemptList} />
+                  {scheduleOrError.scheduleDefinition.partitionSet ? (
+                    <>
                       <PartitionTable
+                        cronSchedule={
+                          scheduleOrError.scheduleDefinition.cronSchedule
+                        }
                         partitionSet={
                           scheduleOrError.scheduleDefinition.partitionSet
                         }
+                        displayed={displayed}
+                        setPageSize={setPageSize}
+                        hasPrevPage={hasPrevPage}
+                        hasNextPage={hasNextPage}
+                        pushCursor={pushCursor}
+                        popCursor={popCursor}
                       />
-                    ) : null}
-                  </ScrollContainer>
-                );
-              } else {
-                return null;
-              }
-            }}
-          </Loading>
-        )}
-      </Query>
-    );
-  }
-}
+                    </>
+                  ) : null}
+                </ScrollContainer>
+              );
+            } else {
+              return null;
+            }
+          }}
+        </Loading>
+      )}
+    </Query>
+  );
+};
 
 const RenderEventSpecificData: React.FunctionComponent<{
   data: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData | null;
@@ -310,7 +357,22 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
 
 const PartitionTable: React.FunctionComponent<{
   partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet;
-}> = ({ partitionSet }) => {
+  displayed: Partition[] | undefined;
+  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
+  cronSchedule: string;
+  pushCursor: (nextCursor: string) => void;
+  popCursor: () => void;
+}> = ({
+  partitionSet,
+  displayed,
+  setPageSize,
+  hasNextPage,
+  hasPrevPage,
+  pushCursor,
+  popCursor
+}) => {
   const { data }: { data?: PartitionRunsQuery } = useQuery(
     PARTITION_RUNS_QUERY,
     {
@@ -326,7 +388,7 @@ const PartitionTable: React.FunctionComponent<{
   const runsByPartition: {
     [key: string]: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results[];
   } = {};
-  partitionSet.partitions.forEach(
+  partitionSet.partitions.results.forEach(
     partition => (runsByPartition[partition.name] = [])
   );
 
@@ -398,6 +460,33 @@ const PartitionTable: React.FunctionComponent<{
   return (
     <>
       <Header>{`Partition Set: ${partitionSet.name}`}</Header>
+      <Divider />
+      <ParitionsTableControls>
+        <ButtonGroup>
+          <Button onClick={() => setPageSize(7)}>Week</Button>
+          <Button onClick={() => setPageSize(31)}>Month</Button>
+          <Button onClick={() => setPageSize(365)}>Year</Button>
+        </ButtonGroup>
+
+        <ButtonGroup>
+          <Button
+            disabled={!hasPrevPage}
+            icon={IconNames.ARROW_LEFT}
+            onClick={() => popCursor()}
+          >
+            Back
+          </Button>
+          <Button
+            disabled={!hasNextPage}
+            rightIcon={IconNames.ARROW_RIGHT}
+            onClick={() =>
+              displayed && pushCursor(displayed[displayed.length - 1].name)
+            }
+          >
+            Next
+          </Button>
+        </ButtonGroup>
+      </ParitionsTableControls>
 
       <RowContainer style={{ marginBottom: 20 }}>
         <Line data={state} height={50} />
@@ -435,16 +524,21 @@ export const SCHEDULE_ROOT_QUERY = gql`
     $scheduleName: String!
     $limit: Int!
     $attemptsLimit: Int!
+    $partitionsLimit: Int
+    $partitionsCursor: String
   ) {
     scheduleOrError(scheduleName: $scheduleName) {
       ... on RunningSchedule {
         ...ScheduleFragment
         scheduleDefinition {
           name
+          cronSchedule
           partitionSet {
             name
-            partitions {
-              name
+            partitions(cursor: $partitionsCursor, limit: $partitionsLimit) {
+              results {
+                name
+              }
             }
           }
         }
@@ -538,4 +632,10 @@ const ButtonLink = styled.button`
     text-decoration: underline;
   }
 }
+`;
+
+const ParitionsTableControls = styled.div`
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
 `;

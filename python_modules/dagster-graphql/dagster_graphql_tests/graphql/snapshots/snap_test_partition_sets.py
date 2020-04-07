@@ -166,38 +166,40 @@ snapshots['test_get_partition_set 1'] = {
         '__typename': 'PartitionSet',
         'mode': 'default',
         'name': 'integer_partition',
-        'partitions': [
-            {
-                'name': '0'
-            },
-            {
-                'name': '1'
-            },
-            {
-                'name': '2'
-            },
-            {
-                'name': '3'
-            },
-            {
-                'name': '4'
-            },
-            {
-                'name': '5'
-            },
-            {
-                'name': '6'
-            },
-            {
-                'name': '7'
-            },
-            {
-                'name': '8'
-            },
-            {
-                'name': '9'
-            }
-        ],
+        'partitions': {
+            'results': [
+                {
+                    'name': '0'
+                },
+                {
+                    'name': '1'
+                },
+                {
+                    'name': '2'
+                },
+                {
+                    'name': '3'
+                },
+                {
+                    'name': '4'
+                },
+                {
+                    'name': '5'
+                },
+                {
+                    'name': '6'
+                },
+                {
+                    'name': '7'
+                },
+                {
+                    'name': '8'
+                },
+                {
+                    'name': '9'
+                }
+            ]
+        },
         'pipelineName': 'no_config_pipeline',
         'solidSubset': [
             'return_hello'
