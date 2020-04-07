@@ -8,7 +8,16 @@ import data from '../data/searchindex.json';
 const DATA_PATH = path.join(__dirname, '../data');
 const MODULE_PATH = path.join(DATA_PATH, '_modules');
 
-(async () => {
+async function preProcess() {
+  const glob = path.join(DATA_PATH, '/**/*.fjson');
+  const entries = await fg([glob]);
+  for (const entry of entries) {
+    await fs.rename(entry, entry.replace('fjson', 'json'));
+  }
+  console.log('✅ Converted fjson files to json');
+}
+
+async function rewriteRelativeLinks() {
   /* Generate list of all module files */
   const glob = path.join(DATA_PATH, '/**/*.json');
   const excludeGlob = path.join(MODULE_PATH, '/**/*.json');
@@ -31,9 +40,9 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
     }
   }
   console.log('✅ Re-wrote all relative links');
-})();
+}
 
-(async () => {
+async function createModuleIndex() {
   /* Generate list of all module files */
   const glob = path.join(MODULE_PATH, '/**/*.json');
   const rootGlob = path.join(MODULE_PATH, '/*.json');
@@ -52,9 +61,9 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
   );
 
   console.log('✅ Generated list of all list and module files');
-})();
+}
 
-(async () => {
+async function createAlgoliaIndex() {
   const { NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY } = process.env;
 
   if (!NEXT_ALGOLIA_APP_ID) {
@@ -111,4 +120,17 @@ const MODULE_PATH = path.join(DATA_PATH, '_modules');
 
   index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
   console.log('✅ Updated Algolia index');
+}
+
+const steps = [
+  preProcess,
+  rewriteRelativeLinks,
+  createModuleIndex,
+  createAlgoliaIndex,
+];
+
+(async () => {
+  for (const step of steps) {
+    await step();
+  }
 })();
