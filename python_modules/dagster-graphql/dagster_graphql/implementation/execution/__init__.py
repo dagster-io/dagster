@@ -26,14 +26,17 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from .fetch_pipelines import (
+from ..fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
     get_pipeline_def_from_selector,
 )
-from .fetch_runs import get_validated_config
-from .fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
-from .pipeline_run_storage import PipelineRunObservableSubscribe
-from .utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
+from ..fetch_runs import get_validated_config
+from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
+from ..pipeline_run_storage import PipelineRunObservableSubscribe
+from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
+from .launch_execution import launch_pipeline_execution
+from .scheduled_execution import start_scheduled_execution
+from .start_execution import start_pipeline_execution
 
 
 @capture_dauphin_error
@@ -75,187 +78,6 @@ def delete_pipeline_run(graphene_info, run_id):
     instance.delete_run(run_id)
 
     return graphene_info.schema.type_named('DeletePipelineRunSuccess')(run_id)
-
-
-@capture_dauphin_error
-def start_scheduled_execution(graphene_info, schedule_name):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(schedule_name, 'schedule_name')
-
-    tick = None
-    try:
-        repository = graphene_info.context.get_repository()
-        schedule_context = ScheduleExecutionContext(graphene_info.context.instance, repository)
-        schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
-        tick = graphene_info.context.instance.create_schedule_tick(
-            repository,
-            ScheduleTickData(
-                schedule_name=schedule_def.name,
-                cron_schedule=schedule_def.cron_schedule,
-                timestamp=time.time(),
-                status=ScheduleTickStatus.STARTED,
-            ),
-        )
-
-        # Run should_execute and halt if it returns False
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: 'Error occurred during the execution should_execute for schedule '
-            '{schedule_name}'.format(schedule_name=schedule_def.name),
-        ):
-            should_execute = schedule_def.should_execute(schedule_context)
-
-        if not should_execute:
-            # Update tick
-            tick = tick.with_status(ScheduleTickStatus.SKIPPED)
-            graphene_info.context.instance.update_schedule_tick(repository, tick)
-            # Return skipped specific gql response
-            return graphene_info.schema.type_named('ScheduledExecutionBlocked')(
-                message='Schedule {schedule_name} did not run because the should_execute did not return'
-                ' True'.format(schedule_name=schedule_name)
-            )
-
-        pipeline_def = get_pipeline_def_from_selector(graphene_info, schedule_def.selector)
-        execution_params = execution_params_for_schedule(
-            graphene_info, schedule_def=schedule_def, pipeline_def=pipeline_def
-        )
-
-        # Launch run if run launcher is defined
-        run_launcher = graphene_info.context.instance.run_launcher
-        if run_launcher:
-            result = _launch_pipeline_execution(graphene_info, execution_params)
-        else:
-            result = _start_pipeline_execution(graphene_info, execution_params)
-
-        run = result.run
-        graphene_info.context.instance.update_schedule_tick(
-            repository, tick.with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id),
-        )
-
-        return result
-
-    except Exception as exc:  # pylint: disable=broad-except
-        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-
-        if tick:
-            graphene_info.context.instance.update_schedule_tick(
-                repository, tick.with_status(ScheduleTickStatus.FAILURE, error=error_data),
-            )
-
-        raise exc
-
-
-@capture_dauphin_error
-def start_pipeline_execution(graphene_info, execution_params):
-    return _start_pipeline_execution(graphene_info, execution_params)
-
-
-def _start_pipeline_execution(graphene_info, execution_params):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
-
-    instance = graphene_info.context.instance
-
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineExecutionDisabledError')()
-
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
-
-    get_validated_config(
-        graphene_info,
-        pipeline_def,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
-    )
-
-    execution_plan = create_execution_plan(
-        pipeline_def,
-        execution_params.environment_dict,
-        run_config=RunConfig(
-            mode=execution_params.mode,
-            previous_run_id=execution_params.previous_run_id,
-            tags=execution_params.execution_metadata.tags,
-        ),
-    )
-
-    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
-
-    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline_def, execution_params))
-
-    graphene_info.context.execution_manager.execute_pipeline(
-        graphene_info.context.get_handle(), pipeline_def, run, instance=instance,
-    )
-
-    return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
-    )
-
-
-def _create_pipeline_run(instance, pipeline, execution_params):
-    step_keys_to_execute = execution_params.step_keys
-    if not execution_params.step_keys and execution_params.previous_run_id:
-        execution_plan = create_execution_plan(
-            pipeline,
-            execution_params.environment_dict,
-            run_config=RunConfig(
-                mode=execution_params.mode,
-                previous_run_id=execution_params.previous_run_id,
-                tags=execution_params.execution_metadata.tags,
-            ),
-        )
-        step_keys_to_execute = get_retry_steps_from_execution_plan(instance, execution_plan)
-    return pipeline_run_from_execution_params(execution_params, step_keys_to_execute)
-
-
-@capture_dauphin_error
-def launch_pipeline_execution(graphene_info, execution_params):
-    return _launch_pipeline_execution(graphene_info, execution_params)
-
-
-def _launch_pipeline_execution(graphene_info, execution_params):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
-
-    instance = graphene_info.context.instance
-    run_launcher = instance.run_launcher
-
-    if run_launcher is None:
-        return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
-
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
-
-    get_validated_config(
-        graphene_info,
-        pipeline_def,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
-    )
-
-    execution_plan = create_execution_plan(
-        pipeline_def,
-        execution_params.environment_dict,
-        run_config=RunConfig(
-            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
-        ),
-    )
-
-    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
-
-    run = instance.launch_run(_create_pipeline_run(instance, pipeline_def, execution_params))
-
-    return graphene_info.schema.type_named('LaunchPipelineExecutionSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
-    )
-
-
-def _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan):
-    if execution_params.step_keys:
-        for step_key in execution_params.step_keys:
-            if not execution_plan.has_step(step_key):
-                raise UserFacingGraphQLError(
-                    graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
-                )
 
 
 def get_pipeline_run_observable(graphene_info, run_id, after=None):
