@@ -17,9 +17,8 @@ def test_bash_command_solid():
 
 
 def test_bash_command_retcode():
-    with pytest.raises(Failure) as exc_info:
+    with pytest.raises(Failure, match='Bash command execution failed'):
         execute_solid(bash_command_solid('exit 1'))
-    assert 'Bash command failed' in str(exc_info.value)
 
 
 def test_bash_command_stream_logs():
@@ -33,7 +32,7 @@ def test_bash_command_stream_logs():
             }
         },
     )
-    assert result.output_values == {'result': 'hello 1hello 2hello 3hello 4hello 5'}
+    assert result.output_values == {'result': 'hello 1\nhello 2\nhello 3\nhello 4\nhello 5\n'}
 
 
 def test_bash_script_solid():
@@ -80,20 +79,18 @@ def test_bash_command_solid_overrides():
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match='Overriding output_defs for bash solid is not supported'):
         bash_command_solid(
             'echo "this is a test message: $MY_ENV_VAR"',
             name='foobar',
             description='a description override',
             output_defs=[OutputDefinition(str, 'bad_output_def')],
         )
-    assert 'Overriding output_defs for bash solid is not supported' in str(exc_info.value)
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match='Overriding config for bash solid is not supported'):
         bash_command_solid(
             'echo "this is a test message: $MY_ENV_VAR"',
             name='foobar',
             description='a description override',
             config={'bad_config': Field(str)},
         )
-    assert 'Overriding config for bash solid is not supported' in str(exc_info.value)

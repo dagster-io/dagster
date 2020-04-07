@@ -8,6 +8,8 @@ and additional functionality:
     Tools for compiling Dagster pipelines to Airflow DAGs.
   `AWS <../../../api/apidocs/libraries/dagster_aws.html>`_ (``dagster_aws``)
     Tools for working with AWS, including using S3 for intermediates storage.
+  `Bash <../../../api/apidocs/libraries/dagster_bash.html>`_ (``dagster_bash``)
+    Provides solid factories for creating bash script solids.
   `Celery <../../../api/apidocs/libraries/dagster_celery.html>`_ (``dagster_celery``)
     Provides an executor built on top of the popular
     `Celery task queue <http:/www.celeryproject.org/>`_.
@@ -15,7 +17,7 @@ and additional functionality:
     Provides a simple scheduler implementation built on system cron.
   `Dask <../../../api/apidocs/libraries/dagster_dask.html>`_ (``dagster_dask``)
     Provides an executor built on top of
-    `dask.distributed <https:/distributed.dask.org/en/latest/>`_. 
+    `dask.distributed <https:/distributed.dask.org/en/latest/>`_.
   `GCP <../../../api/apidocs/libraries/dagster_gcp.html>`_ (``dagster_gcp``)
     Tools for working with GCP, including using GCS for intermediates storage.
   `Jupyter <../../../api/apidocs/libraries/dagstermill.html>`_ (``dagstermill``)
@@ -23,7 +25,7 @@ and additional functionality:
     runs.
   `Kubernetes <../../../api/apidocs/libraries/dagster_k8s.html>`_ (``dagster_k8s``)
     Tools for deploying Dagster to Kubernetes.
-  `Postgres <../../../api/apidocs/libraries/dagster_postgres.html>`_ (``dagster_postgres``) 
+  `Postgres <../../../api/apidocs/libraries/dagster_postgres.html>`_ (``dagster_postgres``)
     Includes implementations of run and event log storage built on Postgres.
 
 .. toctree::
@@ -33,6 +35,7 @@ and additional functionality:
 
   Airflow (dagster_airflow) <dagster_airflow>
   AWS (dagster_aws) <dagster_aws>
+  Bash (dagster_bash) <dagster_bash>
   Celery (dagster_celery) <dagster_celery>
   Cron (dagster_cron) <dagster_cron>
   Dask (dagster_dask) <dagster_dask>
