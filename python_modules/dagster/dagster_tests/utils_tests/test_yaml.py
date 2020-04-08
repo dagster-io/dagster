@@ -57,9 +57,9 @@ def test_merge_yamls():
     with pytest.raises(
         check.CheckError,
         match=(
-            r'Expected YAML from file .*{} to parse to dictionary, '
+            'Expected YAML from file .* to parse to dictionary, '
             'instead got: "this is a valid YAML string but not a dictionary"'
-        ).format(path_to_bad_yaml),
+        ),
     ):
         merge_yamls(
             [
