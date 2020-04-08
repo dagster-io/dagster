@@ -1,4 +1,5 @@
 from collections import defaultdict, namedtuple
+from enum import Enum
 
 import six
 
@@ -54,6 +55,12 @@ def build_run_stats_from_events(run_id, records):
     )
 
 
+class StepEventStatus(Enum):
+    SKIPPED = 'SKIPPED'
+    SUCCESS = 'SUCCESS'
+    FAILURE = 'FAILURE'
+
+
 def build_run_step_stats_from_events(run_id, records):
     check.list_param(records, 'records', EventRecord)
     by_step_key = defaultdict(dict)
@@ -90,15 +97,12 @@ class RunStepKeyStatsSnapshot(
     def __new__(
         cls, run_id, step_key, status=None, start_time=None, end_time=None,
     ):
-        check.opt_inst_param(status, 'status', DagsterEventType)
-        if status:
-            _status_str = status.value
 
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
             run_id=check.str_param(run_id, 'run_id'),
             step_key=check.str_param(step_key, 'step_key'),
-            status=_status_str,
+            status=check.opt_inst_param(status, 'status', StepEventStatus),
             start_time=check.opt_float_param(start_time, 'start_time'),
             end_time=check.opt_float_param(end_time, 'end_time'),
         )

@@ -8,7 +8,7 @@ from dagster import check, seven
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
@@ -197,17 +197,17 @@ class SqlEventLogStorage(EventLogStorage):
                 by_step_key[step_key]['end_time'] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = DagsterEventType.STEP_FAILURE
+                by_step_key[step_key]['status'] = StepEventStatus.FAILURE
             if result.dagster_event_type == DagsterEventType.STEP_SUCCESS.value:
                 by_step_key[step_key]['end_time'] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = DagsterEventType.STEP_SUCCESS
+                by_step_key[step_key]['status'] = StepEventStatus.SUCCESS
             if result.dagster_event_type == DagsterEventType.STEP_SKIPPED.value:
                 by_step_key[step_key]['end_time'] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = DagsterEventType.STEP_SKIPPED
+                by_step_key[step_key]['status'] = StepEventStatus.SKIPPED
 
         return [
             RunStepKeyStatsSnapshot(run_id=run_id, step_key=step_key, **value)

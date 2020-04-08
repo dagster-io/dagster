@@ -802,7 +802,7 @@ enum PipelineRunStatus {
 type PipelineRunStepStats {
   runId: String!
   stepKey: String!
-  status: String!
+  status: StepEventStatus!
   startTime: Float
   endTime: Float
 }
@@ -1122,6 +1122,12 @@ union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefine
 
 interface StepEvent {
   step: ExecutionStep
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
 }
 
 type StepExpectationResultEvent implements MessageEvent & StepEvent {

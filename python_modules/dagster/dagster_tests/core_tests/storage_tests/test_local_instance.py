@@ -16,6 +16,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
@@ -170,11 +171,11 @@ def test_run_step_stats():
         step_stats = sorted(instance.get_run_step_stats('foo'), key=lambda x: x.end_time)
         assert len(step_stats) == 3
         assert step_stats[0].step_key == 'should_succeed.compute'
-        assert step_stats[0].status == DagsterEventType.STEP_SUCCESS.value
+        assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[1].step_key == 'should_fail.compute'
-        assert step_stats[1].status == DagsterEventType.STEP_FAILURE.value
+        assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
         assert step_stats[2].step_key == 'should_skip.compute'
-        assert step_stats[2].status == DagsterEventType.STEP_SKIPPED.value
+        assert step_stats[2].status == StepEventStatus.SKIPPED
         assert step_stats[2].end_time > step_stats[0].start_time

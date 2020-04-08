@@ -26,7 +26,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import (
     PipelineRun,
@@ -37,6 +37,7 @@ from dagster.core.storage.pipeline_run import (
 from .pipelines import DauphinPipeline
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
+DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
 
 
 class DauphinPipelineOrError(dauphin.Union):
@@ -82,7 +83,7 @@ class DauphinPipelineRunStepStats(dauphin.ObjectType):
 
     runId = dauphin.NonNull(dauphin.String)
     stepKey = dauphin.NonNull(dauphin.String)
-    status = dauphin.NonNull(dauphin.String)
+    status = dauphin.NonNull('StepEventStatus')
     startTime = dauphin.Field(dauphin.Float)
     endTime = dauphin.Field(dauphin.Float)
 
