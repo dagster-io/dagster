@@ -19,11 +19,11 @@ const Layout: React.FunctionComponent = (props) => {
         <Header />
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="flex mt-16">
-            <div className="w-1/4">
+            <div className="hidden md:block md:w-1/4">
               <Sidebar />
             </div>
             <div
-              className={`w-3/4 pl-16 pr-4 ${
+              className={`w-full md:w-3/4 md:pl-16 md:pr-4 ${
                 router.pathname.indexOf('docs') > 0 ||
                 router.pathname.indexOf('_modules') > 0
                   ? 'markdown'
