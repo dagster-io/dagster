@@ -1,4 +1,3 @@
-from dagster_graphql.client.util import execution_params_from_pipeline_run
 from kubernetes import client, config
 
 from dagster import Field, Noneable
@@ -180,17 +179,15 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             'app.kubernetes.io/version': dagster_version,
         }
 
-        execution_params = execution_params_from_pipeline_run(run)
-
         job_container = client.V1Container(
             name='dagster-job-%s' % run.run_id,
             image=self.job_image,
             command=['dagster-graphql'],
             args=[
                 '-p',
-                'startPipelineExecution',
+                'startPipelineExecutionForCreatedRun',
                 '-v',
-                json.dumps({'executionParams': execution_params.to_graphql_input()}),
+                json.dumps({'runId': run.run_id}),
             ],
             image_pull_policy=self.image_pull_policy,
             env=[

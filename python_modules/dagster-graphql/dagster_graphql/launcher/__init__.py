@@ -3,7 +3,7 @@ from future.standard_library import install_aliases  # isort:skip
 install_aliases()  # isort:skip
 
 import requests
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.client.query import START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION
 from dagster_graphql.client.util import execution_params_from_pipeline_run
 from requests import RequestException
 
@@ -77,19 +77,18 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, instance, run):
         self.validate()
-        execution_params = execution_params_from_pipeline_run(run)
-        variables = {'executionParams': execution_params.to_graphql_input()}
         instance.create_run(run)
+        variables = {'runId': run.run_id}
         response = requests.post(
             urljoin(self._address, '/graphql'),
             params={
-                'query': START_PIPELINE_EXECUTION_MUTATION,
+                'query': START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION,
                 'variables': seven.json.dumps(variables),
             },
             timeout=self._timeout,
         )
         response.raise_for_status()
-        result = response.json()['data']['startPipelineExecution']
+        result = response.json()['data']['startPipelineExecutionForCreatedRun']
 
         if result['__typename'] == 'StartPipelineExecutionSuccess':
             return run.run_with_status(PipelineRunStatus(result['run']['status']))

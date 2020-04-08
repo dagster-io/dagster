@@ -32,14 +32,9 @@ spec:
       containers:
       - args:
         - -p
-        - startPipelineExecution
+        - startPipelineExecutionForCreatedRun
         - -v
-        - '{{"executionParams": {{"environmentConfigData": {{"loggers": {{"console": {{"config":
-          {{"log_level": "DEBUG"}}}}}}, "solids": {{"multiply_the_word": {{"config": {{"factor":
-          2}}, "inputs": {{"word": "bar"}}}}}}}}, "executionMetadata": {{"parentRunId": null,
-          "rootRunId": null, "runId": "{run_id}", "tags":
-          []}}, "mode": "default", "retryRunId": null, "selector": {{"name": "demo_pipeline",
-          "solidSubset": null}}, "stepKeys": null}}}}'
+        - '{{"runId": "{run_id}"}}'
         command:
         - dagster-graphql
         env:
@@ -108,7 +103,10 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     assert success
     assert not result.get('errors')
     assert result['data']
-    assert result['data']['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert (
+        result['data']['startPipelineExecutionForCreatedRun']['__typename']
+        == 'StartPipelineExecutionSuccess'
+    )
 
 
 def test_failing_k8s_run_launcher(dagster_instance):
@@ -125,11 +123,11 @@ def test_failing_k8s_run_launcher(dagster_instance):
     assert not result.get('errors')
     assert result['data']
     assert (
-        result['data']['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+        result['data']['startPipelineExecutionForCreatedRun']['__typename']
+        == 'PipelineConfigValidationInvalid'
     )
-    assert len(result['data']['startPipelineExecution']['errors']) == 2
+    assert len(result['data']['startPipelineExecutionForCreatedRun']['errors']) == 2
 
-    assert set(error['reason'] for error in result['data']['startPipelineExecution']['errors']) == {
-        'FIELD_NOT_DEFINED',
-        'MISSING_REQUIRED_FIELD',
-    }
+    assert set(
+        error['reason'] for error in result['data']['startPipelineExecutionForCreatedRun']['errors']
+    ) == {'FIELD_NOT_DEFINED', 'MISSING_REQUIRED_FIELD',}

@@ -224,6 +224,65 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
     + MESSAGE_EVENT_FRAGMENTS
 )
 
+START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = (
+    '''
+fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
+	__typename
+	... on InvalidStepError {
+		invalidStepKey
+	}
+	... on InvalidOutputError {
+		stepKey
+		invalidOutputName
+	}
+	... on PipelineConfigValidationInvalid {
+		pipeline {
+			name
+		}
+		errors {
+			__typename
+			message
+			path
+			reason
+		}
+	}
+	... on PipelineNotFoundError {
+		message
+		pipelineName
+	}
+  ... on PythonError {
+    message
+    stack
+  }
+	... on StartPipelineExecutionSuccess {
+		run {
+			runId
+			status
+			pipeline {
+				name
+			}
+			logs {
+				nodes {
+					__typename
+	        ...messageEventFragment
+				}
+				pageInfo {
+					lastCursor
+					hasNextPage
+					hasPreviousPage
+					count
+					totalCount
+				}
+			}
+			environmentConfigYaml
+			mode
+		}
+	}
+}
+'''
+    + MESSAGE_EVENT_FRAGMENTS
+)
+
 START_PIPELINE_EXECUTION_MUTATION = (
     '''
 mutation(
@@ -237,6 +296,21 @@ mutation(
 }
 '''
     + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+)
+
+START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION = (
+    '''
+mutation(
+  $runId: String!
+) {
+  startPipelineExecutionForCreatedRun(
+    runId: $runId,
+  ) {
+    ...startPipelineExecutionForCreatedRunResultFragment
+  }
+}
+'''
+    + START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
 )
 
 START_SCHEDULED_EXECUTION_MUTATION = '''

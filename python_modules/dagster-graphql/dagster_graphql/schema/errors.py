@@ -522,10 +522,27 @@ launch_pipeline_reexecution_result_types = (
 )
 
 
+class DauphinStartPipelineExecution(dauphin.Interface):
+    class Meta(object):
+        name = 'DauphinStartPipelineExecution'
+
+    message = dauphin.String(required=True)
+
+
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'StartPipelineExecutionResult'
         types = start_pipeline_execution_result_types + pipeline_execution_error_types
+
+
+class DauphinStartPipelineExecutionForCreatedRunResult(dauphin.Union):
+    class Meta(object):
+        name = 'StartPipelineExecutionForCreatedRunResult'
+        types = (
+            start_pipeline_execution_result_types
+            + pipeline_execution_error_types
+            + (DauphinPipelineRunNotFoundError,)
+        )
 
 
 class DauphinLaunchPipelineExecutionResult(dauphin.Union):

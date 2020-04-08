@@ -18,6 +18,9 @@ from dagster_graphql.implementation.execution import (
     start_pipeline_reexecution,
     start_scheduled_execution,
 )
+from dagster_graphql.implementation.execution.start_execution import (
+    start_pipeline_execution_for_created_run,
+)
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_set,
     get_partition_sets_or_error,
@@ -333,6 +336,23 @@ class DauphinStartPipelineExecutionMutation(dauphin.Mutation):
         )
 
 
+class DauphinStartPipelineExecutionForCreatedRunMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'StartPipelineExecutionForCreatedRunMutation'
+        description = (
+            'Execute a pipeline run in the python environment '
+            'dagit/dagster-graphql is currently operating in.'
+        )
+
+    class Arguments(object):
+        run_id = dauphin.NonNull(dauphin.String)
+
+    Output = dauphin.NonNull('StartPipelineExecutionForCreatedRunResult')
+
+    def mutate(self, graphene_info, run_id):
+        return start_pipeline_execution_for_created_run(graphene_info, run_id=run_id)
+
+
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
     class Meta(object):
         name = 'LaunchPipelineExecutionMutation'
@@ -542,6 +562,9 @@ class DauphinMutation(dauphin.ObjectType):
         name = 'Mutation'
 
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
+    start_pipeline_execution_for_created_run = (
+        DauphinStartPipelineExecutionForCreatedRunMutation.Field()
+    )
     start_scheduled_execution = DauphinStartScheduledExecutionMutation.Field()
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
     start_pipeline_reexecution = DauphinStartPipelineReexecutionMutation.Field()

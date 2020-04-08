@@ -27,10 +27,13 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     assert success
     assert not result.get('errors')
     assert result['data']
-    assert result['data']['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert (
+        result['data']['startPipelineExecutionForCreatedRun']['__typename']
+        == 'StartPipelineExecutionSuccess'
+    )
     assert 'PipelineSuccessEvent' in {
         log['__typename']: log
-        for log in result['data']['startPipelineExecution']['run']['logs']['nodes']
+        for log in result['data']['startPipelineExecutionForCreatedRun']['run']['logs']['nodes']
     }
 
 
@@ -62,10 +65,10 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
     assert result['data']
     # this is bad test but proves that we got celery configured properly
     # to get it working would involve relying on s3 / gcs for storage
-    assert result['data']['startPipelineExecution']['__typename'] == 'PythonError'
+    assert result['data']['startPipelineExecutionForCreatedRun']['__typename'] == 'PythonError'
     assert (
         'Must use S3 or GCS storage with non-local Celery broker: pyamqp://test:test@dagster-rabbitmq:5672// and backend: amqp'
-        in result['data']['startPipelineExecution']['message']
+        in result['data']['startPipelineExecutionForCreatedRun']['message']
     )
 
 
@@ -84,11 +87,11 @@ def test_failing_k8s_run_launcher(dagster_instance):
     assert not result.get('errors')
     assert result['data']
     assert (
-        result['data']['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
+        result['data']['startPipelineExecutionForCreatedRun']['__typename']
+        == 'PipelineConfigValidationInvalid'
     )
-    assert len(result['data']['startPipelineExecution']['errors']) == 2
+    assert len(result['data']['startPipelineExecutionForCreatedRun']['errors']) == 2
 
-    assert set(error['reason'] for error in result['data']['startPipelineExecution']['errors']) == {
-        'FIELD_NOT_DEFINED',
-        'MISSING_REQUIRED_FIELD',
-    }
+    assert set(
+        error['reason'] for error in result['data']['startPipelineExecutionForCreatedRun']['errors']
+    ) == {'FIELD_NOT_DEFINED', 'MISSING_REQUIRED_FIELD',}

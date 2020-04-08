@@ -8,13 +8,14 @@ from graphql import parse
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
 from .execution_queries import (
     PIPELINE_REEXECUTION_INFO_QUERY,
+    START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
     START_PIPELINE_EXECUTION_QUERY,
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
     SUBSCRIPTION_QUERY,
@@ -626,4 +627,41 @@ def test_start_pipeline_execution_with_start_disabled():
     assert result.data
     assert (
         result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionDisabledError'
+    )
+
+
+def test_start_pipeline_execution_for_created_run():
+    instance = DagsterInstance.local_temp()
+
+    run_id = make_new_run_id()
+    pipeline_run = PipelineRun.create_empty_run(
+        'csv_hello_world', run_id, csv_hello_world_solids_config(),
+    )
+    instance.create_run(pipeline_run)
+
+    result = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
+        variables={'runId': run_id},
+    )
+
+    assert result.data
+    assert (
+        result.data['startPipelineExecutionForCreatedRun']['__typename']
+        == 'StartPipelineExecutionSuccess'
+    )
+
+
+def test_start_pipeline_execution_for_created_run_not_found():
+    run_id = make_new_run_id()
+    result = execute_dagster_graphql(
+        define_test_context(),
+        START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
+        variables={'runId': run_id},
+    )
+
+    assert result.data
+    assert (
+        result.data['startPipelineExecutionForCreatedRun']['__typename']
+        == 'PipelineRunNotFoundError'
     )

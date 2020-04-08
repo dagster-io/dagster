@@ -542,6 +542,7 @@ type ModeNotFoundError implements Error {
 
 type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
+  startPipelineExecutionForCreatedRun(runId: String!): StartPipelineExecutionForCreatedRunResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
   startPipelineReexecution(executionParams: ExecutionParams!): StartPipelineReexecutionResult!
@@ -1131,6 +1132,8 @@ type SolidInvocationSite {
 type StartPipelineExecutionDisabledError implements Error {
   message: String!
 }
+
+union StartPipelineExecutionForCreatedRunResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError | PipelineRunNotFoundError
 
 union StartPipelineExecutionResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
