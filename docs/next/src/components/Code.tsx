@@ -46,10 +46,7 @@ const Code: React.FunctionComponent<CodeProps> = ({
           if (ln >= start && ln <= end) shouldHighlightLine = true;
         }
         return {
-          style: {
-            display: 'block',
-            backgroundColor: shouldHighlightLine ? '#001F86' : undefined,
-          },
+          className: shouldHighlightLine ? 'highlighted-line' : '',
         };
       }}
     >
