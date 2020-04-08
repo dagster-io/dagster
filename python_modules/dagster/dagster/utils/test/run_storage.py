@@ -1,6 +1,7 @@
 import pytest
 
 from dagster.core.definitions import PipelineDefinition
+from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
@@ -465,3 +466,13 @@ class TestRunStorage:
         storage.wipe()
         assert list(storage.get_runs()) == []
         assert dict(storage.get_run_tags()) == {}
+
+    def test_write_conflicting_run_id(self, storage):
+        double_run_id = 'double_run_id'
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+
+        run = PipelineRun.create_empty_run(run_id=double_run_id, pipeline_name=pipeline_def.name)
+
+        assert storage.add_run(run)
+        with pytest.raises(DagsterRunAlreadyExists):
+            storage.add_run(run)

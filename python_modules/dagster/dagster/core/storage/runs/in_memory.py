@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
+from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.utils import frozendict
 
@@ -19,10 +20,10 @@ class InMemoryRunStorage(RunStorage):
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.invariant(
-            not self._runs.get(pipeline_run.run_id),
-            'Can not add same run twice for run_id {run_id}'.format(run_id=pipeline_run.run_id),
-        )
+        if self._runs.get(pipeline_run.run_id):
+            raise DagsterRunAlreadyExists(
+                'Can not add same run twice for run_id {run_id}'.format(run_id=pipeline_run.run_id),
+            )
 
         self._runs[pipeline_run.run_id] = pipeline_run
         if pipeline_run.tags and len(pipeline_run.tags) > 0:
