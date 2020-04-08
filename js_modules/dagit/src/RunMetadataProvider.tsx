@@ -312,6 +312,12 @@ export function extractMetadataFromLogs(
         if (log.markerEnd) {
           upsertMarker(step.markers, log.markerEnd).end = timestamp;
         }
+      } else if (log.__typename === "ObjectStoreOperationEvent") {
+        // this indicates the step was skipped and its previous intermediates were copied
+        // so we will drop the step because we didn't execute it
+        if (log.operationResult.op === "CP_OBJECT") {
+          return;
+        }
       }
 
       metadata.steps[stepKey] = step;
@@ -409,6 +415,14 @@ export class RunMetadataProvider extends React.Component<
             description
             metadataEntries {
               ...TempMetadataEntryFragment
+            }
+          }
+        }
+        ... on ObjectStoreOperationEvent {
+          operationResult {
+            op
+            metadataEntries {
+              ...MetadataEntryFragment
             }
           }
         }
