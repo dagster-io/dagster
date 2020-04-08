@@ -9,7 +9,7 @@ from dagster.core.instance import DagsterInstance
 
 
 def test_smoke_app():
-    flask_app = app.create_app(
+    flask_app = app.create_app_with_execution_handle(
         ExecutionTargetHandle.for_repo_module(
             module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
         ),

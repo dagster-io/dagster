@@ -10,11 +10,12 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
+from dagster.core.definitions.container import get_container_snapshot
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
-from .app import create_app
+from .app import create_app_with_execution_handle, create_app_with_snapshot
 from .reloader import DagitReloader
 from .version import __version__
 
@@ -66,6 +67,14 @@ DEFAULT_DAGIT_PORT = 3000
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
 )
 @click.option(
+    '--image',
+    help=(
+        "Built image name:tag that holds user code. WARNING This is experimental, you"
+        "will only be able to load a very limited part of dagit."
+    ),
+    type=click.STRING,
+)
+@click.option(
     '--storage-fallback',
     help="Base directory for dagster storage if $DAGSTER_HOME is not set",
     default=None,
@@ -93,8 +102,6 @@ DEFAULT_DAGIT_PORT = 3000
 )
 @click.version_option(version=__version__, prog_name='dagit')
 def ui(host, port, storage_fallback, reload_trigger, workdir, **kwargs):
-    handle = handle_for_repo_cli_args(kwargs)
-
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -111,18 +118,38 @@ def ui(host, port, storage_fallback, reload_trigger, workdir, **kwargs):
 
     if workdir is not None:
         with pushd(workdir):
-            host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
+            host_dagit_ui(host, port, storage_fallback, reload_trigger, port_lookup, **kwargs)
     else:
-        host_dagit_ui(handle, host, port, storage_fallback, reload_trigger, port_lookup)
+        host_dagit_ui(host, port, storage_fallback, reload_trigger, port_lookup, **kwargs)
 
 
-def host_dagit_ui(handle, host, port, storage_fallback, reload_trigger=None, port_lookup=True):
+def host_dagit_ui(host, port, storage_fallback, reload_trigger=None, port_lookup=True, **kwargs):
+    if kwargs.get('image'):
+        return host_dagit_ui_with_dagster_image(
+            kwargs.get('image'), host, port, storage_fallback, port_lookup
+        )
+    return host_dagit_ui_with_execution_handle(
+        handle_for_repo_cli_args(kwargs), host, port, storage_fallback, reload_trigger, port_lookup
+    )
+
+
+def host_dagit_ui_with_dagster_image(image, host, port, storage_fallback, port_lookup=True):
+    check.str_param(image, 'image')
+    instance = DagsterInstance.get(storage_fallback)
+    app = create_app_with_snapshot(get_container_snapshot(image), instance)
+
+    start_server(host, port, app, port_lookup)
+
+
+def host_dagit_ui_with_execution_handle(
+    handle, host, port, storage_fallback, reload_trigger=None, port_lookup=True
+):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
 
     instance = DagsterInstance.get(storage_fallback)
     reloader = DagitReloader(reload_trigger=reload_trigger)
 
-    app = create_app(handle, instance, reloader)
+    app = create_app_with_execution_handle(handle, instance, reloader)
 
     start_server(host, port, app, port_lookup)
 

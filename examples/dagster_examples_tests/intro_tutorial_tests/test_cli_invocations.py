@@ -4,7 +4,7 @@ import runpy
 
 import pytest
 from click.testing import CliRunner
-from dagit.app import create_app
+from dagit.app import create_app_with_execution_handle
 
 from dagster import DagsterTypeCheckDidNotPass
 from dagster.cli.load_handle import handle_for_repo_cli_args
@@ -40,7 +40,7 @@ def path_to_tutorial_file(path):
 def load_dagit_for_repo_cli_args(n_pipelines=1, **kwargs):
     handle = handle_for_repo_cli_args(kwargs)
 
-    app = create_app(handle, DagsterInstance.ephemeral())
+    app = create_app_with_execution_handle(handle, DagsterInstance.ephemeral())
 
     client = app.test_client()
 

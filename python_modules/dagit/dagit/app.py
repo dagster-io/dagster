@@ -7,7 +7,10 @@ import uuid
 import warnings
 
 import nbformat
-from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import (
+    DagsterGraphQLContext,
+    DagsterSnapshotGraphQLContext,
+)
 from dagster_graphql.implementation.pipeline_execution_manager import (
     QueueingSubprocessExecutionManager,
     SubprocessExecutionManager,
@@ -27,6 +30,7 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.repository_snapshot import RepositorySnapshot
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
@@ -52,7 +56,9 @@ class DagsterGraphQLView(GraphQLView):
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(context, 'context', DagsterGraphQLContext)
+    context = check.inst_param(
+        context, 'context', (DagsterGraphQLContext, DagsterSnapshotGraphQLContext)
+    )
 
     def view(ws):
         subscription_server.handle(ws, request_context=context)
@@ -104,7 +110,9 @@ def notebook_view(request_args):
 
 
 def download_view(context):
-    context = check.inst_param(context, 'context', DagsterGraphQLContext)
+    context = check.inst_param(
+        context, 'context', (DagsterGraphQLContext, DagsterSnapshotGraphQLContext)
+    )
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
@@ -132,11 +140,7 @@ def download_view(context):
     return view
 
 
-def create_app(handle, instance, reloader=None):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.opt_inst_param(reloader, 'reloader', Reloader)
-
+def instantiate_app_with_views(context):
     app = Flask(
         'dagster-ui',
         static_url_path='',
@@ -147,41 +151,6 @@ def create_app(handle, instance, reloader=None):
 
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
-
-    execution_manager_settings = instance.dagit_settings.get('execution_manager')
-    if execution_manager_settings and execution_manager_settings.get('max_concurrent_runs'):
-        execution_manager = QueueingSubprocessExecutionManager(
-            instance, execution_manager_settings.get('max_concurrent_runs')
-        )
-    else:
-        execution_manager = SubprocessExecutionManager(instance)
-
-    warn_if_compute_logs_disabled()
-
-    print('Loading repository...')
-    context = DagsterGraphQLContext(
-        handle=handle,
-        instance=instance,
-        execution_manager=execution_manager,
-        reloader=reloader,
-        version=__version__,
-    )
-
-    # Automatically initialize scheduler everytime Dagit loads
-    scheduler_handle = context.scheduler_handle
-    scheduler = instance.scheduler
-
-    if scheduler_handle:
-        if scheduler:
-            handle = context.get_handle()
-            python_path = sys.executable
-            repository_path = handle.data.repository_yaml
-            repository = context.get_repository()
-            scheduler_handle.up(
-                python_path, repository_path, repository=repository, instance=instance
-            )
-        else:
-            warnings.warn(MISSING_SCHEDULER_WARNING)
 
     app.add_url_rule(
         '/graphql',
@@ -215,5 +184,66 @@ def create_app(handle, instance, reloader=None):
     app.add_url_rule('/dagit_info', 'sanity_view', info_view)
     app.register_error_handler(404, index_view)
     CORS(app)
-
     return app
+
+
+def get_execution_manager(instance):
+    execution_manager_settings = instance.dagit_settings.get('execution_manager')
+    if execution_manager_settings and execution_manager_settings.get('max_concurrent_runs'):
+        return QueueingSubprocessExecutionManager(
+            instance, execution_manager_settings.get('max_concurrent_runs')
+        )
+    return SubprocessExecutionManager(instance)
+
+
+def create_app_with_snapshot(repository_snapshot, instance):
+    check.inst_param(repository_snapshot, 'snapshot', RepositorySnapshot)
+    check.inst_param(instance, 'instance', DagsterInstance)
+
+    execution_manager = get_execution_manager(instance)
+    warn_if_compute_logs_disabled()
+
+    print('Loading repository...')
+    context = DagsterSnapshotGraphQLContext(
+        repository_snapshot=repository_snapshot,
+        instance=instance,
+        execution_manager=execution_manager,
+        version=__version__,
+    )
+    return instantiate_app_with_views(context)
+
+
+def create_app_with_execution_handle(handle, instance, reloader=None):
+    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.opt_inst_param(reloader, 'reloader', Reloader)
+
+    execution_manager = get_execution_manager(instance)
+    warn_if_compute_logs_disabled()
+
+    print('Loading repository...')
+    context = DagsterGraphQLContext(
+        handle=handle,
+        instance=instance,
+        execution_manager=execution_manager,
+        reloader=reloader,
+        version=__version__,
+    )
+
+    # Automatically initialize scheduler everytime Dagit loads
+    scheduler_handle = context.scheduler_handle
+    scheduler = instance.scheduler
+
+    if scheduler_handle:
+        if scheduler:
+            handle = context.get_handle()
+            python_path = sys.executable
+            repository_path = handle.data.repository_yaml
+            repository = context.get_repository()
+            scheduler_handle.up(
+                python_path, repository_path, repository=repository, instance=instance
+            )
+        else:
+            warnings.warn(MISSING_SCHEDULER_WARNING)
+
+    return instantiate_app_with_views(context)

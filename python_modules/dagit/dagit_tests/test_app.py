@@ -1,22 +1,31 @@
 import pytest
-from dagit.app import create_app
-from dagit.cli import host_dagit_ui
+from dagit.app import create_app_with_execution_handle, create_app_with_snapshot
+from dagit.cli import host_dagit_ui_with_execution_handle
 
 from dagster import ExecutionTargetHandle, seven
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.repository_snapshot import RepositorySnapshot
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 
 
-def test_create_app():
+def test_create_app_with_execution_handle():
     handle = ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml'))
-    assert create_app(handle, DagsterInstance.ephemeral())
+    assert create_app_with_execution_handle(handle, DagsterInstance.ephemeral())
+
+
+def test_create_app_with_snapshot():
+    handle = ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml'))
+    repository_snapshot = RepositorySnapshot.from_repository_definition(
+        handle.build_repository_definition()
+    )
+    assert create_app_with_snapshot(repository_snapshot, DagsterInstance.ephemeral())
 
 
 def test_notebook_view():
     notebook_path = file_relative_path(__file__, 'render_uuid_notebook.ipynb')
 
-    with create_app(
+    with create_app_with_execution_handle(
         ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml')),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
@@ -28,7 +37,7 @@ def test_notebook_view():
 
 
 def test_index_view():
-    with create_app(
+    with create_app_with_execution_handle(
         ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml')),
         DagsterInstance.ephemeral(),
     ).test_client() as client:
@@ -43,7 +52,9 @@ def test_successful_host_dagit_ui():
         handle = ExecutionTargetHandle.for_repo_yaml(
             file_relative_path(__file__, './repository.yaml')
         )
-        host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
+        host_dagit_ui_with_execution_handle(
+            storage_fallback=temp_dir, handle=handle, host=None, port=2343
+        )
 
 
 def _define_mock_server(fn):
@@ -71,7 +82,9 @@ def test_unknown_error():
             file_relative_path(__file__, './repository.yaml')
         )
         with pytest.raises(AnException):
-            host_dagit_ui(storage_fallback=temp_dir, handle=handle, host=None, port=2343)
+            host_dagit_ui_with_execution_handle(
+                storage_fallback=temp_dir, handle=handle, host=None, port=2343
+            )
 
 
 def test_port_collision():
@@ -85,7 +98,7 @@ def test_port_collision():
             file_relative_path(__file__, './repository.yaml')
         )
         with pytest.raises(Exception) as exc_info:
-            host_dagit_ui(
+            host_dagit_ui_with_execution_handle(
                 storage_fallback=temp_dir, handle=handle, host=None, port=2343, port_lookup=False
             )
 

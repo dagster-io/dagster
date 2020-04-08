@@ -134,3 +134,10 @@ class PipelineSnapshot(
                 return solid_def_snap
 
         check.failed('not found')
+
+    def has_solid_name(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
+        for solid_snap in self.dep_structure_snapshot.solid_invocation_snaps:
+            if solid_snap.solid_name == solid_name:
+                return True
+        return False
