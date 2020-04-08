@@ -223,10 +223,14 @@ def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=No
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute or execution_params.step_keys,
         tags=execution_params.execution_metadata.tags,
-        root_run_id=execution_params.execution_metadata.root_run_id,
-        parent_run_id=execution_params.execution_metadata.parent_run_id,
-        status=PipelineRunStatus.NOT_STARTED,
+        root_run_id=(
+            execution_params.execution_metadata.root_run_id or execution_params.previous_run_id
+        ),
+        parent_run_id=(
+            execution_params.execution_metadata.parent_run_id or execution_params.previous_run_id
+        ),
         previous_run_id=execution_params.previous_run_id,
+        status=PipelineRunStatus.NOT_STARTED,
     )
 
 

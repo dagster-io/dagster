@@ -55,7 +55,7 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector '
-            'step_keys_to_execute status tags root_run_id parent_run_id previous_run_id '
+            'step_keys_to_execute status tags root_run_id parent_run_id '
             'pipeline_snapshot_id '
         ),
     ),
@@ -67,7 +67,12 @@ class PipelineRun(
 
     # serdes log
     # * removed reexecution_config - serdes logic expected to strip unknown keys so no need to preserve
-    #
+    # * added pipeline_snapshot_id
+    # * renamed previous_run_id -> parent_run_id, added root_run_id
+    #   serdes will set parent_run_id = root_run_id = previous_run_id when __new__ is called with
+    #   a record that has previous_run_id set but neither of the new fields, i.e., when
+    #   deserializing an old record; the old field will then be dropped when serialized back to
+    #   storage
     def __new__(
         cls,
         pipeline_name,
@@ -93,6 +98,23 @@ class PipelineRun(
         if not status:
             status = PipelineRunStatus.NOT_STARTED
 
+        root_run_id = check.opt_str_param(root_run_id, 'root_run_id')
+        parent_run_id = check.opt_str_param(parent_run_id, 'parent_run_id')
+
+        check.invariant(
+            (root_run_id is not None and parent_run_id is not None)
+            or (root_run_id is None and parent_run_id is None),
+            (
+                'Must set both root_run_id and parent_run_id when creating a PipelineRun that '
+                'belongs to a run group'
+            ),
+        )
+
+        if previous_run_id:
+            if not (parent_run_id and root_run_id):
+                parent_run_id = previous_run_id
+                root_run_id = previous_run_id
+
         return super(PipelineRun, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
@@ -107,15 +129,20 @@ class PipelineRun(
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
             status=status,
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
-            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
-            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
-            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
         )
 
     @staticmethod
     def create_empty_run(
-        pipeline_name, run_id, environment_dict=None, tags=None, pipeline_snapshot_id=None
+        pipeline_name,
+        run_id,
+        environment_dict=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot_id=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
@@ -125,6 +152,8 @@ class PipelineRun(
             environment_dict=environment_dict,
             mode='default',
             selector=ExecutionSelector(pipeline_name),
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
             step_keys_to_execute=None,
             tags=tags,
             status=PipelineRunStatus.NOT_STARTED,
@@ -144,11 +173,17 @@ class PipelineRun(
             root_run_id=self.root_run_id,
             parent_run_id=self.parent_run_id,
             previous_run_id=self.previous_run_id,
+            pipeline_snapshot_id=self.pipeline_snapshot_id,
         )
 
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def previous_run_id(self):
+        # Compat
+        return self.parent_run_id
 
     @staticmethod
     def tags_for_schedule(schedule):

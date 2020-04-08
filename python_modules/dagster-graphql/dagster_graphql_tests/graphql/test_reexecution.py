@@ -115,6 +115,7 @@ def test_pipeline_reexecution_successful_launch():
         variables={
             'executionParams': {
                 'selector': {'name': 'no_config_pipeline'},
+                'environmentConfigData': {'storage': {'filesystem': {}}},
                 'executionMetadata': {'runId': run_id},
                 'mode': 'default',
             }
@@ -136,6 +137,7 @@ def test_pipeline_reexecution_successful_launch():
         variables={
             'executionParams': {
                 'selector': {'name': 'no_config_pipeline'},
+                'environmentConfigData': {'storage': {'filesystem': {}}},
                 'executionMetadata': {
                     'runId': new_run_id,
                     'rootRunId': run_id,

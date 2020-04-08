@@ -389,7 +389,8 @@ def _create_run(instance, pipeline_def, run_config, environment_dict):
             step_keys_to_execute=run_config.step_keys_to_execute,
             tags=run_config.tags,
             status=PipelineRunStatus.NOT_STARTED,
-            previous_run_id=run_config.previous_run_id,
+            parent_run_id=run_config.previous_run_id,
+            root_run_id=run_config.previous_run_id,
         )
     )
 
