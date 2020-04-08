@@ -26,6 +26,11 @@ const Code: React.FunctionComponent<CodeProps> = ({
         .map((s) => s.split('-').map((e) => parseInt(e)))
     : [];
 
+  // Remove the trailing new line from all code blocks.
+  // This is needed to prevent extra spacing at the bottom of
+  // the syntax highligher component.
+  const code = children.replace(/\n+$/, '');
+
   return (
     <SyntaxHighlighter
       language={language}
@@ -48,7 +53,7 @@ const Code: React.FunctionComponent<CodeProps> = ({
         };
       }}
     >
-      {children}
+      {code}
     </SyntaxHighlighter>
   );
 };
