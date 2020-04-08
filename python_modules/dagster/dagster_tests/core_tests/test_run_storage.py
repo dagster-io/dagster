@@ -2,30 +2,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import PipelineDefinition, seven
-from dagster.core.instance import DagsterInstance
+from dagster import seven
 from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster.utils.test.run_storage import TestRunStorage
-
-
-def do_test_single_write_read(instance):
-    run_id = 'some_run_id'
-    pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
-    instance.create_empty_run(run_id=run_id, pipeline_name=pipeline_def.name)
-    run = instance.get_run_by_id(run_id)
-    assert run.run_id == run_id
-    assert run.pipeline_name == 'some_pipeline'
-    assert list(instance.get_runs()) == [run]
-    instance.wipe()
-    assert list(instance.get_runs()) == []
-
-
-def test_filesystem_persist_one_run(tmpdir):
-    do_test_single_write_read(DagsterInstance.local_temp(str(tmpdir)))
-
-
-def test_in_memory_persist_one_run():
-    do_test_single_write_read(DagsterInstance.ephemeral())
 
 
 @contextmanager

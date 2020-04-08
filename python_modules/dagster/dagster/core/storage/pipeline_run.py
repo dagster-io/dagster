@@ -55,7 +55,8 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector '
-            'step_keys_to_execute status tags previous_run_id'
+            'step_keys_to_execute status tags previous_run_id '
+            'pipeline_snapshot_id'
         ),
     ),
     IRunConfig,
@@ -78,6 +79,7 @@ class PipelineRun(
         status=None,
         tags=None,
         previous_run_id=None,
+        pipeline_snapshot_id=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
@@ -104,10 +106,13 @@ class PipelineRun(
             status=status,
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
             previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
+            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
         )
 
     @staticmethod
-    def create_empty_run(pipeline_name, run_id, environment_dict=None, tags=None):
+    def create_empty_run(
+        pipeline_name, run_id, environment_dict=None, tags=None, pipeline_snapshot_id=None
+    ):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
         return PipelineRun(
@@ -119,6 +124,7 @@ class PipelineRun(
             step_keys_to_execute=None,
             tags=tags,
             status=PipelineRunStatus.NOT_STARTED,
+            pipeline_snapshot_id=pipeline_snapshot_id,
         )
 
     def run_with_status(self, status):

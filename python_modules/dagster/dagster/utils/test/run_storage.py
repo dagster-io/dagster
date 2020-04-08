@@ -1,5 +1,7 @@
 import pytest
 
+from dagster.core.definitions import PipelineDefinition
+from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 
@@ -430,3 +432,21 @@ class TestRunStorage:
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
+
+    def test_add_with_snapshot(self, storage):
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+        run_with_snapshot_id = 'lkasjdflkjasdf'
+        snapshot_id = create_pipeline_snapshot_id(pipeline_def.get_pipeline_snapshot())
+
+        run_with_snapshot = PipelineRun.create_empty_run(
+            run_id=run_with_snapshot_id,
+            pipeline_name=pipeline_def.name,
+            pipeline_snapshot_id=snapshot_id,
+        )
+
+        assert storage.add_run(run_with_snapshot)
+
+        assert storage.get_run_by_id(run_with_snapshot_id) == run_with_snapshot
+
+        storage.wipe()
+        assert list(storage.get_runs()) == []
