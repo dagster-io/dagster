@@ -23,7 +23,7 @@ def get_validated_config(graphene_info, pipeline_def, environment_dict, mode):
     if not validated_config.success:
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineConfigValidationInvalid')(
-                pipeline=DauphinPipeline(pipeline_def),
+                pipeline=DauphinPipeline.from_pipeline_def(pipeline_def),
                 errors=[
                     graphene_info.schema.type_named(
                         'PipelineConfigValidationError'
@@ -82,7 +82,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
     get_validated_config(graphene_info, pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
-        DauphinPipeline(pipeline_def)
+        DauphinPipeline.from_pipeline_def(pipeline_def)
     )
 
 
@@ -95,7 +95,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
     get_validated_config(graphene_info, pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
-        DauphinPipeline(pipeline_def),
+        DauphinPipeline.from_pipeline_def(pipeline_def),
         create_execution_plan(pipeline_def, environment_dict, RunConfig(mode=mode)),
     )
 

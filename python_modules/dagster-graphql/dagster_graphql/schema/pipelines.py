@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from dagster_graphql import dauphin
 
-from dagster import PipelineDefinition, PresetDefinition, check
+from dagster import PresetDefinition, check
 from dagster.core.snap.config_types import ConfigSchemaSnapshot
 from dagster.core.snap.mode import LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.snap.pipeline_snapshot import PipelineIndex
@@ -151,18 +151,25 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
 
     presets = dauphin.non_null_list('PipelinePreset')
 
-    def __init__(self, pipeline):
-        self._pipeline = check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-        self._pipeline_index = self._pipeline.get_pipeline_index()
+    def __init__(self, pipeline_index, presets=None):
+        self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        self._presets = check.opt_list_param(presets, 'presets', of_type=PresetDefinition)
 
     def get_pipeline_index(self):
         return self._pipeline_index
 
     def resolve_presets(self, _graphene_info):
+        check.list_param(self._presets, '_presets', of_type=PresetDefinition)
         return [
             DauphinPipelinePreset(preset, self._pipeline_index.name)
-            for preset in sorted(self._pipeline.get_presets(), key=lambda item: item.name)
+            for preset in sorted(self._presets, key=lambda item: item.name)
         ]
+
+    @staticmethod
+    def from_pipeline_def(pipeline_definition):
+        return DauphinPipeline(
+            pipeline_definition.get_pipeline_index(), presets=pipeline_definition.get_presets()
+        )
 
 
 @lru_cache(maxsize=32)

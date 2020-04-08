@@ -1,9 +1,29 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.repository_snapshot import RepositorySnapshot
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
+
+
+class DagsterSnapshotGraphQLContext(object):
+    def __init__(self, repository_snapshot, execution_manager, instance, version=None):
+        self._repository_snapshot = check.inst_param(
+            repository_snapshot, 'repository_snapshot', RepositorySnapshot
+        )
+        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self.execution_manager = check.inst_param(
+            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
+        )
+        self.version = version
+
+    @property
+    def instance(self):
+        return self._instance
+
+    def get_repository_snapshot(self):
+        return self._repository_snapshot
 
 
 class DagsterGraphQLContext(object):

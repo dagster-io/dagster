@@ -1,11 +1,13 @@
 import sys
 
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.snap.pipeline_snapshot import PipelineIndex
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -22,13 +24,15 @@ def get_pipeline_snapshot_or_error(graphene_info, subset_id):
 @capture_dauphin_error
 def get_pipeline_or_error(graphene_info, selector):
     '''Returns a DauphinPipelineOrError.'''
-    return DauphinPipeline(get_pipeline_def_from_selector(graphene_info, selector))
+    pipeline = get_pipeline_def_from_selector(graphene_info, selector)
+    return DauphinPipeline.from_pipeline_def(pipeline)
 
 
 def get_pipeline_or_raise(graphene_info, selector):
     '''Returns a DauphinPipeline or raises a UserFacingGraphQLError if one cannot be retrieved
     from the selector, e.g., the pipeline is not present in the loaded repository.'''
-    return DauphinPipeline(get_pipeline_def_from_selector(graphene_info, selector))
+    pipeline = get_pipeline_def_from_selector(graphene_info, selector)
+    return DauphinPipeline.from_pipeline_def(pipeline)
 
 
 def get_pipeline_reference_or_raise(graphene_info, selector):
@@ -52,11 +56,19 @@ def get_pipelines_or_raise(graphene_info):
 def _get_pipelines(graphene_info):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
-    repository = graphene_info.context.get_repository()
+    if isinstance(graphene_info.context, DagsterGraphQLContext):
+        repository = graphene_info.context.get_repository()
+        pipeline_instances = [
+            graphene_info.schema.type_named('Pipeline').from_pipeline_def(pipeline_def)
+            for pipeline_def in repository.get_all_pipelines()
+        ]
+    else:
+        repository_snapshot = graphene_info.context.get_repository_snapshot()
+        pipeline_instances = [
+            graphene_info.schema.type_named('Pipeline')(PipelineIndex(pipeline_snapshot))
+            for pipeline_snapshot in repository_snapshot.pipeline_snapshots
+        ]
 
-    pipeline_instances = []
-    for pipeline_def in repository.get_all_pipelines():
-        pipeline_instances.append(graphene_info.schema.type_named('Pipeline')(pipeline_def))
     return graphene_info.schema.type_named('PipelineConnection')(
         nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
     )
@@ -82,7 +94,9 @@ def get_pipeline_def_from_selector(graphene_info, selector):
                         message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
                             solid_name=solid_name, pipeline_name=selector.name
                         ),
-                        pipeline=graphene_info.schema.type_named('Pipeline')(orig_pipeline),
+                        pipeline=graphene_info.schema.type_named('Pipeline').from_pipeline_def(
+                            orig_pipeline
+                        ),
                     )
                 )
         try:
@@ -91,7 +105,9 @@ def get_pipeline_def_from_selector(graphene_info, selector):
             raise UserFacingGraphQLError(
                 graphene_info.schema.type_named('InvalidSubsetError')(
                     message=serializable_error_info_from_exc_info(sys.exc_info()).message,
-                    pipeline=graphene_info.schema.type_named('Pipeline')(orig_pipeline),
+                    pipeline=graphene_info.schema.type_named('Pipeline').from_pipeline_def(
+                        orig_pipeline
+                    ),
                 )
             )
 
@@ -102,9 +118,8 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
     try:
-        return graphene_info.schema.type_named('Pipeline')(
-            get_pipeline_def_from_selector(graphene_info, selector)
-        )
+        pipeline = get_pipeline_def_from_selector(graphene_info, selector)
+        return graphene_info.schema.type_named('Pipeline').from_pipeline_def(pipeline)
 
     except UserFacingGraphQLError as exc:
         if (

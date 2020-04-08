@@ -41,8 +41,9 @@ def resolve_is_environment_config_valid(
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
 
     validated_config = validate_config(environment_schema.environment_type, environment_dict)
-
-    dauphin_pipeline = graphene_info.schema.type_named('Pipeline')(dagster_pipeline)
+    dauphin_pipeline = graphene_info.schema.type_named('Pipeline').from_pipeline_def(
+        dagster_pipeline
+    )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

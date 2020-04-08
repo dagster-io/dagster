@@ -371,7 +371,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
         instance=graphene_info.context.instance,
     )
 
-    dauphin_pipeline = DauphinPipeline(pipeline_def)
+    dauphin_pipeline = DauphinPipeline.from_pipeline_def(pipeline_def)
 
     def to_graphql_event(event_record):
         return from_dagster_event_record(
