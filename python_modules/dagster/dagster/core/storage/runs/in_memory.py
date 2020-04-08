@@ -10,6 +10,10 @@ from .base import RunStorage
 
 class InMemoryRunStorage(RunStorage):
     def __init__(self):
+        self._init_storage()
+
+    # separate method so it can be reused in wipe
+    def _init_storage(self):
         self._runs = OrderedDict()
         self._run_tags = defaultdict(dict)
 
@@ -111,4 +115,4 @@ class InMemoryRunStorage(RunStorage):
             del self._run_tags[run_id]
 
     def wipe(self):
-        self._runs = OrderedDict()
+        self._init_storage()

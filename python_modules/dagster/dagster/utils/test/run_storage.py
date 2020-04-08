@@ -450,3 +450,18 @@ class TestRunStorage:
 
         storage.wipe()
         assert list(storage.get_runs()) == []
+
+    def test_wipe_tags(self, storage):
+        run_id = 'some_run_id'
+        run = PipelineRun.create_empty_run(
+            run_id=run_id, pipeline_name='a_pipeline', tags={'foo': 'bar'}
+        )
+
+        storage.add_run(run)
+
+        assert storage.get_run_by_id(run_id) == run
+        assert dict(storage.get_run_tags()) == {'foo': {'bar'}}
+
+        storage.wipe()
+        assert list(storage.get_runs()) == []
+        assert dict(storage.get_run_tags()) == {}
