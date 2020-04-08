@@ -17,22 +17,20 @@ from .utils import UserFacingGraphQLError, capture_dauphin_error
 def get_pipeline_snapshot_or_error(graphene_info, subset_id):
     check.str_param(subset_id, 'subset_id')
     selector = ExecutionSelector(subset_id)
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
+    pipeline_def = get_dauphin_pipeline_from_selector(graphene_info, selector)
     return DauphinPipelineSnapshot(pipeline_def.get_pipeline_index())
 
 
 @capture_dauphin_error
 def get_pipeline_or_error(graphene_info, selector):
     '''Returns a DauphinPipelineOrError.'''
-    pipeline = get_pipeline_def_from_selector(graphene_info, selector)
-    return DauphinPipeline.from_pipeline_def(pipeline)
+    return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
 def get_pipeline_or_raise(graphene_info, selector):
     '''Returns a DauphinPipeline or raises a UserFacingGraphQLError if one cannot be retrieved
     from the selector, e.g., the pipeline is not present in the loaded repository.'''
-    pipeline = get_pipeline_def_from_selector(graphene_info, selector)
-    return DauphinPipeline.from_pipeline_def(pipeline)
+    return get_dauphin_pipeline_from_selector(graphene_info, selector)
 
 
 def get_pipeline_reference_or_raise(graphene_info, selector):
@@ -72,6 +70,31 @@ def _get_pipelines(graphene_info):
     return graphene_info.schema.type_named('PipelineConnection')(
         nodes=sorted(pipeline_instances, key=lambda pipeline: pipeline.name)
     )
+
+
+def get_dauphin_pipeline_from_selector(graphene_info, selector):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(selector, 'selector', ExecutionSelector)
+    if isinstance(graphene_info.context, DagsterGraphQLContext):
+        pipeline = get_pipeline_def_from_selector(graphene_info, selector)
+        return DauphinPipeline(pipeline.get_pipeline_index(), presets=pipeline.get_presets())
+    else:
+        return DauphinPipeline(
+            PipelineIndex(get_pipeline_snapshot_from_selector(graphene_info, selector))
+        )
+
+
+def get_pipeline_snapshot_from_selector(graphene_info, selector):
+    repository_snapshot = graphene_info.context.get_repository_snapshot()
+    if not repository_snapshot.has_pipeline_snapshot(selector.name):
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
+        )
+
+    # TODO: Support pipeline sub-selection
+    if selector.solid_subset:
+        check.failed("DagsterContainerGraphQLContext doesn't support pipeline sub-selection.")
+    return repository_snapshot.get_pipeline_snapshot(selector.name)
 
 
 def get_pipeline_def_from_selector(graphene_info, selector):
@@ -120,7 +143,6 @@ def get_dauphin_pipeline_reference_from_selector(graphene_info, selector):
     try:
         pipeline = get_pipeline_def_from_selector(graphene_info, selector)
         return graphene_info.schema.type_named('Pipeline').from_pipeline_def(pipeline)
-
     except UserFacingGraphQLError as exc:
         if (
             isinstance(exc.dauphin_error, DauphinPipelineNotFoundError)

@@ -206,7 +206,6 @@ def define_test_repository():
 
 
 def test_pipelines_or_error_invalid():
-
     context = DagsterGraphQLContext(
         handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
         instance=DagsterInstance.ephemeral(),
@@ -286,6 +285,55 @@ def test_pipeline_or_error_by_name_not_found():
     assert not result.errors
     assert result.data
     assert result.data['pipelineOrError']['__typename'] == 'PipelineNotFoundError'
+
+
+def test_pipeline_or_error_with_container_context():
+    result = execute_dagster_graphql(
+        DagsterSnapshotGraphQLContext(
+            instance=DagsterInstance.ephemeral(),
+            execution_manager=SynchronousExecutionManager(),
+            repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
+        ),
+        '''
+        { 
+            pipelineOrError(params: {name: "csv_hello_world_two" }) { 
+                __typename
+                ... on Pipeline {
+                    name
+                }
+            } 
+        }
+        ''',
+    )
+    assert not result.errors
+    assert result.data
+    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
+
+
+def test_pipeline_or_error_with_container_context_preset_empty_ok():
+    result = execute_dagster_graphql(
+        DagsterSnapshotGraphQLContext(
+            instance=DagsterInstance.ephemeral(),
+            execution_manager=SynchronousExecutionManager(),
+            repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
+        ),
+        '''
+        { 
+            pipelineOrError(params: {name: "csv_hello_world" }) { 
+                __typename
+                ... on Pipeline {
+                    name
+                    presets {
+                        name
+                    }
+                }
+            } 
+        }
+        ''',
+    )
+    assert not result.errors
+    assert result.data
+    assert result.data['pipelineOrError']['name'] == 'csv_hello_world'
 
 
 def test_production_query(production_query):

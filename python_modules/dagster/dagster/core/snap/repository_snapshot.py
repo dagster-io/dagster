@@ -16,7 +16,15 @@ class RepositorySnapshot(namedtuple('_RepositorySnapshot', 'name pipeline_snapsh
             ),
         )
 
+    def has_pipeline_snapshot(self, pipeline_name):
+        check.str_param(pipeline_name, 'pipeline_name')
+        for pipeline in self.pipeline_snapshots:
+            if pipeline.name == pipeline_name:
+                return True
+        return False
+
     def get_pipeline_snapshot(self, pipeline_name):
+        check.str_param(pipeline_name, 'pipeline_name')
         for pipeline in self.pipeline_snapshots:
             if pipeline.name == pipeline_name:
                 return pipeline
