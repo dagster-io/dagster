@@ -363,7 +363,7 @@ def test_gcs_intermediate_store(gcs_bucket):
             assert intermediate_store.get_object(context, RuntimeBool, [obj_name]).obj is True
             assert intermediate_store.uri_for_paths([obj_name]).startswith('gs://')
 
-            intermediate_store_2.copy_object_from_prev_run(context, run_id, [obj_name])
+            intermediate_store_2.copy_object_from_run(context, run_id, [obj_name])
             assert intermediate_store_2.has_object(context, [obj_name])
             assert intermediate_store_2.get_object(context, RuntimeBool, [obj_name]).obj is True
     finally:

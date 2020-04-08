@@ -29,7 +29,7 @@ class IntermediatesManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-i
         pass
 
     @abstractmethod
-    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
+    def copy_intermediate_from_run(self, context, run_id, step_output_handle):
         pass
 
     @abstractproperty
@@ -90,7 +90,7 @@ class InMemoryIntermediatesManager(IntermediatesManager):
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         return step_output_handle in self.values
 
-    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
+    def copy_intermediate_from_run(self, context, run_id, step_output_handle):
         check.failed('not implemented in in memory')
 
     @property
@@ -153,9 +153,9 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
 
         return self._intermediate_store.has_object(context, self._get_paths(step_output_handle))
 
-    def copy_intermediate_from_prev_run(self, context, previous_run_id, step_output_handle):
-        return self._intermediate_store.copy_object_from_prev_run(
-            context, previous_run_id, self._get_paths(step_output_handle)
+    def copy_intermediate_from_run(self, context, run_id, step_output_handle):
+        return self._intermediate_store.copy_object_from_run(
+            context, run_id, self._get_paths(step_output_handle)
         )
 
     @property

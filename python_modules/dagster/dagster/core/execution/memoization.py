@@ -63,7 +63,7 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
             if intermediates_manager.has_intermediate(pipeline_context, handle):
                 continue
 
-            operation = intermediates_manager.copy_intermediate_from_prev_run(
+            operation = intermediates_manager.copy_intermediate_from_run(
                 pipeline_context, previous_run_id, handle
             )
             yield DagsterEvent.object_store_operation(

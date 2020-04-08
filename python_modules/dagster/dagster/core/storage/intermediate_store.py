@@ -66,12 +66,12 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
         key = self.object_store.key_for_paths([self.root] + paths)
         self.object_store.rm_object(key)
 
-    def copy_object_from_prev_run(self, _context, previous_run_id, paths):
-        check.str_param(previous_run_id, 'previous_run_id')
+    def copy_object_from_run(self, _context, run_id, paths):
+        check.str_param(run_id, 'run_id')
         check.list_param(paths, 'paths', of_type=str)
         check.param_invariant(len(paths) > 0, 'paths')
 
-        src = self.object_store.key_for_paths([self.root_for_run_id(previous_run_id)] + paths)
+        src = self.object_store.key_for_paths([self.root_for_run_id(run_id)] + paths)
         dst = self.object_store.key_for_paths([self.root] + paths)
 
         return self.object_store.cp_object(src, dst)

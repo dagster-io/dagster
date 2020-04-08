@@ -346,7 +346,7 @@ def test_s3_intermediate_store(s3_bucket):
             assert intermediate_store.get_object(context, RuntimeBool, ['true']).obj is True
             assert intermediate_store.uri_for_paths(['true']).startswith('s3://')
 
-            intermediate_store_2.copy_object_from_prev_run(context, run_id, ['true'])
+            intermediate_store_2.copy_object_from_run(context, run_id, ['true'])
             assert intermediate_store_2.has_object(context, ['true'])
             assert intermediate_store_2.get_object(context, RuntimeBool, ['true']).obj is True
     finally:
