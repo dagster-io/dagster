@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import yaml
 
@@ -45,22 +47,22 @@ def test_from_glob_list():
 def test_merge_yamls():
     assert merge_yamls(
         [
-            file_relative_path(__file__, 'yamls/yaml_one.yaml'),
-            file_relative_path(__file__, 'yamls/yaml_two.yaml'),
+            file_relative_path(__file__, os.path.join('yamls', 'yaml_one.yaml')),
+            file_relative_path(__file__, os.path.join('yamls', 'yaml_two.yaml')),
         ]
     ) == {'key_one': {'key_one_one': 'value_one', 'key_one_two': 'value_two'}}
 
     with pytest.raises(
         check.CheckError,
         match=(
-            'Expected YAML from file .*?/yamls/bad/a_string.yaml to parse to dictionary, '
+            'Expected YAML from file .* to parse to dictionary, '
             'instead got: "this is a valid YAML string but not a dictionary"'
         ),
     ):
         merge_yamls(
             [
-                file_relative_path(__file__, 'yamls/yaml_one.yaml'),
-                file_relative_path(__file__, 'yamls/bad/a_string.yaml'),
+                file_relative_path(__file__, os.path.join('yamls', 'yaml_one.yaml')),
+                file_relative_path(__file__, os.path.join('yamls', 'bad', 'a_string.yaml')),
             ]
         )
 
