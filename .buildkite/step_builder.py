@@ -31,9 +31,8 @@ class BuildkiteQueue(Enum):
     '''
 
     DOCKER = "docker-p"
-    MICRO = "micro-p"
-    MEDIUM = "medium-p"
-    C4_2XLARGE = "c4-2xlarge-p"
+    MEDIUM = "medium-v4-3-2"
+    WINDOWS = "windows-medium"
 
     @classmethod
     def contains(cls, value):
