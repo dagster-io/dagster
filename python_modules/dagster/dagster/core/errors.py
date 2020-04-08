@@ -355,6 +355,10 @@ class DagsterRunAlreadyExists(DagsterError):
     '''Indicates that a pipeline run already exists in a run storage.'''
 
 
+class DagsterSnapshotDoesNotExist(DagsterError):
+    '''Indicates you attempted to create a pipeline run with a nonexistent snapshot id'''
+
+
 class DagsterRunConflict(DagsterError):
     '''Indicates that a conflicting pipeline run exists in a run storage.'''
 

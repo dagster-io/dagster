@@ -19,6 +19,9 @@ class RunStorage(six.with_metaclass(ABCMeta)):
     def add_run(self, pipeline_run):
         '''Add a run to storage.
 
+        If a run already exists with the same ID, raise DagsterRunAlreadyExists
+        If the run's snapshot ID does not exist raise DagsterSnapshotDoesNotExist
+
         Args:
             pipeline_run (PipelineRun): The run to add. If this is not a PipelineRun,
         '''
@@ -86,6 +89,44 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
         Returns:
             bool
+        '''
+
+    @abstractmethod
+    def has_pipeline_snapshot(self, pipeline_snapshot_id):
+        '''Check to see if storage contains a pipeline snapshot.
+
+        Args:
+            pipeline_snapshot_id (str): The id of the run.
+
+        Returns:
+            bool
+        '''
+
+    @abstractmethod
+    def add_pipeline_snapshot(self, pipeline_snapshot):
+        '''Add a pipeline snapshot to the run store.
+
+        Pipeline snapshots are content-addressable, meaning
+        that the ID for a snapshot is a hash based on the
+        body of the snapshot. This function returns
+        that snapshot ID.
+
+        Args:
+            pipeline_snapshot (PipelineSnapshot)
+
+        Return:
+            str: The pipeline_snapshot_id
+        '''
+
+    @abstractmethod
+    def get_pipeline_snapshot(self, pipeline_snapshot_id):
+        '''Fetch a snapshot by ID
+
+        Args:
+            pipeline_snapshot_id (str)
+
+        Returns:
+            PipelineSnapshot
         '''
 
     @abstractmethod

@@ -1,8 +1,9 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
-from dagster.core.errors import DagsterRunAlreadyExists
+from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import frozendict
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -17,6 +18,7 @@ class InMemoryRunStorage(RunStorage):
     def _init_storage(self):
         self._runs = OrderedDict()
         self._run_tags = defaultdict(dict)
+        self._pipeline_snapshots = OrderedDict()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -24,6 +26,13 @@ class InMemoryRunStorage(RunStorage):
             raise DagsterRunAlreadyExists(
                 'Can not add same run twice for run_id {run_id}'.format(run_id=pipeline_run.run_id),
             )
+        if pipeline_run.pipeline_snapshot_id:
+            if not self.has_pipeline_snapshot(pipeline_run.pipeline_snapshot_id):
+                raise DagsterSnapshotDoesNotExist(
+                    'pipeline_snapshot_id {ss_id} does not exist in run storage.'.format(
+                        ss_id=pipeline_run.pipeline_snapshot_id
+                    )
+                )
 
         self._runs[pipeline_run.run_id] = pipeline_run
         if pipeline_run.tags and len(pipeline_run.tags) > 0:
@@ -114,6 +123,20 @@ class InMemoryRunStorage(RunStorage):
         del self._runs[run_id]
         if run_id in self._run_tags:
             del self._run_tags[run_id]
+
+    def has_pipeline_snapshot(self, pipeline_snapshot_id):
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        return pipeline_snapshot_id in self._pipeline_snapshots
+
+    def add_pipeline_snapshot(self, pipeline_snapshot):
+        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        self._pipeline_snapshots[pipeline_snapshot_id] = pipeline_snapshot
+        return pipeline_snapshot_id
+
+    def get_pipeline_snapshot(self, pipeline_snapshot_id):
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        return self._pipeline_snapshots[pipeline_snapshot_id]
 
     def wipe(self):
         self._init_storage()

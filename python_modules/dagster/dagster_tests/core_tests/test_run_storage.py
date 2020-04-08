@@ -21,10 +21,19 @@ def create_in_memory_storage():
 TestRunStorage.__test__ = False
 
 
-class TestMyStorageImplementation(TestRunStorage):
+class TestSqliteImplementation(TestRunStorage):
     __test__ = True
 
-    @pytest.fixture(name='storage', params=[create_sqlite_run_storage, create_in_memory_storage])
+    @pytest.fixture(name='storage', params=[create_sqlite_run_storage])
+    def run_storage(self, request):
+        with request.param() as s:
+            yield s
+
+
+class TestInMemoryImplementation(TestRunStorage):
+    __test__ = True
+
+    @pytest.fixture(name='storage', params=[create_in_memory_storage])
     def run_storage(self, request):
         with request.param() as s:
             yield s

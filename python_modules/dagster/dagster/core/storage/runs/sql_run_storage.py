@@ -8,6 +8,7 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
@@ -207,6 +208,18 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         query = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
         with self.connect() as conn:
             conn.execute(query)
+
+    def has_pipeline_snapshot(self, pipeline_snapshot_id):
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        raise NotImplementedError()
+
+    def add_pipeline_snapshot(self, pipeline_snapshot):
+        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        raise NotImplementedError()
+
+    def get_pipeline_snapshot(self, pipeline_snapshot_id):
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        raise NotImplementedError()
 
     def wipe(self):
         '''Clears the run storage.'''

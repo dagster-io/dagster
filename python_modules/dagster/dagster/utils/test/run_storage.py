@@ -1,9 +1,10 @@
 import pytest
 
 from dagster.core.definitions import PipelineDefinition
-from dagster.core.errors import DagsterRunAlreadyExists
+from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.runs.in_memory import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
 
 
@@ -434,24 +435,6 @@ class TestRunStorage:
         assert list(storage.get_runs()) == []
         assert run_id not in [key for key, value in storage.get_run_tags()]
 
-    def test_add_with_snapshot(self, storage):
-        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
-        run_with_snapshot_id = 'lkasjdflkjasdf'
-        snapshot_id = create_pipeline_snapshot_id(pipeline_def.get_pipeline_snapshot())
-
-        run_with_snapshot = PipelineRun.create_empty_run(
-            run_id=run_with_snapshot_id,
-            pipeline_name=pipeline_def.name,
-            pipeline_snapshot_id=snapshot_id,
-        )
-
-        assert storage.add_run(run_with_snapshot)
-
-        assert storage.get_run_by_id(run_with_snapshot_id) == run_with_snapshot
-
-        storage.wipe()
-        assert list(storage.get_runs()) == []
-
     def test_wipe_tags(self, storage):
         run_id = 'some_run_id'
         run = PipelineRun.create_empty_run(
@@ -476,3 +459,51 @@ class TestRunStorage:
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
             storage.add_run(run)
+
+    def test_single_write_read_with_snapshot(self, storage):
+        if not isinstance(storage, InMemoryRunStorage):
+            pytest.skip()
+
+        run_with_snapshot_id = 'lkasjdflkjasdf'
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+
+        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+
+        run_with_snapshot = PipelineRun.create_empty_run(
+            run_id=run_with_snapshot_id,
+            pipeline_name=pipeline_def.name,
+            pipeline_snapshot_id=pipeline_snapshot_id,
+        )
+
+        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+
+        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+
+        assert storage.get_pipeline_snapshot(pipeline_snapshot_id) == pipeline_snapshot
+
+        storage.add_run(run_with_snapshot)
+
+        assert storage.get_run_by_id(run_with_snapshot_id) == run_with_snapshot
+
+        storage.wipe()
+
+        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+        assert not storage.has_run(run_with_snapshot_id)
+
+    def do_test_single_write_with_missing_snapshot(self, storage):
+        if not isinstance(storage, InMemoryRunStorage):
+            pytest.skip()
+
+        run_with_snapshot_id = 'lkasjdflkjasdf'
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+
+        run_with_missing_snapshot = PipelineRun.create_empty_run(
+            run_id=run_with_snapshot_id,
+            pipeline_name=pipeline_def.name,
+            pipeline_snapshot_id='nope',
+        )
+
+        with pytest.raises(DagsterSnapshotDoesNotExist):
+            storage.add_run(run_with_missing_snapshot)
