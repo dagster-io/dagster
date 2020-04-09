@@ -118,6 +118,10 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
         ... on PythonError {
             message
             stack
+            cause {
+                message
+                stack
+            }
         }
         ... on LaunchPipelineExecutionSuccess {
             run {
@@ -178,6 +182,11 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
         }
         ... on PythonError {
             message
+            stack
+            cause {
+                message
+                stack
+            }
         }
     }
 '''
@@ -279,6 +288,14 @@ mutation (
         ... on InvalidOutputError {
             stepKey
             invalidOutputName
+        }
+        ... on PythonError {
+            message
+            stack
+            cause {
+                message
+                stack
+            }
         }
     }
 }
