@@ -120,6 +120,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
+    rootRunId = dauphin.Field(dauphin.String)
+    parentRunId = dauphin.Field(dauphin.String)
     canCancel = dauphin.NonNull(dauphin.Boolean)
     executionSelection = dauphin.NonNull('ExecutionSelection')
 
@@ -167,6 +169,12 @@ class DauphinPipelineRun(dauphin.ObjectType):
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in self._pipeline_run.tags.items()
         ]
+
+    def resolve_rootRunId(self, _):
+        return self._pipeline_run.root_run_id
+
+    def resolve_parentRunId(self, _):
+        return self._pipeline_run.parent_run_id
 
     @property
     def run_id(self):

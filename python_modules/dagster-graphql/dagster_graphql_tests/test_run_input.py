@@ -18,6 +18,8 @@ def test_roundtrip_run():
         step_keys_to_execute=['step_1', 'step_2', 'step_3'],
         tags={'tag_it': 'bag_it'},
         status=PipelineRunStatus.NOT_STARTED,
+        root_run_id='previousID',
+        parent_run_id='previousID',
         previous_run_id='previousID',
         pipeline_snapshot_id='pipey_mcpipeface_snapshot_id',
     )

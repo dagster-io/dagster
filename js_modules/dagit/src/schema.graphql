@@ -215,6 +215,8 @@ type ExecutePlanSuccess {
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
+  rootRunId: String
+  parentRunId: String
 }
 
 input ExecutionParams {
@@ -440,6 +442,12 @@ type LaunchPipelineExecutionSuccess {
   run: PipelineRun!
 }
 
+union LaunchPipelineReexecutionResult = LaunchPipelineReexecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+
+type LaunchPipelineReexecutionSuccess {
+  run: PipelineRun!
+}
+
 type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   key: String!
   name: String
@@ -537,6 +545,8 @@ type Mutation {
   startPipelineExecution(executionParams: ExecutionParams!): StartPipelineExecutionResult!
   startScheduledExecution(scheduleName: String!): StartScheduledExecutionResult!
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
+  startPipelineReexecution(executionParams: ExecutionParams!): StartPipelineReexecutionResult!
+  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
   startSchedule(scheduleName: String!): RunningScheduleResult!
   stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
@@ -741,6 +751,8 @@ type PipelineRun {
   environmentConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]!
+  rootRunId: String
+  parentRunId: String
   canCancel: Boolean!
   executionSelection: ExecutionSelection!
 }
@@ -1115,6 +1127,16 @@ type StartPipelineExecutionDisabledError implements Error {
 union StartPipelineExecutionResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 type StartPipelineExecutionSuccess {
+  run: PipelineRun!
+}
+
+type StartPipelineReexecutionDisabledError implements Error {
+  message: String!
+}
+
+union StartPipelineReexecutionResult = StartPipelineReexecutionSuccess | StartPipelineReexecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+
+type StartPipelineReexecutionSuccess {
   run: PipelineRun!
 }
 

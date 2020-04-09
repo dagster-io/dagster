@@ -213,7 +213,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
 
 def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=None):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-
     return PipelineRun(
         pipeline_name=execution_params.selector.name,
         run_id=execution_params.execution_metadata.run_id
@@ -224,6 +223,8 @@ def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=No
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute or execution_params.step_keys,
         tags=execution_params.execution_metadata.tags,
+        root_run_id=execution_params.execution_metadata.root_run_id,
+        parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=PipelineRunStatus.NOT_STARTED,
         previous_run_id=execution_params.previous_run_id,
     )
@@ -237,7 +238,12 @@ def execution_params_from_pipeline_run(run):
         step_keys=run.step_keys_to_execute,
         environment_dict=run.environment_dict,
         selector=run.selector,
-        execution_metadata=ExecutionMetadata(run_id=run.run_id, tags=run.tags),
+        execution_metadata=ExecutionMetadata(
+            run_id=run.run_id,
+            tags=run.tags,
+            root_run_id=run.root_run_id,
+            parent_run_id=run.parent_run_id,
+        ),
         previous_run_id=run.previous_run_id,
     )
 

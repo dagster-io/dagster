@@ -36,9 +36,10 @@ spec:
         - -v
         - '{{"executionParams": {{"environmentConfigData": {{"loggers": {{"console": {{"config":
           {{"log_level": "DEBUG"}}}}}}, "solids": {{"multiply_the_word": {{"config": {{"factor":
-          2}}, "inputs": {{"word": "bar"}}}}}}}}, "executionMetadata": {{"runId": "{run_id}",
-          "tags": []}}, "mode": "default", "retryRunId": null, "selector": {{"name":
-          "demo_pipeline", "solidSubset": null}}, "stepKeys": null}}}}'
+          2}}, "inputs": {{"word": "bar"}}}}}}}}, "executionMetadata": {{"parentRunId": null,
+          "rootRunId": null, "runId": "{run_id}", "tags":
+          []}}, "mode": "default", "retryRunId": null, "selector": {{"name": "demo_pipeline",
+          "solidSubset": null}}, "stepKeys": null}}}}'
         command:
         - dagster-graphql
         env:

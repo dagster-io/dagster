@@ -65,16 +65,20 @@ class ExecutionParams(
         }
 
 
-class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags')):
-    def __new__(cls, run_id, tags):
+class ExecutionMetadata(namedtuple('_ExecutionMetadata', 'run_id tags root_run_id parent_run_id')):
+    def __new__(cls, run_id, tags, root_run_id=None, parent_run_id=None):
         return super(ExecutionMetadata, cls).__new__(
             cls,
             check.opt_str_param(run_id, 'run_id'),
             check.dict_param(tags, 'tags', key_type=str, value_type=str),
+            check.opt_str_param(root_run_id, 'root_run_id'),
+            check.opt_str_param(parent_run_id, 'parent_run_id'),
         )
 
     def to_graphql_input(self):
         return {
-            'tags': [{'key': k, 'value': v} for k, v in self.tags.items()],
             'runId': self.run_id,
+            'tags': [{'key': k, 'value': v} for k, v in self.tags.items()],
+            'rootRunId': self.root_run_id,
+            'parentRunId': self.parent_run_id,
         }

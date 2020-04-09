@@ -70,6 +70,8 @@ export enum StepKind {
 export interface ExecutionMetadata {
   runId?: string | null;
   tags?: ExecutionTag[] | null;
+  rootRunId?: string | null;
+  parentRunId?: string | null;
 }
 
 export interface ExecutionParams {

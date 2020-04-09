@@ -14,8 +14,8 @@ def execute_dagster_graphql(context, query, variables=None):
     result = graphql(
         create_schema(),
         query,
-        context=context,
-        variables=variables,
+        context_value=context,
+        variable_values=variables,
         # executor=GeventObservableExecutor(),
         allow_subscriptions=True,
         return_promise=False,

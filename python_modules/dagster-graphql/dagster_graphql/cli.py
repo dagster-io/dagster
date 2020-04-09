@@ -57,8 +57,8 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
     result = graphql(
         request_string=query,
         schema=create_schema(),
-        context=context,
-        variables=variables,
+        context_value=context,
+        variable_values=variables,
         executor=executor,
     )
 

@@ -15,7 +15,9 @@ from dagster_graphql.implementation.execution import (
     get_compute_log_observable,
     get_pipeline_run_observable,
     launch_pipeline_execution,
+    launch_pipeline_reexecution,
     start_pipeline_execution,
+    start_pipeline_reexecution,
     start_scheduled_execution,
 )
 from dagster_graphql.implementation.fetch_partition_sets import (
@@ -377,6 +379,43 @@ class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
         )
 
 
+class DauphinStartPipelineReexecutionMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'DauphinStartPipelineReexecutionMutation'
+        description = (
+            'Re-execute a pipeline run in the python environment '
+            'dagit/dagster-graphql is currently operating in.'
+        )
+
+    class Arguments(object):
+        executionParams = dauphin.NonNull('ExecutionParams')
+
+    Output = dauphin.NonNull('StartPipelineReexecutionResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return start_pipeline_reexecution(
+            graphene_info,
+            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
+        )
+
+
+class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
+    class Meta(object):
+        name = 'DauphinLaunchPipelineReexecutionMutation'
+        description = 'Re-launch a pipeline run via the run launcher configured on the instance'
+
+    class Arguments(object):
+        executionParams = dauphin.NonNull('ExecutionParams')
+
+    Output = dauphin.NonNull('LaunchPipelineReexecutionResult')
+
+    def mutate(self, graphene_info, **kwargs):
+        return launch_pipeline_reexecution(
+            graphene_info,
+            execution_params=create_execution_params(graphene_info, kwargs['executionParams']),
+        )
+
+
 class DauphinCancelPipelineExecutionMutation(dauphin.Mutation):
     class Meta(object):
         name = 'CancelPipelineExecutionMutation'
@@ -429,6 +468,8 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 
     runId = dauphin.String()
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
+    rootRunId = dauphin.String()
+    parentRunId = dauphin.String()
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
@@ -490,8 +531,10 @@ def execution_params_from_graphql(graphql_execution_params):
 def create_execution_metadata(graphql_execution_metadata):
     return (
         ExecutionMetadata(
-            graphql_execution_metadata.get('runId'),
-            {t['key']: t['value'] for t in graphql_execution_metadata.get('tags', [])},
+            run_id=graphql_execution_metadata.get('runId'),
+            tags={t['key']: t['value'] for t in graphql_execution_metadata.get('tags', [])},
+            root_run_id=graphql_execution_metadata.get('rootRunId'),
+            parent_run_id=graphql_execution_metadata.get('parentRunId'),
         )
         if graphql_execution_metadata
         else ExecutionMetadata(run_id=None, tags={})
@@ -530,6 +573,8 @@ class DauphinMutation(dauphin.ObjectType):
     start_pipeline_execution = DauphinStartPipelineExecutionMutation.Field()
     start_scheduled_execution = DauphinStartScheduledExecutionMutation.Field()
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
+    start_pipeline_reexecution = DauphinStartPipelineReexecutionMutation.Field()
+    launch_pipeline_reexecution = DauphinLaunchPipelineReexecutionMutation.Field()
     execute_plan = DauphinExecutePlan.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()

@@ -475,3 +475,55 @@ mutation(
   }
 }
 '''
+
+LAUNCH_PIPELINE_REEXECUTION_MUTATION = '''
+mutation(
+  $executionParams: ExecutionParams!
+) {
+  launchPipelineReexecution(
+    executionParams: $executionParams,
+  ) {
+    __typename
+    ... on RunLauncherNotDefinedError {
+      message
+    }
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on LaunchPipelineReexecutionSuccess {
+      run {
+        runId
+        status
+        pipeline {
+          name
+        }
+        environmentConfigYaml
+        mode
+      }
+    }
+  }
+}
+'''

@@ -34,9 +34,9 @@ from ..fetch_runs import get_validated_config
 from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
-from .launch_execution import launch_pipeline_execution
+from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
 from .scheduled_execution import start_scheduled_execution
-from .start_execution import start_pipeline_execution
+from .start_execution import start_pipeline_execution, start_pipeline_reexecution
 
 
 @capture_dauphin_error

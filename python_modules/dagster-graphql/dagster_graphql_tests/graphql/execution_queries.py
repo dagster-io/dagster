@@ -302,6 +302,55 @@ mutation (
 '''
 )
 
+START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = (
+    FRAGMENTS
+    + '''
+mutation (
+    $executionParams: ExecutionParams!
+) {
+    startPipelineReexecution(
+        executionParams: $executionParams
+    ) {
+        __typename
+        ... on StartPipelineReexecutionSuccess {
+            run {
+                pipeline { ...on PipelineReference { name } }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent {
+                            level
+                        }
+                        ...stepEventFragment
+                    }
+                }
+                tags {
+                    key
+                    value
+                }
+                rootRunId
+                parentRunId
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on InvalidStepError {
+            invalidStepKey
+        }
+        ... on InvalidOutputError {
+            stepKey
+            invalidOutputName
+        }
+    }
+}
+'''
+)
+
 SUBSCRIPTION_QUERY = (
     FRAGMENTS
     + '''

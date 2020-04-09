@@ -55,8 +55,8 @@ class PipelineRun(
         '_PipelineRun',
         (
             'pipeline_name run_id environment_dict mode selector '
-            'step_keys_to_execute status tags previous_run_id '
-            'pipeline_snapshot_id'
+            'step_keys_to_execute status tags root_run_id parent_run_id previous_run_id '
+            'pipeline_snapshot_id '
         ),
     ),
     IRunConfig,
@@ -78,6 +78,8 @@ class PipelineRun(
         step_keys_to_execute=None,
         status=None,
         tags=None,
+        root_run_id=None,
+        parent_run_id=None,
         previous_run_id=None,
         pipeline_snapshot_id=None,
     ):
@@ -105,6 +107,8 @@ class PipelineRun(
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
             status=status,
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
+            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
+            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
             previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
         )
@@ -137,6 +141,8 @@ class PipelineRun(
             step_keys_to_execute=self.step_keys_to_execute,
             tags=self.tags,
             status=status,
+            root_run_id=self.root_run_id,
+            parent_run_id=self.parent_run_id,
             previous_run_id=self.previous_run_id,
         )
 
