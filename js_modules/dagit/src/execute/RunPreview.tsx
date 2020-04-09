@@ -14,6 +14,7 @@ import {
 } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
 import { SplitPanelContainer } from "../SplitPanelContainer";
+import { ButtonLink } from "../ButtonLink";
 
 interface RunPreviewProps {
   plan: RunPreviewExecutionPlanResultFragment | null;
@@ -350,15 +351,18 @@ const ErrorRow: React.FunctionComponent<{
       <div>
         {displayed}
         {displayed !== message && (
-          <a
-            onClick={() =>
-              showCustomAlert({
-                body: <div style={{ whiteSpace: "pre-wrap" }}>{message}</div>
-              })
-            }
-          >
-            View&nbsp;All&nbsp;&gt;
-          </a>
+          <>
+            &nbsp;
+            <ButtonLink
+              onClick={() =>
+                showCustomAlert({
+                  body: <div style={{ whiteSpace: "pre-wrap" }}>{message}</div>
+                })
+              }
+            >
+              View&nbsp;All&nbsp;&gt;
+            </ButtonLink>
+          </>
         )}
       </div>
     </ErrorRowContainer>

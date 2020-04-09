@@ -49,6 +49,7 @@ import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useState } from "react";
 import * as querystring from "query-string";
+import { ButtonLink } from "../ButtonLink";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
@@ -671,21 +672,6 @@ export const PARTITION_RUNS_QUERY = gql`
 const AttemptsTableContainer = styled.div`
   margin: 20px 0;
 `;
-const ButtonLink = styled.button`
-  color: #106ba3;
-  margin-left: 10px;
-  font-size: 14px;
-  background: none !important;
-  border: none;
-  padding: 0 !important;
-  font-family: inherit;
-  cursor: pointer;
-  &: hover {
-    text-decoration: underline;
-  }
-}
-`;
-
 const ParitionsTableControls = styled.div`
   display: flex;
   justify-content: space-between;
