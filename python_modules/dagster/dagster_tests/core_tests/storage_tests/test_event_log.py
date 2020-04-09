@@ -9,10 +9,17 @@ import pytest
 import sqlalchemy
 
 from dagster import seven
+from dagster.core.definitions import ExpectationResult, Materialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster.core.events import (
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    StepExpectationResultData,
+    StepMaterializationData,
+)
 from dagster.core.events.log import DagsterEventRecord
-from dagster.core.execution.plan.objects import StepSuccessData
+from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 from dagster.core.storage.event_log import (
     InMemoryEventLogStorage,
     SqlEventLogStorageMetadata,
@@ -294,3 +301,122 @@ def test_concurrent_sqlite_event_log_connections():
         while not exceptions.empty():
             excs.append(exceptions.get())
         assert not excs, excs
+
+
+@event_storage_test
+def test_event_log_step_stats(event_storage_factory_cm_fn):
+    # When an event log doesn't have a PIPELINE_START or PIPELINE_SUCCESS | PIPELINE_FAILURE event,
+    # we want to ensure storage.get_stats_for_run(...) doesn't throw an error.
+
+    run_id = 'foo'
+    with event_storage_factory_cm_fn() as storage:
+        for record in _stats_records(run_id=run_id):
+            storage.store_event(record)
+
+        step_stats = storage.get_step_stats_for_run(run_id)
+        assert len(step_stats) == 4
+
+        a_stats = [stats for stats in step_stats if stats.step_key == 'A'][0]
+        assert a_stats.step_key == 'A'
+        assert a_stats.status == 'STEP_SUCCESS'
+        assert a_stats.end_time - a_stats.start_time == 100
+
+        b_stats = [stats for stats in step_stats if stats.step_key == 'B'][0]
+        assert b_stats.step_key == 'B'
+        assert b_stats.status == 'STEP_FAILURE'
+        assert b_stats.end_time - b_stats.start_time == 50
+
+        c_stats = [stats for stats in step_stats if stats.step_key == 'C'][0]
+        assert c_stats.step_key == 'C'
+        assert c_stats.status == 'STEP_SKIPPED'
+        assert c_stats.end_time - c_stats.start_time == 25
+
+        d_stats = [stats for stats in step_stats if stats.step_key == 'D'][0]
+        assert d_stats.step_key == 'D'
+        assert d_stats.status == 'STEP_SUCCESS'
+        assert d_stats.end_time - d_stats.start_time == 150
+        assert len(d_stats.materializations) == 3
+        assert len(d_stats.expectation_results) == 2
+
+
+def _stats_records(run_id):
+    now = time.time()
+    return [
+        _event_record(run_id, 'A', now - 325, DagsterEventType.STEP_START),
+        _event_record(
+            run_id,
+            'A',
+            now - 225,
+            DagsterEventType.STEP_SUCCESS,
+            StepSuccessData(duration_ms=100000.0),
+        ),
+        _event_record(run_id, 'B', now - 225, DagsterEventType.STEP_START),
+        _event_record(
+            run_id,
+            'B',
+            now - 175,
+            DagsterEventType.STEP_FAILURE,
+            StepFailureData(error=None, user_failure_data=None),
+        ),
+        _event_record(run_id, 'C', now - 175, DagsterEventType.STEP_START),
+        _event_record(run_id, 'C', now - 150, DagsterEventType.STEP_SKIPPED),
+        _event_record(run_id, 'D', now - 150, DagsterEventType.STEP_START),
+        _event_record(
+            run_id,
+            'D',
+            now - 125,
+            DagsterEventType.STEP_MATERIALIZATION,
+            StepMaterializationData(Materialization(label='mat 1')),
+        ),
+        _event_record(
+            run_id,
+            'D',
+            now - 100,
+            DagsterEventType.STEP_EXPECTATION_RESULT,
+            StepExpectationResultData(ExpectationResult(success=True, label='exp 1')),
+        ),
+        _event_record(
+            run_id,
+            'D',
+            now - 75,
+            DagsterEventType.STEP_MATERIALIZATION,
+            StepMaterializationData(Materialization(label='mat 2')),
+        ),
+        _event_record(
+            run_id,
+            'D',
+            now - 50,
+            DagsterEventType.STEP_EXPECTATION_RESULT,
+            StepExpectationResultData(ExpectationResult(success=False, label='exp 2')),
+        ),
+        _event_record(
+            run_id,
+            'D',
+            now - 25,
+            DagsterEventType.STEP_MATERIALIZATION,
+            StepMaterializationData(Materialization(label='mat 3')),
+        ),
+        _event_record(
+            run_id, 'D', now, DagsterEventType.STEP_SUCCESS, StepSuccessData(duration_ms=150000.0)
+        ),
+    ]
+
+
+def _event_record(run_id, step_key, timestamp, event_type, event_specific_data=None):
+    pipeline_name = 'pipeline_name'
+    return DagsterEventRecord(
+        None,
+        '',
+        'debug',
+        '',
+        run_id,
+        timestamp,
+        step_key=step_key,
+        pipeline_name=pipeline_name,
+        dagster_event=DagsterEvent(
+            event_type.value,
+            pipeline_name,
+            step_key=step_key,
+            event_specific_data=event_specific_data,
+        ),
+    )

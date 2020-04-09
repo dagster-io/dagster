@@ -86,6 +86,8 @@ class DauphinPipelineRunStepStats(dauphin.ObjectType):
     status = dauphin.NonNull('StepEventStatus')
     startTime = dauphin.Field(dauphin.Float)
     endTime = dauphin.Field(dauphin.Float)
+    materializations = dauphin.non_null_list('Materialization')
+    expectationResults = dauphin.non_null_list('ExpectationResult')
 
     def __init__(self, stats):
         self._stats = check.inst_param(stats, 'stats', RunStepKeyStatsSnapshot)
@@ -95,6 +97,8 @@ class DauphinPipelineRunStepStats(dauphin.ObjectType):
             status=stats.status,
             startTime=stats.start_time,
             endTime=stats.end_time,
+            materializations=stats.materializations,
+            expectationResults=stats.expectation_results,
         )
 
 
