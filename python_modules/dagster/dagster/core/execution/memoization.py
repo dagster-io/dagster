@@ -15,7 +15,10 @@ def validate_retry_memoization(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
-    if not execution_plan.previous_run_id:
+    parent_run_id = pipeline_context.pipeline_run.parent_run_id
+    check.opt_str_param(parent_run_id, 'parent_run_id')
+
+    if parent_run_id is None:
         return
 
     if not pipeline_context.intermediates_manager.is_persistent:
@@ -25,12 +28,10 @@ def validate_retry_memoization(pipeline_context, execution_plan):
             )
         )
 
-    previous_run_id = execution_plan.previous_run_id
-
-    if not pipeline_context.instance.has_run(previous_run_id):
+    if not pipeline_context.instance.has_run(parent_run_id):
         raise DagsterRunNotFoundError(
-            'Run id {} set as previous run id was not found in instance'.format(previous_run_id),
-            invalid_run_id=previous_run_id,
+            'Run id {} set as parent run id was not found in instance'.format(parent_run_id),
+            invalid_run_id=parent_run_id,
         )
 
 
@@ -41,14 +42,15 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
     '''
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    previous_run_id = execution_plan.previous_run_id
-    if not previous_run_id:
+    parent_run_id = pipeline_context.pipeline_run.parent_run_id
+
+    if not parent_run_id:
         return
 
-    previous_run_logs = pipeline_context.instance.all_logs(execution_plan.previous_run_id)
+    parent_run_logs = pipeline_context.instance.all_logs(parent_run_id)
 
     output_handles_for_current_run = output_handles_from_execution_plan(execution_plan)
-    output_handles_from_previous_run = output_handles_from_event_logs(previous_run_logs)
+    output_handles_from_previous_run = output_handles_from_event_logs(parent_run_logs)
     output_handles_to_copy = output_handles_for_current_run.intersection(
         output_handles_from_previous_run
     )
@@ -64,7 +66,7 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
                 continue
 
             operation = intermediates_manager.copy_intermediate_from_run(
-                pipeline_context, previous_run_id, handle
+                pipeline_context, parent_run_id, handle
             )
             yield DagsterEvent.object_store_operation(
                 step_context,
@@ -128,21 +130,20 @@ def output_handles_from_execution_plan(execution_plan):
     return output_handles_for_current_run
 
 
-def get_retry_steps_from_execution_plan(instance, execution_plan):
+def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_str_param(parent_run_id, 'parent_run_id')
 
-    if not execution_plan.previous_run_id:
+    if not parent_run_id:
         return execution_plan.step_keys_to_execute
 
-    previous_run = instance.get_run_by_id(execution_plan.previous_run_id)
-    previous_run_logs = instance.all_logs(execution_plan.previous_run_id)
+    parent_run = instance.get_run_by_id(parent_run_id)
+    parent_run_logs = instance.all_logs(parent_run_id)
     failed_step_keys = set(
-        record.dagster_event.step_key
-        for record in previous_run_logs
-        if is_step_failure_event(record)
+        record.dagster_event.step_key for record in parent_run_logs if is_step_failure_event(record)
     )
-    previous_run_output_handles = output_handles_from_event_logs(previous_run_logs)
+    previous_run_output_handles = output_handles_from_event_logs(parent_run_logs)
     previous_run_output_names_by_step = defaultdict(set)
     for handle in previous_run_output_handles:
         previous_run_output_names_by_step[handle.step_key].add(handle.output_name)
@@ -151,7 +152,7 @@ def get_retry_steps_from_execution_plan(instance, execution_plan):
 
     execution_deps = execution_plan.execution_deps()
     for step in execution_plan.topological_steps():
-        if previous_run.step_keys_to_execute and step.key not in previous_run.step_keys_to_execute:
+        if parent_run.step_keys_to_execute and step.key not in parent_run.step_keys_to_execute:
             continue
 
         if step.key in failed_step_keys:

@@ -57,7 +57,9 @@ def get_step_keys_to_execute(instance, pipeline_def, execution_params):
                 tags=execution_params.execution_metadata.tags,
             ),
         )
-        return get_retry_steps_from_execution_plan(instance, execution_plan)
+        return get_retry_steps_from_execution_plan(
+            instance, execution_plan, execution_params.previous_run_id
+        )
     else:
         return execution_params.step_keys
 

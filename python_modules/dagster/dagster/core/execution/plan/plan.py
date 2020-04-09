@@ -98,7 +98,6 @@ class _PlanBuilder(object):
             self.environment_config.storage.system_storage_name
         )
 
-        previous_run_id = self.run_config.previous_run_id
         step_keys_to_execute = self.run_config.step_keys_to_execute or [
             step.key for step in self._steps.values()
         ]
@@ -108,7 +107,6 @@ class _PlanBuilder(object):
             step_dict,
             deps,
             system_storage_def.is_persistent,
-            previous_run_id,
             step_keys_to_execute,
         )
 
@@ -268,17 +266,11 @@ def get_step_input(
 class ExecutionPlan(
     namedtuple(
         '_ExecutionPlan',
-        'pipeline_def step_dict deps steps artifacts_persisted previous_run_id step_keys_to_execute',
+        'pipeline_def step_dict deps steps artifacts_persisted step_keys_to_execute',
     )
 ):
     def __new__(
-        cls,
-        pipeline_def,
-        step_dict,
-        deps,
-        artifacts_persisted,
-        previous_run_id,
-        step_keys_to_execute,
+        cls, pipeline_def, step_dict, deps, artifacts_persisted, step_keys_to_execute,
     ):
         missing_steps = [step_key for step_key in step_keys_to_execute if step_key not in step_dict]
         if missing_steps:
@@ -297,7 +289,6 @@ class ExecutionPlan(
             deps=check.dict_param(deps, 'deps', key_type=str, value_type=set),
             steps=list(step_dict.values()),
             artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
-            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
             step_keys_to_execute=check.list_param(
                 step_keys_to_execute, 'step_keys_to_execute', of_type=str
             ),
@@ -355,7 +346,6 @@ class ExecutionPlan(
             self.step_dict,
             self.deps,
             self.artifacts_persisted,
-            self.previous_run_id,
             step_keys_to_execute,
         )
 

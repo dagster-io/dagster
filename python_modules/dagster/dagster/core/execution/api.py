@@ -115,7 +115,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     )
 
     initialization_manager = pipeline_initialization_manager(
-        pipeline, pipeline_run.environment_dict, pipeline_run, instance, execution_plan
+        pipeline, pipeline_run.environment_dict, pipeline_run, instance, execution_plan,
     )
     for event in initialization_manager.generate_setup_events():
         yield event
@@ -317,7 +317,7 @@ def execute_pipeline_with_mode(
 
 
 def execute_plan_iterator(
-    execution_plan, pipeline_run, instance, retries=None, environment_dict=None
+    execution_plan, pipeline_run, instance, retries=None, environment_dict=None,
 ):
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -326,7 +326,7 @@ def execute_plan_iterator(
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
 
     initialization_manager = pipeline_initialization_manager(
-        execution_plan.pipeline_def, environment_dict, pipeline_run, instance, execution_plan
+        execution_plan.pipeline_def, environment_dict, pipeline_run, instance, execution_plan,
     )
     for event in initialization_manager.generate_setup_events():
         yield event
@@ -351,7 +351,9 @@ def execute_plan_iterator(
                 yield event
 
 
-def execute_plan(execution_plan, instance, pipeline_run, environment_dict=None, retries=None):
+def execute_plan(
+    execution_plan, instance, pipeline_run, environment_dict=None, retries=None,
+):
     '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
     '''

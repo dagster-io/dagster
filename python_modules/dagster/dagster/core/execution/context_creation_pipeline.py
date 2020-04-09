@@ -220,8 +220,7 @@ def pipeline_initialization_event_generator(
 
 # perform any plan validation that is dependent on access to the pipeline context
 def _validate_plan_with_context(pipeline_context, execution_plan):
-    if execution_plan.previous_run_id:
-        validate_retry_memoization(pipeline_context, execution_plan)
+    validate_retry_memoization(pipeline_context, execution_plan)
 
 
 def create_system_storage_data(

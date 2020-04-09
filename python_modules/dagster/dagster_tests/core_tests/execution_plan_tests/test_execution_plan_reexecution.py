@@ -134,9 +134,9 @@ def test_execution_plan_wrong_run_id():
             instance=DagsterInstance.ephemeral(),
         )
 
-    assert str(
-        exc_info.value
-    ) == 'Run id {} set as previous run id was not found in instance'.format(unrun_id)
+    assert str(exc_info.value) == 'Run id {} set as parent run id was not found in instance'.format(
+        unrun_id
+    )
 
     assert exc_info.value.invalid_run_id == unrun_id
 
