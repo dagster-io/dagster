@@ -8,6 +8,11 @@ import data from '../data/searchindex.json';
 const DATA_PATH = path.join(__dirname, '../data');
 const MODULE_PATH = path.join(DATA_PATH, '_modules');
 
+process.on('unhandledRejection', (error) => {
+  console.error(error); // This prints error with stack included (as for normal errors)
+  throw error;
+});
+
 async function preProcess() {
   const glob = path.join(DATA_PATH, '/**/*.fjson');
   const entries = await fg([glob]);
@@ -118,8 +123,12 @@ async function createAlgoliaIndex() {
     }
   }
 
-  index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
-  console.log('✅ Updated Algolia index');
+  try {
+    await index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
+    console.log('✅ Updated Algolia index');
+  } catch {
+    console.log('❌ Updated Algolia index');
+  }
 }
 
 const steps = [
