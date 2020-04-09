@@ -1,3 +1,5 @@
+import logging
+import zlib
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
@@ -6,14 +8,15 @@ import six
 import sqlalchemy as db
 
 from dagster import check
-from dagster.core.errors import DagsterRunAlreadyExists
+from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.seven import JSONDecodeError
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
-from .schema import RunTagsTable, RunsTable
+from .schema import RunTagsTable, RunsTable, SnapshotsTable
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
@@ -30,7 +33,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         '''
 
-    def execute(self, query):
+    def fetchall(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)
             res = result_proxy.fetchall()
@@ -38,8 +41,25 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return res
 
+    def fetchone(self, query):
+        with self.connect() as conn:
+            result_proxy = conn.execute(query)
+            row = result_proxy.fetchone()
+            result_proxy.close()
+
+        return row
+
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+
+        if pipeline_run.pipeline_snapshot_id and not self.has_pipeline_snapshot(
+            pipeline_run.pipeline_snapshot_id
+        ):
+            raise DagsterSnapshotDoesNotExist(
+                'Snapshot {ss_id} does not exist in run storage'.format(
+                    ss_id=pipeline_run.pipeline_snapshot_id
+                )
+            )
 
         with self.connect() as conn:
             try:
@@ -48,6 +68,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     pipeline_name=pipeline_run.pipeline_name,
                     status=pipeline_run.status.value,
                     run_body=serialize_dagster_namedtuple(pipeline_run),
+                    snapshot_id=pipeline_run.pipeline_snapshot_id,
                 )
                 conn.execute(runs_insert)
             except db.exc.IntegrityError as exc:
@@ -161,7 +182,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def get_runs(self, filters=None, cursor=None, limit=None):
         query = self._runs_query(filters, cursor, limit)
 
-        rows = self.execute(query)
+        rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
     def get_runs_count(self, filters=None):
@@ -172,7 +193,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         subquery = subquery.alias("subquery")
 
         query = db.select([db.func.count()]).select_from(subquery)
-        rows = self.execute(query)
+        rows = self.fetchall(query)
         count = rows[0][0]
         return count
 
@@ -188,13 +209,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.str_param(run_id, 'run_id')
 
         query = db.select([RunsTable.c.run_body]).where(RunsTable.c.run_id == run_id)
-        rows = self.execute(query)
+        rows = self.fetchall(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def get_run_tags(self):
         result = defaultdict(set)
         query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(RunTagsTable.c.value)
-        rows = self.execute(query)
+        rows = self.fetchall(query)
         for r in rows:
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
@@ -211,15 +232,31 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def has_pipeline_snapshot(self, pipeline_snapshot_id):
         check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
-        raise NotImplementedError()
+        return bool(self.get_pipeline_snapshot(pipeline_snapshot_id))
 
     def add_pipeline_snapshot(self, pipeline_snapshot):
         check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
-        raise NotImplementedError()
+        with self.connect() as conn:
+            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+            runs_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
+                snapshot_id=snapshot_id,
+                snapshot_body=zlib.compress(
+                    serialize_dagster_namedtuple(pipeline_snapshot).encode()
+                ),
+                snapshot_type='PIPELINE',
+            )
+            conn.execute(runs_insert)
+            return snapshot_id
 
     def get_pipeline_snapshot(self, pipeline_snapshot_id):
         check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
-        raise NotImplementedError()
+        query = db.select([SnapshotsTable.c.snapshot_body]).where(
+            SnapshotsTable.c.snapshot_id == pipeline_snapshot_id
+        )
+
+        row = self.fetchone(query)
+
+        return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
     def wipe(self):
         '''Clears the run storage.'''
@@ -227,3 +264,38 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(RunsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
+
+
+GET_PIPELINE_SNAPSHOT_QUERY_ID = 'get-pipeline-snapshot'
+
+
+def defensively_unpack_pipeline_snapshot_query(logger, row):
+    # no checking here because sqlalchemy returns a special
+    # row proxy and don't want to instance check on an internal
+    # implementation detail
+
+    def _warn(msg):
+        logger.warning('get-pipeline-snapshot: {msg}'.format(msg=msg))
+
+    if not isinstance(row[0], six.binary_type):
+        _warn('First entry in row is not a binary type.')
+        return None
+
+    try:
+        uncompressed_bytes = zlib.decompress(row[0])
+    except zlib.error:
+        _warn('Could not decompress bytes stored in snapshot table.')
+        return None
+
+    try:
+        decoded_str = uncompressed_bytes.decode()
+    except UnicodeDecodeError:
+        _warn('Could not unicode decode decompressed bytes stored in snapshot table.')
+        return None
+
+    try:
+        return deserialize_json_to_dagster_namedtuple(decoded_str)
+    except JSONDecodeError:
+        _warn('Could not parse json in snapshot table.')
+        return None

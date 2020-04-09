@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 import os
 import re
+import sqlite3
 
 import pytest
 
@@ -116,3 +117,68 @@ def test_event_log_migration():
             if row_data.step_key is not None:
                 step_key_records.append(row_data)
         assert len(step_key_records) > 0
+
+
+def get_sqlite3_tables(db_path):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    return [r[0] for r in cursor.fetchall()]
+
+
+def get_sqlite3_columns(db_path, table_name):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
+    cursor.execute('PRAGMA table_info("{}");'.format(table_name))
+    return [r[1] for r in cursor.fetchall()]
+
+
+def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
+    run_id = 'fb0b3905-068b-4444-8f00-76fcbaef7e8b'
+    test_dir = file_relative_path(__file__, 'snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite')
+    with restore_directory(test_dir):
+        # invariant check to make sure migration has not been run yet
+        db_path = os.path.join(test_dir, 'history', 'runs.db')
+        assert 'snapshots' not in get_sqlite3_tables(db_path)
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+
+        # Make sure the schema is migrated
+        instance.upgrade()
+
+        assert 'snapshots' in get_sqlite3_tables(db_path)
+        assert {'id', 'snapshot_id', 'snapshot_body', 'snapshot_type'} == set(
+            get_sqlite3_columns(db_path, 'snapshots')
+        )
+
+        runs = instance.get_runs()
+        print(runs)
+        assert len(runs) == 1
+
+        run = instance.get_run_by_id(run_id)
+
+        assert run.run_id == run_id
+        assert run.pipeline_snapshot_id is None
+
+        # TODO: enable these tests once hooked into instance
+
+        # @solid
+        # def noop_solid(_):
+        #     pass
+
+        # @pipeline
+        # def noop_pipeline():
+        #     noop_solid()
+
+        # result = execute_pipeline(noop_pipeline, instance=instance)
+
+        # assert result.success
+
+        # runs = instance.get_runs()
+        # assert len(runs) == 2
+
+        # new_run_id = result.run_id
+
+        # new_run = instance.get_run_by_id(new_run_id)
+
+        # assert new_run.pipeline_snapshot_id

@@ -4,8 +4,12 @@ from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.runs.in_memory import InMemoryRunStorage
 from dagster.core.utils import make_new_run_id
+from dagster.serdes import serialize_dagster_namedtuple
+
+
+def serialize_pp(value):
+    return serialize_dagster_namedtuple(value, indent=2, separators=(',', ': '))
 
 
 class TestRunStorage:
@@ -460,10 +464,23 @@ class TestRunStorage:
         with pytest.raises(DagsterRunAlreadyExists):
             storage.add_run(run)
 
-    def test_single_write_read_with_snapshot(self, storage):
-        if not isinstance(storage, InMemoryRunStorage):
-            pytest.skip()
+    def test_add_get_snapshot(self, storage):
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+        pipeline_snapshot = pipeline_def.get_pipeline_snapshot()
+        pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
+        assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
+        fetched_pipeline_snapshot = storage.get_pipeline_snapshot(pipeline_snapshot_id)
+        assert fetched_pipeline_snapshot
+        assert serialize_pp(fetched_pipeline_snapshot) == serialize_pp(pipeline_snapshot)
+        assert storage.has_pipeline_snapshot(pipeline_snapshot_id)
+        assert not storage.has_pipeline_snapshot('nope')
+
+        storage.wipe()
+
+        assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
+
+    def test_single_write_read_with_snapshot(self, storage):
         run_with_snapshot_id = 'lkasjdflkjasdf'
         pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
 
@@ -481,7 +498,9 @@ class TestRunStorage:
 
         assert storage.add_pipeline_snapshot(pipeline_snapshot) == pipeline_snapshot_id
 
-        assert storage.get_pipeline_snapshot(pipeline_snapshot_id) == pipeline_snapshot
+        assert serialize_pp(storage.get_pipeline_snapshot(pipeline_snapshot_id)) == serialize_pp(
+            pipeline_snapshot
+        )
 
         storage.add_run(run_with_snapshot)
 
@@ -492,9 +511,7 @@ class TestRunStorage:
         assert not storage.has_pipeline_snapshot(pipeline_snapshot_id)
         assert not storage.has_run(run_with_snapshot_id)
 
-    def do_test_single_write_with_missing_snapshot(self, storage):
-        if not isinstance(storage, InMemoryRunStorage):
-            pytest.skip()
+    def test_single_write_with_missing_snapshot(self, storage):
 
         run_with_snapshot_id = 'lkasjdflkjasdf'
         pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])

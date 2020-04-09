@@ -125,3 +125,73 @@ def test_0_7_6_postgres_pre_event_log_migration(hostname, conn_string):
             if row_data.step_key is not None:
                 step_key_records.append(row_data)
         assert len(step_key_records) > 0
+
+
+def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
+    engine = create_engine(conn_string)
+    engine.execute('drop schema public cascade;')
+    engine.execute('create schema public;')
+
+    env = os.environ.copy()
+    env['PGPASSWORD'] = 'test'
+    subprocess.check_call(
+        [
+            'psql',
+            '-h',
+            hostname,
+            '-p',
+            '5432',
+            '-U',
+            'test',
+            '-f',
+            file_relative_path(
+                __file__, 'snapshot_0_7_6_pre_add_pipeline_snapshot/postgres/pg_dump.txt'
+            ),
+        ],
+        env=env,
+    )
+
+    run_id = 'd5f89349-7477-4fab-913e-0925cef0a959'
+
+    with seven.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, 'dagster.yaml'), 'r') as template_fd:
+            with open(os.path.join(tempdir, 'dagster.yaml'), 'w') as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # Runs will appear in DB, but event logs need migration
+        runs = instance.get_runs()
+
+        assert len(runs) == 1
+
+        assert runs[0].run_id == run_id
+
+        run = instance.get_run_by_id(run_id)
+
+        assert run.run_id == run_id
+        assert run.pipeline_snapshot_id is None
+
+        # TODO: enable these tests once hooked into instance
+
+        # @solid
+        # def noop_solid(_):
+        #     pass
+
+        # @pipeline
+        # def noop_pipeline():
+        #     noop_solid()
+
+        # result = execute_pipeline(noop_pipeline, instance=instance)
+
+        # assert result.success
+
+        # runs = instance.get_runs()
+        # assert len(runs) == 2
+
+        # new_run_id = result.run_id
+
+        # new_run = instance.get_run_by_id(new_run_id)
+
+        # assert new_run.pipeline_snapshot_id

@@ -1,0 +1,411 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 11.7 (Debian 11.7-2.pgdg90+1)
+-- Dumped by pg_dump version 12.2
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key character varying
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key character varying,
+    value character varying
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    pipeline_name character varying,
+    status character varying(63),
+    run_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: schedule_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedule_ticks (
+    id integer NOT NULL,
+    repository_name character varying(255),
+    schedule_name character varying,
+    status character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedule_ticks OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedule_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedule_ticks_id_seq OWNER TO test;
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedule_ticks_id_seq OWNED BY public.schedule_ticks.id;
+
+
+--
+-- Name: schedules; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.schedules (
+    id integer NOT NULL,
+    repository_name character varying(255),
+    schedule_name character varying,
+    status character varying(63),
+    schedule_body character varying,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.schedules OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.schedules_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.schedules_id_seq OWNER TO test;
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.schedules_id_seq OWNED BY public.schedules.id;
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: schedule_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks ALTER COLUMN id SET DEFAULT nextval('public.schedule_ticks_id_seq'::regclass);
+
+
+--
+-- Name: schedules id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules ALTER COLUMN id SET DEFAULT nextval('public.schedules_id_seq'::regclass);
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key) FROM stdin;
+1	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "dagit_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[SubprocessExecutionManager] About to start process for pipeline \\"pandas_hello_world_pipeline\\" (run_id: d5f89349-7477-4fab-913e-0925cef0a959).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "[SubprocessExecutionManager] About to start process for pipeline \\"pandas_hello_world_pipeline\\" (run_id: d5f89349-7477-4fab-913e-0925cef0a959).", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612015.159553, "user_message": "[SubprocessExecutionManager] About to start process for pipeline \\"pandas_hello_world_pipeline\\" (run_id: d5f89349-7477-4fab-913e-0925cef0a959)."}	ENGINE_EVENT	2020-04-11 06:33:35.159553	\N
+2	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "dagit_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "85555"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[SubprocessExecutionManager] Started process for pipeline (pid: 85555).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "[SubprocessExecutionManager] Started process for pipeline (pid: 85555).", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612016.278537, "user_message": "[SubprocessExecutionManager] Started process for pipeline (pid: 85555)."}	ENGINE_EVENT	2020-04-11 06:33:36.278537	\N
+3	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of pipeline \\"pandas_hello_world_pipeline\\".", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - PIPELINE_START - Started execution of pipeline \\"pandas_hello_world_pipeline\\".", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612017.504948, "user_message": "Started execution of pipeline \\"pandas_hello_world_pipeline\\"."}	PIPELINE_START	2020-04-11 06:33:37.504948	\N
+4	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "85555"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['mult_solid.compute', 'sum_solid.compute', 'sum_sq_solid.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 85555)", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - ENGINE_EVENT - Executing steps in process (pid: 85555)\\n event_specific_data = {\\"error\\": null, \\"marker_end\\": null, \\"marker_start\\": null, \\"metadata_entries\\": [[\\"pid\\", null, [\\"85555\\"]], [\\"step_keys\\", null, [\\"['mult_solid.compute', 'sum_solid.compute', 'sum_sq_solid.compute']\\"]]]}", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612017.567046, "user_message": "Executing steps in process (pid: 85555)"}	ENGINE_EVENT	2020-04-11 06:33:37.567046	\N
+5	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "mult_solid", "solid_definition": "mult_solid", "step_key": "mult_solid.compute"}, "message": "Started execution of step \\"mult_solid.compute\\".", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "mult_solid", "name": "mult_solid", "parent": null}, "step_key": "mult_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_START - Started execution of step \\"mult_solid.compute\\".\\n               solid = \\"mult_solid\\"\\n    solid_definition = \\"mult_solid\\"\\n            step_key = \\"mult_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "mult_solid.compute", "timestamp": 1586612017.618504, "user_message": "Started execution of step \\"mult_solid.compute\\"."}	STEP_START	2020-04-11 06:33:37.618504	\N
+6	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "num_df", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "num_df", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "mult_solid", "solid_definition": "mult_solid", "step_key": "mult_solid.compute"}, "message": "Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "mult_solid", "name": "mult_solid", "parent": null}, "step_key": "mult_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_INPUT - Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"input_name\\": \\"num_df\\", \\"type_check_data\\": [true, \\"num_df\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\"]}]]]]}\\n               solid = \\"mult_solid\\"\\n    solid_definition = \\"mult_solid\\"\\n            step_key = \\"mult_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "mult_solid.compute", "timestamp": 1586612017.6561332, "user_message": "Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_INPUT	2020-04-11 06:33:37.656133	\N
+7	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "mult_solid.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2", "mult"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "mult_solid", "solid_definition": "mult_solid", "step_key": "mult_solid.compute"}, "message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "mult_solid", "name": "mult_solid", "parent": null}, "step_key": "mult_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"intermediate_materialization\\": null, \\"step_output_handle\\": [\\"mult_solid.compute\\", \\"result\\"], \\"type_check_data\\": [true, \\"result\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\", \\"mult\\"]}]]]]}\\n               solid = \\"mult_solid\\"\\n    solid_definition = \\"mult_solid\\"\\n            step_key = \\"mult_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "mult_solid.compute", "timestamp": 1586612017.689439, "user_message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_OUTPUT	2020-04-11 06:33:37.689439	\N
+8	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 37.87557100000028}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "mult_solid", "solid_definition": "mult_solid", "step_key": "mult_solid.compute"}, "message": "Finished execution of step \\"mult_solid.compute\\" in 37ms.", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "mult_solid", "name": "mult_solid", "parent": null}, "step_key": "mult_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_SUCCESS - Finished execution of step \\"mult_solid.compute\\" in 37ms.\\n event_specific_data = {\\"duration_ms\\": 37.87557100000028}\\n               solid = \\"mult_solid\\"\\n    solid_definition = \\"mult_solid\\"\\n            step_key = \\"mult_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "mult_solid.compute", "timestamp": 1586612017.721548, "user_message": "Finished execution of step \\"mult_solid.compute\\" in 37ms."}	STEP_SUCCESS	2020-04-11 06:33:37.721548	\N
+9	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_solid", "solid_definition": "sum_solid", "step_key": "sum_solid.compute"}, "message": "Started execution of step \\"sum_solid.compute\\".", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_solid", "name": "sum_solid", "parent": null}, "step_key": "sum_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_START - Started execution of step \\"sum_solid.compute\\".\\n               solid = \\"sum_solid\\"\\n    solid_definition = \\"sum_solid\\"\\n            step_key = \\"sum_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_solid.compute", "timestamp": 1586612017.762665, "user_message": "Started execution of step \\"sum_solid.compute\\"."}	STEP_START	2020-04-11 06:33:37.762665	\N
+10	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "num_df", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "num_df", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_solid", "solid_definition": "sum_solid", "step_key": "sum_solid.compute"}, "message": "Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_solid", "name": "sum_solid", "parent": null}, "step_key": "sum_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_INPUT - Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"input_name\\": \\"num_df\\", \\"type_check_data\\": [true, \\"num_df\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\"]}]]]]}\\n               solid = \\"sum_solid\\"\\n    solid_definition = \\"sum_solid\\"\\n            step_key = \\"sum_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_solid.compute", "timestamp": 1586612017.797898, "user_message": "Got input \\"num_df\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_INPUT	2020-04-11 06:33:37.797898	\N
+11	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "sum_solid.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2", "sum"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_solid", "solid_definition": "sum_solid", "step_key": "sum_solid.compute"}, "message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_solid", "name": "sum_solid", "parent": null}, "step_key": "sum_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"intermediate_materialization\\": null, \\"step_output_handle\\": [\\"sum_solid.compute\\", \\"result\\"], \\"type_check_data\\": [true, \\"result\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\", \\"sum\\"]}]]]]}\\n               solid = \\"sum_solid\\"\\n    solid_definition = \\"sum_solid\\"\\n            step_key = \\"sum_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_solid.compute", "timestamp": 1586612017.830553, "user_message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_OUTPUT	2020-04-11 06:33:37.830553	\N
+12	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 26.303399000000116}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_solid", "solid_definition": "sum_solid", "step_key": "sum_solid.compute"}, "message": "Finished execution of step \\"sum_solid.compute\\" in 26ms.", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_solid", "name": "sum_solid", "parent": null}, "step_key": "sum_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_SUCCESS - Finished execution of step \\"sum_solid.compute\\" in 26ms.\\n event_specific_data = {\\"duration_ms\\": 26.303399000000116}\\n               solid = \\"sum_solid\\"\\n    solid_definition = \\"sum_solid\\"\\n            step_key = \\"sum_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_solid.compute", "timestamp": 1586612017.8550599, "user_message": "Finished execution of step \\"sum_solid.compute\\" in 26ms."}	STEP_SUCCESS	2020-04-11 06:33:37.85506	\N
+13	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_sq_solid", "solid_definition": "sum_sq_solid", "step_key": "sum_sq_solid.compute"}, "message": "Started execution of step \\"sum_sq_solid.compute\\".", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_sq_solid", "name": "sum_sq_solid", "parent": null}, "step_key": "sum_sq_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_START - Started execution of step \\"sum_sq_solid.compute\\".\\n               solid = \\"sum_sq_solid\\"\\n    solid_definition = \\"sum_sq_solid\\"\\n            step_key = \\"sum_sq_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_sq_solid.compute", "timestamp": 1586612017.896323, "user_message": "Started execution of step \\"sum_sq_solid.compute\\"."}	STEP_START	2020-04-11 06:33:37.896323	\N
+14	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "sum_df", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "sum_df", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2", "sum"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_sq_solid", "solid_definition": "sum_sq_solid", "step_key": "sum_sq_solid.compute"}, "message": "Got input \\"sum_df\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_sq_solid", "name": "sum_sq_solid", "parent": null}, "step_key": "sum_sq_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_INPUT - Got input \\"sum_df\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"input_name\\": \\"sum_df\\", \\"type_check_data\\": [true, \\"sum_df\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\", \\"sum\\"]}]]]]}\\n               solid = \\"sum_sq_solid\\"\\n    solid_definition = \\"sum_sq_solid\\"\\n            step_key = \\"sum_sq_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_sq_solid.compute", "timestamp": 1586612017.928203, "user_message": "Got input \\"sum_df\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_INPUT	2020-04-11 06:33:37.928203	\N
+15	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "mult_df", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "mult_df", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2", "mult"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_sq_solid", "solid_definition": "sum_sq_solid", "step_key": "sum_sq_solid.compute"}, "message": "Got input \\"mult_df\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_sq_solid", "name": "sum_sq_solid", "parent": null}, "step_key": "sum_sq_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_INPUT - Got input \\"mult_df\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"input_name\\": \\"mult_df\\", \\"type_check_data\\": [true, \\"mult_df\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\", \\"mult\\"]}]]]]}\\n               solid = \\"sum_sq_solid\\"\\n    solid_definition = \\"sum_sq_solid\\"\\n            step_key = \\"sum_sq_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_sq_solid.compute", "timestamp": 1586612017.961459, "user_message": "Got input \\"mult_df\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_INPUT	2020-04-11 06:33:37.961459	\N
+16	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "intermediate_materialization": null, "step_output_handle": {"__class__": "StepOutputHandle", "output_name": "result", "step_key": "sum_sq_solid.compute"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Number of rows in DataFrame", "entry_data": {"__class__": "TextMetadataEntryData", "text": "2"}, "label": "row_count"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "JsonMetadataEntryData", "data": {"columns": ["num1", "num2", "sum", "sum_sq", "sum_mult_sq"]}}, "label": "metadata"}], "success": true}}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_sq_solid", "solid_definition": "sum_sq_solid", "step_key": "sum_sq_solid.compute"}, "message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_sq_solid", "name": "sum_sq_solid", "parent": null}, "step_key": "sum_sq_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed).\\n event_specific_data = {\\"intermediate_materialization\\": null, \\"step_output_handle\\": [\\"sum_sq_solid.compute\\", \\"result\\"], \\"type_check_data\\": [true, \\"result\\", null, [[\\"row_count\\", \\"Number of rows in DataFrame\\", [\\"2\\"]], [\\"metadata\\", null, [{\\"columns\\": [\\"num1\\", \\"num2\\", \\"sum\\", \\"sum_sq\\", \\"sum_mult_sq\\"]}]]]]}\\n               solid = \\"sum_sq_solid\\"\\n    solid_definition = \\"sum_sq_solid\\"\\n            step_key = \\"sum_sq_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_sq_solid.compute", "timestamp": 1586612017.9946759, "user_message": "Yielded output \\"result\\" of type \\"PandasDataFrame\\". (Type check passed)."}	STEP_OUTPUT	2020-04-11 06:33:37.994676	\N
+17	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 33.850225999999765}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "pandas_hello_world_pipeline", "solid": "sum_sq_solid", "solid_definition": "sum_sq_solid", "step_key": "sum_sq_solid.compute"}, "message": "Finished execution of step \\"sum_sq_solid.compute\\" in 33ms.", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": {"__class__": "SolidHandle", "definition_name": "sum_sq_solid", "name": "sum_sq_solid", "parent": null}, "step_key": "sum_sq_solid.compute", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - STEP_SUCCESS - Finished execution of step \\"sum_sq_solid.compute\\" in 33ms.\\n event_specific_data = {\\"duration_ms\\": 33.850225999999765}\\n               solid = \\"sum_sq_solid\\"\\n    solid_definition = \\"sum_sq_solid\\"\\n            step_key = \\"sum_sq_solid.compute\\"", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": "sum_sq_solid.compute", "timestamp": 1586612018.025494, "user_message": "Finished execution of step \\"sum_sq_solid.compute\\" in 33ms."}	STEP_SUCCESS	2020-04-11 06:33:38.025494	\N
+18	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "85555"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['mult_solid.compute', 'sum_solid.compute', 'sum_sq_solid.compute']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 85555) in 458ms", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - ENGINE_EVENT - Finished steps in process (pid: 85555) in 458ms\\n event_specific_data = {\\"error\\": null, \\"marker_end\\": null, \\"marker_start\\": null, \\"metadata_entries\\": [[\\"pid\\", null, [\\"85555\\"]], [\\"step_keys\\", null, [\\"['mult_solid.compute', 'sum_solid.compute', 'sum_sq_solid.compute']\\"]]]}", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612018.05206, "user_message": "Finished steps in process (pid: 85555) in 458ms"}	ENGINE_EVENT	2020-04-11 06:33:38.05206	\N
+19	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of pipeline \\"pandas_hello_world_pipeline\\".", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "pandas_hello_world_pipeline - d5f89349-7477-4fab-913e-0925cef0a959 - PIPELINE_SUCCESS - Finished execution of pipeline \\"pandas_hello_world_pipeline\\".", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612018.079666, "user_message": "Finished execution of pipeline \\"pandas_hello_world_pipeline\\"."}	PIPELINE_SUCCESS	2020-04-11 06:33:38.079666	\N
+20	d5f89349-7477-4fab-913e-0925cef0a959	{"__class__": "DagsterEventRecord", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[SubprocessExecutionManager] Process for pipeline exited (pid: 85555).", "pipeline_name": "pandas_hello_world_pipeline", "solid_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "[SubprocessExecutionManager] Process for pipeline exited (pid: 85555).", "pipeline_name": "pandas_hello_world_pipeline", "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "step_key": null, "timestamp": 1586612018.1645708, "user_message": "[SubprocessExecutionManager] Process for pipeline exited (pid: 85555)."}	ENGINE_EVENT	2020-04-11 06:33:38.164571	\N
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, pipeline_name, status, run_body, create_timestamp, update_timestamp) FROM stdin;
+1	d5f89349-7477-4fab-913e-0925cef0a959	pandas_hello_world_pipeline	SUCCESS	{"__class__": "PipelineRun", "environment_dict": {"solids": {"mult_solid": {"inputs": {"num_df": {"csv": {"path": "data/num_prod.csv"}}}}, "sum_solid": {"inputs": {"num_df": {"csv": {"path": "data/num_prod.csv"}}}}}}, "mode": "default", "parent_run_id": null, "pipeline_name": "pandas_hello_world_pipeline", "pipeline_snapshot_id": null, "previous_run_id": null, "root_run_id": null, "run_id": "d5f89349-7477-4fab-913e-0925cef0a959", "selector": {"__class__": "ExecutionSelector", "name": "pandas_hello_world_pipeline", "solid_subset": null}, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {}}	2020-04-11 13:33:35.168311	2020-04-11 06:33:38.142666
+\.
+
+
+--
+-- Data for Name: schedule_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedule_ticks (id, repository_name, schedule_name, status, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: schedules; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.schedules (id, repository_name, schedule_name, status, schedule_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 20, true);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 1, false);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: schedule_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedule_ticks_id_seq', 1, false);
+
+
+--
+-- Name: schedules_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.schedules_id_seq', 1, false);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: schedule_ticks schedule_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedule_ticks
+    ADD CONSTRAINT schedule_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: schedules schedules_repository_name_schedule_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.schedules
+    ADD CONSTRAINT schedules_repository_name_schedule_name_key UNIQUE (repository_name, schedule_name);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
