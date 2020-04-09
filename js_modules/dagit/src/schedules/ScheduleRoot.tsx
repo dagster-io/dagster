@@ -6,19 +6,13 @@ import {
   RowColumn,
   RowContainer
 } from "../ListComponents";
-import { Query, QueryResult, useQuery } from "react-apollo";
+import { Query, QueryResult } from "react-apollo";
 import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_attemptList,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet,
   ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results
+  ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList_tickSpecificData
 } from "./types/ScheduleRootQuery";
-import {
-  PartitionRunsQuery,
-  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results
-} from "./types/PartitionRunsQuery";
 import Loading from "../Loading";
 import gql from "graphql-tag";
 import { RouteComponentProps } from "react-router";
@@ -39,22 +33,18 @@ import {
   Callout,
   Code,
   Tag,
-  AnchorButton,
-  Button,
-  ButtonGroup
+  AnchorButton
 } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
-import { Line } from "react-chartjs-2";
 import { __RouterContext as RouterContext } from "react-router";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { useState } from "react";
 import * as querystring from "query-string";
 import { ButtonLink } from "../ButtonLink";
+import { PartitionView } from "./PartitionView";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 const NUM_ATTEMPTS_TO_DISPLAY = 25;
-
-type Partition = ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results;
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
@@ -118,23 +108,21 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
                   <TicksTable ticks={scheduleOrError.ticksList} />
                   <AttemptsTable attemptList={scheduleOrError.attemptList} />
                   {scheduleOrError.scheduleDefinition.partitionSet ? (
-                    <>
-                      <PartitionTable
-                        cronSchedule={
-                          scheduleOrError.scheduleDefinition.cronSchedule
-                        }
-                        partitionSet={
-                          scheduleOrError.scheduleDefinition.partitionSet
-                        }
-                        displayed={displayed}
-                        setPageSize={setPageSize}
-                        hasPrevPage={hasPrevPage}
-                        hasNextPage={hasNextPage}
-                        pushCursor={pushCursor}
-                        popCursor={popCursor}
-                        setCursor={setCursor}
-                      />
-                    </>
+                    <PartitionView
+                      cronSchedule={
+                        scheduleOrError.scheduleDefinition.cronSchedule
+                      }
+                      partitionSet={
+                        scheduleOrError.scheduleDefinition.partitionSet
+                      }
+                      displayed={displayed}
+                      setPageSize={setPageSize}
+                      hasPrevPage={hasPrevPage}
+                      hasNextPage={hasNextPage}
+                      pushCursor={pushCursor}
+                      popCursor={popCursor}
+                      setCursor={setCursor}
+                    />
                   ) : null}
                 </ScrollContainer>
               );
@@ -226,7 +214,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
 const TicksTable: React.FunctionComponent<{
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
 }> = ({ ticks }) => {
-  return (
+  return ticks && ticks.length ? (
     <div style={{ marginTop: 10 }}>
       <Header>Schedule Attempts Log</Header>
       <div>
@@ -247,7 +235,7 @@ const TicksTable: React.FunctionComponent<{
         })}
       </div>
     </div>
-  );
+  ) : null;
 };
 
 // TODO: Delete in 0.8.0 release
@@ -357,215 +345,6 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
   );
 };
 
-const PartitionTable: React.FunctionComponent<{
-  partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet;
-  displayed: Partition[] | undefined;
-  setPageSize: React.Dispatch<React.SetStateAction<number>>;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  cronSchedule: string;
-  pushCursor: (nextCursor: string) => void;
-  popCursor: () => void;
-  setCursor: (cursor: string | undefined) => void;
-}> = ({
-  partitionSet,
-  displayed,
-  setPageSize,
-  hasNextPage,
-  hasPrevPage,
-  pushCursor,
-  popCursor,
-  setCursor
-}) => {
-  const { data }: { data?: PartitionRunsQuery } = useQuery(
-    PARTITION_RUNS_QUERY,
-    {
-      variables: {
-        partitionSetName: partitionSet.name
-      }
-    }
-  );
-  if (data?.pipelineRunsOrError.__typename !== "PipelineRuns") {
-    return null;
-  }
-  const runs = data.pipelineRunsOrError.results;
-  const runsByPartition: {
-    [key: string]: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results[];
-  } = {};
-  partitionSet.partitions.results.forEach(
-    partition => (runsByPartition[partition.name] = [])
-  );
-
-  runs.forEach(run => {
-    const tagKV = run.tags.find(tagKV => tagKV.key === "dagster/partition");
-    // need to potentially handle un-matched partitions here
-    // the current behavior is to just ignore them
-    if (runsByPartition[tagKV!.value]) {
-      runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
-    }
-  });
-
-  const latestRunByPartition: {
-    [key: string]: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results | null;
-  } = {};
-
-  for (const partition in runsByPartition) {
-    if (runsByPartition[partition].length > 0) {
-      latestRunByPartition[partition] =
-        runsByPartition[partition][runsByPartition[partition].length - 1];
-    } else {
-      latestRunByPartition[partition] = null;
-    }
-  }
-
-  const stepExecutionTimesByPartition: {
-    [stepKey: string]: {
-      x: string;
-      y: number | null;
-    }[];
-  } = {};
-
-  const pipelineExecutionTimeByPartition: {
-    x: string;
-    y: number | null;
-  }[] = [];
-
-  for (const partition in latestRunByPartition) {
-    const latestRun = latestRunByPartition[partition];
-    if (!latestRun) {
-      continue;
-    }
-
-    const { stats, stepStats } = latestRun;
-    for (const stat of stepStats) {
-      if (stat.endTime && stat.startTime) {
-        const duration = stat.endTime - stat.startTime;
-        if (!stepExecutionTimesByPartition[stat.stepKey]) {
-          stepExecutionTimesByPartition[stat.stepKey] = [];
-        }
-
-        stepExecutionTimesByPartition[stat.stepKey].push({
-          x: partition,
-          y: duration
-        });
-      }
-    }
-    if (
-      stats.__typename === "PipelineRunStatsSnapshot" &&
-      stats.endTime &&
-      stats.startTime
-    ) {
-      const duration = stats.endTime - stats.startTime;
-      pipelineExecutionTimeByPartition.push({
-        x: partition,
-        y: duration
-      });
-    }
-  }
-
-  const datasets = [];
-  datasets.push({
-    label: "Pipeline Execution Time",
-    data: pipelineExecutionTimeByPartition
-  });
-  for (const stepKey in stepExecutionTimesByPartition) {
-    datasets.push({
-      label: stepKey,
-      data: stepExecutionTimesByPartition[stepKey]
-    });
-  }
-
-  const state: any = {
-    labels: partitionSet.partitions.results.map(partition => partition.name),
-    datasets
-  };
-
-  return (
-    <>
-      <Header>{`Partition Set: ${partitionSet.name}`}</Header>
-      <Divider />
-      <ParitionsTableControls>
-        <ButtonGroup>
-          <Button
-            onClick={() => {
-              setPageSize(7);
-            }}
-          >
-            Week
-          </Button>
-          <Button
-            onClick={() => {
-              if (displayed && displayed.length < 31) {
-                setCursor(undefined);
-              }
-              setPageSize(31);
-            }}
-          >
-            Month
-          </Button>
-          <Button
-            onClick={() => {
-              if (displayed && displayed.length < 365) {
-                setCursor(undefined);
-              }
-              setPageSize(365);
-            }}
-          >
-            Year
-          </Button>
-        </ButtonGroup>
-
-        <ButtonGroup>
-          <Button
-            disabled={!hasPrevPage}
-            icon={IconNames.ARROW_LEFT}
-            onClick={() => popCursor()}
-          >
-            Back
-          </Button>
-          <Button
-            disabled={!hasNextPage}
-            rightIcon={IconNames.ARROW_RIGHT}
-            onClick={() =>
-              displayed && pushCursor(displayed[displayed.length - 1].name)
-            }
-          >
-            Next
-          </Button>
-        </ButtonGroup>
-      </ParitionsTableControls>
-
-      <RowContainer style={{ marginBottom: 20 }}>
-        <Line data={state} height={50} />
-      </RowContainer>
-      {Object.keys(runsByPartition).map(partition => (
-        <RowContainer
-          key={partition}
-          style={{ marginBottom: 0, boxShadow: "none" }}
-        >
-          <RowColumn>{partition}</RowColumn>
-          <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
-            {runsByPartition[partition].map(run => (
-              <div
-                key={run.runId}
-                style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
-                }}
-              >
-                <Link to={`/runs/all/${run.runId}`}>
-                  <RunStatus status={run.status} />
-                </Link>
-              </div>
-            ))}
-          </RowColumn>
-        </RowContainer>
-      ))}
-    </>
-  );
-};
-
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery(
     $scheduleName: String!
@@ -634,46 +413,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-export const PARTITION_RUNS_QUERY = gql`
-  query PartitionRunsQuery($partitionSetName: String!) {
-    pipelineRunsOrError(
-      filter: {
-        tags: { key: "dagster/partition_set", value: $partitionSetName }
-      }
-    ) {
-      __typename
-      ... on PipelineRuns {
-        results {
-          runId
-          tags {
-            key
-            value
-          }
-          stats {
-            __typename
-            ... on PipelineRunStatsSnapshot {
-              startTime
-              endTime
-            }
-          }
-          stepStats {
-            __typename
-            stepKey
-            startTime
-            endTime
-          }
-          status
-        }
-      }
-    }
-  }
-`;
-
 const AttemptsTableContainer = styled.div`
   margin: 20px 0;
-`;
-const ParitionsTableControls = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
 `;
