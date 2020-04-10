@@ -81,6 +81,8 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   canCancel: boolean;
   mode: string;
   tags: RunRootQuery_pipelineRunOrError_PipelineRun_tags[];
+  rootRunId: string | null;
+  parentRunId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }

@@ -16,12 +16,12 @@ import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
 import {
-  handleExecutionResult,
-  START_PIPELINE_EXECUTION_MUTATION,
-  LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  getReexecutionVariables
+  handleReexecutionResult,
+  getReexecutionVariables,
+  START_PIPELINE_REEXECUTION_MUTATION,
+  LAUNCH_PIPELINE_REEXECUTION_MUTATION
 } from "./RunUtils";
-import { StartPipelineExecutionVariables } from "./types/StartPipelineExecution";
+import { StartPipelineReexecutionVariables } from "./types/StartPipelineReexecution";
 import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
 import { RunContext } from "./RunContext";
 
@@ -58,6 +58,8 @@ export class Run extends React.Component<IRunProps, IRunState> {
           key
           value
         }
+        rootRunId
+        parentRunId
         pipeline {
           __typename
           ... on PipelineReference {
@@ -150,7 +152,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
           filter={logsFilter}
         >
           {({ filteredNodes, allNodes, loaded }) => (
-            <RunWithData
+            <ReexecuteWithData
               run={run}
               filteredNodes={filteredNodes}
               allNodes={allNodes}
@@ -158,7 +160,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
               logsFilter={logsFilter}
               onSetLogsFilter={logsFilter => this.setState({ logsFilter })}
               onShowStateDetails={this.onShowStateDetails}
-              getExecutionVariables={getReexecutionVariables}
+              getReexecutionVariables={getReexecutionVariables}
             />
           )}
         </LogsProvider>
@@ -167,7 +169,7 @@ export class Run extends React.Component<IRunProps, IRunState> {
   }
 }
 
-interface RunWithDataProps {
+interface ReexecuteWithDataProps {
   run?: RunFragment;
   allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
   filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
@@ -178,27 +180,27 @@ interface RunWithDataProps {
     stepKey: string,
     logs: RunPipelineRunEventFragment[]
   ) => void;
-  getExecutionVariables: (input: {
+  getReexecutionVariables: (input: {
     run: RunFragment;
     stepKey?: string;
     resumeRetry?: boolean;
-  }) => StartPipelineExecutionVariables | undefined;
+  }) => StartPipelineReexecutionVariables | undefined;
 }
 
-const RunWithData = ({
+const ReexecuteWithData = ({
   run,
   allNodes,
   filteredNodes,
   logsFilter,
   logsLoading,
   onSetLogsFilter,
-  getExecutionVariables
-}: RunWithDataProps) => {
-  const [startPipelineExecution] = useMutation(
-    START_PIPELINE_EXECUTION_MUTATION
+  getReexecutionVariables
+}: ReexecuteWithDataProps) => {
+  const [startPipelineReexecution] = useMutation(
+    START_PIPELINE_REEXECUTION_MUTATION
   );
-  const [launchPipelineExecution] = useMutation(
-    LAUNCH_PIPELINE_EXECUTION_MUTATION
+  const [launchPipelineReexecution] = useMutation(
+    LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
@@ -209,25 +211,25 @@ const RunWithData = ({
   };
   const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getExecutionVariables({
+    const variables = getReexecutionVariables({
       run,
       stepKey,
       resumeRetry
     });
-    const result = await startPipelineExecution({ variables });
-    handleExecutionResult(run.pipeline.name, result, {
+    const result = await startPipelineReexecution({ variables });
+    handleReexecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
     });
   };
   const onLaunch = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
-    const variables = getExecutionVariables({
+    const variables = getReexecutionVariables({
       run,
       stepKey,
       resumeRetry
     });
-    const result = await launchPipelineExecution({ variables });
-    handleExecutionResult(run.pipeline.name, result, {
+    const result = await launchPipelineReexecution({ variables });
+    handleReexecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
     });
   };

@@ -65,6 +65,8 @@ export interface RunTableRunFragment {
   stepKeysToExecute: string[] | null;
   canCancel: boolean;
   mode: string;
+  rootRunId: string | null;
+  parentRunId: string | null;
   pipeline: RunTableRunFragment_pipeline;
   stats: RunTableRunFragment_stats;
   tags: RunTableRunFragment_tags[];

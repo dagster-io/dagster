@@ -23,8 +23,8 @@ import {
 import {
   RunStatus,
   titleForRun,
-  handleExecutionResult,
-  START_PIPELINE_EXECUTION_MUTATION,
+  handleReexecutionResult,
+  START_PIPELINE_REEXECUTION_MUTATION,
   DELETE_MUTATION,
   CANCEL_MUTATION,
   getReexecutionVariables
@@ -72,6 +72,8 @@ export class RunTable extends React.Component<RunTableProps> {
         stepKeysToExecute
         canCancel
         mode
+        rootRunId
+        parentRunId
         pipeline {
           __typename
 
@@ -327,7 +329,7 @@ const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment;
 }> = ({ run }) => {
   const variables = React.useContext(RunsQueryVariablesContext);
-  const [reexecute] = useMutation(START_PIPELINE_EXECUTION_MUTATION);
+  const [reexecute] = useMutation(START_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, {
     refetchQueries: [{ query: RUNS_ROOT_QUERY, variables }]
   });
@@ -389,7 +391,7 @@ const RunActionsMenu: React.FunctionComponent<{
                   envYaml
                 })
               });
-              handleExecutionResult(run.pipeline.name, result, {
+              handleReexecutionResult(run.pipeline.name, result, {
                 openInNewWindow: false
               });
             }}

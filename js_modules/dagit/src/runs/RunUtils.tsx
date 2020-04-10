@@ -5,6 +5,8 @@ import { Colors, Spinner } from "@blueprintjs/core";
 
 import { StartPipelineExecution } from "./types/StartPipelineExecution";
 import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
+import { StartPipelineReexecution } from "./types/StartPipelineReexecution";
+import { LaunchPipelineReexecution } from "./types/LaunchPipelineReexecution";
 import gql from "graphql-tag";
 import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
@@ -69,26 +71,62 @@ export function handleExecutionResult(
   }
 }
 
+export function handleReexecutionResult(
+  pipelineName: string,
+  result: void | {
+    data?: StartPipelineReexecution | LaunchPipelineReexecution;
+  },
+  opts: { openInNewWindow: boolean }
+) {
+  if (!result || !result.data) {
+    showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
+    return;
+  }
+
+  const obj = (result.data as StartPipelineReexecution).startPipelineReexecution
+    ? (result.data as StartPipelineReexecution).startPipelineReexecution
+    : (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
+
+  if (
+    obj.__typename === "LaunchPipelineReexecutionSuccess" ||
+    obj.__typename === "StartPipelineReexecutionSuccess"
+  ) {
+    const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
+    if (opts.openInNewWindow) {
+      window.open(url, "_blank");
+    } else {
+      window.location.href = url;
+    }
+  } else if (obj.__typename === "PythonError") {
+    console.log(obj);
+    const message = `${obj.message}`;
+    showCustomAlert({ body: message });
+  } else if (obj.__typename === "StartPipelineReexecutionDisabledError") {
+    const message = `Your instance has been configured to disable local execution.  Please check
+    the run launcher configuration on your dagster instance for more options.`;
+    showCustomAlert({ body: message });
+  } else {
+    let message = `${pipelineName} cannot be executed with the provided config.`;
+
+    if ("errors" in obj) {
+      message += ` Please fix the following errors:\n\n${obj.errors
+        .map(error => error.message)
+        .join("\n\n")}`;
+    }
+
+    showCustomAlert({ body: message });
+  }
+}
+
 function getExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   return {
+    parentRunId: run.runId,
+    rootRunId: run.rootRunId ? run.rootRunId : run.runId,
     tags: [
       ...run.tags.map(tag => ({
         key: tag.key,
         value: tag.value
-      })),
-      {
-        key: "dagster/parent_run_id",
-        value: run.runId
-      },
-      // set root_run_id to be the root run id
-      ...(!run.tags.some(tag => tag.key === "dagster/root_run_id")
-        ? [
-            {
-              key: "dagster/root_run_id",
-              value: run.runId
-            }
-          ]
-        : [])
+      }))
     ]
   };
 }
@@ -128,13 +166,11 @@ export function getReexecutionVariables(input: {
       executionParams["stepKeys"] = [stepKey];
       executionParams["retryRunId"] = run.runId;
     } else {
-      // only pass executionMetadata (e.g. tags) over copy
-      // on full resume-retry or full retry
-      executionParams["executionMetadata"] = getExecutionMetadata(run);
       if (resumeRetry) {
         executionParams["retryRunId"] = run.runId;
       }
     }
+    executionParams["executionMetadata"] = getExecutionMetadata(run);
     return { executionParams };
   } else {
     if (!envYaml) {
@@ -284,6 +320,70 @@ export const CANCEL_MUTATION = gql`
           runId
           canCancel
         }
+      }
+    }
+  }
+`;
+
+export const START_PIPELINE_REEXECUTION_MUTATION = gql`
+  mutation StartPipelineReexecution($executionParams: ExecutionParams!) {
+    startPipelineReexecution(executionParams: $executionParams) {
+      __typename
+      ... on StartPipelineReexecutionSuccess {
+        run {
+          runId
+          pipeline {
+            name
+          }
+          tags {
+            key
+            value
+          }
+          rootRunId
+          parentRunId
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PipelineConfigValidationInvalid {
+        errors {
+          message
+        }
+      }
+      ... on PythonError {
+        message
+        stack
+      }
+    }
+  }
+`;
+
+export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
+  mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
+    launchPipelineReexecution(executionParams: $executionParams) {
+      __typename
+      ... on LaunchPipelineReexecutionSuccess {
+        run {
+          runId
+          pipeline {
+            name
+          }
+          rootRunId
+          parentRunId
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on PipelineConfigValidationInvalid {
+        errors {
+          message
+        }
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }

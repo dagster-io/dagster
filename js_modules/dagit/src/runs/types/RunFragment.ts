@@ -77,6 +77,8 @@ export interface RunFragment {
   canCancel: boolean;
   mode: string;
   tags: RunFragment_tags[];
+  rootRunId: string | null;
+  parentRunId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
 }
