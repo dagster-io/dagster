@@ -76,13 +76,13 @@ def build_run_step_stats_from_events(run_id, records):
             by_step_key[step_key]['start_time'] = event.timestamp
         if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
             by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = DagsterEventType.STEP_FAILURE
+            by_step_key[step_key]['status'] = StepEventStatus.FAILURE
         if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
             by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = DagsterEventType.STEP_SUCCESS
+            by_step_key[step_key]['status'] = StepEventStatus.SUCCESS
         if event.dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
             by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = DagsterEventType.STEP_SKIPPED
+            by_step_key[step_key]['status'] = StepEventStatus.SKIPPED
         if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
             check.inst(event.dagster_event.event_specific_data, StepMaterializationData)
             materialization = event.dagster_event.event_specific_data.materialization

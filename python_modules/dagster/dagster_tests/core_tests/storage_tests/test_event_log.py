@@ -318,22 +318,22 @@ def test_event_log_step_stats(event_storage_factory_cm_fn):
 
         a_stats = [stats for stats in step_stats if stats.step_key == 'A'][0]
         assert a_stats.step_key == 'A'
-        assert a_stats.status == 'STEP_SUCCESS'
+        assert a_stats.status.value == 'SUCCESS'
         assert a_stats.end_time - a_stats.start_time == 100
 
         b_stats = [stats for stats in step_stats if stats.step_key == 'B'][0]
         assert b_stats.step_key == 'B'
-        assert b_stats.status == 'STEP_FAILURE'
+        assert b_stats.status.value == 'FAILURE'
         assert b_stats.end_time - b_stats.start_time == 50
 
         c_stats = [stats for stats in step_stats if stats.step_key == 'C'][0]
         assert c_stats.step_key == 'C'
-        assert c_stats.status == 'STEP_SKIPPED'
+        assert c_stats.status.value == 'SKIPPED'
         assert c_stats.end_time - c_stats.start_time == 25
 
         d_stats = [stats for stats in step_stats if stats.step_key == 'D'][0]
         assert d_stats.step_key == 'D'
-        assert d_stats.status == 'STEP_SUCCESS'
+        assert d_stats.status.value == 'SUCCESS'
         assert d_stats.end_time - d_stats.start_time == 150
         assert len(d_stats.materializations) == 3
         assert len(d_stats.expectation_results) == 2
