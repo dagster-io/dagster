@@ -79,7 +79,7 @@ def test_0_6_6_sqlite_migrate():
 
 
 def test_event_log_migration():
-    test_dir = file_relative_path(__file__, 'snapshot_0_7_6/sqlite')
+    test_dir = file_relative_path(__file__, 'snapshot_0_7_6_pre_event_log_migration/sqlite')
     with restore_directory(test_dir):
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 

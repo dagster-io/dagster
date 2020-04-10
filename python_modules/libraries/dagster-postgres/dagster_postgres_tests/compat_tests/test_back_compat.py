@@ -63,7 +63,7 @@ def test_0_6_6_postgres(hostname, conn_string):
         assert len(instance.all_logs(run_id)) == 89
 
 
-def test_0_7_6_postgres(hostname, conn_string):
+def test_0_7_6_postgres_pre_event_log_migration(hostname, conn_string):
     engine = create_engine(conn_string)
     engine.execute('drop schema public cascade;')
     engine.execute('create schema public;')
@@ -80,7 +80,9 @@ def test_0_7_6_postgres(hostname, conn_string):
             '-U',
             'test',
             '-f',
-            file_relative_path(__file__, 'snapshot_0_7_6/postgres/pg_dump.txt'),
+            file_relative_path(
+                __file__, 'snapshot_0_7_6_pre_event_log_migration/postgres/pg_dump.txt'
+            ),
         ],
         env=env,
     )
