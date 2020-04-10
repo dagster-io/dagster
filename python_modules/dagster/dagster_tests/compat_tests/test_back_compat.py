@@ -160,7 +160,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        # TODO: enable these tests once hooked into instance
+        # TODO: enable these tests once run migration is working
 
         # @solid
         # def noop_solid(_):

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import sys
 import time
 
-from dagster_graphql.client.util import pipeline_run_from_execution_params
 from dagster_graphql.schema.pipelines import DauphinPipeline
 from dagster_graphql.schema.runs import (
     from_compute_log_file,

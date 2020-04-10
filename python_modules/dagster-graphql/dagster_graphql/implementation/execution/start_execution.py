@@ -4,11 +4,18 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import RunConfig, check
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.instance import InstanceCreateRunArgs
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import _check_start_pipeline_execution_errors, _create_pipeline_run
+from .utils import (
+    _check_start_pipeline_execution_errors,
+    _create_pipeline_run,
+    get_step_keys_to_execute,
+)
 
 
 @capture_dauphin_error
@@ -69,7 +76,40 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = instance.get_or_create_run(_create_pipeline_run(instance, pipeline_def, execution_params))
+    if execution_params.execution_metadata.run_id:
+        # If a run_id is provided, use the old get_or_create_run machinery
+        run = instance.get_or_create_run(
+            _create_pipeline_run(instance, pipeline_def, execution_params)
+        )
+    else:
+        # Otherwise we know we are creating a new run, and we can
+        # use the new machinery that persists a pipeline snapshot
+        # with the run.
+        run = instance.create_run_with_snapshot(
+            InstanceCreateRunArgs(
+                pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+                run_id=execution_params.execution_metadata.run_id
+                if execution_params.execution_metadata.run_id
+                else make_new_run_id(),
+                selector=execution_params.selector,
+                environment_dict=execution_params.environment_dict,
+                mode=execution_params.mode,
+                step_keys_to_execute=get_step_keys_to_execute(
+                    instance, pipeline_def, execution_params
+                )
+                or execution_params.step_keys,
+                tags=execution_params.execution_metadata.tags,
+                status=PipelineRunStatus.NOT_STARTED,
+                root_run_id=(
+                    execution_params.execution_metadata.root_run_id
+                    or execution_params.previous_run_id
+                ),
+                parent_run_id=(
+                    execution_params.execution_metadata.parent_run_id
+                    or execution_params.previous_run_id
+                ),
+            )
+        )
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(), pipeline_def, run, instance=instance,

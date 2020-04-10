@@ -85,18 +85,12 @@ class PipelineRun(
         tags=None,
         root_run_id=None,
         parent_run_id=None,
-        previous_run_id=None,
         pipeline_snapshot_id=None,
+        ## GRAVEYARD BELOW
+        # see https://github.com/dagster-io/dagster/issues/2372 for explanation
+        previous_run_id=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
-
-        tags = check.opt_dict_param(tags, 'tags', key_type=str)
-        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
-        if not selector:
-            selector = ExecutionSelector(pipeline_name)
-
-        if not status:
-            status = PipelineRunStatus.NOT_STARTED
 
         root_run_id = check.opt_str_param(root_run_id, 'root_run_id')
         parent_run_id = check.opt_str_param(parent_run_id, 'parent_run_id')
@@ -110,6 +104,8 @@ class PipelineRun(
             ),
         )
 
+        # Historical runs may have previous_run_id set, in which case
+        # that previous ID becomes both the root and the parent
         if previous_run_id:
             if not (parent_run_id and root_run_id):
                 parent_run_id = previous_run_id
@@ -123,11 +119,15 @@ class PipelineRun(
                 environment_dict, 'environment_dict', key_type=str
             ),
             mode=check.str_param(mode, 'mode'),
-            selector=selector,
+            selector=check.opt_inst_param(
+                selector, 'selector', ExecutionSelector, ExecutionSelector(pipeline_name)
+            ),
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
-            status=status,
+            status=check.opt_inst_param(
+                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
+            ),
             tags=check.opt_dict_param(tags, 'tags', key_type=str),
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
@@ -161,20 +161,7 @@ class PipelineRun(
         )
 
     def run_with_status(self, status):
-        return PipelineRun(
-            pipeline_name=self.pipeline_name,
-            run_id=self.run_id,
-            environment_dict=self.environment_dict,
-            mode=self.mode,
-            selector=self.selector,
-            step_keys_to_execute=self.step_keys_to_execute,
-            tags=self.tags,
-            status=status,
-            root_run_id=self.root_run_id,
-            parent_run_id=self.parent_run_id,
-            previous_run_id=self.previous_run_id,
-            pipeline_snapshot_id=self.pipeline_snapshot_id,
-        )
+        return self._replace(status=status)
 
     @property
     def is_finished(self):

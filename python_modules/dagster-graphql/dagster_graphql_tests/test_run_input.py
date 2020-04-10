@@ -1,7 +1,5 @@
-from dagster_graphql.client.util import (
-    execution_params_from_pipeline_run,
-    pipeline_run_from_execution_params,
-)
+from dagster_graphql.client.util import execution_params_from_pipeline_run
+from dagster_graphql.implementation.execution.utils import pipeline_run_from_execution_params
 from dagster_graphql.schema.roots import execution_params_from_graphql
 
 from dagster.core.definitions.pipeline import ExecutionSelector

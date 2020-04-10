@@ -11,13 +11,14 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
+from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
@@ -65,6 +66,54 @@ class _EventListenerLogHandler(logging.Handler):
             logging.critical('Error during instance event listen')
             logging.exception(str(e))
             raise
+
+
+class InstanceCreateRunArgs(
+    namedtuple(
+        '_InstanceCreateRunArgs',
+        'pipeline_snapshot run_id environment_dict mode selector '
+        'step_keys_to_execute status tags root_run_id parent_run_id',
+    ),
+):
+    def __new__(
+        cls,
+        pipeline_snapshot,
+        run_id,
+        environment_dict,
+        mode,
+        selector,
+        step_keys_to_execute,
+        status,
+        tags,
+        root_run_id,
+        parent_run_id,
+    ):
+
+        from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+
+        return super(InstanceCreateRunArgs, cls).__new__(
+            cls,
+            pipeline_snapshot=check.inst_param(
+                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            ),
+            run_id=check.str_param(run_id, 'run_id'),
+            environment_dict=check.opt_dict_param(
+                environment_dict, 'environment_dict', key_type=str
+            ),
+            mode=check.str_param(mode, 'mode'),
+            selector=check.opt_inst_param(
+                selector, 'selector', ExecutionSelector, ExecutionSelector(pipeline_snapshot.name)
+            ),
+            step_keys_to_execute=None
+            if step_keys_to_execute is None
+            else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
+            status=check.opt_inst_param(
+                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
+            ),
+            tags=check.opt_dict_param(tags, 'tags', key_type=str),
+            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
+            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
+        )
 
 
 class InstanceType(Enum):
@@ -380,6 +429,36 @@ class DagsterInstance:
 
         run = self._run_storage.add_run(pipeline_run)
         return run
+
+    def create_run_with_snapshot(self, create_run_args):
+        check.inst_param(create_run_args, 'create_run_args', InstanceCreateRunArgs)
+
+        from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+
+        snapshot_id = create_pipeline_snapshot_id(create_run_args.pipeline_snapshot)
+
+        if not self._run_storage.has_pipeline_snapshot(snapshot_id):
+            returned_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                create_run_args.pipeline_snapshot
+            )
+
+            check.invariant(snapshot_id == returned_snapshot_id)
+
+        return self.create_run(
+            PipelineRun(
+                pipeline_name=create_run_args.pipeline_snapshot.name,
+                pipeline_snapshot_id=snapshot_id,
+                run_id=create_run_args.run_id,
+                environment_dict=create_run_args.environment_dict,
+                mode=create_run_args.mode,
+                selector=create_run_args.selector,
+                step_keys_to_execute=create_run_args.step_keys_to_execute,
+                status=create_run_args.status,
+                tags=create_run_args.tags,
+                parent_run_id=create_run_args.parent_run_id,
+                root_run_id=create_run_args.root_run_id,
+            )
+        )
 
     def get_or_create_run(self, pipeline_run):
         # This eventually needs transactional/locking semantics

@@ -238,14 +238,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
         with self.connect() as conn:
             snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-            runs_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
+            snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
                 snapshot_id=snapshot_id,
                 snapshot_body=zlib.compress(
                     serialize_dagster_namedtuple(pipeline_snapshot).encode()
                 ),
                 snapshot_type='PIPELINE',
             )
-            conn.execute(runs_insert)
+            conn.execute(snapshot_insert)
             return snapshot_id
 
     def get_pipeline_snapshot(self, pipeline_snapshot_id):

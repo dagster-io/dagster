@@ -20,8 +20,7 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
     UserFailureData,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.utils import make_new_run_id
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.error import SerializableErrorInfo
 
 HANDLED_EVENTS = {
@@ -208,29 +207,6 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         step_kind_value=step_kind_value,
         logging_tags=None,
         event_specific_data=event_specific_data,
-    )
-
-
-def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=None):
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    return PipelineRun(
-        pipeline_name=execution_params.selector.name,
-        run_id=execution_params.execution_metadata.run_id
-        if execution_params.execution_metadata.run_id
-        else make_new_run_id(),
-        selector=execution_params.selector,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
-        step_keys_to_execute=step_keys_to_execute or execution_params.step_keys,
-        tags=execution_params.execution_metadata.tags,
-        root_run_id=(
-            execution_params.execution_metadata.root_run_id or execution_params.previous_run_id
-        ),
-        parent_run_id=(
-            execution_params.execution_metadata.parent_run_id or execution_params.previous_run_id
-        ),
-        previous_run_id=execution_params.previous_run_id,
-        status=PipelineRunStatus.NOT_STARTED,
     )
 
 

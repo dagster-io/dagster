@@ -1,8 +1,9 @@
 import pytest
 
-from dagster import PipelineDefinition
+from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun
 
 
@@ -43,3 +44,24 @@ def test_filesystem_persist_one_run(tmpdir):
 
 def test_in_memory_persist_one_run():
     do_test_single_write_read(DagsterInstance.ephemeral())
+
+
+def test_create_pipeline_snapshot():
+    @solid
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    instance = DagsterInstance.local_temp()
+
+    result = execute_pipeline(noop_pipeline, instance=instance)
+    assert result.success
+
+    run = instance.get_run_by_id(result.run_id)
+
+    assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
+        noop_pipeline.get_pipeline_snapshot()
+    )

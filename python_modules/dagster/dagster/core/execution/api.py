@@ -9,7 +9,7 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
-from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance, InstanceCreateRunArgs
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import telemetry_wrapper
@@ -379,9 +379,9 @@ def step_output_event_filter(pipe_iterator):
 
 
 def _create_run(instance, pipeline_def, run_config, environment_dict):
-    return instance.create_run(
-        PipelineRun(
-            pipeline_name=pipeline_def.name,
+    return instance.create_run_with_snapshot(
+        InstanceCreateRunArgs(
+            pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
             run_id=run_config.run_id,
             environment_dict=environment_dict,
             mode=run_config.mode,

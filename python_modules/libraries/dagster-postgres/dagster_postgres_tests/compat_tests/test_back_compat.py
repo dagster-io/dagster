@@ -5,7 +5,7 @@ import subprocess
 
 from sqlalchemy import create_engine
 
-from dagster import seven
+from dagster import execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
@@ -161,7 +161,9 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
-        # Runs will appear in DB, but event logs need migration
+        # ensure migration is run
+        instance.upgrade()
+
         runs = instance.get_runs()
 
         assert len(runs) == 1
@@ -173,25 +175,23 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        # TODO: enable these tests once hooked into instance
+        @solid
+        def noop_solid(_):
+            pass
 
-        # @solid
-        # def noop_solid(_):
-        #     pass
+        @pipeline
+        def noop_pipeline():
+            noop_solid()
 
-        # @pipeline
-        # def noop_pipeline():
-        #     noop_solid()
+        result = execute_pipeline(noop_pipeline, instance=instance)
 
-        # result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
 
-        # assert result.success
+        runs = instance.get_runs()
+        assert len(runs) == 2
 
-        # runs = instance.get_runs()
-        # assert len(runs) == 2
+        new_run_id = result.run_id
 
-        # new_run_id = result.run_id
+        new_run = instance.get_run_by_id(new_run_id)
 
-        # new_run = instance.get_run_by_id(new_run_id)
-
-        # assert new_run.pipeline_snapshot_id
+        assert new_run.pipeline_snapshot_id
