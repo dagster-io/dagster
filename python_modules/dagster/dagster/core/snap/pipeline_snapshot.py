@@ -28,6 +28,12 @@ class PipelineIndex:
             + pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
+        self._dagster_type_snaps_by_name_index = {
+            dagster_type_snap.name: dagster_type_snap
+            for dagster_type_snap in pipeline_snapshot.dagster_type_namespace_snapshot.all_dagster_type_snaps_by_key.values()
+            if dagster_type_snap.name
+        }
+
         self.dep_structure_index = DependencyStructureIndex(
             pipeline_snapshot.dep_structure_snapshot
         )
@@ -48,6 +54,12 @@ class PipelineIndex:
     @property
     def tags(self):
         return self.pipeline_snapshot.tags
+
+    def has_dagster_type_name(self, type_name):
+        return type_name in self._dagster_type_snaps_by_name_index
+
+    def get_dagster_type_from_name(self, type_name):
+        return self._dagster_type_snaps_by_name_index[type_name]
 
     def get_solid_def_snap(self, solid_def_name):
         check.str_param(solid_def_name, 'solid_def_name')

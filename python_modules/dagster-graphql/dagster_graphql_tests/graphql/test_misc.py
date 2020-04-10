@@ -2,17 +2,19 @@ import csv
 from collections import OrderedDict
 
 import pytest
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLContext,
-    DagsterSnapshotGraphQLContext,
-)
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_graphql_tests.graphql.setup import define_repository, define_test_context
+from dagster_graphql_tests.graphql.setup import (
+    define_repository,
+    define_test_context,
+    define_test_snapshot_context,
+)
 
 from dagster import (
+    DagsterInstance,
     DependencyDefinition,
     ExecutionTargetHandle,
     InputDefinition,
@@ -26,8 +28,6 @@ from dagster import (
     input_hydration_config,
     output_materialization_config,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
 
 
 @input_hydration_config(Path)
@@ -184,11 +184,7 @@ def test_pipelines_or_error():
 
 def test_pipelines_or_error_with_container_context():
     result = execute_dagster_graphql(
-        DagsterSnapshotGraphQLContext(
-            repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
-            instance=DagsterInstance.ephemeral(),
-            execution_manager=SynchronousExecutionManager(),
-        ),
+        define_test_snapshot_context(),
         '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
     )
     assert not result.errors
@@ -289,11 +285,7 @@ def test_pipeline_or_error_by_name_not_found():
 
 def test_pipeline_or_error_with_container_context():
     result = execute_dagster_graphql(
-        DagsterSnapshotGraphQLContext(
-            instance=DagsterInstance.ephemeral(),
-            execution_manager=SynchronousExecutionManager(),
-            repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
-        ),
+        define_test_snapshot_context(),
         '''
         { 
             pipelineOrError(params: {name: "csv_hello_world_two" }) { 
@@ -312,11 +304,7 @@ def test_pipeline_or_error_with_container_context():
 
 def test_pipeline_or_error_with_container_context_preset_empty_ok():
     result = execute_dagster_graphql(
-        DagsterSnapshotGraphQLContext(
-            instance=DagsterInstance.ephemeral(),
-            execution_manager=SynchronousExecutionManager(),
-            repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
-        ),
+        define_test_snapshot_context(),
         '''
         { 
             pipelineOrError(params: {name: "csv_hello_world" }) { 
