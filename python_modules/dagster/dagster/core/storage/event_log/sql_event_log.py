@@ -45,8 +45,11 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(event, 'event', EventRecord)
 
         dagster_event_type = None
+        step_key = event.step_key
+
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
+            step_key = event.dagster_event.step_key
 
         run_id = event.run_id
 
@@ -56,7 +59,7 @@ class SqlEventLogStorage(EventLogStorage):
             event=serialize_dagster_namedtuple(event),
             dagster_event_type=dagster_event_type,
             timestamp=utc_datetime_from_timestamp(event.timestamp),
-            step_key=event.step_key,
+            step_key=step_key,
         )
 
         with self.connect(run_id) as conn:
