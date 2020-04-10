@@ -1,7 +1,7 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.repository_snapshot import RepositoryIndex, RepositorySnapshot
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
@@ -12,6 +12,7 @@ class DagsterSnapshotGraphQLContext(object):
         self._repository_snapshot = check.inst_param(
             repository_snapshot, 'repository_snapshot', RepositorySnapshot
         )
+        self._repository_index = RepositoryIndex(self._repository_snapshot)
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
@@ -25,6 +26,9 @@ class DagsterSnapshotGraphQLContext(object):
     def get_repository_snapshot(self):
         return self._repository_snapshot
 
+    def get_repository_index(self):
+        return self._repository_index
+
 
 class DagsterGraphQLContext(object):
     def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
@@ -36,6 +40,7 @@ class DagsterGraphQLContext(object):
         )
         self.version = version
         self.repository_definition = self.get_handle().build_repository_definition()
+        self._repository_index = RepositoryIndex.from_repository_def(self.repository_definition)
 
         self._cached_pipelines = {}
         self.scheduler_handle = self.get_handle().build_scheduler_handle()
@@ -74,6 +79,9 @@ class DagsterGraphQLContext(object):
 
     def get_repository(self):
         return self.repository_definition
+
+    def get_repository_index(self):
+        return self._repository_index
 
     def get_pipeline(self, pipeline_name):
         if not pipeline_name in self._cached_pipelines:

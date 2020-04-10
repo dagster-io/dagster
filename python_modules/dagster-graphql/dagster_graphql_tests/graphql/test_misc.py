@@ -2,8 +2,6 @@ import csv
 from collections import OrderedDict
 
 import pytest
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
@@ -14,9 +12,7 @@ from dagster_graphql_tests.graphql.setup import (
 )
 
 from dagster import (
-    DagsterInstance,
     DependencyDefinition,
-    ExecutionTargetHandle,
     InputDefinition,
     Materialization,
     OutputDefinition,
@@ -199,20 +195,6 @@ def define_test_repository():
     return RepositoryDefinition(
         name='test', pipeline_dict={'pipeline': define_circular_dependency_pipeline}
     )
-
-
-def test_pipelines_or_error_invalid():
-    context = DagsterGraphQLContext(
-        handle=ExecutionTargetHandle.for_repo_fn(define_test_repository),
-        instance=DagsterInstance.ephemeral(),
-        execution_manager=SynchronousExecutionManager(),
-    )
-
-    result = execute_dagster_graphql(
-        context, '{ pipelinesOrError { ... on PythonError { message } } }'
-    )
-    msg = result.data['pipelinesOrError']['message']
-    assert 'circular reference detected in solid "csolid"' in msg
 
 
 def test_pipeline_by_name():

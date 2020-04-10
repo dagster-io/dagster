@@ -444,6 +444,24 @@ class DauphinResourceRequirement(dauphin.ObjectType):
         self.resource_key = resource_key
 
 
+class DauphinUsedSolid(dauphin.ObjectType):
+    class Meta(object):
+        name = 'UsedSolid'
+        description = '''A solid definition and it's invocations within the repo.'''
+
+    definition = dauphin.NonNull('ISolidDefinition')
+    invocations = dauphin.non_null_list('SolidInvocationSite')
+
+
+class DauphinSolidInvocationSite(dauphin.ObjectType):
+    class Meta(object):
+        name = 'SolidInvocationSite'
+        description = '''An invocation of a solid within a repo.'''
+
+    pipeline = dauphin.NonNull('Pipeline')
+    solidHandle = dauphin.NonNull('SolidHandle')
+
+
 def build_dauphin_solids(pipeline_index, current_dep_index):
     check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
     return sorted(

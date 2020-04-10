@@ -1,6 +1,4 @@
 # commment
-from collections import defaultdict
-
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.context import DagsterSnapshotGraphQLContext
 from dagster_graphql.implementation.environment_schema import (
@@ -43,6 +41,7 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_or_error,
     get_scheduler_or_error,
 )
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.fetch_types import get_dagster_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
@@ -56,7 +55,6 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 from .config_types import to_dauphin_config_type
 from .runs import DauphinPipelineRunStatus
 from .schedules import DauphinStartScheduleMutation, DauphinStopRunningScheduleMutation
-from .solids import build_dauphin_solid_handles
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -202,46 +200,10 @@ class DauphinQuery(dauphin.ObjectType):
         return get_run_tags(graphene_info)
 
     def resolve_usedSolid(self, graphene_info, name):
-        repository = graphene_info.context.repository_definition
-        invocations = []
-        definition = None
-
-        for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(
-                pipeline.get_pipeline_index(), pipeline.get_pipeline_index().dep_structure_index
-            ):
-                if handle.handleID.definition_name == name:
-                    if definition is None:
-                        definition = handle.solid.resolve_definition(graphene_info)
-                    invocations.append(
-                        DauphinSolidInvocationSite(pipeline=pipeline, solidHandle=handle)
-                    )
-
-        return DauphinUsedSolid(definition=definition, invocations=invocations)
+        return get_solid(graphene_info, name)
 
     def resolve_usedSolids(self, graphene_info):
-        repository = graphene_info.context.repository_definition
-        inv_by_def_name = defaultdict(list)
-        definitions = []
-
-        for pipeline in repository.get_all_pipelines():
-            for handle in build_dauphin_solid_handles(
-                pipeline.get_pipeline_index(), pipeline.get_pipeline_index().dep_structure_index
-            ):
-                definition = handle.solid.get_dauphin_solid_definition()
-                if definition.name not in inv_by_def_name:
-                    definitions.append(definition)
-                inv_by_def_name[definition.name].append(
-                    DauphinSolidInvocationSite(pipeline=pipeline, solidHandle=handle)
-                )
-
-        return map(
-            lambda d: DauphinUsedSolid(
-                definition=d,
-                invocations=sorted(inv_by_def_name[d.name], key=lambda i: i.solidHandle.handleID),
-            ),
-            sorted(definitions, key=lambda d: d.name),
-        )
+        return get_solids(graphene_info)
 
     def resolve_isPipelineConfigValid(self, graphene_info, pipeline, **kwargs):
         return validate_pipeline_config(
@@ -675,24 +637,6 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
         return PipelineRunsFilter(
             run_id=self.run_id, pipeline_name=self.pipeline_name, tags=tags, status=status,
         )
-
-
-class DauphinUsedSolid(dauphin.ObjectType):
-    class Meta(object):
-        name = 'UsedSolid'
-        description = '''A solid definition and it's invocations within the repo.'''
-
-    definition = dauphin.NonNull('ISolidDefinition')
-    invocations = dauphin.non_null_list('SolidInvocationSite')
-
-
-class DauphinSolidInvocationSite(dauphin.ObjectType):
-    class Meta(object):
-        name = 'SolidInvocationSite'
-        description = '''An invocation of a solid within a repo.'''
-
-    pipeline = dauphin.NonNull('Pipeline')
-    solidHandle = dauphin.NonNull('SolidHandle')
 
 
 class DauphinPipelineTagAndValues(dauphin.ObjectType):
