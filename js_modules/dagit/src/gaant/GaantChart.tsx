@@ -77,7 +77,7 @@ export function setHighlightedGaantChartTime(
  * can be used as the input to the "solid query" filtering algorithm. The idea
  * is that this data structure is generic, but it's really a fake solid tree.
  */
-const toGraphQueryItems = weakmapMemoize(
+export const toGraphQueryItems = weakmapMemoize(
   (plan: GaantChartExecutionPlanFragment) => {
     const nodeTable: { [key: string]: IGaantNode } = {};
 

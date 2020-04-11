@@ -8,10 +8,14 @@ import {
 } from "./types/ScheduleRootQuery";
 import {
   PartitionRunsQuery,
-  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results
+  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results,
+  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan
 } from "./types/PartitionRunsQuery";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
+import { GraphQueryInput } from "../GraphQueryInput";
+import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
+import { GaantChart, toGraphQueryItems } from "../gaant/GaantChart";
 
 import { RunStatus } from "../runs/RunUtils";
 import styled from "styled-components/macro";
@@ -20,6 +24,7 @@ import { IconNames } from "@blueprintjs/icons";
 import { Line } from "react-chartjs-2";
 
 type Partition = ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results;
+type ExecutionPlan = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan | null;
 type Run = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results;
 
 interface PartitionViewProps extends PartitionPagerProps {
@@ -40,6 +45,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = props 
     return null;
   }
   const runs = data.pipelineRunsOrError.results;
+  const latestRun = runs[0];
+  const executionPlan: ExecutionPlan = latestRun.executionPlan;
   const runsByPartition: { [key: string]: Run[] } = {};
   partitionSet.partitions.results.forEach(
     partition => (runsByPartition[partition.name] = [])
@@ -61,6 +68,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = props 
       <PartitionDurationGraph
         partitions={partitionSet.partitions.results}
         runsByPartition={runsByPartition}
+        executionPlan={executionPlan}
       />
       <PartitionTable
         runsByPartition={runsByPartition}
@@ -73,26 +81,72 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = props 
 interface LongitudinalPartitionProps {
   partitions: Partition[];
   runsByPartition: { [key: string]: Run[] };
+  executionPlan?: ExecutionPlan;
 }
 
 const PartitionDurationGraph: React.FunctionComponent<LongitudinalPartitionProps> = ({
   partitions,
-  runsByPartition
+  runsByPartition,
+  executionPlan
 }) => {
   const durationData = _getDurationData(runsByPartition);
+  const graph: GraphQueryItem[] = executionPlan
+    ? toGraphQueryItems(executionPlan)
+    : [];
+  const [query, setQuery] = React.useState("*");
+  const onUpdateQuery = (query: string) => {
+    setQuery(query);
+  };
+  const chart = React.useRef<Line>(null);
+
+  const selectedSteps = filterByQuery(graph, query).all.map(node => node.name);
+
   const data = {
     labels: partitions.map(partition => partition.name),
-    datasets: Object.keys(durationData).map(label => ({
-      label,
-      data: durationData[label]
-    }))
+    datasets: Object.keys(durationData)
+      .filter(
+        label =>
+          !query.trim() || query.trim() === "*" || selectedSteps.includes(label)
+      )
+      .map(label => ({
+        label,
+        data: durationData[label],
+        borderColor: _lineColor(label),
+        backgroundColor: "rgba(0,0,0,0)"
+      }))
   };
 
   return (
-    <RowContainer style={{ marginBottom: 20 }}>
-      <Line data={data} height={50} />
-    </RowContainer>
+    <>
+      <div style={{ paddingBottom: 50, position: "relative" }}>
+        <GraphQueryInput
+          items={graph}
+          value={query}
+          placeholder="Type a Step Subset"
+          onChange={onUpdateQuery}
+        />
+      </div>
+      <RowContainer style={{ marginBottom: 20 }}>
+        <Line data={data} height={50} ref={chart} />
+      </RowContainer>
+    </>
   );
+};
+
+const _lineColor = (str: string) => {
+  let seed = 0;
+  for (let i = 0; i < str.length; i++) {
+    seed = ((seed << 5) - seed + str.charCodeAt(i)) | 0;
+  }
+
+  const random255 = (x: number) => {
+    const value = Math.sin(x) * 10000;
+    return 255 * (value - Math.floor(value));
+  };
+
+  return `rgb(${random255(seed++)}, ${random255(seed++)}, ${random255(
+    seed++
+  )})`;
 };
 
 const _getDurationData = (runsByPartition: { [key: string]: Run[] }) => {
@@ -192,10 +246,14 @@ export const PARTITION_RUNS_QUERY = gql`
             endTime
           }
           status
+          executionPlan {
+            ...GaantChartExecutionPlanFragment
+          }
         }
       }
     }
   }
+  ${GaantChart.fragments.GaantChartExecutionPlanFragment}
 `;
 
 interface PartitionPagerProps {

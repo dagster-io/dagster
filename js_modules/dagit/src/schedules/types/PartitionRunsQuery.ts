@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionRunsQuery
@@ -38,6 +38,41 @@ export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_ste
   endTime: number | null;
 }
 
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn_outputs_type {
+  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  name: string | null;
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn_outputs {
+  __typename: "ExecutionStepOutput";
+  name: string;
+  type: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn_outputs_type;
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn {
+  __typename: "ExecutionStep";
+  key: string;
+  outputs: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn_outputs[];
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs {
+  __typename: "ExecutionStepInput";
+  dependsOn: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn[];
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps {
+  __typename: "ExecutionStep";
+  key: string;
+  kind: StepKind;
+  inputs: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs[];
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan {
+  __typename: "ExecutionPlan";
+  steps: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps[];
+  artifactsPersisted: boolean;
+}
+
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
   runId: string;
@@ -45,6 +80,7 @@ export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results {
   stats: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   stepStats: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats[];
   status: PipelineRunStatus;
+  executionPlan: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan | null;
 }
 
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns {
