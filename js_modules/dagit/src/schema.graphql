@@ -420,7 +420,6 @@ interface IPipelineSnapshot {
   description: String
   runtimeTypes: [RuntimeType!]!
   solids: [Solid!]!
-  runs: [PipelineRun!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
@@ -667,12 +666,12 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   name: String!
   description: String
   runtimeTypes: [RuntimeType!]!
-  runs: [PipelineRun!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   presets: [PipelinePreset!]!
+  runs: [PipelineRun!]!
 }
 
 interface PipelineConfigValidationError {
@@ -826,12 +825,18 @@ type PipelineSnapshot {
   description: String
   runtimeTypes: [RuntimeType!]!
   solids: [Solid!]!
-  runs: [PipelineRun!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
 }
+
+type PipelineSnapshotNotFoundError implements Error {
+  message: String!
+  snapshotId: String!
+}
+
+union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
 
 union PipelinesOrError = PipelineConnection | PythonError
 
@@ -883,6 +888,7 @@ type Query {
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
   pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
+  pipelineSnapshotOrError(snapshotId: String!): PipelineSnapshotOrError!
   runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!

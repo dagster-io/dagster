@@ -50,7 +50,6 @@ class DauphinIPipelineSnapshotMixin(object):
     description = dauphin.String()
     runtime_types = dauphin.non_null_list('RuntimeType')
     solids = dauphin.non_null_list('Solid')
-    runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
     solid_handles = dauphin.Field(
         dauphin.non_null_list('SolidHandle'), parentHandleID=dauphin.String()
@@ -82,14 +81,6 @@ class DauphinIPipelineSnapshotMixin(object):
     def resolve_solids(self, _graphene_info):
         pipeline_index = self.get_pipeline_index()
         return build_dauphin_solids(pipeline_index, pipeline_index.dep_structure_index)
-
-    def resolve_runs(self, graphene_info):
-        return [
-            graphene_info.schema.type_named('PipelineRun')(r)
-            for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(pipeline_name=self.get_pipeline_index().name)
-            )
-        ]
 
     def resolve_modes(self, _):
         pipeline_snapshot = self.get_pipeline_index().pipeline_snapshot
@@ -133,7 +124,6 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
     description = dauphin.String()
     runtime_types = dauphin.non_null_list('RuntimeType')
     solids = dauphin.non_null_list('Solid')
-    runs = dauphin.non_null_list('PipelineRun')
     modes = dauphin.non_null_list('Mode')
     solid_handles = dauphin.Field(
         dauphin.non_null_list('SolidHandle'), parentHandleID=dauphin.String()
@@ -150,6 +140,7 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         interfaces = (DauphinSolidContainer, DauphinPipelineReference, DauphinIPipelineSnapshot)
 
     presets = dauphin.non_null_list('PipelinePreset')
+    runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, pipeline_index, presets=None):
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
@@ -163,6 +154,14 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         return [
             DauphinPipelinePreset(preset, self._pipeline_index.name)
             for preset in sorted(self._presets, key=lambda item: item.name)
+        ]
+
+    def resolve_runs(self, graphene_info):
+        return [
+            graphene_info.schema.type_named('PipelineRun')(r)
+            for r in graphene_info.context.instance.get_runs(
+                filters=PipelineRunsFilter(pipeline_name=self.get_pipeline_index().name)
+            )
         ]
 
     @staticmethod
@@ -322,3 +321,9 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
     def get_pipeline_index(self):
         return self._pipeline_index
+
+
+class DauphinPipelineSnapshotOrError(dauphin.Union):
+    class Meta(object):
+        name = 'PipelineSnapshotOrError'
+        types = ('PipelineSnapshot', 'PipelineSnapshotNotFoundError', 'PythonError')

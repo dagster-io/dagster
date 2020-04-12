@@ -13,12 +13,33 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
+def get_pipeline_snapshot(graphene_info, snapshot_id):
+    check.str_param(snapshot_id, 'snapshot_id')
+    pipeline_snapshot = graphene_info.context.instance.get_pipeline_snapshot(snapshot_id)
+    return DauphinPipelineSnapshot(PipelineIndex(pipeline_snapshot))
+
+
 @capture_dauphin_error
-def get_pipeline_snapshot_or_error(graphene_info, subset_id):
-    check.str_param(subset_id, 'subset_id')
-    selector = ExecutionSelector(subset_id)
-    pipeline_def = get_dauphin_pipeline_from_selector(graphene_info, selector)
-    return DauphinPipelineSnapshot(pipeline_def.get_pipeline_index())
+def get_pipeline_snapshot_or_error(graphene_info, snapshot_id):
+    check.str_param(snapshot_id, 'snapshot_id')
+    instance = graphene_info.context.instance
+    return _get_dauphin_pipeline_snapshot_from_instance(instance, snapshot_id)
+
+
+# extracted this out to test
+def _get_dauphin_pipeline_snapshot_from_instance(instance, snapshot_id):
+    from dagster_graphql.schema.errors import DauphinPipelineSnapshotNotFoundError
+
+    if not instance.has_pipeline_snapshot(snapshot_id):
+        raise UserFacingGraphQLError(DauphinPipelineSnapshotNotFoundError(snapshot_id))
+
+    pipeline_snapshot = instance.get_pipeline_snapshot(snapshot_id)
+
+    if not pipeline_snapshot:
+        # Either a temporary error or it has been deleted in the interim
+        raise UserFacingGraphQLError(DauphinPipelineSnapshotNotFoundError(snapshot_id))
+
+    return DauphinPipelineSnapshot(PipelineIndex(pipeline_snapshot))
 
 
 @capture_dauphin_error

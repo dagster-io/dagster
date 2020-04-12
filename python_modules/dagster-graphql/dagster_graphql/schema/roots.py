@@ -26,6 +26,7 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_def_from_selector,
     get_pipeline_or_error,
     get_pipeline_or_raise,
+    get_pipeline_snapshot,
     get_pipeline_snapshot_or_error,
     get_pipelines_or_error,
     get_pipelines_or_raise,
@@ -75,6 +76,11 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineSnapshot = dauphin.Field(
         dauphin.NonNull('PipelineSnapshot'),
+        snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
+
+    pipelineSnapshotOrError = dauphin.Field(
+        dauphin.NonNull('PipelineSnapshotOrError'),
         snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
@@ -145,6 +151,9 @@ class DauphinQuery(dauphin.ObjectType):
     instance = dauphin.NonNull('Instance')
 
     def resolve_pipelineSnapshot(self, graphene_info, **kwargs):
+        return get_pipeline_snapshot(graphene_info, kwargs['snapshotId'])
+
+    def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         return get_pipeline_snapshot_or_error(graphene_info, kwargs['snapshotId'])
 
     def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):

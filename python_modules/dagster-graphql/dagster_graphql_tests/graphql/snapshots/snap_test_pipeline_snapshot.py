@@ -6,60 +6,204 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_query_snapshot 1'] = {
-    'pipelineSnapshot': {
-        'description': None,
-        'modes': [
-            {
-                'name': 'default'
-            }
-        ],
-        'name': 'csv_hello_world',
-        'runs': [
-        ],
-        'runtimeTypes': [
-            {
-                'key': 'Any'
-            },
-            {
-                'key': 'Bool'
-            },
-            {
-                'key': 'Float'
-            },
-            {
-                'key': 'Int'
-            },
-            {
-                'key': 'Nothing'
-            },
-            {
-                'key': 'Path'
-            },
-            {
-                'key': 'PoorMansDataFrame'
-            },
-            {
-                'key': 'String'
-            }
-        ],
-        'solidHandles': [
-            {
-                'handleID': 'sum_solid'
-            },
-            {
-                'handleID': 'sum_sq_solid'
-            }
-        ],
-        'solids': [
-            {
-                'name': 'sum_solid'
-            },
-            {
-                'name': 'sum_sq_solid'
-            }
-        ],
-        'tags': [
-        ]
-    }
-}
+snapshots['test_query_pipeline_snapshot_empheral_instance 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['test_query_pipeline_snapshot_local_temp_instance 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['test_query_pipeline_snapshot_or_error_empheral_instance 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['test_query_pipeline_snapshot_or_error_local_temp_instance 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['test_query_pipeline_snapshot_or_error_not_found_empheral_instance 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshotNotFoundError",
+    "snapshotId": "notthere"
+  }
+}'''
+
+snapshots['test_query_pipeline_snapshot_or_error_not_found_local_temp_instance 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshotNotFoundError",
+    "snapshotId": "notthere"
+  }
+}'''

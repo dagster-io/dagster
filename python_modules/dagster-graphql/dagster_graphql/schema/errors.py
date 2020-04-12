@@ -70,6 +70,21 @@ class DauphinScheduleNotFoundError(dauphin.ObjectType):
         ).format(schedule_name=schedule_name)
 
 
+class DauphinPipelineSnapshotNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PipelineSnapshotNotFoundError'
+        interfaces = (DauphinError,)
+
+    snapshot_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, snapshot_id):
+        super(DauphinPipelineSnapshotNotFoundError, self).__init__()
+        self.snapshot_id = check.str_param(snapshot_id, 'snapshot_id')
+        self.message = (
+            'Pipeline snapshot {snapshot_id} is not present in the current instance.'
+        ).format(snapshot_id=snapshot_id)
+
+
 class DauphinPipelineNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineNotFoundError'

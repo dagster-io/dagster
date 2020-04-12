@@ -405,6 +405,12 @@ class DagsterInstance:
     def get_run_by_id(self, run_id):
         return self._run_storage.get_run_by_id(run_id)
 
+    def get_pipeline_snapshot(self, snapshot_id):
+        return self._run_storage.get_pipeline_snapshot(snapshot_id)
+
+    def has_pipeline_snapshot(self, snapshot_id):
+        return self._run_storage.has_pipeline_snapshot(snapshot_id)
+
     def get_run_stats(self, run_id):
         return self._event_storage.get_stats_for_run(run_id)
 
