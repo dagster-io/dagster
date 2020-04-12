@@ -207,3 +207,299 @@ snapshots['test_query_pipeline_snapshot_or_error_not_found_local_temp_instance 1
     "snapshotId": "notthere"
   }
 }'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_noop_fetch_snapshot_test[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_noop_fetch_snapshot_test[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshot": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_snapshot_not_found[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshotNotFoundError",
+    "snapshotId": "notthere"
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_snapshot_not_found[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshotNotFoundError",
+    "snapshotId": "notthere"
+  }
+}'''
