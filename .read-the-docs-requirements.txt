@@ -1,7 +1,6 @@
 Sphinx==2.2.2; python_version >= '3.6'
 sphinx-autobuild==0.7.1
-# https://github.com/dagster-io/dagster/issues/1858
-git+https://github.com/t-b/sphinxcontrib-images.git@c76b9c25efb249f9c5054adbb436455095c6d2f7#egg=sphinxcontrib-images
+sphinxcontrib-images==0.9.2
 -e ./python_modules/dagster
 -e ./python_modules/dagster-graphql
 -e ./python_modules/dagit
