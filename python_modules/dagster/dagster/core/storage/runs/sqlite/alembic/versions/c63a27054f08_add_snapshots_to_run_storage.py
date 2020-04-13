@@ -1,7 +1,7 @@
 """add snapshots to run storage
 
 Revision ID: c63a27054f08
-Revises: 1ebdd7a9686f
+Revises: 9fe9e746268c
 Create Date: 2020-04-09 05:57:20.639458
 
 """
@@ -31,10 +31,21 @@ def upgrade():
         )
 
     if not has_column('runs', 'snapshot_id'):
-        op.add_column(
-            'runs',
-            sa.Column('snapshot_id', sa.String(255), sa.ForeignKey('snapshots.snapshot_id')),
-        )
+        # Sqlite does not support adding foreign keys to existing
+        # tables, so we are forced to fallback on this witchcraft.
+        # See https://alembic.sqlalchemy.org/en/latest/batch.html#dealing-with-referencing-foreign-keys
+        # for additional context
+        with op.batch_alter_table('runs') as batch_op:
+            batch_op.execute('PRAGMA foreign_keys = OFF;')
+            batch_op.add_column(
+                sa.Column(
+                    'snapshot_id',
+                    sa.String(255),
+                    sa.ForeignKey(
+                        'snapshots.snapshot_id', name='fk_runs_snapshot_id_snapshots_snapshot_id'
+                    ),
+                ),
+            )
 
 
 def downgrade():

@@ -7,7 +7,11 @@ RunsTable = db.Table(
     RunStorageSqlMetadata,
     db.Column('id', db.Integer, primary_key=True, autoincrement=True),
     db.Column('run_id', db.String(255), unique=True),
-    db.Column('snapshot_id', db.String(255), db.ForeignKey('snapshots.snapshot_id')),
+    db.Column(
+        'snapshot_id',
+        db.String(255),
+        db.ForeignKey('snapshots.snapshot_id', name='fk_runs_snapshot_id_snapshots_snapshot_id'),
+    ),
     db.Column('pipeline_name', db.String),
     db.Column('status', db.String(63)),
     db.Column('run_body', db.String),

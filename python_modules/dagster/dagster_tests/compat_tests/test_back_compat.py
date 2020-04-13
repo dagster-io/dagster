@@ -5,7 +5,7 @@ import sqlite3
 
 import pytest
 
-from dagster import file_relative_path
+from dagster import execute_pipeline, file_relative_path, pipeline, solid
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
@@ -126,6 +126,13 @@ def get_sqlite3_tables(db_path):
     return [r[0] for r in cursor.fetchall()]
 
 
+def get_current_alembic_version(db_path):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
+    cursor.execute('SELECT * FROM alembic_version')
+    return cursor.fetchall()[0][0]
+
+
 def get_sqlite3_columns(db_path, table_name):
     con = sqlite3.connect(db_path)
     cursor = con.cursor()
@@ -138,47 +145,51 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
     test_dir = file_relative_path(__file__, 'snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite')
     with restore_directory(test_dir):
         # invariant check to make sure migration has not been run yet
+
         db_path = os.path.join(test_dir, 'history', 'runs.db')
+
+        assert get_current_alembic_version(db_path) == '9fe9e746268c'
+
         assert 'snapshots' not in get_sqlite3_tables(db_path)
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
+        assert len(instance.get_runs()) == 1
+
         # Make sure the schema is migrated
         instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == 'c63a27054f08'
 
         assert 'snapshots' in get_sqlite3_tables(db_path)
         assert {'id', 'snapshot_id', 'snapshot_body', 'snapshot_type'} == set(
             get_sqlite3_columns(db_path, 'snapshots')
         )
 
-        runs = instance.get_runs()
-        print(runs)
-        assert len(runs) == 1
+        assert len(instance.get_runs()) == 1
 
         run = instance.get_run_by_id(run_id)
 
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        # TODO: enable these tests once run migration is working
+        @solid
+        def noop_solid(_):
+            pass
 
-        # @solid
-        # def noop_solid(_):
-        #     pass
+        @pipeline
+        def noop_pipeline():
+            noop_solid()
 
-        # @pipeline
-        # def noop_pipeline():
-        #     noop_solid()
+        result = execute_pipeline(noop_pipeline, instance=instance)
 
-        # result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
 
-        # assert result.success
+        runs = instance.get_runs()
+        assert len(runs) == 2
 
-        # runs = instance.get_runs()
-        # assert len(runs) == 2
+        new_run_id = result.run_id
 
-        # new_run_id = result.run_id
+        new_run = instance.get_run_by_id(new_run_id)
 
-        # new_run = instance.get_run_by_id(new_run_id)
-
-        # assert new_run.pipeline_snapshot_id
+        assert new_run.pipeline_snapshot_id

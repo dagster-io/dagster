@@ -5,6 +5,7 @@ import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster import check
+from dagster.core.storage.sql import get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
@@ -66,7 +67,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         alembic_config = get_alembic_config(__file__)
         connection = engine.connect()
         db_revision, head_revision = check_alembic_revision(alembic_config, connection)
-        if not (db_revision and head_revision and db_revision == head_revision):
+        if not (db_revision and head_revision):
             stamp_alembic_rev(alembic_config, engine)
 
         return SqliteRunStorage(conn_string, inst_data)
@@ -82,6 +83,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     def upgrade(self):
         old_conn_string = 'sqlite://' + urljoin(urlparse(self._conn_string).path, '../runs.db')
+
         path_to_old_db = urlparse(old_conn_string).path
         # sqlite URLs look like `sqlite:///foo/bar/baz on Unix/Mac` but on Windows they look like
         # `sqlite:///D:/foo/bar/baz` (or `sqlite:///D:\foo\bar\baz`)
@@ -93,6 +95,10 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             for run in old_runs:
                 self.add_run(run)
             os.unlink(path_to_old_db)
+
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)
 
     def delete_run(self, run_id):
         ''' Override the default sql delete run implementation until we can get full
