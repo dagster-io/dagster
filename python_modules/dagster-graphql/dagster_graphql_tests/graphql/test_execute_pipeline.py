@@ -655,6 +655,28 @@ def test_start_pipeline_execution_for_created_run():
     )
 
 
+def test_start_pipeline_execution_for_created_run_invalid_config():
+    instance = DagsterInstance.local_temp()
+
+    run_id = make_new_run_id()
+    config = csv_hello_world_solids_config()
+    config['invalid_key'] = 'invalid_value'
+    pipeline_run = PipelineRun.create_empty_run('csv_hello_world', run_id, config,)
+    instance.create_run(pipeline_run)
+
+    result = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
+        variables={'runId': run_id},
+    )
+
+    assert result.data
+    assert (
+        result.data['startPipelineExecutionForCreatedRun']['__typename']
+        == 'PipelineConfigValidationInvalid'
+    )
+
+
 def test_start_pipeline_execution_for_created_run_not_found():
     run_id = make_new_run_id()
     result = execute_dagster_graphql(

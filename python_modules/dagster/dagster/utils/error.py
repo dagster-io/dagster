@@ -25,6 +25,10 @@ class SerializableErrorInfo(namedtuple('SerializableErrorInfo', 'message stack c
         )
 
 
+def _serializable_error_info_from_exception(exc):
+    return SerializableErrorInfo(exc.message, [], exc.__class__.__name__, None)
+
+
 def _serializable_error_info_from_tb(tb):
     return SerializableErrorInfo(
         # usually one entry, last entry for syntax errors is the exception that occurred

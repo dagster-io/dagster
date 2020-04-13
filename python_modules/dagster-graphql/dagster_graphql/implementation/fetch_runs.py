@@ -21,7 +21,9 @@ def is_config_valid(pipeline_def, environment_dict, mode):
     return validated_config.success
 
 
-def get_validated_config(graphene_info, pipeline_def, environment_dict, mode):
+def get_validated_config(pipeline_def, environment_dict, mode):
+    from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
+
     check.str_param(mode, 'mode')
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
@@ -31,14 +33,8 @@ def get_validated_config(graphene_info, pipeline_def, environment_dict, mode):
 
     if not validated_config.success:
         raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineConfigValidationInvalid')(
-                pipeline=DauphinPipeline.from_pipeline_def(pipeline_def),
-                errors=[
-                    graphene_info.schema.type_named(
-                        'PipelineConfigValidationError'
-                    ).from_dagster_error(pipeline_def.get_config_schema_snapshot(), err)
-                    for err in validated_config.errors
-                ],
+            DauphinPipelineConfigValidationInvalid.for_validation_errors(
+                pipeline_def, validated_config.errors
             )
         )
 
@@ -89,7 +85,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
-    get_validated_config(graphene_info, pipeline_def, environment_dict, mode)
+    get_validated_config(pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
         DauphinPipeline.from_pipeline_def(pipeline_def)
     )
@@ -102,7 +98,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.opt_str_param(mode, 'mode')
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
-    get_validated_config(graphene_info, pipeline_def, environment_dict, mode)
+    get_validated_config(pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
         DauphinPipeline.from_pipeline_def(pipeline_def),
         create_execution_plan(pipeline_def, environment_dict, RunConfig(mode=mode)),

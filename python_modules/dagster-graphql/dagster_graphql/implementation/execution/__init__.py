@@ -144,9 +144,7 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
-    get_validated_config(
-        graphene_info, pipeline_def, execution_params.environment_dict, execution_params.mode
-    )
+    get_validated_config(pipeline_def, execution_params.environment_dict, execution_params.mode)
     return _do_execute_plan(graphene_info, execution_params, pipeline_def)
 
 

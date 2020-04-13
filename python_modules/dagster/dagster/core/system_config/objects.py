@@ -63,6 +63,12 @@ class EnvironmentConfig(
 
     @staticmethod
     def build(pipeline, environment_dict=None, run_config=None):
+        '''This method validates a given environment dict against the pipeline config schema. If
+        successful, we instiate an EnvironmentConfig object.
+
+        In case the environment_dict is invalid, this method raises a DagsterInvalidConfigError
+        '''
+
         from dagster.config.validate import process_config
         from .composite_descent import composite_descent
 

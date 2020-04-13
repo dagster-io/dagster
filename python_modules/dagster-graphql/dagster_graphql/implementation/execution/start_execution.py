@@ -1,13 +1,17 @@
 from __future__ import absolute_import
 
-from dagster_graphql.client.util import execution_params_from_pipeline_run
+from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 from graphql.execution.base import ResolveInfo
 
-from dagster import RunConfig, check
+from dagster import DagsterInvalidConfigError, RunConfig, check
+from dagster.config.validate import validate_config
+from dagster.core.definitions.environment_schema import create_environment_schema
+from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import InstanceCreateRunArgs
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.utils.error import SerializableErrorInfo
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
@@ -26,6 +30,10 @@ def start_pipeline_reexecution(graphene_info, execution_params):
 
 @capture_dauphin_error
 def start_pipeline_execution(graphene_info, execution_params):
+    '''This indirection done on purpose to make the logic in the function
+    below re-usable. The parent function is wrapped in @capture_dauphin_error, which makes it
+    difficult to do exception handling.
+    '''
     return _start_pipeline_execution(graphene_info, execution_params)
 
 
@@ -59,7 +67,6 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
 
     get_validated_config(
-        graphene_info,
         pipeline_def,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
@@ -123,6 +130,10 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
 
 @capture_dauphin_error
 def start_pipeline_execution_for_created_run(graphene_info, run_id):
+    '''This indirection is done on purpose to make the logic in the function
+    below re-usable. The parent function is wrapped in @capture_dauphin_error, which makes it
+    difficult to do exception handling.
+    '''
     return _start_pipeline_execution_for_created_run(graphene_info, run_id)
 
 
@@ -141,19 +152,46 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
 
-    get_validated_config(
-        graphene_info, pipeline_def, environment_dict=run.environment_dict, mode=run.mode,
-    )
+    environment_schema = create_environment_schema(pipeline_def, run.mode)
+    validated_config = validate_config(environment_schema.environment_type, run.environment_dict)
+    if not validated_config.success:
+        # If the config is invalid, we construct a DagsterInvalidConfigError exception and
+        # insert it into the event log. We also return a PipelineConfigValidationInvalid user facing
+        # graphql error.
 
-    execution_plan = create_execution_plan(
+        # We currently re-use the engine events machinery to add the error to the event log, but
+        # may need to create a new event type and instance method to handle these erros.
+        invalid_config_exception = DagsterInvalidConfigError(
+            'Error in config for pipeline {}'.format(pipeline_def.name),
+            validated_config.errors,
+            run.environment_dict,
+        )
+
+        instance.report_engine_event(
+            str(invalid_config_exception.message),
+            run,
+            EngineEventData.engine_error(
+                SerializableErrorInfo(
+                    invalid_config_exception.message,
+                    [],
+                    DagsterInvalidConfigError.__class__.__name__,
+                    None,
+                )
+            ),
+        )
+
+        # TODO: also insert a pipeline init failure event
+        # https://github.com/dagster-io/dagster/issues/2385
+
+        return DauphinPipelineConfigValidationInvalid.for_validation_errors(
+            pipeline_def, validated_config.errors
+        )
+
+    create_execution_plan(
         pipeline_def,
         run.environment_dict,
         run_config=RunConfig(mode=run.mode, previous_run_id=run.previous_run_id, tags=run.tags,),
     )
-
-    execution_params = execution_params_from_pipeline_run(run)
-
-    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(), pipeline_def, run, instance=instance,
