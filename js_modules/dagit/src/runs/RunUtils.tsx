@@ -194,7 +194,10 @@ export function getReexecutionVariables(input: {
   }
 }
 
-export const RunStatus: React.SFC<{ status: IRunStatus }> = ({ status }) => {
+export const RunStatus: React.SFC<{ status: IRunStatus; square?: boolean }> = ({
+  status,
+  square
+}) => {
   if (status === "STARTED") {
     return (
       <div style={{ display: "inline-block" }}>
@@ -202,15 +205,15 @@ export const RunStatus: React.SFC<{ status: IRunStatus }> = ({ status }) => {
       </div>
     );
   }
-  return <RunStatusDot status={status} />;
+  return <RunStatusDot status={status} square={square} />;
 };
 
 // eslint-disable-next-line no-unexpected-multiline
-const RunStatusDot = styled.div<{ status: IRunStatus }>`
+const RunStatusDot = styled.div<{ status: IRunStatus; square?: boolean }>`
   display: inline-block;
   width: 11px;
   height: 11px;
-  border-radius: 5.5px;
+  border-radius: ${({ square }) => (square ? 0 : 5.5)}px;
   align-self: center;
   transition: background 200ms linear;
   background: ${({ status }) =>

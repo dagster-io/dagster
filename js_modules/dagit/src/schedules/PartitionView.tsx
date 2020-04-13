@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Header, RowColumn, RowContainer } from "../ListComponents";
+import { Header, RowContainer } from "../ListComponents";
 import { useQuery } from "react-apollo";
 import {
   ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet,
@@ -188,34 +188,80 @@ const PartitionTable: React.FunctionComponent<LongitudinalPartitionProps> = ({
   runsByPartition
 }) => {
   return (
-    <>
+    <Container>
+      <Gutter>
+        <Column>
+          <GutterHeader>&nbsp;</GutterHeader>
+          <GutterFiller>
+            <div>Runs</div>
+          </GutterFiller>
+        </Column>
+      </Gutter>
       {Object.keys(runsByPartition).map(partition => (
-        <RowContainer
-          key={partition}
-          style={{ marginBottom: 0, boxShadow: "none" }}
-        >
-          <RowColumn>{partition}</RowColumn>
-          <RowColumn style={{ textAlign: "left", borderRight: 0 }}>
-            {runsByPartition[partition].map(run => (
-              <div
-                key={run.runId}
-                style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
-                }}
-              >
-                <Link to={`/runs/all/${run.runId}`}>
-                  <RunStatus status={run.status} />
-                </Link>
-              </div>
-            ))}
-          </RowColumn>
-        </RowContainer>
+        <Column key={partition}>
+          <ColumnHeader>{partition}</ColumnHeader>
+          {runsByPartition[partition].map(run => (
+            <Link
+              to={`/runs/all/${run.runId}`}
+              key={run.runId}
+              style={{ textAlign: "center", lineHeight: 1 }}
+            >
+              <RunStatus status={run.status} square={true} />
+            </Link>
+          ))}
+        </Column>
       ))}
-    </>
+    </Container>
   );
 };
+
+const Gutter = styled.div`
+  width: 45px;
+  display: flex;
+  flex-direction: column-reverse;
+`;
+const GutterHeader = styled.div`
+  font-size: 12px;
+  color: #666666;
+  padding: 2px 0;
+  border-top: 1px solid transparent;
+  text-align: center;
+`;
+const GutterFiller = styled.div`
+  font-size: 12px;
+  color: #666666;
+  border-right: 1px solid #ececec;
+  min-height: 150px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  & div {
+    transform: rotate(-90deg);
+  }
+`;
+const Container = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  background-color: #ffffff;
+  padding: 30px 30px 10px 0;
+`;
+const Column = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+`;
+const ColumnHeader = styled.div`
+  font-size: 12px;
+  color: #666666;
+  padding: 2px 0;
+  border-top: 1px solid #ececec;
+  margin-top: 2px;
+  text-align: center;
+`;
 
 export const PARTITION_RUNS_QUERY = gql`
   query PartitionRunsQuery($partitionSetName: String!) {
