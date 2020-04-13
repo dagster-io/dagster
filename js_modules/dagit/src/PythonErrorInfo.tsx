@@ -3,12 +3,15 @@ import styled from "styled-components/macro";
 import { Button } from "@blueprintjs/core";
 import gql from "graphql-tag";
 import { PythonErrorFragment } from "./types/PythonErrorFragment";
+import { MetadataEntryFragment } from "./runs/types/MetadataEntryFragment";
+import { MetadataEntries } from "./runs/MetadataEntry";
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
   contextMsg?: string;
   error: { message: string } | PythonErrorFragment;
+  failureMetadata?: { metadataEntries: MetadataEntryFragment[] } | null;
 }
 
 export default class PythonErrorInfo extends React.Component<
@@ -37,11 +40,17 @@ export default class PythonErrorInfo extends React.Component<
     const context = this.props.contextMsg ? (
       <ErrorHeader>{this.props.contextMsg}</ErrorHeader>
     ) : null;
+    const metadataEntries = this.props.failureMetadata?.metadataEntries;
 
     return (
       <Wrapper>
         {context}
         <ErrorHeader>{message}</ErrorHeader>
+        {metadataEntries ? (
+          <div style={{ marginTop: 10, marginBottom: 10 }}>
+            <MetadataEntries entries={metadataEntries} />
+          </div>
+        ) : null}
         <Trace>{stack ? stack.join("") : "No Stack Provided."}</Trace>
         {cause ? (
           <>

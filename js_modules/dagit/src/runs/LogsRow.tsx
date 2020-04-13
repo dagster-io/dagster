@@ -143,10 +143,18 @@ export class Structured extends React.Component<
       return null;
     }
 
-    if (
-      node.__typename === "ExecutionStepFailureEvent" ||
-      node.__typename === "PipelineInitFailureEvent"
-    ) {
+    if (node.__typename === "ExecutionStepFailureEvent") {
+      return (
+        <InfoModal title="Error" onRequestClose={this.onCollapse}>
+          <PythonErrorInfo
+            error={node.error}
+            failureMetadata={node.failureMetadata}
+          />
+        </InfoModal>
+      );
+    }
+
+    if (node.__typename === "PipelineInitFailureEvent") {
       return (
         <InfoModal title="Error" onRequestClose={this.onCollapse}>
           <PythonErrorInfo error={node.error} />
