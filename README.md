@@ -7,31 +7,88 @@
 <a href="https://docs.dagster.io/"></a>
 </p>
 
-# Introduction
+# Dagster
 
 Dagster is a system for building modern data applications.
 
-Combining an elegant programming model and beautiful tools, Dagster allows infrastructure engineers, data engineers, and data scientists to seamlessly collaborate to process and produce the trusted, reliable data needed in today's world.
+- **Elegant programming model:** Dagster is a set of abstractions for building self-describing, testable, and reliable data applications. It embraces the principles of functional data programming; gradual, optional typing; and testability as a first-class value.
 
-### Install
+<p align="center">
+<img src="https://user-images.githubusercontent.com/4531914/79161353-366b8480-7d90-11ea-83ce-c8a9522359d5.gif" />
+</p>
 
-To get started:
-<br />
+- **Flexible & incremental:** Dagster integrates with your existing tools and infrastructure, and can invoke any computation–whether it be Spark, Python, a Jupyter notebook, or SQL. It is also designed to deploy to any workflow engine, such as Airflow.
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/4531914/79161365-3d929280-7d90-11ea-9216-c88cce41d3f1.gif" />
+</p>
+
+- **Beautiful tools:** Dagster's development environment, dagit–designed for data engineers, machine learning engineers, data scientists–enables astoundingly productive local development.
+
+<p align="center">
+<img src="https://user-images.githubusercontent.com/4531914/79161362-3bc8cf00-7d90-11ea-8974-17edbde3dc0d.gif" />
+</p>
+
+## Getting Started
+
+### Installation
 
 <p align="center">
 <code>pip install dagster dagit</code>
 </p>
-<br />
+
 This installs two modules:
-<br />
-<br />
 
 - **dagster** | The core programming model and abstraction stack; stateless, single-node,
   single-process and multi-process execution engines; and a CLI tool for driving those engines.
 - **dagit** | A UI and rich development environment for Dagster, including a DAG browser, a type-aware config editor, and a streaming execution interface.
   <br/>
 
-### Learn
+### Hello dagster 👋
+
+**`hello_dagster.py`**
+
+```python
+from dagster import execute_pipeline, pipeline, solid
+
+
+@solid
+def get_name(_):
+    return 'dagster'
+
+
+@solid
+def hello(context, name: str):
+    context.log.info('Hello, {name}!'.format(name=name))
+
+
+@pipeline
+def hello_pipeline():
+    hello(get_name())
+```
+
+Let's execute our first pipeline via any of three different mechanisms:
+
+- From arbitrary Python scripts, use dagster’s Python API
+
+  ```python
+  if __name__ == "__main__":
+      execute_pipeline(hello_pipeline)  # Hello, dagster!
+  ```
+
+- From the command line, use the dagster CLI
+
+  ```bash
+  $ dagster -f hello_dagster.py -n hello_pipeline
+  ```
+
+- From a rich graphical interface, use the dagit GUI tool
+  ```bash
+  $ dagit -f hello_dagster.py -n hello_pipeline
+  ```
+  Navigate to http://localhost:3000 and start your journey with Dagit.
+
+## Learn
 
 Next, jump right into our [tutorial](https://docs.dagster.io/latest/tutorial/), or read our [complete documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
 
@@ -40,11 +97,12 @@ Next, jump right into our [tutorial](https://docs.dagster.io/latest/tutorial/), 
 <a href="https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU"><img src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png" width=160px; /></a>
 </p>
 
-### Contributing
+## Contributing
 
 For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/latest/community/contributing/).
+<br />
 
-# Integrations
+## Integrations
 
 Dagster works with the tools and systems that you're already using with your data, including:
 
@@ -126,7 +184,7 @@ Dagster works with the tools and systems that you're already using with your dat
 
 This list is growing as we are actively building more integrations, and we welcome contributions!
 
-# Example Projects
+## Example Projects
 
 Several example projects are provided under the examples folder demonstrating how to use Dagster, including:
 
