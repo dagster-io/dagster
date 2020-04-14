@@ -27,15 +27,27 @@ export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_sta
   __typename: "PipelineRunStatsSnapshot";
   startTime: number | null;
   endTime: number | null;
+  materializations: number;
 }
 
 export type PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PythonError | PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot;
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_materializations {
+  __typename: "Materialization";
+}
+
+export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_expectationResults {
+  __typename: "ExpectationResult";
+  success: boolean;
+}
 
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats {
   __typename: "PipelineRunStepStats";
   stepKey: string;
   startTime: number | null;
   endTime: number | null;
+  materializations: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_materializations[];
+  expectationResults: PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_stepStats_expectationResults[];
 }
 
 export interface PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan_steps_inputs_dependsOn_outputs_type {
