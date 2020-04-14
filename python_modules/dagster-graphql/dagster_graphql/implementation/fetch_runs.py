@@ -12,6 +12,15 @@ from .fetch_pipelines import get_pipeline_def_from_selector
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
+def is_config_valid(pipeline_def, environment_dict, mode):
+    check.str_param(mode, 'mode')
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+
+    environment_schema = create_environment_schema(pipeline_def, mode)
+    validated_config = validate_config(environment_schema.environment_type, environment_dict)
+    return validated_config.success
+
+
 def get_validated_config(graphene_info, pipeline_def, environment_dict, mode):
     check.str_param(mode, 'mode')
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)

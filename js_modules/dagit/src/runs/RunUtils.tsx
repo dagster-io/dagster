@@ -160,8 +160,9 @@ export function getReexecutionVariables(input: {
     };
 
     // single step re-execution
-    if (stepKey && run.executionPlan) {
-      const step = run.executionPlan.steps.find(s => s.key === stepKey);
+    const { executionPlan } = run;
+    if (stepKey && executionPlan) {
+      const step = executionPlan.steps.find(s => s.key === stepKey);
       if (!step) return;
       executionParams["stepKeys"] = [stepKey];
       executionParams["retryRunId"] = run.runId;

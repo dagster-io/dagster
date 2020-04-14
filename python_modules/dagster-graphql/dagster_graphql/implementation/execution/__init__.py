@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import sys
 import time
 
+from dagster_graphql.implementation.fetch_runs import is_config_valid
 from dagster_graphql.schema.pipelines import DauphinPipeline
 from dagster_graphql.schema.runs import (
     from_compute_log_file,
@@ -14,7 +15,11 @@ from rx import Observable
 
 from dagster import RunConfig, check
 from dagster.core.definitions.schedule import ScheduleExecutionContext
-from dagster.core.errors import ScheduleExecutionError, user_code_error_boundary
+from dagster.core.errors import (
+    DagsterInvalidConfigError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
@@ -102,9 +107,10 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     execution_plan = None
     if isinstance(pipeline_ref, DauphinPipeline):
         pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
-        execution_plan = create_execution_plan(
-            pipeline_def, run.environment_dict, RunConfig(mode=run.mode)
-        )
+        if is_config_valid(pipeline_def, run.environment_dict, run.mode):
+            execution_plan = create_execution_plan(
+                pipeline_def, run.environment_dict, RunConfig(mode=run.mode)
+            )
 
     # pylint: disable=E1101
     return Observable.create(

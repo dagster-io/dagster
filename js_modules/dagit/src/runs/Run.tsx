@@ -11,7 +11,7 @@ import {
   structuredFieldsFromLogFilter
 } from "./LogsProvider";
 import LogsScrollingTable from "./LogsScrollingTable";
-import { RunFragment, RunFragment_executionPlan } from "./types/RunFragment";
+import { RunFragment } from "./types/RunFragment";
 import { SplitPanelContainer, SplitPanelToggles } from "../SplitPanelContainer";
 import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
 import LogsToolbar from "./LogsToolbar";
@@ -33,6 +33,8 @@ import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
 import { RunActionButtons } from "./RunActionButtons";
 import { showCustomAlert } from "../CustomAlertProvider";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { NonIdealState } from "@blueprintjs/core";
+import { IconNames } from "@blueprintjs/icons";
 
 interface IRunProps {
   client: ApolloClient<any>;
@@ -204,11 +206,6 @@ const ReexecuteWithData = ({
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const selectedStep = structuredFieldsFromLogFilter(logsFilter).step;
-  const executionPlan: RunFragment_executionPlan = run?.executionPlan || {
-    __typename: "ExecutionPlan",
-    steps: [],
-    artifactsPersisted: false
-  };
   const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
@@ -244,36 +241,44 @@ const ReexecuteWithData = ({
           firstInitialPercent={35}
           firstMinSize={40}
           first={
-            <GaantChart
-              options={{
-                mode: GaantChartMode.WATERFALL_TIMED
-              }}
-              toolbarLeftActions={
-                <SplitPanelToggles
-                  axis={"vertical"}
-                  container={splitPanelContainer}
-                />
-              }
-              toolbarActions={
-                <RunActionButtons
-                  run={run}
-                  artifactsPersisted={executionPlan.artifactsPersisted}
-                  onExecute={onExecute}
-                  onLaunch={onLaunch}
-                  selectedStep={selectedStep}
-                  selectedStepState={
-                    (selectedStep && metadata.steps[selectedStep]?.state) ||
-                    IStepState.PREPARING
-                  }
-                />
-              }
-              plan={executionPlan}
-              metadata={metadata}
-              selectedStep={selectedStep}
-              onApplyStepFilter={stepKey =>
-                onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
-              }
-            />
+            run?.executionPlan ? (
+              <GaantChart
+                options={{
+                  mode: GaantChartMode.WATERFALL_TIMED
+                }}
+                toolbarLeftActions={
+                  <SplitPanelToggles
+                    axis={"vertical"}
+                    container={splitPanelContainer}
+                  />
+                }
+                toolbarActions={
+                  <RunActionButtons
+                    run={run}
+                    executionPlan={run.executionPlan}
+                    artifactsPersisted={run.executionPlan.artifactsPersisted}
+                    onExecute={onExecute}
+                    onLaunch={onLaunch}
+                    selectedStep={selectedStep}
+                    selectedStepState={
+                      (selectedStep && metadata.steps[selectedStep]?.state) ||
+                      IStepState.PREPARING
+                    }
+                  />
+                }
+                plan={run.executionPlan}
+                metadata={metadata}
+                selectedStep={selectedStep}
+                onApplyStepFilter={stepKey =>
+                  onSetLogsFilter({ ...logsFilter, text: `step:${stepKey}` })
+                }
+              />
+            ) : (
+              <NonIdealState
+                icon={IconNames.ERROR}
+                title="Unable to build execution plan"
+              />
+            )
           }
           second={
             <LogsContainer>

@@ -8,7 +8,12 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_def_from_selector,
     get_pipeline_reference_or_raise,
 )
-from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
+from dagster_graphql.implementation.fetch_runs import (
+    get_execution_plan,
+    get_stats,
+    get_step_stats,
+    is_config_valid,
+)
 
 from dagster import RunConfig, check, seven
 from dagster.core.definitions.events import (
@@ -152,15 +157,17 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_executionPlan(self, graphene_info):
         pipeline = self.resolve_pipeline(graphene_info)
+
         if isinstance(pipeline, DauphinPipeline):
-            execution_plan = create_execution_plan(
-                get_pipeline_def_from_selector(graphene_info, self._pipeline_run.selector),
-                self._pipeline_run.environment_dict,
-                RunConfig(mode=self._pipeline_run.mode),
-            )
-            return graphene_info.schema.type_named('ExecutionPlan')(pipeline, execution_plan)
-        else:
-            return None
+            selector = self._pipeline_run.selector
+            environment_dict = self._pipeline_run.environment_dict
+            mode = self._pipeline_run.mode
+
+            pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
+            if is_config_valid(pipeline_def, environment_dict, mode):
+                return get_execution_plan(graphene_info, selector, environment_dict, mode)
+
+        return None
 
     def resolve_stepKeysToExecute(self, _):
         return self._pipeline_run.step_keys_to_execute

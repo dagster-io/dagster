@@ -53,9 +53,6 @@ interface RunActionButtonsRun {
     __typename: string;
   };
   canCancel: boolean;
-  executionPlan: {
-    artifactsPersisted: boolean;
-  } | null;
 }
 
 interface RunActionButtonsProps {
@@ -63,6 +60,9 @@ interface RunActionButtonsProps {
   selectedStep: string | null;
   selectedStepState: IStepState;
   artifactsPersisted: boolean;
+  executionPlan?: {
+    artifactsPersisted: boolean;
+  } | null;
   onExecute: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
   onLaunch: (stepKey?: string, resumeRetry?: boolean) => Promise<void>;
 }
@@ -155,7 +155,7 @@ export function ReexecuteSingleStepButton(props: ReexecuteButtonProps) {
 }
 
 export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = props => {
-  const { run, onExecute, onLaunch } = props;
+  const { run, executionPlan, onExecute, onLaunch } = props;
   // TODO: temporary hack to try to force rerender of the action buttons based on
   // the local storage state.  Real solution is to push the LaunchButtonGroup to use
   // context (https://github.com/dagster-io/dagster/issues/2153)
@@ -205,9 +205,10 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         </>
       )}
 
-      {run?.executionPlan &&
+      {executionPlan &&
+        run &&
         run.status === PipelineRunStatus.FAILURE &&
-        (run.executionPlan.artifactsPersisted ? (
+        (executionPlan.artifactsPersisted ? (
           <Tooltip
             hoverOpenDelay={300}
             content={isUnknown ? RETRY_PIPELINE_UNKNOWN : RETRY_DESCRIPTION}
