@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
+from tqdm import tqdm
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
@@ -45,7 +46,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
           class: SqliteEventLogStorage
           config:
             base_dir: /path/to/dir
-    
+
     The ``base_dir`` param tells the event log storage where on disk to store the databases. To
     improve concurrent performance, event logs are stored in a separate SQLite database for each
     run.
@@ -70,7 +71,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             )
         )
         alembic_config = get_alembic_config(__file__)
-        for run_id in all_run_ids:
+        for run_id in tqdm(all_run_ids):
             with self.connect(run_id) as conn:
                 run_alembic_upgrade(alembic_config, conn, run_id)
 

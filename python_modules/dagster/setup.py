@@ -79,6 +79,7 @@ def _do_setup(name='dagster'):
             'python-dateutil',
             'rx<=1.6.1',  # 3.0 was a breaking change. No py2 compatability as well.
             'six',
+            'tqdm',
             'sqlalchemy>=1.0',
             'typing; python_version<"3"',
             'backports.tempfile; python_version<"3"',
