@@ -1,5 +1,4 @@
 import abc
-import sys
 from contextlib import contextmanager
 
 import psycopg2
@@ -35,16 +34,18 @@ class _BaseRedshiftResource(six.with_metaclass(abc.ABCMeta)):
         self.log = context.log_manager
 
     @abc.abstractmethod
-    def execute_query(self, query, fetch_results=False, cursor_factory=None):
+    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         pass
 
     @abc.abstractmethod
-    def execute_queries(self, queries, fetch_results=False, cursor_factory=None):
+    def execute_queries(
+        self, queries, fetch_results=False, cursor_factory=None, error_callback=None
+    ):
         pass
 
 
 class RedshiftResource(_BaseRedshiftResource):
-    def execute_query(self, query, fetch_results=False, cursor_factory=None):
+    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         '''Synchronously execute a single query against Redshift. Will return a list of rows, where
         each row is a tuple of values, e.g. SELECT 1 will return [(1,)].
 
@@ -55,6 +56,11 @@ class RedshiftResource(_BaseRedshiftResource):
                 results.
             cursor_factory (Optional[:py:class:`psycopg2.extensions.cursor`]): An alternative
                 cursor_factory; defaults to None. Will be used when constructing the cursor.
+            error_callback (Optional[Callable[[Exception, Cursor, DagsterLogManager], None]]): A
+                callback function, invoked when an exception is encountered during query execution;
+                this is intended to support executing additional queries to provide diagnostic
+                information, e.g. by querying ``stl_load_errors`` using ``pg_last_copy_id()``. If no
+                function is provided, exceptions during query execution will be raised directly.
 
         Returns:
             Optional[List[Tuple[Any, ...]]]: Results of the query, as a list of tuples, when
@@ -63,20 +69,42 @@ class RedshiftResource(_BaseRedshiftResource):
         check.str_param(query, 'query')
         check.bool_param(fetch_results, 'fetch_results')
         check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
+        check.opt_callable_param(error_callback, 'error_callback')
 
-        with self._get_cursor(cursor_factory=cursor_factory) as cursor:
-            if sys.version_info[0] < 3:
-                query = query.encode('utf-8')
+        with self._get_conn() as conn:
+            with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
+                try:
+                    six.ensure_str(query)
 
-            self.log.info('Executing query \'{query}\''.format(query=query))
-            cursor.execute(query)
+                    self.log.info('Executing query \'{query}\''.format(query=query))
+                    cursor.execute(query)
 
-            if fetch_results and cursor.rowcount > 0:
-                return cursor.fetchall()
-            else:
-                self.log.info('Empty result from query')
+                    if fetch_results and cursor.rowcount > 0:
+                        return cursor.fetchall()
+                    else:
+                        self.log.info('Empty result from query')
 
-    def execute_queries(self, queries, fetch_results=False, cursor_factory=None):
+                except Exception as e:  # pylint: disable=broad-except
+                    # If autocommit is disabled or not set (it is disabled by default), Redshift
+                    # will be in the middle of a transaction at exception time, and because of
+                    # the failure the current transaction will not accept any further queries.
+                    #
+                    # This conn.commit() call closes the open transaction before handing off
+                    # control to the error callback, so that the user can issue additional
+                    # queries. Notably, for e.g. pg_last_copy_id() to work, it requires you to
+                    # use the same conn/cursor, so you have to do this conn.commit() to ensure
+                    # things are in a usable state in the error callback.
+                    if not self.autocommit:
+                        conn.commit()
+
+                    if error_callback is not None:
+                        error_callback(e, cursor, self.log)
+                    else:
+                        raise
+
+    def execute_queries(
+        self, queries, fetch_results=False, cursor_factory=None, error_callback=None
+    ):
         '''Synchronously execute a list of queries against Redshift. Will return a list of list of
         rows, where each row is a tuple of values, e.g. ['SELECT 1', 'SELECT 1'] will return
         [[(1,)], [(1,)]].
@@ -87,7 +115,12 @@ class RedshiftResource(_BaseRedshiftResource):
                 Defaults to False, in which case the query will be executed without retrieving the
                 results.
             cursor_factory (Optional[:py:class:`psycopg2.extensions.cursor`]): An alternative
-                cursor_factory; defaults to None. Will be used when constructing the cursor.
+            cursor_factory; defaults to None. Will be used when constructing the cursor.
+            error_callback (Optional[Callable[[Exception, Cursor, DagsterLogManager], None]]): A
+                callback function, invoked when an exception is encountered during query execution;
+                this is intended to support executing additional queries to provide diagnostic
+                information, e.g. by querying ``stl_load_errors`` using ``pg_last_copy_id()``. If no
+                function is provided, exceptions during query execution will be raised directly.
 
         Returns:
             Optional[List[List[Tuple[Any, ...]]]]: Results of the query, as a list of list of
@@ -96,30 +129,56 @@ class RedshiftResource(_BaseRedshiftResource):
         check.list_param(queries, 'queries', of_type=str)
         check.bool_param(fetch_results, 'fetch_results')
         check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
+        check.opt_callable_param(error_callback, 'error_callback')
 
         results = []
-        with self._get_cursor(cursor_factory=cursor_factory) as cursor:
-            for query in queries:
-                if sys.version_info[0] < 3:
-                    query = query.encode('utf-8')
+        with self._get_conn() as conn:
+            with self._get_cursor(conn, cursor_factory=cursor_factory) as cursor:
+                for query in queries:
+                    six.ensure_str(query)
 
-                self.log.info('Executing query \'{query}\''.format(query=query))
-                cursor.execute(query)
+                    try:
+                        self.log.info('Executing query \'{query}\''.format(query=query))
+                        cursor.execute(query)
 
-                if fetch_results and cursor.rowcount > 0:
-                    results.append(cursor.fetchall())
-                else:
-                    results.append([])
-                    self.log.info('Empty result from query')
+                        if fetch_results and cursor.rowcount > 0:
+                            results.append(cursor.fetchall())
+                        else:
+                            results.append([])
+                            self.log.info('Empty result from query')
+
+                    except Exception as e:  # pylint: disable=broad-except
+                        # If autocommit is disabled or not set (it is disabled by default), Redshift
+                        # will be in the middle of a transaction at exception time, and because of
+                        # the failure the current transaction will not accept any further queries.
+                        #
+                        # This conn.commit() call closes the open transaction before handing off
+                        # control to the error callback, so that the user can issue additional
+                        # queries. Notably, for e.g. pg_last_copy_id() to work, it requires you to
+                        # use the same conn/cursor, so you have to do this conn.commit() to ensure
+                        # things are in a usable state in the error callback.
+                        if not self.autocommit:
+                            conn.commit()
+
+                        if error_callback is not None:
+                            error_callback(e, cursor, self.log)
+                        else:
+                            raise
 
         if fetch_results:
             return results
 
     @contextmanager
-    def _get_cursor(self, cursor_factory=None):
-        check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
+    def _get_conn(self):
+        try:
+            conn = psycopg2.connect(**self.conn_args)
+            yield conn
+        finally:
+            conn.close()
 
-        conn = psycopg2.connect(**self.conn_args)
+    @contextmanager
+    def _get_cursor(self, conn, cursor_factory=None):
+        check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
 
         # Could be none, in which case we should respect the connection default. Otherwise
         # explicitly set to true/false.
@@ -135,13 +194,12 @@ class RedshiftResource(_BaseRedshiftResource):
             # queries.
             if not self.autocommit:
                 conn.commit()
-        conn.close()
 
 
 class FakeRedshiftResource(_BaseRedshiftResource):
     QUERY_RESULT = [(1,)]
 
-    def execute_query(self, query, fetch_results=False, cursor_factory=None):
+    def execute_query(self, query, fetch_results=False, cursor_factory=None, error_callback=None):
         '''Fake for execute_query; returns [self.QUERY_RESULT]
 
         Args:
@@ -151,6 +209,11 @@ class FakeRedshiftResource(_BaseRedshiftResource):
                 results.
             cursor_factory (Optional[:py:class:`psycopg2.extensions.cursor`]): An alternative
                 cursor_factory; defaults to None. Will be used when constructing the cursor.
+            error_callback (Optional[Callable[[Exception, Cursor, DagsterLogManager], None]]): A
+                callback function, invoked when an exception is encountered during query execution;
+                this is intended to support executing additional queries to provide diagnostic
+                information, e.g. by querying ``stl_load_errors`` using ``pg_last_copy_id()``. If no
+                function is provided, exceptions during query execution will be raised directly.
 
         Returns:
             Optional[List[Tuple[Any, ...]]]: Results of the query, as a list of tuples, when
@@ -158,12 +221,16 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         '''
         check.str_param(query, 'query')
         check.bool_param(fetch_results, 'fetch_results')
+        check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
+        check.opt_callable_param(error_callback, 'error_callback')
 
         self.log.info('Executing query \'{query}\''.format(query=query))
         if fetch_results:
             return self.QUERY_RESULT
 
-    def execute_queries(self, queries, fetch_results=False, cursor_factory=None):
+    def execute_queries(
+        self, queries, fetch_results=False, cursor_factory=None, error_callback=None
+    ):
         '''Fake for execute_queries; returns [self.QUERY_RESULT] * 3
 
         Args:
@@ -173,6 +240,11 @@ class FakeRedshiftResource(_BaseRedshiftResource):
                 results.
             cursor_factory (Optional[:py:class:`psycopg2.extensions.cursor`]): An alternative
                 cursor_factory; defaults to None. Will be used when constructing the cursor.
+            error_callback (Optional[Callable[[Exception, Cursor, DagsterLogManager], None]]): A
+                callback function, invoked when an exception is encountered during query execution;
+                this is intended to support executing additional queries to provide diagnostic
+                information, e.g. by querying ``stl_load_errors`` using ``pg_last_copy_id()``. If no
+                function is provided, exceptions during query execution will be raised directly.
 
         Returns:
             Optional[List[List[Tuple[Any, ...]]]]: Results of the query, as a list of list of
@@ -180,6 +252,8 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         '''
         check.list_param(queries, 'queries', of_type=str)
         check.bool_param(fetch_results, 'fetch_results')
+        check.opt_subclass_param(cursor_factory, 'cursor_factory', psycopg2.extensions.cursor)
+        check.opt_callable_param(error_callback, 'error_callback')
 
         for query in queries:
             self.log.info('Executing query \'{query}\''.format(query=query))
