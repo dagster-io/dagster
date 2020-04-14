@@ -188,10 +188,10 @@ class CompositeSolidDefSnap(
         name,
         input_def_snaps,
         output_def_snaps,
-        config_field_snap,
         description,
         tags,
         required_resource_keys,
+        config_field_snap,
         dep_structure_snapshot,
         input_mapping_snaps,
         output_mapping_snaps,
@@ -248,8 +248,8 @@ class SolidDefSnap(namedtuple('_SolidDefMeta', SOLID_DEF_HEADER_PROPS)):
         output_def_snaps,
         description,
         tags,
-        config_field_snap,
         required_resource_keys,
+        config_field_snap,
     ):
         return super(SolidDefSnap, cls).__new__(
             cls,

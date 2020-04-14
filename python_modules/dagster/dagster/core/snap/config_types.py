@@ -54,7 +54,7 @@ class ConfigTypeSnap(
     )
 ):
     def __new__(
-        cls, kind, key, given_name, type_param_keys, enum_values, fields, description,
+        cls, kind, key, given_name, description, type_param_keys, enum_values, fields,
     ):
         return super(ConfigTypeSnap, cls).__new__(
             cls,

@@ -14,6 +14,7 @@ Why not pickle?
   (in memory, not human readble, etc) just handle the json case effectively.
 '''
 import importlib
+import sys
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 from enum import Enum
@@ -32,14 +33,98 @@ def register_serdes_tuple_fallbacks(fallback_map):
         _WHITELISTED_TUPLE_MAP[class_name] = klass
 
 
+def _get_dunder_new_params_dict(klass):
+    check.invariant(sys.version_info.major >= 3, 'This function can only be run in python 3')
+
+    # only pulled in by python 3
+    from inspect import signature
+
+    return signature(klass.__new__).parameters
+
+
+def _get_dunder_new_params(klass):
+    return list(_get_dunder_new_params_dict(klass).values())
+
+
+class SerdesClassUsageError(Exception):
+    pass
+
+
+def _check_serdes_tuple_class_invariants(klass):
+    check.invariant(sys.version_info.major >= 3, 'This function can only be run in python 3')
+
+    # pull this in dynamically because this method is only called in python 3 contexts
+    from inspect import Parameter
+
+    dunder_new_params = _get_dunder_new_params(klass)
+
+    cls_param = dunder_new_params[0]
+
+    def _with_header(msg):
+        return 'For namedtuple {class_name}: {msg}'.format(class_name=klass.__name__, msg=msg)
+
+    if cls_param.name not in {'cls', '_cls'}:
+        raise SerdesClassUsageError(
+            _with_header(
+                'First parameter must be _cls or cls. Got "{name}".'.format(name=cls_param.name)
+            )
+        )
+
+    value_params = dunder_new_params[1:]
+
+    for index, field in enumerate(klass._fields):
+
+        if index >= len(value_params):
+            error_msg = (
+                'Missing parameters to __new__. You have declared fields '
+                'in the named tuple that are not present as parameters to the '
+                'to the __new__ method. In order for '
+                'both serdes serialization and pickling to work, '
+                'these must match. Missing: {missing_fields}'
+            ).format(missing_fields=repr(list(klass._fields[index:])))
+
+            raise SerdesClassUsageError(_with_header(error_msg))
+
+        value_param = value_params[index]
+        if value_param.name != field:
+            error_msg = (
+                'Params to __new__ must match the order of field declaration in the namedtuple. '
+                'Declared field number {one_based_index} in the namedtuple is "{field_name}". '
+                'Parameter {one_based_index} in __new__ method is "{param_name}".'
+            ).format(one_based_index=index + 1, field_name=field, param_name=value_param.name)
+            raise SerdesClassUsageError(_with_header(error_msg))
+
+    if len(value_params) > len(klass._fields):
+        # Ensure that remaining parameters have default values
+        for extra_param_index in range(len(klass._fields), len(value_params) - 1):
+            if value_params[extra_param_index].default == Parameter.empty:
+                error_msg = (
+                    'Parameter "{param_name}" is a parameter to the __new__ '
+                    'method but is not a field in this namedtuple. The only '
+                    'reason why this should exist is that '
+                    'it is a field that used to exist (we refer to this as the graveyard) '
+                    'but no longer does. However it might exist in historical storage. This '
+                    'parameter existing ensures that serdes continues to work. However these '
+                    'must come at the end and have a default value for pickling to work.'
+                ).format(param_name=value_params[extra_param_index].name)
+                raise SerdesClassUsageError(_with_header(error_msg))
+
+
 def _whitelist_for_serdes(enum_map, tuple_map):
     def __whitelist_for_serdes(klass):
+
         if issubclass(klass, Enum):
             enum_map[klass.__name__] = klass
         elif issubclass(klass, tuple):
+            # only catch this in python 3 dev environments
+            # no need to do backwargs compat since this is
+            # only for development time
+            if sys.version_info.major >= 3:
+                _check_serdes_tuple_class_invariants(klass)
             tuple_map[klass.__name__] = klass
         else:
             check.failed('Can not whitelist class {klass} for serdes'.format(klass=klass))
+
         return klass
 
     return __whitelist_for_serdes

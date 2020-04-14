@@ -49,7 +49,7 @@ class InstanceRef(
     '''
 
     def __new__(
-        self,
+        cls,
         local_artifact_storage_data,
         run_storage_data,
         event_storage_data,
@@ -60,8 +60,8 @@ class InstanceRef(
         dagit_settings,
         telemetry_settings,
     ):
-        return super(self, InstanceRef).__new__(
-            self,
+        return super(cls, InstanceRef).__new__(
+            cls,
             local_artifact_storage_data=check.inst_param(
                 local_artifact_storage_data, 'local_artifact_storage_data', ConfigurableClassData
             ),

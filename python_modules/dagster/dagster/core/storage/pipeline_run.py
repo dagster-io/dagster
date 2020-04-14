@@ -186,7 +186,7 @@ class PipelineRun(
 
 
 @whitelist_for_serdes
-class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_id tags pipeline_name status')):
+class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_id pipeline_name status tags')):
     def __new__(cls, run_id=None, pipeline_name=None, status=None, tags=None):
         return super(PipelineRunsFilter, cls).__new__(
             cls,

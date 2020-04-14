@@ -6,6 +6,7 @@ import pytest
 
 from dagster.check import ParameterCheckError
 from dagster.serdes import (
+    SerdesClassUsageError,
     _deserialize_json_to_dagster_namedtuple,
     _pack_value,
     _serialize_dagster_namedtuple,
@@ -127,3 +128,142 @@ def test_backward_compat_serdes():
     assert deserialized.foo == quux.foo
     assert deserialized.bar == quux.bar
     assert not hasattr(deserialized, 'baz')
+
+
+def serdes_test_class(klass):
+    _TEST_TUPLE_MAP = {}
+    _TEST_ENUM_MAP = {}
+
+    return _whitelist_for_serdes(tuple_map=_TEST_TUPLE_MAP, enum_map=_TEST_TUPLE_MAP)(klass)
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_wrong_first_arg():
+    with pytest.raises(SerdesClassUsageError) as exc_info:
+
+        @serdes_test_class
+        class NotCls(namedtuple('NotCls', 'field_one field_two')):
+            def __new__(not_cls, field_two, field_one):
+                super(NotCls, not_cls).__new__(field_one, field_two)
+
+    assert (
+        str(exc_info.value)
+        == 'For namedtuple NotCls: First parameter must be _cls or cls. Got "not_cls".'
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_incorrect_order():
+    with pytest.raises(SerdesClassUsageError) as exc_info:
+
+        @serdes_test_class
+        class WrongOrder(namedtuple('WrongOrder', 'field_one field_two')):
+            def __new__(cls, field_two, field_one):
+                super(WrongOrder, cls).__new__(field_one, field_two)
+
+    assert str(exc_info.value) == (
+        'For namedtuple WrongOrder: '
+        'Params to __new__ must match the order of field declaration '
+        'in the namedtuple. Declared field number 1 in the namedtuple '
+        'is "field_one". Parameter 1 in __new__ method is "field_two".'
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_missing_one_parameter():
+    with pytest.raises(SerdesClassUsageError) as exc_info:
+
+        @serdes_test_class
+        class MissingFieldInNew(namedtuple('MissingFieldInNew', 'field_one field_two field_three')):
+            def __new__(cls, field_one, field_two):
+                super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
+
+    assert str(exc_info.value) == (
+        "For namedtuple MissingFieldInNew: "
+        "Missing parameters to __new__. You have declared fields in "
+        "the named tuple that are not present as parameters to the "
+        "to the __new__ method. In order for both serdes serialization "
+        "and pickling to work, these must match. Missing: ['field_three']"
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_missing_many_parameters():
+    with pytest.raises(SerdesClassUsageError) as exc_info:
+
+        @serdes_test_class
+        class MissingFieldsInNew(
+            namedtuple('MissingFieldsInNew', 'field_one field_two field_three, field_four')
+        ):
+            def __new__(cls, field_one, field_two):
+                super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
+
+    assert str(exc_info.value) == (
+        "For namedtuple MissingFieldsInNew: "
+        "Missing parameters to __new__. You have declared fields in "
+        "the named tuple that are not present as parameters to the "
+        "to the __new__ method. In order for both serdes serialization "
+        "and pickling to work, these must match. Missing: ['field_three', 'field_four']"
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_extra_parameters_must_have_defaults():
+    with pytest.raises(SerdesClassUsageError) as exc_info:
+
+        @serdes_test_class
+        class OldFieldsWithoutDefaults(
+            namedtuple('OldFieldsWithoutDefaults', 'field_three field_four')
+        ):
+            # pylint:disable=unused-argument
+            def __new__(
+                cls,
+                field_three,
+                field_four,
+                # Graveyard Below
+                field_one,
+                field_two,
+            ):
+                super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
+
+    assert str(exc_info.value) == (
+        'For namedtuple OldFieldsWithoutDefaults: '
+        'Parameter "field_one" is a parameter to the __new__ '
+        'method but is not a field in this namedtuple. '
+        'The only reason why this should exist is that '
+        'it is a field that used to exist (we refer to '
+        'this as the graveyard) but no longer does. However '
+        'it might exist in historical storage. This parameter '
+        'existing ensures that serdes continues to work. However '
+        'these must come at the end and have a default value for pickling to work.'
+    )
+
+
+@pytest.mark.skipif(
+    sys.version_info.major < 3, reason='Serdes declaration time checks python 3 only'
+)
+def test_extra_parameters_have_working_defaults():
+    @serdes_test_class
+    class OldFieldsWithDefaults(namedtuple('OldFieldsWithDefaults', 'field_three field_four')):
+        # pylint:disable=unused-argument
+        def __new__(
+            cls,
+            field_three,
+            field_four,
+            # Graveyard Below
+            none_field=None,
+            falsey_field=0,
+            another_falsey_field='',
+            value_field='klsjkfjd',
+        ):
+            super(OldFieldsWithDefaults, cls).__new__(field_three, field_four)
