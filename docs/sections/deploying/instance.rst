@@ -116,7 +116,7 @@ Controls how the structured event logs produced by each run are persisted. Colle
 
 Compute log manager
 ###################
-* key: ``compute_log_manager``
+* key: ``compute_logs``
 * base class: :py:class:`~dagster.core.storage.compute_log_manager.ComputeLogManager`
 * default: :py:class:`~dagster.core.storage.local_compute_log_manager.LocalComputeLogManager`
 * example alternative: :py:class:`~dagster_aws.s3.compute_log_manager.S3ComputeLogManager`
