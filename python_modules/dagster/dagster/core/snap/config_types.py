@@ -38,6 +38,10 @@ class ConfigSchemaSnapshot(namedtuple('_ConfigSchemaSnapshot', 'all_config_snaps
         check.str_param(key, 'key')
         return self.all_config_snaps_by_key[key]
 
+    def has_config_snap(self, key):
+        check.str_param(key, 'key')
+        return key in self.all_config_snaps_by_key
+
 
 @whitelist_for_serdes
 class ConfigTypeSnap(

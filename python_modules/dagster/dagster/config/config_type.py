@@ -312,4 +312,20 @@ _CONFIG_MAP = {
     BuiltinEnum.STRING: ConfigStringInstance,
 }
 
+
+_CONFIG_MAP_BY_NAME = {
+    'Any': ConfigAnyInstance,
+    'Bool': ConfigBoolInstance,
+    'Float': ConfigFloatInstance,
+    'Int': ConfigIntInstance,
+    'Path': ConfigPathInstance,
+    'String': ConfigStringInstance,
+}
+
 ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())
+
+
+def get_builtin_scalar_by_name(type_name):
+    if type_name not in _CONFIG_MAP_BY_NAME:
+        check.failed('Scalar {} is not supported'.format(type_name))
+    return _CONFIG_MAP_BY_NAME[type_name]

@@ -2,7 +2,7 @@
 # snapshottest: v1 - https://goo.gl/zC4yUc
 from __future__ import unicode_literals
 
-from snapshottest import Snapshot
+from snapshottest import GenericRepr, Snapshot
 
 snapshots = Snapshot()
 
@@ -6065,3 +6065,23 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
 }'''
 
 snapshots['test_empty_pipeline_snap_props 2'] = 'bb3fc3f68b41af892e70f247c3a33182d7397738'
+
+snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+
+snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+
+snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+
+snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types0] 1'] = GenericRepr('<dagster.config.field_utils.Selector object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types1] 1'] = GenericRepr('<dagster.config.field_utils.Selector object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types2] 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types3] 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types4] 1'] = GenericRepr('<dagster.config.field_utils.Shape object at 0x100000000>')
+
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types5] 1'] = GenericRepr('<dagster.config.field_utils.Shape object at 0x100000000>')

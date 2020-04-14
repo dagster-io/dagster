@@ -1,4 +1,19 @@
-from dagster import InputDefinition, Nothing, OutputDefinition, pipeline, solid
+import itertools
+
+import pytest
+
+from dagster import (
+    Field,
+    InputDefinition,
+    Nothing,
+    OutputDefinition,
+    Permissive,
+    Selector,
+    Shape,
+    pipeline,
+    solid,
+)
+from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, String
 from dagster.core.snap.dep_snapshot import (
     DependencyStructureIndex,
     InputHandle,
@@ -214,3 +229,182 @@ def test_basic_fan_in(snapshot):
 
     snapshot.assert_match(serialize_pp(pipeline_snapshot))
     snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
+
+
+def test_deserialize_solid_def_snaps_enum():
+    @solid(
+        config=Field(Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')]))
+    )
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Enum)
+    assert recevied_config_type.given_name == 'CowboyType'
+    assert all(
+        enum_value.config_value in ('good', 'bad', 'ugly')
+        for enum_value in recevied_config_type.enum_values
+    )
+
+
+def test_deserialize_solid_def_snaps_strict_shape():
+    @solid(config={'foo': Field(str, is_required=False), 'bar': Field(str)})
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Shape)
+    assert isinstance(recevied_config_type.fields['foo'].config_type, String)
+    assert isinstance(recevied_config_type.fields['bar'].config_type, String)
+    assert not recevied_config_type.fields['foo'].is_required
+
+
+def test_deserialize_solid_def_snaps_selector():
+    @solid(config=Selector({'foo': Field(str), 'bar': Field(int)}))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Selector)
+    assert isinstance(recevied_config_type.fields['foo'].config_type, String)
+    assert isinstance(recevied_config_type.fields['bar'].config_type, Int)
+
+
+def test_deserialize_solid_def_snaps_permissive():
+    @solid(config=Field(Permissive({'foo': Field(str)})))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Permissive)
+    assert isinstance(recevied_config_type.fields['foo'].config_type, String)
+
+
+def test_deserialize_solid_def_snaps_array():
+    @solid(config=Field([str]))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Array)
+    assert isinstance(recevied_config_type.inner_type, String)
+
+
+def test_deserialize_solid_def_snaps_noneable():
+    @solid(config=Field(Noneable(str)))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Noneable)
+    assert isinstance(recevied_config_type.inner_type, String)
+
+
+def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
+    @solid(
+        config=Field(
+            Permissive(
+                {
+                    'foo': Field(Array(float)),
+                    'bar': Selector(
+                        {
+                            'baz': Field(Noneable(int)),
+                            'qux': {
+                                'quux': Field(str),
+                                'corge': Field(
+                                    Enum(
+                                        'RGB',
+                                        [EnumValue('red'), EnumValue('green'), EnumValue('blue')],
+                                    )
+                                ),
+                            },
+                        }
+                    ),
+                }
+            )
+        )
+    )
+    def fancy_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        fancy_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    snapshot.assert_match(recevied_config_type)
+
+
+@pytest.mark.parametrize('dict_config_type', [Selector, Permissive, Shape])
+def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
+    @solid(config=Array(dict_config_type({'foo': Field(int), 'bar': Field(str)})))
+    def fancy_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        fancy_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    snapshot.assert_match(recevied_config_type)
+
+
+@pytest.mark.parametrize(
+    'nested_dict_types',
+    [combo for combo in itertools.permutations((Selector, Permissive, Shape), 3)],
+)
+def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
+    D1, D2, D3 = nested_dict_types
+
+    @solid(config=D1({'foo': D2({'bar': D3({'baz': Field(int)})})}))
+    def fancy_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        fancy_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    snapshot.assert_match(recevied_config_type)
