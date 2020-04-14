@@ -5,10 +5,10 @@ const sleep = require("system-sleep");
 
 expect.extend({ toMatchImageSnapshot });
 
-const pathToTutorialFile = pathFragment =>
+const pathToTutorialFile = (pathFragment) =>
   "../examples/dagster_examples/intro_tutorial/" + pathFragment;
 
-const screenshotPath = pathFragment =>
+const screenshotPath = (pathFragment) =>
   __dirname + "/sections/tutorial/" + pathFragment;
 
 const runDagit = async (args, port) => {
@@ -18,23 +18,23 @@ const runDagit = async (args, port) => {
       "--workdir",
       "../examples/dagster_examples/intro_tutorial/",
       "-p",
-      port || 3000
+      port || 3000,
     ])
   );
   console.log(`started dagit with args ${args} on pid ${dagit.pid}`);
-  dagit.stdout.on("data", data => {
+  dagit.stdout.on("data", (data) => {
     console.log(`dagit stdout: ${data}`);
   });
 
-  dagit.stderr.on("data", data => {
+  dagit.stderr.on("data", (data) => {
     console.error(`dagit stderr: ${data}`);
   });
 
-  dagit.on("close", code => {
+  dagit.on("close", (code) => {
     console.log(`dagit child process exited with code ${code}`);
   });
 
-  dagit.on("error", err => {
+  dagit.on("error", (err) => {
     console.error("Failed to start subprocess.");
   });
 
@@ -42,7 +42,7 @@ const runDagit = async (args, port) => {
   return port;
 };
 
-const tearDownDagit = async ps => {
+const tearDownDagit = async (ps) => {
   dagit.removeAllListeners("close");
   dagit.kill();
   console.log(`stopped dagit`);
@@ -50,10 +50,10 @@ const tearDownDagit = async ps => {
   return;
 };
 
-setConfig = filename => ({
+setConfig = (filename) => ({
   failureThreshold: "0.01",
   failureThresholdType: "percent",
-  customSnapshotIdentifier: filename
+  customSnapshotIdentifier: filename,
 });
 
 describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
@@ -61,14 +61,14 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f hello_cereal.py -n hello_cereal_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("hello_cereal.py"),
         "-n",
-        "hello_cereal_pipeline"
+        "hello_cereal_pipeline",
       ],
       3000
     );
@@ -76,7 +76,7 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -84,24 +84,24 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
     }
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     browser.removeAllListeners("targetcreated");
     done();
   });
 
   it("renders the pipelines view for the hello cereal pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/hello_cereal_pipeline:/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     const image = await page.screenshot({
-      path: screenshotPath("/hello_cereal_figure_one.png")
+      path: screenshotPath("/hello_cereal_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("hello_cereal_figure_one"));
     return;
@@ -109,11 +109,11 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
 
   it("renders the playground for the hello cereal pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/playground/hello_cereal_pipeline", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
 
     const image = await page.screenshot({
-      path: screenshotPath("/hello_cereal_figure_two.png")
+      path: screenshotPath("/hello_cereal_figure_two.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("hello_cereal_figure_two"));
     return;
@@ -121,7 +121,7 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
 
   it("renders the executed playground view for the hello cereal pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/playground/hello_cereal_pipeline", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
 
     const executeButton = await page.waitForSelector(
@@ -141,7 +141,7 @@ describe("for hello_solid, hello_pipeline, and execute_pipeline", () => {
             { timeout: 0 }
           );
           const image = await newTab.screenshot({
-            path: screenshotPath("/hello_cereal_figure_three.png")
+            path: screenshotPath("/hello_cereal_figure_three.png"),
           });
           expect(image).toMatchImageSnapshot(
             setConfig("hello_cereal_figure_three")
@@ -164,7 +164,7 @@ describe("for the serial pipeline in hello_dag", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f serial_pipeline.py -n serial_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("serial_pipeline.py"), "-n", "serial_pipeline"],
@@ -174,7 +174,7 @@ describe("for the serial pipeline in hello_dag", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -182,24 +182,24 @@ describe("for the serial pipeline in hello_dag", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
     }
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     browser.removeAllListeners("targetcreated");
     done();
   });
 
   it("renders the pipelines view for the serial pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/serial_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     const image = await page.screenshot({
-      path: screenshotPath("/serial_pipeline_figure_one.png")
+      path: screenshotPath("/serial_pipeline_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("serial_pipeline_figure_one"));
     return;
@@ -211,14 +211,14 @@ describe("for the complex pipeline in hello_dag", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f complex_pipeline.py -n complex_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("complex_pipeline.py"),
         "-n",
-        "complex_pipeline"
+        "complex_pipeline",
       ],
       3000
     );
@@ -226,7 +226,7 @@ describe("for the complex pipeline in hello_dag", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -234,25 +234,25 @@ describe("for the complex pipeline in hello_dag", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
     }
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     browser.removeAllListeners("targetcreated");
     done();
   });
 
   it("renders the pipelines view for the complex pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/complex_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
     const image = await page.screenshot({
-      path: screenshotPath("/complex_pipeline_figure_one.png")
+      path: screenshotPath("/complex_pipeline_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(
       setConfig("complex_pipeline_figure_one")
@@ -266,7 +266,7 @@ describe("for the config editor in inputs", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f inputs.py -n inputs_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("inputs.py"), "-n", "inputs_pipeline"],
@@ -276,7 +276,7 @@ describe("for the config editor in inputs", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     await tearDownDagit(dagit);
     try {
       await browser.close();
@@ -284,30 +284,30 @@ describe("for the config editor in inputs", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
     }
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     browser.removeAllListeners("targetcreated");
     done();
   });
 
   it("renders the playground view for the inputs pipeline with a hover error", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
     await page.waitForSelector(".CodeMirror-lint-marker-error", {
-      timeout: 0
+      timeout: 0,
     });
     await page.hover(".CodeMirror-lint-marker-error");
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/inputs_figure_one.png")
+      path: screenshotPath("/inputs_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("inputs_figure_one"));
     return;
@@ -315,7 +315,7 @@ describe("for the config editor in inputs", () => {
 
   it("renders the playground view for the inputs pipeline with typeahead", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
     await page.waitForSelector(".CodeMirror textarea", { timeout: 0 });
@@ -324,7 +324,7 @@ describe("for the config editor in inputs", () => {
     await page.keyboard.down("Space");
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/inputs_figure_two.png")
+      path: screenshotPath("/inputs_figure_two.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("inputs_figure_two"));
     return;
@@ -332,7 +332,7 @@ describe("for the config editor in inputs", () => {
 
   it("renders the playground view for the inputs pipeline with valid config", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(1000);
     await page.waitForSelector(".CodeMirror textarea", { timeout: 0 });
@@ -348,7 +348,7 @@ describe("for the config editor in inputs", () => {
       'button[title="Start execution in a subprocess"]'
     );
     const image = await page.screenshot({
-      path: screenshotPath("/inputs_figure_three.png")
+      path: screenshotPath("/inputs_figure_three.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("inputs_figure_three"));
     return;
@@ -360,7 +360,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f inputs.py -n inputs_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("inputs.py"), "-n", "inputs_pipeline"],
@@ -370,7 +370,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -378,7 +378,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -386,13 +386,13 @@ describe("for the untyped pipeline in typed_inputs", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the pipelines view for the inputs pipeline with the type annotations for a solid", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/inputs_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     const [readCsvSolid] = await page.$x(
       "//*[name()='svg']/*[name()='g']/*[name()='text' and contains(text(), 'read_csv')]"
@@ -400,14 +400,14 @@ describe("for the untyped pipeline in typed_inputs", () => {
     await readCsvSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/inputs_figure_four.png")
+      path: screenshotPath("/inputs_figure_four.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("inputs_figure_four"));
   });
 
   it("renders the playground view for the inputs pipeline with a runtime error due to bad config", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     await sleep(500);
     await page.type(
@@ -432,7 +432,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/inputs_figure_five.png")
+            path: screenshotPath("/inputs_figure_five.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("inputs_figure_five"));
           resolve();
@@ -448,7 +448,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
 
   it("renders an error detail for the inputs pipeline with a runtime error due to bad config", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     // this is because localStorage has the stale config!!
     await page.evaluate(() => {
@@ -484,7 +484,7 @@ describe("for the untyped pipeline in typed_inputs", () => {
           await viewFullMessage.click();
           await sleep(50);
           const image = await newTab.screenshot({
-            path: screenshotPath("/inputs_figure_six.png")
+            path: screenshotPath("/inputs_figure_six.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("inputs_figure_six"));
           resolve();
@@ -504,7 +504,7 @@ describe("for the typed pipeline in typed_inputs", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f inputs_typed.py -n inputs_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("inputs_typed.py"), "-n", "inputs_pipeline"],
@@ -514,7 +514,7 @@ describe("for the typed pipeline in typed_inputs", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -522,7 +522,7 @@ describe("for the typed pipeline in typed_inputs", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -530,13 +530,13 @@ describe("for the typed pipeline in typed_inputs", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the playground view for the inputs pipeline with an error due to bad config", async () => {
     await page.goto("http://127.0.0.1:3000/playground/inputs_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     await sleep(500);
     await page.type(
@@ -549,12 +549,12 @@ describe("for the typed pipeline in typed_inputs", () => {
     );
     await sleep(500);
     await page.waitForSelector(".CodeMirror-lint-marker-error", {
-      timeout: 0
+      timeout: 0,
     });
     await page.hover(".CodeMirror-lint-marker-error");
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/inputs_figure_seven.png")
+      path: screenshotPath("/inputs_figure_seven.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("inputs_figure_seven"));
   });
@@ -565,7 +565,7 @@ describe("for the config pipeline in config", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f config.py -n config_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("config.py"), "-n", "config_pipeline"],
@@ -575,7 +575,7 @@ describe("for the config pipeline in config", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -583,7 +583,7 @@ describe("for the config pipeline in config", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -591,13 +591,13 @@ describe("for the config pipeline in config", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the playground view with the mini schema", async () => {
     await page.goto("http://127.0.0.1:3000/playground/config_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     await sleep(500);
     await page.type(
@@ -618,14 +618,14 @@ describe("for the config pipeline in config", () => {
     );
     await sleep(500);
     const image = await page.screenshot({
-      path: screenshotPath("/config_figure_one.png")
+      path: screenshotPath("/config_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("config_figure_one"));
   });
 
   it("renders the pipelines view for the config pipeline with the config type for a solid", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/config_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     const [readCsvSolid] = await page.$x(
       "//*[name()='svg']/*[name()='g']/*[name()='text' and contains(text(), 'read_csv')]"
@@ -633,7 +633,7 @@ describe("for the config pipeline in config", () => {
     await readCsvSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/config_figure_two.png")
+      path: screenshotPath("/config_figure_two.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("config_figure_two"));
   });
@@ -644,14 +644,14 @@ describe("for the custom types pipeline in types", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("custom_types.py"),
         "-n",
-        "custom_type_pipeline"
+        "custom_type_pipeline",
       ],
       3000
     );
@@ -659,7 +659,7 @@ describe("for the custom types pipeline in types", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -667,7 +667,7 @@ describe("for the custom types pipeline in types", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -675,13 +675,13 @@ describe("for the custom types pipeline in types", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the pipelines view with read_csv selected", async () => {
     await page.goto("http://127.0.0.1:3000/pipeline/custom_type_pipeline/", {
-      waitUntil: "networkidle2"
+      waitUntil: "networkidle2",
     });
     const [readCsvSolid] = await page.$x(
       "//*[name()='svg']/*[name()='g']/*[name()='text' and contains(text(), 'read_csv')]"
@@ -689,7 +689,7 @@ describe("for the custom types pipeline in types", () => {
     await readCsvSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/custom_types_figure_one.png")
+      path: screenshotPath("/custom_types_figure_one.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("custom_types_figure_one"));
   });
@@ -700,14 +700,14 @@ describe("for the custom types pipeline in metadata", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("custom_types_4.py"),
         "-n",
-        "custom_type_pipeline"
+        "custom_type_pipeline",
       ],
       3000
     );
@@ -715,7 +715,7 @@ describe("for the custom types pipeline in metadata", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -723,7 +723,7 @@ describe("for the custom types pipeline in metadata", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -731,13 +731,13 @@ describe("for the custom types pipeline in metadata", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders a pipeline run with the sort_by_calories.compute metadata", async () => {
     await page.goto("http://127.0.0.1:3000/playground/custom_type_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(1000);
     await page.waitForSelector(".CodeMirror textarea", { timeout: 0 });
@@ -764,7 +764,7 @@ describe("for the custom types pipeline in metadata", () => {
           await newTab.waitFor(3000);
 
           const image = await newTab.screenshot({
-            path: screenshotPath("/custom_types_figure_two.png")
+            path: screenshotPath("/custom_types_figure_two.png"),
           });
           expect(image).toMatchImageSnapshot(
             setConfig("custom_types_figure_two")
@@ -786,14 +786,14 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f custom_types.py -n custom_type_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("multiple_outputs.py"),
         "-n",
-        "multiple_outputs_pipeline"
+        "multiple_outputs_pipeline",
       ],
       3000
     );
@@ -801,7 +801,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -809,7 +809,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -817,7 +817,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -825,12 +825,12 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     await page.goto(
       "http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
     const image = await page.screenshot({
-      path: screenshotPath("/multiple_outputs.png")
+      path: screenshotPath("/multiple_outputs.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("multiple_outputs"));
     return;
@@ -840,7 +840,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     await page.goto(
       "http://127.0.0.1:3000/pipeline/multiple_outputs_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
 
@@ -856,13 +856,13 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     await splitCerealsSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/multiple_outputs_zoom.png")
+      path: screenshotPath("/multiple_outputs_zoom.png"),
     });
     expect(image).toMatchImageSnapshot({
       // This is not ideal, but this test is a little flakier (due to positioning issues in zoom?)
       failureThreshold: "0.02",
       failureThresholdType: "percent",
-      customSnapshotIdentifier: "multiple_outputs_zoom"
+      customSnapshotIdentifier: "multiple_outputs_zoom",
     });
   });
 
@@ -870,7 +870,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
     await page.goto(
       "http://127.0.0.1:3000/playground/multiple_outputs_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
 
@@ -913,7 +913,7 @@ describe("for the multiple outputs pipeline in multiple_outputs", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/conditional_outputs.png")
+            path: screenshotPath("/conditional_outputs.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("conditional_outputs"));
           resolve();
@@ -933,14 +933,14 @@ describe("for the multiple outputs pipeline in reusable", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f reusable_solids.py -n reusable_solids_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("reusable_solids.py"),
         "-n",
-        "reusable_solids_pipeline"
+        "reusable_solids_pipeline",
       ],
       3000
     );
@@ -948,7 +948,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -956,7 +956,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -964,7 +964,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -972,7 +972,7 @@ describe("for the multiple outputs pipeline in reusable", () => {
     await page.goto(
       "http://127.0.0.1:3000/pipeline/reusable_solids_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -989,13 +989,13 @@ describe("for the multiple outputs pipeline in reusable", () => {
     await sortHotCerealsSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/reusable_solids.png")
+      path: screenshotPath("/reusable_solids.png"),
     });
     expect(image).toMatchImageSnapshot({
       // This is not ideal, but this test is a little flakier (due to positioning issues in zoom?)
       failureThreshold: "0.021",
       failureThresholdType: "percent",
-      customSnapshotIdentifier: "reusable_solids"
+      customSnapshotIdentifier: "reusable_solids",
     });
   });
 });
@@ -1005,14 +1005,14 @@ describe("for the composition pipeline in composite_solids", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f composite_solids.py -n composite_solids_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("composite_solids.py"),
         "-n",
-        "composite_solids_pipeline"
+        "composite_solids_pipeline",
       ],
       3000
     );
@@ -1020,7 +1020,7 @@ describe("for the composition pipeline in composite_solids", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1028,7 +1028,7 @@ describe("for the composition pipeline in composite_solids", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1036,7 +1036,7 @@ describe("for the composition pipeline in composite_solids", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -1044,7 +1044,7 @@ describe("for the composition pipeline in composite_solids", () => {
     await page.goto(
       "http://127.0.0.1:3000/pipeline/composite_solids_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1061,7 +1061,7 @@ describe("for the composition pipeline in composite_solids", () => {
     await loadCerealsSolid.click();
     await sleep(50);
     const image = await page.screenshot({
-      path: screenshotPath("/composite_solids.png")
+      path: screenshotPath("/composite_solids.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("composite_solids"));
   });
@@ -1070,7 +1070,7 @@ describe("for the composition pipeline in composite_solids", () => {
     await page.goto(
       "http://127.0.0.1:3000/pipeline/composite_solids_pipeline:/load_cereals/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1082,7 +1082,7 @@ describe("for the composition pipeline in composite_solids", () => {
     await sleep(50);
 
     const image = await page.screenshot({
-      path: screenshotPath("/composite_solids_expanded.png")
+      path: screenshotPath("/composite_solids_expanded.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("composite_solids_expanded"));
   });
@@ -1091,7 +1091,7 @@ describe("for the composition pipeline in composite_solids", () => {
     await page.goto(
       "http://127.0.0.1:3000/playground/composite_solids_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1155,7 +1155,7 @@ describe("for the composition pipeline in composite_solids", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/composite_solids_results.png")
+            path: screenshotPath("/composite_solids_results.png"),
           });
           expect(image).toMatchImageSnapshot(
             setConfig("composite_solids_results")
@@ -1177,14 +1177,14 @@ describe("for the materialization pipeline in materializations and intermediates
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f materializations.py -n materialization_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("materializations.py"),
         "-n",
-        "materialization_pipeline"
+        "materialization_pipeline",
       ],
       3000
     );
@@ -1192,7 +1192,7 @@ describe("for the materialization pipeline in materializations and intermediates
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1200,7 +1200,7 @@ describe("for the materialization pipeline in materializations and intermediates
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1208,7 +1208,7 @@ describe("for the materialization pipeline in materializations and intermediates
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -1216,7 +1216,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1250,7 +1250,7 @@ describe("for the materialization pipeline in materializations and intermediates
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/materializations.png")
+            path: screenshotPath("/materializations.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("materializations"));
           resolve();
@@ -1268,7 +1268,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1307,7 +1307,7 @@ describe("for the materialization pipeline in materializations and intermediates
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/intermediates.png")
+            path: screenshotPath("/intermediates.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("intermediates"));
           resolve();
@@ -1325,7 +1325,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1367,7 +1367,7 @@ describe("for the materialization pipeline in materializations and intermediates
           await page.$x('//div[@title="read_csv.compute"]');
 
           const image = await newTab.screenshot({
-            path: screenshotPath("/reexecution.png")
+            path: screenshotPath("/reexecution.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("reexecution"));
           resolve();
@@ -1385,7 +1385,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1438,7 +1438,7 @@ describe("for the materialization pipeline in materializations and intermediates
           await reexecuteReadCsvButton.click();
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/reexecution_results.png")
+            path: screenshotPath("/reexecution_results.png"),
           });
           expect(image).toMatchImageSnapshot(setConfig("reexecution_results"));
           resolve();
@@ -1457,7 +1457,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1487,7 +1487,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await page.waitForSelector(".CodeMirror-lint-mark-error");
     const image = await page.screenshot({
-      path: screenshotPath("/reexecution_errors.png")
+      path: screenshotPath("/reexecution_errors.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("reexecution_errors"));
     return;
@@ -1497,7 +1497,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1536,7 +1536,7 @@ describe("for the materialization pipeline in materializations and intermediates
 
     await sleep(100);
     const image = await page.screenshot({
-      path: screenshotPath("/subset_selection.png")
+      path: screenshotPath("/subset_selection.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("subset_selection"));
     return;
@@ -1546,7 +1546,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await page.goto(
       "http://127.0.0.1:3000/playground/materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1587,7 +1587,7 @@ describe("for the materialization pipeline in materializations and intermediates
     await sleep(50);
     await page.waitForSelector('div[title="sort_by_calories.compute"]');
     const image = await page.screenshot({
-      path: screenshotPath("/subset_config.png")
+      path: screenshotPath("/subset_config.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("subset_config"));
     return;
@@ -1599,14 +1599,14 @@ describe("for the output materialization pipeline in materializations", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f output_materialization.py -n output_materialization_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("output_materialization.py"),
         "-n",
-        "output_materialization_pipeline"
+        "output_materialization_pipeline",
       ],
       3000
     );
@@ -1614,7 +1614,7 @@ describe("for the output materialization pipeline in materializations", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1622,7 +1622,7 @@ describe("for the output materialization pipeline in materializations", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1630,7 +1630,7 @@ describe("for the output materialization pipeline in materializations", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -1638,7 +1638,7 @@ describe("for the output materialization pipeline in materializations", () => {
     await page.goto(
       "http://127.0.0.1:3000/playground/output_materialization_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1684,7 +1684,7 @@ describe("for the output materialization pipeline in materializations", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/output_materializations.png")
+            path: screenshotPath("/output_materializations.png"),
           });
           expect(image).toMatchImageSnapshot(
             setConfig("output_materializations")
@@ -1706,14 +1706,14 @@ describe("for the serialization strategy pipeline in intermediates", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f serialization_strategy.py -n serialization_strategy_pipeline
     dagit = await runDagit(
       [
         "-f",
         pathToTutorialFile("serialization_strategy.py"),
         "-n",
-        "serialization_strategy_pipeline"
+        "serialization_strategy_pipeline",
       ],
       3000
     );
@@ -1721,7 +1721,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1729,7 +1729,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1737,7 +1737,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
@@ -1745,7 +1745,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
     await page.goto(
       "http://127.0.0.1:3000/playground/serialization_strategy_pipeline/",
       {
-        waitUntil: "networkidle0"
+        waitUntil: "networkidle0",
       }
     );
     await sleep(500);
@@ -1784,7 +1784,7 @@ describe("for the serialization strategy pipeline in intermediates", () => {
           await newTab.setViewport({ width: 1680, height: 946 });
           await newTab.waitFor(3000);
           const image = await newTab.screenshot({
-            path: screenshotPath("/serialization_strategy.png")
+            path: screenshotPath("/serialization_strategy.png"),
           });
           expect(image).toMatchImageSnapshot(
             setConfig("serialization_strategy")
@@ -1806,7 +1806,7 @@ describe("for the modes pipeline in modes", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("modes.py"), "-n", "modes_pipeline"],
@@ -1816,7 +1816,7 @@ describe("for the modes pipeline in modes", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1824,7 +1824,7 @@ describe("for the modes pipeline in modes", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1832,13 +1832,13 @@ describe("for the modes pipeline in modes", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the mode selector for the modes pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/playground/modes_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
 
@@ -1849,11 +1849,11 @@ describe("for the modes pipeline in modes", () => {
     await page.reload({ waitUntil: "networkidle0" });
     await sleep(500);
 
-    await page.click("button[title='mode-picker-button']");
+    await page.click("button[data-test-id='mode-picker-button']");
     await sleep(500);
 
     const image = await page.screenshot({
-      path: screenshotPath("/modes.png")
+      path: screenshotPath("/modes.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("modes"));
   });
@@ -1864,7 +1864,7 @@ describe("for the presets pipeline in presets", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("presets.py"), "-n", "presets_pipeline"],
@@ -1874,7 +1874,7 @@ describe("for the presets pipeline in presets", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1882,7 +1882,7 @@ describe("for the presets pipeline in presets", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1890,13 +1890,13 @@ describe("for the presets pipeline in presets", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the presets selector for the presets pipeline", async () => {
     await page.goto("http://127.0.0.1:3000/playground/presets_pipeline/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
 
@@ -1907,7 +1907,7 @@ describe("for the presets pipeline in presets", () => {
     await page.reload({ waitUntil: "networkidle0" });
     await sleep(500);
 
-    await page.click("button[title='mode-picker-button']");
+    await page.click("button[data-test-id='mode-picker-button']");
     await sleep(50);
     const [devModeItem] = await page.$x(
       '//li//a//div[contains(text(), "dev")]'
@@ -1915,7 +1915,7 @@ describe("for the presets pipeline in presets", () => {
     await devModeItem.click();
     await sleep(50);
 
-    await page.click("button[title='preset-selector-button']");
+    await page.click("button[data-test-id='preset-selector-button']");
     await sleep(50);
     const [devPresetItem] = await page.$x(
       '//li//a//div[contains(text(), "dev")]'
@@ -1923,11 +1923,11 @@ describe("for the presets pipeline in presets", () => {
     await devPresetItem.click();
     await sleep(50);
 
-    await page.click("button[title='preset-selector-button']");
+    await page.click("button[data-test-id='preset-selector-button']");
     await sleep(50);
 
     const image = await page.screenshot({
-      path: screenshotPath("/presets.png")
+      path: screenshotPath("/presets.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("presets"));
   });
@@ -1938,7 +1938,7 @@ describe("for the repo", () => {
   let page;
   let dagit;
 
-  beforeAll(async done => {
+  beforeAll(async (done) => {
     // dagit -f modes.py -n serialization_strategy_pipeline
     dagit = await runDagit(
       ["-f", pathToTutorialFile("repos.py"), "-n", "define_repo"],
@@ -1948,7 +1948,7 @@ describe("for the repo", () => {
     done();
   });
 
-  afterAll(async done => {
+  afterAll(async (done) => {
     try {
       await browser.close();
     } catch {}
@@ -1956,7 +1956,7 @@ describe("for the repo", () => {
     done();
   });
 
-  beforeEach(async done => {
+  beforeEach(async (done) => {
     let existingPage;
     for (existingPage of await browser.pages()) {
       await existingPage.close();
@@ -1964,13 +1964,13 @@ describe("for the repo", () => {
     browser.removeAllListeners("targetcreated");
     page = await browser.newPage();
     await page.setViewport({ width: 1680, height: 946 });
-    page.on("console", msg => console.log("PAGE LOG:", msg.text()));
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
     done();
   });
 
   it("renders the pipeline selector ", async () => {
     await page.goto("http://127.0.0.1:3005/pipeline/complex_pipeline:/", {
-      waitUntil: "networkidle0"
+      waitUntil: "networkidle0",
     });
     await sleep(500);
 
@@ -1985,7 +1985,7 @@ describe("for the repo", () => {
     await sleep(50);
 
     const image = await page.screenshot({
-      path: screenshotPath("/repos.png")
+      path: screenshotPath("/repos.png"),
     });
     expect(image).toMatchImageSnapshot(setConfig("repos"));
   });

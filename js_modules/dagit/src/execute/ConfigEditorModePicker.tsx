@@ -16,6 +16,8 @@ interface Mode {
   name: string;
 }
 
+const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeline.`;
+
 const ModeSelect = Select.ofType<Mode>();
 
 export class ConfigEditorModePicker extends React.PureComponent<
@@ -51,6 +53,7 @@ export class ConfigEditorModePicker extends React.PureComponent<
     const singleMode = this.props.modes.length === 1;
     const currentMode = this.getCurrentMode();
     const valid = !this.props.modeError;
+    const disabled = singleMode && valid;
 
     return (
       <ModeSelect
@@ -72,9 +75,9 @@ export class ConfigEditorModePicker extends React.PureComponent<
         onItemSelect={this.onItemSelect}
       >
         <Button
-          icon={valid ? "insert" : IconNames.WARNING_SIGN}
+          icon={valid ? undefined : IconNames.ERROR}
           intent={valid ? Intent.NONE : Intent.WARNING}
-          title="mode-picker-button"
+          title={disabled ? MODE_PICKER_HINT_TEXT : "Current execution mode"}
           text={
             valid
               ? currentMode
@@ -82,8 +85,9 @@ export class ConfigEditorModePicker extends React.PureComponent<
                 : "Select Mode"
               : "Invalid Mode Selection"
           }
-          disabled={singleMode && valid}
+          disabled={disabled}
           rightIcon="caret-down"
+          data-test-id="mode-picker-button"
         />
       </ModeSelect>
     );

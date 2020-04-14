@@ -244,7 +244,7 @@ export default class ExecutionSessionContainer extends React.Component<
   closeTagEditor = () => this.setState({ tagEditorOpen: false });
 
   render() {
-    const { currentSession, onCreateSession } = this.props;
+    const { currentSession, onCreateSession, onSaveSession } = this.props;
     const {
       plan,
       validationResult,
@@ -267,6 +267,14 @@ export default class ExecutionSessionContainer extends React.Component<
         first={
           <>
             <SessionSettingsBar>
+              <ConfigEditorConfigPicker
+                pipelineName={pipeline.name}
+                base={currentSession.base}
+                solidSubset={currentSession.solidSubset}
+                onCreateSession={onCreateSession}
+                onSaveSession={onSaveSession}
+              />
+              <div style={{ width: 5 }} />
               <SolidSelector
                 subsetError={subsetError}
                 pipelineName={pipeline.name}
@@ -302,15 +310,6 @@ export default class ExecutionSessionContainer extends React.Component<
             {tags.length ? (
               <TagContainer tags={tags} onRequestEdit={this.openTagEditor} />
             ) : null}
-            <ConfigEditorPresetInsertionContainer>
-              {pipeline && (
-                <ConfigEditorConfigPicker
-                  pipelineName={pipeline.name}
-                  solidSubset={currentSession.solidSubset}
-                  onCreateSession={onCreateSession}
-                />
-              )}
-            </ConfigEditorPresetInsertionContainer>
             <ConfigEditorDisplayOptionsContainer>
               <Button
                 icon="paragraph"
@@ -477,14 +476,6 @@ const SessionSettingsBar = styled.div`
   align-items: center;
   height: 47px;
   padding: 8px 10px;
-`;
-
-const ConfigEditorPresetInsertionContainer = styled.div`
-  display: inline-block;
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  z-index: 10;
 `;
 
 const ConfigEditorDisplayOptionsContainer = styled.div`

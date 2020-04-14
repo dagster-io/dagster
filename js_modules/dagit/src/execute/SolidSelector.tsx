@@ -216,9 +216,9 @@ export default (props: ISolidSelectorProps) => {
 
   let buttonText;
   if (subsetError) {
-    buttonText = "Invalid Solid Selection";
+    buttonText = `Solids: Invalid Selection`;
   } else {
-    buttonText = query || "*";
+    buttonText = `Solids: ${query || "*"}`;
   }
 
   return (
@@ -246,7 +246,7 @@ export default (props: ISolidSelectorProps) => {
           />
         </Dialog>
         <Button
-          icon={subsetError ? IconNames.WARNING_SIGN : undefined}
+          icon={subsetError ? IconNames.ERROR : undefined}
           intent={subsetError ? Intent.WARNING : Intent.NONE}
           onClick={() => setOpen(true)}
           title="solid-subset-selector"

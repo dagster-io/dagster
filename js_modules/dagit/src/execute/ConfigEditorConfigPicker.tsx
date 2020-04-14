@@ -1,8 +1,16 @@
 import * as React from "react";
-import { Button, Menu, MenuItem, Icon } from "@blueprintjs/core";
+import {
+  Button,
+  Menu,
+  Spinner,
+  MenuItem,
+  Intent,
+  IInputGroupProps,
+  HTMLInputProps
+} from "@blueprintjs/core";
 import * as ReactDOM from "react-dom";
 
-import { Select } from "@blueprintjs/select";
+import { Select, Suggest } from "@blueprintjs/select";
 import { useQuery } from "react-apollo";
 import {
   ConfigPresetsQuery,
@@ -19,7 +27,6 @@ import {
 } from "./types/ConfigPartitionSetsQuery";
 import gql from "graphql-tag";
 import { IExecutionSession } from "../LocalStorage";
-import ApolloClient from "apollo-client";
 import { isEqual } from "apollo-utilities";
 import styled from "styled-components";
 import { ShortcutHandler } from "../ShortcutHandler";
@@ -27,73 +34,85 @@ import { ShortcutHandler } from "../ShortcutHandler";
 type Preset = ConfigPresetsQuery_pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
 type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
-type Pipeline = ConfigPartitionsQuery_pipeline;
 type ConfigGenerator = Preset | PartitionSet;
 
-const ConfigGeneratorSelect = Select.ofType<ConfigGenerator>();
-const PartitionSelect = Select.ofType<Partition>();
-
 interface ConfigEditorConfigPickerProps {
+  base: IExecutionSession["base"];
   pipelineName: string;
   solidSubset: string[] | null;
+  onSaveSession: (updates: Partial<IExecutionSession>) => void;
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
 }
 
-interface ConfigEditorConfigPickerState {
-  selectedConfigGenerator: ConfigGenerator | null;
-  selectedPartition: Partition | null;
-}
-
-interface ConfigEditorConfigGeneratorPickerProps {
-  pipelineName: string;
-  solidSubset: string[] | null;
-  selectedConfigGenerator: ConfigGenerator | null;
-  onCreateSession: (initial: Partial<IExecutionSession>) => void;
-  onSelectConfigGenerator: (configGenerator: ConfigGenerator) => void;
-}
+const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
 
 export class ConfigEditorConfigPicker extends React.Component<
   ConfigEditorConfigPickerProps
 > {
-  state: Readonly<ConfigEditorConfigPickerState> = {
-    selectedConfigGenerator: null,
-    selectedPartition: null
+  onSelectPartitionSet = (partitionSet: PartitionSet) => {
+    this.props.onSaveSession({
+      base: {
+        partitionsSetName: partitionSet.name,
+        partitionName: null
+      }
+    });
   };
 
-  onSelectConfigGenerator = (configGenerator: ConfigGenerator) => {
-    this.setState({ selectedConfigGenerator: configGenerator });
-    this.setState({ selectedPartition: null });
+  onSelectPreset = (preset: Preset) => {
+    this.onCommit({
+      base: { presetName: preset.name },
+      name: preset.name,
+      environmentConfigYaml: preset.environmentConfigYaml || "",
+      solidSubset: preset.solidSubset,
+      mode: preset.mode,
+      tags: []
+    });
   };
 
-  onSelectPartition = (partition: Partition) => {
-    this.setState({ selectedPartition: partition });
+  onSelectPartition = (
+    partition: Partition,
+    pipeline?: ConfigPartitionsQuery_pipeline
+  ) => {
+    this.onCommit({
+      name: partition.name,
+      base: Object.assign({}, this.props.base, {
+        partitionName: partition.name
+      }),
+      environmentConfigYaml: partition.environmentConfigYaml || "",
+      solidSubset: partition.solidSubset,
+      mode: partition.mode,
+      tags: [...(pipeline?.tags || []), ...partition.tags]
+    });
+  };
+
+  onCommit = (changes: Partial<IExecutionSession>) => {
+    this.props.onSaveSession(changes);
   };
 
   render() {
-    const { selectedConfigGenerator } = this.state;
+    const { pipelineName, solidSubset, base } = this.props;
 
     return (
       <PickerContainer>
         <ConfigEditorConfigGeneratorPicker
-          pipelineName={this.props.pipelineName}
-          solidSubset={this.props.solidSubset}
-          onCreateSession={this.props.onCreateSession}
-          selectedConfigGenerator={this.state.selectedConfigGenerator}
-          onSelectConfigGenerator={this.onSelectConfigGenerator}
+          value={base}
+          pipelineName={pipelineName}
+          solidSubset={solidSubset}
+          onSelectPreset={this.onSelectPreset}
+          onSelectPartitionSet={this.onSelectPartitionSet}
         />
-        {selectedConfigGenerator &&
-          selectedConfigGenerator.__typename === "PartitionSet" && (
-            <>
-              <Icon icon="chevron-right" style={{ padding: "0 10px" }} />
-              <ConfigEditorPartitionPicker
-                pipelineName={this.props.pipelineName}
-                partitionSet={selectedConfigGenerator}
-                selectedPartition={this.state.selectedPartition}
-                onSelectPartition={this.onSelectPartition}
-                onCreateSession={this.props.onCreateSession}
-              />
-            </>
-          )}
+        {base && "partitionsSetName" in base && (
+          <>
+            <div style={{ width: 5 }} />
+            <ConfigEditorPartitionPicker
+              key={base.partitionsSetName}
+              pipelineName={pipelineName}
+              partitionSetName={base.partitionsSetName}
+              value={base.partitionName}
+              onSelect={this.onSelectPartition}
+            />
+          </>
+        )}
       </PickerContainer>
     );
   }
@@ -101,151 +120,127 @@ export class ConfigEditorConfigPicker extends React.Component<
 
 interface ConfigEditorPartitionPickerProps {
   pipelineName: string;
-  partitionSet: PartitionSet;
-  selectedPartition: Partition | null;
-  onSelectPartition: (partition: Partition) => void;
-  onCreateSession: (initial: Partial<IExecutionSession>) => void;
+  partitionSetName: string;
+  value: string | null;
+  onSelect: (
+    partition: Partition,
+    pipeline?: ConfigPartitionsQuery_pipeline
+  ) => void;
 }
 
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
   props => {
-    const {
-      partitionSet,
-      pipelineName,
-      onCreateSession,
-      onSelectPartition,
-      selectedPartition
-    } = props;
-
-    const onPartitionSelect = async (
-      partition: Partition,
-      pipeline?: Pipeline
-    ) => {
-      const pipelineTags = pipeline?.tags || [];
-      const partitionTags = partition.tags;
-      onCreateSession({
-        name: partition.name,
-        environmentConfigYaml: partition.environmentConfigYaml || "",
-        solidSubset: partition.solidSubset,
-        mode: partition.mode,
-        tags: [...pipelineTags, ...partitionTags]
-      });
-      onSelectPartition(partition);
-    };
-
-    const { data } = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
-      fetchPolicy: "network-only",
-      variables: { partitionSetName: partitionSet.name, pipelineName }
-    });
+    const { partitionSetName, pipelineName, value, onSelect } = props;
+    const { data, loading } = useQuery<ConfigPartitionsQuery>(
+      CONFIG_PARTITIONS_QUERY,
+      {
+        variables: { partitionSetName, pipelineName },
+        fetchPolicy: "network-only"
+      }
+    );
 
     const partitions: Partition[] =
-      (data &&
-        data.partitionSetOrError.__typename === "PartitionSet" &&
-        data.partitionSetOrError.partitions.results) ||
-      [];
+      data?.partitionSetOrError.__typename === "PartitionSet"
+        ? data.partitionSetOrError.partitions.results
+        : [];
 
+    const selected = partitions.find(p => p.name === value);
+
+    const inputProps: IInputGroupProps & HTMLInputProps = {
+      placeholder: "Partition",
+      style: { width: 180 },
+      intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER
+    };
+
+    // If we are loading the partitions and do NOT have any cached data to display,
+    // show the component in a loading state with a spinner and fill it with the
+    // current partition's name so it doesn't flicker (if one is set already.)
+    if (loading && partitions.length === 0) {
+      return (
+        <Suggest<string>
+          key="loading"
+          inputProps={{
+            ...inputProps,
+            rightElement: !value ? <Spinner size={17} /> : undefined
+          }}
+          items={[]}
+          itemRenderer={() => null}
+          noResults={<Menu.Item disabled={true} text="Loading..." />}
+          inputValueRenderer={str => str}
+          selectedItem={value}
+        />
+      );
+    }
+
+    // Note: We don't want this Suggest to be a fully "controlled" React component.
+    // Keeping it's state is annoyign and we only want to update our data model on
+    // selection change. However, we need to set an initial value (defaultSelectedItem)
+    // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
-      <div>
-        <PartitionSelect
-          items={partitions}
-          itemPredicate={(query, partition) =>
-            query.length === 0 || partition.name.includes(query)
-          }
-          itemRenderer={(partition, props) => (
-            <Menu.Item
-              active={props.modifiers.active}
-              onClick={props.handleClick}
-              key={partition.name}
-              text={partition.name}
-            />
-          )}
-          noResults={<Menu.Item disabled={true} text="No presets." />}
-          onItemSelect={partition =>
-            onPartitionSelect(partition, data?.pipeline)
-          }
-        >
-          <Button
-            text={selectedPartition ? selectedPartition.name : ""}
-            icon="insert"
-            rightIcon="caret-down"
+      <Suggest<Partition>
+        key={selected ? selected.name : "none"}
+        defaultSelectedItem={selected}
+        items={partitions}
+        inputProps={inputProps}
+        inputValueRenderer={partition => partition.name}
+        itemPredicate={(query, partition) =>
+          query.length === 0 || partition.name.includes(query)
+        }
+        itemRenderer={(partition, props) => (
+          <Menu.Item
+            active={props.modifiers.active}
+            onClick={props.handleClick}
+            key={partition.name}
+            text={partition.name}
           />
-        </PartitionSelect>
-      </div>
+        )}
+        noResults={<Menu.Item disabled={true} text="No presets." />}
+        onItemSelect={item => onSelect(item, data?.pipeline)}
+      />
     );
   },
   isEqual
 );
 
+interface ConfigEditorConfigGeneratorPickerProps {
+  pipelineName: string;
+  solidSubset: string[] | null;
+  value: IExecutionSession["base"];
+  onSelectPreset: (preset: Preset) => void;
+  onSelectPartitionSet: (partitionSet: PartitionSet) => void;
+}
+
 export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   props => {
-    const { pipelineName, onCreateSession, onSelectConfigGenerator } = props;
-
-    const onPresetSelect = async (
-      preset: Preset,
-      pipelineName: string,
-      client: ApolloClient<any>
-    ) => {
-      const { data } = await client.query({
-        query: CONFIG_PRESETS_QUERY,
-        variables: { pipelineName },
-        fetchPolicy: "network-only"
-      });
-      let updatedPreset = preset;
-      for (const p of data.pipeline.presets) {
-        if (p.name === preset.name) {
-          updatedPreset = p;
-          break;
-        }
-      }
-      onCreateSession({
-        name: updatedPreset.name,
-        environmentConfigYaml: updatedPreset.environmentConfigYaml || "",
-        solidSubset: updatedPreset.solidSubset,
-        mode: updatedPreset.mode
-      });
-      onSelectConfigGenerator(updatedPreset);
-    };
-
-    const onPartitionSetSelect = async (partitionSet: PartitionSet) => {
-      onSelectConfigGenerator(partitionSet);
-    };
-
-    const { data, client } = useQuery<ConfigPresetsQuery>(
-      CONFIG_PRESETS_QUERY,
-      {
-        fetchPolicy: "network-only",
-        variables: { pipelineName }
-      }
+    const { pipelineName, onSelectPreset, onSelectPartitionSet, value } = props;
+    const { presets, partitionSets, loading } = usePresetsAndPartitions(
+      pipelineName
     );
 
-    const presets: Preset[] = (
-      (data &&
-        data.pipeline &&
-        data.pipeline.__typename === "Pipeline" &&
-        data.pipeline.presets) ||
-      []
-    ).sort((a, b) => a.name.localeCompare(b.name));
-
-    const { data: partitionsData } = useQuery<ConfigPartitionSetsQuery>(
-      CONFIG_PARTITION_SETS_QUERY,
-      {
-        fetchPolicy: "network-only",
-        variables: { pipelineName }
-      }
-    );
-
-    const partitionSets: PartitionSet[] =
-      (partitionsData &&
-        partitionsData.partitionSetsOrError.__typename === "PartitionSets" &&
-        partitionsData.partitionSetsOrError.results) ||
-      [];
-
-    // This is done in two steps because we can't do
-    // presets.concat(partitionsSets) since they are different types
-    let configGenerators: ConfigGenerator[] = presets;
-    configGenerators = configGenerators.concat(partitionSets);
+    const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets];
+    const empty = !loading && configGenerators.length === 0;
 
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
+    const onSelect = (item: ConfigGenerator) => {
+      if (item.__typename === "PartitionSet") {
+        onSelectPartitionSet(item);
+      } else {
+        onSelectPreset(item);
+      }
+    };
+
+    let emptyLabel = `Preset / Partition Set`;
+    if (presets.length && !partitionSets.length) {
+      emptyLabel = `Preset`;
+    } else if (!presets.length && partitionSets.length) {
+      emptyLabel = `Partition Set`;
+    }
+
+    const label = !value
+      ? emptyLabel
+      : "presetName" in value
+      ? `Preset: ${value.presetName}`
+      : `Partition Set: ${value.partitionsSetName}`;
 
     return (
       <div>
@@ -254,8 +249,9 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
           shortcutFilter={e => e.keyCode === 69 && e.altKey}
           onShortcut={() => activateSelect(select.current)}
         >
-          <ConfigGeneratorSelect
+          <Select<ConfigGenerator>
             ref={select}
+            disabled={empty}
             items={configGenerators}
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
@@ -265,67 +261,67 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
               renderItem,
               filteredItems
             }) => {
-              const presetItems = filteredItems.filter(
-                item => item.__typename === "PipelinePreset"
-              );
-
-              const partitionSetItems = filteredItems.filter(
-                item => item.__typename === "PartitionSet"
-              );
-
-              const renderedPresetItems = presetItems
+              const renderedPresetItems = filteredItems
+                .filter(item => item.__typename === "PipelinePreset")
                 .map(renderItem)
-                .filter(item => item != null);
+                .filter(Boolean);
 
-              const renderedPartitionSetItems = partitionSetItems
+              const renderedPartitionSetItems = filteredItems
+                .filter(item => item.__typename === "PartitionSet")
                 .map(renderItem)
-                .filter(item => item != null);
+                .filter(Boolean);
+
+              const bothTypesPresent =
+                renderedPresetItems.length > 0 &&
+                renderedPartitionSetItems.length > 0;
 
               return (
                 <Menu ulRef={itemsParentRef}>
-                  {renderedPresetItems.length > 0 && (
-                    <>
-                      <MenuItem disabled={true} text={`Presets`} />
-                      {renderedPresetItems}
-                    </>
+                  {bothTypesPresent && (
+                    <MenuItem disabled={true} text={`Presets`} />
                   )}
-                  {renderedPresetItems.length > 0 &&
-                    renderedPartitionSetItems.length > 0 && <Menu.Divider />}
-                  {renderedPartitionSetItems.length > 0 && (
-                    <>
-                      <MenuItem disabled={true} text={`Partitions`} />
-                      {renderedPartitionSetItems}
-                    </>
+                  {renderedPresetItems}
+                  {bothTypesPresent && <Menu.Divider />}
+                  {bothTypesPresent && (
+                    <MenuItem disabled={true} text={`Partition Sets`} />
                   )}
+                  {renderedPartitionSetItems}
                 </Menu>
               );
             }}
-            itemRenderer={(configGenerator, props) => (
+            itemRenderer={(item, props) => (
               <Menu.Item
                 active={props.modifiers.active}
                 onClick={props.handleClick}
-                key={configGenerator.name}
-                text={configGenerator.name}
+                key={item.name}
+                text={
+                  <div>
+                    {item.name}
+                    <div style={{ opacity: 0.4, fontSize: "0.75rem" }}>
+                      {[
+                        item.solidSubset
+                          ? item.solidSubset.length === 1
+                            ? `Solids: ${item.solidSubset[0]}`
+                            : `Solids: ${item.solidSubset.length}`
+                          : `Solids: All`,
+                        `Mode: ${item.mode}`
+                      ].join(" - ")}
+                    </div>
+                  </div>
+                }
               />
             )}
             noResults={<Menu.Item disabled={true} text="No presets." />}
-            onItemSelect={selection => {
-              selection.__typename === "PipelinePreset"
-                ? onPresetSelect(selection, pipelineName, client)
-                : onPartitionSetSelect(selection);
-            }}
+            onItemSelect={onSelect}
           >
             <Button
-              text={
-                props.selectedConfigGenerator
-                  ? props.selectedConfigGenerator.name
-                  : ""
-              }
-              title="preset-selector-button"
-              icon="insert"
+              disabled={empty}
+              text={label}
+              title={empty ? PRESET_PICKER_HINT_TEXT : undefined}
+              data-test-id="preset-selector-button"
               rightIcon="caret-down"
             />
-          </ConfigGeneratorSelect>
+          </Select>
         </ShortcutHandler>
       </div>
     );
@@ -356,9 +352,9 @@ export const CONFIG_PRESETS_QUERY = gql`
       presets {
         __typename
         name
+        mode
         solidSubset
         environmentConfigYaml
-        mode
       }
     }
   }
@@ -371,6 +367,8 @@ export const CONFIG_PARTITION_SETS_QUERY = gql`
       ... on PartitionSets {
         results {
           name
+          mode
+          solidSubset
         }
       }
     }
@@ -408,3 +406,35 @@ export const CONFIG_PARTITIONS_QUERY = gql`
     }
   }
 `;
+
+function usePresetsAndPartitions(
+  pipelineName: string
+): { presets: Preset[]; partitionSets: PartitionSet[]; loading: boolean } {
+  const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
+    fetchPolicy: "network-only",
+    variables: { pipelineName }
+  });
+  const partitionSetsQuery = useQuery<ConfigPartitionSetsQuery>(
+    CONFIG_PARTITION_SETS_QUERY,
+    {
+      fetchPolicy: "network-only",
+      variables: { pipelineName }
+    }
+  );
+
+  const byName = (a: { name: string }, b: { name: string }) =>
+    a.name.localeCompare(b.name);
+
+  return {
+    loading: presetsQuery.loading || partitionSetsQuery.loading,
+    presets:
+      presetsQuery.data?.pipeline?.__typename === "Pipeline"
+        ? presetsQuery.data.pipeline.presets.sort(byName)
+        : [],
+    partitionSets:
+      partitionSetsQuery.data?.partitionSetsOrError?.__typename ===
+      "PartitionSets"
+        ? partitionSetsQuery.data.partitionSetsOrError.results.sort(byName)
+        : []
+  };
+}

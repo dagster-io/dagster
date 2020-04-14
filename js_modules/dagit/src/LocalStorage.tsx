@@ -32,6 +32,10 @@ export interface IExecutionSession {
   key: string;
   name: string;
   environmentConfigYaml: string;
+  base:
+    | { presetName: string }
+    | { partitionsSetName: string; partitionName: string | null }
+    | null;
   mode: string | null;
   solidSubset: string[] | null;
   solidSubsetQuery: string | null;
@@ -94,6 +98,7 @@ export function applyCreateSession(
         name: "Workspace",
         environmentConfigYaml: "",
         mode: null,
+        base: null,
         solidSubset: null,
         solidSubsetQuery: "*",
         tags: null,

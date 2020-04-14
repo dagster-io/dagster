@@ -14,6 +14,8 @@ export interface ConfigPartitionSetsQuery_partitionSetsOrError_PipelineNotFoundE
 export interface ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results {
   __typename: "PartitionSet";
   name: string;
+  mode: string;
+  solidSubset: string[] | null;
 }
 
 export interface ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets {
