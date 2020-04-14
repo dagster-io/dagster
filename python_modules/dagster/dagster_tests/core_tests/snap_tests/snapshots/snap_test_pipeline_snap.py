@@ -2,7 +2,7 @@
 # snapshottest: v1 - https://goo.gl/zC4yUc
 from __future__ import unicode_literals
 
-from snapshottest import GenericRepr, Snapshot
+from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
@@ -6066,22 +6066,209 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
 
 snapshots['test_empty_pipeline_snap_props 2'] = 'bb3fc3f68b41af892e70f247c3a33182d7397738'
 
-snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "bar",
+      "type_key": "Selector.2d70a477fddef640dd26e7ded5d4317d66155b7f"
+    },
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Array.Float"
+    }
+  ],
+  "given_name": null,
+  "key": "Permissive.2922420c806e6864670c535462c974f498260ac4",
+  "kind": {
+    "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": "List of [{ bar: String foo: Int }]",
+  "enum_values": null,
+  "fields": null,
+  "given_name": null,
+  "key": "Array.Selector.1f37a068c7c51aba23e9c41475c78eebc4e58471",
+  "kind": {
+    "__enum__": "ConfigTypeKind.ARRAY"
+  },
+  "type_param_keys": [
+    "Selector.1f37a068c7c51aba23e9c41475c78eebc4e58471"
+  ]
+}'''
 
-snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": "List of [{ bar: String foo: Int }]",
+  "enum_values": null,
+  "fields": null,
+  "given_name": null,
+  "key": "Array.Permissive.1f37a068c7c51aba23e9c41475c78eebc4e58471",
+  "kind": {
+    "__enum__": "ConfigTypeKind.ARRAY"
+  },
+  "type_param_keys": [
+    "Permissive.1f37a068c7c51aba23e9c41475c78eebc4e58471"
+  ]
+}'''
 
-snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = GenericRepr('<dagster.config.config_type.Array object at 0x100000000>')
+snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": "List of [{ bar: String foo: Int }]",
+  "enum_values": null,
+  "fields": null,
+  "given_name": null,
+  "key": "Array.Shape.1f37a068c7c51aba23e9c41475c78eebc4e58471",
+  "kind": {
+    "__enum__": "ConfigTypeKind.ARRAY"
+  },
+  "type_param_keys": [
+    "Shape.1f37a068c7c51aba23e9c41475c78eebc4e58471"
+  ]
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types0] 1'] = GenericRepr('<dagster.config.field_utils.Selector object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types0] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Permissive.c1ae6abf6c3c9e951eeefe4fde820cafc053ee40"
+    }
+  ],
+  "given_name": null,
+  "key": "Selector.cb18f2a8fc9fa17668d8f4fd6b44c86c30c56774",
+  "kind": {
+    "__enum__": "ConfigTypeKind.SELECTOR"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types1] 1'] = GenericRepr('<dagster.config.field_utils.Selector object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types1] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Shape.9bbda63934c371bf9be9a1cbb6fff9f5ee0be828"
+    }
+  ],
+  "given_name": null,
+  "key": "Selector.b188a7737a2fecf0fca8cf94d331be517176dddf",
+  "kind": {
+    "__enum__": "ConfigTypeKind.SELECTOR"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types2] 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types2] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Selector.c1ae6abf6c3c9e951eeefe4fde820cafc053ee40"
+    }
+  ],
+  "given_name": null,
+  "key": "Permissive.84180c8bd71a154af9d2965c8955925c228dc2bf",
+  "kind": {
+    "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types3] 1'] = GenericRepr('<dagster.config.field_utils.Permissive object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types3] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Shape.3d03240a3cdb5557305a2118fb3a059896368dd1"
+    }
+  ],
+  "given_name": null,
+  "key": "Permissive.31f842392439e3c949b44f9e0e36bd1ed050a6b5",
+  "kind": {
+    "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types4] 1'] = GenericRepr('<dagster.config.field_utils.Shape object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types4] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Selector.9bbda63934c371bf9be9a1cbb6fff9f5ee0be828"
+    }
+  ],
+  "given_name": null,
+  "key": "Shape.88efc4d6ed14b1d35062d1e50a0227f606049e87",
+  "kind": {
+    "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+  },
+  "type_param_keys": null
+}'''
 
-snapshots['test_multi_type_config_nested_dicts[nested_dict_types5] 1'] = GenericRepr('<dagster.config.field_utils.Shape object at 0x100000000>')
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types5] 1'] = '''{
+  "__class__": "ConfigTypeSnap",
+  "description": null,
+  "enum_values": null,
+  "fields": [
+    {
+      "__class__": "ConfigFieldSnap",
+      "default_provided": false,
+      "description": null,
+      "is_required": true,
+      "name": "foo",
+      "type_key": "Permissive.3d03240a3cdb5557305a2118fb3a059896368dd1"
+    }
+  ],
+  "given_name": null,
+  "key": "Shape.0117583609bbf6ddcd1b1c9586aca163c454ed9d",
+  "kind": {
+    "__enum__": "ConfigTypeKind.STRICT_SHAPE"
+  },
+  "type_param_keys": null
+}'''

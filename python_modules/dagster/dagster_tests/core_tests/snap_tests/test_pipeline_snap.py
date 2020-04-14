@@ -14,6 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, String
+from dagster.core.snap.config_types import snap_from_config_type
 from dagster.core.snap.dep_snapshot import (
     DependencyStructureIndex,
     InputHandle,
@@ -370,7 +371,7 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
-    snapshot.assert_match(recevied_config_type)
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
 
 
 @pytest.mark.parametrize('dict_config_type', [Selector, Permissive, Shape])
@@ -386,7 +387,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
-    snapshot.assert_match(recevied_config_type)
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
 
 
 @pytest.mark.parametrize(
@@ -407,4 +408,4 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
-    snapshot.assert_match(recevied_config_type)
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
