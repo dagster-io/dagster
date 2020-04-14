@@ -3,7 +3,7 @@ from contextlib import contextmanager
 # pylint chokes on the perfectly ok import from alembic.migration
 import six
 import sqlalchemy as db
-from alembic.command import stamp, upgrade
+from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
@@ -25,6 +25,12 @@ def run_alembic_upgrade(alembic_config, conn, run_id=None, rev='head'):
     alembic_config.attributes['connection'] = conn
     alembic_config.attributes['run_id'] = run_id
     upgrade(alembic_config, rev)
+
+
+def run_alembic_downgrade(alembic_config, conn, rev, run_id=None):
+    alembic_config.attributes['connection'] = conn
+    alembic_config.attributes['run_id'] = run_id
+    downgrade(alembic_config, rev)
 
 
 def stamp_alembic_rev(alembic_config, conn, rev='head', quiet=True):

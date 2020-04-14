@@ -193,3 +193,52 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         new_run = instance.get_run_by_id(new_run_id)
 
         assert new_run.pipeline_snapshot_id
+
+
+def test_downgrade_and_upgrade():
+    test_dir = file_relative_path(__file__, 'snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite')
+    with restore_directory(test_dir):
+        # invariant check to make sure migration has not been run yet
+
+        db_path = os.path.join(test_dir, 'history', 'runs.db')
+
+        assert get_current_alembic_version(db_path) == '9fe9e746268c'
+
+        assert 'snapshots' not in get_sqlite3_tables(db_path)
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+
+        assert len(instance.get_runs()) == 1
+
+        # Make sure the schema is migrated
+        instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == 'c63a27054f08'
+
+        assert 'snapshots' in get_sqlite3_tables(db_path)
+        assert {'id', 'snapshot_id', 'snapshot_body', 'snapshot_type'} == set(
+            get_sqlite3_columns(db_path, 'snapshots')
+        )
+
+        assert len(instance.get_runs()) == 1
+
+        instance._run_storage._alembic_downgrade(rev='9fe9e746268c')
+
+        assert get_current_alembic_version(db_path) == '9fe9e746268c'
+
+        assert 'snapshots' not in get_sqlite3_tables(db_path)
+
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+
+        assert len(instance.get_runs()) == 1
+
+        instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == 'c63a27054f08'
+
+        assert 'snapshots' in get_sqlite3_tables(db_path)
+        assert {'id', 'snapshot_id', 'snapshot_body', 'snapshot_type'} == set(
+            get_sqlite3_columns(db_path, 'snapshots')
+        )
+
+        assert len(instance.get_runs()) == 1

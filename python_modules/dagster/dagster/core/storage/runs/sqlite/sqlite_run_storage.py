@@ -5,7 +5,7 @@ import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.storage.sql import get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import get_alembic_config, run_alembic_downgrade, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
@@ -81,11 +81,19 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         finally:
             conn.close()
 
-    def upgrade(self):
-        self._check_for_version_066_migration_and_perform()
+    def _alembic_upgrade(self, rev='head'):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
-            run_alembic_upgrade(alembic_config, conn)
+            run_alembic_upgrade(alembic_config, conn, rev=rev)
+
+    def _alembic_downgrade(self, rev='head'):
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            run_alembic_downgrade(alembic_config, conn, rev=rev)
+
+    def upgrade(self):
+        self._check_for_version_066_migration_and_perform()
+        self._alembic_upgrade()
 
     # In version 0.6.6, we changed the layout of the of the sqllite dbs on disk
     # to move from the root of DAGSTER_HOME/runs.db to DAGSTER_HOME/history/runs.bd

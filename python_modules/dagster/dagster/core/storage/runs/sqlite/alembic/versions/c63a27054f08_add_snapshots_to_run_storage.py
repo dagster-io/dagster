@@ -46,11 +46,13 @@ def upgrade():
                     ),
                 ),
             )
+        op.execute('PRAGMA foreign_keys = ON;')
 
 
 def downgrade():
     if has_column('runs', 'snapshot_id'):
-        op.drop_column('runs', 'snapshot_id')
+        with op.batch_alter_table('runs') as batch_op:
+            batch_op.drop_column('snapshot_id')
 
     if has_table('snapshots'):
         op.drop_table('snapshots')
