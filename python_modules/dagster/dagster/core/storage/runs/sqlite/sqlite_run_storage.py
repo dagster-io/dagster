@@ -82,8 +82,16 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             conn.close()
 
     def upgrade(self):
-        old_conn_string = 'sqlite://' + urljoin(urlparse(self._conn_string).path, '../runs.db')
+        self._check_for_version_066_migration_and_perform()
+        alembic_config = get_alembic_config(__file__)
+        with self.connect() as conn:
+            run_alembic_upgrade(alembic_config, conn)
 
+    # In version 0.6.6, we changed the layout of the of the sqllite dbs on disk
+    # to move from the root of DAGSTER_HOME/runs.db to DAGSTER_HOME/history/runs.bd
+    # This function checks for that condition and does the move
+    def _check_for_version_066_migration_and_perform(self):
+        old_conn_string = 'sqlite://' + urljoin(urlparse(self._conn_string).path, '../runs.db')
         path_to_old_db = urlparse(old_conn_string).path
         # sqlite URLs look like `sqlite:///foo/bar/baz on Unix/Mac` but on Windows they look like
         # `sqlite:///D:/foo/bar/baz` (or `sqlite:///D:\foo\bar\baz`)
@@ -95,10 +103,6 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             for run in old_runs:
                 self.add_run(run)
             os.unlink(path_to_old_db)
-
-        alembic_config = get_alembic_config(__file__)
-        with self.connect() as conn:
-            run_alembic_upgrade(alembic_config, conn)
 
     def delete_run(self, run_id):
         ''' Override the default sql delete run implementation until we can get full
