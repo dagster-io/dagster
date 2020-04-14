@@ -2,27 +2,38 @@ import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
 import { Colors, Icon, Checkbox } from "@blueprintjs/core";
+
 import PythonErrorInfo from "../PythonErrorInfo";
 import { showCustomAlert } from "../CustomAlertProvider";
-import {
-  ValidationResult,
-  ValidationError
-} from "../configeditor/codemirror-yaml/mode";
+import { SplitPanelContainer } from "../SplitPanelContainer";
+import { errorStackToYamlPath } from "../configeditor/ConfigEditorUtils";
+import { ButtonLink } from "../ButtonLink";
+
 import {
   ConfigEditorEnvironmentSchemaFragment,
   ConfigEditorEnvironmentSchemaFragment_allConfigTypes_CompositeConfigType
 } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
 import { RunPreviewExecutionPlanResultFragment } from "./types/RunPreviewExecutionPlanResultFragment";
-import { SplitPanelContainer } from "../SplitPanelContainer";
-import { ButtonLink } from "../ButtonLink";
+import {
+  RunPreviewValidationFragment,
+  RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors
+} from "./types/RunPreviewValidationFragment";
+
+type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
+type ValidationErrorOrNode = ValidationError | React.ReactNode;
+
+function isValidationError(e: ValidationErrorOrNode): e is ValidationError {
+  return e && typeof e === "object" && "__typename" in e ? true : false;
+}
 
 interface RunPreviewProps {
   plan: RunPreviewExecutionPlanResultFragment | null;
-  validationResult: ValidationResult | null;
+  validation: RunPreviewValidationFragment | null;
+  document: object | null;
 
   actions?: React.ReactChild;
   environmentSchema: ConfigEditorEnvironmentSchemaFragment;
-  onHighlightValidationError: (error: ValidationError) => void;
+  onHighlightPath: (path: string[]) => void;
 }
 
 interface RunPreviewState {
@@ -49,6 +60,39 @@ export class RunPreview extends React.Component<
         ...PythonErrorFragment
       }
       ${PythonErrorInfo.fragments.PythonErrorFragment}
+    `,
+    RunPreviewValidationFragment: gql`
+      fragment RunPreviewValidationFragment on PipelineConfigValidationResult {
+        __typename
+        ... on PipelineConfigValidationInvalid {
+          errors {
+            __typename
+            reason
+            message
+            stack {
+              entries {
+                __typename
+                ... on EvaluationStackPathEntry {
+                  fieldName
+                }
+                ... on EvaluationStackListItemEntry {
+                  listIndex
+                }
+              }
+            }
+            ... on MissingFieldConfigError {
+              field {
+                name
+              }
+            }
+            ... on MissingFieldsConfigError {
+              fields {
+                name
+              }
+            }
+          }
+        }
+      }
     `
   };
 
@@ -61,7 +105,7 @@ export class RunPreview extends React.Component<
     nextState: RunPreviewState
   ) {
     return (
-      nextProps.validationResult !== this.props.validationResult ||
+      nextProps.validation !== this.props.validation ||
       nextProps.plan !== this.props.plan ||
       nextState.errorsOnly !== this.state.errorsOnly
     );
@@ -91,68 +135,104 @@ export class RunPreview extends React.Component<
   };
 
   render() {
-    const {
-      plan,
-      actions,
-      validationResult,
-      onHighlightValidationError
-    } = this.props;
+    const { plan, actions, document, validation, onHighlightPath } = this.props;
     const { errorsOnly } = this.state;
 
-    const errors: (ValidationError | React.ReactNode)[] = [];
-    const errorsByNode: { [path: string]: ValidationError[] } = {};
+    const missingNodes: string[] = [];
+    const errorsAndPaths: {
+      pathKey: string;
+      error: ValidationErrorOrNode;
+    }[] = [];
 
-    if (validationResult && !validationResult.isValid) {
-      validationResult.errors.forEach(e => {
-        errors.push(e);
+    if (
+      validation &&
+      validation.__typename === "PipelineConfigValidationInvalid"
+    ) {
+      validation.errors.forEach(e => {
+        const path = errorStackToYamlPath(e.stack.entries);
 
-        const path: string[] = [];
-        for (const component of e.path) {
-          path.push(component);
-          const key = path.join(".");
-          errorsByNode[key] = errorsByNode[key] || [];
-          errorsByNode[key].push(e);
+        if (e.__typename === "MissingFieldConfigError") {
+          missingNodes.push([...path, e.field.name].join("."));
+        } else if (e.__typename === "MissingFieldsConfigError") {
+          for (const field of e.fields) {
+            missingNodes.push([...path, field.name].join("."));
+          }
+        } else {
+          errorsAndPaths.push({ pathKey: path.join("."), error: e });
         }
       });
     }
 
     if (plan?.__typename === "InvalidSubsetError") {
-      errors.push(plan.message);
+      errorsAndPaths.push({ pathKey: "", error: plan.message });
     }
 
     if (plan?.__typename === "PythonError") {
       const info = <PythonErrorInfo error={plan} />;
-      errors.push(
-        <>
-          PythonError{" "}
-          <span onClick={() => showCustomAlert({ body: info })}>
-            click for details
-          </span>
-        </>
-      );
+      errorsAndPaths.push({
+        pathKey: "",
+        error: (
+          <>
+            PythonError{" "}
+            <span onClick={() => showCustomAlert({ body: info })}>
+              click for details
+            </span>
+          </>
+        )
+      });
     }
 
     const { resources, solids, ...rest } = this.getRootCompositeChildren();
 
     const itemsIn = (parents: string[], names: string[]) => {
+      const parentsKey = parents.join(".");
+      const parentErrors = errorsAndPaths.filter(e => e.pathKey === parentsKey);
+
       const boxes = names
         .map(name => {
           const path = [...parents, name];
-          const errors = errorsByNode[path.join(".")];
-          const present = pathExistsInObject(path, validationResult?.document);
-          if (errorsOnly && !errors) {
+          const pathKey = path.join(".");
+          const pathErrors = errorsAndPaths
+            .filter(
+              e => e.pathKey === pathKey || e.pathKey.startsWith(`${pathKey}.`)
+            )
+            .map(e => e.error);
+
+          const isPresent = pathExistsInObject(path, document);
+          const isInvalid = pathErrors.length || parentErrors.length;
+          const isMissing = path.some((_, idx) =>
+            missingNodes.includes(path.slice(0, idx + 1).join("."))
+          );
+
+          if (errorsOnly && !isInvalid) {
             return false;
           }
+          const state = isMissing
+            ? "missing"
+            : isInvalid
+            ? "invalid"
+            : isPresent
+            ? "present"
+            : "none";
+
           return (
             <Item
               key={name}
-              isPresent={present}
-              isInvalid={!!errors}
-              onClick={() =>
-                onHighlightValidationError(
-                  errors ? errors[0] : { path, message: "", reason: "" }
-                )
+              state={state}
+              title={
+                {
+                  invalid: `You need to fix this configuration section.`,
+                  missing: `You need to add this configuration section.`,
+                  present: `This section is present and valid.`,
+                  none: `This section is empty and valid.`
+                }[state]
               }
+              onClick={() => {
+                const first = pathErrors.find(isValidationError);
+                onHighlightPath(
+                  first ? errorStackToYamlPath(first.stack.entries) : path
+                );
+              }}
             >
               {name}
             </Item>
@@ -174,11 +254,11 @@ export class RunPreview extends React.Component<
           <ErrorListContainer>
             <Section>
               <SectionTitle>Errors</SectionTitle>
-              {errors.map((e, idx) => (
+              {errorsAndPaths.map((item, idx) => (
                 <ErrorRow
                   key={idx}
-                  error={e}
-                  onClick={onHighlightValidationError}
+                  error={item.error}
+                  onHighlight={onHighlightPath}
                 />
               ))}
             </Section>
@@ -265,25 +345,51 @@ const ItemsEmptyNotice = styled.div`
   padding-bottom: 7px;
 `;
 
-const Item = styled.div<{ isInvalid: boolean; isPresent: boolean }>`
+const ItemBorder = {
+  invalid: `1px solid #CE1126`,
+  missing: `1px solid #D9822B`,
+  present: `1px solid #AFCCE1`,
+  none: `1px solid ${Colors.LIGHT_GRAY2}`
+};
+
+const ItemBackground = {
+  invalid: Colors.RED5,
+  missing: "#F2A85C",
+  present: "#C8E1F4",
+  none: Colors.LIGHT_GRAY4
+};
+
+const ItemBackgroundHover = {
+  invalid: "#E15858",
+  missing: "#F2A85C",
+  present: "#AFCCE1",
+  none: Colors.LIGHT_GRAY4
+};
+
+const ItemColor = {
+  invalid: Colors.WHITE,
+  missing: Colors.WHITE,
+  present: Colors.BLACK,
+  none: Colors.BLACK
+};
+
+const Item = styled.div<{
+  state: "present" | "missing" | "invalid" | "none";
+}>`
   white-space: nowrap;
   font-size: 13px;
-  color: ${({ isInvalid }) => (isInvalid ? Colors.WHITE : Colors.BLACK)};
-  background: ${({ isInvalid, isPresent }) =>
-    isInvalid ? Colors.RED5 : isPresent ? "#C8E1F4" : Colors.LIGHT_GRAY4};
+  color: ${({ state }) => ItemColor[state]};
+  background: ${({ state }) => ItemBackground[state]};
   border-radius: 3px;
-  border: 1px solid
-    ${({ isPresent, isInvalid }) =>
-      isInvalid ? "#CE1126" : isPresent ? "#AFCCE1" : Colors.LIGHT_GRAY2};
+  border: ${({ state }) => ItemBorder[state]};
   padding: 3px 5px;
   margin: 3px;
   transition: background 150ms linear, color 150ms linear;
-  cursor: ${({ isPresent }) => (isPresent ? "default" : "not-allowed")};
+  cursor: ${({ state }) => (state === "present" ? "default" : "not-allowed")};
 
   &:hover {
     transition: none;
-    background: ${({ isInvalid, isPresent }) =>
-      isInvalid ? "#E15858" : isPresent ? "#AFCCE1" : Colors.LIGHT_GRAY4};
+    background: ${({ state }) => ItemBackgroundHover[state]};
   }
 `;
 
@@ -326,11 +432,11 @@ const RuntimeAndResourcesSection = styled.div`
 
 const ErrorRow: React.FunctionComponent<{
   error: ValidationError | React.ReactNode;
-  onClick: (error: ValidationError) => void;
-}> = ({ error, onClick }) => {
+  onHighlight: (path: string[]) => void;
+}> = ({ error, onHighlight }) => {
   let message = error;
   let target: ValidationError | null = null;
-  if (error && typeof error === "object" && "message" in error) {
+  if (isValidationError(error)) {
     message = error.message;
     target = error;
   }
@@ -343,7 +449,9 @@ const ErrorRow: React.FunctionComponent<{
   return (
     <ErrorRowContainer
       hoverable={!!target}
-      onClick={() => target && onClick(target)}
+      onClick={() =>
+        target && onHighlight(errorStackToYamlPath(target.stack.entries))
+      }
     >
       <div style={{ paddingRight: 8 }}>
         <Icon icon="error" iconSize={14} color={Colors.RED4} />

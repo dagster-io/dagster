@@ -25,10 +25,9 @@ import {
 } from "./types/ConfigEditorEnvironmentSchemaFragment";
 import "./codemirror-yaml/mode";
 import {
-  ValidationError as YamlModeValidationError,
-  ValidateFunction as YamlModeValidateFunction,
+  YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
-  validationErrorToCodemirrorError
+  findRangeInDocumentFromPath
 } from "./codemirror-yaml/mode";
 import { debounce } from "../Util";
 
@@ -127,18 +126,16 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     this._editor.focus();
   };
 
-  moveCursorToValidationError = (err: YamlModeValidationError) => {
+  moveCursorToPath = (path: string[]) => {
     if (!this._editor) return;
     const codeMirrorDoc = this._editor.getDoc();
     const yamlDoc = yaml.parseDocument(this.props.configCode);
-    const lintError = validationErrorToCodemirrorError(
-      err,
-      yamlDoc,
-      codeMirrorDoc
-    );
-    if (lintError) {
-      this.moveCursor(lintError.from.line, lintError.from.ch);
-    }
+    const range = findRangeInDocumentFromPath(yamlDoc, path, "key");
+    if (!range) return;
+    const from = codeMirrorDoc.posFromIndex(
+      range ? range.start : 0
+    ) as CodeMirror.Position;
+    this.moveCursor(from.line, from.ch);
   };
 
   // End Public API

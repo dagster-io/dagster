@@ -24,8 +24,7 @@ it("renders a codemirror", () => {
     <BrowserRouter>
       <ConfigEditor
         checkConfig={async () => ({
-          isValid: true,
-          document: {}
+          isValid: true
         })}
         onConfigChange={() => null}
         onHelpContextChange={() => null}

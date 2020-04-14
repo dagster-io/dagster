@@ -1,5 +1,5 @@
 import gql from "graphql-tag";
-import { ValidationResult } from "./codemirror-yaml/mode";
+import { YamlModeValidationResult } from "./codemirror-yaml/mode";
 import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
 
 export const CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT = gql`
@@ -45,6 +45,7 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
     __typename
     ... on PipelineConfigValidationInvalid {
       errors {
+        __typename
         reason
         message
         stack {
@@ -63,22 +64,36 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   }
 `;
 
-export function responseToValidationResult(
+export type StackEntry =
+  | {
+      __typename: "EvaluationStackPathEntry";
+      fieldName: string;
+    }
+  | {
+      __typename: "EvaluationStackListItemEntry";
+      listIndex: number;
+    };
+
+export function errorStackToYamlPath(entries: StackEntry[]) {
+  return entries.map(entry =>
+    entry.__typename === "EvaluationStackPathEntry"
+      ? entry.fieldName
+      : `${entry.listIndex}`
+  );
+}
+
+export function responseToYamlValidationResult(
   configJSON: object,
   response: ConfigEditorValidationFragment
-): ValidationResult {
+): YamlModeValidationResult {
   if (response.__typename !== "PipelineConfigValidationInvalid") {
-    return { isValid: true, document: configJSON };
+    return { isValid: true };
   }
 
-  const errors = response.errors.map(({ message, reason, stack }) => ({
-    message: message,
-    reason: reason,
-    path: stack.entries.map(entry =>
-      entry.__typename === "EvaluationStackPathEntry"
-        ? entry.fieldName
-        : `${entry.listIndex}`
-    )
+  const errors = response.errors.map(err => ({
+    message: err.message,
+    reason: err.reason,
+    path: errorStackToYamlPath(err.stack.entries)
   }));
 
   // Errors at the top level have no stack path because they are not within any
@@ -91,5 +106,5 @@ export function responseToValidationResult(
     }
   });
 
-  return { isValid: false, errors, document: configJSON };
+  return { isValid: false, errors };
 }

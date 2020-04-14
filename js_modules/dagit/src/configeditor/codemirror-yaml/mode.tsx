@@ -303,11 +303,7 @@ type CodemirrorHint = {
   to: CodemirrorLocation;
 };
 
-type CodemirrorToken = {
-  string: string;
-  start: number;
-  end: number;
-  type: string;
+type CodemirrorToken = CodeMirror.Token & {
   state: IParseState;
 };
 
@@ -658,60 +654,62 @@ type CodemirrorLintError = {
   to: CodemirrorLocation;
 };
 
-export type ValidationResult =
+export type YamlModeValidationResult =
   | {
       isValid: true;
-      document: object;
     }
   | {
       isValid: false;
-      errors: Array<ValidationError>;
-      document: object;
+      errors: YamlModeValidationError[];
     };
 
-export type ValidateFunction = (
+export type YamlModeValidateFunction = (
   configJSON: object
-) => Promise<ValidationResult>;
+) => Promise<YamlModeValidationResult>;
 
-export type ValidationError = {
+export type YamlModeValidationError = {
   message: string;
-  path: Array<string>;
+  path: string[];
   reason: string;
 };
 
-CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: any) => {
-  const token = editor.getTokenAt(pos);
+CodeMirror.registerHelper(
+  "dagster-docs",
+  "yaml",
+  (editor: any, pos: CodeMirror.Position) => {
+    const token = editor.getTokenAt(pos);
 
-  const schema: ConfigEditorEnvironmentSchemaFragment =
-    editor.options.hintOptions.schema;
+    const schema: ConfigEditorEnvironmentSchemaFragment =
+      editor.options.hintOptions.schema;
 
-  if (token.type !== "atom") {
+    if (token.type !== "atom") {
+      return null;
+    }
+
+    const context = findAutocompletionContext(
+      schema,
+      token.state.parents,
+      token.start
+    );
+    const match =
+      context &&
+      context.type.__typename === "CompositeConfigType" &&
+      context.type.fields.find(f => f.name === token.string);
+
+    if (match && match.description) {
+      return match.description;
+    }
+
     return null;
   }
-
-  const context = findAutocompletionContext(
-    schema,
-    token.state.parents,
-    token.start
-  );
-  const match =
-    context &&
-    context.type.__typename === "CompositeConfigType" &&
-    context.type.fields.find(f => f.name === token.string);
-
-  if (match && match.description) {
-    return match.description;
-  }
-
-  return null;
-});
+);
 
 CodeMirror.registerHelper(
   "lint",
   "yaml",
   async (
     text: string,
-    { checkConfig }: { checkConfig: ValidateFunction },
+    { checkConfig }: { checkConfig: YamlModeValidateFunction },
     editor: any
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
@@ -783,7 +781,7 @@ CodeMirror.registerHelper(
 );
 
 export function validationErrorToCodemirrorError(
-  error: ValidationError,
+  error: YamlModeValidationError,
   yamlDoc: yaml.ast.Document,
   codeMirrorDoc: any
 ): CodemirrorLintError | null {
@@ -794,22 +792,24 @@ export function validationErrorToCodemirrorError(
     message: error.message,
     severity: "error",
     type: "syntax",
-    from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as any,
+    from: codeMirrorDoc.posFromIndex(
+      range ? range.start : 0
+    ) as CodeMirror.Position,
     to: codeMirrorDoc.posFromIndex(
       range ? range.end : Number.MAX_SAFE_INTEGER
-    ) as any
+    ) as CodeMirror.Position
   };
 }
 
-function findRangeInDocumentFromPath(
+export function findRangeInDocumentFromPath(
   doc: yaml.ast.Document,
   path: Array<string>,
   pathPart: "key" | "value"
 ): { start: number; end: number } | null {
-  let node: any = nodeAtPath(doc, path);
-  if (!node) return null;
+  let node = nodeAtPath(doc, path);
+  if (!node || !("type" in node) || node.type !== "PAIR") return null;
 
-  if (node.type && node.type === "PAIR" && pathPart === "value" && node.value) {
+  if (pathPart === "value" && node.value) {
     node = node.value;
   } else {
     node = node.key;
@@ -828,7 +828,7 @@ function findRangeInDocumentFromPath(
 function nodeAtPath(
   doc: yaml.ast.Document,
   path: Array<string>
-): yaml.ast.Node | yaml.ast.Pair | null {
+): yaml.ast.AstNode | yaml.ast.Pair | null {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
     const part = path[i];

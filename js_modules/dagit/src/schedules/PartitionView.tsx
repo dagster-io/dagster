@@ -108,7 +108,7 @@ const _getDurationData = (runsByPartition: { [key: string]: Run[] }) => {
     const key = "Pipeline Execution Time";
     if (
       stats &&
-      stats.__typename == "PipelineRunStatsSnapshot" &&
+      stats.__typename === "PipelineRunStatsSnapshot" &&
       stats.endTime &&
       stats.startTime
     ) {

@@ -19,14 +19,13 @@ import { IStorageData, IExecutionSession } from "../LocalStorage";
 import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   CONFIG_EDITOR_ENVIRONMENT_SCHEMA_FRAGMENT,
-  responseToValidationResult
+  responseToYamlValidationResult
 } from "../configeditor/ConfigEditorUtils";
 
 import { ConfigEditorEnvironmentSchemaFragment } from "../configeditor/types/ConfigEditorEnvironmentSchemaFragment";
 import {
   PreviewConfigQuery,
-  PreviewConfigQueryVariables,
-  PreviewConfigQuery_executionPlan
+  PreviewConfigQueryVariables
 } from "./types/PreviewConfigQuery";
 import {
   ExecutionSessionContainerFragment,
@@ -42,7 +41,7 @@ import { PipelineExecutionButtonGroup } from "./PipelineExecutionButtonGroup";
 import { TagContainer, TagEditor } from "./TagEditor";
 import { ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags } from "./types/ConfigPartitionsQuery";
 import { ShortcutHandler } from "../ShortcutHandler";
-import { ValidationResult } from "../configeditor/codemirror-yaml/mode";
+import ApolloClient from "apollo-client";
 
 type PipelineTag = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results_tags;
 
@@ -60,8 +59,8 @@ interface IExecutionSessionContainerProps {
 }
 
 interface IExecutionSessionContainerState {
-  plan: PreviewConfigQuery_executionPlan | null;
-  validationResult: ValidationResult | null;
+  preview: PreviewConfigQuery | null;
+  previewedDocument: object | null;
 
   editorHelpContext: ConfigEditorHelpContext | null;
   showWhitespace: boolean;
@@ -119,8 +118,8 @@ export default class ExecutionSessionContainer extends React.Component<
   };
 
   state: IExecutionSessionContainerState = {
-    plan: null,
-    validationResult: null,
+    preview: null,
+    previewedDocument: null,
 
     showWhitespace: true,
     editorHelpContext: null,
@@ -240,14 +239,47 @@ export default class ExecutionSessionContainer extends React.Component<
     this.props.onSaveSession({ tags: toSave });
   };
 
+  checkConfig = async (client: ApolloClient<any>, configJSON: object) => {
+    const { currentSession } = this.props;
+    const pipeline = this.getPipeline();
+
+    const { data } = await client.query<
+      PreviewConfigQuery,
+      PreviewConfigQueryVariables
+    >({
+      fetchPolicy: "no-cache",
+      query: PREVIEW_CONFIG_QUERY,
+      variables: {
+        environmentConfigData: configJSON,
+        pipeline: {
+          name: pipeline.name,
+          solidSubset: currentSession.solidSubset
+        },
+        mode: currentSession.mode || "default"
+      }
+    });
+
+    if (this.mounted) {
+      this.setState({
+        preview: data,
+        previewedDocument: configJSON
+      });
+    }
+
+    return responseToYamlValidationResult(
+      configJSON,
+      data.isPipelineConfigValid
+    );
+  };
+
   openTagEditor = () => this.setState({ tagEditorOpen: true });
   closeTagEditor = () => this.setState({ tagEditorOpen: false });
 
   render() {
     const { currentSession, onCreateSession, onSaveSession } = this.props;
     const {
-      plan,
-      validationResult,
+      preview,
+      previewedDocument,
       editorHelpContext,
       showWhitespace,
       tagEditorOpen
@@ -341,50 +373,7 @@ export default class ExecutionSessionContainer extends React.Component<
                     }}
                     showWhitespace={showWhitespace}
                     checkConfig={async configJSON => {
-                      if (!currentSession.mode || modeError) {
-                        return {
-                          isValid: false,
-                          document: configJSON,
-                          errors: [
-                            // FIXME this should be specific -- we should have an enumerated
-                            // validation error when there is no mode provided
-                            {
-                              message: "Must specify a mode",
-                              path: ["root"],
-                              reason: "MISSING_REQUIRED_FIELD"
-                            }
-                          ]
-                        };
-                      }
-                      const { data } = await client.query<
-                        PreviewConfigQuery,
-                        PreviewConfigQueryVariables
-                      >({
-                        fetchPolicy: "no-cache",
-                        query: PREVIEW_CONFIG_QUERY,
-                        variables: {
-                          environmentConfigData: configJSON,
-                          pipeline: {
-                            name: pipeline.name,
-                            solidSubset: currentSession.solidSubset
-                          },
-                          mode: currentSession.mode || "default"
-                        }
-                      });
-
-                      const validationResult = responseToValidationResult(
-                        configJSON,
-                        data.isPipelineConfigValid
-                      );
-
-                      if (this.mounted) {
-                        this.setState({
-                          plan: data.executionPlan,
-                          validationResult: validationResult
-                        });
-                      }
-
-                      return validationResult;
+                      return await this.checkConfig(client, configJSON);
                     }}
                   />
                 )}
@@ -395,17 +384,20 @@ export default class ExecutionSessionContainer extends React.Component<
         second={
           environmentSchema ? (
             <RunPreview
-              plan={plan}
+              document={previewedDocument}
+              plan={preview ? preview.executionPlan : null}
+              validation={preview ? preview.isPipelineConfigValid : null}
               environmentSchema={environmentSchema}
-              validationResult={validationResult}
-              onHighlightValidationError={error =>
-                this.editor.current?.moveCursorToValidationError(error)
+              onHighlightPath={path =>
+                this.editor.current?.moveCursorToPath(path)
               }
               actions={
                 <PipelineExecutionButtonGroup
                   pipelineName={pipeline.name}
                   getVariables={this.buildExecutionVariables}
-                  disabled={plan?.__typename !== "ExecutionPlan"}
+                  disabled={
+                    preview?.executionPlan?.__typename !== "ExecutionPlan"
+                  }
                 />
               }
             />
@@ -455,6 +447,7 @@ const PREVIEW_CONFIG_QUERY = gql`
       mode: $mode
     ) {
       ...ConfigEditorValidationFragment
+      ...RunPreviewValidationFragment
     }
     executionPlan(
       pipeline: $pipeline
@@ -464,6 +457,7 @@ const PREVIEW_CONFIG_QUERY = gql`
       ...RunPreviewExecutionPlanResultFragment
     }
   }
+  ${RunPreview.fragments.RunPreviewValidationFragment}
   ${RunPreview.fragments.RunPreviewExecutionPlanResultFragment}
   ${CONFIG_EDITOR_VALIDATION_FRAGMENT}
 `;
