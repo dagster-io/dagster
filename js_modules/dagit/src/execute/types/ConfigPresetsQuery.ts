@@ -15,10 +15,17 @@ export interface ConfigPresetsQuery_pipeline_presets {
   environmentConfigYaml: string;
 }
 
+export interface ConfigPresetsQuery_pipeline_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface ConfigPresetsQuery_pipeline {
   __typename: "Pipeline";
   name: string;
   presets: ConfigPresetsQuery_pipeline_presets[];
+  tags: ConfigPresetsQuery_pipeline_tags[];
 }
 
 export interface ConfigPresetsQuery {

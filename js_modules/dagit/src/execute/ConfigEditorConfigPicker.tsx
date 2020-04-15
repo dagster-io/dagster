@@ -18,8 +18,7 @@ import {
 } from "./types/ConfigPresetsQuery";
 import {
   ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results,
-  ConfigPartitionsQuery_pipeline
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results
 } from "./types/ConfigPartitionsQuery";
 import {
   ConfigPartitionSetsQuery,
@@ -35,6 +34,12 @@ type Preset = ConfigPresetsQuery_pipeline_presets;
 type PartitionSet = ConfigPartitionSetsQuery_partitionSetsOrError_PartitionSets_results;
 type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitions_results;
 type ConfigGenerator = Preset | PartitionSet;
+interface Pipeline {
+  tags: {
+    key: string;
+    value: string;
+  }[];
+}
 
 interface ConfigEditorConfigPickerProps {
   base: IExecutionSession["base"];
@@ -58,21 +63,18 @@ export class ConfigEditorConfigPicker extends React.Component<
     });
   };
 
-  onSelectPreset = (preset: Preset) => {
+  onSelectPreset = (preset: Preset, pipeline?: Pipeline) => {
     this.onCommit({
       base: { presetName: preset.name },
       name: preset.name,
       environmentConfigYaml: preset.environmentConfigYaml || "",
       solidSubset: preset.solidSubset,
       mode: preset.mode,
-      tags: []
+      tags: [...(pipeline?.tags || [])]
     });
   };
 
-  onSelectPartition = (
-    partition: Partition,
-    pipeline?: ConfigPartitionsQuery_pipeline
-  ) => {
+  onSelectPartition = (partition: Partition, pipeline?: Pipeline) => {
     this.onCommit({
       name: partition.name,
       base: Object.assign({}, this.props.base, {
@@ -122,10 +124,7 @@ interface ConfigEditorPartitionPickerProps {
   pipelineName: string;
   partitionSetName: string;
   value: string | null;
-  onSelect: (
-    partition: Partition,
-    pipeline?: ConfigPartitionsQuery_pipeline
-  ) => void;
+  onSelect: (partition: Partition, pipeline?: Pipeline) => void;
 }
 
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
@@ -206,16 +205,22 @@ interface ConfigEditorConfigGeneratorPickerProps {
   pipelineName: string;
   solidSubset: string[] | null;
   value: IExecutionSession["base"];
-  onSelectPreset: (preset: Preset) => void;
-  onSelectPartitionSet: (partitionSet: PartitionSet) => void;
+  onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
+  onSelectPartitionSet: (
+    partitionSet: PartitionSet,
+    pipeline?: Pipeline
+  ) => void;
 }
 
 export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   props => {
     const { pipelineName, onSelectPreset, onSelectPartitionSet, value } = props;
-    const { presets, partitionSets, loading } = usePresetsAndPartitions(
-      pipelineName
-    );
+    const {
+      presets,
+      partitionSets,
+      loading,
+      pipeline
+    } = usePresetsAndPartitions(pipelineName);
 
     const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets];
     const empty = !loading && configGenerators.length === 0;
@@ -223,9 +228,9 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
     const onSelect = (item: ConfigGenerator) => {
       if (item.__typename === "PartitionSet") {
-        onSelectPartitionSet(item);
+        onSelectPartitionSet(item, pipeline);
       } else {
-        onSelectPreset(item);
+        onSelectPreset(item, pipeline);
       }
     };
 
@@ -356,6 +361,10 @@ export const CONFIG_PRESETS_QUERY = gql`
         solidSubset
         environmentConfigYaml
       }
+      tags {
+        key
+        value
+      }
     }
   }
 `;
@@ -409,7 +418,12 @@ export const CONFIG_PARTITIONS_QUERY = gql`
 
 function usePresetsAndPartitions(
   pipelineName: string
-): { presets: Preset[]; partitionSets: PartitionSet[]; loading: boolean } {
+): {
+  presets: Preset[];
+  partitionSets: PartitionSet[];
+  loading: boolean;
+  pipeline?: Pipeline;
+} {
   const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
     fetchPolicy: "network-only",
     variables: { pipelineName }
@@ -435,6 +449,7 @@ function usePresetsAndPartitions(
       partitionSetsQuery.data?.partitionSetsOrError?.__typename ===
       "PartitionSets"
         ? partitionSetsQuery.data.partitionSetsOrError.results.sort(byName)
-        : []
+        : [],
+    pipeline: presetsQuery.data?.pipeline
   };
 }
