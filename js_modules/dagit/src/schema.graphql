@@ -418,6 +418,7 @@ type InvalidSubsetError implements Error {
 interface IPipelineSnapshot {
   name: String!
   description: String
+  pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
   solids: [Solid!]!
   modes: [Mode!]!
@@ -666,6 +667,7 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   solids: [Solid!]!
   name: String!
   description: String
+  pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -740,6 +742,7 @@ interface PipelineReference {
 
 type PipelineRun {
   runId: String!
+  pipelineSnapshotId: String
   status: PipelineRunStatus!
   pipeline: PipelineReference!
   stats: PipelineRunStatsOrError!
@@ -824,6 +827,7 @@ type PipelineRunStepStats {
 type PipelineSnapshot {
   name: String!
   description: String
+  pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
   solids: [Solid!]!
   modes: [Mode!]!

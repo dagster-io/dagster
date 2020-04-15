@@ -18,6 +18,7 @@ query PipelineSnapshotQuery($snapshotId: String!) {
     pipelineSnapshot(snapshotId: $snapshotId) {
         __typename
         name
+        pipelineSnapshotId
         description
         runtimeTypes { key }
         solids { name }
@@ -34,6 +35,7 @@ query PipelineSnapshotQuery($snapshotId: String!) {
         __typename
         ... on PipelineSnapshot {
             name
+            pipelineSnapshotId
             description
             runtimeTypes { key }
             solids { name }

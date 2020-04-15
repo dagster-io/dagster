@@ -16,6 +16,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_epheme
       }
     ],
     "name": "noop_pipeline",
+    "pipelineSnapshotId": "88528edde2ed64da3c39cca0da8ba2f7586c1a5d",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -63,6 +64,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
       }
     ],
     "name": "noop_pipeline",
+    "pipelineSnapshotId": "88528edde2ed64da3c39cca0da8ba2f7586c1a5d",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -110,6 +112,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[crea
       }
     ],
     "name": "noop_pipeline",
+    "pipelineSnapshotId": "88528edde2ed64da3c39cca0da8ba2f7586c1a5d",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -157,6 +160,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[crea
       }
     ],
     "name": "noop_pipeline",
+    "pipelineSnapshotId": "88528edde2ed64da3c39cca0da8ba2f7586c1a5d",
     "runtimeTypes": [
       {
         "key": "Any"

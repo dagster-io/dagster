@@ -43,11 +43,11 @@ class DauphinIPipelineSnapshotMixin(object):
     # get_pipeline_index()
     #
     def get_pipeline_index(self):
-
         raise NotImplementedError()
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
+    pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
     runtime_types = dauphin.non_null_list('RuntimeType')
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')
@@ -58,6 +58,9 @@ class DauphinIPipelineSnapshotMixin(object):
         'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     tags = dauphin.non_null_list('PipelineTag')
+
+    def resolve_pipeline_snapshot_id(self, _):
+        return self.get_pipeline_index().pipeline_snapshot_id
 
     def resolve_name(self, _):
         return self.get_pipeline_index().name
@@ -122,6 +125,7 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
+    pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
     runtime_types = dauphin.non_null_list('RuntimeType')
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')

@@ -112,6 +112,8 @@ class DauphinPipelineRun(dauphin.ObjectType):
         name = 'PipelineRun'
 
     runId = dauphin.NonNull(dauphin.String)
+    # Nullable because of historical runs
+    pipelineSnapshotId = dauphin.String()
     status = dauphin.NonNull('PipelineRunStatus')
     pipeline = dauphin.NonNull('PipelineReference')
     stats = dauphin.NonNull('PipelineRunStatsOrError')
@@ -142,6 +144,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_pipeline(self, graphene_info):
         return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
+
+    def resolve_pipelineSnapshotId(self, _):
+        return self._pipeline_run.pipeline_snapshot_id
 
     def resolve_logs(self, graphene_info):
         return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)

@@ -64,6 +64,8 @@ class PipelineIndex:
             for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
+        self.pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+
     @property
     def name(self):
         return self.pipeline_snapshot.name
