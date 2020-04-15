@@ -307,6 +307,38 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'get_input_one'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'get_input_one'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'get_input_two'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'get_input_two'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'loop'
             },
             'invocations': [
@@ -547,6 +579,22 @@ snapshots['test_query_all_solids 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'return_one'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_one'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'return_six'
             },
             'invocations': [
@@ -668,6 +716,22 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'start'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'sum_inputs'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'sum_inputs'
                     }
                 }
             ]
@@ -1096,6 +1160,38 @@ snapshots['test_query_all_solids_with_snapshot_context 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'get_input_one'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'get_input_one'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'get_input_two'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'get_input_two'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'loop'
             },
             'invocations': [
@@ -1336,6 +1432,22 @@ snapshots['test_query_all_solids_with_snapshot_context 1'] = {
         {
             '__typename': 'UsedSolid',
             'definition': {
+                'name': 'return_one'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'return_one'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
                 'name': 'return_six'
             },
             'invocations': [
@@ -1457,6 +1569,22 @@ snapshots['test_query_all_solids_with_snapshot_context 1'] = {
                     },
                     'solidHandle': {
                         'handleID': 'start'
+                    }
+                }
+            ]
+        },
+        {
+            '__typename': 'UsedSolid',
+            'definition': {
+                'name': 'sum_inputs'
+            },
+            'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'retry_multi_input_early_terminate_pipeline'
+                    },
+                    'solidHandle': {
+                        'handleID': 'sum_inputs'
                     }
                 }
             ]

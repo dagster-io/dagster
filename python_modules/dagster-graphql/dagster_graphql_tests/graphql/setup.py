@@ -188,6 +188,7 @@ def define_repository():
             scalar_output_pipeline,
             spew_pipeline,
             tagged_pipeline,
+            retry_multi_input_early_terminate_pipeline,
         ],
     )
 
@@ -692,6 +693,45 @@ def tagged_pipeline():
     return simple_solid()
 
 
+@pipeline
+def retry_multi_input_early_terminate_pipeline():
+    @lambda_solid(output_def=OutputDefinition(Int))
+    def return_one():
+        return 1
+
+    @solid(
+        config={'wait_to_terminate': bool},
+        input_defs=[InputDefinition('one', Int)],
+        output_defs=[OutputDefinition(Int)],
+    )
+    def get_input_one(context, one):
+        if context.solid_config['wait_to_terminate']:
+            while True:
+                time.sleep(0.1)
+        return one
+
+    @solid(
+        config={'wait_to_terminate': bool},
+        input_defs=[InputDefinition('one', Int)],
+        output_defs=[OutputDefinition(Int)],
+    )
+    def get_input_two(context, one):
+        if context.solid_config['wait_to_terminate']:
+            while True:
+                time.sleep(0.1)
+        return one
+
+    @lambda_solid(
+        input_defs=[InputDefinition('input_one', Int), InputDefinition('input_two', Int)],
+        output_def=OutputDefinition(Int),
+    )
+    def sum_inputs(input_one, input_two):
+        return input_one + input_two
+
+    step_one = return_one()
+    return sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
+
+
 def get_retry_multi_execution_params(should_fail, retry_id=None):
     return {
         'mode': 'default',
@@ -701,4 +741,5 @@ def get_retry_multi_execution_params(should_fail, retry_id=None):
             'solids': {'can_fail': {'config': {'fail': should_fail}}},
         },
         'retryRunId': retry_id,
+        'executionMetadata': {'rootRunId': retry_id, 'parentRunId': retry_id,},
     }

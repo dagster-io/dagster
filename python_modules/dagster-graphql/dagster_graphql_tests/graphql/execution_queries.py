@@ -231,6 +231,47 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
     }
 '''
 
+START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
+    fragment startPipelineReexecutionResultFragment on StartPipelineReexecutionResult {
+        __typename
+        ... on StartPipelineReexecutionSuccess {
+            run {
+                runId
+                pipeline { ...on PipelineReference { name } }
+                logs {
+                    nodes {
+                        __typename
+                        ... on MessageEvent  {
+                            message
+                            level
+                        }
+                        ...stepEventFragment
+                    }
+                }
+                tags {
+                    key
+                    value
+                }
+            }
+        }
+        ... on PipelineConfigValidationInvalid {
+            pipeline { name }
+            errors { message }
+        }
+        ... on PipelineNotFoundError {
+            pipelineName
+        }
+        ... on PythonError {
+            message
+            stack
+            cause {
+                message
+                stack
+            }
+        }
+    }
+'''
+
 START_PIPELINE_EXECUTION_QUERY = (
     FRAGMENTS
     + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
@@ -260,6 +301,24 @@ mutation (
         runId: $runId
     ) {
         ...startPipelineExecutionForCreatedRunResultFragment
+    }
+}
+'''
+)
+
+
+START_PIPELINE_REEXECUTION_QUERY = (
+    FRAGMENTS
+    + START_PIPELINE_REEXECUTION_RESULT_FRAGMENT
+    + '''
+
+mutation (
+    $executionParams: ExecutionParams!
+) {
+    startPipelineReexecution(
+        executionParams: $executionParams
+    ) {
+        ...startPipelineReexecutionResultFragment
     }
 }
 '''

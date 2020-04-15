@@ -140,13 +140,14 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
 
     parent_run = instance.get_run_by_id(parent_run_id)
     parent_run_logs = instance.all_logs(parent_run_id)
+    steps_in_parent_run_logs = set(
+        record.dagster_event.step_key
+        for record in parent_run_logs
+        if record.dagster_event and record.dagster_event.step_key
+    )
     failed_step_keys = set(
         record.dagster_event.step_key for record in parent_run_logs if is_step_failure_event(record)
     )
-    previous_run_output_handles = output_handles_from_event_logs(parent_run_logs)
-    previous_run_output_names_by_step = defaultdict(set)
-    for handle in previous_run_output_handles:
-        previous_run_output_names_by_step[handle.step_key].add(handle.output_name)
 
     to_retry = []
 
@@ -156,6 +157,12 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
             continue
 
         if step.key in failed_step_keys:
+            to_retry.append(step.key)
+            continue
+
+        # include the steps that did not run
+        # e.g. when the run was terminated through the dagit "terminate" button
+        if step.key not in steps_in_parent_run_logs:
             to_retry.append(step.key)
             continue
 
