@@ -3,9 +3,11 @@
 import os
 import subprocess
 
+import pytest
 from sqlalchemy import create_engine
 
 from dagster import execute_pipeline, pipeline, seven, solid
+from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
@@ -161,6 +163,23 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         instance = DagsterInstance.from_config(tempdir)
 
+        @solid
+        def noop_solid(_):
+            pass
+
+        @pipeline
+        def noop_pipeline():
+            noop_solid()
+
+        with pytest.raises(DagsterInstanceMigrationRequired) as exc_info:
+            execute_pipeline(noop_pipeline, instance=instance)
+
+        assert str(exc_info.value) == (
+            'Instance is out of date and must be migrated (Postgres run storage '
+            'requires migration). Database is at revision None, head is c63a27054f08. '
+            'Please run `dagster instance migrate`.'
+        )
+
         # ensure migration is run
         instance.upgrade()
 
@@ -174,15 +193,6 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
 
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
-
-        @solid
-        def noop_solid(_):
-            pass
-
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
-
         result = execute_pipeline(noop_pipeline, instance=instance)
 
         assert result.success

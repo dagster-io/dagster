@@ -5,7 +5,12 @@ import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
 from dagster import check
-from dagster.core.storage.sql import get_alembic_config, run_alembic_downgrade, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    get_alembic_config,
+    handle_schema_errors,
+    run_alembic_downgrade,
+    run_alembic_upgrade,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
@@ -77,7 +82,10 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            yield conn
+            with handle_schema_errors(
+                conn, get_alembic_config(__file__), msg='Sqlite run storage requires migration',
+            ):
+                yield conn
         finally:
             conn.close()
 

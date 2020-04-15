@@ -154,6 +154,24 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
+        @solid
+        def noop_solid(_):
+            pass
+
+        @pipeline
+        def noop_pipeline():
+            noop_solid()
+
+        with pytest.raises(DagsterInstanceMigrationRequired) as exc_info:
+            execute_pipeline(noop_pipeline, instance=instance)
+
+        assert str(exc_info.value) == (
+            'Instance is out of date and must be migrated (Sqlite run '
+            'storage requires migration). Database is at revision '
+            '9fe9e746268c, head is c63a27054f08. Please run `dagster '
+            'instance migrate`.'
+        )
+
         assert len(instance.get_runs()) == 1
 
         # Make sure the schema is migrated
@@ -172,14 +190,6 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
-
-        @solid
-        def noop_solid(_):
-            pass
-
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
 
         result = execute_pipeline(noop_pipeline, instance=instance)
 

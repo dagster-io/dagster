@@ -4,7 +4,12 @@ import sqlalchemy as db
 
 from dagster import check
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
+from dagster.core.storage.sql import (
+    create_engine,
+    get_alembic_config,
+    handle_schema_errors,
+    run_alembic_upgrade,
+)
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from ..utils import pg_config, pg_url_from_config
@@ -70,7 +75,16 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     @contextmanager
     def connect(self, _run_id=None):  # pylint: disable=arguments-differ
         with self.get_engine() as engine:
-            yield engine
+            try:
+                conn = engine.connect()
+                with handle_schema_errors(
+                    conn,
+                    get_alembic_config(__file__),
+                    msg='Postgres run storage requires migration',
+                ):
+                    yield engine
+            finally:
+                conn.close()
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
