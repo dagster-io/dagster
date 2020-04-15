@@ -214,11 +214,11 @@ def execute_inner(step_key, pipeline_run, instance_ref):
 
 def inner_step(instance, pipeline_run, step_key):
     with instance.compute_log_manager.watch(pipeline_run, step_key=step_key):
-        time.sleep(0.5)
+        time.sleep(0.1)
         print(step_key, 'inner 1')
         print(step_key, 'inner 2')
         print(step_key, 'inner 3')
-        time.sleep(0.5)
+        time.sleep(0.1)
 
 
 def expected_inner_output(step_key):

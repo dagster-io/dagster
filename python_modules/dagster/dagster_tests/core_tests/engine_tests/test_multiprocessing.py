@@ -184,10 +184,10 @@ def define_subdag_pipeline():
     def waiter(context):
         done = False
         while not done:
-            time.sleep(0.25)
+            time.sleep(0.15)
             if os.path.isfile(context.solid_config):
                 done = True
-                time.sleep(1)
+                time.sleep(0.15)
 
     @solid(
         input_defs=[InputDefinition('after', Nothing)],

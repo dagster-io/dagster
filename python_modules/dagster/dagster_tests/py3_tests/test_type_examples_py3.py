@@ -73,7 +73,7 @@ def exists(_, path: Path) -> Bool:
 
 @solid
 def wait(_) -> Nothing:
-    time.sleep(1)
+    time.sleep(0.2)
     return
 
 
@@ -89,7 +89,7 @@ def nothing_pipeline():
 
 @solid
 def wait_int(_) -> Int:
-    time.sleep(1)
+    time.sleep(0.2)
     return 1
 
 

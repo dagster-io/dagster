@@ -158,7 +158,7 @@ def test_event_log_storage_watch(event_storage_factory_cm_fn):
             attempts -= 1
 
         storage.end_watch('foo', watcher)
-        time.sleep(0.5)  # this value scientifically selected from a range of attractive values
+        time.sleep(0.3)  # this value scientifically selected from a range of attractive values
         storage.store_event(evt('Message5'))
 
         assert len(storage.get_logs_for_run('foo')) == 5

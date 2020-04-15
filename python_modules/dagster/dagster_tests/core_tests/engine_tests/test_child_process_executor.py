@@ -39,7 +39,7 @@ class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
 
 class LongRunningCommand(ChildProcessCommand):  # pylint: disable=no-init
     def execute(self):
-        time.sleep(1.0)
+        time.sleep(0.5)
         yield 1
 
 
