@@ -1,4 +1,7 @@
 # pylint:disable=no-member
+import math
+import random
+import time
 from collections import defaultdict
 
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
@@ -113,9 +116,53 @@ def optional_outputs():
     bar.alias('third_consumer')(input_arg=foo_res.out_3)
 
 
+def define_long_running_pipeline_celery():
+    from dagster_celery import celery_executor
+
+    @solid
+    def long_running_task(context):
+        iterations = 20 * 30  # 20 minutes
+        for i in range(iterations):
+            context.log.info(
+                'task in progress [%d/100]%% complete' % math.floor(100.0 * float(i) / iterations)
+            )
+            time.sleep(2)
+        return random.randint(0, iterations)
+
+    @solid
+    def post_process(context, input_count):
+        context.log.info('received input %d' % input_count)
+        iterations = 60 * 2  # 2 hours
+        for i in range(iterations):
+            context.log.info(
+                'post-process task in progress [%d/100]%% complete'
+                % math.floor(100.0 * float(i) / iterations)
+            )
+            time.sleep(60)
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                system_storage_defs=s3_plus_default_storage_defs,
+                resource_defs={'s3': s3_resource},
+                executor_defs=default_executors + [celery_executor],
+            )
+        ]
+    )
+    def long_running_pipeline_celery():
+        for i in range(10):
+            t = long_running_task.alias('first_%d' % i)()
+            post_process.alias('post_process_%d' % i)(t)
+
+    return long_running_pipeline_celery
+
+
 def define_demo_execution_repo():
     return RepositoryDefinition(
         name='demo_execution_repo',
-        pipeline_dict={'demo_pipeline_celery': define_demo_pipeline_celery,},
+        pipeline_dict={
+            'demo_pipeline_celery': define_demo_pipeline_celery,
+            'long_running_pipeline_celery': define_long_running_pipeline_celery,
+        },
         pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],
     )
