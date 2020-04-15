@@ -361,3 +361,10 @@ def define_bad_kernel_pipeline():
 def test_hello_logging():
     with exec_for_test('define_hello_logging_pipeline') as result:
         assert result.success
+
+
+@pytest.mark.notebook_test
+def test_reimport():
+    with exec_for_test('reimport_pipeline') as result:
+        assert result.success
+        assert result.result_for_solid('reimport').output_value() == 6

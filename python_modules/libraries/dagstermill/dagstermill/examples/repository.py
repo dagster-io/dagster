@@ -10,6 +10,7 @@ from dagster import (
     FileHandle,
     InputDefinition,
     Int,
+    List,
     ModeDefinition,
     OutputDefinition,
     PipelineDefinition,
@@ -20,6 +21,7 @@ from dagster import (
     String,
     check,
     lambda_solid,
+    pipeline,
     resource,
     solid,
 )
@@ -355,6 +357,24 @@ def define_bad_kernel_pipeline():
     return PipelineDefinition(name='bad_kernel_pipeline', solid_defs=[bad_kernel_solid])
 
 
+reimport_solid = dagstermill.define_dagstermill_solid(
+    'reimport',
+    nb_test_path('reimport'),
+    input_defs=[InputDefinition('l', List[int])],
+    output_defs=[OutputDefinition()],
+)
+
+
+@solid
+def lister(_):
+    return [1, 2, 3]
+
+
+@pipeline
+def reimport_pipeline():
+    reimport_solid(lister())
+
+
 def define_example_repository():
     pipeline_dict = {
         'bad_kernel_pipeline': define_bad_kernel_pipeline,
@@ -368,6 +388,7 @@ def define_example_repository():
         'resource_with_exception_pipeline': define_resource_with_exception_pipeline,
         'test_add_pipeline': define_add_pipeline,
         'test_notebook_dag': define_test_notebook_dag_pipeline,
+        'reimport_pipeline': lambda: reimport_pipeline,
     }
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
         pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline

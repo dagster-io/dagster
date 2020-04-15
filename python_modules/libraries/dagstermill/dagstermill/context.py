@@ -119,3 +119,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
 
         solid_config = self.environment_config.solids.get(self.solid.name)
         return solid_config.config if solid_config else None
+
+
+class DagstermillRuntimeExecutionContext(DagstermillExecutionContext):
+    pass

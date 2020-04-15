@@ -30,7 +30,7 @@ from dagster.loggers import colored_console_logger
 from dagster.serdes import unpack_value
 from dagster.utils import EventGenerationManager
 
-from .context import DagstermillExecutionContext
+from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError
 from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
@@ -158,7 +158,7 @@ class Manager(object):
             execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
-            self.context = DagstermillExecutionContext(
+            self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,
                 solid_config=None,
                 resource_keys_to_init=get_required_resource_keys_to_init(
@@ -186,6 +186,13 @@ class Manager(object):
         '''
         check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+
+        # If we are running non-interactively, and there is already a context reconstituted, return
+        # that context rather than overwriting it.
+        if self.context is not None and isinstance(
+            self.context, DagstermillRuntimeExecutionContext
+        ):
+            return self.context
 
         if not mode_def:
             mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
