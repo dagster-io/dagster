@@ -25,10 +25,10 @@ def test_multiple_outputs():
         yield Output(output_name='output_two', value='bar')
 
     @pipeline
-    def muptiple_outputs_pipeline():
+    def multiple_outputs_pipeline():
         multiple_outputs()
 
-    result = execute_pipeline(muptiple_outputs_pipeline)
+    result = execute_pipeline(multiple_outputs_pipeline)
     solid_result = result.solid_result_list[0]
 
     assert solid_result.solid.name == 'multiple_outputs'
