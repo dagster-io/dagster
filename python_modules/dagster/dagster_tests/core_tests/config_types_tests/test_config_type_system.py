@@ -5,6 +5,7 @@ import pytest
 
 from dagster import (
     Any,
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     Field,
@@ -902,3 +903,13 @@ def test_no_tuple_in_config_system():
         @solid(config=Field(Tuple[int]))
         def _bare_closed_set(_):
             pass
+
+
+def test_field_is_none():
+    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+
+        @solid(config={'none_field': None})
+        def _none_is_bad(_):
+            pass
+
+    assert 'Fields cannot be None' in str(exc_info.value)

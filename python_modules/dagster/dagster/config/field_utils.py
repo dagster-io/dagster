@@ -297,6 +297,11 @@ def _convert_potential_type(original_root, potential_type, stack):
 def _convert_potential_field(original_root, potential_field, stack):
     from .field import Field
 
+    if potential_field is None:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, potential_field, stack, reason='Fields cannot be None'
+        )
+
     if not is_potential_field(potential_field):
         raise DagsterInvalidConfigDefinitionError(original_root, potential_field, stack)
 
