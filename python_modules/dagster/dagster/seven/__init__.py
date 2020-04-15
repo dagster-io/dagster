@@ -1,5 +1,6 @@
 '''Internal py2/3 compatibility library. A little more than six.'''
 
+import datetime
 import inspect
 import os
 import signal
@@ -176,3 +177,17 @@ def print_single_line_str(single_line_str):
             mock.call.write(single_line_str),
             mock.call.write('\n'),
         ]
+
+
+def get_current_datetime_in_utc():
+    tz = None
+    if sys.version_info.major >= 3 and sys.version_info.minor >= 2:
+        from datetime import timezone
+
+        tz = timezone.utc
+    else:
+        import pytz
+
+        tz = pytz.utc
+
+    return datetime.datetime.now(tz=tz)

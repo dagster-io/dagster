@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import time
@@ -20,10 +21,19 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
+from dagster.seven import get_current_datetime_in_utc
+from dagster.utils.merger import merge_dicts
 from dagster.utils.yaml_utils import load_yaml_from_globs
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
 from .ref import InstanceRef, compute_logs_directory
+
+# 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
+# airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
+# 'execution_date' used in Airflow operator execution and 'is_airflow_ingest_pipeline' determines
+# whether 'airflow_execution_date' is needed.
+AIRFLOW_EXECUTION_DATE_STR = 'airflow_execution_date'
+IS_AIRFLOW_INGEST_PIPELINE_STR = 'is_airflow_ingest_pipeline'
 
 
 def _is_dagster_home_set():
@@ -473,6 +483,13 @@ class DagsterInstance:
 
             check.invariant(ep_snapshot_id == returned_ep_snapshot_id)
 
+        # If dagster pipeline was created via airflow ingest and airflow_execution_date was not set
+        # in tags, then add the current time as airflow_execution_date to PipelineRun tags
+        tags = create_run_args.tags
+        if IS_AIRFLOW_INGEST_PIPELINE_STR in create_run_args.tags:
+            if AIRFLOW_EXECUTION_DATE_STR not in create_run_args.tags:
+                tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
+
         return self.create_run(
             PipelineRun(
                 pipeline_name=create_run_args.pipeline_snapshot.name,
@@ -484,7 +501,7 @@ class DagsterInstance:
                 selector=create_run_args.selector,
                 step_keys_to_execute=create_run_args.step_keys_to_execute,
                 status=create_run_args.status,
-                tags=create_run_args.tags,
+                tags=tags,
                 parent_run_id=create_run_args.parent_run_id,
                 root_run_id=create_run_args.root_run_id,
             )
