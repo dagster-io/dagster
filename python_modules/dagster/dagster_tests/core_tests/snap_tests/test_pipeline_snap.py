@@ -23,15 +23,15 @@ from dagster.core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_icontains_solids,
 )
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    serialize_pp,
+)
 
 
 def serialize_rt(value):
     return deserialize_json_to_dagster_namedtuple(serialize_dagster_namedtuple(value))
-
-
-def serialize_pp(value):
-    return serialize_dagster_namedtuple(value, indent=2, separators=(',', ': '))
 
 
 def get_noop_pipeline():

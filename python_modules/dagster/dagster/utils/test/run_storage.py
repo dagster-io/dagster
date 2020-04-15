@@ -5,11 +5,7 @@ from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotE
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import serialize_dagster_namedtuple
-
-
-def serialize_pp(value):
-    return serialize_dagster_namedtuple(value, indent=2, separators=(',', ': '))
+from dagster.serdes import serialize_pp
 
 
 class TestRunStorage:

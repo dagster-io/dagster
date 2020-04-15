@@ -28,6 +28,10 @@ _WHITELISTED_TUPLE_MAP = {}
 _WHITELISTED_ENUM_MAP = {}
 
 
+def serialize_pp(value):
+    return serialize_dagster_namedtuple(value, indent=2, separators=(',', ': '))
+
+
 def register_serdes_tuple_fallbacks(fallback_map):
     for class_name, klass in fallback_map.items():
         _WHITELISTED_TUPLE_MAP[class_name] = klass
