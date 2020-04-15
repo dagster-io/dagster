@@ -1,6 +1,6 @@
 from os import path
 
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_value
 
 
 def test_dead_events():
@@ -8,7 +8,7 @@ def test_dead_events():
     with open(snapshot, 'r') as fd:
         objs = []
         for line in fd.readlines():
-            obj = deserialize_json_to_dagster_namedtuple(line)
+            obj = deserialize_value(line)
             assert obj is not None
             objs.append(obj)
 

@@ -123,15 +123,23 @@ class ConfigEnumValueSnap(namedtuple('_ConfigEnumValueSnap', 'value description'
 
 @whitelist_for_serdes
 class ConfigFieldSnap(
-    namedtuple('_ConfigFieldSnap', 'name type_key is_required default_provided description',)
+    namedtuple(
+        '_ConfigFieldSnap',
+        'name type_key is_required default_provided default_value_as_json_str description',
+    )
 ):
-    def __new__(cls, name, type_key, is_required, default_provided, description):
+    def __new__(
+        cls, name, type_key, is_required, default_provided, default_value_as_json_str, description
+    ):
         return super(ConfigFieldSnap, cls).__new__(
             cls,
             name=check.opt_str_param(name, 'name'),
             type_key=check.str_param(type_key, 'type_key'),
             is_required=check.bool_param(is_required, 'is_required'),
             default_provided=check.bool_param(default_provided, 'default_provided'),
+            default_value_as_json_str=check.opt_str_param(
+                default_value_as_json_str, 'default_value_as_json_str'
+            ),
             description=check.opt_str_param(description, 'description'),
         )
 
@@ -144,6 +152,9 @@ def snap_from_field(name, field):
         type_key=field.config_type.key,
         is_required=field.is_required,
         default_provided=field.default_provided,
+        default_value_as_json_str=field.default_value_as_json_str
+        if field.default_provided
+        else None,
         description=field.description,
     )
 

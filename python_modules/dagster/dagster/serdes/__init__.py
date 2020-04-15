@@ -171,15 +171,26 @@ def _serialize_dagster_namedtuple(nt, enum_map, tuple_map, **json_kwargs):
     return seven.json.dumps(_pack_value(nt, enum_map, tuple_map), **json_kwargs)
 
 
-def serialize_value(nt):
+def serialize_value(val):
     return seven.json.dumps(
-        _pack_value(nt, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
+        _pack_value(val, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP)
+    )
+
+
+def deserialize_value(val):
+    return _unpack_value(
+        seven.json.loads(check.str_param(val, 'val')),
+        enum_map=_WHITELISTED_ENUM_MAP,
+        tuple_map=_WHITELISTED_TUPLE_MAP,
     )
 
 
 def serialize_dagster_namedtuple(nt, **json_kwargs):
     return _serialize_dagster_namedtuple(
-        nt, enum_map=_WHITELISTED_ENUM_MAP, tuple_map=_WHITELISTED_TUPLE_MAP, **json_kwargs
+        check.tuple_param(nt, 'nt'),
+        enum_map=_WHITELISTED_ENUM_MAP,
+        tuple_map=_WHITELISTED_TUPLE_MAP,
+        **json_kwargs
     )
 
 
@@ -225,11 +236,18 @@ def _unpack_value(val, enum_map, tuple_map):
 
 
 def deserialize_json_to_dagster_namedtuple(json_str):
-    return _deserialize_json_to_dagster_namedtuple(
+    dagster_namedtuple = _deserialize_json_to_dagster_namedtuple(
         check.str_param(json_str, 'json_str'),
         enum_map=_WHITELISTED_ENUM_MAP,
         tuple_map=_WHITELISTED_TUPLE_MAP,
     )
+    check.invariant(
+        isinstance(dagster_namedtuple, tuple),
+        'Output of deserialized json_str was not a namedtuple. Recevied type {}.'.format(
+            type(dagster_namedtuple)
+        ),
+    )
+    return dagster_namedtuple
 
 
 def _deserialize_json_to_dagster_namedtuple(json_str, enum_map, tuple_map):

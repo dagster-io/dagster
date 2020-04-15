@@ -153,6 +153,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -161,6 +162,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -169,6 +171,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -190,6 +193,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -198,6 +202,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -219,6 +224,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -227,6 +233,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -248,6 +255,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -256,6 +264,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -264,6 +273,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -285,6 +295,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -293,6 +304,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -301,6 +313,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -322,6 +335,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -330,6 +344,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -338,6 +353,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -359,6 +375,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -367,6 +384,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -375,6 +393,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -396,6 +415,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -404,6 +424,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -425,6 +446,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -433,6 +455,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -454,6 +477,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -462,6 +486,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -470,6 +495,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -478,6 +504,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -486,6 +513,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -507,6 +535,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -515,6 +544,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -536,6 +566,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -557,6 +588,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -578,6 +610,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -599,6 +632,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -620,6 +654,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -628,6 +663,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -649,6 +685,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -657,6 +694,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -678,6 +716,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -699,6 +738,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "noop_solid",
@@ -732,6 +772,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -753,6 +794,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -774,6 +816,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -795,6 +838,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -948,6 +992,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1138,6 +1183,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1146,6 +1192,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1154,6 +1201,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -1175,6 +1223,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -1183,6 +1232,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -1204,6 +1254,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -1212,6 +1263,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -1233,6 +1285,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1241,6 +1294,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1249,6 +1303,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -1270,6 +1325,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1278,6 +1334,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1286,6 +1343,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -1307,6 +1365,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1315,6 +1374,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1323,6 +1383,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -1344,6 +1405,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1352,6 +1414,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1360,6 +1423,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -1381,6 +1445,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -1389,6 +1454,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -1410,6 +1476,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -1418,6 +1485,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -1439,6 +1507,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -1447,6 +1516,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -1455,6 +1525,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -1463,6 +1534,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -1471,6 +1543,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -1492,6 +1565,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -1500,6 +1574,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -1521,6 +1596,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1542,6 +1618,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -1563,6 +1640,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -1584,6 +1662,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1605,6 +1684,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -1613,6 +1693,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -1634,6 +1715,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -1642,6 +1724,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -1663,6 +1746,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1684,6 +1768,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "noop_solid",
@@ -1717,6 +1802,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -1738,6 +1824,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -1759,6 +1846,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -1780,6 +1868,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1933,6 +2022,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -1974,7 +2064,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_pipeline_snap_all_props 2'] = '05d105ecc849f9552a4b603387f567109119ee2f'
+snapshots['test_pipeline_snap_all_props 2'] = '634a36c067acaf9f10f37ac0ceb916d8c564160b'
 
 snapshots['test_two_invocations_deps_snap 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -2123,6 +2213,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2131,6 +2222,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2139,6 +2231,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -2160,6 +2253,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -2168,6 +2262,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -2189,6 +2284,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -2197,6 +2293,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -2218,6 +2315,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2226,6 +2324,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2234,6 +2333,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -2255,6 +2355,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2263,6 +2364,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2271,6 +2373,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -2292,6 +2395,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2300,6 +2404,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2308,6 +2413,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -2329,6 +2435,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2337,6 +2444,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2345,6 +2453,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -2366,6 +2475,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -2374,6 +2484,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -2395,6 +2506,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -2403,6 +2515,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -2424,6 +2537,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -2432,6 +2546,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -2440,6 +2555,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -2448,6 +2564,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"one\\": {}, \\"two\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -2456,6 +2573,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -2477,6 +2595,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -2485,6 +2604,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -2506,6 +2626,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -2527,6 +2648,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -2548,6 +2670,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -2569,6 +2692,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -2590,6 +2714,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -2598,6 +2723,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -2619,6 +2745,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -2627,6 +2754,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -2648,6 +2776,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -2681,6 +2810,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -2702,6 +2832,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -2723,6 +2854,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -2744,6 +2876,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "one",
@@ -2752,6 +2885,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "two",
@@ -2773,6 +2907,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -2933,6 +3068,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -2974,7 +3110,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_two_invocations_deps_snap 2'] = 'd2f85e0477b1d3e1a72cc31819e92335a5d8599b'
+snapshots['test_two_invocations_deps_snap 2'] = 'd89efc442db557ae228f5e56016ff487ff1d43a6'
 
 snapshots['test_basic_dep_fan_out 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3123,6 +3259,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3131,6 +3268,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3139,6 +3277,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -3160,6 +3299,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -3168,6 +3308,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -3189,6 +3330,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -3197,6 +3339,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -3218,6 +3361,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3226,6 +3370,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3234,6 +3379,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -3255,6 +3401,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3263,6 +3410,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3271,6 +3419,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -3292,6 +3441,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3300,6 +3450,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3308,6 +3459,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -3329,6 +3481,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3337,6 +3490,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3345,6 +3499,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -3366,6 +3521,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -3374,6 +3530,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -3395,6 +3552,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -3403,6 +3561,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -3424,6 +3583,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -3432,6 +3592,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -3453,6 +3614,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "passone",
@@ -3461,6 +3623,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "passtwo",
@@ -3469,6 +3632,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "return_one",
@@ -3490,6 +3654,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -3511,6 +3676,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -3532,6 +3698,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -3553,6 +3720,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -3574,6 +3742,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -3582,6 +3751,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -3603,6 +3773,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -3611,6 +3782,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -3632,6 +3804,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -3640,6 +3813,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -3648,6 +3822,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -3656,6 +3831,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"passone\\": {}, \\"passtwo\\": {}, \\"return_one\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -3664,6 +3840,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -3685,6 +3862,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -3718,6 +3896,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -3739,6 +3918,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -3760,6 +3940,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -3781,6 +3962,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -3972,6 +4154,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -4038,7 +4221,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_dep_fan_out 2'] = 'f4633fdee2b7d8314cb83f3df7a3f3009c90e309'
+snapshots['test_basic_dep_fan_out 2'] = 'ab880e36b41951910b62fbf8608554c970bec0ba'
 
 snapshots['test_basic_fan_in 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4187,6 +4370,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4195,6 +4379,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4203,6 +4388,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -4224,6 +4410,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -4232,6 +4419,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -4253,6 +4441,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -4261,6 +4450,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -4282,6 +4472,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4290,6 +4481,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4298,6 +4490,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -4319,6 +4512,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4327,6 +4521,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4335,6 +4530,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -4356,6 +4552,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4364,6 +4561,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4372,6 +4570,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -4393,6 +4592,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4401,6 +4601,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4409,6 +4610,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -4430,6 +4632,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -4438,6 +4641,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -4459,6 +4663,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -4467,6 +4672,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -4488,6 +4694,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "take_nothings",
@@ -4509,6 +4716,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -4517,6 +4725,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -4538,6 +4747,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -4559,6 +4769,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -4580,6 +4791,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -4588,6 +4800,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -4596,6 +4809,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -4604,6 +4818,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"take_nothings\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -4612,6 +4827,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -4633,6 +4849,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -4654,6 +4871,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -4675,6 +4893,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -4683,6 +4902,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -4704,6 +4924,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -4712,6 +4933,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -4733,6 +4955,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -4766,6 +4989,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -4787,6 +5011,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -4808,6 +5033,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -4829,6 +5055,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -5013,6 +5240,7 @@ snapshots['test_basic_fan_in 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -5079,7 +5307,7 @@ snapshots['test_basic_fan_in 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_fan_in 2'] = 'f82e1f1faf6976f1f3442c504b4222be6c0eb4ec'
+snapshots['test_basic_fan_in 2'] = 'ad4ff4a4b528d6a1bfc6f296757f96bd5888e0d6'
 
 snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5228,6 +5456,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5236,6 +5465,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5244,6 +5474,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -5265,6 +5496,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "disabled",
@@ -5273,6 +5505,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "enabled",
@@ -5294,6 +5527,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "in_process",
@@ -5302,6 +5536,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}}",
             "description": null,
             "is_required": false,
             "name": "multiprocess",
@@ -5323,6 +5558,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5331,6 +5567,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5339,6 +5576,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -5360,6 +5598,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5368,6 +5607,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5376,6 +5616,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -5397,6 +5638,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5405,6 +5647,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5413,6 +5656,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -5434,6 +5678,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5442,6 +5687,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5450,6 +5696,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "value",
@@ -5471,6 +5718,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"config\\": {}}",
             "description": null,
             "is_required": false,
             "name": "filesystem",
@@ -5479,6 +5727,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "in_memory",
@@ -5500,6 +5749,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "json",
@@ -5508,6 +5758,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "pickle",
@@ -5529,6 +5780,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "execution",
@@ -5537,6 +5789,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "loggers",
@@ -5545,6 +5798,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "resources",
@@ -5553,6 +5807,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"noop_solid\\": {}}",
             "description": null,
             "is_required": false,
             "name": "solids",
@@ -5561,6 +5816,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "storage",
@@ -5582,6 +5838,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"INFO\\"",
             "description": null,
             "is_required": false,
             "name": "log_level",
@@ -5590,6 +5847,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "\\"dagster\\"",
             "description": null,
             "is_required": false,
             "name": "name",
@@ -5611,6 +5869,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -5632,6 +5891,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": true,
             "name": "path",
@@ -5653,6 +5913,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "result",
@@ -5674,6 +5935,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -5695,6 +5957,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "marker_to_close",
@@ -5703,6 +5966,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -5724,6 +5988,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "0",
             "description": null,
             "is_required": false,
             "name": "max_concurrent",
@@ -5732,6 +5997,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"enabled\\": {}}",
             "description": null,
             "is_required": false,
             "name": "retries",
@@ -5753,6 +6019,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -5774,6 +6041,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{}",
             "description": null,
             "is_required": false,
             "name": "noop_solid",
@@ -5807,6 +6075,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "base_dir",
@@ -5828,6 +6097,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "outputs",
@@ -5849,6 +6119,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": false,
+            "default_value_as_json_str": null,
             "description": null,
             "is_required": false,
             "name": "console",
@@ -5870,6 +6141,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"max_concurrent\\": 0, \\"retries\\": {\\"enabled\\": {}}}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -6023,6 +6295,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
           "config_field_snap": {
             "__class__": "ConfigFieldSnap",
             "default_provided": true,
+            "default_value_as_json_str": "{\\"log_level\\": \\"INFO\\", \\"name\\": \\"dagster\\"}",
             "description": null,
             "is_required": false,
             "name": "config",
@@ -6064,7 +6337,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_empty_pipeline_snap_props 2'] = 'bb3fc3f68b41af892e70f247c3a33182d7397738'
+snapshots['test_empty_pipeline_snap_props 2'] = '88528edde2ed64da3c39cca0da8ba2f7586c1a5d'
 
 snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
   "__class__": "ConfigTypeSnap",
@@ -6074,6 +6347,7 @@ snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "bar",
@@ -6082,6 +6356,7 @@ snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6149,6 +6424,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types0] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6171,6 +6447,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types1] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6193,6 +6470,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types2] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6215,6 +6493,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types3] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6237,6 +6516,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types4] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",
@@ -6259,6 +6539,7 @@ snapshots['test_multi_type_config_nested_dicts[nested_dict_types5] 1'] = '''{
     {
       "__class__": "ConfigFieldSnap",
       "default_provided": false,
+      "default_value_as_json_str": null,
       "description": null,
       "is_required": true,
       "name": "foo",

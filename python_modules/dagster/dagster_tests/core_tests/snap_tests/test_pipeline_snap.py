@@ -232,6 +232,41 @@ def test_basic_fan_in(snapshot):
     snapshot.assert_match(create_pipeline_snapshot_id(pipeline_snapshot))
 
 
+def _map_has_stable_hashes(hydrated_map, snapshot_config_snap_map):
+    assert isinstance(hydrated_map, (Shape, Permissive, Selector))
+    assert hydrated_map.key in snapshot_config_snap_map
+    for field in hydrated_map.fields.values():
+        assert field.config_type.key in snapshot_config_snap_map
+
+
+def _array_has_stable_hashes(hydrated_array, snapshot_config_snap_map):
+    assert isinstance(hydrated_array, Array)
+    assert hydrated_array.key in snapshot_config_snap_map
+    assert hydrated_array.inner_type.key in snapshot_config_snap_map
+
+
+def test_deserialize_solid_def_snaps_default_field():
+    @solid(config={'foo': Field(str, is_required=False, default_value='hello'), 'bar': Field(str)})
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_solid_def_snap('noop_solid')
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Shape)
+    assert isinstance(recevied_config_type.fields['foo'].config_type, String)
+    assert isinstance(recevied_config_type.fields['bar'].config_type, String)
+    assert not recevied_config_type.fields['foo'].is_required
+    assert recevied_config_type.fields['foo'].default_value == 'hello'
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
+
+
 def test_deserialize_solid_def_snaps_enum():
     @solid(
         config=Field(Enum('CowboyType', [EnumValue('good'), EnumValue('bad'), EnumValue('ugly')]))
@@ -270,6 +305,9 @@ def test_deserialize_solid_def_snaps_strict_shape():
     assert isinstance(recevied_config_type.fields['foo'].config_type, String)
     assert isinstance(recevied_config_type.fields['bar'].config_type, String)
     assert not recevied_config_type.fields['foo'].is_required
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 def test_deserialize_solid_def_snaps_selector():
@@ -287,6 +325,9 @@ def test_deserialize_solid_def_snaps_selector():
     assert isinstance(recevied_config_type, Selector)
     assert isinstance(recevied_config_type.fields['foo'].config_type, String)
     assert isinstance(recevied_config_type.fields['bar'].config_type, Int)
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 def test_deserialize_solid_def_snaps_permissive():
@@ -303,6 +344,9 @@ def test_deserialize_solid_def_snaps_permissive():
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Permissive)
     assert isinstance(recevied_config_type.fields['foo'].config_type, String)
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 def test_deserialize_solid_def_snaps_array():
@@ -319,6 +363,9 @@ def test_deserialize_solid_def_snaps_array():
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Array)
     assert isinstance(recevied_config_type.inner_type, String)
+    _array_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 def test_deserialize_solid_def_snaps_noneable():
@@ -372,6 +419,9 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 @pytest.mark.parametrize('dict_config_type', [Selector, Permissive, Shape])
@@ -388,6 +438,9 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    _array_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
 
 
 @pytest.mark.parametrize(
@@ -409,3 +462,6 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     solid_def_snap = pipeline_snapshot.get_solid_def_snap('fancy_solid')
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )

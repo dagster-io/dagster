@@ -16,7 +16,11 @@ from dagster.core.snap.config_types import (
     build_config_schema_snapshot,
     snap_from_config_type,
 )
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    deserialize_value,
+    serialize_dagster_namedtuple,
+)
 
 
 def snap_from_dagster_type(dagster_type):
@@ -65,8 +69,11 @@ def test_field_things():
     assert field_snap_dict['req'].is_required is True
     assert field_snap_dict['req'].description is None
     assert field_snap_dict['opt'].is_required is False
+    assert field_snap_dict['opt'].default_provided is False
+    assert field_snap_dict['opt'].default_value_as_json_str is None
     assert field_snap_dict['opt_with_default'].is_required is False
     assert field_snap_dict['opt_with_default'].default_provided is True
+    assert deserialize_value(field_snap_dict['opt_with_default'].default_value_as_json_str) == 2
 
     assert field_snap_dict['req_with_desc'].is_required is True
     assert field_snap_dict['req_with_desc'].description == 'A desc'

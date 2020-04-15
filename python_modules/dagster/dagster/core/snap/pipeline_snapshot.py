@@ -11,8 +11,9 @@ from dagster.config.config_type import (
     ScalarUnion,
     get_builtin_scalar_by_name,
 )
+from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED
 from dagster.core.definitions import PipelineDefinition
-from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster.serdes import deserialize_value, serialize_dagster_namedtuple, whitelist_for_serdes
 
 from .config_types import (
     ConfigEnumValueSnap,
@@ -204,6 +205,9 @@ def _construct_fields(config_type_snap, config_snap_map):
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
             description=field.description,
             is_required=field.is_required,
+            default_value=deserialize_value(field.default_value_as_json_str)
+            if field.default_provided
+            else FIELD_NO_DEFAULT_PROVIDED,
         )
         for field in config_type_snap.fields
     }
