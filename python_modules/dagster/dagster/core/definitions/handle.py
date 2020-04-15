@@ -51,7 +51,7 @@ class PartitionLoaderEntrypoint(
 
         else:
             raise DagsterInvariantViolationError(
-                '{fn_name} must be a function that returns a RepositoryPartitionstHandle.'.format(
+                '{fn_name} must be a function that returns a RepositoryPartitionsHandle.'.format(
                     fn_name=self.fn_name
                 )
             )

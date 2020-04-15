@@ -74,7 +74,7 @@ class SchedulerHandle(object):
 
         For every previously existing ScheduleDefinition (where schedule_name is the primary key),
         any changes to the definition are persisted in the corresponding Schedule and the status is
-        left unchanged. The schedule is also restarted to make sure the external articfacts (such
+        left unchanged. The schedule is also restarted to make sure the external artifacts (such
         as a cron job) are up to date.
 
         For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
@@ -243,7 +243,7 @@ def _validate_schedule_tick_args(status, run_id=None, error=None):
             error is None, desc="Schedule tick status is SUCCESS, but error was provided"
         )
     elif status == ScheduleTickStatus.FAILURE:
-        check.invariant(run_id is None, "Schdule tick status is FAILURE but run_id was provided")
+        check.invariant(run_id is None, "Schedule tick status is FAILURE but run_id was provided")
         check.inst_param(error, 'error', SerializableErrorInfo)
     else:
         check.invariant(
@@ -262,7 +262,7 @@ class ScheduleTickData(
         '''
         This class defines the data that is serialized and stored in ``ScheduleStorage``. We depend
         on the schedule storage implementation to provide schedule tick ids, and therefore
-        seperate all other data into this serializable class that can be stored independently of the
+        separate all other data into this serializable class that can be stored independently of the
         id
 
         Arguments:
@@ -276,7 +276,7 @@ class ScheduleTickData(
             run_id (str): The run created by the tick. This is set only when the status is
                 ``ScheduleTickStatus.SUCCESS``
             error (SerializableErrorInfo): The error caught during schedule execution. This is set
-                onle when the status is ``ScheduleTickStatus.Failure``
+                only when the status is ``ScheduleTickStatus.Failure``
         '''
 
         _validate_schedule_tick_args(status, run_id, error)
@@ -298,7 +298,7 @@ class ScheduleTickData(
 class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
     '''
     A scheduler is configured to run at an multiple intervals set by the `cron_schedule`
-    properies on ``ScheduleDefinition``. We define a schedule tick as each time the scheduler
+    properties on ``ScheduleDefinition``. We define a schedule tick as each time the scheduler
     runs for a specific schedule.
 
     When the schedule is being executed to create a pipeline run, we create a``ScheduleTick``
@@ -310,7 +310,7 @@ class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
 
     A schedule definition has a `should_execute` argument, where users can define a function
     which defines whether to create a run for the current tick. In the case where
-    ``should_execute`` returns false, schedule execution is short-circuted, a run is not created,
+    ``should_execute`` returns false, schedule execution is short-circuited, a run is not created,
     and the status of the schedule tick is updated to be ``ScheduleTickStatus.SKIPPED``.
 
     There are also several errors that can occur during schedule execution, which are important
