@@ -29,6 +29,16 @@ def test_basic_file_manager_execute():
         with context.file_manager.read(file_handle) as handle_obj:
             assert foo_bytes == handle_obj.read()
 
+        file_handle = context.file_manager.write_data(foo_bytes, ext='foo')
+        assert isinstance(file_handle, LocalFileHandle)
+        assert file_handle.path[-4:] == '.foo'
+
+        with open(file_handle.path, 'rb') as handle_obj:
+            assert foo_bytes == handle_obj.read()
+
+        with context.file_manager.read(file_handle) as handle_obj:
+            assert foo_bytes == handle_obj.read()
+
         called['yup'] = True
 
     result = execute_solid(file_handle)

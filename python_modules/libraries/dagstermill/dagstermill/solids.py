@@ -200,12 +200,17 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                         try:
                             with open(executed_notebook_path, 'r') as fd:
                                 executed_notebook_file_handle = compute_context.file_manager.write(
-                                    fd, mode='w'
+                                    fd, mode='w', ext='ipynb'
                                 )
                                 executed_notebook_materialization_path = (
                                     executed_notebook_file_handle.path_desc
                                 )
-                        except Exception:  # pylint: disable=broad-except
+                        except Exception as exc_inner:  # pylint: disable=broad-except
+                            compute_context.log.warning(
+                                'Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}'.format(
+                                    exc=exc_inner
+                                )
+                            )
                             executed_notebook_materialization_path = executed_notebook_path
 
                         yield Materialization(
@@ -225,9 +230,16 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
 
             try:
                 with open(executed_notebook_path, 'r') as fd:
-                    executed_notebook_file_handle = compute_context.file_manager.write(fd, mode='w')
+                    executed_notebook_file_handle = compute_context.file_manager.write(
+                        fd, mode='w', ext='ipynb'
+                    )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
-            except Exception:  # pylint: disable=broad-except
+            except Exception as exc:  # pylint: disable=broad-except
+                compute_context.log.warning(
+                    'Error when attempting to materialize executed notebook using file manager (falling back to local): {exc}'.format(
+                        exc=str(exc)
+                    )
+                )
                 executed_notebook_materialization_path = executed_notebook_path
 
             yield Materialization(

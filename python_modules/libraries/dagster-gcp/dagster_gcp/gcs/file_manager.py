@@ -80,13 +80,13 @@ class GCSFileManager(FileManager):
         with self.read(file_handle, mode='rb') as file_obj:
             return file_obj.read()
 
-    def write_data(self, data):
+    def write_data(self, data, ext=None):
         check.inst_param(data, 'data', bytes)
-        return self.write(io.BytesIO(data), mode='wb')
+        return self.write(io.BytesIO(data), mode='wb', ext=ext)
 
-    def write(self, file_obj, mode='wb'):
+    def write(self, file_obj, mode='wb', ext=None):
         check_file_like_obj(file_obj)
-        gcs_key = self.get_full_key(str(uuid.uuid4()))
+        gcs_key = self.get_full_key(str(uuid.uuid4()) + (('.' + ext) if ext is not None else ''))
         bucket_obj = self._client.get_bucket(self._gcs_bucket)
         bucket_obj.blob(gcs_key).upload_from_file(file_obj)
         return GCSFileHandle(self._gcs_bucket, gcs_key)

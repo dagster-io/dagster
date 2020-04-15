@@ -38,6 +38,16 @@ def test_s3_file_manager_write():
 
     assert s3_mock.put_object.call_count == 1
 
+    file_handle = file_manager.write_data(foo_bytes, ext='foo')
+
+    assert isinstance(file_handle, S3FileHandle)
+
+    assert file_handle.s3_bucket == 'some-bucket'
+    assert file_handle.s3_key.startswith('some-key/')
+    assert file_handle.s3_key[-4:] == '.foo'
+
+    assert s3_mock.put_object.call_count == 2
+
 
 def test_s3_file_manager_read():
     state = {'called': 0}

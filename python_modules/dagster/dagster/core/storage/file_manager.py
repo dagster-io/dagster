@@ -126,7 +126,7 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write(self, file_obj, mode='wb'):
+    def write(self, file_obj, mode='wb', ext=None):
         '''Write the bytes contained within the given ``file_obj`` into the file manager.
         This returns a :py:class:`~dagster.FileHandle` corresponding to the newly created file.
         
@@ -138,7 +138,9 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
         Args:
             file_obj (Union[IOBytes, IOString]): A file-like object.
-            mode (str): The mode in which to write the file into storage. Default: ``'wb'``.
+            mode (Optional[str]): The mode in which to write the file into storage. Default: ``'wb'``.
+            ext (Optional[str]): For file managers that support file extensions, the extension with
+                which to write the file. Default: ``None``.
         
         Returns:
             FileHandle: A handle to the newly created file.
@@ -146,11 +148,13 @@ class FileManager(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data):
+    def write_data(self, data, ext=None):
         '''Write raw bytes into storage.
         
         Args:
             data (bytes): The bytes to write into storage.
+            ext (Optional[str]): For file managers that support file extensions, the extension with
+                which to write the file. Default: ``None``.
 
         Returns:
             FileHandle: A handle to the newly created file.
@@ -214,15 +218,20 @@ class LocalFileManager(FileManager):
         with self.read(file_handle, mode='rb') as file_obj:
             return file_obj.read()
 
-    def write_data(self, data):
+    def write_data(self, data, ext=None):
         check.inst_param(data, 'data', bytes)
-        return self.write(io.BytesIO(data), mode='wb')
+        return self.write(io.BytesIO(data), mode='wb', ext=ext)
 
-    def write(self, file_obj, mode='wb'):
+    def write(self, file_obj, mode='wb', ext=None):
         check_file_like_obj(file_obj)
+        check.opt_str_param(ext, 'ext')
+
         self.ensure_base_dir_exists()
 
-        dest_file_path = os.path.join(self.base_dir, str(uuid.uuid4()))
+        dest_file_path = os.path.join(
+            self.base_dir, str(uuid.uuid4()) + (('.' + ext) if ext is not None else '')
+        )
+
         with open(dest_file_path, mode) as dest_file_obj:
             shutil.copyfileobj(file_obj, dest_file_obj)
             return LocalFileHandle(dest_file_path)
