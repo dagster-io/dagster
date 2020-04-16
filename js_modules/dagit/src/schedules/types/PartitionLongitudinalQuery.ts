@@ -3,7 +3,7 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, StepKind } from "./../../types/globalTypes";
+import { PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PartitionLongitudinalQuery
@@ -50,41 +50,6 @@ export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_par
   expectationResults: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_stepStats_expectationResults[];
 }
 
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
-  name: string | null;
-}
-
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn_outputs {
-  __typename: "ExecutionStepOutput";
-  name: string;
-  type: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn_outputs_type;
-}
-
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn {
-  __typename: "ExecutionStep";
-  key: string;
-  outputs: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn_outputs[];
-}
-
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs {
-  __typename: "ExecutionStepInput";
-  dependsOn: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs_dependsOn[];
-}
-
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps {
-  __typename: "ExecutionStep";
-  key: string;
-  kind: StepKind;
-  inputs: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps_inputs[];
-}
-
-export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan {
-  __typename: "ExecutionPlan";
-  steps: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan_steps[];
-  artifactsPersisted: boolean;
-}
-
 export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs {
   __typename: "PipelineRun";
   runId: string;
@@ -92,7 +57,6 @@ export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_par
   stats: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_stats;
   stepStats: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_stepStats[];
   status: PipelineRunStatus;
-  executionPlan: PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan | null;
 }
 
 export interface PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results {

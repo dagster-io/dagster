@@ -3,16 +3,11 @@ import * as React from "react";
 import { Query, QueryResult } from "react-apollo";
 import {
   PartitionLongitudinalQuery,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results
 } from "./types/PartitionLongitudinalQuery";
 import { Header, RowContainer } from "../ListComponents";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
-import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
-import { GaantChart, toGraphQueryItems } from "../gaant/GaantChart";
 
 import { RunStatus } from "../runs/RunUtils";
 import styled from "styled-components/macro";
@@ -23,8 +18,6 @@ import { colorHash } from "../Util";
 import Loading from "../Loading";
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
-type ExecutionPlan = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan;
-type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
 
 interface PartitionViewProps {
   partitionSetName: string;
@@ -68,9 +61,6 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
             }
             const partitionSet = partitionSetOrError;
             const partitions = partitionSet.partitions.results;
-            const latestRun = getLatestRun(partitions);
-            const executionPlan: ExecutionPlan | null | undefined =
-              latestRun?.executionPlan;
 
             return (
               <div style={{ marginTop: 30 }}>
@@ -86,30 +76,38 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                   setCursor={setCursor}
                 />
                 <div style={{ position: "relative" }}>
-                  <PartitionTable partitions={partitions} />
-                  <PartitionGraph
+                  <PartitionTable
+                    title="Runs by Partition"
                     partitions={partitions}
-                    executionPlan={executionPlan}
+                  />
+                  <PartitionGraph
+                    title="Execution Time by Partition"
+                    yLabel="Execution time (secs)"
+                    partitions={partitions}
                     generateData={_getDurationData}
                   />
                   <PartitionGraph
+                    title="Materialization Count by Partition"
+                    yLabel="Number of materializations"
                     partitions={partitions}
-                    executionPlan={executionPlan}
                     generateData={_getMaterializationData}
                   />
                   <PartitionGraph
+                    title="Expectation Successes by Partition"
+                    yLabel="Number of successes"
                     partitions={partitions}
-                    executionPlan={executionPlan}
                     generateData={_getExpectationsSuccess}
                   />
                   <PartitionGraph
+                    title="Expectation Failures by Partition"
+                    yLabel="Number of failures"
                     partitions={partitions}
-                    executionPlan={executionPlan}
                     generateData={_getExpectationsFailure}
                   />
                   <PartitionGraph
+                    title="Expectation Rate by Partition"
+                    yLabel="Rate of success"
                     partitions={partitions}
-                    executionPlan={executionPlan}
                     generateData={_getExpectationsRate}
                   />
                   {queryResult.loading ? (
@@ -135,45 +133,10 @@ const Overlay = styled.div`
   left: 0;
   background-color: #ffffff;
   opacity: 0.8;
-  z-index: 3;
   display: flex;
   justify-content: center;
   align-items: center;
 `;
-
-const getLatestRun = (partitions: Partition[]) => {
-  let runs: Run[] = [];
-  partitions.forEach(partition => {
-    runs = runs.concat(partition.runs);
-  });
-  runs.sort((a: Run, b: Run) => {
-    if (
-      a.stats.__typename !== "PipelineRunStatsSnapshot" &&
-      b.stats.__typename !== "PipelineRunStatsSnapshot"
-    ) {
-      return 0;
-    }
-    if (a.stats.__typename !== "PipelineRunStatsSnapshot") {
-      return -1;
-    }
-    if (b.stats.__typename !== "PipelineRunStatsSnapshot") {
-      return 1;
-    }
-
-    return (b.stats.endTime || 0) - (a.stats.endTime || 0);
-  });
-
-  if (!runs.length) {
-    return undefined;
-  }
-  return runs[0];
-};
-
-interface PartitionGraphProps {
-  partitions: Partition[];
-  executionPlan: ExecutionPlan | null | undefined;
-  generateData: (partitions: Partition[]) => { [key: string]: any };
-}
 
 const _getDurationData = (partitions: Partition[]) => {
   const points: {
@@ -371,83 +334,136 @@ const fillPartitions = (
   return points;
 };
 
+interface PartitionGraphProps {
+  partitions: Partition[];
+  generateData: (partitions: Partition[]) => { [key: string]: any };
+  title?: string;
+  yLabel?: string;
+}
+
 const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
+  title,
+  yLabel,
   partitions,
-  executionPlan,
   generateData
 }) => {
-  const graph: GraphQueryItem[] = executionPlan
-    ? toGraphQueryItems(executionPlan)
-    : [];
-  const [query, setQuery] = React.useState("*");
-  const onUpdateQuery = (query: string) => {
-    setQuery(query);
-  };
-  const selectedSteps = filterByQuery(graph, query).all.map(node => node.name);
+  const chart = React.useRef<any>(undefined);
   const data = fillPartitions(generateData(partitions), partitions);
   const graphData = {
     labels: partitions.map(partition => partition.name),
-    datasets: Object.keys(data)
-      .filter(
-        label =>
-          !query.trim() || query.trim() === "*" || selectedSteps.includes(label)
-      )
-      .map(label => ({
-        label,
-        data: data[label],
-        borderColor: colorHash(label),
-        backgroundColor: "rgba(0,0,0,0)"
-      }))
+    datasets: Object.keys(data).map(label => ({
+      label,
+      data: data[label],
+      borderColor: colorHash(label),
+      backgroundColor: "rgba(0,0,0,0)"
+    }))
+  };
+
+  const titleOptions = title ? { display: true, text: title } : undefined;
+  const scales = yLabel
+    ? {
+        yAxes: [{ scaleLabel: { display: true, labelString: yLabel } }],
+        xAxes: [{ scaleLabel: { display: true, labelString: "Partition" } }]
+      }
+    : undefined;
+  const legend = {
+    align: "start",
+    position: "right",
+    display: true,
+    labels: {
+      boxWidth: 12
+    },
+    onClick: (e: MouseEvent, legendItem: any) => {
+      const selectedIndex = legendItem.datasetIndex;
+      const instance = chart?.current?.chartInstance;
+      if (!instance) {
+        return;
+      }
+      const selectedMeta = instance.getDatasetMeta(selectedIndex);
+
+      if (e.shiftKey) {
+        // just toggle the selected dataset
+        selectedMeta.hidden =
+          selectedMeta.hidden === null
+            ? !instance.data.datasets[selectedIndex].hidden
+            : null;
+      } else {
+        // only show the selected dataset
+        instance.data.datasets.forEach((_: any, i: number) => {
+          const meta = instance.getDatasetMeta(i);
+          meta.hidden = i !== selectedIndex;
+        });
+      }
+
+      // rerender the chart
+      instance.update();
+    }
+  };
+  const options = {
+    title: titleOptions,
+    scales,
+    legend
   };
 
   return (
-    <>
-      <div style={{ paddingBottom: 50, position: "relative" }}>
-        <GraphQueryInput
-          items={graph}
-          value={query}
-          placeholder="Type a Step Subset"
-          onChange={onUpdateQuery}
-        />
-      </div>
-      <RowContainer style={{ marginBottom: 20 }}>
-        <Line data={graphData} height={50} />
-      </RowContainer>
-    </>
+    <RowContainer style={{ margin: "20px 0" }}>
+      <Line data={graphData} height={100} options={options} ref={chart} />
+    </RowContainer>
   );
 };
 
-const PartitionTable: React.FunctionComponent<{ partitions: Partition[] }> = ({
-  partitions
-}) => {
+const PartitionTable: React.FunctionComponent<{
+  title: string;
+  partitions: Partition[];
+}> = ({ title, partitions }) => {
   return (
     <Container>
-      <Gutter>
-        <Column>
-          <GutterHeader>&nbsp;</GutterHeader>
-          <GutterFiller>
-            <div>Runs</div>
-          </GutterFiller>
-        </Column>
-      </Gutter>
-      {partitions.map(partition => (
-        <Column key={partition.name}>
-          <ColumnHeader>{partition.name}</ColumnHeader>
-          {partition.runs.map(run => (
-            <Link
-              to={`/runs/all/${run.runId}`}
-              key={run.runId}
-              style={{ textAlign: "center", lineHeight: 1 }}
-            >
-              <RunStatus status={run.status} square={true} />
-            </Link>
-          ))}
-        </Column>
-      ))}
+      <Title>{title}</Title>
+      <TableContainer>
+        <Gutter>
+          <Column>
+            <GutterHeader>&nbsp;</GutterHeader>
+            <GutterFiller>
+              <div>Runs</div>
+            </GutterFiller>
+          </Column>
+        </Gutter>
+        {partitions.map(partition => (
+          <Column key={partition.name}>
+            <ColumnHeader>{partition.name}</ColumnHeader>
+            {partition.runs.map(run => (
+              <Link
+                to={`/runs/all/${run.runId}`}
+                key={run.runId}
+                style={{ textAlign: "center", lineHeight: 1 }}
+              >
+                <RunStatus status={run.status} square={true} />
+              </Link>
+            ))}
+          </Column>
+        ))}
+      </TableContainer>
     </Container>
   );
 };
 
+const Title = styled.div`
+  text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #666666;
+`;
+const Container = styled.div`
+  background-color: #ffffff;
+  padding-top: 10px;
+`;
+const TableContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  overflow-x: auto;
+  margin: 30px 30px 10px 0;
+`;
 const Gutter = styled.div`
   width: 45px;
   display: flex;
@@ -474,15 +490,7 @@ const GutterFiller = styled.div`
     transform: rotate(-90deg);
   }
 `;
-const Container = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  background-color: #ffffff;
-  padding: 30px 30px 10px 0;
-  overflow-x: auto;
-  margin-bottom: 30px;
-`;
+
 const Column = styled.div`
   flex: 1;
   display: flex;
@@ -617,14 +625,10 @@ const PARTITION_SET_QUERY = gql`
                 }
               }
               status
-              executionPlan {
-                ...GaantChartExecutionPlanFragment
-              }
             }
           }
         }
       }
     }
   }
-  ${GaantChart.fragments.GaantChartExecutionPlanFragment}
 `;
