@@ -18,6 +18,19 @@
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
 
+**Bugfix**
+
+- Fixed a bug where selecting a preset in `dagit` would not populate tags specified on the pipeline
+  definition.
+- Fixed a bug where metadata attached to a raised `Failure` was not displayed in the error modal in
+  `dagit`.
+
+**Experimental**
+
+- Added a longitudinal view of runs for on the `Schedule` tab for scheduled, partitioned pipelines.
+  Includes views of run status, execution time, and materializations across partitions. The UI is
+  in flux and is currently optimized for daily schedules, but feedback is welcome.
+
 ## 0.7.6
 
 **Breaking Changes**
