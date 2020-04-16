@@ -31,10 +31,11 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
     <Loading queryResult={queryResult}>
       {data => {
         if (
-          data.runtimeTypeOrError &&
-          data.runtimeTypeOrError.__typename === "RegularRuntimeType"
+          data.pipeline &&
+          data.pipeline.runtimeTypeOrError &&
+          data.pipeline.runtimeTypeOrError.__typename === "RegularRuntimeType"
         ) {
-          return <TypeExplorer type={data.runtimeTypeOrError} />;
+          return <TypeExplorer type={data.pipeline.runtimeTypeOrError} />;
         } else {
           return <div>Type Not Found</div>;
         }
@@ -48,16 +49,14 @@ export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
     $pipelineName: String!
     $runtimeTypeName: String!
   ) {
-    runtimeTypeOrError(
-      pipelineName: $pipelineName
-      runtimeTypeName: $runtimeTypeName
-    ) {
-      __typename
-      ... on RegularRuntimeType {
-        ...TypeExplorerFragment
+    pipeline(params: { name: $pipelineName }) {
+      runtimeTypeOrError(runtimeTypeName: $runtimeTypeName) {
+        __typename
+        ... on RegularRuntimeType {
+          ...TypeExplorerFragment
+        }
       }
     }
   }
-
   ${TypeExplorer.fragments.TypeExplorerFragment}
 `;
