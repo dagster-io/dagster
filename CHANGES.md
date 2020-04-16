@@ -24,12 +24,20 @@
   above, you do not need to run it again. Any unforeseen errors related the the new `snapshot_id`
   in the `runs` table or the new `snapshots` table are related to this migration.
 
+**New**
+
+- You can now specify that dagstermill output notebooks be yielded as an output from dagstermill
+  solids, in addition to being materialized.
+- You may now set the extension on files created using the `FileManager` machinery.
+
 **Bugfix**
 
 - Fixed a bug where selecting a preset in `dagit` would not populate tags specified on the pipeline
   definition.
 - Fixed a bug where metadata attached to a raised `Failure` was not displayed in the error modal in
   `dagit`.
+- Fixed an issue where reimporting dagstermill and calling `dagstermill.get_context()` outside of
+  the parameters cell of a dagstermill notebook could lead to unexpected behavior.
 
 **Experimental**
 
