@@ -79,7 +79,7 @@ Let's execute our first pipeline via any of three different mechanisms:
 - From the command line, use the dagster CLI
 
   ```bash
-  $ dagster -f hello_dagster.py -n hello_pipeline
+  $ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
   ```
 
 - From a rich graphical interface, use the dagit GUI tool
