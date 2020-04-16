@@ -14,6 +14,7 @@
     "algoliasearch": "^4.1.0",
     "axios": "^0.19.2",
     "axios-hooks": "^1.9.0",
+    "classnames": "^2.2.6",
     "fast-glob": "^3.2.2",
     "next": "^9.3.1",
     "node-sass": "^4.13.1",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^2.1.0",
+    "@types/classnames": "^2.2.10",
     "@types/node": "^13.9.2",
     "@types/parse5": "^5.0.2",
     "@types/react": "^16.9.25",

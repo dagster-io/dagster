@@ -141,11 +141,15 @@ const Search = () => {
   );
 };
 
-const Header = () => (
+type HeaderProps = {
+  onMobileToggleNavigationClick: (() => void) | undefined;
+};
+
+const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => (
   <div className="bg-white border-b border-gray-200 fixed top-0 inset-x-0 z-10 h-16 ">
     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 h-full ">
       <div className="flex items-center h-full">
-        <div className="w-1/4 font-bold flex items-center">
+        <div className="pl-4 w-1/4 font-bold flex items-center">
           <img
             src="https://images.squarespace-cdn.com/content/v1/5cb5f5d490f904864e26772f/1555429309832-T9W4RY8LN0YOG2WSKHG7/ke17ZwdGBToddI8pDm48kAVes4PdedRJbHzbyrt9K4RZw-zPPgdn4jUwVcJE1ZvWEtT5uBSRWt4vQZAgTJucoTqqXjS3CfNDSuuf31e0tVHE-hDbU1-lN9X0kRdwCihrUiHQfJsM_k09tUzDxHZfTWQ6l2WM7tn7mqHTODzkmeM/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png?format=750w"
             width={26}
@@ -153,8 +157,23 @@ const Header = () => (
           />
           <div className="uppercase">Dagster</div>
         </div>
-        <div className={`w-3/4 pl-16 pr-4`}>
+        <div className="w-3/4 pl-16 pr-4">
           <Search />
+        </div>
+        <div className="pr-4 md:hidden">
+          <button
+            className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
+            onClick={onMobileToggleNavigationClick}
+          >
+            <svg
+              className="fill-current w-4 h-4"
+              viewBox="0 0 100 80"
+            >
+              <rect width="100" height="20"></rect>
+              <rect y="30" width="100" height="20"></rect>
+              <rect y="60" width="100" height="20"></rect>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

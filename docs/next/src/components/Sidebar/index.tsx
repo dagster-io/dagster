@@ -88,7 +88,7 @@ const Sidebar = () => {
   );
 
   return (
-    <nav className="fixed">
+    <nav className="overflow-scroll left-bar">
       <div>
         <MainItem name={'Install'} path="/docs/install" />
         <MainItem name={'Tutorial'} path="/docs/tutorial" />

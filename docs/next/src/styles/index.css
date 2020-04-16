@@ -252,6 +252,10 @@ dl.function > dd > dl.field-list.simple > dd.field-odd p {
   background-color: #169f84;
 }
 
+.left-bar {
+  max-height: calc(100vh - 4em);
+}
+
 /* ApiDocs styles */
 .highlight .hll {
   background-color: #ffffcc;
