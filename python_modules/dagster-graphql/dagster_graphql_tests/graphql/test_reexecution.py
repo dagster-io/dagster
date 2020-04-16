@@ -17,7 +17,11 @@ from .execution_queries import (
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
     START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
-from .setup import csv_hello_world_solids_config_fs_storage, define_test_context
+from .setup import (
+    csv_hello_world_solids_config,
+    csv_hello_world_solids_config_fs_storage,
+    define_test_context,
+)
 from .utils import InMemoryRunLauncher
 
 RUN_QUERY = '''
@@ -32,19 +36,20 @@ query RunQuery($runId: ID!) {
 '''
 
 
-def test_successful_full_pipeline_reexecution(snapshot):
-    def sanitize_result_data(result_data):
-        if isinstance(result_data, dict):
-            if 'path' in result_data:
-                result_data['path'] = 'DUMMY_PATH'
-            result_data = {k: sanitize_result_data(v) for k, v in result_data.items()}
-        elif isinstance(result_data, list):
-            for i in range(len(result_data)):
-                result_data[i] = sanitize_result_data(result_data[i])
-        else:
-            pass
-        return result_data
+def sanitize_result_data(result_data):
+    if isinstance(result_data, dict):
+        if 'path' in result_data:
+            result_data['path'] = 'DUMMY_PATH'
+        result_data = {k: sanitize_result_data(v) for k, v in result_data.items()}
+    elif isinstance(result_data, list):
+        for i in range(len(result_data)):
+            result_data[i] = sanitize_result_data(result_data[i])
+    else:
+        pass
+    return result_data
 
+
+def test_full_pipeline_reexecution_fs_storage(snapshot):
     run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
@@ -76,6 +81,54 @@ def test_successful_full_pipeline_reexecution(snapshot):
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
                 'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'executionMetadata': {
+                    'runId': new_run_id,
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                },
+                'mode': 'default',
+            }
+        },
+    )
+
+    query_result = result_two.data['startPipelineReexecution']
+    assert query_result['__typename'] == 'StartPipelineReexecutionSuccess'
+    assert query_result['run']['rootRunId'] == run_id
+    assert query_result['run']['parentRunId'] == run_id
+
+
+def test_full_pipeline_reexecution_in_memory_storage(snapshot):
+    run_id = make_new_run_id()
+    instance = DagsterInstance.ephemeral()
+    result_one = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
+        },
+    )
+
+    assert (
+        result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    )
+
+    snapshot.assert_match(sanitize_result_data(result_one.data))
+
+    # reexecution
+    new_run_id = make_new_run_id()
+
+    result_two = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
                 'executionMetadata': {
                     'runId': new_run_id,
                     'rootRunId': run_id,

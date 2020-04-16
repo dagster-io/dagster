@@ -21,17 +21,23 @@ def validate_retry_memoization(pipeline_context, execution_plan):
     if parent_run_id is None:
         return
 
+    if not pipeline_context.instance.has_run(parent_run_id):
+        raise DagsterRunNotFoundError(
+            'Run id {} set as parent run id was not found in instance'.format(parent_run_id),
+            invalid_run_id=parent_run_id,
+        )
+
+    if len(execution_plan.step_keys_to_execute) == len(execution_plan.steps):
+        # this is a short-term proxy to distinguish between re-execution and retries.
+        # Resume/retry will always have a subset of the execution plan, and re-execution will
+        # always be the full execution plan (until we change dagit to enable re-execution subsets)
+        return
+
     if not pipeline_context.intermediates_manager.is_persistent:
         raise DagsterInvariantViolationError(
             'Cannot perform reexecution with non persistent intermediates manager `{}`.'.format(
                 pipeline_context.intermediates_manager.__class__.__name__
             )
-        )
-
-    if not pipeline_context.instance.has_run(parent_run_id):
-        raise DagsterRunNotFoundError(
-            'Run id {} set as parent run id was not found in instance'.format(parent_run_id),
-            invalid_run_id=parent_run_id,
         )
 
 

@@ -551,7 +551,7 @@ def test_pipeline_init_failure():
     assert event.pipeline_init_failure_data
 
 
-def test_reexecution():
+def test_reexecution_fs_storage():
     @lambda_solid
     def return_one():
         return 1
@@ -577,6 +577,35 @@ def test_reexecution():
         environment_dict={'storage': {'filesystem': {}}},
         run_config=reexecution_run_config,
         instance=instance,
+    )
+
+    assert reexecution_result.success
+    assert len(reexecution_result.solid_result_list) == 2
+    assert reexecution_result.result_for_solid('return_one').output_value() == 1
+    assert reexecution_result.result_for_solid('add_one').output_value() == 2
+
+
+def test_reexecution_inmemory_storage():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solid_defs=[return_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    )
+    instance = DagsterInstance.ephemeral()
+    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').output_value() == 2
+
+    reexecution_run_config = RunConfig(previous_run_id=pipeline_result.run_id)
+    reexecution_result = execute_pipeline(
+        pipeline_def, run_config=reexecution_run_config, instance=instance,
     )
 
     assert reexecution_result.success
