@@ -18,6 +18,12 @@
   migrate_event_log_data(instance=DagsterInstance.get())
   ```
 
+- We have made pipeline metadata serializable and persist that along with run information.
+  While there are no user-facing features to leverage this yet, it does require an instance migration.
+  `dagster instance migrate`. If you have already run the migration for the `event_log` changes
+  above, you do not need to run it again. Any unforeseen errors related the the new `snapshot_id`
+  in the `runs` table or the new `snapshots` table are related to this migration.
+
 **Bugfix**
 
 - Fixed a bug where selecting a preset in `dagit` would not populate tags specified on the pipeline
