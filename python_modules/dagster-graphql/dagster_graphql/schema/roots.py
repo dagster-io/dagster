@@ -46,7 +46,6 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_scheduler_or_error,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.fetch_types import get_dagster_type
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
@@ -85,12 +84,6 @@ class DauphinQuery(dauphin.ObjectType):
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
         snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-    )
-
-    runtimeTypeOrError = dauphin.Field(
-        dauphin.NonNull('RuntimeTypeOrError'),
-        pipelineName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
-        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
@@ -158,9 +151,6 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         return get_pipeline_snapshot_or_error(graphene_info, kwargs['snapshotId'])
-
-    def resolve_runtimeTypeOrError(self, graphene_info, **kwargs):
-        return get_dagster_type(graphene_info, kwargs['pipelineName'], kwargs['runtimeTypeName'])
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version

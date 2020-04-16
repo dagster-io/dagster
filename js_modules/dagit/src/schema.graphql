@@ -898,7 +898,6 @@ type Query {
   pipelines: PipelineConnection!
   pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
   pipelineSnapshotOrError(snapshotId: String!): PipelineSnapshotOrError!
-  runtimeTypeOrError(pipelineName: String!, runtimeTypeName: String!): RuntimeTypeOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(pipelineName: String): PartitionSetsOrError!
