@@ -134,7 +134,7 @@ Provides an optional scheduler which will control timed repeated execution of pi
 
 Scheduler storage
 #################
-* key: ``scheduler``
+* key: ``schedule_storage``
 * base class: :py:class:`~dagster.core.storage.schedules.ScheduleStorage`
 * default: :py:class:`~dagster.core.storage.schedules.SqliteScheduleStorage`
 * example alternative: :py:class:`~dagster_postgres.schedule_storage.PostgresScheduleStorage`
