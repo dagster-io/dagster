@@ -50,24 +50,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = check.str_param(postgres_url, 'postgres_url')
         self._event_watcher = PostgresEventWatcher(self.postgres_url)
-        with self.get_engine() as engine:
-            SqlEventLogStorageMetadata.create_all(engine)
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-
-    @contextmanager
-    def get_engine(self):
-        engine = create_engine(
+        self._engine = create_engine(
             self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
         )
-        try:
-            yield engine
-        finally:
-            engine.dispose()
+        SqlEventLogStorageMetadata.create_all(self._engine)
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.get_engine() as engine:
-            run_alembic_upgrade(alembic_config, engine)
+        run_alembic_upgrade(alembic_config, self._engine)
 
     @property
     def inst_data(self):
@@ -105,31 +96,27 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         run_id = event.run_id
 
-        with self.connect() as conn:
-            # https://stackoverflow.com/a/54386260/324449
-            event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-                run_id=run_id,
-                event=serialize_dagster_namedtuple(event),
-                dagster_event_type=dagster_event_type,
-                timestamp=datetime.datetime.fromtimestamp(event.timestamp),
-                step_key=step_key,
-            )
-            result_proxy = conn.execute(
-                event_insert.returning(
-                    SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
-                )
-            )
-            res = result_proxy.fetchone()
-            result_proxy.close()
-            conn.execute(
-                '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
-                (res[0] + '_' + str(res[1]),),
-            )
+        # https://stackoverflow.com/a/54386260/324449
+        event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=run_id,
+            event=serialize_dagster_namedtuple(event),
+            dagster_event_type=dagster_event_type,
+            timestamp=datetime.datetime.fromtimestamp(event.timestamp),
+            step_key=step_key,
+        )
+        result_proxy = self._engine.execute(
+            event_insert.returning(SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id)
+        )
+        res = result_proxy.fetchone()
+        result_proxy.close()
+        self._engine.execute(
+            '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
+            (res[0] + '_' + str(res[1]),),
+        )
 
     @contextmanager
     def connect(self, run_id=None):
-        with self.get_engine() as engine:
-            yield engine
+        yield self._engine
 
     def watch(self, run_id, start_cursor, callback):
         self._event_watcher.watch_run(run_id, start_cursor, callback)
@@ -147,6 +134,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def dispose(self):
         self._event_watcher.close()
+        self._engine.dispose()
 
 
 EventWatcherProcessStartedEvent = namedtuple('EventWatcherProcessStartedEvent', '')

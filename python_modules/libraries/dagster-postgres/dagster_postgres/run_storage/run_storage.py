@@ -33,19 +33,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = postgres_url
-        with self.get_engine() as engine:
-            RunStorageSqlMetadata.create_all(engine)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-
-    @contextmanager
-    def get_engine(self):
-        engine = create_engine(
+        self._engine = create_engine(
             self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
         )
-        try:
-            yield engine
-        finally:
-            engine.dispose()
+        RunStorageSqlMetadata.create_all(self._engine)
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -74,19 +66,22 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     @contextmanager
     def connect(self, _run_id=None):  # pylint: disable=arguments-differ
-        with self.get_engine() as engine:
-            try:
-                conn = engine.connect()
-                with handle_schema_errors(
-                    conn,
-                    get_alembic_config(__file__),
-                    msg='Postgres run storage requires migration',
-                ):
-                    yield engine
-            finally:
-                conn.close()
+        try:
+            conn = self._engine.connect()
+            with handle_schema_errors(
+                conn, get_alembic_config(__file__), msg='Postgres run storage requires migration',
+            ):
+                yield self._engine
+        finally:
+            conn.close()
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
-        with self.get_engine() as engine:
-            run_alembic_upgrade(alembic_config, engine)
+        run_alembic_upgrade(alembic_config, self._engine)
+
+    def __del__(self):
+        # Keep the inherent limitations of __del__ in Python in mind!
+        self.dispose()
+
+    def dispose(self):
+        self._engine.dispose()
