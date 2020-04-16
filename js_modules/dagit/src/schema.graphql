@@ -420,6 +420,7 @@ interface IPipelineSnapshot {
   description: String
   pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
+  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -670,6 +671,7 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   description: String
   pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
+  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
@@ -830,6 +832,7 @@ type PipelineSnapshot {
   description: String
   pipelineSnapshotId: String!
   runtimeTypes: [RuntimeType!]!
+  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -995,7 +998,6 @@ interface RuntimeType {
 
 type RuntimeTypeNotFoundError implements Error {
   message: String!
-  pipeline: Pipeline!
   runtimeTypeName: String!
 }
 

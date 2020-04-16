@@ -15,9 +15,7 @@ def get_dagster_type(graphene_info, pipeline_name, type_name):
 
     if not pipeline_index.has_dagster_type_name(type_name):
         raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('RuntimeTypeNotFoundError')(
-                pipeline=dauphin_pipeline, runtime_type_name=type_name
-            )
+            graphene_info.schema.type_named('RuntimeTypeNotFoundError')(runtime_type_name=type_name)
         )
 
     return to_dauphin_dagster_type(

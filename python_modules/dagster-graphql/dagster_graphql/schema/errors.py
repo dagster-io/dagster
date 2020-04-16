@@ -634,7 +634,6 @@ class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
         name = 'RuntimeTypeNotFoundError'
         interfaces = (DauphinError,)
 
-    pipeline = dauphin.NonNull('Pipeline')
     runtime_type_name = dauphin.NonNull(dauphin.String)
 
 

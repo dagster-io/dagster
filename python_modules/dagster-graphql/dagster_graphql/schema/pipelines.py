@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import PresetDefinition, check
 from dagster.core.snap.config_types import ConfigSchemaSnapshot
@@ -49,6 +50,10 @@ class DauphinIPipelineSnapshotMixin(object):
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
     runtime_types = dauphin.non_null_list('RuntimeType')
+    runtime_type_or_error = dauphin.Field(
+        dauphin.NonNull('RuntimeTypeOrError'),
+        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')
     solid_handles = dauphin.Field(
@@ -79,6 +84,24 @@ class DauphinIPipelineSnapshotMixin(object):
                 )
             ),
             key=lambda dagster_type: dagster_type.name,
+        )
+
+    @capture_dauphin_error
+    def resolve_runtime_type_or_error(self, _, **kwargs):
+        type_name = kwargs['runtimeTypeName']
+
+        pipeline_index = self.get_pipeline_index()
+
+        if not pipeline_index.has_dagster_type_name(type_name):
+            from .errors import DauphinRuntimeTypeNotFoundError
+
+            raise UserFacingGraphQLError(
+                DauphinRuntimeTypeNotFoundError(runtime_type_name=type_name)
+            )
+
+        return to_dauphin_dagster_type(
+            pipeline_index.pipeline_snapshot,
+            pipeline_index.get_dagster_type_from_name(type_name).key,
         )
 
     def resolve_solids(self, _graphene_info):
@@ -127,6 +150,10 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
     runtime_types = dauphin.non_null_list('RuntimeType')
+    runtime_type_or_error = dauphin.Field(
+        dauphin.NonNull('RuntimeTypeOrError'),
+        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+    )
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')
     solid_handles = dauphin.Field(

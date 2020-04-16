@@ -5,22 +5,23 @@ from .setup import define_test_context, define_test_snapshot_context
 RUNTIME_TYPE_QUERY = '''
 query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
 {
-    runtimeTypeOrError(
-        pipelineName: $pipelineName
-        runtimeTypeName: $runtimeTypeName
-    ) {
+    pipelineOrError(params:{ name: $pipelineName}) {
         __typename
-        ... on RegularRuntimeType {
-            name
-            displayName
-            isBuiltin
+        ... on Pipeline {
+            runtimeTypeOrError(runtimeTypeName: $runtimeTypeName) {
+                __typename
+                ... on RegularRuntimeType {
+                    name
+                    displayName
+                    isBuiltin
+                }
+                ... on RuntimeTypeNotFoundError {
+                    runtimeTypeName
+                }
+            }
         }
         ... on PipelineNotFoundError {
             pipelineName
-        }
-        ... on RuntimeTypeNotFoundError {
-            pipeline { name }
-            runtimeTypeName
         }
     }
 }
@@ -86,8 +87,10 @@ def test_dagster_type_query_works():
 
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
-    assert result.data['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
+    assert (
+        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    )
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
 def test_dagster_type_query_with_container_context_ok():
@@ -98,8 +101,10 @@ def test_dagster_type_query_with_container_context_ok():
     )
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
-    assert result.data['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
+    assert (
+        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    )
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
 def test_dagster_type_builtin_query():
@@ -111,9 +116,11 @@ def test_dagster_type_builtin_query():
 
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
-    assert result.data['runtimeTypeOrError']['name'] == 'Int'
-    assert result.data['runtimeTypeOrError']['isBuiltin']
+    assert (
+        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+    )
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'Int'
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['isBuiltin']
 
 
 def test_dagster_type_or_error_pipeline_not_found():
@@ -125,8 +132,8 @@ def test_dagster_type_or_error_pipeline_not_found():
 
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['runtimeTypeOrError']['pipelineName'] == 'nope'
+    assert result.data['pipelineOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data['pipelineOrError']['pipelineName'] == 'nope'
 
 
 def test_dagster_type_or_error_type_not_found():
@@ -138,9 +145,11 @@ def test_dagster_type_or_error_type_not_found():
 
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'RuntimeTypeNotFoundError'
-    assert result.data['runtimeTypeOrError']['pipeline']['name'] == 'csv_hello_world'
-    assert result.data['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+    assert (
+        result.data['pipelineOrError']['runtimeTypeOrError']['__typename']
+        == 'RuntimeTypeNotFoundError'
+    )
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
 
 
 def test_dagster_type_or_error_query_with_container_context_not_found():
@@ -152,9 +161,11 @@ def test_dagster_type_or_error_query_with_container_context_not_found():
 
     assert not result.errors
     assert result.data
-    assert result.data['runtimeTypeOrError']['__typename'] == 'RuntimeTypeNotFoundError'
-    assert result.data['runtimeTypeOrError']['pipeline']['name'] == 'csv_hello_world'
-    assert result.data['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+    assert (
+        result.data['pipelineOrError']['runtimeTypeOrError']['__typename']
+        == 'RuntimeTypeNotFoundError'
+    )
+    assert result.data['pipelineOrError']['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
 
 
 def test_smoke_test_dagster_type_system():
