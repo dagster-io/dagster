@@ -44,7 +44,7 @@ import { ButtonLink } from "../ButtonLink";
 import { PartitionView } from "./PartitionView";
 
 const NUM_RUNS_TO_DISPLAY = 10;
-const NUM_ATTEMPTS_TO_DISPLAY = 25;
+const NUM_ATTEMPTS_TO_DISPLAY = 5;
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
@@ -53,22 +53,9 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
 
   const { history } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
-
-  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
-  const [pageSize, setPageSize] = React.useState<number>(100);
   const cursor = (qs.cursor as string) || undefined;
-
   const setCursor = (cursor: string | undefined) => {
     history.push({ search: `?${querystring.stringify({ ...qs, cursor })}` });
-  };
-  const popCursor = () => {
-    const nextStack = [...cursorStack];
-    setCursor(nextStack.pop());
-    setCursorStack(nextStack);
-  };
-  const pushCursor = (nextCursor: string) => {
-    if (cursor) setCursorStack([...cursorStack, cursor]);
-    setCursor(nextCursor);
   };
 
   return (
@@ -77,9 +64,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
       variables={{
         scheduleName,
         limit: NUM_RUNS_TO_DISPLAY,
-        attemptsLimit: NUM_ATTEMPTS_TO_DISPLAY,
-        partitionsCursor: cursor,
-        partitionsLimit: pageSize + 1
+        attemptsLimit: NUM_ATTEMPTS_TO_DISPLAY
       }}
       fetchPolicy="cache-and-network"
       pollInterval={15 * 1000}
@@ -91,39 +76,21 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
             const { scheduleOrError } = result;
 
             if (scheduleOrError.__typename === "RunningSchedule") {
-              const partitionSet =
-                scheduleOrError.scheduleDefinition.partitionSet;
-              const displayed = partitionSet?.partitions.results.slice(
-                0,
-                pageSize
-              );
-              const hasPrevPage = !!cursor;
-              const hasNextPage =
-                partitionSet?.partitions.results.length === pageSize + 1;
-
+              const partitionSetName =
+                scheduleOrError.scheduleDefinition.partitionSet?.name;
               return (
                 <ScrollContainer>
                   <Header>Schedules</Header>
                   <ScheduleRow schedule={scheduleOrError} />
                   <TicksTable ticks={scheduleOrError.ticksList} />
-                  <AttemptsTable attemptList={scheduleOrError.attemptList} />
-                  {scheduleOrError.scheduleDefinition.partitionSet ? (
+                  {partitionSetName ? (
                     <PartitionView
-                      cronSchedule={
-                        scheduleOrError.scheduleDefinition.cronSchedule
-                      }
-                      partitionSet={
-                        scheduleOrError.scheduleDefinition.partitionSet
-                      }
-                      displayed={displayed}
-                      setPageSize={setPageSize}
-                      hasPrevPage={hasPrevPage}
-                      hasNextPage={hasNextPage}
-                      pushCursor={pushCursor}
-                      popCursor={popCursor}
+                      partitionSetName={partitionSetName}
+                      cursor={cursor}
                       setCursor={setCursor}
                     />
                   ) : null}
+                  <AttemptsTable attemptList={scheduleOrError.attemptList} />
                 </ScrollContainer>
               );
             } else {
@@ -350,8 +317,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
     $scheduleName: String!
     $limit: Int!
     $attemptsLimit: Int!
-    $partitionsLimit: Int
-    $partitionsCursor: String
   ) {
     scheduleOrError(scheduleName: $scheduleName) {
       ... on RunningSchedule {
@@ -361,11 +326,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
           cronSchedule
           partitionSet {
             name
-            partitions(cursor: $partitionsCursor, limit: $partitionsLimit) {
-              results {
-                name
-              }
-            }
           }
         }
         ticksList: ticks(limit: $attemptsLimit) {

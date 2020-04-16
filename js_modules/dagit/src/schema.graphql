@@ -636,6 +636,7 @@ type Partition {
   mode: String!
   environmentConfigYaml: String!
   tags: [PipelineTag!]!
+  runs: [PipelineRun!]!
 }
 
 type Partitions {

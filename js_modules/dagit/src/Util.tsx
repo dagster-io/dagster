@@ -182,3 +182,19 @@ export function setFeatureFlags(flags: FeatureFlag[]) {
   if (!(flags instanceof Array)) throw new Error("flags must be an array");
   localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
 }
+
+export function colorHash(str: string) {
+  let seed = 0;
+  for (let i = 0; i < str.length; i++) {
+    seed = ((seed << 5) - seed + str.charCodeAt(i)) | 0;
+  }
+
+  const random255 = (x: number) => {
+    const value = Math.sin(x) * 10000;
+    return 255 * (value - Math.floor(value));
+  };
+
+  return `rgb(${random255(seed++)}, ${random255(seed++)}, ${random255(
+    seed++
+  )})`;
+}

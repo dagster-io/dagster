@@ -1,5 +1,6 @@
 import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.schema.errors import (
     DauphinPartitionSetNotFoundError,
     DauphinPipelineNotFoundError,
@@ -8,6 +9,7 @@ from dagster_graphql.schema.errors import (
 
 from dagster import check
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 
 class DauphinPartition(dauphin.ObjectType):
@@ -20,10 +22,10 @@ class DauphinPartition(dauphin.ObjectType):
     mode = dauphin.NonNull(dauphin.String)
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     tags = dauphin.non_null_list('PipelineTag')
+    runs = dauphin.non_null_list('PipelineRun')
 
     def __init__(self, partition, partition_set):
         self._partition = check.inst_param(partition, 'partition', Partition)
-
         self._partition_set = check.inst_param(
             partition_set, 'partition_set', PartitionSetDefinition
         )
@@ -44,6 +46,15 @@ class DauphinPartition(dauphin.ObjectType):
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
             for key, value in self._partition_set.tags_for_partition(self._partition).items()
         ]
+
+    def resolve_runs(self, graphene_info):
+        runs_filter = PipelineRunsFilter(
+            tags={
+                'dagster/partition_set': self._partition_set.name,
+                'dagster/partition': self._partition.name,
+            }
+        )
+        return get_runs(graphene_info, runs_filter)
 
 
 class DauphinPartitions(dauphin.ObjectType):

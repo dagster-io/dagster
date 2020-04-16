@@ -9,20 +9,9 @@ import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus, ScheduleAttemptS
 // GraphQL query operation: ScheduleRootQuery
 // ====================================================
 
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results {
-  __typename: "Partition";
-  name: string;
-}
-
-export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions {
-  __typename: "Partitions";
-  results: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results[];
-}
-
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet {
   __typename: "PartitionSet";
   name: string;
-  partitions: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition {
@@ -155,6 +144,4 @@ export interface ScheduleRootQueryVariables {
   scheduleName: string;
   limit: number;
   attemptsLimit: number;
-  partitionsLimit?: number | null;
-  partitionsCursor?: string | null;
 }

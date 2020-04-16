@@ -1,16 +1,13 @@
 import * as React from "react";
 
+import { Query, QueryResult } from "react-apollo";
+import {
+  PartitionLongitudinalQuery,
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results,
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs,
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan
+} from "./types/PartitionLongitudinalQuery";
 import { Header, RowContainer } from "../ListComponents";
-import { useQuery } from "react-apollo";
-import {
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet,
-  ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results
-} from "./types/ScheduleRootQuery";
-import {
-  PartitionRunsQuery,
-  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results,
-  PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan
-} from "./types/PartitionRunsQuery";
 import gql from "graphql-tag";
 import { Link } from "react-router-dom";
 import { GraphQueryInput } from "../GraphQueryInput";
@@ -19,182 +16,175 @@ import { GaantChart, toGraphQueryItems } from "../gaant/GaantChart";
 
 import { RunStatus } from "../runs/RunUtils";
 import styled from "styled-components/macro";
-import { Divider, Button, ButtonGroup, Menu } from "@blueprintjs/core";
+import { Divider, Button, ButtonGroup, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Line } from "react-chartjs-2";
-import { Select, ItemRenderer } from "@blueprintjs/select";
+import { colorHash } from "../Util";
+import Loading from "../Loading";
 
-type Partition = ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet_partitions_results;
-type ExecutionPlan = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results_executionPlan | null;
-type Run = PartitionRunsQuery_pipelineRunsOrError_PipelineRuns_results;
+type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
+type ExecutionPlan = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs_executionPlan;
+type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
 
-interface PartitionViewProps extends PartitionPagerProps {
-  partitionSet: ScheduleRootQuery_scheduleOrError_RunningSchedule_scheduleDefinition_partitionSet;
+interface PartitionViewProps {
+  partitionSetName: string;
+  cursor: string | undefined;
+  setCursor: (cursor: string | undefined) => void;
 }
 
-const VIEW_ITEMS = {
-  runs: "Run status by partition",
-  duration: "Execution time by partition",
-  materializations: "Materializations by partition",
-  expectationSuccess: "Expectation successes by partition",
-  expectationFailure: "Expectation failures by partition",
-  expectationRate: "Expectation rate by partition"
-};
-
-export const PartitionView: React.FunctionComponent<PartitionViewProps> = props => {
-  const { partitionSet, ...pagerProps } = props;
-  const { data }: { data?: PartitionRunsQuery } = useQuery(
-    PARTITION_RUNS_QUERY,
-    {
-      variables: {
-        partitionSetName: partitionSet.name
-      }
-    }
-  );
-  const [viewType, setViewType] = React.useState<string>("runs");
-  if (data?.pipelineRunsOrError.__typename !== "PipelineRuns") {
-    return null;
-  }
-  const runs = data.pipelineRunsOrError.results;
-  const latestRun = runs[0];
-  const executionPlan: ExecutionPlan = latestRun.executionPlan;
-  const runsByPartition: { [key: string]: Run[] } = {};
-  partitionSet.partitions.results.forEach(
-    partition => (runsByPartition[partition.name] = [])
-  );
-  runs.forEach(run => {
-    const tagKV = run.tags.find(tagKV => tagKV.key === "dagster/partition");
-    // need to potentially handle un-matched partitions here
-    // the current behavior is to just ignore them
-    if (runsByPartition[tagKV!.value]) {
-      runsByPartition[tagKV!.value].unshift(run); // later runs are from earlier so push them in front
-    }
-  });
-
-  const onSelect = (item: string) => {
-    setViewType(item);
+export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
+  partitionSetName,
+  cursor,
+  setCursor
+}) => {
+  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
+  const [pageSize, setPageSize] = React.useState<number>(7);
+  const popCursor = () => {
+    const nextStack = [...cursorStack];
+    setCursor(nextStack.pop());
+    setCursorStack(nextStack);
   };
-  const viewTypeRenderer: ItemRenderer<string> = (
-    viewType,
-    { handleClick, modifiers }
-  ) => {
-    return (
-      <Menu.Item
-        active={modifiers.active}
-        disabled={modifiers.disabled}
-        key={viewType}
-        onClick={handleClick}
-        text={VIEW_ITEMS[viewType]}
-      />
-    );
+  const pushCursor = (nextCursor: string) => {
+    if (cursor) setCursorStack([...cursorStack, cursor]);
+    setCursor(nextCursor);
   };
-
-  let partitionView = null;
-  if (viewType === "runs") {
-    partitionView = <PartitionTable runsByPartition={runsByPartition} />;
-  } else if (viewType === "duration") {
-    partitionView = (
-      <PartitionGraph
-        partitions={partitionSet.partitions.results}
-        runsByPartition={runsByPartition}
-        executionPlan={executionPlan}
-        generateData={_getDurationData}
-      />
-    );
-  } else if (viewType === "materializations") {
-    partitionView = (
-      <PartitionGraph
-        partitions={partitionSet.partitions.results}
-        runsByPartition={runsByPartition}
-        executionPlan={executionPlan}
-        generateData={_getMaterializationData}
-      />
-    );
-  } else if (viewType === "expectationSuccess") {
-    partitionView = (
-      <PartitionGraph
-        partitions={partitionSet.partitions.results}
-        runsByPartition={runsByPartition}
-        executionPlan={executionPlan}
-        generateData={_getExpectationsSuccess}
-      />
-    );
-  } else if (viewType === "expectationFailure") {
-    partitionView = (
-      <PartitionGraph
-        partitions={partitionSet.partitions.results}
-        runsByPartition={runsByPartition}
-        executionPlan={executionPlan}
-        generateData={_getExpectationsFailure}
-      />
-    );
-  } else if (viewType === "expectationRate") {
-    partitionView = (
-      <PartitionGraph
-        partitions={partitionSet.partitions.results}
-        runsByPartition={runsByPartition}
-        executionPlan={executionPlan}
-        generateData={_getExpectationsRate}
-      />
-    );
-  }
 
   return (
-    <div style={{ marginTop: 30 }}>
-      <Header>{`Partition Set: ${partitionSet.name}`}</Header>
-      <Divider />
-      <PartitionPagerControls {...pagerProps} />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          margin: "20px 0px"
-        }}
-      >
-        <Select<string>
-          items={Object.keys(VIEW_ITEMS)}
-          itemRenderer={viewTypeRenderer}
-          onItemSelect={onSelect}
-          filterable={false}
-        >
-          <Button
-            text={VIEW_ITEMS[viewType]}
-            rightIcon="double-caret-vertical"
-            style={{ minWidth: 300 }}
-          />
-        </Select>
-      </div>
-      {partitionView}
-    </div>
+    <Query
+      query={PARTITION_SET_QUERY}
+      variables={{
+        partitionSetName,
+        partitionsCursor: cursor,
+        partitionsLimit: pageSize + 1
+      }}
+      fetchPolicy="cache-and-network"
+      partialRefetch={true}
+    >
+      {(queryResult: QueryResult<PartitionLongitudinalQuery, any>) => (
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {({ partitionSetOrError }) => {
+            if (partitionSetOrError.__typename !== "PartitionSet") {
+              return null;
+            }
+            const partitionSet = partitionSetOrError;
+            const partitions = partitionSet.partitions.results;
+            const latestRun = getLatestRun(partitions);
+            const executionPlan: ExecutionPlan | null | undefined =
+              latestRun?.executionPlan;
+
+            return (
+              <div style={{ marginTop: 30 }}>
+                <Header>{`Partition Set: ${partitionSetName}`}</Header>
+                <Divider />
+                <PartitionPagerControls
+                  displayed={partitions.slice(0, pageSize)}
+                  setPageSize={setPageSize}
+                  hasNextPage={partitions.length === pageSize + 1}
+                  hasPrevPage={!!cursor}
+                  pushCursor={pushCursor}
+                  popCursor={popCursor}
+                  setCursor={setCursor}
+                />
+                <div style={{ position: "relative" }}>
+                  <PartitionTable partitions={partitions} />
+                  <PartitionGraph
+                    partitions={partitions}
+                    executionPlan={executionPlan}
+                    generateData={_getDurationData}
+                  />
+                  <PartitionGraph
+                    partitions={partitions}
+                    executionPlan={executionPlan}
+                    generateData={_getMaterializationData}
+                  />
+                  <PartitionGraph
+                    partitions={partitions}
+                    executionPlan={executionPlan}
+                    generateData={_getExpectationsSuccess}
+                  />
+                  <PartitionGraph
+                    partitions={partitions}
+                    executionPlan={executionPlan}
+                    generateData={_getExpectationsFailure}
+                  />
+                  <PartitionGraph
+                    partitions={partitions}
+                    executionPlan={executionPlan}
+                    generateData={_getExpectationsRate}
+                  />
+                  {queryResult.loading ? (
+                    <Overlay>
+                      <Spinner size={48} />
+                    </Overlay>
+                  ) : null}
+                </div>
+              </div>
+            );
+          }}
+        </Loading>
+      )}
+    </Query>
   );
+};
+
+const Overlay = styled.div`
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: #ffffff;
+  opacity: 0.8;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const getLatestRun = (partitions: Partition[]) => {
+  let runs: Run[] = [];
+  partitions.forEach(partition => {
+    runs = runs.concat(partition.runs);
+  });
+  runs.sort((a: Run, b: Run) => {
+    if (
+      a.stats.__typename !== "PipelineRunStatsSnapshot" &&
+      b.stats.__typename !== "PipelineRunStatsSnapshot"
+    ) {
+      return 0;
+    }
+    if (a.stats.__typename !== "PipelineRunStatsSnapshot") {
+      return -1;
+    }
+    if (b.stats.__typename !== "PipelineRunStatsSnapshot") {
+      return 1;
+    }
+
+    return (b.stats.endTime || 0) - (a.stats.endTime || 0);
+  });
+
+  if (!runs.length) {
+    return undefined;
+  }
+  return runs[0];
 };
 
 interface PartitionGraphProps {
   partitions: Partition[];
-  runsByPartition: { [key: string]: Run[] };
-  executionPlan?: ExecutionPlan;
-  generateData: (runsByPartition: {
-    [key: string]: Run[];
-  }) => { [key: string]: any };
+  executionPlan: ExecutionPlan | null | undefined;
+  generateData: (partitions: Partition[]) => { [key: string]: any };
 }
 
-const getLastSuccessfulRunOrLastRun = (runs: Run[]) => {
-  const successfulRuns = runs.filter(run => run.status === "SUCCESS");
-  return successfulRuns.length
-    ? successfulRuns[successfulRuns.length - 1]
-    : runs[runs.length - 1];
-};
-
-const _getDurationData = (runsByPartition: { [key: string]: Run[] }) => {
+const _getDurationData = (partitions: Partition[]) => {
   const points: {
     [key: string]: { x: string; y: number | null }[];
   } = {};
-  Object.keys(runsByPartition).forEach(partitionName => {
-    const runs = runsByPartition[partitionName];
+  partitions.forEach(partition => {
+    const runs = partition.runs;
     if (!runs || !runs.length) {
       return;
     }
-    const { stats, stepStats } = getLastSuccessfulRunOrLastRun(runs);
+    const { stats, stepStats } = runs[runs.length - 1];
     const key = "Pipeline Execution Time";
     if (
       stats &&
@@ -204,14 +194,14 @@ const _getDurationData = (runsByPartition: { [key: string]: Run[] }) => {
     ) {
       points[key] = [
         ...(points[key] || []),
-        { x: partitionName, y: stats.endTime - stats.startTime }
+        { x: partition.name, y: stats.endTime - stats.startTime }
       ];
     }
     stepStats.forEach(stepStat => {
       if (stepStat.endTime && stepStat.startTime) {
         points[stepStat.stepKey] = [
           ...(points[stepStat.stepKey] || []),
-          { x: partitionName, y: stepStat.endTime - stepStat.startTime }
+          { x: partition.name, y: stepStat.endTime - stepStat.startTime }
         ];
       }
     });
@@ -220,27 +210,27 @@ const _getDurationData = (runsByPartition: { [key: string]: Run[] }) => {
   return points;
 };
 
-const _getMaterializationData = (runsByPartition: { [key: string]: Run[] }) => {
+const _getMaterializationData = (partitions: Partition[]) => {
   const points: {
     [key: string]: { x: string; y: number | null }[];
   } = {};
-  Object.keys(runsByPartition).forEach(partitionName => {
-    const runs = runsByPartition[partitionName];
+  partitions.forEach(partition => {
+    const runs = partition.runs;
     if (!runs || !runs.length) {
       return;
     }
-    const { stats, stepStats } = getLastSuccessfulRunOrLastRun(runs);
+    const { stats, stepStats } = runs[runs.length - 1];
     const key = "Total Materializations";
     if (stats && stats.__typename === "PipelineRunStatsSnapshot") {
       points[key] = [
         ...(points[key] || []),
-        { x: partitionName, y: stats.materializations }
+        { x: partition.name, y: stats.materializations }
       ];
     }
     stepStats.forEach(stepStat => {
       points[stepStat.stepKey] = [
         ...(points[stepStat.stepKey] || []),
-        { x: partitionName, y: stepStat.materializations?.length || 0 }
+        { x: partition.name, y: stepStat.materializations?.length || 0 }
       ];
     });
   });
@@ -248,19 +238,19 @@ const _getMaterializationData = (runsByPartition: { [key: string]: Run[] }) => {
   return points;
 };
 
-const _getExpectationsSuccess = (runsByPartition: { [key: string]: Run[] }) => {
+const _getExpectationsSuccess = (partitions: Partition[]) => {
   const pipelineKey = "Total Successes";
   const points: {
     [key: string]: { x: string; y: number | null }[];
   } = {
     [pipelineKey]: []
   };
-  Object.keys(runsByPartition).forEach(partitionName => {
-    const runs = runsByPartition[partitionName];
+  partitions.forEach(partition => {
+    const runs = partition.runs;
     if (!runs || !runs.length) {
       return;
     }
-    const { stepStats } = getLastSuccessfulRunOrLastRun(runs);
+    const { stepStats } = runs[runs.length - 1];
 
     let pipelineSuccessCount = 0;
     stepStats.forEach(stepStat => {
@@ -269,7 +259,7 @@ const _getExpectationsSuccess = (runsByPartition: { [key: string]: Run[] }) => {
       points[stepStat.stepKey] = [
         ...(points[stepStat.stepKey] || []),
         {
-          x: partitionName,
+          x: partition.name,
           y: successCount
         }
       ];
@@ -277,14 +267,14 @@ const _getExpectationsSuccess = (runsByPartition: { [key: string]: Run[] }) => {
     });
     points[pipelineKey] = [
       ...points[pipelineKey],
-      { x: partitionName, y: pipelineSuccessCount }
+      { x: partition.name, y: pipelineSuccessCount }
     ];
   });
 
   return points;
 };
 
-const _getExpectationsFailure = (runsByPartition: { [key: string]: Run[] }) => {
+const _getExpectationsFailure = (partitions: Partition[]) => {
   const pipelineKey = "Total Failures";
   const points: {
     [key: string]: { x: string; y: number | null }[];
@@ -292,12 +282,12 @@ const _getExpectationsFailure = (runsByPartition: { [key: string]: Run[] }) => {
     [pipelineKey]: []
   };
 
-  Object.keys(runsByPartition).forEach(partitionName => {
-    const runs = runsByPartition[partitionName];
+  partitions.forEach(partition => {
+    const runs = partition.runs;
     if (!runs || !runs.length) {
       return;
     }
-    const { stepStats } = getLastSuccessfulRunOrLastRun(runs);
+    const { stepStats } = runs[runs.length - 1];
     let pipelineFailureCount = 0;
     stepStats.forEach(stepStat => {
       const failureCount =
@@ -305,7 +295,7 @@ const _getExpectationsFailure = (runsByPartition: { [key: string]: Run[] }) => {
       points[stepStat.stepKey] = [
         ...(points[stepStat.stepKey] || []),
         {
-          x: partitionName,
+          x: partition.name,
           y: failureCount
         }
       ];
@@ -313,26 +303,26 @@ const _getExpectationsFailure = (runsByPartition: { [key: string]: Run[] }) => {
     });
     points[pipelineKey] = [
       ...points[pipelineKey],
-      { x: partitionName, y: pipelineFailureCount }
+      { x: partition.name, y: pipelineFailureCount }
     ];
   });
 
   return points;
 };
 
-const _getExpectationsRate = (runsByPartition: { [key: string]: Run[] }) => {
+const _getExpectationsRate = (partitions: Partition[]) => {
   const pipelineKey = "Total Rate";
   const points: {
     [key: string]: { x: string; y: number | null }[];
   } = {
     [pipelineKey]: []
   };
-  Object.keys(runsByPartition).forEach(partitionName => {
-    const runs = runsByPartition[partitionName];
+  partitions.forEach(partition => {
+    const runs = partition.runs;
     if (!runs || !runs.length) {
       return;
     }
-    const { stepStats } = getLastSuccessfulRunOrLastRun(runs);
+    const { stepStats } = runs[runs.length - 1];
     let pipelineSuccessCount = 0;
     let pipelineTotalCount = 0;
     stepStats.forEach(stepStat => {
@@ -342,7 +332,7 @@ const _getExpectationsRate = (runsByPartition: { [key: string]: Run[] }) => {
       const rate = totalCount ? successCount / totalCount : 0;
       points[stepStat.stepKey] = [
         ...(points[stepStat.stepKey] || []),
-        { x: partitionName, y: rate }
+        { x: partition.name, y: rate }
       ];
       pipelineSuccessCount += successCount;
       pipelineTotalCount += totalCount;
@@ -350,7 +340,7 @@ const _getExpectationsRate = (runsByPartition: { [key: string]: Run[] }) => {
     points[pipelineKey] = [
       ...points[pipelineKey],
       {
-        x: partitionName,
+        x: partition.name,
         y: pipelineTotalCount ? pipelineSuccessCount / pipelineTotalCount : 0
       }
     ];
@@ -383,7 +373,6 @@ const fillPartitions = (
 
 const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
   partitions,
-  runsByPartition,
   executionPlan,
   generateData
 }) => {
@@ -395,7 +384,7 @@ const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
     setQuery(query);
   };
   const selectedSteps = filterByQuery(graph, query).all.map(node => node.name);
-  const data = fillPartitions(generateData(runsByPartition), partitions);
+  const data = fillPartitions(generateData(partitions), partitions);
   const graphData = {
     labels: partitions.map(partition => partition.name),
     datasets: Object.keys(data)
@@ -406,7 +395,7 @@ const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
       .map(label => ({
         label,
         data: data[label],
-        borderColor: _lineColor(label),
+        borderColor: colorHash(label),
         backgroundColor: "rgba(0,0,0,0)"
       }))
   };
@@ -428,28 +417,8 @@ const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
   );
 };
 
-const _lineColor = (str: string) => {
-  let seed = 0;
-  for (let i = 0; i < str.length; i++) {
-    seed = ((seed << 5) - seed + str.charCodeAt(i)) | 0;
-  }
-
-  const random255 = (x: number) => {
-    const value = Math.sin(x) * 10000;
-    return 255 * (value - Math.floor(value));
-  };
-
-  return `rgb(${random255(seed++)}, ${random255(seed++)}, ${random255(
-    seed++
-  )})`;
-};
-
-interface PartitionTableProps {
-  runsByPartition: { [key: string]: Run[] };
-}
-
-const PartitionTable: React.FunctionComponent<PartitionTableProps> = ({
-  runsByPartition
+const PartitionTable: React.FunctionComponent<{ partitions: Partition[] }> = ({
+  partitions
 }) => {
   return (
     <Container>
@@ -461,10 +430,10 @@ const PartitionTable: React.FunctionComponent<PartitionTableProps> = ({
           </GutterFiller>
         </Column>
       </Gutter>
-      {Object.keys(runsByPartition).map(partition => (
-        <Column key={partition}>
-          <ColumnHeader>{partition}</ColumnHeader>
-          {runsByPartition[partition].map(run => (
+      {partitions.map(partition => (
+        <Column key={partition.name}>
+          <ColumnHeader>{partition.name}</ColumnHeader>
+          {partition.runs.map(run => (
             <Link
               to={`/runs/all/${run.runId}`}
               key={run.runId}
@@ -511,12 +480,15 @@ const Container = styled.div`
   justify-content: space-around;
   background-color: #ffffff;
   padding: 30px 30px 10px 0;
+  overflow-x: auto;
+  margin-bottom: 30px;
 `;
 const Column = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column-reverse;
   align-items: stretch;
+  min-width: 50px;
 `;
 const ColumnHeader = styled.div`
   font-size: 12px;
@@ -532,7 +504,6 @@ interface PartitionPagerProps {
   setPageSize: React.Dispatch<React.SetStateAction<number>>;
   hasPrevPage: boolean;
   hasNextPage: boolean;
-  cronSchedule: string;
   pushCursor: (nextCursor: string) => void;
   popCursor: () => void;
   setCursor: (cursor: string | undefined) => void;
@@ -607,44 +578,49 @@ const PartitionPagerContainer = styled.div`
   margin: 10px 0;
 `;
 
-export const PARTITION_RUNS_QUERY = gql`
-  query PartitionRunsQuery($partitionSetName: String!) {
-    pipelineRunsOrError(
-      filter: {
-        tags: { key: "dagster/partition_set", value: $partitionSetName }
-      }
-    ) {
-      __typename
-      ... on PipelineRuns {
-        results {
-          runId
-          tags {
-            key
-            value
-          }
-          stats {
-            __typename
-            ... on PipelineRunStatsSnapshot {
-              startTime
-              endTime
-              materializations
+const PARTITION_SET_QUERY = gql`
+  query PartitionLongitudinalQuery(
+    $partitionSetName: String!
+    $partitionsLimit: Int
+    $partitionsCursor: String
+  ) {
+    partitionSetOrError(partitionSetName: $partitionSetName) {
+      ... on PartitionSet {
+        name
+        partitions(cursor: $partitionsCursor, limit: $partitionsLimit) {
+          results {
+            name
+            runs {
+              runId
+              tags {
+                key
+                value
+              }
+              stats {
+                __typename
+                ... on PipelineRunStatsSnapshot {
+                  startTime
+                  endTime
+                  materializations
+                }
+              }
+              stepStats {
+                __typename
+                stepKey
+                startTime
+                endTime
+                materializations {
+                  __typename
+                }
+                expectationResults {
+                  success
+                }
+              }
+              status
+              executionPlan {
+                ...GaantChartExecutionPlanFragment
+              }
             }
-          }
-          stepStats {
-            __typename
-            stepKey
-            startTime
-            endTime
-            materializations {
-              __typename
-            }
-            expectationResults {
-              success
-            }
-          }
-          status
-          executionPlan {
-            ...GaantChartExecutionPlanFragment
           }
         }
       }
