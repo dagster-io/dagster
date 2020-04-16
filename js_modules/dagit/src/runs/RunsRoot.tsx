@@ -23,7 +23,7 @@ import {
 import styled from "styled-components/macro";
 import { PipelineRunsFilter, PipelineRunStatus } from "../types/globalTypes";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export const RunsQueryVariablesContext = React.createContext<
   RunsRootQueryVariables
