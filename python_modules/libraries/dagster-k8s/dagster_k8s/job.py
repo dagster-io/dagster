@@ -190,6 +190,14 @@ class DagsterK8sJobConfig(
 
         return config_maps + secrets
 
+    def to_dict(self):
+        return self._asdict()
+
+    @staticmethod
+    def from_dict(config=None):
+        check.opt_dict_param(config, 'config')
+        return DagsterK8sJobConfig(**config)
+
 
 def construct_dagster_graphql_k8s_job(job_config, args, job_name, pod_name=None, component=None):
     '''Constructs a Kubernetes Job object for a dagster-graphql invocation.

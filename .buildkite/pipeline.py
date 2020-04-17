@@ -275,8 +275,12 @@ def celery_tests():
         coverage = ".coverage.dagster-celery.{version}.$BUILDKITE_BUILD_ID".format(version=version)
         tests.append(
             StepBuilder("[dagster-celery] ({ver})".format(ver=TOX_MAP[version]))
-            .on_integration_image(version)
+            .on_integration_image(
+                version, ['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',],
+            )
             .run(
+                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+                "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "pushd python_modules/libraries/dagster-celery",
                 # Run the rabbitmq db. We are in docker running docker
                 # so this will be a sibling container.
@@ -291,6 +295,7 @@ def celery_tests():
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
+            .depends_on(["dagster-test-images-{version}".format(version=TOX_MAP[version])])
             .build()
         )
     return tests

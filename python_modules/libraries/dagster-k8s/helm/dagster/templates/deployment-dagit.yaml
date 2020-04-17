@@ -43,8 +43,8 @@ spec:
           command: [
             "/bin/bash",
             "-c",
-            "service cron start && \
-            /usr/local/bin/dagster schedule up && \
+            "service cron start; \
+            /usr/local/bin/dagster schedule up; \
             dagit -h 0.0.0.0 -p 80"
           ]
           env:

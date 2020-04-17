@@ -53,14 +53,14 @@ def demo_pipeline():
 
 
 def define_demo_pipeline_celery():
-    from dagster_celery import celery_executor
+    from dagster_celery import celery_executor, celery_k8s_job_executor
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
                 resource_defs={'s3': s3_resource},
-                executor_defs=default_executors + [celery_executor],
+                executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
             )
         ]
     )
@@ -117,7 +117,7 @@ def optional_outputs():
 
 
 def define_long_running_pipeline_celery():
-    from dagster_celery import celery_executor
+    from dagster_celery import celery_executor, celery_k8s_job_executor
 
     @solid
     def long_running_task(context):
@@ -145,7 +145,7 @@ def define_long_running_pipeline_celery():
             ModeDefinition(
                 system_storage_defs=s3_plus_default_storage_defs,
                 resource_defs={'s3': s3_resource},
-                executor_defs=default_executors + [celery_executor],
+                executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
             )
         ]
     )
