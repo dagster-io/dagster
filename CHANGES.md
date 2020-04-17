@@ -23,12 +23,21 @@
   `dagster instance migrate`. If you have already run the migration for the `event_log` changes
   above, you do not need to run it again. Any unforeseen errors related the the new `snapshot_id`
   in the `runs` table or the new `snapshots` table are related to this migration.
+- dagster-pandas `ColumnTypeConstraint` has been removed in favor of `ColumnDTypeFnConstraint` and
+  `ColumnDTypeInSetConstraint`.
 
 **New**
 
 - You can now specify that dagstermill output notebooks be yielded as an output from dagstermill
   solids, in addition to being materialized.
 - You may now set the extension on files created using the `FileManager` machinery.
+- dagster-pandas typed `PandasColumn` constructors now support pandas 1.0 dtypes.
+- The Dagit Playground has been restructured to make the relationship between Preset, Partition
+  Sets, Modes, and subsets more clear. All of these buttons have be reconciled and moved to the
+  left side of the Playground.
+- Config sections that are required but not filled out in the Dagit playground are now detected
+  and labeled in orange.
+- dagster-celery config now support using `env:` to load from environment variables.
 
 **Bugfix**
 
@@ -38,6 +47,8 @@
   `dagit`.
 - Fixed an issue where reimporting dagstermill and calling `dagstermill.get_context()` outside of
   the parameters cell of a dagstermill notebook could lead to unexpected behavior.
+- Fixed an issue with connection pooling in dagster-postgres, improving responsiveness when using
+  the Postgres-backed storages.
 
 **Experimental**
 
