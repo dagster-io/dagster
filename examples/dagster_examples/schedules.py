@@ -44,7 +44,7 @@ def backfilling_partition_selector(
     return selected
 
 
-def backfill_should_execute(context, partition_set_def):
+def backfill_should_execute(context, partition_set_def, schedule_name):
     runs_by_partition = _fetch_runs_by_partition(context.instance, partition_set_def)
     for runs in runs_by_partition.values():
         for run in runs:
@@ -60,12 +60,13 @@ def backfill_should_execute(context, partition_set_def):
     # stop_schedule method available on the instance.
     is_remaining_partitions = bool(available_partitions.difference(satisfied_partitions))
     if not is_remaining_partitions:
-        context.instance.stop_schedule(context.repository, 'unreliable_weekly')
+        context.instance.stop_schedule(context.repository, schedule_name)
 
     return is_remaining_partitions
 
 
 def backfill_test_schedule():
+    schedule_name = 'backfill_unreliable_weekly'
     # create weekly partition set
     partition_set = PartitionSetDefinition(
         name='unreliable_weekly',
@@ -79,10 +80,31 @@ def backfill_test_schedule():
     )
 
     def _should_execute(context):
-        return backfill_should_execute(context, partition_set)
+        return backfill_should_execute(context, partition_set, schedule_name)
 
     return partition_set.create_schedule_definition(
-        schedule_name='backfill_unreliable_weekly',
+        schedule_name=schedule_name,
+        cron_schedule="* * * * *",  # tick every minute
+        partition_selector=backfilling_partition_selector,
+        should_execute=_should_execute,
+    )
+
+
+def materialization_schedule():
+    # create weekly partition set
+    schedule_name = 'many_events_partitioned'
+    partition_set = PartitionSetDefinition(
+        name='many_events_minutely',
+        pipeline_name='many_events',
+        partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
+        environment_dict_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
+    )
+
+    def _should_execute(context):
+        return backfill_should_execute(context, partition_set, schedule_name)
+
+    return partition_set.create_schedule_definition(
+        schedule_name=schedule_name,
         cron_schedule="* * * * *",  # tick every minute
         partition_selector=backfilling_partition_selector,
         should_execute=_should_execute,
@@ -104,6 +126,7 @@ def get_toys_schedules():
 
     return [
         backfill_test_schedule(),
+        materialization_schedule(),
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
