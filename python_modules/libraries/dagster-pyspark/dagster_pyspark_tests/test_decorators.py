@@ -4,8 +4,8 @@ from dagster import (
     Field,
     InputDefinition,
     ModeDefinition,
-    RunConfig,
     execute_pipeline,
+    execute_pipeline_with_mode,
     pipeline,
     solid,
 )
@@ -22,7 +22,7 @@ def test_simple_pyspark_decorator():
     def pipe():
         pyspark_job()
 
-    assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
+    assert execute_pipeline_with_mode(pipeline=pipe, mode='default').success
 
 
 def test_pyspark_decorator_with_arguments():
@@ -40,7 +40,7 @@ def test_pyspark_decorator_with_arguments():
     def pipe():
         pyspark_job(produce_number())
 
-    assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
+    assert execute_pipeline_with_mode(pipeline=pipe, mode='default').success
 
 
 def test_named_pyspark_decorator():
@@ -54,10 +54,10 @@ def test_named_pyspark_decorator():
     def pipe():
         pyspark_job()
 
-    assert execute_pipeline(
-        pipe,
+    assert execute_pipeline_with_mode(
+        pipeline=pipe,
+        mode='default',
         environment_dict={'solids': {'blah': {'config': {'foo': 'baz'}}}},
-        run_config=RunConfig(mode='default'),
     ).success
 
 
@@ -90,7 +90,7 @@ def test_default_pyspark_decorator():
         first_pyspark_job()
         last_pyspark_job()
 
-    assert execute_pipeline(pipe, run_config=RunConfig(mode='default')).success
+    assert execute_pipeline_with_mode(pipeline=pipe, mode='default').success
 
 
 def test_aliased_pyspark_solid():

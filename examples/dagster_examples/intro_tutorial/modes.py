@@ -9,9 +9,8 @@ import sqlalchemy.ext.declarative
 from dagster import (
     Field,
     ModeDefinition,
-    RunConfig,
     String,
-    execute_pipeline,
+    execute_pipeline_with_mode,
     pipeline,
     resource,
     solid,
@@ -149,9 +148,9 @@ if __name__ == '__main__':
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
-    result = execute_pipeline(
-        modes_pipeline,
+    result = execute_pipeline_with_mode(
+        pipeline=modes_pipeline,
+        mode='unittest',
         environment_dict=environment_dict,
-        run_config=RunConfig(mode='unittest'),
     )
     assert result.success

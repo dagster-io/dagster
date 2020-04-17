@@ -8,8 +8,7 @@ from moto import mock_emr
 from dagster import (
     DagsterInvalidDefinitionError,
     ModeDefinition,
-    RunConfig,
-    execute_pipeline,
+    execute_pipeline_with_mode,
     pipeline,
 )
 from dagster.seven import mock
@@ -46,10 +45,10 @@ def example_pipe():
 
 
 def test_local():
-    result = execute_pipeline(
-        example_pipe,
+    result = execute_pipeline_with_mode(
+        pipeline=example_pipe,
+        mode='local',
         environment_dict={'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},},
-        run_config=RunConfig(mode='local'),
     )
     assert result.success
 
@@ -78,8 +77,9 @@ def test_pyspark_emr(mock_wait):
     context = create_test_pipeline_execution_context()
     cluster_id = job_runner.run_job_flow(context, run_job_flow_args)
 
-    result = execute_pipeline(
-        example_pipe,
+    result = execute_pipeline_with_mode(
+        pipeline=example_pipe,
+        mode='prod',
         environment_dict={
             'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
             'resources': {
@@ -94,7 +94,6 @@ def test_pyspark_emr(mock_wait):
                 }
             },
         },
-        run_config=RunConfig(mode='prod'),
     )
     assert result.success
     assert mock_wait.called_once
@@ -102,8 +101,9 @@ def test_pyspark_emr(mock_wait):
 
 def test_bad_requirements_txt():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        execute_pipeline(
-            example_pipe,
+        execute_pipeline_with_mode(
+            pipeline=example_pipe,
+            mode='prod',
             environment_dict={
                 'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
                 'resources': {
@@ -119,7 +119,6 @@ def test_bad_requirements_txt():
                     }
                 },
             },
-            run_config=RunConfig(mode='prod'),
         )
     assert 'The requirements.txt file that was specified does not exist' in str(exc_info.value)
 
@@ -129,8 +128,9 @@ def test_bad_requirements_txt():
     reason='This test is slow and requires a live EMR cluster; run only upon explicit request',
 )
 def test_do_it_live_emr():
-    result = execute_pipeline(
-        example_pipe,
+    result = execute_pipeline_with_mode(
+        pipeline=example_pipe,
+        mode='prod',
         environment_dict={
             'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},
             'resources': {
@@ -146,6 +146,5 @@ def test_do_it_live_emr():
                 }
             },
         },
-        run_config=RunConfig(mode='prod'),
     )
     assert result.success

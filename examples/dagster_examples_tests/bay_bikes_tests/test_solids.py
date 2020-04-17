@@ -25,7 +25,7 @@ from numpy.testing import assert_array_equal
 from pandas import DataFrame, Timestamp
 from requests import HTTPError
 
-from dagster import ModeDefinition, RunConfig, execute_pipeline, execute_solid, pipeline, seven
+from dagster import ModeDefinition, execute_pipeline_with_mode, execute_solid, pipeline, seven
 
 START_TIME = 1514793600
 VOLUME_TARGET_DIRECTORY = '/tmp/bar'
@@ -203,10 +203,10 @@ def test_generate_training_set(mocker):
     mocker.patch('dagster_examples.bay_bikes.solids.read_sql_table', side_effect=mock_read_sql)
 
     # Execute Pipeline
-    test_pipeline_result = execute_pipeline(
-        generate_test_training_set_pipeline,
+    test_pipeline_result = execute_pipeline_with_mode(
+        pipeline=generate_test_training_set_pipeline,
+        mode='testing',
         environment_dict=compose_training_data_env_dict(),
-        run_config=RunConfig(mode='testing'),
     )
     assert test_pipeline_result.success
 

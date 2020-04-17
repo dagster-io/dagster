@@ -3,7 +3,7 @@ import os
 # pylint: disable=unused-argument
 import pytest
 
-from dagster import RunConfig, execute_pipeline, file_relative_path
+from dagster import execute_pipeline, execute_pipeline_with_mode, file_relative_path
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_globs
@@ -39,10 +39,10 @@ def test_ingest_pipeline_fast(postgres, pg_hostname):
     ingest_config_dict = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_fast_ingest.yaml')
     )
-    result_ingest = execute_pipeline(
-        ingest_pipeline_def,
-        ingest_config_dict,
-        run_config=RunConfig(mode='local'),
+    result_ingest = execute_pipeline_with_mode(
+        pipeline=ingest_pipeline_def,
+        mode='local',
+        environment_dict=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
     )
 
@@ -59,10 +59,10 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
         config_path('local_fast_ingest.yaml'),
         config_path('filesystem_storage.yaml'),
     )
-    result_ingest = execute_pipeline(
-        ingest_pipeline_def,
-        ingest_config_dict,
-        run_config=RunConfig(mode='local'),
+    result_ingest = execute_pipeline_with_mode(
+        pipeline=ingest_pipeline_def,
+        mode='local',
+        environment_dict=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
     )
 
@@ -77,10 +77,10 @@ def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_warehouse.yaml')
     )
-    result_warehouse = execute_pipeline(
-        warehouse_pipeline_def,
-        warehouse_config_object,
-        run_config=RunConfig(mode='local'),
+    result_warehouse = execute_pipeline_with_mode(
+        pipeline=warehouse_pipeline_def,
+        mode='local',
+        environment_dict=warehouse_config_object,
         instance=DagsterInstance.local_temp(),
     )
     assert result_warehouse.success

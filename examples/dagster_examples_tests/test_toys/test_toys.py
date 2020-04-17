@@ -13,8 +13,8 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
-    RunConfig,
     execute_pipeline,
+    execute_pipeline_with_mode,
 )
 
 
@@ -65,8 +65,9 @@ def test_error_monster_success():
         },
     ).success
 
-    assert execute_pipeline(
-        error_monster,
+    assert execute_pipeline_with_mode(
+        pipeline=error_monster,
+        mode='errorable_mode',
         environment_dict={
             'solids': {
                 'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -75,14 +76,14 @@ def test_error_monster_success():
             },
             'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
         },
-        run_config=RunConfig(mode='errorable_mode'),
     ).success
 
 
 def test_error_monster_wrong_mode():
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline(
-            error_monster,
+        execute_pipeline_with_mode(
+            pipeline=error_monster,
+            mode='nope',
             environment_dict={
                 'solids': {
                     'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
@@ -91,7 +92,6 @@ def test_error_monster_wrong_mode():
                 },
                 'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
             },
-            run_config=RunConfig(mode='nope'),
         )
 
 
