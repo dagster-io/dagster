@@ -548,7 +548,7 @@ class DagsterInstance:
         self._subscribers[run_id].append(cb)
 
     def report_engine_event(
-        self, cls, message, pipeline_run, engine_event_data=None, step_key=None
+        self, message, pipeline_run, engine_event_data=None, cls=None, step_key=None,
     ):
         '''
         Report a EngineEvent that occurred outside of a pipeline execution context.
@@ -563,7 +563,8 @@ class DagsterInstance:
             engine_event_data, 'engine_event_data', EngineEventData, EngineEventData([]),
         )
 
-        message = "[{}] {}".format(cls.__name__, message)
+        if cls:
+            message = "[{}] {}".format(cls.__name__, message)
 
         log_level = logging.INFO
         if engine_event_data and engine_event_data.error:

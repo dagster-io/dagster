@@ -97,9 +97,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
             run_id=run.run_id
         )
-        self._instance.report_engine_event(
-            self.__class__, message, run,
-        )
+        self._instance.report_engine_event(message, run, cls=self.__class__)
         self._instance.report_run_failed(run)
 
     def _living_process_snapshot(self):
@@ -169,12 +167,12 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         )
 
         instance.report_engine_event(
-            self.__class__,
             'About to start process for pipeline "{pipeline_name}" (run_id: {run_id}).'.format(
                 pipeline_name=pipeline_run.pipeline_name, run_id=pipeline_run.run_id
             ),
             pipeline_run,
             engine_event_data=EngineEventData(marker_start='dagit_subprocess_init'),
+            cls=self.__class__,
         )
         mp_process.start()
 
@@ -249,10 +247,10 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         instance = DagsterInstance.from_ref(instance_ref)
         pid = os.getpid()
         instance.report_engine_event(
-            cls,
             'Started process for pipeline (pid: {pid}).'.format(pid=pid),
             pipeline_run,
             EngineEventData.in_process(pid, marker_end='dagit_subprocess_init'),
+            cls,
         )
 
         start_termination_thread(term_event)
@@ -262,10 +260,10 @@ class SubprocessExecutionManager(PipelineExecutionManager):
             pipeline_def = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
         except Exception:  # pylint: disable=broad-except
             instance.report_engine_event(
-                cls,
                 'Failed attempting to load pipeline "{}"'.format(pipeline_name),
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+                cls,
             )
             return
 
@@ -289,25 +287,25 @@ class SubprocessExecutionManager(PipelineExecutionManager):
                 ]
             ):
                 instance.report_engine_event(
-                    cls,
                     'An exception was thrown during execution that is likely a framework error, '
                     'rather than an error in user code.',
                     pipeline_run,
                     EngineEventData.engine_error(
                         serializable_error_info_from_exc_info(sys.exc_info())
                     ),
+                    cls,
                 )
         except Exception:  # pylint: disable=broad-except
             instance.report_engine_event(
-                cls,
                 'An exception was thrown during execution that is likely a framework error, '
                 'rather than an error in user code.',
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+                cls,
             )
         finally:
             instance.report_engine_event(
-                cls, 'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+                'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run, cls=cls,
             )
 
 

@@ -42,12 +42,12 @@ def create_task(celery_app, **task_kwargs):
         ).build_subset_plan(step_keys)
 
         engine_event = instance.report_engine_event(
-            CeleryEngine,
             'Executing steps {} in celery worker'.format(step_keys_str),
             pipeline_run,
             EngineEventData(
                 [EventMetadataEntry.text(step_keys_str, 'step_keys'),], marker_end=DELEGATE_MARKER,
             ),
+            CeleryEngine,
             step_key=execution_plan.step_key_for_single_step_plans(),
         )
 

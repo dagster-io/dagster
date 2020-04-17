@@ -45,7 +45,6 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         ).build_subset_plan([self.step_key])
 
         yield instance.report_engine_event(
-            MultiprocessEngine,
             'Executing step {} in subprocess'.format(self.step_key),
             self.pipeline_run,
             EngineEventData(
@@ -55,6 +54,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
+            MultiprocessEngine,
             self.step_key,
         )
 

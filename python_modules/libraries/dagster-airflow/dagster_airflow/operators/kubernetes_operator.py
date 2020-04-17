@@ -207,12 +207,12 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     handle_execution_errors(res, 'executePlan')
                 except DagsterGraphQLClientError as err:
                     self.instance.report_engine_event(
-                        self.__class__,
                         str(err),
                         pipeline_run,
                         EngineEventData.engine_error(
                             serializable_error_info_from_exc_info(sys.exc_info())
                         ),
+                        self.__class__,
                     )
                     raise
 
