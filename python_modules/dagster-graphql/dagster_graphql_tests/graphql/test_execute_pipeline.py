@@ -634,8 +634,11 @@ def test_start_pipeline_execution_for_created_run():
     instance = DagsterInstance.local_temp()
 
     run_id = make_new_run_id()
-    pipeline_run = PipelineRun.create_empty_run(
-        'csv_hello_world', run_id, csv_hello_world_solids_config(),
+    pipeline_run = PipelineRun(
+        pipeline_name='csv_hello_world',
+        run_id=run_id,
+        environment_dict=csv_hello_world_solids_config(),
+        mode='default',
     )
     instance.create_run(pipeline_run)
 

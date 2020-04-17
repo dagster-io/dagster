@@ -91,7 +91,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         result = response.json()['data']['startPipelineExecutionForCreatedRun']
 
         if result['__typename'] == 'StartPipelineExecutionSuccess':
-            return run.run_with_status(PipelineRunStatus(result['run']['status']))
+            return run.with_status(PipelineRunStatus(result['run']['status']))
 
         raise DagsterLaunchFailedError(
             'Failed to launch run with {cls} targeting {address}:\n{result}'.format(

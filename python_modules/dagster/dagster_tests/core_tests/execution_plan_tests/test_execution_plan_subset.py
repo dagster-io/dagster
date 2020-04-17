@@ -11,7 +11,6 @@ from dagster import (
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.utils import make_new_run_id
 
 
 def define_two_int_pipeline():
@@ -40,7 +39,7 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key('return_one.compute')
     assert execution_plan.get_step_by_key('add_one.compute')
 
-    pipeline_run = PipelineRun.create_empty_run(pipeline_def.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=pipeline_def.name)
     events = execute_plan(
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
@@ -74,7 +73,7 @@ def test_execution_plan_two_outputs():
 
     execution_plan = create_execution_plan(pipeline_def)
 
-    pipeline_run = PipelineRun.create_empty_run(pipeline_def.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=pipeline_def.name)
     step_events = execute_plan(
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
     )
@@ -97,9 +96,7 @@ def test_reentrant_execute_plan():
     pipeline_def = PipelineDefinition(name='has_tag_pipeline', solid_defs=[has_tag])
     execution_plan = create_execution_plan(pipeline_def)
 
-    pipeline_run = PipelineRun.create_empty_run(
-        pipeline_def.name, make_new_run_id(), tags={'foo': 'bar'}
-    )
+    pipeline_run = PipelineRun(pipeline_name=pipeline_def.name, tags={'foo': 'bar'})
 
     step_events = execute_plan(
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()

@@ -111,7 +111,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .where(RunsTable.c.run_id == run_id)
                 .values(
                     status=new_pipeline_status.value,
-                    run_body=serialize_dagster_namedtuple(run.run_with_status(new_pipeline_status)),
+                    run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
                     update_timestamp=datetime.now(),
                 )
             )

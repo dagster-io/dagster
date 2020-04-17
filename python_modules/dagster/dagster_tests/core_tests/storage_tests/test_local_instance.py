@@ -96,7 +96,7 @@ MOCK_HAS_RUN_CALLED = False
 def test_get_or_create_run():
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun.create_empty_run('foo_pipeline', 'bar_run')
+        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
         assert instance.get_or_create_run(run) == run
         assert instance.has_run(run.run_id)
         assert instance.get_or_create_run(run) == run
@@ -104,14 +104,14 @@ def test_get_or_create_run():
     # Run is created after we check whether it exists
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun.create_empty_run('foo_pipeline', 'bar_run')
+        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun.create_empty_run('foo_pipeline', run_id))
+                self._run_storage.add_run(PipelineRun(pipeline_name='foo_pipeline', run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -124,13 +124,13 @@ def test_get_or_create_run():
     MOCK_HAS_RUN_CALLED = False
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun.create_empty_run('foo_pipeline', 'bar_run')
+        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun.create_empty_run('foo_pipeline', run_id))
+                self._run_storage.add_run(PipelineRun(pipeline_name='foo_pipeline', run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:

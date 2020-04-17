@@ -107,8 +107,8 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     step_keys = ['return_one.compute']
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun.create_empty_run(
-        pipeline_def.name, run_id=run_id, environment_dict=environment_dict
+    pipeline_run = PipelineRun(
+        pipeline_name=pipeline_def.name, run_id=run_id, environment_dict=environment_dict
     )
 
     return_one_step_events = list(
@@ -289,8 +289,8 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket, 'gcs_prefix': gcs_prefix}}}
     }
 
-    pipeline_run = PipelineRun.create_empty_run(
-        pipe.name, run_id=run_id, environment_dict=environment_dict
+    pipeline_run = PipelineRun(
+        pipeline_name=pipe.name, run_id=run_id, environment_dict=environment_dict
     )
     instance = DagsterInstance.ephemeral()
 

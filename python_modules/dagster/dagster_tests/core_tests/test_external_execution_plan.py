@@ -16,7 +16,6 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.utils import make_new_run_id
 
 
 def define_inty_pipeline():
@@ -60,8 +59,7 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
     assert execution_plan.get_step_by_key('return_one.compute')
 
-    run_id = make_new_run_id()
-    pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
+    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
 
     return_one_step_events = list(
         execute_plan(
@@ -72,7 +70,7 @@ def test_using_file_system_for_subplan():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert get_step_output(return_one_step_events, 'return_one.compute')
     assert store.has_intermediate(None, 'return_one.compute')
     assert store.get_intermediate(None, 'return_one.compute', Int).obj == 1
@@ -103,8 +101,7 @@ def test_using_file_system_for_subplan_multiprocessing():
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
-    run_id = make_new_run_id()
-    run = instance.create_empty_run(run_id, execution_plan.pipeline_def.name)
+    run = instance.create_run(PipelineRun(pipeline_name=execution_plan.pipeline_def.name),)
 
     return_one_step_events = list(
         execute_plan(
@@ -115,7 +112,7 @@ def test_using_file_system_for_subplan_multiprocessing():
         )
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, run.run_id)
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
     assert store.has_intermediate(None, 'return_one.compute')
@@ -139,7 +136,7 @@ def test_execute_step_wrong_step_key():
     pipeline = define_inty_pipeline()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline)
-    pipeline_run = PipelineRun.create_empty_run(pipeline.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
@@ -167,7 +164,7 @@ def test_using_file_system_for_subplan_missing_input():
     environment_dict = {'storage': {'filesystem': {}}}
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
-    pipeline_run = PipelineRun.create_empty_run(pipeline.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_plan(
@@ -184,7 +181,7 @@ def test_using_file_system_for_subplan_invalid_step():
     environment_dict = {'storage': {'filesystem': {}}}
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
-    pipeline_run = PipelineRun.create_empty_run(pipeline.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(

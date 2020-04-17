@@ -46,11 +46,11 @@ class InMemoryRunStorage(RunStorage):
         run = self._runs[run_id]
 
         if event.event_type == DagsterEventType.PIPELINE_START:
-            self._runs[run_id] = run.run_with_status(PipelineRunStatus.STARTED)
+            self._runs[run_id] = run.with_status(PipelineRunStatus.STARTED)
         elif event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-            self._runs[run_id] = run.run_with_status(PipelineRunStatus.SUCCESS)
+            self._runs[run_id] = run.with_status(PipelineRunStatus.SUCCESS)
         elif event.event_type == DagsterEventType.PIPELINE_FAILURE:
-            self._runs[run_id] = self._runs[run_id].run_with_status(PipelineRunStatus.FAILURE)
+            self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.FAILURE)
 
     def get_runs(self, filters=None, cursor=None, limit=None):
         check.opt_inst_param(filters, 'filters', PipelineRunsFilter)

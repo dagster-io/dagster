@@ -3,7 +3,6 @@ import logging
 from dagster_papertrail import papertrail_logger
 
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
-from dagster.core.execution.config import RunConfig
 from dagster.loggers import colored_console_logger
 from dagster.seven import mock
 
@@ -27,7 +26,7 @@ def hello_pipeline():
 def test_papertrail_logger():
     with mock.patch('logging.handlers.SysLogHandler.emit') as emit:
 
-        execute_pipeline(
+        result = execute_pipeline(
             hello_pipeline,
             {
                 'loggers': {
@@ -42,7 +41,6 @@ def test_papertrail_logger():
                     },
                 }
             },
-            run_config=RunConfig(run_id='123'),
         )
 
     log_record = emit.call_args_list[0][0][0]
@@ -53,8 +51,10 @@ def test_papertrail_logger():
 
     assert (
         log_record.msg
-        == '''system - 123 - Hello, world!
+        == '''system - {run_id} - Hello, world!
                solid = "hello_logs"
     solid_definition = "hello_logs"
-            step_key = "hello_logs.compute"'''
+            step_key = "hello_logs.compute"'''.format(
+            run_id=result.run_id
+        )
     )

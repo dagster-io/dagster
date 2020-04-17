@@ -421,7 +421,7 @@ class DagsterInstance:
         return self._run_storage.get_run_tags()
 
     def create_empty_run(self, run_id, pipeline_name):
-        return self.create_run(PipelineRun.create_empty_run(pipeline_name, run_id))
+        return self.create_run(PipelineRun(pipeline_name=pipeline_name, run_id=run_id))
 
     def create_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)

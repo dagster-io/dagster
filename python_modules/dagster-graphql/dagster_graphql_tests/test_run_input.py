@@ -41,7 +41,7 @@ def test_roundtrip_run():
     assert exec_params_gql == exec_params
     assert run == pipeline_run_from_execution_params(exec_params_gql)
 
-    empty_run = PipelineRun.create_empty_run('foo', 'bar')
+    empty_run = PipelineRun(pipeline_name='foo', run_id='bar', mode='default')
     exec_params = execution_params_from_pipeline_run(empty_run)
     assert empty_run == pipeline_run_from_execution_params(exec_params)
 

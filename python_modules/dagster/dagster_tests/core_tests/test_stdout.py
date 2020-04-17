@@ -22,7 +22,6 @@ from dagster.core.execution.compute_logs import should_disable_io_stream_redirec
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.utils import make_new_run_id
 from dagster.utils import get_multiprocessing_context
 
 HELLO_SOLID = 'HELLO SOLID'
@@ -237,8 +236,7 @@ def expected_outer_prefix():
 def test_single():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    run_id = make_new_run_id()
-    pipeline_run = PipelineRun.create_empty_run(pipeline_name, run_id)
+    pipeline_run = PipelineRun(pipeline_name=pipeline_name)
 
     step_keys = ['A', 'B', 'C']
 
@@ -251,11 +249,13 @@ def test_single():
             inner_step(instance, pipeline_run, step_key)
 
     for step_key in step_keys:
-        stdout = instance.compute_log_manager.read_logs_file(run_id, step_key, ComputeIOType.STDOUT)
+        stdout = instance.compute_log_manager.read_logs_file(
+            pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+        )
         assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
     full_out = instance.compute_log_manager.read_logs_file(
-        run_id, pipeline_name, ComputeIOType.STDOUT
+        pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
     )
 
     assert normalize_file_content(full_out.data).startswith(expected_outer_prefix())
@@ -267,8 +267,7 @@ def test_single():
 def test_multi():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    run_id = make_new_run_id()
-    pipeline_run = PipelineRun.create_empty_run(pipeline_name, run_id)
+    pipeline_run = PipelineRun(pipeline_name=pipeline_name)
     context = get_multiprocessing_context()
 
     step_keys = ['A', 'B', 'C']
@@ -286,11 +285,13 @@ def test_multi():
             process.join()
 
     for step_key in step_keys:
-        stdout = instance.compute_log_manager.read_logs_file(run_id, step_key, ComputeIOType.STDOUT)
+        stdout = instance.compute_log_manager.read_logs_file(
+            pipeline_run.run_id, step_key, ComputeIOType.STDOUT
+        )
         assert normalize_file_content(stdout.data) == expected_inner_output(step_key)
 
     full_out = instance.compute_log_manager.read_logs_file(
-        run_id, pipeline_name, ComputeIOType.STDOUT
+        pipeline_run.run_id, pipeline_name, ComputeIOType.STDOUT
     )
 
     # The way that the multiprocess compute-logging interacts with pytest (which stubs out the

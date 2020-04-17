@@ -191,7 +191,7 @@ def test_step_retry_limit(environment):
 def test_retry_deferral():
     events = execute_plan(
         create_execution_plan(define_retry_limit_pipeline()),
-        pipeline_run=PipelineRun.create_empty_run('retry_limits', '42'),
+        pipeline_run=PipelineRun(pipeline_name='retry_limits', run_id='42'),
         retries=Retries(RetryMode.DEFERRED),
         instance=DagsterInstance.local_temp(),
     )

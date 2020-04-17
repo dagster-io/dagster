@@ -108,8 +108,8 @@ def test_using_s3_for_subplan(s3_bucket):
 
     step_keys = ['return_one.compute']
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun.create_empty_run(
-        pipeline_def.name, run_id=run_id, environment_dict=environment_dict
+    pipeline_run = PipelineRun(
+        pipeline_name=pipeline_def.name, run_id=run_id, environment_dict=environment_dict
     )
 
     return_one_step_events = list(
@@ -278,8 +278,8 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
         'storage': {'s3': {'config': {'s3_bucket': s3_bucket, 's3_prefix': s3_prefix}}}
     }
 
-    pipeline_run = PipelineRun.create_empty_run(
-        pipe.name, run_id=run_id, environment_dict=environment_dict
+    pipeline_run = PipelineRun(
+        pipeline_name=pipe.name, run_id=run_id, environment_dict=environment_dict
     )
     instance = DagsterInstance.ephemeral()
 

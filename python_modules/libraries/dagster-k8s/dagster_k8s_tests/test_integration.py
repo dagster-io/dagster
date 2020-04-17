@@ -1,5 +1,4 @@
 import os
-import uuid
 
 import pytest
 from dagster_k8s import get_celery_engine_config
@@ -14,14 +13,13 @@ from .utils import parse_raw_res, wait_for_job_success
 
 @pytest.mark.integration
 def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-name
-    run_id = uuid.uuid4().hex
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
-    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict, tags)
+    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags)
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
+    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
     result = parse_raw_res(raw_logs.split('\n'))
 
     assert success
@@ -39,7 +37,6 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
 
 @pytest.mark.integration
 def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined-outer-name
-    run_id = uuid.uuid4().hex
     environment_dict = merge_dicts(
         merge_yamls(
             [
@@ -54,10 +51,10 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
     pipeline_name = 'demo_pipeline_celery'
     tags = {'key': 'value'}
-    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict, tags)
+    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags)
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
+    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
     result = parse_raw_res(raw_logs.split('\n'))
 
     assert success
@@ -74,13 +71,12 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
 @pytest.mark.integration
 def test_failing_k8s_run_launcher(dagster_instance):
-    run_id = uuid.uuid4().hex
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun.create_empty_run(pipeline_name, run_id, environment_dict)
+    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run_id)
+    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
     result = parse_raw_res(raw_logs.split('\n'))
 
     assert success

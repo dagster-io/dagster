@@ -8,6 +8,7 @@ from dagster import (
     Int,
     ModeDefinition,
     PipelineDefinition,
+    PipelineRun,
     ResourceDefinition,
     String,
     execute_pipeline,
@@ -19,8 +20,6 @@ from dagster.core.events.log import EventRecord, LogMessageRecord, construct_eve
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.config import RunConfig
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.utils import make_new_run_id
 
 
 def define_string_resource():
@@ -449,8 +448,7 @@ def test_resource_init_failure():
     assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
 
     execution_plan = create_execution_plan(pipeline)
-    run_id = make_new_run_id()
-    pipeline_run = PipelineRun.create_empty_run(pipeline.name, run_id)
+    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
 
     step_events = execute_plan(
         execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()

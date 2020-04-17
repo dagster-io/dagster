@@ -437,9 +437,7 @@ class TestRunStorage:
 
     def test_wipe_tags(self, storage):
         run_id = 'some_run_id'
-        run = PipelineRun.create_empty_run(
-            run_id=run_id, pipeline_name='a_pipeline', tags={'foo': 'bar'}
-        )
+        run = PipelineRun(run_id=run_id, pipeline_name='a_pipeline', tags={'foo': 'bar'})
 
         storage.add_run(run)
 
@@ -454,7 +452,7 @@ class TestRunStorage:
         double_run_id = 'double_run_id'
         pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
 
-        run = PipelineRun.create_empty_run(run_id=double_run_id, pipeline_name=pipeline_def.name)
+        run = PipelineRun(run_id=double_run_id, pipeline_name=pipeline_def.name)
 
         assert storage.add_run(run)
         with pytest.raises(DagsterRunAlreadyExists):
@@ -484,7 +482,7 @@ class TestRunStorage:
 
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
-        run_with_snapshot = PipelineRun.create_empty_run(
+        run_with_snapshot = PipelineRun(
             run_id=run_with_snapshot_id,
             pipeline_name=pipeline_def.name,
             pipeline_snapshot_id=pipeline_snapshot_id,
@@ -512,7 +510,7 @@ class TestRunStorage:
         run_with_snapshot_id = 'lkasjdflkjasdf'
         pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
 
-        run_with_missing_snapshot = PipelineRun.create_empty_run(
+        run_with_missing_snapshot = PipelineRun(
             run_id=run_with_snapshot_id,
             pipeline_name=pipeline_def.name,
             pipeline_snapshot_id='nope',

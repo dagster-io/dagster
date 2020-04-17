@@ -390,7 +390,7 @@ def test_has_run_query_and_terminate():
 
     with safe_tempfile_path() as path:
         pipeline_run = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id_one,
                 environment_dict={'solids': {'loop': {'config': {'file': path}}}},
@@ -424,7 +424,7 @@ def test_two_runs_running():
         execution_manager = SubprocessExecutionManager(instance)
 
         pipeline_run_one = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id_one,
                 environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
@@ -435,7 +435,7 @@ def test_two_runs_running():
         )
 
         pipeline_run_two = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id_two,
                 environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
@@ -473,7 +473,7 @@ def test_max_concurrency_zero():
         execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=0)
 
         pipeline_run = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id,
                 environment_dict={'solids': {'loop': {'config': {'file': filepath}}}},
@@ -495,14 +495,14 @@ def test_max_concurrency_one():
         execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=1)
 
         run_one = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id_one,
                 environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
             )
         )
         run_two = instance.create_run(
-            PipelineRun.create_empty_run(
+            PipelineRun(
                 pipeline_name=infinite_loop_pipeline.name,
                 run_id=run_id_two,
                 environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},

@@ -2,7 +2,6 @@ from dagster import Field, Int, String, composite_solid, pipeline, solid
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.utils import make_new_run_id
 
 
 @solid(config={'foo': Field(String)})
@@ -50,7 +49,7 @@ def test_execution_plan_for_composite_solid():
         }
     }
     execution_plan = create_execution_plan(composite_pipeline, environment_dict=environment_dict)
-    pipeline_run = PipelineRun.create_empty_run(composite_pipeline.name, make_new_run_id())
+    pipeline_run = PipelineRun(pipeline_name=composite_pipeline.name)
     events = execute_plan(
         execution_plan,
         environment_dict=environment_dict,
@@ -80,9 +79,7 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     execution_plan = create_execution_plan(
         composite_pipeline_with_config_mapping, environment_dict=environment_dict
     )
-    pipeline_run = PipelineRun.create_empty_run(
-        composite_pipeline_with_config_mapping.name, make_new_run_id()
-    )
+    pipeline_run = PipelineRun(pipeline_name=composite_pipeline_with_config_mapping.name)
 
     events = execute_plan(
         execution_plan,

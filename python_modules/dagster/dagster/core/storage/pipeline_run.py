@@ -2,7 +2,9 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.execution.config import IRunConfig
+from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 
 from .tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG, SCHEDULE_NAME_TAG
@@ -75,10 +77,10 @@ class PipelineRun(
     #   storage
     def __new__(
         cls,
-        pipeline_name,
-        run_id,
-        environment_dict,
-        mode,
+        pipeline_name=None,
+        run_id=None,
+        environment_dict=None,
+        mode=None,
         selector=None,
         step_keys_to_execute=None,
         status=None,
@@ -91,6 +93,10 @@ class PipelineRun(
         previous_run_id=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
+
+        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
+        if not selector and pipeline_name:
+            selector = ExecutionSelector(pipeline_name)
 
         root_run_id = check.opt_str_param(root_run_id, 'root_run_id')
         parent_run_id = check.opt_str_param(parent_run_id, 'parent_run_id')
@@ -113,15 +119,13 @@ class PipelineRun(
 
         return super(PipelineRun, cls).__new__(
             cls,
-            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            run_id=check.str_param(run_id, 'run_id'),
+            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
+            run_id=check.opt_str_param(run_id, 'run_id', default=make_new_run_id()),
             environment_dict=check.opt_dict_param(
                 environment_dict, 'environment_dict', key_type=str
             ),
-            mode=check.str_param(mode, 'mode'),
-            selector=check.opt_inst_param(
-                selector, 'selector', ExecutionSelector, ExecutionSelector(pipeline_name)
-            ),
+            mode=check.opt_str_param(mode, 'mode', default=DEFAULT_MODE_NAME),
+            selector=selector,
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
@@ -134,34 +138,17 @@ class PipelineRun(
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
         )
 
-    @staticmethod
-    def create_empty_run(
-        pipeline_name,
-        run_id,
-        environment_dict=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot_id=None,
-    ):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
-        return PipelineRun(
-            pipeline_name=pipeline_name,
-            run_id=run_id,
-            environment_dict=environment_dict,
-            mode='default',
-            selector=ExecutionSelector(pipeline_name),
-            root_run_id=root_run_id,
-            parent_run_id=parent_run_id,
-            step_keys_to_execute=None,
-            tags=tags,
-            status=PipelineRunStatus.NOT_STARTED,
-            pipeline_snapshot_id=pipeline_snapshot_id,
-        )
-
-    def run_with_status(self, status):
+    def with_status(self, status):
         return self._replace(status=status)
+
+    def with_mode(self, mode):
+        return self._replace(mode=mode)
+
+    def with_tags(self, tags):
+        return self._replace(tags=tags)
+
+    def with_pipeline_snapshot_id(self, pipeline_snapshot_id):
+        return self._replace(pipeline_snapshot_id=pipeline_snapshot_id)
 
     @property
     def is_finished(self):

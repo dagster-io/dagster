@@ -52,7 +52,6 @@ from ..typing_api import is_typing_type
 
 
 def create_test_pipeline_execution_context(logger_defs=None):
-    run_id = make_new_run_id()
     loggers = check.opt_dict_param(
         logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
     )
@@ -61,7 +60,9 @@ def create_test_pipeline_execution_context(logger_defs=None):
         name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
     )
     environment_dict = {'loggers': {key: {} for key in loggers}}
-    pipeline_run = PipelineRun.create_empty_run('test_legacy_context', run_id, environment_dict)
+    pipeline_run = PipelineRun(
+        pipeline_name='test_legacy_context', environment_dict=environment_dict
+    )
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline_def, environment_dict, pipeline_run)
     creation_data = create_context_creation_data(
@@ -75,7 +76,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
         scoped_resources_builder=scoped_resources_builder,
         system_storage_data=SystemStorageData(
             intermediates_manager=InMemoryIntermediatesManager(),
-            file_manager=LocalFileManager.for_instance(instance, run_id),
+            file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
         ),
         log_manager=log_manager,
         executor_config=executor_config,
@@ -204,7 +205,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     with scoped_pipeline_context(
         pipeline,
         {},
-        PipelineRun.create_empty_run('empty', run_id=run_id if run_id is not None else 'TESTING',),
+        PipelineRun(pipeline_name='empty', run_id=run_id),
         instance or DagsterInstance.ephemeral(),
         create_execution_plan(pipeline),
     ) as context:
