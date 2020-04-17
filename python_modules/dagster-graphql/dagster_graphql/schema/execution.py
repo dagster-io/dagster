@@ -4,8 +4,12 @@ from dagster_graphql import dauphin
 from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 
 from dagster import check
-from dagster.core.execution.plan.objects import ExecutionStep, StepInput, StepOutput
-from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanIndex,
+    ExecutionStepInputSnap,
+    ExecutionStepOutputSnap,
+    ExecutionStepSnap,
+)
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
 
@@ -14,21 +18,26 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         name = 'ExecutionPlan'
 
     steps = dauphin.non_null_list('ExecutionStep')
+    # unused?
     pipeline = dauphin.NonNull('PipelineReference')
     artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
-    def __init__(self, pipeline, execution_plan):
+    def __init__(self, pipeline, execution_plan_index):
         super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
-        self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._execution_plan_index = check.inst_param(
+            execution_plan_index, execution_plan_index, ExecutionPlanIndex
+        )
 
     def resolve_steps(self, _graphene_info):
         return [
-            DauphinExecutionStep(self._execution_plan, step)
-            for step in self._execution_plan.topological_steps()
+            DauphinExecutionStep(
+                self._execution_plan_index, self._execution_plan_index.get_step_by_key(step.key),
+            )
+            for step in self._execution_plan_index.execution_plan_snapshot.steps
         ]
 
     def resolve_artifactsPersisted(self, _graphene_info):
-        return self._execution_plan.artifacts_persisted
+        return self._execution_plan_index.execution_plan_snapshot.artifacts_persisted
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
@@ -38,18 +47,22 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
 
-    def __init__(self, pipeline_snapshot, step_output):
+    def __init__(self, pipeline_snapshot, step_output_snap):
         super(DauphinExecutionStepOutput, self).__init__()
-        self._step_output = check.inst_param(step_output, 'step_output', StepOutput)
+        self._step_output_snap = check.inst_param(
+            step_output_snap, 'step_output_snap', ExecutionStepOutputSnap
+        )
         self._pipeline_snapshot = check.inst_param(
             pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
         )
 
     def resolve_name(self, _graphene_info):
-        return self._step_output.name
+        return self._step_output_snap.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_output.dagster_type.key)
+        return to_dauphin_dagster_type(
+            self._pipeline_snapshot, self._step_output_snap.dagster_type_key
+        )
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
@@ -60,26 +73,32 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     type = dauphin.Field(dauphin.NonNull('RuntimeType'))
     dependsOn = dauphin.non_null_list('ExecutionStep')
 
-    def __init__(self, pipeline_snapshot, execution_plan, step_input):
+    def __init__(self, pipeline_snapshot, step_input_snap, execution_plan_index):
         super(DauphinExecutionStepInput, self).__init__()
-        self._step_input = check.inst_param(step_input, 'step_input', StepInput)
-        self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._step_input_snap = check.inst_param(
+            step_input_snap, 'step_input_snap', ExecutionStepInputSnap
+        )
         self._pipeline_snapshot = check.inst_param(
             pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
         )
+        self._execution_plan_index = check.inst_param(
+            execution_plan_index, 'execution_plan_index', ExecutionPlanIndex
+        )
 
     def resolve_name(self, _graphene_info):
-        return self._step_input.name
+        return self._step_input_snap.name
 
     def resolve_type(self, _graphene_info):
-        return to_dauphin_dagster_type(self._pipeline_snapshot, self._step_input.dagster_type.key)
+        return to_dauphin_dagster_type(
+            self._pipeline_snapshot, self._step_input_snap.dagster_type_key
+        )
 
     def resolve_dependsOn(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStep')(
-                self._execution_plan, self._execution_plan.get_step_by_key(key)
+                self._execution_plan_index, self._execution_plan_index.get_step_by_key(key),
             )
-            for key in self._step_input.dependency_keys
+            for key in self._step_input_snap.upstream_step_keys
         ]
 
 
@@ -110,40 +129,45 @@ class DauphinExecutionStep(dauphin.ObjectType):
     kind = dauphin.NonNull('StepKind')
     metadata = dauphin.non_null_list('MetadataItemDefinition')
 
-    def __init__(self, execution_plan, execution_step):
+    def __init__(self, execution_plan_index, execution_step_snap):
         super(DauphinExecutionStep, self).__init__()
-        self._execution_step = check.inst_param(execution_step, 'execution_step', ExecutionStep)
-        self._execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self._execution_plan_index = check.inst_param(
+            execution_plan_index, 'execution_plan_index', ExecutionPlanIndex
+        )
+        self._plan_snapshot = execution_plan_index.execution_plan_snapshot
+        self._step_snap = check.inst_param(
+            execution_step_snap, 'execution_step_snap', ExecutionStepSnap
+        )
 
     def resolve_metadata(self, graphene_info):
         return [
-            graphene_info.schema.type_named('MetadataItemDefinition')(key=key, value=value)
-            for key, value in self._execution_step.tags.items()
+            graphene_info.schema.type_named('MetadataItemDefinition')(key=mdi.key, value=mdi.value)
+            for mdi in self._step_snap.metadata_items
         ]
 
     def resolve_inputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepInput')(
-                self._execution_plan.pipeline_def.get_pipeline_snapshot(),
-                self._execution_plan,
+                self._execution_plan_index.pipeline_index.pipeline_snapshot,
                 inp,
+                self._execution_plan_index,
             )
-            for inp in self._execution_step.step_inputs
+            for inp in self._step_snap.inputs
         ]
 
     def resolve_outputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepOutput')(
-                self._execution_plan.pipeline_def.get_pipeline_snapshot(), out,
+                self._execution_plan_index.pipeline_index.pipeline_snapshot, out,
             )
-            for out in self._execution_step.step_outputs
+            for out in self._step_snap.outputs
         ]
 
     def resolve_key(self, _graphene_info):
-        return self._execution_step.key
+        return self._step_snap.key
 
     def resolve_solidHandleID(self, _graphene_info):
-        return str(self._execution_step.solid_handle)
+        return self._step_snap.solid_handle_id
 
     def resolve_kind(self, _graphene_info):
-        return self._execution_step.kind
+        return self._step_snap.kind

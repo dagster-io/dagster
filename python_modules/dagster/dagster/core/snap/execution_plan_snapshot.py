@@ -5,6 +5,38 @@ from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput,
 from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
 from dagster.serdes import whitelist_for_serdes
 
+from .pipeline_snapshot import PipelineIndex
+
+
+class ExecutionPlanIndex:
+    def __init__(self, execution_plan_snapshot, pipeline_index):
+        self.execution_plan_snapshot = check.inst_param(
+            execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
+        )
+        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+
+        self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
+
+        check.invariant(
+            execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
+        )
+
+    def get_step_by_key(self, key):
+        check.str_param(key, 'key')
+        return self._step_index[key]
+
+    @staticmethod
+    def from_plan_and_index(execution_plan, pipeline_index):
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        return ExecutionPlanIndex(
+            snapshot_from_execution_plan(
+                execution_plan=execution_plan,
+                pipeline_snapshot_id=pipeline_index.pipeline_snapshot_id,
+            ),
+            pipeline_index,
+        )
+
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshot(
@@ -50,6 +82,10 @@ class ExecutionStepInputSnap(
                 upstream_output_handles, 'upstream_output_handles', of_type=StepOutputHandle
             ),
         )
+
+    @property
+    def upstream_step_keys(self):
+        return [output_handle.step_key for output_handle in self.upstream_output_handles]
 
 
 @whitelist_for_serdes

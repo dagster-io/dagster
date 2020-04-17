@@ -6,6 +6,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.snap.execution_plan_snapshot import ExecutionPlanIndex
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .fetch_pipelines import get_pipeline_def_from_selector
@@ -99,9 +100,11 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
     get_validated_config(pipeline_def, environment_dict, mode)
+    execution_plan = create_execution_plan(pipeline_def, environment_dict, PipelineRun(mode=mode))
+    pipeline_index = pipeline_def.get_pipeline_index()
     return graphene_info.schema.type_named('ExecutionPlan')(
-        DauphinPipeline.from_pipeline_def(pipeline_def),
-        create_execution_plan(pipeline_def, environment_dict, pipeline_run=PipelineRun(mode=mode)),
+        DauphinPipeline(pipeline_index=pipeline_index, presets=pipeline_def.get_presets()),
+        ExecutionPlanIndex.from_plan_and_index(execution_plan, pipeline_index),
     )
 
 

@@ -25,6 +25,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
+from dagster.core.snap.execution_plan_snapshot import ExecutionPlanIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
@@ -105,11 +106,16 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     pipeline_ref = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
 
     execution_plan = None
+    execution_plan_index = None
     if isinstance(pipeline_ref, DauphinPipeline):
         pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
         if is_config_valid(pipeline_def, run.environment_dict, run.mode):
             execution_plan = create_execution_plan(
                 pipeline_def, run.environment_dict, pipeline_run=PipelineRun(mode=run.mode)
+            )
+
+            execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
+                execution_plan, pipeline_def.get_pipeline_index()
             )
 
     # pylint: disable=E1101
@@ -119,7 +125,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             run=graphene_info.schema.type_named('PipelineRun')(run),
             messages=[
-                from_event_record(graphene_info, event, pipeline_ref, execution_plan)
+                from_event_record(graphene_info, event, pipeline_ref, execution_plan_index)
                 for event in events
             ],
         )
@@ -198,9 +204,13 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
 
     dauphin_pipeline = DauphinPipeline.from_pipeline_def(pipeline_def)
 
+    execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
+        execution_plan, pipeline_def.get_pipeline_index()
+    )
+
     def to_graphql_event(event_record):
         return from_dagster_event_record(
-            graphene_info, event_record, dauphin_pipeline, execution_plan
+            graphene_info, event_record, dauphin_pipeline, execution_plan_index
         )
 
     return graphene_info.schema.type_named('ExecutePlanSuccess')(

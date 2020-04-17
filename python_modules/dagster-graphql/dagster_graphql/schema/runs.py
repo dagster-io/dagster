@@ -30,8 +30,8 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
+from dagster.core.snap.execution_plan_snapshot import ExecutionPlanIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
@@ -317,17 +317,24 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
         pipeline = get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
 
         if isinstance(pipeline, DauphinPipeline):
+            pipeline_def = get_pipeline_def_from_selector(
+                graphene_info, self._pipeline_run.selector
+            )
             execution_plan = create_execution_plan(
-                get_pipeline_def_from_selector(graphene_info, self._pipeline_run.selector),
+                pipeline_def,
                 self._pipeline_run.environment_dict,
                 pipeline_run=PipelineRun(mode=self._pipeline_run.mode),
+            )
+            execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
+                execution_plan, pipeline_def.get_pipeline_index()
             )
         else:
             pipeline = None
             execution_plan = None
+            execution_plan_index = None
 
         return [
-            from_event_record(graphene_info, log, pipeline, execution_plan)
+            from_event_record(graphene_info, log, pipeline, execution_plan_index)
             for log in graphene_info.context.instance.all_logs(self._pipeline_run.run_id)
         ]
 
@@ -714,7 +721,7 @@ class DauphinPipelineTag(dauphin.ObjectType):
         super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
-def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
+def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan_index):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
@@ -727,10 +734,10 @@ def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, exe
             graphene_info.schema.type_named('UnknownPipeline'),
         ),
     )
-    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
     dagster_event = event_record.dagster_event
-    basic_params = construct_basic_params(graphene_info, event_record, execution_plan)
+    basic_params = construct_basic_params(graphene_info, event_record, execution_plan_index)
     if dagster_event.event_type == DagsterEventType.STEP_START:
         return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
@@ -837,7 +844,7 @@ def from_compute_log_file(graphene_info, file):
     )
 
 
-def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan):
+def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.opt_inst_param(
         dauphin_pipeline,
@@ -847,33 +854,33 @@ def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_p
             graphene_info.schema.type_named('UnknownPipeline'),
         ),
     )
-    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
     if event_record.is_dagster_event:
         return from_dagster_event_record(
-            graphene_info, event_record, dauphin_pipeline, execution_plan
+            graphene_info, event_record, dauphin_pipeline, execution_plan_index
         )
     else:
         return graphene_info.schema.type_named('LogMessageEvent')(
-            **construct_basic_params(graphene_info, event_record, execution_plan)
+            **construct_basic_params(graphene_info, event_record, execution_plan_index)
         )
 
 
-def create_dauphin_step(graphene_info, event_record, execution_plan):
+def create_dauphin_step(graphene_info, event_record, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
     return (
         graphene_info.schema.type_named('ExecutionStep')(
-            execution_plan, execution_plan.get_step_by_key(event_record.step_key)
+            execution_plan_index, execution_plan_index.get_step_by_key(event_record.step_key),
         )
         if event_record.step_key
         else None
     )
 
 
-def construct_basic_params(graphene_info, event_record, execution_plan):
+def construct_basic_params(graphene_info, event_record, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
     return {
         'runId': event_record.run_id,
         'message': event_record.dagster_event.message
@@ -881,7 +888,7 @@ def construct_basic_params(graphene_info, event_record, execution_plan):
         else event_record.user_message,
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
-        'step': create_dauphin_step(graphene_info, event_record, execution_plan)
-        if execution_plan
+        'step': create_dauphin_step(graphene_info, event_record, execution_plan_index)
+        if execution_plan_index
         else None,
     }
