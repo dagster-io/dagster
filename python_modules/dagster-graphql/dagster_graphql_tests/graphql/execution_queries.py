@@ -224,6 +224,11 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
         }
         ... on PythonError {
             message
+            stack
+            cause {
+                message
+                stack
+            }
         }
         ... on PipelineRunNotFoundError {
             message
