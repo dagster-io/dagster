@@ -92,7 +92,7 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
         :py:class:`JsonMetadataEntryData`.
 
         Args:
-            data (str): The JSON data contained by this metadata entry.
+            data (Dict[str, Any]): The JSON data contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         '''
@@ -160,7 +160,7 @@ class JsonMetadataEntryData(namedtuple('_JsonMetadataEntryData', 'data')):
     '''Container class for JSON metadata entry data.
 
     Args:
-        data (str): The JSON data.
+        data (Dict[str, Any]): The JSON data.
     '''
 
     def __new__(cls, data):
