@@ -326,6 +326,6 @@ const ZoomSliderContainer = styled.div`
   bottom: 0;
   right: 0;
   width: 30px;
-  padding: 22px 8px;
+  padding: 10px 8px;
   background: rgba(245, 248, 250, 0.4);
 `;

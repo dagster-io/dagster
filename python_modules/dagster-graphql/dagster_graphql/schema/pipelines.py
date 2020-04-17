@@ -348,7 +348,7 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
     class Meta(object):
         name = 'PipelineSnapshot'
-        interaces = (DauphinIPipelineSnapshot,)
+        interfaces = (DauphinIPipelineSnapshot,)
 
     def get_pipeline_index(self):
         return self._pipeline_index

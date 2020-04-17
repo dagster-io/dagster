@@ -7,7 +7,7 @@ import { NonIdealState } from "@blueprintjs/core";
 import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
 import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
 import { PipelineNamesContext } from "./PipelineNamesContext";
-import PipelineExplorerRoot from "./PipelineExplorerRoot";
+import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
 import PythonErrorInfo from "./PythonErrorInfo";
 import { RootPipelinesQuery } from "./types/RootPipelinesQuery";
 import { RunRoot } from "./runs/RunRoot";

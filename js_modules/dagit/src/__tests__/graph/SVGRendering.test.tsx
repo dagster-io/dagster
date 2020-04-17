@@ -8,7 +8,7 @@ import fs from "fs";
 
 import { PipelineGraphContents } from "../../graph/PipelineGraph";
 import { getDagrePipelineLayout } from "../../graph/getFullSolidLayout";
-import { PipelineExplorerRootQuery_pipelineOrError_Pipeline } from "../../types/PipelineExplorerRootQuery";
+import { PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot } from "../../types/PipelineExplorerRootQuery";
 import { PipelineGraphSolidFragment } from "../../graph/types/PipelineGraphSolidFragment";
 import { MOCKS } from "./SVGMocks";
 
@@ -16,7 +16,7 @@ const snapshotsDir = path.join(__dirname, "__snapshots__");
 
 function readMock(mock: { filepath: string }) {
   const { data } = JSON.parse(fs.readFileSync(mock.filepath).toString());
-  return data.pipelineOrError as PipelineExplorerRootQuery_pipelineOrError_Pipeline;
+  return data.pipelineSnapshotOrError as PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot;
 }
 
 function svgForPipeline(

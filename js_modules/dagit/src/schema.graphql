@@ -825,7 +825,7 @@ type PipelineRunStepStats {
   expectationResults: [ExpectationResult!]!
 }
 
-type PipelineSnapshot {
+type PipelineSnapshot implements IPipelineSnapshot {
   name: String!
   description: String
   pipelineSnapshotId: String!

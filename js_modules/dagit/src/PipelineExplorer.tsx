@@ -3,7 +3,7 @@ import gql from "graphql-tag";
 import Color from "color";
 import styled from "styled-components/macro";
 import { History } from "history";
-import { Icon, Colors, InputGroup, Checkbox } from "@blueprintjs/core";
+import { Icon, Colors, InputGroup, Checkbox, Button } from "@blueprintjs/core";
 import { Route } from "react-router";
 import { Link } from "react-router-dom";
 import * as querystring from "query-string";
@@ -17,6 +17,7 @@ import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSol
 import { filterByQuery } from "./GraphQueryImpl";
 import { SolidJumpBar, PipelineJumpBar } from "./PipelineJumpComponents";
 import { GraphQueryInput } from "./GraphQueryInput";
+import { PipelineSelector, selectorToString } from "./PipelineSelectorUtils";
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -26,8 +27,7 @@ export type SolidNameOrPath = { name: string } | { path: string[] };
 
 interface PipelineExplorerProps {
   history: History;
-  path: string[];
-  visibleSolidsQuery: string;
+  selector: PipelineSelector;
   options: PipelineExplorerOptions;
   setOptions: (options: PipelineExplorerOptions) => void;
   pipeline: PipelineExplorerFragment;
@@ -47,7 +47,7 @@ export default class PipelineExplorer extends React.Component<
 > {
   static fragments = {
     PipelineExplorerFragment: gql`
-      fragment PipelineExplorerFragment on Pipeline {
+      fragment PipelineExplorerFragment on IPipelineSnapshot {
         name
         description
         ...SidebarTabbedContainerPipelineFragment
@@ -72,23 +72,23 @@ export default class PipelineExplorer extends React.Component<
     highlighted: ""
   };
 
-  handleQueryChange = (query: string) => {
-    const { history, pipeline, path } = this.props;
-    history.replace(`/pipeline/${pipeline.name}:${query}/${path.join("/")}`);
+  handleQueryChange = (solidsQuery: string) => {
+    const { history, selector } = this.props;
+    history.replace(
+      `/pipeline/${selectorToString({ ...selector, solidsQuery })}`
+    );
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
-    const { history, pipeline, path, visibleSolidsQuery } = this.props;
-    const next = [...path];
-    const retValue = fn(next);
+    const { history, selector } = this.props;
+    const path = [...selector.path];
+    const retValue = fn(path);
     if (retValue !== undefined) {
       throw new Error(
         "handleAdjustPath function is expected to mutate the array"
       );
     }
-    history.push(
-      `/pipeline/${pipeline.name}:${visibleSolidsQuery}/${next.join("/")}`
-    );
+    history.push(`/pipeline/${selectorToString({ ...selector, path })}`);
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -141,18 +141,11 @@ export default class PipelineExplorer extends React.Component<
   };
 
   public render() {
-    const {
-      path,
-      options,
-      history,
-      pipeline,
-      parentHandle,
-      visibleSolidsQuery
-    } = this.props;
+    const { selector, options, history, pipeline, parentHandle } = this.props;
     const { highlighted } = this.state;
 
     const solids = this.props.handles.map(h => h.solid);
-    const solidsQueryEnabled = !parentHandle;
+    const solidsQueryEnabled = !parentHandle && !selector.snapshotId;
     const explodeCompositesEnabled =
       !parentHandle &&
       (options.explodeComposites ||
@@ -161,7 +154,7 @@ export default class PipelineExplorer extends React.Component<
         ));
 
     const queryResultSolids = solidsQueryEnabled
-      ? filterByQuery(solids, visibleSolidsQuery)
+      ? filterByQuery(solids, selector.solidsQuery)
       : { all: solids, focus: [] };
 
     const highlightedSolids = queryResultSolids.all.filter(s =>
@@ -194,26 +187,31 @@ export default class PipelineExplorer extends React.Component<
               style={{ background: backgroundTranslucent }}
               ref={this.pathOverlayEl}
             >
-              <PipelineJumpBar
-                selectedPipelineName={pipeline.name}
-                onChange={name => history.push(`/pipeline/${name}:/`)}
-              />
+              {selector.snapshotId ? (
+                <Button>{selector.snapshotId}</Button>
+              ) : (
+                <PipelineJumpBar
+                  selectedPipelineName={pipeline.name}
+                  onChange={name => history.push(`/pipeline/${name}:/`)}
+                />
+              )}
               <Icon icon="chevron-right" />
-              {path.slice(0, path.length - 1).map((name, idx) => (
-                <React.Fragment key={idx}>
-                  <Link
-                    style={{ padding: 3 }}
-                    to={`/pipeline/${
-                      pipeline.name
-                    }:${visibleSolidsQuery}/${path
-                      .slice(0, idx + 1)
-                      .join("/")}`}
-                  >
-                    {name}
-                  </Link>
-                  <Icon icon="chevron-right" />
-                </React.Fragment>
-              ))}
+              {selector.path
+                .slice(0, selector.path.length - 1)
+                .map((name, idx) => (
+                  <React.Fragment key={idx}>
+                    <Link
+                      style={{ padding: 3 }}
+                      to={`/pipeline/${selectorToString({
+                        ...selector,
+                        path: selector.path.slice(0, idx + 1)
+                      })}`}
+                    >
+                      {name}
+                    </Link>
+                    <Icon icon="chevron-right" />
+                  </React.Fragment>
+                ))}
               <SolidJumpBar
                 solids={queryResultSolids.all}
                 selectedSolid={selectedHandle && selectedHandle.solid}
@@ -224,7 +222,7 @@ export default class PipelineExplorer extends React.Component<
               <PipelineGraphQueryInputContainer>
                 <GraphQueryInput
                   items={solids}
-                  value={visibleSolidsQuery}
+                  value={selector.solidsQuery}
                   placeholder="Type a Solid Subset"
                   onChange={this.handleQueryChange}
                 />
@@ -259,7 +257,7 @@ export default class PipelineExplorer extends React.Component<
               </OptionsOverlay>
             )}
             {queryResultSolids.all.length === 0 &&
-              !visibleSolidsQuery.length && <LargeDAGNotice />}
+              !selector.solidsQuery.length && <LargeDAGNotice />}
             <PipelineGraphContainer
               pipelineName={pipeline.name}
               backgroundColor={backgroundColor}
@@ -282,6 +280,7 @@ export default class PipelineExplorer extends React.Component<
               children={({ location }: { location: any }) => (
                 <SidebarTabbedContainer
                   pipeline={pipeline}
+                  selector={selector}
                   solidHandleID={selectedHandle && selectedHandle.handleID}
                   parentSolidHandleID={parentHandle && parentHandle.handleID}
                   getInvocations={this.props.getInvocations}
@@ -311,7 +310,7 @@ const RightInfoPanel = styled.div`
 
 const OptionsOverlay = styled.div`
   z-index: 2;
-  padding: 3px 15px;
+  padding: 5px 15px;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
@@ -403,7 +402,7 @@ const LargeDAGInstructionBox = styled.div`
 const PipelineGraphQueryInputContainer = styled.div`
   z-index: 2;
   position: absolute;
-  bottom: 20px;
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;

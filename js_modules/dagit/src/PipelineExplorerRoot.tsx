@@ -2,15 +2,18 @@ import * as React from "react";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { RouteComponentProps } from "react-router-dom";
-import { NonIdealState } from "@blueprintjs/core";
+import { NonIdealState, IconName, Colors } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import Loading from "./Loading";
 import PipelineExplorer, { PipelineExplorerOptions } from "./PipelineExplorer";
 import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
 import {
   PipelineExplorerRootQuery,
-  PipelineExplorerRootQueryVariables
+  PipelineExplorerRootQueryVariables,
+  PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
 } from "./types/PipelineExplorerRootQuery";
+import { selectorFromString, PipelineSelector } from "./PipelineSelectorUtils";
+import styled from "styled-components/macro";
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -116,91 +119,77 @@ function explodeCompositesInHandleGraph(
 
   return results;
 }
+export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
+  const selector = selectorFromString(props.match.params["0"]);
 
-const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = props => {
-  const [pipelineSelector, ...pathSolids] = props.match.params["0"].split("/");
-  const [pipelineName, query] = [...pipelineSelector.split(":"), ""];
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false
   });
 
-  const parentNames = pathSolids.slice(0, pathSolids.length - 1);
-  const selectedName = pathSolids[pathSolids.length - 1];
-
-  const queryResult = useQuery<
-    PipelineExplorerRootQuery,
-    PipelineExplorerRootQueryVariables
-  >(PIPELINE_EXPLORER_ROOT_QUERY, {
-    fetchPolicy: "cache-and-network",
-    partialRefetch: true,
-    variables: {
-      pipeline: pipelineName,
-      rootHandleID: parentNames.join("."),
-      requestScopeHandleID: options.explodeComposites
-        ? undefined
-        : parentNames.join(".")
-    }
-  });
+  const selectedName = selector.path[selector.path.length - 1];
 
   return (
-    <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
-      {({ pipelineOrError }) => {
-        switch (pipelineOrError.__typename) {
-          case "PipelineNotFoundError":
-            return (
-              <NonIdealState
-                icon={IconNames.FLOW_BRANCH}
-                title="Pipeline Not Found"
-                description={pipelineOrError.message}
-              />
-            );
-          case "InvalidSubsetError":
-          case "PythonError":
-            return <NonIdealState icon={IconNames.ERROR} title="Query Error" />;
-          default:
-            const pipeline = pipelineOrError;
-            const parentSolidHandle = pipelineOrError.solidHandle;
-            const displayedHandles = options.explodeComposites
-              ? explodeCompositesInHandleGraph(pipeline.solidHandles)
-              : pipeline.solidHandles;
-
-            return (
-              <PipelineExplorer
-                options={options}
-                setOptions={setOptions}
-                history={props.history}
-                path={pathSolids}
-                visibleSolidsQuery={query}
-                pipeline={pipelineOrError}
-                handles={displayedHandles}
-                parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
-                selectedHandle={displayedHandles.find(
-                  h => h.solid.name === selectedName
-                )}
-                getInvocations={definitionName =>
-                  displayedHandles
-                    .filter(s => s.solid.definition.name === definitionName)
-                    .map(s => ({ handleID: s.handleID }))
-                }
-              />
-            );
+    <ExplorerSnapshotResolver selector={selector} options={options}>
+      {result => {
+        if (result.__typename === "NonIdealState") {
+          return <NonIdealState {...result} />;
         }
+        const parentSolidHandle = result.solidHandle;
+        const displayedHandles = options.explodeComposites
+          ? explodeCompositesInHandleGraph(result.solidHandles)
+          : result.solidHandles;
+
+        return (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
+            {selector.snapshotId && (
+              <SnapshotNotice>
+                You are viewing a historical pipeline snapshot.
+              </SnapshotNotice>
+            )}
+            <PipelineExplorer
+              options={options}
+              setOptions={setOptions}
+              selector={selector}
+              history={props.history}
+              pipeline={result}
+              handles={displayedHandles}
+              parentHandle={parentSolidHandle ? parentSolidHandle : undefined}
+              selectedHandle={displayedHandles.find(
+                h => h.solid.name === selectedName
+              )}
+              getInvocations={definitionName =>
+                displayedHandles
+                  .filter(s => s.solid.definition.name === definitionName)
+                  .map(s => ({ handleID: s.handleID }))
+              }
+            />
+          </div>
+        );
       }}
-    </Loading>
+    </ExplorerSnapshotResolver>
   );
 };
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $pipeline: String!
+    $pipelineName: String
+    $snapshotId: String
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    pipelineOrError(params: { name: $pipeline }) {
-      ... on PipelineReference {
+    pipelineSnapshotOrError(
+      snapshotId: $snapshotId
+      activePipelineName: $pipelineName
+    ) {
+      ... on PipelineSnapshot {
         name
-      }
-      ... on Pipeline {
         ...PipelineExplorerFragment
 
         solidHandle(handleID: $rootHandleID) {
@@ -217,10 +206,88 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
+      ... on PipelineSnapshotNotFoundError {
+        message
+      }
     }
   }
   ${PipelineExplorer.fragments.PipelineExplorerFragment}
   ${PipelineExplorer.fragments.PipelineExplorerSolidHandleFragment}
 `;
 
-export default PipelineExplorerRoot;
+interface ResolverProps {
+  selector: PipelineSelector;
+  options: PipelineExplorerOptions;
+  children: (
+    result:
+      | {
+          __typename: "NonIdealState";
+          icon: IconName;
+          title: string;
+          description?: string;
+        }
+      | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot
+  ) => React.ReactNode;
+}
+
+const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
+  children,
+  selector,
+  options
+}) => {
+  const parentNames = selector.path.slice(0, selector.path.length - 1);
+
+  const queryResult = useQuery<
+    PipelineExplorerRootQuery,
+    PipelineExplorerRootQueryVariables
+  >(PIPELINE_EXPLORER_ROOT_QUERY, {
+    fetchPolicy: "cache-and-network",
+    partialRefetch: true,
+    variables: {
+      pipelineName: selector.snapshotId ? undefined : selector.pipelineName,
+      snapshotId: selector.snapshotId ? selector.snapshotId : undefined,
+      rootHandleID: parentNames.join("."),
+      requestScopeHandleID: options.explodeComposites
+        ? undefined
+        : parentNames.join(".")
+    }
+  });
+  return (
+    <Loading<PipelineExplorerRootQuery> queryResult={queryResult}>
+      {({ pipelineSnapshotOrError }) => {
+        switch (pipelineSnapshotOrError.__typename) {
+          case "PipelineSnapshotNotFoundError":
+            return children({
+              __typename: "NonIdealState",
+              title: "Pipeline Snapshot Not Found",
+              icon: IconNames.FLOW_BRANCH,
+              description: pipelineSnapshotOrError.message
+            });
+          case "PipelineNotFoundError":
+            return children({
+              __typename: "NonIdealState",
+              title: "Pipeline Not Found",
+              icon: IconNames.FLOW_BRANCH,
+              description: pipelineSnapshotOrError.message
+            });
+          case "PythonError":
+            return children({
+              __typename: "NonIdealState",
+              title: "Query Error",
+              icon: IconNames.ERROR
+            });
+          default:
+            return children(pipelineSnapshotOrError);
+        }
+      }}
+    </Loading>
+  );
+};
+
+const SnapshotNotice = styled.div`
+  background: linear-gradient(to bottom, ${Colors.GOLD5}, ${Colors.GOLD4});
+  border-bottom: 1px solid ${Colors.GOLD3};
+  text-align: center;
+  padding: 4px 10px;
+  user-select: none;
+`;

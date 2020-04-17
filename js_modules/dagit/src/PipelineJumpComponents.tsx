@@ -21,7 +21,7 @@ interface SolidJumpBarProps {
 export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
   static fragments = {
     SolidJumpBarFragment: gql`
-      fragment SolidJumpBarFragment on Pipeline {
+      fragment SolidJumpBarFragment on IPipelineSnapshot {
         solids {
           name
         }

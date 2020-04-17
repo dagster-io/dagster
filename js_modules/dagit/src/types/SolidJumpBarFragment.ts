@@ -13,6 +13,6 @@ export interface SolidJumpBarFragment_solids {
 }
 
 export interface SolidJumpBarFragment {
-  __typename: "Pipeline";
+  __typename: "Pipeline" | "PipelineSnapshot";
   solids: SolidJumpBarFragment_solids[];
 }

@@ -22,6 +22,7 @@ export interface RunTableRunFragment_pipeline_Pipeline_solids {
 export interface RunTableRunFragment_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
+  pipelineSnapshotId: string;
   solids: RunTableRunFragment_pipeline_Pipeline_solids[];
 }
 
@@ -67,6 +68,7 @@ export interface RunTableRunFragment {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineSnapshotId: string | null;
   pipeline: RunTableRunFragment_pipeline;
   stats: RunTableRunFragment_stats;
   tags: RunTableRunFragment_tags[];

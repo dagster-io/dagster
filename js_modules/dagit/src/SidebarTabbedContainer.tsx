@@ -9,11 +9,13 @@ import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedCon
 import { SidebarSolidContainer } from "./SidebarSolidContainer";
 import SidebarPipelineInfo from "./SidebarPipelineInfo";
 import { SolidNameOrPath } from "./PipelineExplorer";
+import { PipelineSelector } from "./PipelineSelectorUtils";
 
 interface ISidebarTabbedContainerProps {
   types?: string;
   typeExplorer?: string;
   pipeline: SidebarTabbedContainerPipelineFragment;
+  selector: PipelineSelector;
   solidHandleID?: string;
   parentSolidHandleID?: string;
   getInvocations?: (definitionName: string) => { handleID: string }[];
@@ -48,7 +50,7 @@ export default class SidebarTabbedContainer extends React.Component<
 > {
   static fragments = {
     SidebarTabbedContainerPipelineFragment: gql`
-      fragment SidebarTabbedContainerPipelineFragment on Pipeline {
+      fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {
         name
         ...SidebarPipelineInfoFragment
       }
@@ -62,6 +64,7 @@ export default class SidebarTabbedContainer extends React.Component<
       typeExplorer,
       types,
       pipeline,
+      selector,
       solidHandleID,
       getInvocations,
       parentSolidHandleID,
@@ -75,19 +78,16 @@ export default class SidebarTabbedContainer extends React.Component<
     if (typeExplorer) {
       activeTab = "types";
       content = (
-        <TypeExplorerContainer
-          pipelineName={pipeline.name}
-          typeName={typeExplorer}
-        />
+        <TypeExplorerContainer selector={selector} typeName={typeExplorer} />
       );
     } else if (types) {
       activeTab = "types";
-      content = <TypeListContainer pipelineName={pipeline.name} />;
+      content = <TypeListContainer selector={selector} />;
     } else if (solidHandleID) {
       content = (
         <SidebarSolidContainer
           key={solidHandleID}
-          pipelineName={pipeline.name}
+          selector={selector}
           handleID={solidHandleID}
           showingSubsolids={false}
           getInvocations={getInvocations}
@@ -99,7 +99,7 @@ export default class SidebarTabbedContainer extends React.Component<
       content = (
         <SidebarSolidContainer
           key={parentSolidHandleID}
-          pipelineName={pipeline.name}
+          selector={selector}
           handleID={parentSolidHandleID}
           showingSubsolids={true}
           getInvocations={getInvocations}

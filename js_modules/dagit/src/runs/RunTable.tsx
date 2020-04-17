@@ -3,13 +3,11 @@ import * as qs from "query-string";
 import gql from "graphql-tag";
 import {
   Button,
-  Colors,
   Icon,
   Menu,
   MenuItem,
   Popover,
   MenuDivider,
-  Tooltip,
   NonIdealState,
   Intent
 } from "@blueprintjs/core";
@@ -50,10 +48,6 @@ interface RunTableProps {
   onSetFilter: (search: TokenizingFieldValue[]) => void;
 }
 
-const TOOLTIP_MESSAGE_PIPELINE_MISSING =
-  `This pipeline is not present in the currently loaded repository, ` +
-  `so dagit can't browse the pipeline solids, but you can still view the logs.`;
-
 // Avoid fetching envYaml on load in Runs page. It is slow.
 const PipelineEnvironmentYamlQuery = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
@@ -76,6 +70,7 @@ export class RunTable extends React.Component<RunTableProps> {
         mode
         rootRunId
         parentRunId
+        pipelineSnapshotId
         pipeline {
           __typename
 
@@ -83,6 +78,7 @@ export class RunTable extends React.Component<RunTableProps> {
             name
           }
           ... on Pipeline {
+            pipelineSnapshotId
             solids {
               name
             }
@@ -216,6 +212,15 @@ const RunRow: React.FunctionComponent<{
     onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
   };
 
+  let pipelineLink = `/pipeline/${run.pipeline.name}@${run.pipelineSnapshotId}/`;
+  if (
+    run.pipeline.__typename === "Pipeline" &&
+    run.pipeline.pipelineSnapshotId === run.pipelineSnapshotId
+  ) {
+    // If the pipeline snapshot is still current, go to the live view not the snapshot.
+    pipelineLink = `/pipeline/${run.pipeline.name}/`;
+  }
+
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
@@ -228,19 +233,9 @@ const RunRow: React.FunctionComponent<{
         {details}
       </RowColumn>
       <RowColumn>
-        {run.pipeline.__typename === "Pipeline" ? (
-          <Link to={`/pipeline/${run.pipeline.name}/`}>
-            <Icon icon="diagram-tree" /> {run.pipeline.name}
-          </Link>
-        ) : (
-          <>
-            <Icon icon="diagram-tree" color={Colors.GRAY3} />
-            &nbsp;
-            <Tooltip content={TOOLTIP_MESSAGE_PIPELINE_MISSING}>
-              {run.pipeline.name}
-            </Tooltip>
-          </>
-        )}
+        <Link to={pipelineLink}>
+          <Icon icon="diagram-tree" /> {run.pipeline.name}
+        </Link>
       </RowColumn>
       <RowColumn>
         <div>

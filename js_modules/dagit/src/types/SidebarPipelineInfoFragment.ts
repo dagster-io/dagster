@@ -710,7 +710,7 @@ export interface SidebarPipelineInfoFragment_modes {
 }
 
 export interface SidebarPipelineInfoFragment {
-  __typename: "Pipeline";
+  __typename: "Pipeline" | "PipelineSnapshot";
   name: string;
   description: string | null;
   modes: SidebarPipelineInfoFragment_modes[];

@@ -82,8 +82,8 @@
       <title>result: Nothing
 
         Used By:
-        check_users_and_groups_one_fails_one_succeeds:start
-        check_admins_both_succeed:start</title>
+        check_admins_both_succeed:start
+        check_users_and_groups_one_fails_one_succeeds:start</title>
       <rect x="1570" y="569" width="105.75999999999999" height="36" stroke="#979797" stroke-width="1" fill="#137CBD"></rect>
       <ellipse cx="1585" cy="587" rx="7" ry="7" fill="rgba(0, 0, 0, 0.3)" stroke="white" stroke-width="1.5"></ellipse>
       <rect x="1599" y="573.5" width="68.75999999999999" height="27" rx="4" ry="4" fill="#d6ecff" stroke="#2491eb" stroke-width="1"></rect><text fill="#222" x="1603" y="580" style="font:14px &quot;Source Code Pro&quot;, monospace;pointer-events:none" width="60.76" height="14" dominant-baseline="hanging">Nothing</text>

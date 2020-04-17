@@ -22,6 +22,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline {
   __typename: "Pipeline";
   name: string;
+  pipelineSnapshotId: string;
   solids: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline_Pipeline_solids[];
 }
 
@@ -67,6 +68,7 @@ export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   mode: string;
   rootRunId: string | null;
   parentRunId: string | null;
+  pipelineSnapshotId: string | null;
   pipeline: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_pipeline;
   stats: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats;
   tags: RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_tags[];

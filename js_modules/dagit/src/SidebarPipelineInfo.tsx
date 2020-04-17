@@ -27,7 +27,7 @@ export default class SidebarPipelineInfo extends React.Component<
 > {
   static fragments = {
     SidebarPipelineInfoFragment: gql`
-      fragment SidebarPipelineInfoFragment on Pipeline {
+      fragment SidebarPipelineInfoFragment on IPipelineSnapshot {
         name
         description
         modes {
