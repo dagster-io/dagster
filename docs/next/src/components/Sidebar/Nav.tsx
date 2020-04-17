@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import CommunityLinks from 'components/CommunityLinks';
 import { flatten, TreeLink } from 'utils/treeOfContents/flatten';
 import { useTreeOfContents } from 'hooks/useTreeOfContents';
+import { VersionedLink } from 'components/VersionedComponents';
 
 export type TreeElement = {
   name: string;
@@ -20,27 +21,29 @@ const MainItem: React.FC<MainItemProps> = ({ name, path }) => {
   const router = useRouter();
   const selected = router.pathname.includes(path);
   return (
-    <a
-      href={selected ? '#' : path}
-      className={cx(
-        'group flex justify-between items-center px-2 py-2 text-sm font-medium leading-5 text-gray-900 rounded-md',
-        { 'font-bold bg-gray-200': selected },
-        { 'hover:font-bold': !selected },
-        { 'focus:outline-none': !selected },
-        { 'focus:bg-gray-200': !selected },
-        'transition ease-in-out duration-150',
-      )}
-    >
-      <span className="truncate">{name}</span>
-      <div
+    <VersionedLink href={path}>
+      <a
         className={cx(
-          'w-2 h-2 rounded-full transition ease-in-out duration-600',
-          {
-            'bg-blue-300': selected,
-          },
+          'group flex justify-between items-center px-2 py-2 text-sm font-medium leading-5 text-gray-900 rounded-md',
+          { 'font-bold bg-gray-200': selected },
+          { 'hover:font-bold': !selected },
+          { 'focus:outline-none': !selected },
+          { 'focus:bg-gray-200': !selected },
+          'transition ease-in-out duration-150',
         )}
-      ></div>
-    </a>
+      >
+        {/* {icon} */}
+        <span className="truncate">{name}</span>
+        <div
+          className={cx(
+            'w-2 h-2 rounded-full transition ease-in-out duration-600',
+            {
+              'bg-blue-300': selected,
+            },
+          )}
+        ></div>
+      </a>
+    </VersionedLink>
   );
 };
 
@@ -57,6 +60,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
   const selectedSectionChildren = (treeOfContents as Record<string, any>)[
     selectedSection?.name || ''
   ]?.children;
+
   return (
     <nav className={className}>
       {isMobile && <CommunityLinks className="mb-5" />}
@@ -78,21 +82,24 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
           </h3>
           <div className="mt-1">
             {selectedSectionChildren.map((c: TreeLink) => {
-              const subSelected = router.asPath === c.path;
+              const subSelected =
+                router.asPath.startsWith(c.path) &&
+                router.asPath.length - c.path.length < 2;
+              console.log(router.asPath, c.path);
               return (
-                <a
-                  key={`${c.path}-${c.name}`}
-                  href={c.path}
-                  className={cx(
-                    `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none focus:bg-gray-100 transition ease-in-out duration-150`,
-                    {
-                      'text-blue-800 bg-blue-200': subSelected,
-                      'hover:bg-gray-200': !subSelected,
-                    },
-                  )}
-                >
-                  <span className="truncate">{c.name}</span>
-                </a>
+                <VersionedLink key={`${c.path}-${c.name}`} href={c.path}>
+                  <a
+                    className={cx(
+                      `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
+                      {
+                        'text-blue-800 bg-blue-200': subSelected,
+                        'hover:bg-gray-200': !subSelected,
+                      },
+                    )}
+                  >
+                    <span className="truncate">{c.name}</span>
+                  </a>
+                </VersionedLink>
               );
             })}
           </div>

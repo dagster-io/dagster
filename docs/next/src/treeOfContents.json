@@ -81,7 +81,94 @@
   },
   "API Docs": {
     "name": "API Docs",
-    "path": "/docs/apidocs"
+    "path": "/docs/apidocs",
+    "children": [
+      {
+        "name": "Solids",
+        "path": "/docs/apidocs/solids"
+      },
+      {
+        "name": "Pipelines",
+        "path": "/docs/apidocs/pipeline"
+      },
+      {
+        "name": "Config",
+        "path": "/docs/apidocs/config"
+      },
+      {
+        "name": "Types",
+        "path": "/docs/apidocs/types"
+      },
+      {
+        "name": "Dagster CLI",
+        "path": "/docs/apidocs/cli"
+      },
+      {
+        "name": "Schedules",
+        "path": "/docs/apidocs/schedules"
+      },
+      {
+        "name": "Partitions",
+        "path": "/docs/apidocs/partitions"
+      },
+
+      {
+        "name": "Errors",
+        "path": "/docs/apidocs/errors"
+      },
+      {
+        "name": "Execution",
+        "path": "/docs/apidocs/execution"
+      },
+      {
+        "name": "Utilities",
+        "path": "/docs/apidocs/utilities"
+      },
+      {
+        "name": "Internals",
+        "path": "/docs/apidocs/internals"
+      },
+      {
+        "name": "dagstermill",
+        "path": "/docs/apidocs/libraries/dagstermill"
+      },
+      {
+        "name": "dagster_airflow",
+        "path": "/docs/apidocs/libraries/dagster_airflow"
+      },
+      {
+        "name": "dagster_aws",
+        "path": "/docs/apidocs/libraries/dagster_aws"
+      },
+      {
+        "name": "dagster_bash",
+        "path": "/docs/apidocs/libraries/dagster_bash"
+      },
+      {
+        "name": "dagster_celery",
+        "path": "/docs/apidocs/libraries/dagster_celery"
+      },
+      {
+        "name": "dagster_cron",
+        "path": "/docs/apidocs/libraries/dagster_cron"
+      },
+      {
+        "name": "dagster_dask",
+        "path": "/docs/apidocs/libraries/dagster_dask"
+      },
+      {
+        "name": "dagster_gcp",
+        "path": "/docs/apidocs/libraries/dagster_gcp"
+      },
+      {
+        "name": "dagster_k8s",
+        "path": "/docs/apidocs/libraries/dagster_k8s"
+      },
+      {
+        "name": "dagster_postgres",
+        "path": "/docs/apidocs/libraries/dagster_postgres"
+      }
+    ]
   },
   "Deploying": {
     "name": "Deploying",

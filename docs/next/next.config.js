@@ -66,6 +66,14 @@ const withMDX = require('@next/mdx')({
 
 module.exports = withMDX({
   pageExtensions: ['mdx', 'jsx', 'js', 'ts', 'tsx'],
+  assetPrefix: process.env.BASE_PATH || '',
+  publicRuntimeConfig: {
+    basePath: process.env.BASE_PATH || '',
+    version:
+      process.env.VERSION ||
+      (process.env.BASE_PATH && process.env.BASE_PATH.substr(1)) ||
+      '',
+  },
   webpack: (config) => {
     config.plugins.push(
       new ExtraWatchPlugin({

@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 
 import data from 'data/searchindex.json';
 import treeOfContents from 'treeOfContents.json';
-import { TreeLink } from 'utils/treeOfContents/flatten';
 
 const createTreeOfContents = () => {
   const API_DOCS_PAGES = [];
@@ -17,7 +16,9 @@ const createTreeOfContents = () => {
       });
     }
   }
-  (treeOfContents['API Docs'] as TreeLink).children = API_DOCS_PAGES;
+
+  // Don't mutate state for now - hardcoded
+  // (treeOfContents['API Docs'] as TreeLink).children = API_DOCS_PAGES;
   return treeOfContents;
 };
 

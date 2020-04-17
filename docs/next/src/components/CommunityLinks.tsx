@@ -1,5 +1,6 @@
 import React from 'react';
 import cx from 'classnames';
+import { VersionedImage } from './VersionedComponents';
 
 type CommunityLinksProps = {
   className?: string;
@@ -19,18 +20,24 @@ const Icon: React.FC<{ href: string; src: string }> = ({ href, src }) => {
 const CommunityLinks: React.FC<CommunityLinksProps> = ({ className }) => {
   return (
     <div className={cx('flex flex-row nowrap justify-around', className)}>
-      <Icon
-        href="https://github.com/dagster-io/dagster"
-        src="/assets/images/logos/github-icon.svg"
-      />
-      <Icon
-        href="https://dagster-slackin.herokuapp.com/"
-        src="/assets/images/logos/slack-icon.svg"
-      />
-      <Icon
-        href="https://stackoverflow.com/questions/tagged/dagster"
-        src="/assets/images/logos/stack-overflow-icon.svg"
-      />
+      <a href="https://github.com/dagster-io/dagster">
+        <VersionedImage
+          className="h-8"
+          src="/assets/images/logos/github-icon.svg"
+        />
+      </a>
+      <a href="https://dagster-slackin.herokuapp.com/">
+        <VersionedImage
+          className="h-8"
+          src="/assets/images/logos/slack-icon.svg"
+        />
+      </a>
+      <a href="https://stackoverflow.com/questions/tagged/dagster">
+        <VersionedImage
+          className="h-8"
+          src="/assets/images/logos/stack-overflow-icon.svg"
+        />
+      </a>
     </div>
   );
 };

@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import data from 'data/searchindex.json';
+import { VersionedLink } from './VersionedComponents';
 
 const PyObject: React.FunctionComponent<{
   module: string;
@@ -15,11 +15,11 @@ const PyObject: React.FunctionComponent<{
   // that link to objects that don't exist anymore.
   if (!moduleObjects || !objectData) {
     return (
-      <Link href="#">
+      <VersionedLink href="#">
         <a>
           <code className="text-red-800">Invalid: {displayText || object}</code>
         </a>
-      </Link>
+      </VersionedLink>
     );
   }
 
@@ -29,11 +29,11 @@ const PyObject: React.FunctionComponent<{
   const doc = data.docnames[fileIndex];
   const link = doc.replace('sections/api/apidocs/', '/docs/apidocs/');
   return (
-    <Link href={link + '#' + module + '.' + object}>
+    <VersionedLink href={link + '#' + module + '.' + object}>
       <a>
         <code>{displayText || object}</code>
       </a>
-    </Link>
+    </VersionedLink>
   );
 };
 

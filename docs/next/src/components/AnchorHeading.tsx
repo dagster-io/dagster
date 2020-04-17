@@ -51,7 +51,7 @@ const AnchorHeading: React.FC<AnchorHeadingProps> = ({
     <Tag id={localHref.replace('#', '')} {...props}>
       {children}
       {localHref ? (
-        <a className="headerlink" href={localHref} title={hrefTitle}>
+        <a href={localHref} className="headerlink" title={hrefTitle}>
           ¶
         </a>
       ) : null}

@@ -148,3 +148,31 @@ buildnext:
 	cp -r _build/json/_modules next/src/data
 	yarn --cwd next
 	yarn --cwd next process
+
+root_build:
+	make build_next_default version=0.7.9
+	make build_next_version version=0.7.9
+
+build_next_master:
+	yarn --cwd next
+	rm -rf next/out
+	BASE_PATH=/master yarn --cwd next build
+	BASE_PATH=/master yarn --cwd next export
+	mkdir -p out/master
+	cp -a next/out/. out/master
+
+build_next_version:
+	yarn --cwd next
+	rm -rf next/out
+	BASE_PATH=/$(version) yarn --cwd next build
+	BASE_PATH=/$(version) yarn --cwd next export
+	mkdir -p out/$(version)
+	cp -a next/out/. out/$(version)
+
+build_next_default:
+	yarn --cwd next
+	VERSION=$(version) rm -rf next/out
+	VERSION=$(version) yarn --cwd next build
+	yarn --cwd next export
+	mkdir -p out
+	cp -a next/out/. out
