@@ -1,47 +1,39 @@
 import Head from 'next/head';
 import Header from './Header';
-import Sidebar from './Sidebar';
-import { useRouter } from 'next/router';
+import SidebarDesktop from './Sidebar/SidebarDesktop';
+import SidebarMobile from './Sidebar/SidebarMobile';
 import { useState } from 'react';
 import cx from 'classnames';
-
-const layoutStyle = {
-  margin: 20,
-  padding: 20,
-};
+import { useRouter } from 'next/router';
 
 const Layout: React.FunctionComponent = (props) => {
-  const router = useRouter();
   const [isNavigationVisible, setIsNavigationVisible] = useState(false);
+  const router = useRouter();
   return (
     <>
       <Head>
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </Head>
-      <div style={layoutStyle}>
-        <Header
-          onMobileToggleNavigationClick={() => {
-            setIsNavigationVisible(!isNavigationVisible);
-          }}
+
+      <Header
+        onMobileToggleNavigationClick={() => {
+          setIsNavigationVisible(!isNavigationVisible);
+        }}
+      />
+
+      <div className="h-screen flex overflow-hidden bg-white">
+        <SidebarMobile
+          isNavigationVisible={isNavigationVisible}
+          setIsNavigationVisible={setIsNavigationVisible}
         />
-        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-          <div className="flex mt-16 flex-col md:flex-row">
+        <SidebarDesktop />
+        <div className="flex flex-col w-0 flex-1 overflow-hidden">
+          <main
+            className="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
+            tabIndex={0}
+          >
             <div
-              className={cx(
-                {
-                  hidden: !isNavigationVisible,
-                },
-                'pb-16',
-                'md:pb-0',
-                'md:visible',
-                'md:block',
-                'md:w-1/4',
-              )}
-            >
-              <Sidebar />
-            </div>
-            <div
-              className={cx('w-full', 'md:w-3/4', 'md:pl-16', 'md:pr-4', {
+              className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8', {
                 markdown:
                   router.pathname.indexOf('docs') > 0 ||
                   router.pathname.indexOf('_modules') > 0,
@@ -49,7 +41,7 @@ const Layout: React.FunctionComponent = (props) => {
             >
               {props.children}
             </div>
-          </div>
+          </main>
         </div>
       </div>
     </>

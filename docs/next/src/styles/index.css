@@ -4,10 +4,6 @@
 /* purgecss end ignore */
 @tailwind utilities;
 
-body {
-  @apply bg-gray-100;
-}
-
 .py-05 {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;

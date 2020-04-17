@@ -8,6 +8,7 @@ import {
 import useClickAway from 'react-use/lib/useClickAway';
 
 import { useState, useRef } from 'react';
+import CommunityLinks from './CommunityLinks';
 
 const searchClient = algoliasearch(
   // TODO: Move to next environment variables: https://nextjs.org/docs/api-reference/next.config.js/environment-variables
@@ -16,26 +17,6 @@ const searchClient = algoliasearch(
   'CTO1CV9T4R',
   '991c27897aafec73e6eff85912eed810',
 );
-
-// const linkStyle = {
-//   marginRight: 15
-// };
-
-const SearchBox: React.FunctionComponent<{
-  refine: (...args: any[]) => any;
-  currentRefinement: string;
-  setFocus: any;
-}> = ({ currentRefinement, refine, setFocus }) => {
-  return (
-    <input
-      onFocus={() => setFocus(true)}
-      className="w-full bg-gray-200 rounded py-2 px-4 "
-      placeholder="Search ..."
-      value={currentRefinement}
-      onChange={(event) => refine(event.currentTarget.value)}
-    />
-  );
-};
 
 const Hit: React.FunctionComponent<{ hit: any }> = ({ hit }) => {
   const colors: {
@@ -108,9 +89,9 @@ const Search = () => {
   });
 
   const CustomSearchBox = connectSearchBox(
-    // @ts-ignore:
+    // @ts-ignore
     ({ setFocus, currentRefinement, refine }) => (
-      <SearchBox
+      <SearchBoxV2
         currentRefinement={currentRefinement}
         refine={refine}
         setFocus={setFocus}
@@ -126,13 +107,17 @@ const Search = () => {
       searchClient={searchClient}
       createURL={(searchState) => console.log(searchState.query)}
     >
-      <div className="relative" ref={ref}>
+      <div
+        className="relative flex-1 flex items-center justify-center px-2 lg:ml-6 lg:justify-end"
+        ref={ref}
+      >
         <CustomSearchBox
           // @ts-ignore:
           setFocus={setFocus}
-        />{' '}
+        />
+        &nbsp;
         {focus && (
-          <div className={`top-12 w-full absolute`}>
+          <div className="top-12 fixed right-0 max-w-full md:right-auto md:absolute md:w-auto z-10">
             <CustomHits />
           </div>
         )}
@@ -141,43 +126,132 @@ const Search = () => {
   );
 };
 
-type HeaderProps = {
-  onMobileToggleNavigationClick: (() => void) | undefined;
-};
-
-const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => (
-  <div className="bg-white border-b border-gray-200 fixed top-0 inset-x-0 z-10 h-16 ">
-    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 h-full ">
-      <div className="flex items-center h-full">
-        <div className="pl-4 w-1/4 font-bold flex items-center">
-          <img
-            src="https://images.squarespace-cdn.com/content/v1/5cb5f5d490f904864e26772f/1555429309832-T9W4RY8LN0YOG2WSKHG7/ke17ZwdGBToddI8pDm48kAVes4PdedRJbHzbyrt9K4RZw-zPPgdn4jUwVcJE1ZvWEtT5uBSRWt4vQZAgTJucoTqqXjS3CfNDSuuf31e0tVHE-hDbU1-lN9X0kRdwCihrUiHQfJsM_k09tUzDxHZfTWQ6l2WM7tn7mqHTODzkmeM/44878798-b6e17e00-ac5c-11e8-8d25-2e47e5a53418.png?format=750w"
-            width={26}
-            className="mr-2"
-          />
-          <div className="uppercase">Dagster</div>
-        </div>
-        <div className="w-3/4 pl-16 pr-4">
-          <Search />
-        </div>
-        <div className="pr-4 md:hidden">
-          <button
-            className="bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white py-2 px-4 border border-blue-500 hover:border-transparent rounded"
-            onClick={onMobileToggleNavigationClick}
+const SearchBoxV2: React.FC<{
+  refine: (...args: any[]) => any;
+  currentRefinement: string;
+  setFocus: any;
+}> = ({ currentRefinement, refine, setFocus }) => {
+  return (
+    <div className="max-w-lg w-full lg:max-w-xs">
+      <label htmlFor="search" className="sr-only">
+        Search
+      </label>
+      <div className="relative">
+        <div className="hidden md:flex absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg
+            className="h-5 w-5 text-gray-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
           >
-            <svg
-              className="fill-current w-4 h-4"
-              viewBox="0 0 100 80"
-            >
-              <rect width="100" height="20"></rect>
-              <rect y="30" width="100" height="20"></rect>
-              <rect y="60" width="100" height="20"></rect>
-            </svg>
-          </button>
+            <path
+              fillRule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              clipRule="evenodd"
+            />
+          </svg>
         </div>
+        <input
+          id="search"
+          className="block w-full pl-2 md:pl-10 pr-2 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-300 focus:shadow-outline-blue sm:text-sm transition duration-150 ease-in-out"
+          placeholder="Search"
+          type="search"
+          onFocus={() => setFocus(true)}
+          value={currentRefinement}
+          onChange={(event) => refine(event.currentTarget.value)}
+        />
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+type HeaderProps = {
+  onMobileToggleNavigationClick: () => void;
+};
+
+const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
+  return (
+    <nav className="bg-white border-b border-gray-200 shadow">
+      <div className="mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex px-2 lg:px-0">
+            <div className="flex-shrink-0 flex items-center">
+              <img
+                className="block mt-2 lg:hidden h-8 w-auto"
+                src="/assets/logos/small.png"
+                alt=""
+              />
+              <img
+                className="hidden mt-2 lg:block h-8 w-auto"
+                src="/assets/logos/large.png"
+                alt=""
+              />
+            </div>
+            <div className="ml-6 flex">
+              <a
+                href="#"
+                className="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out"
+              >
+                Docs
+              </a>
+              <a
+                href="#"
+                className="ml-2 lg:ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out"
+              >
+                Blog
+              </a>
+              <a
+                href="#"
+                className="ml-2 lg:ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out"
+              >
+                Community
+              </a>
+            </div>
+          </div>
+          <Search />
+          <div className="flex items-center lg:hidden">
+            <button
+              onClick={() => onMobileToggleNavigationClick()}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out"
+            >
+              {/* <!-- Icon when menu is closed. -->
+          <!-- Menu open: "hidden", Menu closed: "block" --> */}
+              <svg
+                className="block h-6 w-6"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              {/* <!-- Icon when menu is open. -->
+          <!-- Menu open: "block", Menu closed: "hidden" --> */}
+              <svg
+                className="hidden h-6 w-6"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+          <div className="hidden lg:ml-4 lg:flex lg:items-center">
+            <CommunityLinks className="w-40" />
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
 
 export default Header;
