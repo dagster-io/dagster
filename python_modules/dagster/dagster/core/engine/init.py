@@ -26,10 +26,12 @@ class InitExecutorContext(
         mode_def (ModeDefinition): The mode in which the pipeline is to be executed.
         executor_def (ExecutorDefinition): The definition of the executor currently being
             constructed.
-        run_config (RunConfig): Configuration for this pipeline run.
+        pipeline_run (PipelineRun): Configuration for this pipeline run.
         environment_config (EnvironmentConfig): The parsed environment configuration for this
             pipeline run.
         executor_config (dict): The parsed config passed to the executor.
+        system_storage_def (SystemStorageDefinition): The system storage definition.
+        instance (DagsterInstance): The current instance.
     '''
 
     def __new__(
