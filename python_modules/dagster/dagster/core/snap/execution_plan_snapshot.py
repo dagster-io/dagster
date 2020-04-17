@@ -1,0 +1,124 @@
+from collections import namedtuple
+
+from dagster import check
+from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput, StepOutputHandle
+from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
+from dagster.serdes import whitelist_for_serdes
+
+
+@whitelist_for_serdes
+class ExecutionPlanSnapshot(
+    namedtuple('_ExecutionPlanSnapshot', 'steps artifacts_persisted pipeline_snapshot_id')
+):
+    def __new__(cls, steps, artifacts_persisted, pipeline_snapshot_id):
+        return super(ExecutionPlanSnapshot, cls).__new__(
+            cls,
+            steps=check.list_param(steps, 'steps', of_type=ExecutionStepSnap),
+            artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
+            pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+        )
+
+
+@whitelist_for_serdes
+class ExecutionStepSnap(
+    namedtuple('_ExecutionStepSnap', 'key inputs outputs solid_handle_id kind metadata_items')
+):
+    def __new__(cls, key, inputs, outputs, solid_handle_id, kind, metadata_items):
+        return super(ExecutionStepSnap, cls).__new__(
+            cls,
+            key=check.str_param(key, 'key'),
+            inputs=check.list_param(inputs, 'inputs', ExecutionStepInputSnap),
+            outputs=check.list_param(outputs, 'outputs', ExecutionStepOutputSnap),
+            solid_handle_id=check.str_param(solid_handle_id, 'solid_handle_id'),
+            kind=check.inst_param(kind, 'kind', StepKind),
+            metadata_items=check.list_param(
+                metadata_items, 'metadata_items', ExecutionPlanMetadataItemSnap
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ExecutionStepInputSnap(
+    namedtuple('_ExecutionStepInputSnap', 'name dagster_type_key upstream_output_handles')
+):
+    def __new__(cls, name, dagster_type_key, upstream_output_handles):
+        return super(ExecutionStepInputSnap, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.str_param(dagster_type_key, 'dagster_type_key'),
+            check.list_param(
+                upstream_output_handles, 'upstream_output_handles', of_type=StepOutputHandle
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ExecutionStepOutputSnap(namedtuple('_ExecutionStepOutputSnap', 'name dagster_type_key')):
+    def __new__(cls, name, dagster_type_key):
+        return super(ExecutionStepOutputSnap, cls).__new__(
+            cls,
+            check.str_param(name, 'name'),
+            check.str_param(dagster_type_key, 'dagster_type_key'),
+        )
+
+
+@whitelist_for_serdes
+class ExecutionPlanMetadataItemSnap(namedtuple('_ExecutionPlanMetadataItemSnap', 'key value')):
+    def __new__(cls, key, value):
+        return super(ExecutionPlanMetadataItemSnap, cls).__new__(
+            cls, check.str_param(key, 'key'), check.str_param(value, 'value'),
+        )
+
+
+def _snapshot_from_step_input(step_input):
+    check.inst_param(step_input, 'step_input', StepInput)
+    return ExecutionStepInputSnap(
+        name=step_input.name,
+        dagster_type_key=step_input.dagster_type.key,
+        upstream_output_handles=step_input.source_handles,
+    )
+
+
+def _snapshot_from_step_output(step_output):
+    check.inst_param(step_output, 'step_output', StepOutput)
+    return ExecutionStepOutputSnap(
+        name=step_output.name, dagster_type_key=step_output.dagster_type.key
+    )
+
+
+def _snapshot_from_execution_step(execution_step):
+    check.inst_param(execution_step, 'execution_step', ExecutionStep)
+    return ExecutionStepSnap(
+        key=execution_step.key,
+        inputs=sorted(
+            list(map(_snapshot_from_step_input, execution_step.step_inputs)), key=lambda si: si.name
+        ),
+        outputs=sorted(
+            list(map(_snapshot_from_step_output, execution_step.step_outputs)),
+            key=lambda so: so.name,
+        ),
+        solid_handle_id=execution_step.solid_handle.to_string(),
+        kind=execution_step.kind,
+        metadata_items=sorted(
+            [
+                ExecutionPlanMetadataItemSnap(key=key, value=value)
+                for key, value in execution_step.tags.items()
+            ],
+            key=lambda md: md.key,
+        )
+        if execution_step.tags
+        else [],
+    )
+
+
+def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+
+    return ExecutionPlanSnapshot(
+        steps=sorted(
+            list(map(_snapshot_from_execution_step, execution_plan.steps)), key=lambda es: es.key
+        ),
+        artifacts_persisted=execution_plan.artifacts_persisted,
+        pipeline_snapshot_id=pipeline_snapshot_id,
+    )

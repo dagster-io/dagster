@@ -115,6 +115,7 @@ class StepSuccessData(namedtuple('_StepSuccessData', 'duration_ms')):
         )
 
 
+@whitelist_for_serdes
 class StepKind(Enum):
     COMPUTE = 'COMPUTE'
 
