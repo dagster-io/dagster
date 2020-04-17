@@ -200,14 +200,13 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
                 />
               );
             }
-
             const runs = pipelineRunsOrError.results;
             const displayed = runs.slice(0, PAGE_SIZE);
             const hasPrevPage = !!cursor;
             const hasNextPage = runs.length === PAGE_SIZE + 1;
             return (
               <>
-                <RunTable runs={displayed} />
+                <RunTable runs={displayed} onSetFilter={setSearch} />
                 <div style={{ textAlign: "center" }}>
                   <Button
                     style={{

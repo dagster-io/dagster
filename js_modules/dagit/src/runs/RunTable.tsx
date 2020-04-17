@@ -43,9 +43,11 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import { useMutation, useLazyQuery } from "react-apollo";
 import { RUNS_ROOT_QUERY, RunsQueryVariablesContext } from "./RunsRoot";
 import PythonErrorInfo from "../PythonErrorInfo";
+import { TokenizingFieldValue } from "../TokenizingField";
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
+  onSetFilter: (search: TokenizingFieldValue[]) => void;
 }
 
 const TOOLTIP_MESSAGE_PIPELINE_MISSING =
@@ -131,16 +133,21 @@ export class RunTable extends React.Component<RunTableProps> {
           <LegendColumn style={{ maxWidth: 50 }}></LegendColumn>
         </Legend>
         {this.props.runs.map(run => (
-          <RunRow run={run} key={run.runId} />
+          <RunRow
+            run={run}
+            key={run.runId}
+            onSetFilter={this.props.onSetFilter}
+          />
         ))}
       </div>
     );
   }
 }
 
-const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
-  run
-}) => {
+const RunRow: React.FunctionComponent<{
+  run: RunTableRunFragment;
+  onSetFilter: (search: TokenizingFieldValue[]) => void;
+}> = ({ run, onSetFilter }) => {
   let details;
   let time;
   if (run.stats.__typename === "PipelineRunStatsSnapshot") {
@@ -205,6 +212,10 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
     );
   }
 
+  const onTagClick = (tag: RunTableRunFragment_tags) => {
+    onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
+  };
+
   return (
     <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
       <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
@@ -242,7 +253,7 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
                 : `${run.stepKeysToExecute.length} Steps`}
             </div>
           )}
-          <RunTags tags={run.tags} />
+          <RunTags tags={run.tags} onClick={onTagClick} />
         </div>
       </RowColumn>
       <RowColumn style={{ flex: 1.8, borderRight: 0 }}>{time}</RowColumn>
@@ -255,7 +266,8 @@ const RunRow: React.FunctionComponent<{ run: RunTableRunFragment }> = ({
 
 const RunTags: React.FunctionComponent<{
   tags: RunTableRunFragment_tags[];
-}> = ({ tags }) => {
+  onClick?: (tag: { key: string; value: string }) => void;
+}> = ({ tags, onClick }) => {
   const [open, setOpen] = React.useState(false);
 
   if (!tags.length) {
@@ -283,7 +295,7 @@ const RunTags: React.FunctionComponent<{
         }}
       >
         {tags.map((tag, idx) => (
-          <RunTag tag={tag} key={idx} />
+          <RunTag tag={tag} key={idx} onClick={onClick} />
         ))}
         <div
           style={{

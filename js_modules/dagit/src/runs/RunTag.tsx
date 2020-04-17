@@ -4,11 +4,20 @@ import styled from "styled-components/macro";
 export const DAGSTER_TAG_NAMESPACE = "dagster/";
 
 interface IRunTagProps {
-  key: string;
-  value: string;
+  tag: {
+    key: string;
+    value: string;
+  };
+  onClick?: (tag: { key: string; value: string }) => void;
 }
 
-export const RunTag = ({ tag }: { tag: IRunTagProps }) => {
+export const RunTag = ({ tag, onClick }: IRunTagProps) => {
+  const onTagClick = onClick
+    ? () => {
+        onClick(tag);
+      }
+    : undefined;
+
   if (tag.key.startsWith(DAGSTER_TAG_NAMESPACE)) {
     const tagKey = tag.key.substr(DAGSTER_TAG_NAMESPACE.length);
     return (
@@ -18,7 +27,7 @@ export const RunTag = ({ tag }: { tag: IRunTagProps }) => {
         targetTagName="div"
         position={Position.LEFT}
       >
-        <TagElement>
+        <TagElement onClick={onTagClick}>
           <span
             style={{
               padding: "2px 5px",
@@ -39,12 +48,13 @@ export const RunTag = ({ tag }: { tag: IRunTagProps }) => {
       </Tooltip>
     );
   }
+
   return (
-    <TagElement>
+    <TagElement onClick={onTagClick}>
       <span
         style={{
           padding: "2px 5px",
-          // borderRight: "1px solid #999",
+          borderRight: "1px solid #999",
           backgroundColor: "#5C7080"
         }}
       >
@@ -64,4 +74,5 @@ const TagElement = styled(Tag)`
     display: inline-flex;
   }
   overflow: hidden;
+  ${({ onClick }) => (onClick ? `cursor: pointer;` : "")}
 `;
