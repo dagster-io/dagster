@@ -9,6 +9,7 @@ from dagster.core.definitions.environment_schema import create_environment_schem
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import InstanceCreateRunArgs
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils.error import SerializableErrorInfo
@@ -94,9 +95,13 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         # Otherwise we know we are creating a new run, and we can
         # use the new machinery that persists a pipeline snapshot
         # with the run.
+
         run = instance.create_run_with_snapshot(
             InstanceCreateRunArgs(
                 pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+                execution_plan_snapshot=snapshot_from_execution_plan(
+                    execution_plan, pipeline_def.get_pipeline_snapshot_id()
+                ),
                 run_id=execution_params.execution_metadata.run_id
                 if execution_params.execution_metadata.run_id
                 else make_new_run_id(),

@@ -71,13 +71,15 @@ class _EventListenerLogHandler(logging.Handler):
 class InstanceCreateRunArgs(
     namedtuple(
         '_InstanceCreateRunArgs',
-        'pipeline_snapshot run_id environment_dict mode selector '
-        'step_keys_to_execute status tags root_run_id parent_run_id',
+        'pipeline_snapshot execution_plan_snapshot run_id environment_dict '
+        'mode selector step_keys_to_execute status tags root_run_id '
+        'parent_run_id',
     ),
 ):
     def __new__(
         cls,
         pipeline_snapshot,
+        execution_plan_snapshot,
         run_id,
         environment_dict,
         mode,
@@ -89,12 +91,16 @@ class InstanceCreateRunArgs(
         parent_run_id,
     ):
 
+        from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
         from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
         return super(InstanceCreateRunArgs, cls).__new__(
             cls,
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            ),
+            execution_plan_snapshot=check.inst_param(
+                execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
             ),
             run_id=check.str_param(run_id, 'run_id'),
             environment_dict=check.opt_dict_param(

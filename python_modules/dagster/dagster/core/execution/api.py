@@ -11,6 +11,7 @@ from dagster.core.execution.plan.execute import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance, InstanceCreateRunArgs
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import telemetry_wrapper
@@ -122,12 +123,23 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run)
 
 def execute_run_iterator(pipeline, pipeline_run, instance):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
-    instance = check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     execution_plan = create_execution_plan(
         pipeline, environment_dict=pipeline_run.environment_dict, pipeline_run=pipeline_run
     )
+
+    return _execute_run_iterator_with_plan(pipeline, pipeline_run, instance, execution_plan)
+
+
+def _execute_run_iterator_with_plan(pipeline, pipeline_run, instance, execution_plan):
+    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     initialization_manager = pipeline_initialization_manager(
         pipeline, pipeline_run.environment_dict, pipeline_run, instance, execution_plan,
@@ -215,14 +227,23 @@ def _check_execute_pipeline_args(
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
+    fake_pipeline_run_to_pass_to_create_run = check_pipeline_run(
+        pipeline_run_from_run_config(run_config), pipeline
+    )
+
+    execution_plan = create_execution_plan(
+        pipeline, environment_dict, fake_pipeline_run_to_pass_to_create_run,
+    )
+
     pipeline_run = _create_run(
         instance,
         pipeline,
-        check_pipeline_run(pipeline_run_from_run_config(run_config), pipeline),
+        fake_pipeline_run_to_pass_to_create_run,
         environment_dict,
+        execution_plan,
     )
 
-    return pipeline, environment_dict, instance, pipeline_run
+    return pipeline, environment_dict, instance, pipeline_run, execution_plan
 
 
 def execute_pipeline_iterator(
@@ -267,7 +288,13 @@ def execute_pipeline_iterator(
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
-    pipeline, environment_dict, instance, pipeline_run = _check_execute_pipeline_args(
+    (
+        pipeline,
+        environment_dict,
+        instance,
+        pipeline_run,
+        execution_plan,
+    ) = _check_execute_pipeline_args(
         'execute_pipeline_iterator',
         pipeline=pipeline,
         environment_dict=environment_dict,
@@ -278,7 +305,7 @@ def execute_pipeline_iterator(
         instance=instance,
     )
 
-    return execute_run_iterator(pipeline, pipeline_run, instance)
+    return _execute_run_iterator_with_plan(pipeline, pipeline_run, instance, execution_plan)
 
 
 @telemetry_wrapper
@@ -328,7 +355,13 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
-    pipeline, environment_dict, instance, pipeline_run = _check_execute_pipeline_args(
+    (
+        pipeline,
+        environment_dict,
+        instance,
+        pipeline_run,
+        execution_plan,
+    ) = _check_execute_pipeline_args(
         'execute_pipeline',
         pipeline=pipeline,
         environment_dict=environment_dict,
@@ -338,8 +371,6 @@ def execute_pipeline(
         run_config=run_config,
         instance=instance,
     )
-
-    execution_plan = create_execution_plan(pipeline, environment_dict, pipeline_run)
 
     initialization_manager = pipeline_initialization_manager(
         pipeline,
@@ -440,10 +471,14 @@ def step_output_event_filter(pipe_iterator):
             yield step_event
 
 
-def _create_run(instance, pipeline_def, run_config, environment_dict):
+def _create_run(instance, pipeline_def, run_config, environment_dict, execution_plan):
+
     return instance.create_run_with_snapshot(
         InstanceCreateRunArgs(
             pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan, pipeline_def.get_pipeline_snapshot_id()
+            ),
             run_id=run_config.run_id,
             environment_dict=environment_dict,
             mode=run_config.mode,
