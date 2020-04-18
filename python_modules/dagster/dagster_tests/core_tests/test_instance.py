@@ -2,7 +2,12 @@ import pytest
 
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterRunConflict
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
+from dagster.core.snap.execution_plan_snapshot import (
+    create_execution_plan_snapshot_id,
+    snapshot_from_execution_plan,
+)
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun
 
@@ -65,3 +70,30 @@ def test_create_pipeline_snapshot():
     assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
         noop_pipeline.get_pipeline_snapshot()
     )
+
+
+def test_create_execution_plan_snapshot():
+    @solid
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    instance = DagsterInstance.local_temp()
+
+    execution_plan = create_execution_plan(noop_pipeline)
+
+    ep_snapshot = snapshot_from_execution_plan(
+        execution_plan, noop_pipeline.get_pipeline_snapshot_id()
+    )
+    ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
+
+    result = execute_pipeline(noop_pipeline, instance=instance)
+    assert result.success
+
+    run = instance.get_run_by_id(result.run_id)
+
+    assert run.execution_plan_snapshot_id == ep_snapshot_id
+    assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)

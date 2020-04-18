@@ -57,7 +57,7 @@ class PipelineRun(
         (
             'pipeline_name run_id environment_dict mode selector '
             'step_keys_to_execute status tags root_run_id parent_run_id '
-            'pipeline_snapshot_id '
+            'pipeline_snapshot_id execution_plan_snapshot_id'
         ),
     ),
     IRunConfig,
@@ -74,6 +74,7 @@ class PipelineRun(
     #   a record that has previous_run_id set but neither of the new fields, i.e., when
     #   deserializing an old record; the old field will then be dropped when serialized back to
     #   storage
+    # * added execution_plan_snapshot_id
     def __new__(
         cls,
         pipeline_name=None,
@@ -87,6 +88,7 @@ class PipelineRun(
         root_run_id=None,
         parent_run_id=None,
         pipeline_snapshot_id=None,
+        execution_plan_snapshot_id=None,
         ## GRAVEYARD BELOW
         # see https://github.com/dagster-io/dagster/issues/2372 for explanation
         previous_run_id=None,
@@ -135,6 +137,9 @@ class PipelineRun(
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+            execution_plan_snapshot_id=check.opt_str_param(
+                execution_plan_snapshot_id, 'execution_plan_snapshot_id'
+            ),
         )
 
     def with_status(self, status):

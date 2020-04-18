@@ -449,21 +449,32 @@ class DagsterInstance:
     def create_run_with_snapshot(self, create_run_args):
         check.inst_param(create_run_args, 'create_run_args', InstanceCreateRunArgs)
 
+        from dagster.core.snap.execution_plan_snapshot import create_execution_plan_snapshot_id
         from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 
-        snapshot_id = create_pipeline_snapshot_id(create_run_args.pipeline_snapshot)
+        pipeline_snapshot_id = create_pipeline_snapshot_id(create_run_args.pipeline_snapshot)
 
-        if not self._run_storage.has_pipeline_snapshot(snapshot_id):
-            returned_snapshot_id = self._run_storage.add_pipeline_snapshot(
+        if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
+            returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
                 create_run_args.pipeline_snapshot
             )
 
-            check.invariant(snapshot_id == returned_snapshot_id)
+            check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
+
+        ep_snapshot_id = create_execution_plan_snapshot_id(create_run_args.execution_plan_snapshot)
+
+        if not self._run_storage.has_execution_plan_snapshot(ep_snapshot_id):
+            returned_ep_snapshot_id = self._run_storage.add_execution_plan_snapshot(
+                create_run_args.execution_plan_snapshot
+            )
+
+            check.invariant(ep_snapshot_id == returned_ep_snapshot_id)
 
         return self.create_run(
             PipelineRun(
                 pipeline_name=create_run_args.pipeline_snapshot.name,
-                pipeline_snapshot_id=snapshot_id,
+                pipeline_snapshot_id=pipeline_snapshot_id,
+                execution_plan_snapshot_id=ep_snapshot_id,
                 run_id=create_run_args.run_id,
                 environment_dict=create_run_args.environment_dict,
                 mode=create_run_args.mode,
