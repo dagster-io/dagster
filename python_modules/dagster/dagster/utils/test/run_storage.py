@@ -518,3 +518,24 @@ class TestRunStorage:
 
         with pytest.raises(DagsterSnapshotDoesNotExist):
             storage.add_run(run_with_missing_snapshot)
+
+    def test_add_get_execution_snapshot(self, storage):
+        from dagster.core.execution.api import create_execution_plan
+        from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+
+        pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+        execution_plan = create_execution_plan(pipeline_def)
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, pipeline_def.get_pipeline_snapshot_id()
+        )
+
+        snapshot_id = storage.add_execution_plan_snapshot(ep_snapshot)
+        fetched_ep_snapshot = storage.get_execution_plan_snapshot(snapshot_id)
+        assert fetched_ep_snapshot
+        assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
+        assert storage.has_execution_plan_snapshot(snapshot_id)
+        assert not storage.has_execution_plan_snapshot('nope')
+
+        storage.wipe()
+
+        assert not storage.has_execution_plan_snapshot(snapshot_id)

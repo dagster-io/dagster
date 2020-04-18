@@ -3,6 +3,10 @@ from collections import OrderedDict, defaultdict
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    create_execution_plan_snapshot_id,
+)
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import frozendict
 
@@ -19,6 +23,7 @@ class InMemoryRunStorage(RunStorage):
         self._runs = OrderedDict()
         self._run_tags = defaultdict(dict)
         self._pipeline_snapshots = OrderedDict()
+        self._ep_snapshots = OrderedDict()
 
     def add_run(self, pipeline_run):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
@@ -137,6 +142,20 @@ class InMemoryRunStorage(RunStorage):
     def get_pipeline_snapshot(self, pipeline_snapshot_id):
         check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
         return self._pipeline_snapshots[pipeline_snapshot_id]
+
+    def has_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        return execution_plan_snapshot_id in self._ep_snapshots
+
+    def add_execution_plan_snapshot(self, execution_plan_snapshot):
+        check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
+        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        self._ep_snapshots[execution_plan_snapshot_id] = execution_plan_snapshot
+        return execution_plan_snapshot_id
+
+    def get_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        return self._ep_snapshots[execution_plan_snapshot_id]
 
     def wipe(self):
         self._init_storage()

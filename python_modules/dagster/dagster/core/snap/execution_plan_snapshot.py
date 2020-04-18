@@ -6,6 +6,12 @@ from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
 from dagster.serdes import whitelist_for_serdes
 
 from .pipeline_snapshot import PipelineIndex
+from .utils import create_snapshot_id
+
+
+def create_execution_plan_snapshot_id(execution_plan_snapshot):
+    check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
+    return create_snapshot_id(execution_plan_snapshot)
 
 
 class ExecutionPlanIndex:

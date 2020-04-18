@@ -1,4 +1,3 @@
-import hashlib
 from collections import namedtuple
 
 from dagster import Field, Permissive, Selector, Shape, check
@@ -13,7 +12,7 @@ from dagster.config.config_type import (
 )
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED
 from dagster.core.definitions import PipelineDefinition
-from dagster.serdes import deserialize_value, serialize_dagster_namedtuple, whitelist_for_serdes
+from dagster.serdes import deserialize_value, whitelist_for_serdes
 
 from .config_types import (
     ConfigEnumValueSnap,
@@ -35,6 +34,7 @@ from .solid import (
     SolidDefinitionsSnapshot,
     build_solid_definitions_snapshot,
 )
+from .utils import create_snapshot_id
 
 
 class PipelineIndex:
@@ -97,10 +97,8 @@ class PipelineIndex:
 
 
 def create_pipeline_snapshot_id(snapshot):
-    json_rep = serialize_dagster_namedtuple(snapshot)
-    m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
-    m.update(json_rep.encode())
-    return m.hexdigest()
+    check.inst_param(snapshot, 'snapshot', PipelineSnapshot)
+    return create_snapshot_id(snapshot)
 
 
 @whitelist_for_serdes

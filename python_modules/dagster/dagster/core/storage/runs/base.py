@@ -130,6 +130,44 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''
 
     @abstractmethod
+    def has_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        '''Check to see if storage contains an execution plan snapshot.
+
+        Args:
+            execution_plan_snapshot_id (str): The id of the execution plan.
+
+        Returns:
+            bool
+        '''
+
+    @abstractmethod
+    def add_execution_plan_snapshot(self, execution_plan_snapshot):
+        '''Add an execution plan snapshot to the run store.
+
+        Execution plan snapshots are content-addressable, meaning
+        that the ID for a snapshot is a hash based on the
+        body of the snapshot. This function returns
+        that snapshot ID.
+
+        Args:
+            execution_plan_snapshot (ExecutionPlanSnapshot)
+
+        Return:
+            str: The execution_plan_snapshot_id
+        '''
+
+    @abstractmethod
+    def get_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        '''Fetch a snapshot by ID
+
+        Args:
+            execution_plan_snapshot_id (str)
+
+        Returns:
+            ExecutionPlanSnapshot
+        '''
+
+    @abstractmethod
     def wipe(self):
         '''Clears the run storage.'''
 

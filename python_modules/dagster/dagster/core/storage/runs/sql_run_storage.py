@@ -11,6 +11,10 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    create_execution_plan_snapshot_id,
+)
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
@@ -22,6 +26,7 @@ from .schema import RunTagsTable, RunsTable, SnapshotsTable
 
 class SnapshotType(Enum):
     PIPELINE = 'PIPELINE'
+    EXECUTION_PLAN = 'EXECUTION_PLAN'
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
@@ -250,6 +255,23 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def get_pipeline_snapshot(self, pipeline_snapshot_id):
         check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
         return self._get_snapshot(pipeline_snapshot_id)
+
+    def has_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
+
+    def add_execution_plan_snapshot(self, execution_plan_snapshot):
+        check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
+        execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        return self._add_snapshot(
+            snapshot_id=execution_plan_snapshot_id,
+            snapshot_obj=execution_plan_snapshot,
+            snapshot_type=SnapshotType.EXECUTION_PLAN,
+        )
+
+    def get_execution_plan_snapshot(self, execution_plan_snapshot_id):
+        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        return self._get_snapshot(execution_plan_snapshot_id)
 
     def _add_snapshot(self, snapshot_id, snapshot_obj, snapshot_type):
         check.str_param(snapshot_id, 'snapshot_id')
