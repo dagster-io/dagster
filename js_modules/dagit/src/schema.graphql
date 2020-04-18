@@ -231,7 +231,6 @@ input ExecutionParams {
 
 type ExecutionPlan {
   steps: [ExecutionStep!]!
-  pipeline: PipelineReference!
   artifactsPersisted: Boolean!
 }
 

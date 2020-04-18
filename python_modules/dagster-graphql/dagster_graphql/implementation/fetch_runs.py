@@ -103,7 +103,6 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     execution_plan = create_execution_plan(pipeline_def, environment_dict, PipelineRun(mode=mode))
     pipeline_index = pipeline_def.get_pipeline_index()
     return graphene_info.schema.type_named('ExecutionPlan')(
-        DauphinPipeline(pipeline_index=pipeline_index, presets=pipeline_def.get_presets()),
         ExecutionPlanIndex.from_plan_and_index(execution_plan, pipeline_index),
     )
 

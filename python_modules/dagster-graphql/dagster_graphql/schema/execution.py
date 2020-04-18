@@ -18,12 +18,10 @@ class DauphinExecutionPlan(dauphin.ObjectType):
         name = 'ExecutionPlan'
 
     steps = dauphin.non_null_list('ExecutionStep')
-    # unused?
-    pipeline = dauphin.NonNull('PipelineReference')
     artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
-    def __init__(self, pipeline, execution_plan_index):
-        super(DauphinExecutionPlan, self).__init__(pipeline=pipeline)
+    def __init__(self, execution_plan_index):
+        super(DauphinExecutionPlan, self).__init__()
         self._execution_plan_index = check.inst_param(
             execution_plan_index, execution_plan_index, ExecutionPlanIndex
         )

@@ -21,7 +21,6 @@ query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: Ex
   executionPlan(environmentConfigData: $environmentConfigData, pipeline: $pipeline, mode: $mode) {
     __typename
     ... on ExecutionPlan {
-      pipeline { name }
       steps {
         key
         solidHandleID
