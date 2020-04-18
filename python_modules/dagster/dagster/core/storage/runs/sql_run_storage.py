@@ -3,6 +3,7 @@ import zlib
 from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
+from enum import Enum
 
 import six
 import sqlalchemy as db
@@ -17,6 +18,10 @@ from dagster.seven import JSONDecodeError
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
 from .schema import RunTagsTable, RunsTable, SnapshotsTable
+
+
+class SnapshotType(Enum):
+    PIPELINE = 'PIPELINE'
 
 
 class SqlRunStorage(RunStorage):  # pylint: disable=no-init
@@ -236,22 +241,33 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def add_pipeline_snapshot(self, pipeline_snapshot):
         check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        return self._add_snapshot(
+            snapshot_id=create_pipeline_snapshot_id(pipeline_snapshot),
+            snapshot_obj=pipeline_snapshot,
+            snapshot_type=SnapshotType.PIPELINE,
+        )
+
+    def get_pipeline_snapshot(self, pipeline_snapshot_id):
+        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        return self._get_snapshot(pipeline_snapshot_id)
+
+    def _add_snapshot(self, snapshot_id, snapshot_obj, snapshot_type):
+        check.str_param(snapshot_id, 'snapshot_id')
+        check.not_none_param(snapshot_obj, 'snapshot_obj')
+        check.inst_param(snapshot_type, 'snapshot_type', SnapshotType)
+
         with self.connect() as conn:
-            snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
             snapshot_insert = SnapshotsTable.insert().values(  # pylint: disable=no-value-for-parameter
                 snapshot_id=snapshot_id,
-                snapshot_body=zlib.compress(
-                    serialize_dagster_namedtuple(pipeline_snapshot).encode()
-                ),
-                snapshot_type='PIPELINE',
+                snapshot_body=zlib.compress(serialize_dagster_namedtuple(snapshot_obj).encode()),
+                snapshot_type=snapshot_type.value,
             )
             conn.execute(snapshot_insert)
             return snapshot_id
 
-    def get_pipeline_snapshot(self, pipeline_snapshot_id):
-        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+    def _get_snapshot(self, snapshot_id):
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
-            SnapshotsTable.c.snapshot_id == pipeline_snapshot_id
+            SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
         row = self.fetchone(query)
