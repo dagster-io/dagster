@@ -5,10 +5,14 @@ import SidebarMobile from './Sidebar/SidebarMobile';
 import { useState } from 'react';
 import cx from 'classnames';
 import { useRouter } from 'next/router';
+import OnThisPage from './OnThisPage';
+import { useAnchorHeadings } from 'hooks/AnchorHeadings';
 
 const Layout: React.FunctionComponent = (props) => {
   const [isNavigationVisible, setIsNavigationVisible] = useState(false);
   const router = useRouter();
+  const { anchors } = useAnchorHeadings();
+  const anchorHeadings = Object.values(anchors);
   return (
     <>
       <Head>
@@ -43,6 +47,7 @@ const Layout: React.FunctionComponent = (props) => {
             </div>
           </main>
         </div>
+        <OnThisPage anchors={anchorHeadings} />
       </div>
     </>
   );

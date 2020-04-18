@@ -91,7 +91,7 @@ const Search = () => {
   const CustomSearchBox = connectSearchBox(
     // @ts-ignore
     ({ setFocus, currentRefinement, refine }) => (
-      <SearchBoxV2
+      <SearchBox
         currentRefinement={currentRefinement}
         refine={refine}
         setFocus={setFocus}
@@ -126,7 +126,7 @@ const Search = () => {
   );
 };
 
-const SearchBoxV2: React.FC<{
+const SearchBox: React.FC<{
   refine: (...args: any[]) => any;
   currentRefinement: string;
   setFocus: any;
@@ -178,12 +178,12 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
               <img
                 className="block mt-2 lg:hidden h-8 w-auto"
                 src="/assets/logos/small.png"
-                alt=""
+                alt="Logo"
               />
               <img
                 className="hidden mt-2 lg:block h-8 w-auto"
                 src="/assets/logos/large.png"
-                alt=""
+                alt="Logo"
               />
             </div>
             <div className="ml-6 flex">

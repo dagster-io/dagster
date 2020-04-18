@@ -5,7 +5,10 @@ type IconProps = {
   className?: string;
 };
 
-export const Home: React.FC<IconProps> = ({ className, size = 24 }) => (
+const defaultIconClassName =
+  'mr-3 h-6 w-6 text-gray-500 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150';
+
+export const Home: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -15,7 +18,7 @@ export const Home: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const Book: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const Book: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -25,7 +28,7 @@ export const Book: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const Code: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const Code: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -35,7 +38,7 @@ export const Code: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const ArrowDown: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const ArrowDown: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -45,7 +48,7 @@ export const ArrowDown: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const Community: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const Community: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -55,7 +58,7 @@ export const Community: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const Cog: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const Cog: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}
@@ -65,7 +68,7 @@ export const Cog: React.FC<IconProps> = ({ className, size = 24 }) => (
   </svg>
 );
 
-export const File: React.FC<IconProps> = ({ className, size = 24 }) => (
+export const File: React.FC<IconProps> = ({ className = defaultIconClassName, size = 24 }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox={`0 0 ${size} ${size}`}

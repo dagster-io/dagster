@@ -1,9 +1,17 @@
 import { AppProps } from 'next/app';
+import { useRouter } from 'next/router';
+import { MDXProvider } from '@mdx-js/react';
+
 import Layout from 'components/Layout';
 import Code from 'components/Code';
-import 'styles/index.css';
+import {
+  AnchorHeadingsProvider,
+  useAnchorHeadingsActions,
+} from 'hooks/AnchorHeadings';
 
-import { MDXProvider } from '@mdx-js/react';
+import 'styles/index.css';
+import { useCallback, useEffect } from 'react';
+
 const components = {
   pre: (props: any) => <div {...props} />,
   code: (props: any) => {
@@ -12,11 +20,31 @@ const components = {
 };
 
 function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const { clearAnchorHeadings } = useAnchorHeadingsActions();
+
+  const onClearAnchorHeadings = useCallback(() => {
+    try {
+      clearAnchorHeadings();
+    } catch (error) {
+      console.log('Attempting to clean up not initialized context.');
+    }
+  }, [clearAnchorHeadings]);
+
+  useEffect(() => {
+    router.events.on('routeChangeStart', onClearAnchorHeadings);
+    return () => {
+      router.events.off('routeChangeStart', onClearAnchorHeadings);
+    };
+  }, [router]);
+
   return (
     <MDXProvider components={components}>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <AnchorHeadingsProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </AnchorHeadingsProvider>
     </MDXProvider>
   );
 }

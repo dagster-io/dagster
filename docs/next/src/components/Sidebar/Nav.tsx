@@ -53,19 +53,6 @@ const MainItem: React.FC<MainItemProps> = ({ name, path, icon }) => {
       )}
     >
       {icon}
-      {/* <svg
-        className="mr-3 h-6 w-6 text-gray-500 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150"
-        stroke="currentColor"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10M9 21h6"
-        />
-      </svg> */}
       <span className="truncate">{name}</span>
     </a>
   );
@@ -75,9 +62,6 @@ type NavProps = {
   className: string;
   isMobile?: boolean;
 };
-
-const IconClassName =
-  'mr-3 h-6 w-6 text-gray-500 group-hover:text-gray-500 group-focus:text-gray-600 transition ease-in-out duration-150';
 
 const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
   const router = useRouter();
@@ -91,32 +75,32 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
         <MainItem
           name={'Install'}
           path="/docs/install"
-          icon={<ArrowDown className={IconClassName} />}
+          icon={<ArrowDown />}
         />
         <MainItem
           name={'Tutorial'}
           path="/docs/tutorial"
-          icon={<File className={IconClassName} />}
+          icon={<File />}
         />
         <MainItem
           name={'Learn'}
           path="/docs/learn"
-          icon={<Book className={IconClassName} />}
+          icon={<Book />}
         />
         <MainItem
           name={'API Docs'}
           path="/docs/apidocs"
-          icon={<Code className={IconClassName} />}
+          icon={<Code />}
         />
         <MainItem
           name={'Deploying'}
           path="/docs/deploying"
-          icon={<Cog className={IconClassName} />}
+          icon={<Cog />}
         />
         <MainItem
           name={'Community'}
           path="/docs/community"
-          icon={<Community className={IconClassName} />}
+          icon={<Community />}
         />
       </div>
 
