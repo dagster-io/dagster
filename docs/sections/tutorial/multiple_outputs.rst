@@ -1,7 +1,7 @@
 Multiple and conditional outputs
 --------------------------------
 
-Solids can have arbitrarily many outputs, and downstream solids can depends on any number of these.
+Solids can have arbitrarily many outputs, and downstream solids can depend on any number of these.
 
 What's more, outputs don't necessarily have to be yielded by solids, which lets us write pipelines
 where some solids conditionally execute based on the presence of an upstream output.
