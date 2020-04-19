@@ -151,8 +151,9 @@ def launch_background_worker(subprocess_args, env):
 @click.option(
     '--loglevel', '-l', type=click.STRING, default='INFO', help='Log level for the worker.'
 )
+@click.argument('additional_args', nargs=-1, type=click.UNPROCESSED)
 def worker_start_command(
-    name=None, config_yaml=None, background=None, queue=None, includes=None, loglevel=None,
+    name, config_yaml, background, queue, includes, loglevel, additional_args,
 ):
     loglevel_args = ['--loglevel', loglevel]
 
@@ -174,6 +175,7 @@ def worker_start_command(
         + queue_args
         + includes_args
         + ['-n', get_worker_name(name)]
+        + list(additional_args)
     )
 
     env = os.environ.copy()

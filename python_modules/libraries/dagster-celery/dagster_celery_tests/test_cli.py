@@ -124,6 +124,18 @@ def test_start_worker_too_many_queues():
 
 
 @skip_ci
+def test_start_worker_addargs():
+    args = ['--', '-uid', '42']
+
+    with cleanup_worker('dagster_test_worker'):
+        start_worker(
+            'dagster_test_worker', args=args,
+        )
+
+        # Omitting to incur a heavy test dependency on psutil
+
+
+@skip_ci
 def test_start_worker_config_from_empty_yaml():
     args = ['-y', file_relative_path(__file__, 'empty.yaml')]
     with cleanup_worker('dagster_test_worker', args=args):
