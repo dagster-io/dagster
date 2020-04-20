@@ -6,7 +6,7 @@ import six
 from dagster_aws.s3 import S3ComputeLogManager
 from moto import mock_s3
 
-from dagster import DagsterEventType, RunConfig, execute_pipeline, pipeline, seven, solid
+from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
@@ -39,11 +39,9 @@ def test_compute_log_manager(s3_bucket):
     s3.create_bucket(Bucket=s3_bucket)
 
     with seven.TemporaryDirectory() as temp_dir:
-        run = RunConfig()
-
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
-        manager = S3ComputeLogManager(bucket=s3_bucket, prefix=run.run_id, local_dir=temp_dir)
+        manager = S3ComputeLogManager(bucket=s3_bucket, prefix='my_prefix', local_dir=temp_dir)
         instance = DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -51,7 +49,7 @@ def test_compute_log_manager(s3_bucket):
             event_storage=event_store,
             compute_log_manager=manager,
         )
-        result = execute_pipeline(simple, run_config=run, instance=instance)
+        result = execute_pipeline(simple, instance=instance)
         compute_steps = [
             event.step_key
             for event in result.step_event_list
@@ -70,14 +68,16 @@ def test_compute_log_manager(s3_bucket):
         # Check S3 directly
         s3_object = s3.get_object(
             Bucket=s3_bucket,
-            Key='{run_id}/storage/{run_id}/compute_logs/easy.compute.err'.format(run_id=run.run_id),
+            Key='{prefix}/storage/{run_id}/compute_logs/easy.compute.err'.format(
+                prefix='my_prefix', run_id=result.run_id
+            ),
         )
         stderr_s3 = six.ensure_str(s3_object['Body'].read())
         for expected in EXPECTED_LOGS:
             assert expected in stderr_s3
 
         # Check download behavior by deleting locally cached logs
-        compute_logs_dir = os.path.join(temp_dir, run.run_id, 'compute_logs')
+        compute_logs_dir = os.path.join(temp_dir, result.run_id, 'compute_logs')
         for filename in os.listdir(compute_logs_dir):
             os.unlink(os.path.join(compute_logs_dir, filename))
 

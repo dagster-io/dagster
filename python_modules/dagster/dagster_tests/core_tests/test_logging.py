@@ -5,13 +5,12 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import ModeDefinition, RunConfig, check, execute_solid, pipeline, resource, solid
+from dagster import ModeDefinition, check, execute_solid, pipeline, resource, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
 
@@ -224,20 +223,17 @@ def test_resource_logging(capsys):
         context.resources.foo()
         context.resources.bar()
 
-    run_id = make_new_run_id()
     execute_solid(
-        process,
-        mode_def=ModeDefinition(resource_defs={'foo': foo_resource, 'bar': bar_resource}),
-        run_config=RunConfig(run_id=run_id),
+        process, mode_def=ModeDefinition(resource_defs={'foo': foo_resource, 'bar': bar_resource}),
     )
 
     captured = capsys.readouterr()
 
     expected_log_regexes = [
-        r'dagster - INFO - resource:foo - %s - test logging from foo resource\n\s*resource_fn_name = "foo_resource"'
-        % run_id,
-        r'dagster - INFO - resource:bar - %s - test logging from bar resource\n\s*resource_fn_name = "bar_resource"'
-        % run_id,
+        r'dagster - INFO - resource:foo - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-'
+        r'[a-f0-9]{12} - test logging from foo resource\n\s*resource_fn_name = "foo_resource"',
+        r'dagster - INFO - resource:bar - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-'
+        r'[a-f0-9]{12} - test logging from bar resource\n\s*resource_fn_name = "bar_resource"',
     ]
     for expected_log_regex in expected_log_regexes:
         assert re.search(expected_log_regex, captured.err, re.MULTILINE)

@@ -14,7 +14,6 @@ from dagster import (
     List,
     ModeDefinition,
     OutputDefinition,
-    RunConfig,
     SerializationStrategy,
     String,
     check,
@@ -281,7 +280,6 @@ def test_gcs_intermediate_store_with_custom_serializer(gcs_bucket):
 
 @nettest
 def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
-    run_id = make_new_run_id()
     gcs_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
@@ -289,14 +287,10 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket, 'gcs_prefix': gcs_prefix}}}
     }
 
-    pipeline_run = PipelineRun(
-        pipeline_name=pipe.name, run_id=run_id, environment_dict=environment_dict
-    )
+    pipeline_run = PipelineRun(pipeline_name=pipe.name, environment_dict=environment_dict)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(
-        pipe, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id),
-    )
+    result = execute_pipeline(pipe, environment_dict=environment_dict,)
     assert result.success
 
     execution_plan = create_execution_plan(pipe, environment_dict, pipeline_run=pipeline_run)
@@ -304,14 +298,14 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         pipe, environment_dict, pipeline_run, instance, execution_plan
     ) as context:
         store = GCSIntermediateStore(
-            run_id=run_id,
+            run_id=result.run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
             client=context.scoped_resources_builder.build(
                 required_resource_keys={'gcs'},
             ).gcs.client,
         )
-        assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
+        assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 

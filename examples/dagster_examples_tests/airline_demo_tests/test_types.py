@@ -20,7 +20,6 @@ from dagster import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.utils import make_new_run_id
 
 from .test_solids import spark_mode
 
@@ -34,20 +33,20 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     def spark_df_test_pipeline():
         ingest_csv_file_handle_to_spark(nonce())
 
-    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
-    intermediate_store = build_fs_intermediate_store(
-        instance.intermediates_directory, run_id=run_id
-    )
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        run_config=RunConfig(run_id=run_id, mode='spark'),
+        run_config=RunConfig(mode='spark'),
         environment_dict={
             'storage': {'filesystem': {}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
         instance=instance,
+    )
+
+    intermediate_store = build_fs_intermediate_store(
+        instance.intermediates_directory, run_id=result.run_id
     )
 
     assert result.success
@@ -77,20 +76,18 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
 
         ingest_csv_file_handle_to_spark(nonce())
 
-    run_id = make_new_run_id()
-
-    intermediate_store = S3IntermediateStore(s3_bucket=s3_bucket, run_id=run_id)
-
     result = execute_pipeline(
         spark_df_test_pipeline,
         environment_dict={
             'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
-        run_config=RunConfig(run_id=run_id, mode='spark'),
+        run_config=RunConfig(mode='spark'),
     )
 
     assert result.success
+
+    intermediate_store = S3IntermediateStore(s3_bucket=s3_bucket, run_id=result.run_id)
 
     success_key = '/'.join(
         [

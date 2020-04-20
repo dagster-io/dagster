@@ -9,7 +9,6 @@ from dagster import (
     DagsterInvalidConfigError,
     InputDefinition,
     OutputDefinition,
-    RunConfig,
     check,
     execute_pipeline,
     pipeline,
@@ -47,17 +46,16 @@ def test_fs_stores():
             compute_log_manager=compute_log_manager,
         )
 
-        run = RunConfig()
-        execute_pipeline(simple, run_config=run, instance=instance)
+        result = execute_pipeline(simple, instance=instance)
 
-        assert run_store.has_run(run.run_id)
-        assert run_store.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+        assert run_store.has_run(result.run_id)
+        assert run_store.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
         assert DagsterEventType.PIPELINE_SUCCESS in [
             event.dagster_event.event_type
-            for event in event_store.get_logs_for_run(run.run_id)
+            for event in event_store.get_logs_for_run(result.run_id)
             if event.is_dagster_event
         ]
-        stats = event_store.get_stats_for_run(run.run_id)
+        stats = event_store.get_stats_for_run(result.run_id)
         assert stats.steps_succeeded == 1
         assert stats.end_time is not None
 
@@ -166,9 +164,8 @@ def test_run_step_stats():
 
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = RunConfig(run_id='foo')
-        execute_pipeline(simple, run_config=run, instance=instance, raise_on_error=False)
-        step_stats = sorted(instance.get_run_step_stats('foo'), key=lambda x: x.end_time)
+        result = execute_pipeline(simple, instance=instance, raise_on_error=False)
+        step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 3
         assert step_stats[0].step_key == 'should_succeed.compute'
         assert step_stats[0].status == StepEventStatus.SUCCESS

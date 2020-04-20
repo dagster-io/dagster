@@ -4,7 +4,7 @@ import pytest
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.run_storage import PostgresRunStorage
 
-from dagster import DagsterEventType, RunConfig, execute_pipeline, pipeline, seven, solid
+from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -39,16 +39,15 @@ def test_postgres_instance(multi_postgres):
             compute_log_manager=LocalComputeLogManager(temp_dir),
         )
 
-        run = RunConfig()
-        execute_pipeline(simple, run_config=run, instance=instance)
+        result = execute_pipeline(simple, instance=instance)
 
-        assert run_storage.has_run(run.run_id)
-        assert run_storage.get_run_by_id(run.run_id).status == PipelineRunStatus.SUCCESS
+        assert run_storage.has_run(result.run_id)
+        assert run_storage.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
         assert DagsterEventType.PIPELINE_SUCCESS in [
             event.dagster_event.event_type
-            for event in event_storage.get_logs_for_run(run.run_id)
+            for event in event_storage.get_logs_for_run(result.run_id)
             if event.is_dagster_event
         ]
-        stats = event_storage.get_stats_for_run(run.run_id)
+        stats = event_storage.get_stats_for_run(result.run_id)
         assert stats.steps_succeeded == 1
         assert stats.end_time is not None

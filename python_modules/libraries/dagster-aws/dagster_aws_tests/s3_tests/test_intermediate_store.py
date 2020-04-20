@@ -13,7 +13,6 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     PipelineRun,
-    RunConfig,
     SerializationStrategy,
     String,
     check,
@@ -270,7 +269,6 @@ def test_s3_intermediate_store_with_custom_serializer(s3_bucket):
 
 @nettest
 def test_s3_pipeline_with_custom_prefix(s3_bucket):
-    run_id = make_new_run_id()
     s3_prefix = 'custom_prefix'
 
     pipe = define_inty_pipeline(should_throw=False)
@@ -278,27 +276,25 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
         'storage': {'s3': {'config': {'s3_bucket': s3_bucket, 's3_prefix': s3_prefix}}}
     }
 
-    pipeline_run = PipelineRun(
-        pipeline_name=pipe.name, run_id=run_id, environment_dict=environment_dict
-    )
+    pipeline_run = PipelineRun(pipeline_name=pipe.name, environment_dict=environment_dict)
     instance = DagsterInstance.ephemeral()
 
-    result = execute_pipeline(
-        pipe, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id),
-    )
+    result = execute_pipeline(pipe, environment_dict=environment_dict,)
     assert result.success
 
-    execution_plan = create_execution_plan(pipe, environment_dict, PipelineRun(run_id=run_id))
+    execution_plan = create_execution_plan(
+        pipe, environment_dict, PipelineRun(run_id=result.run_id)
+    )
     with scoped_pipeline_context(
         pipe, environment_dict, pipeline_run, instance, execution_plan
     ) as context:
         store = S3IntermediateStore(
-            run_id=run_id,
+            run_id=result.run_id,
             s3_bucket=s3_bucket,
             s3_prefix=s3_prefix,
             s3_session=context.scoped_resources_builder.build(required_resource_keys={'s3'}).s3,
         )
-        assert store.root == '/'.join(['custom_prefix', 'storage', run_id])
+        assert store.root == '/'.join(['custom_prefix', 'storage', result.run_id])
         assert store.get_intermediate(context, 'return_one.compute', Int).obj == 1
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
 
