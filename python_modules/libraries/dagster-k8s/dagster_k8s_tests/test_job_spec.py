@@ -1,14 +1,13 @@
 import os
 
 import yaml
-from dagster_graphql.client.util import parse_raw_log_lines
 
 from dagster import __version__ as dagster_version
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
 from .conftest import docker_image  # pylint: disable=unused-import
-from .utils import environments_path, remove_none_recursively, wait_for_job_success
+from .utils import environments_path, remove_none_recursively, wait_for_job_and_get_logs
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
@@ -97,12 +96,10 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success(
-        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    result = wait_for_job_and_get_logs(
+        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
-    result = parse_raw_log_lines(raw_logs.split('\n'))
 
-    assert success
     assert not result.get('errors')
     assert result['data']
     assert (
@@ -119,12 +116,10 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success(
-        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    result = wait_for_job_and_get_logs(
+        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
-    result = parse_raw_log_lines(raw_logs.split('\n'))
 
-    assert success
     assert not result.get('errors')
     assert result['data']
     assert (

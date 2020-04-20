@@ -8,6 +8,7 @@ import kubernetes
 import psycopg2
 import pytest
 from dagster_k8s.launcher import K8sRunLauncher
+from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -18,7 +19,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from .cluster_config import ClusterConfig
 from .helm import helm_chart, helm_test_resources, test_namespace
 from .kind_cluster import kind_cluster, kind_cluster_exists
-from .utils import check_output, find_free_port, test_repo_path, wait_for_pod
+from .utils import check_output, find_free_port, test_repo_path
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -227,10 +228,9 @@ def dagster_instance(helm_namespace, run_launcher):
             .strip('"')
         )
         forward_port = find_free_port()
-        success, _ = wait_for_pod(
-            postgres_pod_name, namespace=helm_namespace, wait_for_readiness=True
-        )
-        assert success
+
+        wait_for_pod(postgres_pod_name, namespace=helm_namespace)
+
         try:
             p = subprocess.Popen(
                 [

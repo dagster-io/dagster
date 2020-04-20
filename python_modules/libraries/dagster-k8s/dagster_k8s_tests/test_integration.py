@@ -1,17 +1,18 @@
 import os
 
 import pytest
-from dagster_graphql.client.util import parse_raw_log_lines
 from dagster_k8s import get_celery_engine_config
 
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
-from .utils import environments_path, wait_for_job_success
+from .utils import environments_path, wait_for_job_and_get_logs
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=redefined-outer-name
+def test_k8s_run_launcher_default(
+    dagster_instance, helm_namespace
+):  # pylint: disable=redefined-outer-name
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
@@ -20,12 +21,11 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success(
-        'dagster-job-%s' % run.run_id, namespace=helm_namespace
-    )
-    result = parse_raw_log_lines(raw_logs.split('\n'))
 
-    assert success
+    result = wait_for_job_and_get_logs(
+        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+    )
+
     assert not result.get('errors')
     assert result['data']
     assert (
@@ -61,12 +61,10 @@ def test_k8s_run_launcher_celery(
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success(
-        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    result = wait_for_job_and_get_logs(
+        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
-    result = parse_raw_log_lines(raw_logs.split('\n'))
 
-    assert success
     assert not result.get('errors')
     assert result['data']
     # this is bad test but proves that we got celery configured properly
@@ -87,12 +85,10 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success(
-        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    result = wait_for_job_and_get_logs(
+        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
-    result = parse_raw_log_lines(raw_logs.split('\n'))
 
-    assert success
     assert not result.get('errors')
     assert result['data']
     assert (

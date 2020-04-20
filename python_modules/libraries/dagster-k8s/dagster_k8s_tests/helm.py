@@ -1,15 +1,17 @@
 import base64
 import os
 import subprocess
+import time
 from contextlib import contextmanager
 
 import kubernetes
 import six
 import yaml
+from dagster_k8s.utils import wait_for_pod
 
 from dagster import check
 
-from .utils import check_output, get_test_namespace, git_repository_root, wait_for_pod
+from .utils import check_output, get_test_namespace, git_repository_root
 
 
 @contextmanager
@@ -144,8 +146,16 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
         )
 
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
-        success, _ = wait_for_pod('dagit', namespace=namespace)
-        assert success
+        kube_api = kubernetes.client.CoreV1Api()
+
+        print('Waiting for Dagit pod to be ready...')
+        dagit_pod = None
+        while dagit_pod is None:
+            pods = kube_api.list_namespaced_pod(namespace=namespace)
+            pod_names = [p.metadata.name for p in pods.items if 'dagit' in p.metadata.name]
+            if pod_names:
+                dagit_pod = pod_names[0]
+            time.sleep(1)
 
         # Wait for additional Celery worker queues to become ready
         pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
@@ -155,8 +165,8 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
             ]
             assert len(pod_names) == extra_queue['replicaCount']
             for pod in pod_names:
-                success, _ = wait_for_pod(pod, namespace=namespace)
-                assert success
+                print('Waiting for pod %s' % pod)
+                wait_for_pod(pod, namespace=namespace)
 
         yield
 
