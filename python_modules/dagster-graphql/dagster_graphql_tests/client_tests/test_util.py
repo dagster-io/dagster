@@ -15,8 +15,8 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
+    PipelineRun,
     RetryRequested,
-    RunConfig,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -107,8 +107,8 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
     pipeline = handle.build_pipeline_definition()
     mode = pipeline.get_default_mode_name()
-    run_config = RunConfig(mode=mode)
-    execution_plan = create_execution_plan(pipeline, {}, run_config=run_config)
+    pipeline_run = PipelineRun(mode=mode)
+    execution_plan = create_execution_plan(pipeline, {}, pipeline_run=pipeline_run)
     step_levels = execution_plan.topological_step_levels()
 
     unhandled_events = STEP_EVENTS.copy()
@@ -132,7 +132,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     'selector': {'name': pipeline.name},
                     'environmentConfigData': {'storage': {'filesystem': {}}},
                     'mode': mode,
-                    'executionMetadata': {'runId': run_config.run_id},
+                    'executionMetadata': {'runId': pipeline_run.run_id},
                     'stepKeys': [step.key],
                 }
             }
@@ -163,7 +163,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                 raise Exception(res['errors'])
 
             # build up a dict, incrementing all the event records we've produced in the run storage
-            logs = instance.all_logs(run_config.run_id)
+            logs = instance.all_logs(pipeline_run.run_id)
             for log in logs:
                 if not log.dagster_event or (
                     DagsterEventType(log.dagster_event.event_type_value)

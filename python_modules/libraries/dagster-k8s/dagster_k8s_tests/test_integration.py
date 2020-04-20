@@ -16,7 +16,9 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags)
+    run = PipelineRun(
+        pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
+    )
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
@@ -51,7 +53,9 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
     pipeline_name = 'demo_pipeline_celery'
     tags = {'key': 'value'}
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags)
+    run = PipelineRun(
+        pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
+    )
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)

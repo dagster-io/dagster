@@ -123,6 +123,10 @@ mutation ($executionParams: ExecutionParams!) {
         ... on PipelineNotFoundError {
             pipelineName
         }
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 '''

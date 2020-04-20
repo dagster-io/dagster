@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import RunConfig, check
+from dagster import PipelineRun, check
 from dagster.core.execution.api import create_execution_plan
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
@@ -56,8 +56,10 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     execution_plan = create_execution_plan(
         pipeline_def,
         execution_params.environment_dict,
-        run_config=RunConfig(
-            mode=execution_params.mode, previous_run_id=execution_params.previous_run_id
+        pipeline_run=PipelineRun(
+            mode=execution_params.mode,
+            parent_run_id=execution_params.previous_run_id,
+            root_run_id=execution_params.previous_run_id,
         ),
     )
 

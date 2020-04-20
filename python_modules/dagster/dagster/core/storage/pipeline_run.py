@@ -2,7 +2,6 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.execution.config import IRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
@@ -124,7 +123,7 @@ class PipelineRun(
             environment_dict=check.opt_dict_param(
                 environment_dict, 'environment_dict', key_type=str
             ),
-            mode=check.opt_str_param(mode, 'mode', default=DEFAULT_MODE_NAME),
+            mode=check.opt_str_param(mode, 'mode'),
             selector=selector,
             step_keys_to_execute=None
             if step_keys_to_execute is None

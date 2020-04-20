@@ -12,6 +12,7 @@ from dagster import (
     List,
     ModeDefinition,
     OutputDefinition,
+    PipelineRun,
     RunConfig,
     SerializationStrategy,
     String,
@@ -24,7 +25,6 @@ from dagster import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan, scoped_pipeline_context
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry
 from dagster.core.types.dagster_type import Bool as RuntimeBool
 from dagster.core.types.dagster_type import String as RuntimeString
@@ -101,7 +101,7 @@ def test_using_s3_for_subplan(s3_bucket):
     run_id = make_new_run_id()
 
     execution_plan = create_execution_plan(
-        pipeline_def, environment_dict=environment_dict, run_config=RunConfig(run_id=run_id)
+        pipeline_def, environment_dict=environment_dict, pipeline_run=PipelineRun(run_id=run_id)
     )
 
     assert execution_plan.get_step_by_key('return_one.compute')
@@ -288,7 +288,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
     )
     assert result.success
 
-    execution_plan = create_execution_plan(pipe, environment_dict, RunConfig(run_id=run_id))
+    execution_plan = create_execution_plan(pipe, environment_dict, PipelineRun(run_id=run_id))
     with scoped_pipeline_context(
         pipe, environment_dict, pipeline_run, instance, execution_plan
     ) as context:

@@ -1,7 +1,7 @@
 from dagster_graphql.schema.pipelines import DauphinPipeline
 from graphql.execution.base import ResolveInfo
 
-from dagster import PipelineDefinition, RunConfig, check
+from dagster import PipelineDefinition, PipelineRun, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector
@@ -101,7 +101,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     get_validated_config(pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('ExecutionPlan')(
         DauphinPipeline.from_pipeline_def(pipeline_def),
-        create_execution_plan(pipeline_def, environment_dict, RunConfig(mode=mode)),
+        create_execution_plan(pipeline_def, environment_dict, pipeline_run=PipelineRun(mode=mode)),
     )
 
 

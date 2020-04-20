@@ -3,13 +3,13 @@ from __future__ import absolute_import
 from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 from graphql.execution.base import ResolveInfo
 
-from dagster import DagsterInvalidConfigError, RunConfig, check
+from dagster import DagsterInvalidConfigError, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import create_environment_schema
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import InstanceCreateRunArgs
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils.error import SerializableErrorInfo
 
@@ -75,9 +75,10 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     execution_plan = create_execution_plan(
         pipeline_def,
         execution_params.environment_dict,
-        run_config=RunConfig(
+        pipeline_run=PipelineRun(
             mode=execution_params.mode,
-            previous_run_id=execution_params.previous_run_id,
+            parent_run_id=execution_params.previous_run_id,
+            root_run_id=execution_params.previous_run_id,
             tags=execution_params.execution_metadata.tags,
         ),
     )
@@ -146,14 +147,16 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineExecutionDisabledError')()
 
-    run = instance.get_run_by_id(run_id)
-    if not run:
+    pipeline_run = instance.get_run_by_id(run_id)
+    if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
+    pipeline_def = get_pipeline_def_from_selector(graphene_info, pipeline_run.selector)
 
-    environment_schema = create_environment_schema(pipeline_def, run.mode)
-    validated_config = validate_config(environment_schema.environment_type, run.environment_dict)
+    environment_schema = create_environment_schema(pipeline_def, pipeline_run.mode)
+    validated_config = validate_config(
+        environment_schema.environment_type, pipeline_run.environment_dict
+    )
     if not validated_config.success:
         # If the config is invalid, we construct a DagsterInvalidConfigError exception and
         # insert it into the event log. We also return a PipelineConfigValidationInvalid user facing
@@ -164,12 +167,12 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         invalid_config_exception = DagsterInvalidConfigError(
             'Error in config for pipeline {}'.format(pipeline_def.name),
             validated_config.errors,
-            run.environment_dict,
+            pipeline_run.environment_dict,
         )
 
         instance.report_engine_event(
             str(invalid_config_exception.message),
-            run,
+            pipeline_run,
             EngineEventData.engine_error(
                 SerializableErrorInfo(
                     invalid_config_exception.message,
@@ -188,15 +191,13 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         )
 
     create_execution_plan(
-        pipeline_def,
-        run.environment_dict,
-        run_config=RunConfig(mode=run.mode, previous_run_id=run.previous_run_id, tags=run.tags,),
+        pipeline_def, pipeline_run.environment_dict, pipeline_run=pipeline_run,
     )
 
     graphene_info.context.execution_manager.execute_pipeline(
-        graphene_info.context.get_handle(), pipeline_def, run, instance=instance,
+        graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
     )
 
     return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
+        run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )

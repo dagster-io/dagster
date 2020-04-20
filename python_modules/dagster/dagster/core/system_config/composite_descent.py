@@ -12,7 +12,6 @@ from dagster.core.errors import (
     DagsterInvalidConfigError,
     user_code_error_boundary,
 )
-from dagster.core.execution.config import IRunConfig, RunConfig
 from dagster.core.system_config.objects import SolidConfig
 
 
@@ -53,7 +52,7 @@ class DescentStack(namedtuple('_DescentStack', 'pipeline_def handle')):
         )
 
 
-def composite_descent(pipeline_def, solids_config, run_config=None):
+def composite_descent(pipeline_def, solids_config):
     '''
     This function is responsible for constructing the dictionary
     of SolidConfig (indexed by handle) that will be passed into the
@@ -67,12 +66,6 @@ def composite_descent(pipeline_def, solids_config, run_config=None):
     '''
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.dict_param(solids_config, 'solids_config')
-
-    run_config = (
-        RunConfig()
-        if run_config is None
-        else check.inst_param(run_config, 'run_config', IRunConfig)
-    )
 
     return {
         handle.to_string(): solid_config

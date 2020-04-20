@@ -12,7 +12,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
-from dagster.core.execution.config import IRunConfig
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
@@ -32,13 +32,13 @@ class _PlanBuilder(object):
     execution.
     '''
 
-    def __init__(self, pipeline_def, environment_config, run_config):
+    def __init__(self, pipeline_def, environment_config, pipeline_run):
         self.pipeline_def = check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         self.environment_config = check.inst_param(
             environment_config, 'environment_config', EnvironmentConfig
         )
-        self.run_config = check.inst_param(run_config, 'run_config', IRunConfig)
-        self.mode_definition = pipeline_def.get_mode_definition(run_config.mode)
+        self.pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        self.mode_definition = pipeline_def.get_mode_definition(pipeline_run.mode)
         self._steps = OrderedDict()
         self.step_output_map = dict()
         self._seen_keys = set()
@@ -98,7 +98,7 @@ class _PlanBuilder(object):
             self.environment_config.storage.system_storage_name
         )
 
-        step_keys_to_execute = self.run_config.step_keys_to_execute or [
+        step_keys_to_execute = self.pipeline_run.step_keys_to_execute or [
             step.key for step in self._steps.values()
         ]
 
@@ -365,7 +365,7 @@ class ExecutionPlan(
         return self.step_keys_to_execute[0] if len(self.step_keys_to_execute) == 1 else None
 
     @staticmethod
-    def build(pipeline_def, environment_config, run_config):
+    def build(pipeline_def, environment_config, pipeline_run):
         '''Here we build a new ExecutionPlan from a pipeline definition and the environment config.
 
         To do this, we iterate through the pipeline's solids in topological order, and hand off the
@@ -376,9 +376,9 @@ class ExecutionPlan(
         '''
         check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-        check.inst_param(run_config, 'run_config', IRunConfig)
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
-        plan_builder = _PlanBuilder(pipeline_def, environment_config, run_config)
+        plan_builder = _PlanBuilder(pipeline_def, environment_config, pipeline_run)
 
         # Finally, we build and return the execution plan
         return plan_builder.build()

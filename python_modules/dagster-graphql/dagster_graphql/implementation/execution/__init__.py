@@ -13,7 +13,7 @@ from dagster_graphql.schema.runs import (
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from dagster import RunConfig, check
+from dagster import check
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -109,7 +109,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
         if is_config_valid(pipeline_def, run.environment_dict, run.mode):
             execution_plan = create_execution_plan(
-                pipeline_def, run.environment_dict, RunConfig(mode=run.mode)
+                pipeline_def, run.environment_dict, pipeline_run=PipelineRun(mode=run.mode)
             )
 
     # pylint: disable=E1101
@@ -169,7 +169,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
     execution_plan = create_execution_plan(
         pipeline=pipeline_def,
         environment_dict=execution_params.environment_dict,
-        run_config=pipeline_run,
+        pipeline_run=pipeline_run,
     )
 
     if execution_params.step_keys:

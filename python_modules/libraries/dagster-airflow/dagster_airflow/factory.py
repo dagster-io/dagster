@@ -6,7 +6,7 @@ from airflow import DAG
 from airflow.operators import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
-from dagster import ExecutionTargetHandle, RunConfig, check, seven
+from dagster import ExecutionTargetHandle, PipelineRun, check, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
@@ -160,7 +160,7 @@ def _make_airflow_dag(
         mode = pipeline.get_default_mode_name()
 
     execution_plan = create_execution_plan(
-        pipeline, environment_dict, run_config=RunConfig(mode=mode)
+        pipeline, environment_dict, pipeline_run=PipelineRun(mode=mode)
     )
 
     tasks = {}

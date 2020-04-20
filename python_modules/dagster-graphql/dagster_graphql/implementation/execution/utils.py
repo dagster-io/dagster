@@ -1,10 +1,10 @@
 from dagster_graphql.implementation.utils import ExecutionParams
 
-from dagster import PipelineDefinition, RunConfig, check
+from dagster import PipelineDefinition, PipelineRun, check
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 
 from ..utils import UserFacingGraphQLError
@@ -51,9 +51,10 @@ def get_step_keys_to_execute(instance, pipeline_def, execution_params):
         execution_plan = create_execution_plan(
             pipeline_def,
             execution_params.environment_dict,
-            run_config=RunConfig(
+            pipeline_run=PipelineRun(
                 mode=execution_params.mode,
-                previous_run_id=execution_params.previous_run_id,
+                parent_run_id=execution_params.previous_run_id,
+                root_run_id=execution_params.previous_run_id,
                 tags=execution_params.execution_metadata.tags,
             ),
         )

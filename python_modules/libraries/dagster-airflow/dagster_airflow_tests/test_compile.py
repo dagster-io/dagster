@@ -1,18 +1,20 @@
 from dagster_airflow.compile import coalesce_execution_steps
 from dagster_examples.toys.composition import composition
 
-from dagster import RunConfig
+from dagster import PipelineRun
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def test_compile():
-    run_config = RunConfig()
+    pipeline_run = PipelineRun()
     environment_config = EnvironmentConfig.build(
-        composition, {'solids': {'add_four': {'inputs': {'num': {'value': 1}}}}}, run_config=None
+        composition,
+        {'solids': {'add_four': {'inputs': {'num': {'value': 1}}}}},
+        pipeline_run=pipeline_run,
     )
 
-    plan = ExecutionPlan.build(composition, environment_config, run_config)
+    plan = ExecutionPlan.build(composition, environment_config, pipeline_run)
 
     res = coalesce_execution_steps(plan)
 

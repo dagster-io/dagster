@@ -15,7 +15,7 @@ from dagster_graphql.implementation.fetch_runs import (
     is_config_valid,
 )
 
-from dagster import RunConfig, check, seven
+from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
     JsonMetadataEntryData,
@@ -33,11 +33,7 @@ from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
-from dagster.core.storage.pipeline_run import (
-    PipelineRun,
-    PipelineRunStatsSnapshot,
-    PipelineRunStatus,
-)
+from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
 from .pipelines import DauphinPipeline
 
@@ -324,7 +320,7 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
             execution_plan = create_execution_plan(
                 get_pipeline_def_from_selector(graphene_info, self._pipeline_run.selector),
                 self._pipeline_run.environment_dict,
-                RunConfig(mode=self._pipeline_run.mode),
+                pipeline_run=PipelineRun(mode=self._pipeline_run.mode),
             )
         else:
             pipeline = None

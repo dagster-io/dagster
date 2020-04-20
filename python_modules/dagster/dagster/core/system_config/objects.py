@@ -5,7 +5,7 @@ from dagster import check
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.execution.config import IRunConfig, RunConfig
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import ensure_single_item
 
 
@@ -62,21 +62,22 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def build(pipeline, environment_dict=None, run_config=None):
+    def build(pipeline, environment_dict=None, pipeline_run=None):
         '''This method validates a given environment dict against the pipeline config schema. If
         successful, we instiate an EnvironmentConfig object.
 
         In case the environment_dict is invalid, this method raises a DagsterInvalidConfigError
         '''
-
         from dagster.config.validate import process_config
         from .composite_descent import composite_descent
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-        run_config = check.opt_inst_param(run_config, 'run_config', IRunConfig, default=RunConfig())
+        pipeline_run = check.opt_inst_param(
+            pipeline_run, 'pipeline_run', PipelineRun, default=PipelineRun()
+        )
 
-        mode = run_config.mode or pipeline.get_default_mode_name()
+        mode = pipeline_run.mode or pipeline.get_default_mode_name()
         environment_type = create_environment_type(pipeline, mode)
 
         config_evr = process_config(environment_type, environment_dict)
@@ -89,7 +90,7 @@ class EnvironmentConfig(
 
         config_value = config_evr.value
 
-        solid_config_dict = composite_descent(pipeline, config_value.get('solids', {}), run_config)
+        solid_config_dict = composite_descent(pipeline, config_value.get('solids', {}))
 
         return EnvironmentConfig(
             solids=solid_config_dict,
