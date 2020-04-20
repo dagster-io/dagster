@@ -8,6 +8,11 @@
   for these definitions via `repository.yaml` under the `scheduler:` and `partitions:` keys is deprecated
   and expected to be removed in 0.8.0.
 
+**Breaking Changes**
+
+- Runs created prior to 0.7.8 will no longer render their execution plans as DAGs. We are only rendering
+  execution plans that have been persisted. Logs are still available.
+
 ## 0.7.9
 
 **Breaking Changes**
@@ -25,7 +30,7 @@
 - You can now view the structure of pipelines from historical runs, even if that pipeline no longer exists in the loaded repository or has changed structure.
 - Historical execution plans are now viewable, even if the pipeline has changed structure.
 - Added metadata link to raw compute logs for all StepStart events in PipelineRun view and Step view.
-- Improved error handling for the scheduler. If a scheduled run has config errors, the errors are persisted to the event log for the run and can be viewed in Dagit. 
+- Improved error handling for the scheduler. If a scheduled run has config errors, the errors are persisted to the event log for the run and can be viewed in Dagit.
 
 **Bugfix**
 
@@ -33,8 +38,8 @@
 - Made boto3 dependency in dagster-aws more flexible (#2418)
 - Fixed tooltip UI cleanup in partitioned schedule view
 
-
 **Documentation**
+
 - Brand new documentation site, available at https://docs.dagster.io
 - The tutorial has been restructured to multiple sections, and the examples in intro_tutorial have been rearranged to separate folders to reflect this.
 

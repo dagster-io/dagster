@@ -4,16 +4,8 @@ import logging
 
 import yaml
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_pipelines import (
-    get_pipeline_def_from_selector,
-    get_pipeline_reference_or_raise,
-)
-from dagster_graphql.implementation.fetch_runs import (
-    get_execution_plan,
-    get_stats,
-    get_step_stats,
-    is_config_valid,
-)
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
+from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
 
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
@@ -33,8 +25,6 @@ from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatu
 from dagster.core.snap import ExecutionPlanIndex, PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
-
-from .pipelines import DauphinPipeline
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
@@ -152,45 +142,29 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('ComputeLogs')(runId=self.run_id, stepKey=stepKey)
 
     def resolve_executionPlan(self, graphene_info):
-        if (
+        if not (
             self._pipeline_run.execution_plan_snapshot_id
             and self._pipeline_run.pipeline_snapshot_id
         ):
-            from .execution import DauphinExecutionPlan
-
-            instance = graphene_info.context.instance
-            execution_plan_snapshot = instance.get_execution_plan_snapshot(
-                self._pipeline_run.execution_plan_snapshot_id
-            )
-            pipeline_snapshot = instance.get_pipeline_snapshot(
-                self._pipeline_run.pipeline_snapshot_id
-            )
-            return (
-                DauphinExecutionPlan(
-                    ExecutionPlanIndex(
-                        execution_plan_snapshot=execution_plan_snapshot,
-                        pipeline_index=PipelineIndex(pipeline_snapshot),
-                    )
-                )
-                # check this in case fetches fail
-                if execution_plan_snapshot and pipeline_snapshot
-                else None
-            )
-        else:
-            # "legacy" code path for runs created before pipeline and
-            # execution plan snapshots.
-            pipeline = self.resolve_pipeline(graphene_info)
-
-            if isinstance(pipeline, DauphinPipeline):
-                selector = self._pipeline_run.selector
-                environment_dict = self._pipeline_run.environment_dict
-                mode = self._pipeline_run.mode
-
-                pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
-                if is_config_valid(pipeline_def, environment_dict, mode):
-                    return get_execution_plan(graphene_info, selector, environment_dict, mode)
-
             return None
+
+        from .execution import DauphinExecutionPlan
+
+        instance = graphene_info.context.instance
+        pipeline_snapshot = instance.get_pipeline_snapshot(self._pipeline_run.pipeline_snapshot_id)
+        execution_plan_snapshot = instance.get_execution_plan_snapshot(
+            self._pipeline_run.execution_plan_snapshot_id
+        )
+        return (
+            DauphinExecutionPlan(
+                ExecutionPlanIndex(
+                    execution_plan_snapshot=execution_plan_snapshot,
+                    pipeline_index=PipelineIndex(pipeline_snapshot),
+                )
+            )
+            if execution_plan_snapshot and pipeline_snapshot
+            else None
+        )
 
     def resolve_stepKeysToExecute(self, _):
         return self._pipeline_run.step_keys_to_execute
