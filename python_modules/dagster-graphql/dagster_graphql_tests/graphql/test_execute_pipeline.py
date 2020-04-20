@@ -661,8 +661,7 @@ def test_start_pipeline_execution_for_created_run_invalid_config():
     run_id = make_new_run_id()
     config = csv_hello_world_solids_config()
     config['invalid_key'] = 'invalid_value'
-    pipeline_run = PipelineRun.create_empty_run('csv_hello_world', run_id, config,)
-    instance.create_run(pipeline_run)
+    instance.create_empty_run(run_id, 'csv_hello_world', config)
 
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
