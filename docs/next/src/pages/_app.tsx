@@ -1,6 +1,6 @@
 import { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
-import { MDXProvider } from '@mdx-js/react';
+import { MDXProvider, MDXProviderComponentsProp } from '@mdx-js/react';
 
 import Layout from 'components/Layout';
 import Code from 'components/Code';
@@ -11,12 +11,16 @@ import {
 
 import 'styles/index.css';
 import { useCallback, useEffect } from 'react';
+import AnchorHeading from 'components/AnchorHeading';
 
-const components = {
+const components: MDXProviderComponentsProp = {
+  h2: (props) => <AnchorHeading tag={'h2'} {...props} />,
+  h3: (props) => <AnchorHeading tag={'h3'} {...props} />,
+  h4: (props) => <AnchorHeading tag={'h4'} {...props} />,
+  h5: (props) => <AnchorHeading tag={'h5'} {...props} />,
+  h6: (props) => <AnchorHeading tag={'h6'} {...props} />,
   pre: (props: any) => <div {...props} />,
-  code: (props: any) => {
-    return <Code {...props} />;
-  },
+  code: (props: any) => <Code {...props} />,
 };
 
 function App({ Component, pageProps }: AppProps) {

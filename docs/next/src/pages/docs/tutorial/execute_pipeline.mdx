@@ -1,7 +1,7 @@
 import PyObject from 'components/PyObject';
 import AnchorHeading from 'components/AnchorHeading';
 
-<AnchorHeading tag="h1">Executing our first pipeline</AnchorHeading>
+# Executing our first pipeline
 
 Assuming you've saved this pipeline as `hello_cereal.py`, we can
 execute it via any of three different mechanisms:
@@ -10,9 +10,7 @@ execute it via any of three different mechanisms:
 2. From a rich graphical interface, using the `dagit` GUI tool.
 3. From arbitrary Python scripts, using dagster's Python API.
 
-<AnchorHeading tag="h2">
-  Using the dagster CLI to execute a pipeline
-</AnchorHeading>
+## Using the dagster CLI to execute a pipeline
 
 From the directory in which you've saved the pipeline file, just run:
 
@@ -33,7 +31,7 @@ a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals
 
 Success!
 
-<AnchorHeading tag="h2">Using dagit to execute a pipeline</AnchorHeading>
+## Using dagit to execute a pipeline
 
 To visualize your pipeline (which only has one node) in dagit, from the
 directory in which you've saved the pipeline file, just run:
@@ -77,7 +75,7 @@ this, and every run of your pipeline.)
 In this view, you can filter and search through the logs corresponding to your
 pipeline run.
 
-<AnchorHeading tag="h2">Using the Python API to execute a pipeline</AnchorHeading>
+## Using the Python API to execute a pipeline
 
 If you'd rather execute your pipelines as a script, you can do that without
 using the dagster CLI at all. Just add a few lines to

@@ -43,17 +43,24 @@ const MainItem: React.FC<MainItemProps> = ({ name, path, icon }) => {
     <a
       href={selected ? '#' : path}
       className={cx(
-        'group flex items-center px-2 py-2 text-sm leading-5 font-medium text-gray-900 rounded-md',
-        { 'bg-gray-100': selected },
-        { 'hover:text-gray-900': !selected },
-        { 'hover:bg-gray-100': !selected },
+        'group flex justify-between items-center px-2 py-2 text-sm font-medium leading-5 text-gray-900 rounded-md',
+        { 'font-bold bg-gray-200': selected },
+        { 'hover:font-bold': !selected },
         { 'focus:outline-none': !selected },
         { 'focus:bg-gray-200': !selected },
         'transition ease-in-out duration-150',
       )}
     >
-      {icon}
+      {/* {icon} */}
       <span className="truncate">{name}</span>
+      <div
+        className={cx(
+          'w-2 h-2 rounded-full transition ease-in-out duration-600',
+          {
+            'bg-blue-300': selected,
+          },
+        )}
+      ></div>
     </a>
   );
 };
@@ -71,32 +78,12 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
   return (
     <nav className={className}>
       {isMobile && <CommunityLinks className="mb-5" />}
-      <div>
-        <MainItem
-          name={'Install'}
-          path="/docs/install"
-          icon={<ArrowDown />}
-        />
-        <MainItem
-          name={'Tutorial'}
-          path="/docs/tutorial"
-          icon={<File />}
-        />
-        <MainItem
-          name={'Learn'}
-          path="/docs/learn"
-          icon={<Book />}
-        />
-        <MainItem
-          name={'API Docs'}
-          path="/docs/apidocs"
-          icon={<Code />}
-        />
-        <MainItem
-          name={'Deploying'}
-          path="/docs/deploying"
-          icon={<Cog />}
-        />
+      <div className="border-b border-gray-200 pb-2">
+        <MainItem name={'Install'} path="/docs/install" icon={<ArrowDown />} />
+        <MainItem name={'Tutorial'} path="/docs/tutorial" icon={<File />} />
+        <MainItem name={'Learn'} path="/docs/learn" icon={<Book />} />
+        <MainItem name={'API Docs'} path="/docs/apidocs" icon={<Code />} />
+        <MainItem name={'Deploying'} path="/docs/deploying" icon={<Cog />} />
         <MainItem
           name={'Community'}
           path="/docs/community"
@@ -138,9 +125,13 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                   <a
                     key={idx}
                     href={subsectionPath}
-                    className={`group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 ${
-                      subSelected && 'bg-blue-100'
-                    } rounded-md hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:bg-gray-100 transition ease-in-out duration-150`}
+                    className={cx(
+                      `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none focus:bg-gray-100 transition ease-in-out duration-150`,
+                      {
+                        'text-blue-800 bg-blue-200': subSelected,
+                        'hover:bg-gray-200': !subSelected,
+                      },
+                    )}
                   >
                     <span className="truncate">{i.name}</span>
                   </a>

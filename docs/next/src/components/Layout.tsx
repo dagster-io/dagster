@@ -36,18 +36,22 @@ const Layout: React.FunctionComponent = (props) => {
             className="flex-1 relative z-0 overflow-y-auto pt-2 pb-6 focus:outline-none md:py-6"
             tabIndex={0}
           >
-            <div
-              className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8', {
-                markdown:
-                  router.pathname.indexOf('docs') > 0 ||
-                  router.pathname.indexOf('_modules') > 0,
-              })}
-            >
-              {props.children}
+            <div className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8')}>
+              <div className="flex justify-between">
+                <div
+                  className={cx('flex-1', {
+                    markdown:
+                      router.pathname.indexOf('docs') > 0 ||
+                      router.pathname.indexOf('_modules') > 0,
+                  })}
+                >
+                  {props.children}
+                </div>
+                <OnThisPage anchors={anchorHeadings} />
+              </div>
             </div>
           </main>
         </div>
-        <OnThisPage anchors={anchorHeadings} />
       </div>
     </>
   );

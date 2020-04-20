@@ -33,7 +33,7 @@ const Hit: React.FunctionComponent<{ hit: any }> = ({ hit }) => {
   };
 
   return (
-    <li>
+    <li className="border-b border-gray-100">
       <a
         href={'/docs/apidocs/' + hit.path}
         className="block hover:bg-gray-50 focus:outline-none focus:bg-gray-50 transition duration-150 ease-in-out"
@@ -70,7 +70,7 @@ const Hit: React.FunctionComponent<{ hit: any }> = ({ hit }) => {
 
 const Hits: React.FunctionComponent<{ hits: any[] }> = ({ hits }) => {
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white border shadow overflow-hidden sm:rounded-md">
       <ul>
         {hits.splice(0, 6).map((hit) => (
           <Hit hit={hit} />
@@ -117,7 +117,7 @@ const Search = () => {
         />
         &nbsp;
         {focus && (
-          <div className="top-12 fixed right-0 max-w-full md:right-auto md:absolute md:w-auto z-10">
+          <div className="top-14 fixed right-0 max-w-full md:right-auto md:absolute md:w-2/3 z-10">
             <CustomHits />
           </div>
         )}
