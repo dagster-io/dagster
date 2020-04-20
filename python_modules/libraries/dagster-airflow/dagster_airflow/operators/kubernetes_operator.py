@@ -6,7 +6,7 @@ from airflow.exceptions import AirflowException
 from airflow.utils.state import State
 from dagster_airflow.vendor.kubernetes_pod_operator import KubernetesPodOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_variables
+from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
 
 from dagster import __version__ as dagster_version
 from dagster import seven
@@ -21,7 +21,6 @@ from .util import (
     check_events_for_failures,
     check_events_for_skips,
     get_aws_environment,
-    parse_raw_res,
 )
 
 # For retries on log retrieval
@@ -197,7 +196,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     raw_res = client.read_namespaced_pod_log(
                         name=pod.name, namespace=pod.namespace, container='base'
                     )
-                    res = parse_raw_res(raw_res.split('\n'))
+                    res = parse_raw_log_lines(raw_res.split('\n'))
                     time.sleep(LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC)
                     num_attempts += 1
                     self.log.debug('k8s pod raw response: ' + str(raw_res))

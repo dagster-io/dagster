@@ -1,13 +1,14 @@
 import os
 
 import yaml
+from dagster_graphql.client.util import parse_raw_log_lines
 
 from dagster import __version__ as dagster_version
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
 from .conftest import docker_image, environments_path  # pylint: disable=unused-import
-from .utils import parse_raw_res, remove_none_recursively, wait_for_job_success
+from .utils import remove_none_recursively, wait_for_job_success
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
@@ -97,7 +98,7 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
-    result = parse_raw_res(raw_logs.split('\n'))
+    result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
     assert not result.get('errors')
@@ -115,7 +116,7 @@ def test_failing_k8s_run_launcher(dagster_instance):
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
-    result = parse_raw_res(raw_logs.split('\n'))
+    result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
     assert not result.get('errors')

@@ -22,8 +22,6 @@ from dagster.utils import safe_tempfile_path
 
 from .utils import wait_for_pod
 
-TOX_PYTHON_VERSION = 'py37'
-
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
 # This is the name of the image built by build.sh / present on buildkite which we use for all of

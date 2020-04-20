@@ -32,42 +32,6 @@ def check_events_for_skips(events):
         raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
 
 
-def parse_raw_res(raw_res):
-    res = None
-    # Look upon my works, ye mighty, and despair:
-    # - Log lines don't necessarily come back in order
-    # - Something else might log JSON
-    # - Docker appears to silently split very long log lines -- this is undocumented behavior
-    lines = []
-    coalesced = []
-    in_split_line = False
-    for line in raw_res:
-        if not in_split_line and line.startswith('{'):
-            if line.endswith('}'):
-                lines.append(line)
-                continue
-            else:
-                coalesced.append(line)
-                in_split_line = True
-                continue
-        if in_split_line:
-            coalesced.append(line)
-            if line.endswith('}'):
-                lines.append(''.join(coalesced))
-                coalesced = []
-                in_split_line = False
-
-    for line in reversed(lines):
-        try:
-            res = seven.json.loads(line)
-            break
-        # If we don't get a GraphQL response, check the next line
-        except seven.JSONDecodeError:
-            continue
-
-    return res
-
-
 def convert_airflow_datestr_to_epoch_ts(airflow_ts):
     '''convert_airflow_datestr_to_epoch_ts
     Converts Airflow time strings (e.g. 2019-06-26T17:19:09+00:00) to epoch timestamps.

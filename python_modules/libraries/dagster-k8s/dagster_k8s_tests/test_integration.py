@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from dagster_graphql.client.util import parse_raw_log_lines
 from dagster_k8s import get_celery_engine_config
 
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -8,7 +9,7 @@ from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
 from .conftest import environments_path
-from .utils import parse_raw_res, wait_for_job_success
+from .utils import wait_for_job_success
 
 
 @pytest.mark.integration
@@ -22,7 +23,7 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
-    result = parse_raw_res(raw_logs.split('\n'))
+    result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
     assert not result.get('errors')
@@ -59,7 +60,7 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
-    result = parse_raw_res(raw_logs.split('\n'))
+    result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
     assert not result.get('errors')
@@ -81,7 +82,7 @@ def test_failing_k8s_run_launcher(dagster_instance):
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
-    result = parse_raw_res(raw_logs.split('\n'))
+    result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
     assert not result.get('errors')

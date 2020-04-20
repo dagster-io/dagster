@@ -246,3 +246,48 @@ def construct_variables(mode, environment_dict, pipeline_name, run_id, step_keys
     }
 
     return variables
+
+
+def parse_raw_log_lines(log_lines):
+    '''Parses the raw log lines response from a dagster-graphql CLI invocation, typically from a
+    Docker or Kubernetes container.
+
+     - Log lines don't necessarily come back in order
+     - Something else might log JSON
+     - Docker appears to silently split very long log lines -- this is undocumented behavior
+
+    Args:
+        log_lines (List[str]): Log lines containing response JSON
+
+    Returns:
+        Dict: Parsed JSON response
+    '''
+    res = None
+    lines = []
+    coalesced = []
+    in_split_line = False
+    for line in log_lines:
+        if not in_split_line and line.startswith('{'):
+            if line.endswith('}'):
+                lines.append(line)
+                continue
+            else:
+                coalesced.append(line)
+                in_split_line = True
+                continue
+        if in_split_line:
+            coalesced.append(line)
+            if line.endswith('}'):
+                lines.append(''.join(coalesced))
+                coalesced = []
+                in_split_line = False
+
+    for line in reversed(lines):
+        try:
+            res = seven.json.loads(line)
+            break
+        # If we don't get a GraphQL response, check the next line
+        except seven.JSONDecodeError:
+            continue
+
+    return res

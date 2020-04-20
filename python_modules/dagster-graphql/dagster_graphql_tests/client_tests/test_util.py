@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from dagster_graphql.cli import execute_query
 from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict
+from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict, parse_raw_log_lines
 
 from dagster import (
     Bool,
@@ -181,3 +181,14 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
     # Ensure we've handled the universe of event types
     assert not unhandled_events
+
+
+def test_parse_raw_log_lines():
+    raw_log_lines = [
+        'Some extraneous log line',
+        'Another extraneous log line, JSON data is on the next line',
+        '{"data": {"executePlan": {"__typename": "ExecutePlanSuccess"}}}',
+    ]
+
+    result = {'data': {'executePlan': {'__typename': 'ExecutePlanSuccess'}}}
+    assert parse_raw_log_lines(raw_log_lines) == result

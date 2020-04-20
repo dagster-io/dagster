@@ -7,7 +7,7 @@ from airflow.exceptions import AirflowException
 from airflow.utils.file import TemporaryDirectory
 from dagster_airflow.vendor.docker_operator import DockerOperator
 from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_variables
+from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
 from docker import APIClient, from_env
 
 from dagster import seven
@@ -22,7 +22,6 @@ from .util import (
     check_events_for_failures,
     check_events_for_skips,
     get_aws_environment,
-    parse_raw_res,
 )
 
 DOCKER_TEMPDIR = '/tmp'
@@ -298,7 +297,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
 
-            res = parse_raw_res(raw_res)
+            res = parse_raw_log_lines(raw_res)
 
             try:
                 handle_execution_errors(res, 'executePlan')

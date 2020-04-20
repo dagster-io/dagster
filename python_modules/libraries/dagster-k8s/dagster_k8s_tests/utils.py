@@ -2,8 +2,6 @@ import time
 
 from kubernetes import client
 
-from dagster import seven
-
 
 def remove_none_recursively(obj):
     '''Remove none values from a dict. This is used here to support comparing provided config vs.
@@ -20,47 +18,6 @@ def remove_none_recursively(obj):
         )
     else:
         return obj
-
-
-def parse_raw_res(raw_res):
-    '''this function copied from dagster-airflow.operators.util for now
-    '''
-    assert isinstance(raw_res, list)
-
-    res = None
-    # Look upon my works, ye mighty, and despair:
-    # - Log lines don't necessarily come back in order
-    # - Something else might log JSON
-    # - Docker appears to silently split very long log lines -- this is undocumented behavior
-    lines = []
-    coalesced = []
-    in_split_line = False
-    for line in raw_res:
-        if not in_split_line and line.startswith('{'):
-            if line.endswith('}'):
-                lines.append(line)
-                continue
-            else:
-                coalesced.append(line)
-                in_split_line = True
-                continue
-        if in_split_line:
-            coalesced.append(line)
-            if line.endswith('}'):
-                lines.append(''.join(coalesced))
-                coalesced = []
-                in_split_line = False
-
-    for line in reversed(lines):
-        try:
-            res = seven.json.loads(line)
-            break
-        # If we don't get a GraphQL response, check the next line
-        except seven.JSONDecodeError as e:
-            print('[parse_raw_res error]', e)
-            continue
-
-    return res
 
 
 def retrieve_pod_logs(pod_name):
