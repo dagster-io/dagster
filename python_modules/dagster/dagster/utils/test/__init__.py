@@ -128,7 +128,15 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
 
 
 def execute_solids_within_pipeline(
-    pipeline_def, solid_names, inputs=None, environment_dict=None, run_config=None
+    pipeline_def,
+    solid_names,
+    inputs=None,
+    environment_dict=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    run_config=None,
+    instance=None,
 ):
     '''Execute a set of solids within an existing pipeline.
 
@@ -142,8 +150,22 @@ def execute_solids_within_pipeline(
             You may also use the ``environment_dict`` to configure any inputs that are configurable.
         environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
+        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
+            and ``preset``.
+        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
+            ``mode`` and ``preset``. 
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
+
+            Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
+            will be deprecated. In the interim, if you set a mode using `run_config`, this must
+            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
+            tags set using `tags` will take precedence. If you set step keys, these must be
+            compatible with any solid subset specified using `preset`.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
         Dict[str, Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results of
@@ -152,18 +174,32 @@ def execute_solids_within_pipeline(
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
     inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig)
 
     sub_pipeline = pipeline_def.build_sub_pipeline(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
-    result = execute_pipeline(stubbed_pipeline, environment_dict, run_config)
+    result = execute_pipeline(
+        stubbed_pipeline,
+        environment_dict=environment_dict,
+        mode=mode,
+        preset=preset,
+        tags=tags,
+        run_config=run_config,
+        instance=instance,
+    )
 
     return {sr.solid.name: sr for sr in result.solid_result_list}
 
 
 def execute_solid_within_pipeline(
-    pipeline_def, solid_name, inputs=None, environment_dict=None, run_config=None
+    pipeline_def,
+    solid_name,
+    inputs=None,
+    environment_dict=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    run_config=None,
+    instance=None,
 ):
     '''Execute a single solid within an existing pipeline.
 
@@ -177,25 +213,37 @@ def execute_solid_within_pipeline(
             configure any inputs that are configurable.
         environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
+        mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
+            and ``preset``.
+        preset (Optional[str]): The name of the pipeline preset to use. You may not set both
+            ``mode`` and ``preset``. 
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
+
+            Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
+            will be deprecated. In the interim, if you set a mode using `run_config`, this must
+            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
+            tags set using `tags` will take precedence. If you set step keys, these must be
+            compatible with any solid subset specified using `preset`.
+        instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
+            an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
     '''
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.str_param(solid_name, 'solid_name')
-    inputs = check.opt_dict_param(inputs, 'inputs', key_type=str)
-    environment_dict = check.opt_dict_param(environment_dict, 'environment')
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig)
-
     return execute_solids_within_pipeline(
         pipeline_def,
-        [solid_name],
-        {solid_name: inputs} if inputs else None,
-        environment_dict,
-        run_config,
+        solid_names=[solid_name],
+        inputs={solid_name: inputs} if inputs else None,
+        environment_dict=environment_dict,
+        mode=mode,
+        preset=preset,
+        tags=tags,
+        run_config=run_config,
+        instance=instance,
     )[solid_name]
 
 
@@ -216,8 +264,8 @@ def execute_solid(
     solid_def,
     mode_def=None,
     input_values=None,
+    tags=None,
     environment_dict=None,
-    run_config=None,
     raise_on_error=True,
 ):
     '''Execute a single solid in an ephemeral pipeline.
@@ -232,10 +280,10 @@ def execute_solid(
         input_values (Optional[Dict[str, Any]]): A dict of input names to input values, used to
             pass inputs to the solid directly. You may also use the ``environment_dict`` to
             configure any inputs that are configurable.
+        tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
+            logs.
         environment_dict (Optional[dict]): The environment configuration that parameterized this
             execution, as a dict.
-        run_config (Optional[RunConfig]): Optionally specifies additional config options for
-            pipeline execution.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
             Defaults to ``True``, since this is the most useful behavior in test.
 
@@ -270,7 +318,8 @@ def execute_solid(
             mode_defs=[mode_def] if mode_def else None,
         ),
         environment_dict=environment_dict,
-        run_config=run_config,
+        mode=mode_def.name if mode_def else None,
+        tags=tags,
         raise_on_error=raise_on_error,
     )
     return result.result_for_handle(solid_def.name)
