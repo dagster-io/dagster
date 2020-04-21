@@ -10,7 +10,6 @@ from dagster import (
     PresetDefinition,
     String,
     execute_pipeline,
-    execute_pipeline_with_preset,
     lambda_solid,
     pipeline,
     seven,
@@ -170,9 +169,7 @@ def test_solid_subset():
         __file__, 'define_diamond_pipeline'
     ).build_pipeline_definition()
 
-    result = execute_pipeline_with_preset(
-        pipe, 'just_adder', instance=DagsterInstance.local_temp(),
-    )
+    result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp(),)
 
     assert result.success
 

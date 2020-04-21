@@ -14,7 +14,6 @@ from dagster import (
     DagsterResourceFunctionError,
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
-    execute_pipeline_with_mode,
 )
 
 
@@ -65,7 +64,7 @@ def test_error_monster_success():
         },
     ).success
 
-    assert execute_pipeline_with_mode(
+    assert execute_pipeline(
         pipeline=error_monster,
         mode='errorable_mode',
         environment_dict={
@@ -81,7 +80,7 @@ def test_error_monster_success():
 
 def test_error_monster_wrong_mode():
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline_with_mode(
+        execute_pipeline(
             pipeline=error_monster,
             mode='nope',
             environment_dict={

@@ -3,7 +3,7 @@ import os
 # pylint: disable=unused-argument
 import pytest
 
-from dagster import execute_pipeline, execute_pipeline_with_mode, file_relative_path
+from dagster import execute_pipeline, file_relative_path
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_globs
@@ -39,7 +39,7 @@ def test_ingest_pipeline_fast(postgres, pg_hostname):
     ingest_config_dict = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_fast_ingest.yaml')
     )
-    result_ingest = execute_pipeline_with_mode(
+    result_ingest = execute_pipeline(
         pipeline=ingest_pipeline_def,
         mode='local',
         environment_dict=ingest_config_dict,
@@ -59,7 +59,7 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
         config_path('local_fast_ingest.yaml'),
         config_path('filesystem_storage.yaml'),
     )
-    result_ingest = execute_pipeline_with_mode(
+    result_ingest = execute_pipeline(
         pipeline=ingest_pipeline_def,
         mode='local',
         environment_dict=ingest_config_dict,
@@ -77,7 +77,7 @@ def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
     warehouse_config_object = load_yaml_from_globs(
         config_path('test_base.yaml'), config_path('local_warehouse.yaml')
     )
-    result_warehouse = execute_pipeline_with_mode(
+    result_warehouse = execute_pipeline(
         pipeline=warehouse_pipeline_def,
         mode='local',
         environment_dict=warehouse_config_object,

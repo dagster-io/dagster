@@ -10,13 +10,7 @@ import click
 import six
 import yaml
 
-from dagster import (
-    PipelineDefinition,
-    RunConfig,
-    check,
-    execute_pipeline,
-    execute_pipeline_with_preset,
-)
+from dagster import PipelineDefinition, RunConfig, check, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
 from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
 from dagster.core.definitions import ExecutionTargetHandle
@@ -329,9 +323,9 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     cli_args.pop('pipeline_name')
     tags = get_tags_from_args(cli_args)
 
-    return execute_pipeline_with_preset(
+    return execute_pipeline(
         pipeline,
-        preset_name,
+        preset=preset_name,
         instance=DagsterInstance.get(),
         raise_on_error=False,
         run_config=RunConfig(tags=tags),

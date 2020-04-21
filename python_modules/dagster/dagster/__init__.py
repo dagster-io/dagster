@@ -84,8 +84,6 @@ from dagster.core.execution.api import (
     execute_partition_set,
     execute_pipeline,
     execute_pipeline_iterator,
-    execute_pipeline_with_mode,
-    execute_pipeline_with_preset,
 )
 from dagster.core.execution.config import ExecutorConfig, RunConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -195,8 +193,6 @@ __all__ = [
     'default_executors',
     'default_system_storage_defs',
     'execute_pipeline_iterator',
-    'execute_pipeline_with_mode',
-    'execute_pipeline_with_preset',
     'execute_pipeline',
     'execute_solid_within_pipeline',
     'fs_system_storage',

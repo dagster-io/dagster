@@ -34,7 +34,7 @@ From the CLI, use ``-p`` or ``--preset``:
 
     $ dagster pipeline execute -f presets.py -n presets_pipeline -p unittest
 
-From Python, you can use :py:func:`execute_pipeline_with_preset <dagster.execute_pipeline_with_preset>`:
+From Python, you can use :py:func:`execute_pipeline <dagster.execute_pipeline>`:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/presets.py
    :lines: 171

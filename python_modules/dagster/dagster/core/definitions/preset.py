@@ -25,7 +25,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
 
     .. code-block:: python
 
-        execute_pipeline_with_preset(pipeline_def, 'example_preset')
+        execute_pipeline(pipeline_def, preset='example_preset')
 
     Presets may also be used with the command line tools:
 

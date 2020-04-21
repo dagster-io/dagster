@@ -7,7 +7,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
-    execute_pipeline_with_preset,
+    execute_pipeline,
     lambda_solid,
     solid,
 )
@@ -66,24 +66,18 @@ def test_presets():
             environment_files=[file_relative_path(__file__, 'test_repository_definition.py')],
         )
 
-    assert execute_pipeline_with_preset(pipeline, 'passing').success
+    assert execute_pipeline(pipeline, preset='passing').success
 
-    assert execute_pipeline_with_preset(pipeline, 'passing_direct_dict').success
-    assert (
-        execute_pipeline_with_preset(pipeline, 'failing_1', raise_on_error=False).success == False
-    )
+    assert execute_pipeline(pipeline, preset='passing_direct_dict').success
+    assert execute_pipeline(pipeline, preset='failing_1', raise_on_error=False).success == False
 
-    assert (
-        execute_pipeline_with_preset(pipeline, 'failing_2', raise_on_error=False).success == False
-    )
+    assert execute_pipeline(pipeline, preset='failing_2', raise_on_error=False).success == False
 
     with pytest.raises(DagsterInvariantViolationError, match='Could not find preset'):
-        execute_pipeline_with_preset(pipeline, 'not_failing', raise_on_error=False)
+        execute_pipeline(pipeline, preset='not_failing', raise_on_error=False)
 
     assert (
-        execute_pipeline_with_preset(
-            pipeline, 'passing_overide_to_fail', raise_on_error=False
-        ).success
+        execute_pipeline(pipeline, preset='passing_overide_to_fail', raise_on_error=False).success
         == False
     )
 

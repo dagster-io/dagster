@@ -5,12 +5,7 @@ from dagster_aws.emr import EmrJobRunner, emr_pyspark_resource
 from dagster_pyspark import pyspark_resource, pyspark_solid
 from moto import mock_emr
 
-from dagster import (
-    DagsterInvalidDefinitionError,
-    ModeDefinition,
-    execute_pipeline_with_mode,
-    pipeline,
-)
+from dagster import DagsterInvalidDefinitionError, ModeDefinition, execute_pipeline, pipeline
 from dagster.seven import mock
 from dagster.utils.test import create_test_pipeline_execution_context
 
@@ -45,7 +40,7 @@ def example_pipe():
 
 
 def test_local():
-    result = execute_pipeline_with_mode(
+    result = execute_pipeline(
         pipeline=example_pipe,
         mode='local',
         environment_dict={'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},},
@@ -77,7 +72,7 @@ def test_pyspark_emr(mock_wait):
     context = create_test_pipeline_execution_context()
     cluster_id = job_runner.run_job_flow(context, run_job_flow_args)
 
-    result = execute_pipeline_with_mode(
+    result = execute_pipeline(
         pipeline=example_pipe,
         mode='prod',
         environment_dict={
@@ -101,7 +96,7 @@ def test_pyspark_emr(mock_wait):
 
 def test_bad_requirements_txt():
     with pytest.raises(DagsterInvalidDefinitionError) as exc_info:
-        execute_pipeline_with_mode(
+        execute_pipeline(
             pipeline=example_pipe,
             mode='prod',
             environment_dict={
@@ -128,7 +123,7 @@ def test_bad_requirements_txt():
     reason='This test is slow and requires a live EMR cluster; run only upon explicit request',
 )
 def test_do_it_live_emr():
-    result = execute_pipeline_with_mode(
+    result = execute_pipeline(
         pipeline=example_pipe,
         mode='prod',
         environment_dict={

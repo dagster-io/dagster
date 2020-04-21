@@ -10,7 +10,7 @@ from dagster import (
     Field,
     ModeDefinition,
     String,
-    execute_pipeline_with_mode,
+    execute_pipeline,
     pipeline,
     resource,
     solid,
@@ -148,7 +148,7 @@ if __name__ == '__main__':
         },
         'resources': {'warehouse': {'config': {'conn_str': ':memory:'}}},
     }
-    result = execute_pipeline_with_mode(
+    result = execute_pipeline(
         pipeline=modes_pipeline,
         mode='unittest',
         environment_dict=environment_dict,

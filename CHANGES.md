@@ -1,6 +1,15 @@
 # Changelog
 
-## (Future) 0.7.7
+## 0.7.8 (Upcoming)
+
+**Breaking Changes**
+
+- The `execute_pipeline_with_mode` and `execute_pipeline_with_preset` APIs have been dropped in
+  favor of new top level arguments to `execute_pipeline`, `mode` and `preset`.
+- The use of `RunConfig` to pass options to `execute_pipeline` has been deprecated, and `RunConfig`
+  will be removed in 0.8.0.
+
+## 0.7.7
 
 **Breaking Changes**
 

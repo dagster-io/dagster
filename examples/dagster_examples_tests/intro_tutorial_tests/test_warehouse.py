@@ -6,7 +6,7 @@ from dagster_examples.intro_tutorial.modes import modes_pipeline
 from dagster_examples.intro_tutorial.presets import SqlAlchemyPostgresWarehouse as sapw2
 from dagster_examples.intro_tutorial.presets import presets_pipeline
 
-from dagster import execute_pipeline_with_mode, execute_pipeline_with_preset
+from dagster import execute_pipeline
 from dagster.utils import pushd, script_relative_path
 
 BUILDKITE = bool(os.getenv('BUILDKITE'))
@@ -27,12 +27,12 @@ def test_warehouse_resource(postgres):
         'resources': {'warehouse': {'config': {'conn_str': postgres}}},
     }
     with pushd(script_relative_path('../../dagster_examples/intro_tutorial/')):
-        result = execute_pipeline_with_mode(
+        result = execute_pipeline(
             pipeline=modes_pipeline, mode='dev', environment_dict=environment_dict,
         )
     assert result.success
 
     if not BUILDKITE:
         with pushd(script_relative_path('../../dagster_examples/intro_tutorial/')):
-            result = execute_pipeline_with_preset(presets_pipeline, preset_name='dev')
+            result = execute_pipeline(presets_pipeline, preset='dev')
         assert result.success

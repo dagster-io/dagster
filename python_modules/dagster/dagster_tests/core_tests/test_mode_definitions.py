@@ -11,7 +11,6 @@ from dagster import (
     PipelineDefinition,
     String,
     execute_pipeline,
-    execute_pipeline_with_mode,
     logger,
     pipeline,
     resource,
@@ -60,7 +59,7 @@ def test_execute_single_mode():
     assert execute_pipeline(single_mode_pipeline).result_for_solid('return_two').output_value() == 2
 
     assert (
-        execute_pipeline_with_mode(single_mode_pipeline, mode='the_mode')
+        execute_pipeline(single_mode_pipeline, mode='the_mode')
         .result_for_solid('return_two')
         .output_value()
         == 2
@@ -70,7 +69,7 @@ def test_execute_single_mode():
 def test_wrong_single_mode():
     with pytest.raises(DagsterInvariantViolationError):
         assert (
-            execute_pipeline_with_mode(pipeline=define_single_mode_pipeline(), mode='wrong_mode')
+            execute_pipeline(pipeline=define_single_mode_pipeline(), mode='wrong_mode')
             .result_for_solid('return_two')
             .output_value()
             == 2
@@ -107,14 +106,14 @@ def test_execute_multi_mode():
     multi_mode_pipeline = define_multi_mode_pipeline()
 
     assert (
-        execute_pipeline_with_mode(pipeline=multi_mode_pipeline, mode='mode_one')
+        execute_pipeline(pipeline=multi_mode_pipeline, mode='mode_one')
         .result_for_solid('return_three')
         .output_value()
         == 3
     )
 
     assert (
-        execute_pipeline_with_mode(pipeline=multi_mode_pipeline, mode='mode_two')
+        execute_pipeline(pipeline=multi_mode_pipeline, mode='mode_two')
         .result_for_solid('return_three')
         .output_value()
         == 3
@@ -128,13 +127,13 @@ def test_execute_multi_mode_errors():
         execute_pipeline(multi_mode_pipeline)
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline_with_mode(pipeline=multi_mode_pipeline, mode='wrong_mode')
+        execute_pipeline(pipeline=multi_mode_pipeline, mode='wrong_mode')
 
 
 def test_execute_multi_mode_with_resources():
     pipeline_def = define_multi_mode_with_resources_pipeline()
 
-    add_mode_result = execute_pipeline_with_mode(
+    add_mode_result = execute_pipeline(
         pipeline=pipeline_def,
         mode='add_mode',
         environment_dict={'resources': {'op': {'config': 2}}},
@@ -142,7 +141,7 @@ def test_execute_multi_mode_with_resources():
 
     assert add_mode_result.result_for_solid('apply_to_three').output_value() == 5
 
-    mult_mode_result = execute_pipeline_with_mode(
+    mult_mode_result = execute_pipeline(
         pipeline=pipeline_def,
         mode='mult_mode',
         environment_dict={'resources': {'op': {'config': 3}}},
@@ -302,7 +301,7 @@ def test_execute_multi_mode_loggers_with_single_logger():
         bar_logger_captured_results,
     ) = define_multi_mode_with_loggers_pipeline()
 
-    execute_pipeline_with_mode(
+    execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_mode',
         environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},
@@ -318,7 +317,7 @@ def test_execute_multi_mode_loggers_with_single_logger_extra_config():
     pipeline_def, _, __ = define_multi_mode_with_loggers_pipeline()
 
     with pytest.raises(DagsterInvalidConfigError):
-        execute_pipeline_with_mode(
+        execute_pipeline(
             pipeline=pipeline_def,
             mode='foo_mode',
             environment_dict={
@@ -337,7 +336,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers():
         bar_logger_captured_results,
     ) = define_multi_mode_with_loggers_pipeline()
 
-    execute_pipeline_with_mode(
+    execute_pipeline(
         pipeline=pipeline_def,
         mode='foo_bar_mode',
         environment_dict={
@@ -364,7 +363,7 @@ def test_execute_multi_mode_loggers_with_multiple_loggers_single_config():
         bar_logger_captured_results,
     ) = define_multi_mode_with_loggers_pipeline()
 
-    execute_pipeline_with_mode(
+    execute_pipeline(
         pipeline_def,
         mode='foo_bar_mode',
         environment_dict={'loggers': {'foo': {'config': {'log_level': 'DEBUG'}}}},

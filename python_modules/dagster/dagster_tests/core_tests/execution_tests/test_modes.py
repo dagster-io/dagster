@@ -3,7 +3,7 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     ModeDefinition,
-    execute_pipeline_with_mode,
+    execute_pipeline,
     pipeline,
     resource,
     solid,
@@ -42,7 +42,7 @@ def pipeline_with_mode():
 
 
 def test_execute_pipeline_with_mode():
-    pipeline_result = execute_pipeline_with_mode(
+    pipeline_result = execute_pipeline(
         pipeline_with_mode,
         environment_dict={
             'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
@@ -52,7 +52,7 @@ def test_execute_pipeline_with_mode():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('solid_that_uses_adder_resource').output_value() == 5
 
-    pipeline_result = execute_pipeline_with_mode(
+    pipeline_result = execute_pipeline(
         pipeline_with_mode,
         environment_dict={
             'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
@@ -65,9 +65,9 @@ def test_execute_pipeline_with_mode():
 
 def test_execute_pipeline_with_non_existant_mode():
     with pytest.raises(DagsterInvariantViolationError):
-        execute_pipeline_with_mode(
+        execute_pipeline(
             pipeline_with_mode,
-            'BAD',
+            mode='BAD',
             environment_dict={
                 'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
             },

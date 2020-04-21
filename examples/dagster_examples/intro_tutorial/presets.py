@@ -11,7 +11,7 @@ from dagster import (
     ModeDefinition,
     PresetDefinition,
     String,
-    execute_pipeline_with_preset,
+    execute_pipeline,
     pipeline,
     resource,
     solid,
@@ -170,5 +170,5 @@ def presets_pipeline():
 
 
 if __name__ == '__main__':
-    result = execute_pipeline_with_preset(presets_pipeline, 'unittest')
+    result = execute_pipeline(presets_pipeline, preset='unittest')
     assert result.success
