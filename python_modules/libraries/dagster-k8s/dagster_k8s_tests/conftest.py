@@ -1,11 +1,9 @@
 import base64
 import os
-import socket
 import subprocess
 import sys
 import time
 import uuid
-from contextlib import closing
 
 import pytest
 import six
@@ -20,7 +18,7 @@ from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.utils import safe_tempfile_path
 
-from .utils import wait_for_pod
+from .utils import check_output, find_free_port, git_repository_root, test_repo_path, wait_for_pod
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -30,37 +28,10 @@ DOCKER_IMAGE_NAME = 'dagster-docker-buildkite'
 
 # This needs to be a domain name to avoid the k8s machinery automatically prefixing it with
 # `docker.io/` and attempting to pull images from Docker Hub
-LOCAL_DOCKER_REPOSITORY = 'dagster.io'
+LOCAL_DOCKER_REPOSITORY = 'dagster.io.priv'
 
 # Detect the python version we're running on
 MAJMIN = str(sys.version_info.major) + str(sys.version_info.minor)
-
-
-def check_output(*args, **kwargs):
-    try:
-        return subprocess.check_output(*args, **kwargs)
-    except subprocess.CalledProcessError as exc:
-        output = exc.output.decode()
-        six.raise_from(Exception(output), exc)
-
-
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-
-
-def git_repository_root():
-    return six.ensure_str(check_output(['git', 'rev-parse', '--show-toplevel']).strip())
-
-
-def test_repo_path():
-    return os.path.join(git_repository_root(), '.buildkite', 'images', 'docker', 'test_project')
-
-
-def environments_path():
-    return os.path.join(test_repo_path(), 'test_pipelines', 'environments')
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -107,55 +78,34 @@ def image_pull_policy():
         return 'IfNotPresent'
 
 
+# pylint:disable=redefined-outer-name
 @pytest.fixture(scope='session')
-def docker_repository():
-    docker_repository_env = os.getenv('DAGSTER_DOCKER_REPOSITORY')
-    if IS_BUILDKITE:
-        assert docker_repository_env is not None, (
-            'This test requires the environment variable DAGSTER_DOCKER_REPOSITORY to be set '
-            'to proceed'
-        )
-        return docker_repository_env
-    else:
-        assert docker_repository_env is None, (
-            'When executing locally, this test requires the environment variable '
-            'DAGSTER_DOCKER_REPOSITORY to be unset to proceed'
-        )
-        return LOCAL_DOCKER_REPOSITORY
-
-
-@pytest.fixture(scope='session')
-def docker_image_tag():
-    docker_image_tag_env = os.getenv('DAGSTER_DOCKER_IMAGE_TAG')
+def docker_image():
+    docker_repository = os.getenv('DAGSTER_DOCKER_REPOSITORY')
+    image_name = os.getenv('DAGSTER_DOCKER_IMAGE', DOCKER_IMAGE_NAME)
+    docker_image_tag = os.getenv('DAGSTER_DOCKER_IMAGE_TAG')
 
     if IS_BUILDKITE:
-        assert docker_image_tag_env is not None, (
+        assert docker_image_tag is not None, (
             'This test requires the environment variable DAGSTER_DOCKER_IMAGE_TAG to be set '
             'to proceed'
         )
-        return docker_image_tag_env
-    else:
-        return 'py{majmin}-{image_version}'.format(majmin=MAJMIN, image_version='latest')
+        assert docker_repository is not None, (
+            'This test requires the environment variable DAGSTER_DOCKER_REPOSITORY to be set '
+            'to proceed'
+        )
 
+    if not docker_repository:
+        docker_repository = LOCAL_DOCKER_REPOSITORY
 
-# pylint:disable=redefined-outer-name
-@pytest.fixture(scope='session')
-def docker_full_image_name(docker_repository, docker_image_tag):
-    return '{repository}/{image}:{tag}'.format(
-        repository=docker_repository, image=DOCKER_IMAGE_NAME, tag=docker_image_tag
+    if not docker_image_tag:
+        docker_image_tag = 'py{majmin}-{image_version}'.format(
+            majmin=MAJMIN, image_version='latest'
+        )
+
+    return '{repository}/{image_name}:{tag}'.format(
+        repository=docker_repository, image_name=image_name, tag=docker_image_tag
     )
-
-
-@pytest.fixture(scope='session')
-def docker_image(docker_full_image_name, base_python, cluster_exists):
-
-    if not IS_BUILDKITE and not cluster_exists:
-        # We build the image because we aren't guaranteed to have it
-        build_script = os.path.join(test_repo_path(), 'build.sh')
-        check_output([build_script, base_python])
-        check_output(['docker', 'tag', DOCKER_IMAGE_NAME, docker_full_image_name])
-
-    return docker_full_image_name
 
 
 @pytest.fixture(scope='session')
@@ -220,7 +170,7 @@ def kubeconfig(setup_cluster, kubeconfig_file):  # pylint: disable=redefined-out
 
 @pytest.fixture(scope='session')
 def cluster(
-    setup_cluster, kubeconfig, docker_image,
+    setup_cluster, kubeconfig, docker_image, cluster_exists, base_python
 ):  # pylint: disable=redefined-outer-name
     # Need a unique cluster name for this job; can't have hyphens
     if IS_BUILDKITE:
@@ -232,6 +182,12 @@ def cluster(
     config.load_kube_config(config_file=kubeconfig)
 
     if not IS_BUILDKITE:
+        if not cluster_exists:
+            # We build the image because we aren't guaranteed to have it
+            build_script = os.path.join(test_repo_path(), 'build.sh')
+            check_output([build_script, base_python])
+            check_output(['docker', 'tag', DOCKER_IMAGE_NAME, docker_image])
+
         check_output(['kind', 'load', 'docker-image', '--name', setup_cluster, docker_image])
 
         # rabbitmq

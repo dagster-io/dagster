@@ -1,6 +1,38 @@
+import os
+import socket
+import subprocess
 import time
+from contextlib import closing
 
+import six
 from kubernetes import client
+
+
+def check_output(*args, **kwargs):
+    try:
+        return subprocess.check_output(*args, **kwargs)
+    except subprocess.CalledProcessError as exc:
+        output = exc.output.decode()
+        six.raise_from(Exception(output), exc)
+
+
+def find_free_port():
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(('', 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
+
+
+def git_repository_root():
+    return six.ensure_str(check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+
+
+def test_repo_path():
+    return os.path.join(git_repository_root(), '.buildkite', 'images', 'docker', 'test_project')
+
+
+def environments_path():
+    return os.path.join(test_repo_path(), 'test_pipelines', 'environments')
 
 
 def remove_none_recursively(obj):

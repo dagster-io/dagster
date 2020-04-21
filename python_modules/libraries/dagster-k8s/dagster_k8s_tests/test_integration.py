@@ -8,8 +8,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
-from .conftest import environments_path
-from .utils import wait_for_job_success
+from .utils import environments_path, wait_for_job_success
 
 
 @pytest.mark.integration

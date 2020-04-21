@@ -7,8 +7,8 @@ from dagster import __version__ as dagster_version
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
-from .conftest import docker_image, environments_path  # pylint: disable=unused-import
-from .utils import remove_none_recursively, wait_for_job_success
+from .conftest import docker_image  # pylint: disable=unused-import
+from .utils import environments_path, remove_none_recursively, wait_for_job_success
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1

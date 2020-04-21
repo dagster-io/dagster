@@ -75,7 +75,7 @@ the repo:
 
     ./.buildkite/images/docker/test_project/build.sh 3.7.6
     docker tag dagster-docker-buildkite:latest \
-        dagster.io/dagster-docker-buildkite:py37-latest
+        dagster.io.priv/dagster-docker-buildkite:py37-latest
 
 In the above invocation, the Python majmin version should be appropriate for your desired tests.
 
