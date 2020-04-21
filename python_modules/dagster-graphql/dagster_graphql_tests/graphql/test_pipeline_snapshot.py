@@ -29,8 +29,8 @@ query PipelineSnapshotQuery($snapshotId: String!) {
 }
 '''
 
-SNAPSHOT_OR_ERROR_QUERY = '''
-query PipelineSnapshotQuery($snapshotId: String!) {
+SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = '''
+query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
     pipelineSnapshotOrError(snapshotId: $snapshotId) {
         __typename
         ... on PipelineSnapshot {
@@ -50,6 +50,26 @@ query PipelineSnapshotQuery($snapshotId: String!) {
 }
 '''
 
+SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME = '''
+query PipelineSnapshotQueryByActivePipelineName($activePipelineName: String!) {
+    pipelineSnapshotOrError(activePipelineName: $activePipelineName) {
+        __typename
+        ... on PipelineSnapshot {
+            name
+            pipelineSnapshotId
+            description
+            runtimeTypes { key }
+            solids { name }
+            modes { name }
+            solidHandles { handleID }
+            tags { key value }
+        }
+        ... on PipelineSnapshotNotFoundError {
+            snapshotId
+        }
+    }
+}
+'''
 
 # makes snapshot tests much easier to debug
 def pretty_dump(data):
@@ -89,7 +109,7 @@ class TestPipelineSnapshotGraphQL:
         assert result.data['pipelineSnapshot']['__typename'] == 'PipelineSnapshot'
         snapshot.assert_match(pretty_dump(result.data))
 
-    def test_fetch_snapshot_or_error_success(self, instance, snapshot):
+    def test_fetch_snapshot_or_error_by_snapshot_id_success(self, instance, snapshot):
         result = execute_pipeline(noop_pipeline, instance=instance)
         assert result.success
         run = instance.get_run_by_id(result.run_id)
@@ -97,7 +117,7 @@ class TestPipelineSnapshotGraphQL:
 
         result = execute_dagster_graphql(
             define_test_context(instance),
-            SNAPSHOT_OR_ERROR_QUERY,
+            SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
             {'snapshotId': run.pipeline_snapshot_id},
         )
 
@@ -107,9 +127,11 @@ class TestPipelineSnapshotGraphQL:
 
         snapshot.assert_match(pretty_dump(result.data))
 
-    def test_fetch_snapshot_or_error_snapshot_not_found(self, instance, snapshot):
+    def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(self, instance, snapshot):
         result = execute_dagster_graphql(
-            define_test_context(instance), SNAPSHOT_OR_ERROR_QUERY, {'snapshotId': 'notthere'},
+            define_test_context(instance),
+            SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
+            {'snapshotId': 'notthere'},
         )
 
         assert not result.errors
@@ -118,6 +140,33 @@ class TestPipelineSnapshotGraphQL:
             result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineSnapshotNotFoundError'
         )
         assert result.data['pipelineSnapshotOrError']['snapshotId'] == 'notthere'
+        snapshot.assert_match(pretty_dump(result.data))
+
+    def test_fetch_snapshot_or_error_by_active_pipeline_name_success(self, instance, snapshot):
+        result = execute_dagster_graphql(
+            define_test_context(instance),
+            SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
+            {'activePipelineName': 'csv_hello_world'},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineSnapshot'
+        assert result.data['pipelineSnapshotOrError']['name'] == 'csv_hello_world'
+
+        snapshot.assert_match(pretty_dump(result.data))
+
+    def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(self, instance, snapshot):
+        result = execute_dagster_graphql(
+            define_test_context(instance),
+            SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
+            {'activePipelineName': 'jkdjfkdj'},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineNotFoundError'
+
         snapshot.assert_match(pretty_dump(result.data))
 
 

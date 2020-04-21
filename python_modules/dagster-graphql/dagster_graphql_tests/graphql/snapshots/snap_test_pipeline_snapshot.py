@@ -102,7 +102,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
   }
 }'''
 
-snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[create_ephemeral_instance] 1'] = '''{
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_success[create_ephemeral_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
     "description": null,
@@ -150,7 +150,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[crea
   }
 }'''
 
-snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[create_local_temp_instance] 1'] = '''{
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_success[create_local_temp_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
     "description": null,
@@ -198,16 +198,142 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_success[crea
   }
 }'''
 
-snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_snapshot_not_found[create_ephemeral_instance] 1'] = '''{
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found[create_ephemeral_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshotNotFoundError",
     "snapshotId": "notthere"
   }
 }'''
 
-snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_snapshot_not_found[create_local_temp_instance] 1'] = '''{
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found[create_local_temp_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshotNotFoundError",
     "snapshotId": "notthere"
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_success[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "csv_hello_world",
+    "pipelineSnapshotId": "c5f9b33924f0843bb005d31e8a44a747b5731891",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "PoorMansDataFrame"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "sum_solid"
+      },
+      {
+        "handleID": "sum_sq_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "sum_solid"
+      },
+      {
+        "name": "sum_sq_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_success[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "csv_hello_world",
+    "pipelineSnapshotId": "c5f9b33924f0843bb005d31e8a44a747b5731891",
+    "runtimeTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "Path"
+      },
+      {
+        "key": "PoorMansDataFrame"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "solidHandles": [
+      {
+        "handleID": "sum_solid"
+      },
+      {
+        "handleID": "sum_sq_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "sum_solid"
+      },
+      {
+        "name": "sum_sq_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_not_found[create_ephemeral_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineNotFoundError"
+  }
+}'''
+
+snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_not_found[create_local_temp_instance] 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineNotFoundError"
   }
 }'''

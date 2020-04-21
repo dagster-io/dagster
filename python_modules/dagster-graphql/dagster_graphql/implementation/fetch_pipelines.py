@@ -20,10 +20,16 @@ def get_pipeline_snapshot(graphene_info, snapshot_id):
 
 
 @capture_dauphin_error
-def get_pipeline_snapshot_or_error(graphene_info, snapshot_id):
+def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
+    check.str_param(pipeline_name, 'pipeline_name')
+    pipeline_def = get_pipeline_definition(graphene_info, pipeline_name)
+    return DauphinPipelineSnapshot(pipeline_def.get_pipeline_index())
+
+
+@capture_dauphin_error
+def get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id):
     check.str_param(snapshot_id, 'snapshot_id')
-    instance = graphene_info.context.instance
-    return _get_dauphin_pipeline_snapshot_from_instance(instance, snapshot_id)
+    return _get_dauphin_pipeline_snapshot_from_instance(graphene_info.context.instance, snapshot_id)
 
 
 # extracted this out to test

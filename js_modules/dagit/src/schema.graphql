@@ -844,7 +844,7 @@ type PipelineSnapshotNotFoundError implements Error {
   snapshotId: String!
 }
 
-union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
+union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
 
 union PipelinesOrError = PipelineConnection | PythonError
 
@@ -896,7 +896,7 @@ type Query {
   pipelinesOrError: PipelinesOrError!
   pipelines: PipelineConnection!
   pipelineSnapshot(snapshotId: String!): PipelineSnapshot!
-  pipelineSnapshotOrError(snapshotId: String!): PipelineSnapshotOrError!
+  pipelineSnapshotOrError(snapshotId: String, activePipelineName: String): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleName: String!, limit: Int): ScheduleOrError!
   partitionSetsOrError(pipelineName: String): PartitionSetsOrError!

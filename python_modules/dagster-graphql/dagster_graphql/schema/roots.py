@@ -30,7 +30,8 @@ from dagster_graphql.implementation.fetch_pipelines import (
     get_pipeline_or_error,
     get_pipeline_or_raise,
     get_pipeline_snapshot,
-    get_pipeline_snapshot_or_error,
+    get_pipeline_snapshot_or_error_from_pipeline_name,
+    get_pipeline_snapshot_or_error_from_snapshot_id,
     get_pipelines_or_error,
     get_pipelines_or_raise,
 )
@@ -83,7 +84,8 @@ class DauphinQuery(dauphin.ObjectType):
 
     pipelineSnapshotOrError = dauphin.Field(
         dauphin.NonNull('PipelineSnapshotOrError'),
-        snapshotId=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        snapshotId=dauphin.String(),
+        activePipelineName=dauphin.String(),
     )
 
     scheduler = dauphin.Field(dauphin.NonNull('SchedulerOrError'))
@@ -150,7 +152,22 @@ class DauphinQuery(dauphin.ObjectType):
         return get_pipeline_snapshot(graphene_info, kwargs['snapshotId'])
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
-        return get_pipeline_snapshot_or_error(graphene_info, kwargs['snapshotId'])
+        snapshot_id_arg = kwargs.get('snapshotId')
+        pipeline_name_arg = kwargs.get('activePipelineName')
+        check.invariant(
+            not (snapshot_id_arg and pipeline_name_arg),
+            'Cannot pass both snapshotId and activePipelineName',
+        )
+        check.invariant(
+            snapshot_id_arg or pipeline_name_arg, 'Must set one of snapshotId or activePipelineName'
+        )
+
+        if pipeline_name_arg:
+            return get_pipeline_snapshot_or_error_from_pipeline_name(
+                graphene_info, pipeline_name_arg
+            )
+        else:
+            return get_pipeline_snapshot_or_error_from_snapshot_id(graphene_info, snapshot_id_arg)
 
     def resolve_version(self, graphene_info):
         return graphene_info.context.version

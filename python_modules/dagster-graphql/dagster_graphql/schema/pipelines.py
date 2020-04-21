@@ -357,4 +357,9 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 class DauphinPipelineSnapshotOrError(dauphin.Union):
     class Meta(object):
         name = 'PipelineSnapshotOrError'
-        types = ('PipelineSnapshot', 'PipelineSnapshotNotFoundError', 'PythonError')
+        types = (
+            'PipelineSnapshot',
+            'PipelineSnapshotNotFoundError',
+            'PipelineNotFoundError',
+            'PythonError',
+        )
