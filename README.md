@@ -82,11 +82,11 @@ Let's execute our first pipeline via any of three different mechanisms:
   $ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
   ```
 
-- From a rich graphical interface, use the dagit GUI tool
+- From the Dagit GUI
   ```bash
   $ dagit -f hello_dagster.py -n hello_pipeline
   ```
-  Navigate to http://localhost:3000 and start your journey with Dagit.
+  And then navigate to http://localhost:3000 to start using Dagit
 
 ## Learn
 
