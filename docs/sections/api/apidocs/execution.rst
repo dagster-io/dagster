@@ -147,9 +147,6 @@ Environment Dict Schema
         }
       }
 
-.. autoclass:: RunConfig
-   :members:
-
 
 System Storage
 --------------

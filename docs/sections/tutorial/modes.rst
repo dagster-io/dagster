@@ -37,7 +37,7 @@ From the command line, we can set ``-d`` or ``--mode`` and select the name of th
 
     $ dagster pipeline execute -f modes.py -n modes_pipeline -d dev
 
-From the Python API, we can use the :py:class:`RunConfig <dagster.RunConfig>`:
+Or, from the Python API:
 
 .. literalinclude:: ../../../examples/dagster_examples/intro_tutorial/modes.py
    :lines: 152-156
