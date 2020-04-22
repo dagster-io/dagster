@@ -102,13 +102,19 @@ def get_log_queue_dir():
     return dagster_home_logs_queue_path
 
 
-handler = RotatingFileHandler(
-    os.path.join(get_dir_from_dagster_home('logs'), 'event.log'), maxBytes=MAX_BYTES, backupCount=10
-)
+def _get_telemetry_logger():
+    logger = logging.getLogger('dagster_telemetry_logger')
 
-logger = logging.getLogger('telemetry_logger')
-logger.setLevel(logging.INFO)
-logger.addHandler(handler)
+    if len(logger.handlers) == 0:
+        handler = RotatingFileHandler(
+            os.path.join(get_dir_from_dagster_home('logs'), 'event.log'),
+            maxBytes=MAX_BYTES,
+            backupCount=10,
+        )
+        logger.setLevel(logging.INFO)
+        logger.addHandler(handler)
+
+    return logger
 
 
 def log_action(action, client_time, elapsed_time=None, metadata=None):
@@ -128,6 +134,7 @@ def log_action(action, client_time, elapsed_time=None, metadata=None):
     try:
         dagster_telemetry_enabled = DagsterInstance.get().telemetry_enabled
         if dagster_telemetry_enabled:
+            logger = _get_telemetry_logger()
             instance_id = _get_telemetry_instance_id()
             if instance_id == None:
                 instance_id = _set_telemetry_instance_id()

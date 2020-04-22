@@ -17,7 +17,7 @@ store any data that is processed within solids and pipelines.
 The telemetry-instrumented functions are:
 
 .. literalinclude:: ../../../python_modules/dagster/dagster/core/telemetry.py
-   :lines: 47-51
+   :lines: 46-50
    :linenos:
    :caption: telemetry.py
    :language: python

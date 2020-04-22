@@ -7,6 +7,7 @@ from click.testing import CliRunner
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.instance import DagsterInstance
+from dagster.core.telemetry import get_dir_from_dagster_home
 from dagster.core.test_utils import environ
 from dagster.utils import pushd, script_relative_path
 
@@ -68,6 +69,7 @@ def test_dagster_telemetry_disabled(caplog):
                     ],
                 )
 
+            assert not os.path.exists(os.path.join(get_dir_from_dagster_home('logs'), 'event.log'))
             assert len(caplog.records) == 0
             assert result.exit_code == 0
 
