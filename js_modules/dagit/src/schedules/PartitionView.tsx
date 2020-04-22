@@ -7,15 +7,14 @@ import {
 } from "./types/PartitionLongitudinalQuery";
 import { Header, RowContainer } from "../ListComponents";
 import gql from "graphql-tag";
-import { Link } from "react-router-dom";
 
-import { RunStatus } from "../runs/RunUtils";
 import styled from "styled-components/macro";
 import { Divider, Button, ButtonGroup, Spinner } from "@blueprintjs/core";
 import { IconNames } from "@blueprintjs/icons";
 import { Line } from "react-chartjs-2";
 import { colorHash } from "../Util";
 import Loading from "../Loading";
+import { PartitionTable } from "./PartitionTable";
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
 
@@ -75,7 +74,13 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                   popCursor={popCursor}
                   setCursor={setCursor}
                 />
-                <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "relative",
+                    maxWidth: 1600,
+                    margin: "0 auto"
+                  }}
+                >
                   <PartitionTable
                     title="Runs by Partition"
                     partitions={partitions}
@@ -327,7 +332,7 @@ const fillPartitions = (
     });
     points[key] = partitions.map(partition => ({
       x: partition.name,
-      y: keyData[partition.name] || 0
+      y: keyData[partition.name]
     }));
   });
 
@@ -341,24 +346,7 @@ interface PartitionGraphProps {
   yLabel?: string;
 }
 
-const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
-  title,
-  yLabel,
-  partitions,
-  generateData
-}) => {
-  const chart = React.useRef<any>(undefined);
-  const data = fillPartitions(generateData(partitions), partitions);
-  const graphData = {
-    labels: partitions.map(partition => partition.name),
-    datasets: Object.keys(data).map(label => ({
-      label,
-      data: data[label],
-      borderColor: colorHash(label),
-      backgroundColor: "rgba(0,0,0,0)"
-    }))
-  };
-
+const _defaultGraphOptions = (title?: string, yLabel?: string, chart?: any) => {
   const titleOptions = title ? { display: true, text: title } : undefined;
   const scales = yLabel
     ? {
@@ -399,113 +387,37 @@ const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
       instance.update();
     }
   };
-  const options = {
+  return {
     title: titleOptions,
     scales,
     legend
   };
+};
 
+const PartitionGraph: React.FunctionComponent<PartitionGraphProps> = ({
+  title,
+  yLabel,
+  partitions,
+  generateData
+}) => {
+  const chart = React.useRef<any>(undefined);
+  const data = fillPartitions(generateData(partitions), partitions);
+  const graphData = {
+    labels: partitions.map(partition => partition.name),
+    datasets: Object.keys(data).map(label => ({
+      label,
+      data: data[label],
+      borderColor: colorHash(label),
+      backgroundColor: "rgba(0,0,0,0)"
+    }))
+  };
+  const options = _defaultGraphOptions(title, yLabel, chart);
   return (
     <RowContainer style={{ margin: "20px 0" }}>
       <Line data={graphData} height={100} options={options} ref={chart} />
     </RowContainer>
   );
 };
-
-const PartitionTable: React.FunctionComponent<{
-  title: string;
-  partitions: Partition[];
-}> = ({ title, partitions }) => {
-  return (
-    <Container>
-      <Title>{title}</Title>
-      <TableContainer>
-        <Gutter>
-          <Column>
-            <GutterHeader>&nbsp;</GutterHeader>
-            <GutterFiller>
-              <div>Runs</div>
-            </GutterFiller>
-          </Column>
-        </Gutter>
-        {partitions.map(partition => (
-          <Column key={partition.name}>
-            <ColumnHeader>{partition.name}</ColumnHeader>
-            {partition.runs.map(run => (
-              <Link
-                to={`/runs/all/${run.runId}`}
-                key={run.runId}
-                style={{ textAlign: "center", lineHeight: 1 }}
-              >
-                <RunStatus status={run.status} square={true} />
-              </Link>
-            ))}
-          </Column>
-        ))}
-      </TableContainer>
-    </Container>
-  );
-};
-
-const Title = styled.div`
-  text-align: center;
-  font-size: 12px;
-  font-weight: bold;
-  color: #666666;
-`;
-const Container = styled.div`
-  background-color: #ffffff;
-  padding-top: 10px;
-`;
-const TableContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  overflow-x: auto;
-  margin: 30px 30px 10px 0;
-`;
-const Gutter = styled.div`
-  width: 45px;
-  display: flex;
-  flex-direction: column-reverse;
-`;
-const GutterHeader = styled.div`
-  font-size: 12px;
-  color: #666666;
-  padding: 2px 0;
-  border-top: 1px solid transparent;
-  text-align: center;
-`;
-const GutterFiller = styled.div`
-  font-size: 12px;
-  color: #666666;
-  border-right: 1px solid #ececec;
-  min-height: 50px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  & div {
-    transform: rotate(-90deg);
-  }
-`;
-
-const Column = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: stretch;
-  min-width: 50px;
-`;
-const ColumnHeader = styled.div`
-  font-size: 12px;
-  color: #666666;
-  padding: 2px 0;
-  border-top: 1px solid #ececec;
-  margin-top: 2px;
-  text-align: center;
-`;
 
 interface PartitionPagerProps {
   displayed: Partition[] | undefined;

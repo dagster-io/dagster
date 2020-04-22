@@ -24,6 +24,21 @@ export function titleForRun(run: { runId: string }) {
   return run.runId.split("-").shift();
 }
 
+export const RUN_STATUS_COLORS = {
+  NOT_STARTED: Colors.GRAY1,
+  MANAGED: Colors.GRAY3,
+  STARTED: Colors.GRAY3,
+  SUCCESS: Colors.GREEN2,
+  FAILURE: Colors.RED3
+};
+export const RUN_STATUS_HOVER_COLORS = {
+  NOT_STARTED: Colors.GRAY3,
+  MANAGED: Colors.GRAY3,
+  STARTED: Colors.GRAY5,
+  SUCCESS: Colors.GREEN4,
+  FAILURE: Colors.RED5
+};
+
 export function handleExecutionResult(
   pipelineName: string,
   result: void | {
@@ -216,22 +231,9 @@ const RunStatusDot = styled.div<{ status: IRunStatus; square?: boolean }>`
   border-radius: ${({ square }) => (square ? 0 : 5.5)}px;
   align-self: center;
   transition: background 200ms linear;
-  background: ${({ status }) =>
-    ({
-      NOT_STARTED: Colors.GRAY1,
-      MANAGED: Colors.GRAY3,
-      STARTED: Colors.GRAY3,
-      SUCCESS: Colors.GREEN2,
-      FAILURE: Colors.RED3
-    }[status])};
+  background: ${({ status }) => RUN_STATUS_COLORS[status]};
   &:hover {
-    background: ${({ status }) =>
-      ({
-        NOT_STARTED: Colors.GRAY1,
-        STARTED: Colors.GRAY3,
-        SUCCESS: Colors.GREEN2,
-        FAILURE: Colors.RED5
-      }[status])};
+    background: ${({ status }) => RUN_STATUS_HOVER_COLORS[status]};
   }
 `;
 

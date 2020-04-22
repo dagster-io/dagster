@@ -182,7 +182,7 @@ const TicksTable: React.FunctionComponent<{
   ticks: ScheduleRootQuery_scheduleOrError_RunningSchedule_ticksList[];
 }> = ({ ticks }) => {
   return ticks && ticks.length ? (
-    <div style={{ marginTop: 10 }}>
+    <div style={{ marginTop: 25 }}>
       <Header>Schedule Attempts Log</Header>
       <div>
         {ticks.map((tick, i) => {
