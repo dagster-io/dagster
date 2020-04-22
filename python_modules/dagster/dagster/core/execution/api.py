@@ -25,6 +25,7 @@ from .results import PipelineExecutionResult
 
 def pipeline_run_from_run_config(run_config):
     run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
+
     return PipelineRun(
         run_id=run_config.run_id,
         mode=run_config.mode,
@@ -51,7 +52,6 @@ def check_pipeline_run(pipeline_run, pipeline_def):
                     modes=pipeline_def.available_modes,
                 )
             )
-        return pipeline_run
 
     else:
         if not pipeline_def.is_single_mode:
@@ -63,11 +63,11 @@ def check_pipeline_run(pipeline_run, pipeline_def):
                 ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
             )
 
-    pipeline_run = (
-        pipeline_run.with_mode(pipeline_def.get_default_mode_name())
-        if pipeline_run
-        else PipelineRun(mode=pipeline_def.get_default_mode_name())
-    )
+        pipeline_run = (
+            pipeline_run.with_mode(pipeline_def.get_default_mode_name())
+            if pipeline_run
+            else PipelineRun(mode=pipeline_def.get_default_mode_name())
+        )
 
     if pipeline_def.tags:
         return pipeline_run.with_tags(merge_dicts(pipeline_def.tags, pipeline_run.tags))
@@ -271,12 +271,12 @@ def execute_pipeline_iterator(
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``. 
+            ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
-            
+
             Deprecation notice:  In 0.8.0, the use of `run_config` to set mode, tags, and step keys
             will be deprecated. In the interim, if you set a mode using `run_config`, this must
             match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
@@ -331,12 +331,12 @@ def execute_pipeline(
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``. 
+            ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
             pipeline execution.
-            
+
             Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
             will be deprecated. In the interim, if you set a mode using `run_config`, this must
             match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
