@@ -3,6 +3,7 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     ModeDefinition,
+    RunConfig,
     execute_pipeline,
     pipeline,
     resource,
@@ -72,3 +73,56 @@ def test_execute_pipeline_with_non_existant_mode():
                 'solids': {'solid_that_uses_adder_resource': {'inputs': {'number': {'value': 4}}}}
             },
         )
+
+
+@solid
+def solid_that_gets_tags(context):
+    return context.pipeline_run.tags
+
+
+@pipeline(
+    mode_defs=[ModeDefinition(name='tags'),], tags={'tag_key': 'tag_value'},
+)
+def pipeline_with_one_mode_and_tags():
+    return solid_that_gets_tags()
+
+
+def test_execute_pipeline_with_mode_and_tags():
+    pipeline_result = execute_pipeline(pipeline_with_one_mode_and_tags)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('solid_that_gets_tags').output_value() == {
+        'tag_key': 'tag_value'
+    }
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(name='tags_1'),
+        ModeDefinition(name='tags_2'),
+        ModeDefinition(name='tags_3'),
+    ],
+    tags={'pipeline_tag_key': 'pipeline_tag_value'},
+)
+def pipeline_with_multi_mode_and_tags():
+    return solid_that_gets_tags()
+
+
+def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
+    pipeline_result = execute_pipeline(pipeline_with_multi_mode_and_tags, mode='tags_1',)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('solid_that_gets_tags').output_value() == {
+        'pipeline_tag_key': 'pipeline_tag_value'
+    }
+
+
+def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_run_config_tags():
+    pipeline_result = execute_pipeline(
+        pipeline_with_multi_mode_and_tags,
+        mode='tags_1',
+        run_config=RunConfig(tags={'run_tag_key': 'run_tag_value'}),
+    )
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('solid_that_gets_tags').output_value() == {
+        'pipeline_tag_key': 'pipeline_tag_value',
+        'run_tag_key': 'run_tag_value',
+    }
