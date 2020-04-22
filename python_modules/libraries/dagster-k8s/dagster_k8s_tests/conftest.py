@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 import time
-import uuid
+from collections import namedtuple
 
 import pytest
 import six
@@ -12,12 +12,13 @@ from dagster_k8s.launcher import K8sRunLauncher
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 from kubernetes import client, config
 
+from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import compute_logs_directory
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
-from dagster.utils import safe_tempfile_path
 
+from .kind_cluster import kind_cluster
 from .utils import check_output, find_free_port, git_repository_root, test_repo_path, wait_for_pod
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
@@ -41,29 +42,6 @@ def dagster_home():
     yield
     if old_env is not None:
         os.environ['DAGSTER_HOME'] = old_env
-
-
-@pytest.fixture(scope='session')
-def kubeconfig_file():
-    with safe_tempfile_path() as path:
-        yield path
-
-
-@pytest.fixture(scope='session')
-def base_python():
-    return '.'.join(
-        [str(x) for x in [sys.version_info.major, sys.version_info.minor, sys.version_info.micro]]
-    )
-
-
-@pytest.fixture(scope='session')
-def cluster_name(request):
-    # This is to allow users to reuse an existing cluster in local test by running
-    # `pytest --cluster my-cluster` -- this avoids the per-test run overhead of cluster setup
-    # and teardown
-    return request.config.getoption("--cluster") or 'kind-cluster-{uuid}'.format(
-        uuid=uuid.uuid4().hex
-    )
 
 
 @pytest.fixture(scope='session')
@@ -103,140 +81,86 @@ def docker_image():
             majmin=MAJMIN, image_version='latest'
         )
 
-    return '{repository}/{image_name}:{tag}'.format(
+    final_docker_image = '{repository}/{image_name}:{tag}'.format(
         repository=docker_repository, image_name=image_name, tag=docker_image_tag
     )
+    print('Using Docker image: %s' % final_docker_image)
+    return final_docker_image
+
+
+def kind_build_and_load_images(local_dagster_image, cluster_name):
+    # We build the image because we aren't guaranteed to have it
+    base_python = '.'.join(
+        [str(x) for x in [sys.version_info.major, sys.version_info.minor, sys.version_info.micro]]
+    )
+
+    # Build and tag local dagster test image
+    build_script = os.path.join(test_repo_path(), 'build.sh')
+    check_output([build_script, base_python])
+    check_output(['docker', 'tag', DOCKER_IMAGE_NAME, local_dagster_image])
+
+    # Pull rabbitmq/pg images
+    check_output(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
+    check_output(['docker', 'pull', 'docker.io/bitnami/postgresql'])
+
+    # load all images into the kind cluster
+    for image in [
+        'docker.io/bitnami/postgresql',
+        'docker.io/bitnami/rabbitmq',
+        local_dagster_image,
+    ]:
+        check_output(['kind', 'load', 'docker-image', '--name', cluster_name, image])
+
+
+class ClusterConfig(namedtuple('_ClusterConfig', 'name kubeconfig_file')):
+    '''Used to represent a cluster, returned by the cluster_provider fixture below.
+    '''
+
+    def __new__(cls, name, kubeconfig_file):
+        return super(ClusterConfig, cls).__new__(
+            cls,
+            name=check.str_param(name, 'name'),
+            kubeconfig_file=check.str_param(kubeconfig_file, 'kubeconfig_file'),
+        )
 
 
 @pytest.fixture(scope='session')
-def cluster_exists(cluster_name):
-    running_clusters = check_output(['kind', 'get', 'clusters']).decode('utf-8').split('\n')
-
-    return cluster_name in running_clusters
-
-
-@pytest.fixture(scope='session')
-def setup_cluster(request, cluster_name, cluster_exists):  # pylint: disable=redefined-outer-name
-
-    if not IS_BUILDKITE and cluster_exists:
-        yield cluster_name
-        return
-    else:
-        try:
-            print(
-                '--- \033[32m:k8s: Running kind cluster setup for cluster '
-                '{cluster_name}\033[0m'.format(cluster_name=cluster_name)
-            )
-            check_output(['kind', 'create', 'cluster', '--name', cluster_name])
-            yield cluster_name
-        finally:
-            if not request.config.getoption("--keep-cluster"):
-                # ensure cleanup happens on error or normal exit
-                print('Cleaning up kind cluster {cluster_name}'.format(cluster_name=cluster_name))
-                check_output('kind delete cluster --name %s' % cluster_name, shell=True)
-
-
-@pytest.fixture(scope='session')
-def kubeconfig(setup_cluster, kubeconfig_file):  # pylint: disable=redefined-outer-name
-    cluster_name = setup_cluster
-    old_kubeconfig = os.getenv('KUBECONFIG')
-    try:
-        print('Writing kubeconfig to file %s' % kubeconfig_file)
-        if not IS_BUILDKITE and sys.platform == 'darwin':
-            kubeconfig_call = 'kind get kubeconfig --name {cluster_name}'.format(
-                cluster_name=cluster_name
-            )
-        else:
-            kubeconfig_call = 'kind get kubeconfig --internal --name {cluster_name}'.format(
-                cluster_name=cluster_name
-            )
-
-        with open(kubeconfig_file, 'wb') as f:
-            subprocess.check_call(
-                kubeconfig_call, stdout=f, shell=True,
-            )
-        os.environ['KUBECONFIG'] = kubeconfig_file
-
-        yield kubeconfig_file
-
-    finally:
-        print('Cleaning up kubeconfig')
-        if 'KUBECONFIG' in os.environ:
-            del os.environ['KUBECONFIG']
-
-        if old_kubeconfig is not None:
-            os.environ['KUBECONFIG'] = old_kubeconfig
-
-
-@pytest.fixture(scope='session')
-def cluster(
-    setup_cluster, kubeconfig, docker_image, cluster_exists, base_python
-):  # pylint: disable=redefined-outer-name
-    # Need a unique cluster name for this job; can't have hyphens
+def cluster_provider(request, docker_image):
     if IS_BUILDKITE:
         print('Installing ECR credentials...')
         check_output('aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True)
 
-    # see https://kind.sigs.k8s.io/docs/user/private-registries/#use-an-access-token
-    print('Syncing kubeconfig to nodes...')
-    config.load_kube_config(config_file=kubeconfig)
+    cluster_provider = request.config.getoption('--cluster-provider')
 
-    if not IS_BUILDKITE:
-        if not cluster_exists:
-            # We build the image because we aren't guaranteed to have it
-            build_script = os.path.join(test_repo_path(), 'build.sh')
-            check_output([build_script, base_python])
-            check_output(['docker', 'tag', DOCKER_IMAGE_NAME, docker_image])
+    # Use a kind cluster
+    if cluster_provider == 'kind':
+        cluster_name = request.config.getoption("--kind-cluster")
 
-        check_output(['kind', 'load', 'docker-image', '--name', setup_cluster, docker_image])
+        # Cluster will be deleted afterwards unless this is set.
+        # This is to allow users to reuse an existing cluster in local test by running
+        # `pytest --kind-cluster my-cluster` -- this avoids the per-test run overhead of cluster
+        # setup and teardown
+        keep_cluster = request.config.getoption("--keep-cluster")
 
-        # rabbitmq
-        check_output(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
-        check_output(
-            ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/rabbitmq:latest']
-        )
+        with kind_cluster(cluster_name, keep_cluster) as (cluster_name, kubeconfig_file):
+            if not IS_BUILDKITE:
+                kind_build_and_load_images(docker_image, cluster_name)
 
-        # postgres
-        check_output(['docker', 'pull', 'docker.io/bitnami/postgresql'])
-        check_output(
-            ['kind', 'load', 'docker-image', '--name', setup_cluster, 'bitnami/postgresql:latest']
-        )
+            yield ClusterConfig(cluster_name, kubeconfig_file)
 
-    # https://github.com/kubernetes-client/python/issues/895#issuecomment-515025300
-    from kubernetes.client.models.v1_container_image import V1ContainerImage
+    # Use cluster from kubeconfig
+    elif cluster_provider == 'kubeconfig':
+        kubeconfig_file = os.getenv('KUBECONFIG', os.path.expandvars('${HOME}/.kube/config'))
+        config.load_kube_config(config_file=kubeconfig_file)
+        yield ClusterConfig(name='from_system_kubeconfig', kubeconfig_file=kubeconfig_file)
 
-    def names(self, names):
-        self._names = names  # pylint: disable=protected-access
-
-    V1ContainerImage.names = V1ContainerImage.names.setter(names)  # pylint: disable=no-member
-
-    nodes = client.CoreV1Api().list_node().items
-    for node in nodes:
-        node_name = node.metadata.name
-
-        if IS_BUILDKITE:
-            docker_exe = '/usr/bin/docker'
-        else:
-            docker_exe = 'docker'
-        # copy the config to where kubelet will look
-        cmd = os.path.expandvars(
-            '{docker_exe} cp $HOME/.docker/config.json '
-            '{node_name}:/var/lib/kubelet/config.json'.format(
-                docker_exe=docker_exe, node_name=node_name
-            )
-        )
-        check_output(cmd, shell=True)
-
-        # restart kubelet to pick up the config
-        print('Restarting node kubelets...')
-        check_output('docker exec %s systemctl restart kubelet.service' % node_name, shell=True)
-
-    yield cluster
+    else:
+        raise Exception('unknown cluster provider %s' % cluster_provider)
 
 
 @pytest.fixture(scope='session')
 def helm_chart(
-    kubeconfig, cluster, docker_image, image_pull_policy
+    cluster_provider, docker_image, image_pull_policy
 ):  # pylint: disable=redefined-outer-name,unused-argument
     print('--- \033[32m:helm: Installing Helm chart\033[0m')
 
@@ -245,7 +169,6 @@ def helm_chart(
         check_output('''kubectl create namespace dagster-test''', shell=True)
 
         print('Creating k8s test objects ConfigMap test-env-configmap and Secret test-env-secret')
-        config.load_kube_config(config_file=kubeconfig)
         kube_api = client.CoreV1Api()
 
         configmap = client.V1ConfigMap(
@@ -358,7 +281,7 @@ def helm_chart(
 
 @pytest.fixture(scope='session')
 def run_launcher(
-    helm_chart, docker_image, kubeconfig_file, image_pull_policy
+    helm_chart, docker_image, cluster_provider, image_pull_policy
 ):  # pylint: disable=redefined-outer-name,unused-argument
     return K8sRunLauncher(
         image_pull_secrets=[{'name': 'element-dev-key'}],
@@ -368,7 +291,7 @@ def run_launcher(
         dagster_home='/opt/dagster/dagster_home',
         job_image=docker_image,
         load_kubeconfig=True,
-        kubeconfig_file=kubeconfig_file,
+        kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy,
         job_namespace='dagster-test',
         env_config_maps=['dagster-job-runner-env', 'test-env-configmap'],
@@ -426,6 +349,8 @@ def dagster_instance(run_launcher, network_postgres):
     postgres_url = 'postgresql://test:test@localhost:{network_postgres}/test'.format(
         network_postgres=network_postgres
     )
+    print('Local Postgres forwarding URL: ', postgres_url)
+
     instance = DagsterInstance(
         instance_type=InstanceType.EPHEMERAL,
         local_artifact_storage=LocalArtifactStorage(tempdir),

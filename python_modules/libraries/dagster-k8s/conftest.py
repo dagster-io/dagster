@@ -1,4 +1,10 @@
 # See: https://stackoverflow.com/a/31526934/324449
 def pytest_addoption(parser):
-    parser.addoption("--cluster", action="store")
+    # Use kind or some other cluster provider?
+    parser.addoption("--cluster-provider", action="store", default='kind')
+
+    # Specify an existing kind cluster name to use
+    parser.addoption("--kind-cluster", action="store")
+
+    # Keep kind cluster around after tests are done
     parser.addoption("--keep-cluster", action="store_true", default=False)

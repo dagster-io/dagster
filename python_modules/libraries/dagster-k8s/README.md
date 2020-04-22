@@ -97,7 +97,7 @@ rabbitmq and postgresql:
 
 Then you can run pytest as follows:
 
-    pytest --cluster=kind-test
+    pytest --kind-cluster=kind-test
 
 This will bypass the cluster creation/deletion step, and you will incur the image load overhead
 only when the image changes, at the expense of each test run executing in a fully isolated cluster.

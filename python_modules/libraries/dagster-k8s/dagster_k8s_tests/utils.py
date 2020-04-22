@@ -8,6 +8,27 @@ import six
 from kubernetes import client
 
 
+def within_docker():
+    '''detect if we're running inside of a docker container
+
+    from: https://stackoverflow.com/a/48710609/11295366
+    '''
+    cgroup_path = '/proc/self/cgroup'
+    return (
+        os.path.exists('/.dockerenv')
+        or os.path.isfile(cgroup_path)
+        and any('docker' in line for line in open(cgroup_path))
+    )
+
+
+def which_(exe):
+    '''Uses distutils to look for an executable, mimicking unix which'''
+    from distutils import spawn  # pylint: disable=no-name-in-module
+
+    # https://github.com/PyCQA/pylint/issues/73
+    return spawn.find_executable(exe)
+
+
 def check_output(*args, **kwargs):
     try:
         return subprocess.check_output(*args, **kwargs)

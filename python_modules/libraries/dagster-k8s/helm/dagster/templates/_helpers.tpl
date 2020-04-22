@@ -76,12 +76,12 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 
 {{/*
-Create a default fully qualified postgresql name or use the `postgresHost` value if defined.
+Create a default fully qualified postgresql name or use the `postgresqlHost` value if defined.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 */}}
 {{- define "dagster.postgresql.fullname" -}}
-{{- if .Values.postgresql.postgresHost }}
-    {{- .Values.postgresql.postgresHost -}}
+{{- if .Values.postgresql.postgresqlHost }}
+    {{- .Values.postgresql.postgresqlHost -}}
 {{- else }}
     {{- $name := default "postgresql" .Values.postgresql.nameOverride -}}
     {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
