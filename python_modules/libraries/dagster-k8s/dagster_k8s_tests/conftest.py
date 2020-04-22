@@ -3,13 +3,15 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 
+import kubernetes
+import psycopg2
 import pytest
 import six
 import yaml
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
-from kubernetes import client, config
 
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import compute_logs_directory
@@ -30,8 +32,9 @@ DOCKER_IMAGE_NAME = 'dagster-docker-buildkite'
 # `docker.io/` and attempting to pull images from Docker Hub
 LOCAL_DOCKER_REPOSITORY = 'dagster.io.priv'
 
-# Detect the python version we're running on
-MAJMIN = str(sys.version_info.major) + str(sys.version_info.minor)
+
+# How long to wait before giving up on trying to establish postgres port forwarding
+PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -76,8 +79,11 @@ def docker_image():
         docker_repository = LOCAL_DOCKER_REPOSITORY
 
     if not docker_image_tag:
+        # Detect the python version we're running on
+        majmin = str(sys.version_info.major) + str(sys.version_info.minor)
+
         docker_image_tag = 'py{majmin}-{image_version}'.format(
-            majmin=MAJMIN, image_version='latest'
+            majmin=majmin, image_version='latest'
         )
 
     final_docker_image = '{repository}/{image_name}:{tag}'.format(
@@ -137,7 +143,7 @@ def cluster_provider(request, docker_image):
     # Use cluster from kubeconfig
     elif cluster_provider == 'kubeconfig':
         kubeconfig_file = os.getenv('KUBECONFIG', os.path.expandvars('${HOME}/.kube/config'))
-        config.load_kube_config(config_file=kubeconfig_file)
+        kubernetes.config.load_kube_config(config_file=kubeconfig_file)
         yield ClusterConfig(name='from_system_kubeconfig', kubeconfig_file=kubeconfig_file)
 
     else:
@@ -155,23 +161,23 @@ def helm_chart(
         check_output('''kubectl create namespace dagster-test''', shell=True)
 
         print('Creating k8s test objects ConfigMap test-env-configmap and Secret test-env-secret')
-        kube_api = client.CoreV1Api()
+        kube_api = kubernetes.client.CoreV1Api()
 
-        configmap = client.V1ConfigMap(
+        configmap = kubernetes.client.V1ConfigMap(
             api_version='v1',
             kind='ConfigMap',
             data={'TEST_ENV_VAR': 'foobar'},
-            metadata=client.V1ObjectMeta(name='test-env-configmap'),
+            metadata=kubernetes.client.V1ObjectMeta(name='test-env-configmap'),
         )
         kube_api.create_namespaced_config_map(namespace='dagster-test', body=configmap)
 
         # Secret values are expected to be base64 encoded
         secret_val = six.ensure_str(base64.b64encode(six.ensure_binary('foobar')))
-        secret = client.V1Secret(
+        secret = kubernetes.client.V1Secret(
             api_version='v1',
             kind='Secret',
             data={'TEST_SECRET_ENV_VAR': secret_val},
-            metadata=client.V1ObjectMeta(name='test-env-secret'),
+            metadata=kubernetes.client.V1ObjectMeta(name='test-env-secret'),
         )
         kube_api.create_namespaced_secret(namespace='dagster-test', body=secret)
 
@@ -286,63 +292,87 @@ def run_launcher(
 
 
 @pytest.fixture(scope='session')
-def network_postgres(helm_chart):  # pylint:disable=unused-argument
-    print('Port-forwarding postgres')
-    postgres_pod_name = (
-        check_output(
-            [
-                'kubectl',
-                'get',
-                'pods',
-                '--namespace',
-                'dagster-test',
-                '-l',
-                'app=postgresql,release=dagster',
-                '-o',
-                'jsonpath="{.items[0].metadata.name}"',
-            ]
+def dagster_instance(run_launcher):
+    @contextmanager
+    def local_port_forward_postgres():
+        print('Port-forwarding postgres')
+        postgres_pod_name = (
+            check_output(
+                [
+                    'kubectl',
+                    'get',
+                    'pods',
+                    '--namespace',
+                    'dagster-test',
+                    '-l',
+                    'app=postgresql,release=dagster',
+                    '-o',
+                    'jsonpath="{.items[0].metadata.name}"',
+                ]
+            )
+            .decode('utf-8')
+            .strip('"')
         )
-        .decode('utf-8')
-        .strip('"')
-    )
-    forward_port = find_free_port()
-    success, _ = wait_for_pod(postgres_pod_name, wait_for_readiness=True)
-    assert success
-    try:
-        p = subprocess.Popen(
-            [
-                'kubectl',
-                'port-forward',
-                '--namespace',
-                'dagster-test',
-                postgres_pod_name,
-                '{forward_port}:5432'.format(forward_port=forward_port),
-            ]
-        )
-        time.sleep(1)
-        yield forward_port
+        forward_port = find_free_port()
+        success, _ = wait_for_pod(postgres_pod_name, wait_for_readiness=True)
+        assert success
+        try:
+            p = subprocess.Popen(
+                [
+                    'kubectl',
+                    'port-forward',
+                    '--namespace',
+                    'dagster-test',
+                    postgres_pod_name,
+                    '{forward_port}:5432'.format(forward_port=forward_port),
+                ]
+            )
 
-    finally:
-        print('Terminating port-forwarding')
-        p.terminate()
+            # Validate port forwarding works
+            start = time.time()
 
+            while True:
+                if time.time() - start > PG_PORT_FORWARDING_TIMEOUT:
+                    raise Exception('Timed out while waiting for postgres port forwarding')
 
-@pytest.fixture(scope='session')
-def dagster_instance(run_launcher, network_postgres):
+                print(
+                    'Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be'
+                    ' available...' % (postgres_pod_name, forward_port)
+                )
+                try:
+                    conn = psycopg2.connect(
+                        database='test',
+                        user='test',
+                        password='test',
+                        host='localhost',
+                        port=forward_port,
+                    )
+                    conn.close()
+                    break
+                except:  # pylint: disable=bare-except, broad-except
+                    pass
+                time.sleep(1)
+
+            yield forward_port
+
+        finally:
+            print('Terminating port-forwarding')
+            p.terminate()
 
     tempdir = DagsterInstance.temp_storage()
 
-    postgres_url = 'postgresql://test:test@localhost:{network_postgres}/test'.format(
-        network_postgres=network_postgres
-    )
-    print('Local Postgres forwarding URL: ', postgres_url)
+    with local_port_forward_postgres() as local_forward_port:
+        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+            local_forward_port=local_forward_port
+        )
+        print('Local Postgres forwarding URL: ', postgres_url)
 
-    instance = DagsterInstance(
-        instance_type=InstanceType.EPHEMERAL,
-        local_artifact_storage=LocalArtifactStorage(tempdir),
-        run_storage=PostgresRunStorage(postgres_url),
-        event_storage=PostgresEventLogStorage(postgres_url),
-        compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
-        run_launcher=run_launcher,
-    )
-    return instance
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(tempdir),
+            run_storage=PostgresRunStorage(postgres_url),
+            event_storage=PostgresEventLogStorage(postgres_url),
+            compute_log_manager=NoOpComputeLogManager(compute_logs_directory(tempdir)),
+            run_launcher=run_launcher,
+        )
+        yield instance
