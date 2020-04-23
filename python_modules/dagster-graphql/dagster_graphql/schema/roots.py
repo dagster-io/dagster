@@ -37,7 +37,7 @@ from dagster_graphql.implementation.fetch_pipelines import (
 )
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
-    get_run,
+    get_run_by_id,
     get_run_tags,
     get_runs,
     validate_pipeline_config,
@@ -205,7 +205,7 @@ class DauphinQuery(dauphin.ObjectType):
         )
 
     def resolve_pipelineRunOrError(self, graphene_info, runId):
-        return get_run(graphene_info, runId)
+        return get_run_by_id(graphene_info, runId)
 
     def resolve_partitionSetsOrError(self, graphene_info, **kwargs):
         pipeline_name = kwargs.get('pipelineName')

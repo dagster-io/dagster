@@ -219,6 +219,9 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 			mode
 		}
 	}
+  ... on PipelineRunConflict {
+    message
+  }
 }
 '''
     + MESSAGE_EVENT_FRAGMENTS
@@ -457,12 +460,16 @@ mutation(
       }
     }
     ... on PipelineNotFoundError {
-        message
-        pipelineName
+      message
+      pipelineName
     }
     ... on PythonError {
       message
       stack
+      cause {
+          message
+          stack
+      }
     }
     ... on ExecutePlanSuccess {
       pipeline {

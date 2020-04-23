@@ -1,7 +1,6 @@
 from dagster import Field, Int, String, composite_solid, pipeline, solid
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun
 
 
 @solid(config={'foo': Field(String)})
@@ -49,12 +48,15 @@ def test_execution_plan_for_composite_solid():
         }
     }
     execution_plan = create_execution_plan(composite_pipeline, environment_dict=environment_dict)
-    pipeline_run = PipelineRun(pipeline_name=composite_pipeline.name)
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=composite_pipeline, execution_plan=execution_plan
+    )
     events = execute_plan(
         execution_plan,
         environment_dict=environment_dict,
         pipeline_run=pipeline_run,
-        instance=DagsterInstance.ephemeral(),
+        instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [
@@ -79,13 +81,16 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     execution_plan = create_execution_plan(
         composite_pipeline_with_config_mapping, environment_dict=environment_dict
     )
-    pipeline_run = PipelineRun(pipeline_name=composite_pipeline_with_config_mapping.name)
+    instance = DagsterInstance.ephemeral()
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=composite_pipeline_with_config_mapping, execution_plan=execution_plan
+    )
 
     events = execute_plan(
         execution_plan,
         environment_dict=environment_dict,
         pipeline_run=pipeline_run,
-        instance=DagsterInstance.ephemeral(),
+        instance=instance,
     )
 
     assert [e.event_type_value for e in events] == [

@@ -1,6 +1,6 @@
 from dagster_graphql.implementation.utils import ExecutionParams
 
-from dagster import PipelineDefinition, PipelineRun, check
+from dagster import PipelineDefinition, check
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.instance import DagsterInstance
@@ -10,9 +10,9 @@ from dagster.core.utils import make_new_run_id
 from ..utils import UserFacingGraphQLError
 
 
-def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=None):
+def pipeline_run_args_from_execution_params(execution_params, step_keys_to_execute=None):
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    return PipelineRun(
+    return dict(
         pipeline_name=execution_params.selector.name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
@@ -28,17 +28,7 @@ def pipeline_run_from_execution_params(execution_params, step_keys_to_execute=No
         parent_run_id=(
             execution_params.execution_metadata.parent_run_id or execution_params.previous_run_id
         ),
-        previous_run_id=execution_params.previous_run_id,
         status=PipelineRunStatus.NOT_STARTED,
-    )
-
-
-def _create_pipeline_run(instance, pipeline_def, execution_params):
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    return pipeline_run_from_execution_params(
-        execution_params, get_step_keys_to_execute(instance, pipeline_def, execution_params)
     )
 
 

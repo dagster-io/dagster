@@ -92,7 +92,7 @@ def test_valid_job_format(
 def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-name
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(
+    run = dagster_instance.get_or_create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, mode='default'
     )
 
@@ -112,7 +112,9 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
 def test_failing_k8s_run_launcher(dagster_instance):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
+    run = dagster_instance.get_or_create_run(
+        pipeline_name=pipeline_name, environment_dict=environment_dict
+    )
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)

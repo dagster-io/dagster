@@ -4,11 +4,16 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import _check_start_pipeline_execution_errors, _create_pipeline_run
+from .utils import (
+    _check_start_pipeline_execution_errors,
+    get_step_keys_to_execute,
+    pipeline_run_args_from_execution_params,
+)
 
 
 @capture_dauphin_error
@@ -59,7 +64,17 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    run = instance.launch_run(_create_pipeline_run(instance, pipeline_def, execution_params))
+    pipeline_run = instance.get_or_create_run(
+        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+        execution_plan_snapshot=snapshot_from_execution_plan(
+            execution_plan, pipeline_def.get_pipeline_snapshot_id()
+        ),
+        **pipeline_run_args_from_execution_params(
+            execution_params, get_step_keys_to_execute(instance, pipeline_def, execution_params),
+        )
+    )
+
+    run = instance.launch_run(pipeline_run)
 
     return graphene_info.schema.type_named(success_type)(
         run=graphene_info.schema.type_named('PipelineRun')(run)

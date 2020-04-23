@@ -160,15 +160,23 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
 
     run_id = execution_params.execution_metadata.run_id
 
+    mode = execution_params.mode or pipeline_def.get_default_mode_name()
+
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
+
+    execution_plan = create_execution_plan(
+        pipeline=pipeline_def, environment_dict=execution_params.environment_dict, mode=mode,
+    )
+
     if not pipeline_run:
         # TODO switch to raising a UserFacingError if the run_id cannot be found
         # https://github.com/dagster-io/dagster/issues/1876
-        pipeline_run = PipelineRun(
-            pipeline_name=pipeline_def.name,
+        pipeline_run = graphene_info.context.instance.create_run_for_pipeline(
+            pipeline=pipeline_def,
+            execution_plan=execution_plan,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
-            mode=execution_params.mode or pipeline_def.get_default_mode_name(),
+            mode=mode,
             tags=execution_params.execution_metadata.tags or {},
         )
 

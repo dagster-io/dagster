@@ -161,6 +161,7 @@ def test_pipeline_reexecution_successful_launch():
     context = define_context_for_repository_yaml(
         path=file_relative_path(__file__, '../repository.yaml'), instance=instance
     )
+
     run_id = make_new_run_id()
     result = execute_dagster_graphql(
         context=context,

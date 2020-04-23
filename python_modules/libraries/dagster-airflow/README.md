@@ -8,6 +8,8 @@ From repo root
 
 ```
 # select your python version
+pip install -e .buildkite/images/docker/test_project/test_pipelines
+
 .buildkite/images/docker/test_project/build.sh 3.6.8
 
 export DAGSTER_DOCKER_IMAGE="dagster-docker-buildkite"

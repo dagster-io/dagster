@@ -8,7 +8,6 @@ from dagster import (
     Int,
     ModeDefinition,
     PipelineDefinition,
-    PipelineRun,
     ResourceDefinition,
     String,
     execute_pipeline,
@@ -447,12 +446,11 @@ def test_resource_init_failure():
     event_types = [event.event_type_value for event in res.event_list]
     assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types
 
+    instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline)
-    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
+    pipeline_run = instance.create_run_for_pipeline(pipeline, execution_plan=execution_plan)
 
-    step_events = execute_plan(
-        execution_plan, pipeline_run=pipeline_run, instance=DagsterInstance.ephemeral()
-    )
+    step_events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
 
     event_types = [event.event_type_value for event in step_events]
     assert DagsterEventType.PIPELINE_INIT_FAILURE.value in event_types

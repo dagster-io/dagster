@@ -6,7 +6,28 @@ from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
 from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
+from dagster import pipeline, solid
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+
 from .conftest import dagster_docker_image  # pylint: disable=unused-import
+
+
+@solid
+def nonce_solid(_):
+    return
+
+
+@pipeline
+def nonce_pipeline():
+    return nonce_solid()
+
+
+nonce_pipeline_snapshot = nonce_pipeline.get_pipeline_snapshot()
+
+nonce_execution_plan_snapshot = snapshot_from_execution_plan(
+    create_execution_plan(nonce_pipeline), nonce_pipeline.get_pipeline_snapshot_id()
+)
 
 
 def test_init_modified_docker_operator(
@@ -18,6 +39,8 @@ def test_init_modified_docker_operator(
         pipeline_name='',
         mode='default',
         op_kwargs={'image': dagster_docker_image, 'api_version': 'auto',},
+        pipeline_snapshot=nonce_pipeline_snapshot,
+        execution_plan_snapshot=nonce_execution_plan_snapshot,
     )
     DagsterDockerOperator(dagster_operator_parameters)
 
@@ -36,6 +59,8 @@ def test_modified_docker_operator_bad_docker_conn(
             'docker_conn_id': 'foo_conn',
             'command': 'dagster-graphql --help',
         },
+        pipeline_snapshot=nonce_pipeline_snapshot,
+        execution_plan_snapshot=nonce_execution_plan_snapshot,
     )
     operator = DagsterDockerOperator(dagster_operator_parameters)
 
@@ -54,6 +79,8 @@ def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=
             'api_version': 'auto',
             'command': 'dagster-graphql --help',
         },
+        pipeline_snapshot=nonce_pipeline_snapshot,
+        execution_plan_snapshot=nonce_execution_plan_snapshot,
     )
     operator = DagsterDockerOperator(dagster_operator_parameters)
     with pytest.raises(DagsterGraphQLClientError, match='Unhandled error type'):
@@ -73,6 +100,8 @@ def test_modified_docker_operator_bad_command(
             'api_version': 'auto',
             'command': 'dagster-graphql gargle bargle',
         },
+        pipeline_snapshot=nonce_pipeline_snapshot,
+        execution_plan_snapshot=nonce_execution_plan_snapshot,
     )
     operator = DagsterDockerOperator(dagster_operator_parameters)
     with pytest.raises(AirflowException, match='\'StatusCode\': 2'):
@@ -102,6 +131,8 @@ def test_modified_docker_operator_url(dagster_docker_image):  # pylint: disable=
                 'tls_ca_cert': docker_cert_path,
                 'command': 'dagster-graphql --help',
             },
+            pipeline_snapshot=nonce_pipeline_snapshot,
+            execution_plan_snapshot=nonce_execution_plan_snapshot,
         )
         operator = DagsterDockerOperator(dagster_operator_parameters)
 

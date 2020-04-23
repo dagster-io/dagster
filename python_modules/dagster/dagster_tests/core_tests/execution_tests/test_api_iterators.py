@@ -6,8 +6,6 @@ from dagster.core.execution.api import (
     execute_plan_iterator,
     execute_run_iterator,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.utils import make_new_run_id
 
 
 @resource
@@ -86,14 +84,8 @@ def test_execute_run_iterator():
             )
         ],
     )
-    pipeline_run = instance.create_run(
-        PipelineRun(
-            pipeline_name=pipeline.name,
-            run_id=make_new_run_id(),
-            environment_dict={'loggers': {'callback': {}}},
-            mode='default',
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline, environment_dict={'loggers': {'callback': {}}}, mode='default',
     )
 
     iterator = execute_run_iterator(pipeline, pipeline_run, instance=instance)
@@ -131,17 +123,14 @@ def test_execute_plan_iterator():
         ],
     )
     environment_dict = {'loggers': {'callback': {}}}
-    pipeline_run = instance.create_run(
-        PipelineRun(
-            pipeline_name=pipeline.name,
-            run_id=make_new_run_id(),
-            environment_dict={'loggers': {'callback': {}}},
-            mode='default',
-            status=PipelineRunStatus.NOT_STARTED,
-        )
+
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline,
+        environment_dict={'loggers': {'callback': {}}},
+        execution_plan=execution_plan,
     )
 
-    execution_plan = create_execution_plan(pipeline, environment_dict)
     iterator = execute_plan_iterator(
         execution_plan, pipeline_run, instance, environment_dict=environment_dict
     )

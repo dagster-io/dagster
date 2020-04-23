@@ -9,6 +9,7 @@ from dagster import (
     DagsterInvalidConfigError,
     InputDefinition,
     OutputDefinition,
+    PipelineRun,
     check,
     execute_pipeline,
     pipeline,
@@ -19,7 +20,7 @@ from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 
@@ -91,13 +92,19 @@ def test_init_compute_log_with_bad_config_module():
 MOCK_HAS_RUN_CALLED = False
 
 
-def test_get_or_create_run():
+def test_get_run_by_id():
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
-        assert instance.get_or_create_run(run) == run
-        assert instance.has_run(run.run_id)
-        assert instance.get_or_create_run(run) == run
+
+        assert instance.get_runs() == []
+        pipeline_run = PipelineRun('foo_pipeline', 'new_run')
+        assert instance.get_run_by_id(pipeline_run.run_id) is None
+
+        instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
+
+        assert instance.get_runs() == [pipeline_run]
+
+        assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
 
     # Run is created after we check whether it exists
     with seven.TemporaryDirectory() as tmpdir_path:
@@ -115,7 +122,8 @@ def test_get_or_create_run():
                 return self._run_storage.has_run(run_id)
 
         instance.has_run = types.MethodType(_has_run, instance)
-        assert instance.get_or_create_run(run) == run
+
+        assert instance.get_run_by_id(run.run_id) is None
 
     # Run is created after we check whether it exists, but deleted before we can get it
     global MOCK_HAS_RUN_CALLED  # pylint:disable=global-statement
@@ -138,8 +146,7 @@ def test_get_or_create_run():
                 return False
 
         instance.has_run = types.MethodType(_has_run, instance)
-        with pytest.raises(check.CheckError, match='Inconsistent run storage'):
-            instance.get_or_create_run(run)
+        assert instance.get_run_by_id(run.run_id) is None
 
 
 def test_run_step_stats():

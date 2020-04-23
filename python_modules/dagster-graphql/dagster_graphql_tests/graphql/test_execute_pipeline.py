@@ -8,7 +8,7 @@ from graphql import parse
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
@@ -22,6 +22,7 @@ from .execution_queries import (
 )
 from .setup import (
     PoorMansDataFrame,
+    csv_hello_world,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
     define_test_context,
@@ -655,46 +656,20 @@ def test_start_pipeline_execution_with_start_disabled():
 def test_start_pipeline_execution_for_created_run():
     instance = DagsterInstance.local_temp()
 
-    run_id = make_new_run_id()
-    pipeline_run = PipelineRun(
-        pipeline_name='csv_hello_world',
-        run_id=run_id,
-        environment_dict=csv_hello_world_solids_config(),
-        mode='default',
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=csv_hello_world_solids_config()
     )
-    instance.create_run(pipeline_run)
 
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
         START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
-        variables={'runId': run_id},
+        variables={'runId': pipeline_run.run_id},
     )
 
     assert result.data
     assert (
         result.data['startPipelineExecutionForCreatedRun']['__typename']
         == 'StartPipelineExecutionSuccess'
-    )
-
-
-def test_start_pipeline_execution_for_created_run_invalid_config():
-    instance = DagsterInstance.local_temp()
-
-    run_id = make_new_run_id()
-    config = csv_hello_world_solids_config()
-    config['invalid_key'] = 'invalid_value'
-    instance.create_empty_run(run_id, 'csv_hello_world', config)
-
-    result = execute_dagster_graphql(
-        define_test_context(instance=instance),
-        START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
-        variables={'runId': run_id},
-    )
-
-    assert result.data
-    assert (
-        result.data['startPipelineExecutionForCreatedRun']['__typename']
-        == 'PipelineConfigValidationInvalid'
     )
 
 

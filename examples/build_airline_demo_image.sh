@@ -19,6 +19,7 @@ function cleanup {
     rm -rf dagster-pyspark
     rm -rf dagster-postgres
     rm -rf dagster-cron
+    rm -rf dagster-dbt
 }
 # ensure cleanup happens on error or normal exit
 trap cleanup EXIT
@@ -32,6 +33,7 @@ cp -R ../python_modules/libraries/dagster-spark .
 cp -R ../python_modules/libraries/dagster-pyspark .
 cp -R ../python_modules/libraries/dagster-postgres .
 cp -R ../python_modules/libraries/dagster-cron .
+cp -R ../python_modules/libraries/dagster-dbt .
 
 rm -rf dagster/.tox
 rm -rf dagster-graphql/.tox
@@ -42,6 +44,7 @@ rm -rf dagster-spark/.tox
 rm -rf dagster-pyspark/.tox
 rm -rf dagster-postgres/.tox
 rm -rf dagster-cron/.tox
+rm -rf dagster-dbt/.tox
 
 rm -rf dagster/dist
 rm -rf dagster-graphql/dist
@@ -52,6 +55,7 @@ rm -rf dagster-spark/dist
 rm -rf dagster-pyspark/dist
 rm -rf dagster-postgres/dist
 rm -rf dagster-cron/dist
+rm -rf dagster-dbt/dist
 
 rm -rf .tox dist
 

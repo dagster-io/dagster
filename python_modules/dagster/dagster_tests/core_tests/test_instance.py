@@ -1,7 +1,4 @@
-import pytest
-
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
-from dagster.core.errors import DagsterRunConflict
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.execution_plan_snapshot import (
@@ -9,32 +6,25 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
-from dagster.core.storage.pipeline_run import PipelineRun
 
 
-def test_get_or_create_run():
+def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = PipelineRun(pipeline_name='foo_pipeline', run_id='new_run')
-    assert instance.get_or_create_run(pipeline_run) == pipeline_run
+    pipeline_run = instance.get_or_create_run(
+        pipeline_name='foo_pipeline', run_id='new_run', pipeline_snapshot=None
+    )
 
     assert instance.get_runs() == [pipeline_run]
 
-    assert instance.get_or_create_run(pipeline_run) == pipeline_run
-
-    assert instance.get_runs() == [pipeline_run]
-
-    conflicting_pipeline_run = PipelineRun(pipeline_name='bar_pipeline', run_id='new_run')
-
-    with pytest.raises(DagsterRunConflict, match='Found conflicting existing run with same id.'):
-        instance.get_or_create_run(conflicting_pipeline_run)
+    assert instance.get_run_by_id(pipeline_run.run_id) == pipeline_run
 
 
 def do_test_single_write_read(instance):
     run_id = 'some_run_id'
     pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
-    instance.create_empty_run(run_id=run_id, pipeline_name=pipeline_def.name)
+    instance.create_run_for_pipeline(pipeline=pipeline_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
     assert run.pipeline_name == 'some_pipeline'

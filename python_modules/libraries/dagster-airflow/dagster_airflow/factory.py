@@ -10,6 +10,11 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanSnapshot,
+    snapshot_from_execution_plan,
+)
+from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator
@@ -50,10 +55,21 @@ def _rename_for_airflow(name):
 class DagsterOperatorInvocationArgs(
     namedtuple(
         'DagsterOperatorInvocationArgs',
-        'handle pipeline_name environment_dict mode step_keys instance_ref',
+        'handle pipeline_name environment_dict mode step_keys instance_ref pipeline_snapshot '
+        'execution_plan_snapshot',
     )
 ):
-    def __new__(cls, handle, pipeline_name, environment_dict, mode, step_keys, instance_ref):
+    def __new__(
+        cls,
+        handle,
+        pipeline_name,
+        environment_dict,
+        mode,
+        step_keys,
+        instance_ref,
+        pipeline_snapshot,
+        execution_plan_snapshot,
+    ):
         return super(DagsterOperatorInvocationArgs, cls).__new__(
             cls,
             handle=handle,
@@ -62,6 +78,8 @@ class DagsterOperatorInvocationArgs(
             mode=mode,
             step_keys=step_keys,
             instance_ref=instance_ref,
+            pipeline_snapshot=pipeline_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
         )
 
 
@@ -70,7 +88,8 @@ class DagsterOperatorParameters(
         '_DagsterOperatorParameters',
         (
             'handle pipeline_name environment_dict '
-            'mode task_id step_keys dag instance_ref op_kwargs'
+            'mode task_id step_keys dag instance_ref op_kwargs pipeline_snapshot '
+            'execution_plan_snapshot'
         ),
     )
 ):
@@ -85,6 +104,8 @@ class DagsterOperatorParameters(
         dag=None,
         instance_ref=None,
         op_kwargs=None,
+        pipeline_snapshot=None,
+        execution_plan_snapshot=None,
     ):
         check_storage_specified(environment_dict)
         return super(DagsterOperatorParameters, cls).__new__(
@@ -100,6 +121,12 @@ class DagsterOperatorParameters(
             dag=check.opt_inst_param(dag, 'dag', DAG),
             instance_ref=check.opt_inst_param(instance_ref, 'instance_ref', InstanceRef),
             op_kwargs=check.opt_dict_param(op_kwargs.copy(), 'op_kwargs', key_type=str),
+            pipeline_snapshot=check.inst_param(
+                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            ),
+            execution_plan_snapshot=check.inst_param(
+                execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
+            ),
         )
 
     @property
@@ -111,6 +138,8 @@ class DagsterOperatorParameters(
             mode=self.mode,
             step_keys=self.step_keys,
             instance_ref=self.instance_ref,
+            pipeline_snapshot=self.pipeline_snapshot,
+            execution_plan_snapshot=self.execution_plan_snapshot,
         )
 
 
@@ -178,6 +207,10 @@ def _make_airflow_dag(
             dag=dag,
             instance_ref=instance.get_ref(),
             op_kwargs=op_kwargs,
+            pipeline_snapshot=pipeline.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan, pipeline_snapshot_id=pipeline.get_pipeline_snapshot_id()
+            ),
         )
         task = operator(operator_parameters)
 

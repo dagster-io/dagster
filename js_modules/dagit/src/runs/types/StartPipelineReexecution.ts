@@ -10,7 +10,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface StartPipelineReexecution_startPipelineReexecution_StartPipelineReexecutionDisabledError {
-  __typename: "StartPipelineReexecutionDisabledError" | "InvalidStepError" | "InvalidOutputError";
+  __typename: "StartPipelineReexecutionDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface StartPipelineReexecution_startPipelineReexecution_StartPipelineReexecutionSuccess_run_pipeline {

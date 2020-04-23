@@ -12,7 +12,7 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.definitions.pipeline import ExecutionSelector, PipelineDefinition
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -51,6 +51,37 @@ def _dagster_home():
     return os.path.expanduser(dagster_home_path)
 
 
+def _check_run_equality(pipeline_run, candidate_run):
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(candidate_run, 'candidate_run', PipelineRun)
+
+    field_diff = {}
+    for field in pipeline_run._fields:
+        expected_value = getattr(pipeline_run, field)
+        candidate_value = getattr(candidate_run, field)
+        if expected_value != candidate_value:
+            field_diff[field] = (expected_value, candidate_value)
+
+    return field_diff
+
+
+def _format_field_diff(field_diff):
+    return '\n'.join(
+        [
+            (
+                '    {field_name}:\n'
+                + '        Expected: {expected_value}\n'
+                + '        Received: {candidate_value}'
+            ).format(
+                field_name=field_name,
+                expected_value=expected_value,
+                candidate_value=candidate_value,
+            )
+            for field_name, (expected_value, candidate_value,) in field_diff.items()
+        ]
+    )
+
+
 class _EventListenerLogHandler(logging.Handler):
     def __init__(self, instance):
         self._instance = instance
@@ -76,60 +107,6 @@ class _EventListenerLogHandler(logging.Handler):
             logging.critical('Error during instance event listen')
             logging.exception(str(e))
             raise
-
-
-class InstanceCreateRunArgs(
-    namedtuple(
-        '_InstanceCreateRunArgs',
-        'pipeline_snapshot execution_plan_snapshot run_id environment_dict '
-        'mode selector step_keys_to_execute status tags root_run_id '
-        'parent_run_id',
-    ),
-):
-    def __new__(
-        cls,
-        pipeline_snapshot,
-        execution_plan_snapshot,
-        run_id,
-        environment_dict,
-        mode,
-        selector,
-        step_keys_to_execute,
-        status,
-        tags,
-        root_run_id,
-        parent_run_id,
-    ):
-
-        from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-        from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
-
-        return super(InstanceCreateRunArgs, cls).__new__(
-            cls,
-            pipeline_snapshot=check.inst_param(
-                pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
-            ),
-            execution_plan_snapshot=check.inst_param(
-                execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
-            ),
-            run_id=check.str_param(run_id, 'run_id'),
-            environment_dict=check.opt_dict_param(
-                environment_dict, 'environment_dict', key_type=str
-            ),
-            mode=check.str_param(mode, 'mode'),
-            selector=check.opt_inst_param(
-                selector, 'selector', ExecutionSelector, ExecutionSelector(pipeline_snapshot.name)
-            ),
-            step_keys_to_execute=None
-            if step_keys_to_execute is None
-            else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
-            status=check.opt_inst_param(
-                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
-            ),
-            tags=check.opt_dict_param(tags, 'tags', key_type=str),
-            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
-            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
-        )
 
 
 class InstanceType(Enum):
@@ -439,98 +416,135 @@ class DagsterInstance:
     def get_run_tags(self):
         return self._run_storage.get_run_tags()
 
-    def create_empty_run(self, run_id, pipeline_name, environment_dict=None):
-        return self.create_run(
-            PipelineRun(
-                pipeline_name=pipeline_name, run_id=run_id, environment_dict=environment_dict
+    def create_run_for_pipeline(
+        self,
+        pipeline,
+        execution_plan=None,
+        run_id=None,
+        environment_dict=None,
+        mode=None,
+        selector=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+    ):
+        from dagster.core.execution.api import create_execution_plan
+        from dagster.core.execution.plan.plan import ExecutionPlan
+        from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+
+        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
+        if execution_plan is None:
+            execution_plan = create_execution_plan(
+                pipeline,
+                environment_dict=environment_dict,
+                mode=mode,
+                step_keys_to_execute=step_keys_to_execute,
             )
+
+        return self.get_or_create_run(
+            pipeline_name=pipeline.name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name()),
+            selector=check.opt_inst_param(
+                selector,
+                'selector',
+                ExecutionSelector,
+                default=ExecutionSelector(name=pipeline.name),
+            ),
+            step_keys_to_execute=step_keys_to_execute,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            pipeline_snapshot=pipeline.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan, pipeline.get_pipeline_snapshot_id()
+            ),
         )
 
-    def create_run(self, pipeline_run):
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    def get_or_create_run(
+        self,
+        pipeline_name=None,
+        run_id=None,
+        environment_dict=None,
+        mode=None,
+        selector=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot=None,
+        execution_plan_snapshot=None,
+    ):
 
-        if self.has_run(pipeline_run.run_id):
-            raise DagsterRunAlreadyExists(
-                'Attempting to create a pipeline run for an existing run id, {run_id}'.format(
-                    run_id=pipeline_run.run_id
-                )
-            )
-
-        run = self._run_storage.add_run(pipeline_run)
-        return run
-
-    def create_run_with_snapshot(self, create_run_args):
-        check.inst_param(create_run_args, 'create_run_args', InstanceCreateRunArgs)
-
-        from dagster.core.snap.execution_plan_snapshot import create_execution_plan_snapshot_id
-        from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
-
-        pipeline_snapshot_id = create_pipeline_snapshot_id(create_run_args.pipeline_snapshot)
-
-        if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
-            returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
-                create_run_args.pipeline_snapshot
-            )
-
-            check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
-
-        ep_snapshot_id = create_execution_plan_snapshot_id(create_run_args.execution_plan_snapshot)
-
-        if not self._run_storage.has_execution_plan_snapshot(ep_snapshot_id):
-            returned_ep_snapshot_id = self._run_storage.add_execution_plan_snapshot(
-                create_run_args.execution_plan_snapshot
-            )
-
-            check.invariant(ep_snapshot_id == returned_ep_snapshot_id)
-
-        # If dagster pipeline was created via airflow ingest and airflow_execution_date was not set
-        # in tags, then add the current time as airflow_execution_date to PipelineRun tags
-        tags = create_run_args.tags
-        if IS_AIRFLOW_INGEST_PIPELINE_STR in create_run_args.tags:
-            if AIRFLOW_EXECUTION_DATE_STR not in create_run_args.tags:
+        if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
+            if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags[AIRFLOW_EXECUTION_DATE_STR] = get_current_datetime_in_utc().isoformat()
 
-        return self.create_run(
-            PipelineRun(
-                pipeline_name=create_run_args.pipeline_snapshot.name,
-                pipeline_snapshot_id=pipeline_snapshot_id,
-                execution_plan_snapshot_id=ep_snapshot_id,
-                run_id=create_run_args.run_id,
-                environment_dict=create_run_args.environment_dict,
-                mode=create_run_args.mode,
-                selector=create_run_args.selector,
-                step_keys_to_execute=create_run_args.step_keys_to_execute,
-                status=create_run_args.status,
-                tags=tags,
-                parent_run_id=create_run_args.parent_run_id,
-                root_run_id=create_run_args.root_run_id,
-            )
+        pipeline_run = PipelineRun(
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=mode,
+            selector=selector,
+            step_keys_to_execute=step_keys_to_execute,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
         )
 
-    def get_or_create_run(self, pipeline_run):
-        # This eventually needs transactional/locking semantics
+        if pipeline_snapshot is not None:
+            from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+
+            pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+
+            if not self._run_storage.has_pipeline_snapshot(pipeline_snapshot_id):
+                returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
+                    pipeline_snapshot
+                )
+
+                check.invariant(pipeline_snapshot_id == returned_pipeline_snapshot_id)
+
+            pipeline_run = pipeline_run.with_pipeline_snapshot_id(pipeline_snapshot_id)
+
+        if execution_plan_snapshot is not None:
+            from dagster.core.snap.execution_plan_snapshot import create_execution_plan_snapshot_id
+
+            check.invariant(execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id)
+
+            execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+
+            if not self._run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id):
+                returned_execution_plan_snapshot_id = self._run_storage.add_execution_plan_snapshot(
+                    execution_plan_snapshot
+                )
+
+                check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
+
+            pipeline_run = pipeline_run.with_execution_plan_snapshot_id(execution_plan_snapshot_id)
+
         if self.has_run(pipeline_run.run_id):
             candidate_run = self.get_run_by_id(pipeline_run.run_id)
-            if not candidate_run == pipeline_run:
+
+            field_diff = _check_run_equality(pipeline_run, candidate_run)
+
+            if field_diff:
                 raise DagsterRunConflict(
-                    'Found conflicting existing run with same id. Expected {pipeline_run}, found {candidate_run}.'.format(
-                        pipeline_run=pipeline_run, candidate_run=candidate_run
-                    )
+                    'Found conflicting existing run with same id {run_id}. Runs differ in:'
+                    '\n{field_diff}'.format(
+                        run_id=pipeline_run.run_id, field_diff=_format_field_diff(field_diff),
+                    ),
                 )
             return candidate_run
-        else:
-            # We will need a more principled way of doing this
-            try:
-                return self.create_run(pipeline_run)
-            except DagsterRunAlreadyExists:
-                if not self.has_run(pipeline_run.run_id):
-                    check.failed(
-                        'Inconsistent run storage: could not get or create pipeline run with run_id {run_id}'.format(
-                            run_id=pipeline_run.run_id
-                        )
-                    )
 
-                return self.get_run_by_id(pipeline_run.run_id)
+        return self._run_storage.add_run(pipeline_run)
 
     def add_run(self, pipeline_run):
         return self._run_storage.add_run(pipeline_run)

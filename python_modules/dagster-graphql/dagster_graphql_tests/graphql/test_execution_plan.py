@@ -5,12 +5,12 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
-from dagster.core.utils import make_new_run_id
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
 from .setup import (
     PoorMansDataFrame,
+    csv_hello_world,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
     define_test_context,
@@ -52,6 +52,14 @@ query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: Ex
     ... on PipelineConfigValidationInvalid {
         pipeline { name }
         errors { message }
+    }
+    ... on PythonError {
+        message
+        stack
+        cause {
+            message
+            stack
+        }
     }
   }
 }
@@ -135,18 +143,20 @@ def clean_log_messages(result_data):
 
 
 def test_success_whole_execution_plan(snapshot):
-    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
-    instance.create_empty_run(run_id, 'csv_hello_world')
+    environment_dict = csv_hello_world_solids_config_fs_storage()
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=environment_dict
+    )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'environmentConfigData': environment_dict,
                 'stepKeys': None,
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -166,26 +176,26 @@ def test_success_whole_execution_plan(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
-    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
-    instance.create_empty_run(run_id, 'csv_hello_world')
+    environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}})
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=environment_dict
+    )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': merge_dicts(
-                    csv_hello_world_solids_config(), {'storage': {'filesystem': {}}}
-                ),
+                'environmentConfigData': environment_dict,
                 'stepKeys': None,
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -205,26 +215,26 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
-    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
-    instance.create_empty_run(run_id, 'csv_hello_world')
+    environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}})
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=environment_dict
+    )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': merge_dicts(
-                    csv_hello_world_solids_config(), {'storage': {'in_memory': {}}}
-                ),
+                'environmentConfigData': environment_dict,
                 'stepKeys': None,
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -244,15 +254,17 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert not store.has_intermediate(None, 'sum_solid.compute')
     assert not store.has_intermediate(None, 'sum_sq_solid.compute')
 
 
 def test_successful_one_part_execute_plan(snapshot):
-    run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
-    instance.create_empty_run(run_id, 'csv_hello_world')
+    environment_dict = csv_hello_world_solids_config_fs_storage()
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=environment_dict
+    )
 
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -260,9 +272,9 @@ def test_successful_one_part_execute_plan(snapshot):
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'environmentConfigData': environment_dict,
                 'stepKeys': ['sum_solid.compute'],
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -297,7 +309,7 @@ def test_successful_one_part_execute_plan(snapshot):
 
     snapshot.assert_match(clean_log_messages(result.data))
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert store.has_intermediate(None, 'sum_solid.compute')
     assert (
         str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame).obj)
@@ -306,18 +318,20 @@ def test_successful_one_part_execute_plan(snapshot):
 
 
 def test_successful_two_part_execute_plan(snapshot):
-    run_id = make_new_run_id()
     instance = DagsterInstance.local_temp()
-    instance.create_empty_run(run_id, 'csv_hello_world')
+    environment_dict = csv_hello_world_solids_config_fs_storage()
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=csv_hello_world, environment_dict=environment_dict
+    )
     result_one = execute_dagster_graphql(
         define_test_context(instance=instance),
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'environmentConfigData': environment_dict,
                 'stepKeys': ['sum_solid.compute'],
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -335,7 +349,7 @@ def test_successful_two_part_execute_plan(snapshot):
                 'selector': {'name': 'csv_hello_world'},
                 'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
                 'stepKeys': ['sum_sq_solid.compute'],
-                'executionMetadata': {'runId': run_id},
+                'executionMetadata': {'runId': pipeline_run.run_id},
                 'mode': 'default',
             }
         },
@@ -368,7 +382,7 @@ def test_successful_two_part_execute_plan(snapshot):
         '''('sum_sq', 49)])]'''
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
     assert store.has_intermediate(None, 'sum_sq_solid.compute')
     assert (
         str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
@@ -496,8 +510,9 @@ def test_basic_execute_plan_with_materialization():
             'sum_sq_solid.compute',
         ]
 
-        run_id = make_new_run_id()
-        instance.create_empty_run(run_id, 'csv_hello_world')
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline=csv_hello_world, environment_dict=environment_dict
+        )
 
         result = execute_dagster_graphql(
             define_test_context(instance=instance),
@@ -507,7 +522,7 @@ def test_basic_execute_plan_with_materialization():
                     'selector': {'name': 'csv_hello_world'},
                     'environmentConfigData': environment_dict,
                     'stepKeys': ['sum_solid.compute', 'sum_sq_solid.compute'],
-                    'executionMetadata': {'runId': run_id},
+                    'executionMetadata': {'runId': pipeline_run.run_id},
                     'mode': 'default',
                 }
             },

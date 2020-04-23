@@ -9,7 +9,6 @@ from dagster.core.execution.resources_init import (
     single_resource_event_generator,
 )
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import make_new_run_id
 
@@ -68,8 +67,11 @@ def test_clean_event_generator_exit():
     from dagster.core.execution.context.init import InitResourceContext
 
     pipeline = gen_basic_resource_pipeline()
-    pipeline_run = PipelineRun(pipeline_name=pipeline.name)
     instance = DagsterInstance.ephemeral()
+    execution_plan = create_execution_plan(pipeline)
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline, execution_plan=execution_plan
+    )
     log_manager = DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[])
     environment_config = EnvironmentConfig.build(pipeline)
     execution_plan = create_execution_plan(pipeline)

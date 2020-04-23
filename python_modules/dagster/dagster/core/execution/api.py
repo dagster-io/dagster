@@ -10,8 +10,7 @@ from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
-from dagster.core.instance import DagsterInstance, InstanceCreateRunArgs
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import telemetry_wrapper
@@ -21,58 +20,6 @@ from dagster.utils import merge_dicts
 from .config import RunConfig
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
 from .results import PipelineExecutionResult
-
-
-def pipeline_run_from_run_config(run_config):
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
-
-    return PipelineRun(
-        run_id=run_config.run_id,
-        mode=run_config.mode,
-        step_keys_to_execute=run_config.step_keys_to_execute,
-        tags=run_config.tags,
-        root_run_id=run_config.previous_run_id,
-        parent_run_id=run_config.previous_run_id,
-    )
-
-
-def check_pipeline_run(pipeline_run, pipeline_def):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.opt_inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-
-    if pipeline_run and pipeline_run.mode:
-        if not pipeline_def.has_mode_definition(pipeline_run.mode):
-            raise DagsterInvariantViolationError(
-                (
-                    'You have attempted to execute pipeline {name} with mode {mode}. '
-                    'Available modes: {modes}'
-                ).format(
-                    name=pipeline_def.name,
-                    mode=pipeline_run.mode,
-                    modes=pipeline_def.available_modes,
-                )
-            )
-
-    else:
-        if not pipeline_def.is_single_mode:
-            raise DagsterInvariantViolationError(
-                (
-                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
-                    'attempted to execute it without specifying a mode. Set '
-                    'mode property on the PipelineRun object.'
-                ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
-            )
-
-        pipeline_run = (
-            pipeline_run.with_mode(pipeline_def.get_default_mode_name())
-            if pipeline_run
-            else PipelineRun(mode=pipeline_def.get_default_mode_name())
-        )
-
-    if pipeline_def.tags:
-        return pipeline_run.with_tags(merge_dicts(pipeline_def.tags, pipeline_run.tags))
-
-    return pipeline_run
 
 
 def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
@@ -213,7 +160,15 @@ def _check_execute_pipeline_args(
         if pipeline_preset.solid_subset is not None:
             pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)
 
-        run_config = run_config.with_mode(pipeline_preset.mode)
+        check.invariant(
+            mode is None or mode == pipeline_preset.mode,
+            'Mode {mode} does not agree with the mode set in preset \'{preset}\': '
+            '(\'{preset_mode}\')'.format(
+                preset=preset, preset_mode=pipeline_preset.mode, mode=mode
+            ),
+        )
+
+        mode = pipeline_preset.mode
 
     if run_config.mode is not None or run_config.tags:
         warnings.warn(
@@ -224,35 +179,46 @@ def _check_execute_pipeline_args(
             ).format(fn_name=fn_name)
         )
 
-    if mode is not None:
-        run_config = run_config.with_mode(mode)
+    if run_config.mode is not None:
+        if mode is not None:
+            check.invariant(
+                run_config.mode == mode,
+                'Mode \'{mode}\' does not agree with the mode set in the `run_config`: '
+                '\'{run_config_mode}\''.format(mode=mode, run_config_mode=run_config.mode),
+            )
+        mode = run_config.mode
 
-    if tags:
-        run_config = run_config.with_tags(**tags)
+    if mode is not None:
+        if not pipeline.has_mode_definition(mode):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to execute pipeline {name} with mode {mode}. '
+                    'Available modes: {modes}'
+                ).format(
+                    name=pipeline.name, mode=mode, modes=pipeline.available_modes,
+                )
+            )
+    else:
+        if not pipeline.is_single_mode:
+            raise DagsterInvariantViolationError(
+                (
+                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
+                    'attempted to execute it without specifying a mode. Set '
+                    'mode property on the PipelineRun object.'
+                ).format(name=pipeline.name, modes=pipeline.available_modes)
+            )
+        mode = pipeline.get_default_mode_name()
+
+    tags = merge_dicts(merge_dicts(pipeline.tags, run_config.tags or {}), tags)
 
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
-    fake_pipeline_run_to_pass_to_create_run = check_pipeline_run(
-        pipeline_run_from_run_config(run_config), pipeline
-    )
-
     execution_plan = create_execution_plan(
-        pipeline,
-        environment_dict,
-        mode=fake_pipeline_run_to_pass_to_create_run.mode,
-        step_keys_to_execute=fake_pipeline_run_to_pass_to_create_run.step_keys_to_execute,
+        pipeline, environment_dict, mode=mode, step_keys_to_execute=run_config.step_keys_to_execute
     )
 
-    pipeline_run = _create_run(
-        instance,
-        pipeline,
-        fake_pipeline_run_to_pass_to_create_run,
-        environment_dict,
-        execution_plan,
-    )
-
-    return pipeline, environment_dict, instance, pipeline_run, execution_plan
+    return pipeline, environment_dict, instance, mode, tags, run_config, execution_plan
 
 
 def execute_pipeline_iterator(
@@ -301,7 +267,9 @@ def execute_pipeline_iterator(
         pipeline,
         environment_dict,
         instance,
-        pipeline_run,
+        mode,
+        tags,
+        run_config,
         execution_plan,
     ) = _check_execute_pipeline_args(
         'execute_pipeline_iterator',
@@ -312,6 +280,18 @@ def execute_pipeline_iterator(
         tags=tags,
         run_config=run_config,
         instance=instance,
+    )
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline,
+        run_id=run_config.run_id,
+        environment_dict=environment_dict,
+        mode=mode,
+        selector=pipeline.selector,
+        step_keys_to_execute=run_config.step_keys_to_execute,
+        tags=tags,
+        root_run_id=run_config.previous_run_id,
+        parent_run_id=run_config.previous_run_id,
     )
 
     return _execute_run_iterator_with_plan(pipeline, pipeline_run, instance, execution_plan)
@@ -368,7 +348,9 @@ def execute_pipeline(
         pipeline,
         environment_dict,
         instance,
-        pipeline_run,
+        mode,
+        tags,
+        run_config,
         execution_plan,
     ) = _check_execute_pipeline_args(
         'execute_pipeline',
@@ -379,6 +361,18 @@ def execute_pipeline(
         tags=tags,
         run_config=run_config,
         instance=instance,
+    )
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline,
+        run_id=run_config.run_id,
+        environment_dict=environment_dict,
+        mode=mode,
+        selector=pipeline.selector,
+        step_keys_to_execute=run_config.step_keys_to_execute,
+        tags=tags,
+        root_run_id=run_config.previous_run_id,
+        parent_run_id=run_config.previous_run_id,
     )
 
     initialization_manager = pipeline_initialization_manager(
@@ -478,27 +472,6 @@ def step_output_event_filter(pipe_iterator):
     for step_event in pipe_iterator:
         if step_event.is_successful_output:
             yield step_event
-
-
-def _create_run(instance, pipeline_def, run_config, environment_dict, execution_plan):
-
-    return instance.create_run_with_snapshot(
-        InstanceCreateRunArgs(
-            pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-            execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan, pipeline_def.get_pipeline_snapshot_id()
-            ),
-            run_id=run_config.run_id,
-            environment_dict=environment_dict,
-            mode=run_config.mode,
-            selector=pipeline_def.selector,
-            step_keys_to_execute=run_config.step_keys_to_execute,
-            tags=run_config.tags,
-            status=PipelineRunStatus.NOT_STARTED,
-            parent_run_id=run_config.previous_run_id,
-            root_run_id=run_config.previous_run_id,
-        )
-    )
 
 
 def execute_partition_set(partition_set, partition_filter, instance=None):

@@ -224,7 +224,7 @@ def execution_params_from_pipeline_run(run):
             root_run_id=run.root_run_id,
             parent_run_id=run.parent_run_id,
         ),
-        previous_run_id=run.previous_run_id,
+        previous_run_id=run.parent_run_id,
     )
 
 

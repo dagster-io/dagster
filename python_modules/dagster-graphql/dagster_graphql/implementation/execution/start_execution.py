@@ -6,9 +6,10 @@ from graphql.execution.base import ResolveInfo
 from dagster import DagsterInvalidConfigError, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import create_environment_schema
+from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import InstanceCreateRunArgs
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
@@ -18,11 +19,7 @@ from dagster.utils.error import SerializableErrorInfo
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import (
-    _check_start_pipeline_execution_errors,
-    _create_pipeline_run,
-    get_step_keys_to_execute,
-)
+from .utils import _check_start_pipeline_execution_errors, get_step_keys_to_execute
 
 
 @capture_dauphin_error
@@ -80,51 +77,42 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    if execution_params.execution_metadata.run_id:
-        # If a run_id is provided, use the old get_or_create_run machinery
-        run = instance.get_or_create_run(
-            _create_pipeline_run(instance, pipeline_def, execution_params)
+    try:
+        pipeline_run = instance.get_or_create_run(
+            pipeline_name=pipeline_def.name,
+            run_id=execution_params.execution_metadata.run_id
+            if execution_params.execution_metadata.run_id
+            else make_new_run_id(),
+            selector=execution_params.selector or ExecutionSelector(name=pipeline_def.name),
+            environment_dict=execution_params.environment_dict,
+            mode=execution_params.mode,
+            step_keys_to_execute=(
+                get_step_keys_to_execute(instance, pipeline_def, execution_params)
+                or execution_params.step_keys
+            ),
+            tags=merge_dicts(pipeline_def.tags, execution_params.execution_metadata.tags),
+            status=PipelineRunStatus.NOT_STARTED,
+            root_run_id=(
+                execution_params.execution_metadata.root_run_id or execution_params.previous_run_id
+            ),
+            parent_run_id=(
+                execution_params.execution_metadata.parent_run_id
+                or execution_params.previous_run_id
+            ),
+            pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
+            execution_plan_snapshot=snapshot_from_execution_plan(
+                execution_plan, pipeline_def.get_pipeline_snapshot_id()
+            ),
         )
-    else:
-        # Otherwise we know we are creating a new run, and we can
-        # use the new machinery that persists a pipeline snapshot
-        # with the run.
-
-        run = instance.create_run_with_snapshot(
-            InstanceCreateRunArgs(
-                pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-                execution_plan_snapshot=snapshot_from_execution_plan(
-                    execution_plan, pipeline_def.get_pipeline_snapshot_id()
-                ),
-                run_id=execution_params.execution_metadata.run_id
-                if execution_params.execution_metadata.run_id
-                else make_new_run_id(),
-                selector=execution_params.selector,
-                environment_dict=execution_params.environment_dict,
-                mode=execution_params.mode,
-                step_keys_to_execute=get_step_keys_to_execute(
-                    instance, pipeline_def, execution_params
-                )
-                or execution_params.step_keys,
-                tags=merge_dicts(pipeline_def.tags, execution_params.execution_metadata.tags),
-                status=PipelineRunStatus.NOT_STARTED,
-                root_run_id=(
-                    execution_params.execution_metadata.root_run_id
-                    or execution_params.previous_run_id
-                ),
-                parent_run_id=(
-                    execution_params.execution_metadata.parent_run_id
-                    or execution_params.previous_run_id
-                ),
-            )
-        )
+    except DagsterRunConflict as exc:
+        return graphene_info.schema.type_named('PipelineRunConflict')(exc)
 
     graphene_info.context.execution_manager.execute_pipeline(
-        graphene_info.context.get_handle(), pipeline_def, run, instance=instance,
+        graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
     )
 
     return graphene_info.schema.type_named(success_type)(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
+        run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )
 
 

@@ -77,7 +77,6 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, instance, run):
         self.validate()
-        instance.create_run(run)
         variables = {'runId': run.run_id}
         response = requests.post(
             urljoin(self._address, '/graphql'),

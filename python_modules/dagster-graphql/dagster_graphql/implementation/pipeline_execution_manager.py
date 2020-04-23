@@ -8,11 +8,17 @@ from queue import Empty
 import gevent
 import six
 
-from dagster import ExecutionTargetHandle, PipelineDefinition, PipelineExecutionResult, check
+from dagster import (
+    DagsterInstance,
+    ExecutionTargetHandle,
+    PipelineDefinition,
+    PipelineExecutionResult,
+    PipelineRun,
+    check,
+)
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
-from dagster.core.instance import DagsterInstance
 from dagster.utils import get_multiprocessing_context, start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -45,6 +51,8 @@ class SynchronousExecutionManager(PipelineExecutionManager):
 
     def execute_pipeline(self, _, pipeline, pipeline_run, instance):
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        check.inst_param(instance, 'instance', DagsterInstance)
 
         event_list = []
         self._active.add(pipeline_run.run_id)

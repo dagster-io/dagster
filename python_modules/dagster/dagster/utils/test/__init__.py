@@ -250,12 +250,14 @@ def execute_solid_within_pipeline(
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
     pipeline = PipelineDefinition([])
+    instance = check.opt_inst_param(
+        instance, 'instance', DagsterInstance, default=DagsterInstance.ephemeral()
+    )
+    pipeline_run = instance.get_or_create_run(
+        run_id=run_id, pipeline_name='<empty>', pipeline_snapshot=None
+    )
     with scoped_pipeline_context(
-        pipeline,
-        {},
-        PipelineRun(pipeline_name='empty', run_id=run_id),
-        instance or DagsterInstance.ephemeral(),
-        create_execution_plan(pipeline),
+        pipeline, {}, pipeline_run, instance, create_execution_plan(pipeline),
     ) as context:
         yield context
 

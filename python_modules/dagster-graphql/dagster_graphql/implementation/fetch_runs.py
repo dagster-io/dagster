@@ -42,7 +42,7 @@ def get_validated_config(pipeline_def, environment_dict, mode):
     return validated_config
 
 
-def get_run(graphene_info, run_id):
+def get_run_by_id(graphene_info, run_id):
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
     if not run:

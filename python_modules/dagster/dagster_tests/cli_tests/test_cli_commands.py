@@ -944,7 +944,12 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
 def define_baz_partitions():
     return [
         PartitionSetDefinition(
-            name='baz_partitions', pipeline_name='baz', partition_fn=lambda: string.ascii_lowercase,
+            name='baz_partitions',
+            pipeline_name='baz',
+            partition_fn=lambda: string.ascii_lowercase,
+            environment_dict_fn_for_partition=lambda partition: {
+                'solids': {'do_input': {'inputs': {'x': {'value': partition}}}}
+            },
         )
     ]
 

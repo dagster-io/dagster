@@ -11,7 +11,7 @@ from dagster import DagsterEventType, check, seven
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 
 def check_events_for_failures(events):
@@ -107,6 +107,8 @@ def invoke_steps_within_python_operator(
     instance_ref = invocation_args.instance_ref
     environment_dict = invocation_args.environment_dict
     handle = invocation_args.handle
+    pipeline_snapshot = invocation_args.pipeline_snapshot
+    execution_plan_snapshot = invocation_args.execution_plan_snapshot
 
     run_id = dag_run.run_id
 
@@ -121,16 +123,16 @@ def invoke_steps_within_python_operator(
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
     if instance:
         instance.get_or_create_run(
-            PipelineRun(
-                pipeline_name=pipeline_name,
-                run_id=run_id,
-                environment_dict=environment_dict,
-                mode=mode,
-                selector=ExecutionSelector(pipeline_name),
-                step_keys_to_execute=None,
-                tags=None,
-                status=PipelineRunStatus.MANAGED,
-            )
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=mode,
+            selector=ExecutionSelector(pipeline_name),
+            step_keys_to_execute=None,
+            tags=None,
+            status=PipelineRunStatus.MANAGED,
+            pipeline_snapshot=pipeline_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
         )
 
     events = execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref,)

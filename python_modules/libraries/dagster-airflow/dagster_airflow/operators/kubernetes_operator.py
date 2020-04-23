@@ -13,7 +13,7 @@ from dagster import seven
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
@@ -39,6 +39,8 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
     def __init__(self, operator_parameters, *args):
         kwargs = operator_parameters.op_kwargs
         self.pipeline_name = operator_parameters.pipeline_name
+        self.pipeline_snapshot = operator_parameters.pipeline_snapshot
+        self.execution_plan_snapshot = operator_parameters.execution_plan_snapshot
         kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
             pipeline_name=self.pipeline_name, task_id=operator_parameters.task_id
         ).replace(
@@ -168,19 +170,20 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             pod.security_context = self.security_context
 
             launcher = pod_launcher.PodLauncher(kube_client=client, extract_xcom=self.xcom_push)
-            pipeline_run = PipelineRun(
-                pipeline_name=self.pipeline_name,
-                run_id=self.run_id,
-                environment_dict=self.environment_dict,
-                mode=self.mode,
-                selector=ExecutionSelector(self.pipeline_name),
-                step_keys_to_execute=None,
-                tags=None,
-                status=PipelineRunStatus.MANAGED,
-            )
             try:
                 if self.instance:
-                    self.instance.get_or_create_run(pipeline_run)
+                    run = self.instance.get_or_create_run(
+                        pipeline_name=self.pipeline_name,
+                        run_id=self.run_id,
+                        environment_dict=self.environment_dict,
+                        mode=self.mode,
+                        selector=ExecutionSelector(self.pipeline_name),
+                        step_keys_to_execute=None,
+                        tags=None,
+                        status=PipelineRunStatus.MANAGED,
+                        pipeline_snapshot=self.pipeline_snapshot,
+                        execution_plan_snapshot=self.execution_plan_snapshot,
+                    )
 
                 # we won't use the "result", which is the pod's xcom json file
                 (final_state, _) = launcher.run_pod(
@@ -207,7 +210,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 except DagsterGraphQLClientError as err:
                     self.instance.report_engine_event(
                         str(err),
-                        pipeline_run,
+                        run,
                         EngineEventData.engine_error(
                             serializable_error_info_from_exc_info(sys.exc_info())
                         ),

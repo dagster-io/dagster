@@ -19,9 +19,9 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap.dep_snapshot import SolidInvocationSnap
 from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id, make_new_run_id
+from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -406,17 +406,16 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     run_tags = get_tags_from_args(kwargs)
 
-    run = PipelineRun(
-        pipeline_name=pipeline.name,
-        run_id=make_new_run_id(),
+    # FIXME need to check the env against environment_dict
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline,
         selector=ExecutionSelector(pipeline.name, preset.solid_subset if preset else None),
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
-        status=PipelineRunStatus.NOT_STARTED,
         tags=run_tags,
     )
 
-    return instance.launch_run(run)
+    return instance.launch_run(pipeline_run)
 
 
 @click.command(
@@ -695,14 +694,13 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             run_tags['dagster-celery/run_priority'] = celery_priority
 
         for partition in partitions:
-            run = PipelineRun(
-                pipeline_name=pipeline.name,
-                run_id=make_new_run_id(),
-                selector=ExecutionSelector(pipeline.name),
+            # execution_plan = create_execution_plan()
+            run = instance.create_run_for_pipeline(
+                pipeline=pipeline,
+                # execution_plan=execution_plan,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 mode=cli_args.get('mode') or 'default',
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
-                status=PipelineRunStatus.NOT_STARTED,
             )
             instance.launch_run(run)
             # Remove once we can handle synchronous execution... currently limited by sqlite

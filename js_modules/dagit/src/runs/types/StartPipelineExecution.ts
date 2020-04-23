@@ -10,7 +10,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionDisabledError {
-  __typename: "StartPipelineExecutionDisabledError" | "InvalidStepError" | "InvalidOutputError";
+  __typename: "StartPipelineExecutionDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {

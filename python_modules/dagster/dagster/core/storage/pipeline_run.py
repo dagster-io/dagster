@@ -154,6 +154,9 @@ class PipelineRun(
     def with_pipeline_snapshot_id(self, pipeline_snapshot_id):
         return self._replace(pipeline_snapshot_id=pipeline_snapshot_id)
 
+    def with_execution_plan_snapshot_id(self, execution_plan_snapshot_id):
+        return self._replace(execution_plan_snapshot_id=execution_plan_snapshot_id)
+
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE

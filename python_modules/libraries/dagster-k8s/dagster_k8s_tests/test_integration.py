@@ -4,7 +4,6 @@ import pytest
 from dagster_graphql.client.util import parse_raw_log_lines
 from dagster_k8s import get_celery_engine_config
 
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
@@ -16,7 +15,7 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
-    run = PipelineRun(
+    run = dagster_instance.get_or_create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
     )
 
@@ -53,7 +52,7 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
     pipeline_name = 'demo_pipeline_celery'
     tags = {'key': 'value'}
-    run = PipelineRun(
+    run = dagster_instance.get_or_create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
     )
 
@@ -77,7 +76,9 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 def test_failing_k8s_run_launcher(dagster_instance):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
+    run = dagster_instance.get_or_create_run(
+        pipeline_name=pipeline_name, environment_dict=environment_dict
+    )
 
     dagster_instance.launch_run(run)
     success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)

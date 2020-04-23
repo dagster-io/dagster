@@ -156,7 +156,7 @@ def make_dagster_solid_from_airflow_task(task):
     def _solid(context):  # pylint: disable=unused-argument
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
             raise DagsterInvariantViolationError(
-                'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in pipeline tags "{tags}". Please'
+                'Could not find "{AIRFLOW_EXECUTION_DATE_STR}" in pipeline tags "{tags}". Please '
                 'add "{AIRFLOW_EXECUTION_DATE_STR}" to pipeline tags before executing'.format(
                     AIRFLOW_EXECUTION_DATE_STR=AIRFLOW_EXECUTION_DATE_STR,
                     tags=context.pipeline_run.tags,

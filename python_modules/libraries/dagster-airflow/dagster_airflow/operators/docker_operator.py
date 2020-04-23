@@ -14,7 +14,7 @@ from dagster import seven
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .util import (
@@ -177,6 +177,8 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
         self.environment_dict = environment_dict
         self.pipeline_name = dagster_operator_parameters.pipeline_name
+        self.pipeline_snapshot = dagster_operator_parameters.pipeline_snapshot
+        self.execution_plan_snapshot = dagster_operator_parameters.execution_plan_snapshot
         self.mode = dagster_operator_parameters.mode
         self.step_keys = dagster_operator_parameters.step_keys
         self._run_id = None
@@ -280,19 +282,20 @@ class DagsterDockerOperator(ModifiedDockerOperator):
         elif 'dag_run' in context and context['dag_run'] is not None:
             self._run_id = context['dag_run'].run_id
 
-        pipeline_run = PipelineRun(
-            pipeline_name=self.pipeline_name,
-            run_id=self.run_id,
-            environment_dict=self.environment_dict,
-            mode=self.mode,
-            selector=ExecutionSelector(self.pipeline_name),
-            step_keys_to_execute=None,
-            tags=None,
-            status=PipelineRunStatus.MANAGED,
-        )
         try:
             if self.instance:
-                self.instance.get_or_create_run(pipeline_run)
+                run = self.instance.get_or_create_run(
+                    pipeline_name=self.pipeline_name,
+                    run_id=self.run_id,
+                    environment_dict=self.environment_dict,
+                    mode=self.mode,
+                    selector=ExecutionSelector(self.pipeline_name),
+                    step_keys_to_execute=None,
+                    tags=None,
+                    status=PipelineRunStatus.MANAGED,
+                    pipeline_snapshot=self.pipeline_snapshot,
+                    execution_plan_snapshot=self.execution_plan_snapshot,
+                )
 
             raw_res = super(DagsterDockerOperator, self).execute(context)
             self.log.info('Finished executing container.')
@@ -305,7 +308,7 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                 if self.instance:
                     self.instance.report_engine_event(
                         str(err),
-                        pipeline_run,
+                        run,
                         EngineEventData.engine_error(
                             serializable_error_info_from_exc_info(sys.exc_info())
                         ),

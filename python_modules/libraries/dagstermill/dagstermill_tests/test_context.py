@@ -1,4 +1,3 @@
-import pytest
 from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 from dagster import SolidDefinition
@@ -12,8 +11,7 @@ def test_tags():
     context = BARE_OUT_OF_PIPELINE_CONTEXT
 
     assert not context.has_tag('foo')
-    with pytest.raises(KeyError):
-        assert not context.get_tag('foo')
+    assert context.get_tag('foo') is None
 
 
 def test_run_id():

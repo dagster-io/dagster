@@ -5,7 +5,6 @@ from dagster_graphql.client.mutations import (
 
 from dagster import ExecutionTargetHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.utils import make_new_run_id
 
 EXPECTED_EVENTS = {
     ('STEP_INPUT', 'sleeper.compute'),
@@ -39,16 +38,17 @@ def test_execute_execute_plan_mutation():
     handle = ExecutionTargetHandle.for_pipeline_module(
         'dagster_examples.toys.sleepy', pipeline_name
     )
-    run_id = make_new_run_id()
+    pipeline = handle.build_pipeline_definition()
+
     instance = DagsterInstance.local_temp()
-    instance.create_empty_run(run_id, pipeline_name)
+    pipeline_run = instance.create_run_for_pipeline(pipeline=pipeline)
 
     variables = {
         'executionParams': {
             'environmentConfigData': {},
             'mode': 'default',
             'selector': {'name': pipeline_name},
-            'executionMetadata': {'runId': run_id},
+            'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
     result = execute_execute_plan_mutation(handle, variables, instance_ref=instance.get_ref())
@@ -64,15 +64,15 @@ def test_execute_execute_plan_mutation_raw():
     handle = ExecutionTargetHandle.for_pipeline_module(
         'dagster_examples.toys.sleepy', pipeline_name
     )
-    run_id = make_new_run_id()
+    pipeline = handle.build_pipeline_definition()
     instance = DagsterInstance.local_temp()
-    instance.create_empty_run(run_id, pipeline_name)
+    pipeline_run = instance.create_run_for_pipeline(pipeline=pipeline)
     variables = {
         'executionParams': {
             'environmentConfigData': {},
             'mode': 'default',
             'selector': {'name': pipeline_name},
-            'executionMetadata': {'runId': run_id},
+            'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
     result = execute_execute_plan_mutation_raw(handle, variables, instance_ref=instance.get_ref())

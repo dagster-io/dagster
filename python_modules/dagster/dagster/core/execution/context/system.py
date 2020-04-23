@@ -142,7 +142,7 @@ class SystemPipelineExecutionContext(object):
 
     def get_tag(self, key):
         check.str_param(key, 'key')
-        return self.logging_tags[key]
+        return self.logging_tags.get(key)
 
     @property
     def pipeline_def(self):

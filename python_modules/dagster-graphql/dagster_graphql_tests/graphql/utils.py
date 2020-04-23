@@ -21,7 +21,6 @@ class InMemoryRunLauncher(RunLauncher):
         assert len(self._queue) > 0
         run = self._queue.pop(0)
         pipeline = define_repository().get_pipeline(run.pipeline_name)
-        instance.create_run(run)
         return [ev for ev in execute_run_iterator(pipeline, run, instance)]
 
 

@@ -10,7 +10,7 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_RunLauncherNotDefinedError {
-  __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError";
+  __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess_run_pipeline {

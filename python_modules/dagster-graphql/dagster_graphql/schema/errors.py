@@ -506,11 +506,18 @@ class DauphinLaunchPipelineReexecutionSuccess(dauphin.ObjectType):
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
+class DauphinPipelineRunConflict(dauphin.ObjectType):
+    class Meta(object):
+        name = 'PipelineRunConflict'
+        interfaces = (DauphinError,)
+
+
 pipeline_execution_error_types = (
     DauphinInvalidStepError,
     DauphinInvalidOutputError,
     DauphinPipelineConfigValidationInvalid,
     DauphinPipelineNotFoundError,
+    DauphinPipelineRunConflict,
     DauphinPythonError,
 )
 

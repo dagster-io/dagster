@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dagster_graphql.cli import execute_query
-from dagster_graphql.client.query import START_PIPELINE_EXECUTION_MUTATION
+from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
 from dagster_graphql.client.util import HANDLED_EVENTS, dagster_event_from_dict, parse_raw_log_lines
 
 from dagster import (
@@ -15,7 +15,6 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineDefinition,
-    PipelineRun,
     RetryRequested,
     execute_pipeline,
     lambda_solid,
@@ -107,8 +106,11 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
     pipeline = handle.build_pipeline_definition()
     mode = pipeline.get_default_mode_name()
-    pipeline_run = PipelineRun(mode=mode)
+    instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, mode=mode)
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline=pipeline, execution_plan=execution_plan, mode=mode
+    )
     step_levels = execution_plan.topological_step_levels()
 
     unhandled_events = STEP_EVENTS.copy()
@@ -126,7 +128,6 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
     for step_level in step_levels:
         for step in step_level:
-
             variables = {
                 'executionParams': {
                     'selector': {'name': pipeline.name},
@@ -136,19 +137,19 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                     'stepKeys': [step.key],
                 }
             }
-            instance = DagsterInstance.ephemeral()
-            res = execute_query(
-                handle, START_PIPELINE_EXECUTION_MUTATION, variables, instance=instance
-            )
+            res = execute_query(handle, EXECUTE_PLAN_MUTATION, variables, instance=instance)
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
             # response
             if not res.get('errors'):
-                run_logs = res['data']['startPipelineExecution']['run']['logs']['nodes']
+                assert 'data' in res, res
+                assert 'executePlan' in res['data'], res
+                assert 'stepEvents' in res['data']['executePlan'], res
+                step_events = res['data']['executePlan']['stepEvents']
 
                 events = [
                     dagster_event_from_dict(e, pipeline.name)
-                    for e in run_logs
+                    for e in step_events
                     if e['__typename'] not in ignored_events
                 ]
 
@@ -162,25 +163,28 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             else:
                 raise Exception(res['errors'])
 
-            # build up a dict, incrementing all the event records we've produced in the run storage
-            logs = instance.all_logs(pipeline_run.run_id)
-            for log in logs:
-                if not log.dagster_event or (
-                    DagsterEventType(log.dagster_event.event_type_value)
-                    not in STEP_EVENTS.union(set([DagsterEventType.ENGINE_EVENT]))
-                ):
-                    continue
-                if log.dagster_event.step_key:
-                    key = log.dagster_event.step_key + '.' + log.dagster_event.event_type_value
-                else:
-                    key = log.dagster_event.event_type_value
-                event_counts[key] += 1
+    # build up a dict, incrementing all the event records we've produced in the run storage
+    logs = instance.all_logs(pipeline_run.run_id)
+    for log in logs:
+        if not log.dagster_event or (
+            DagsterEventType(log.dagster_event.event_type_value)
+            not in STEP_EVENTS.union(set([DagsterEventType.ENGINE_EVENT]))
+        ):
+            continue
+        if log.dagster_event.step_key:
+            key = log.dagster_event.step_key + '.' + log.dagster_event.event_type_value
+        else:
+            key = log.dagster_event.event_type_value
+        event_counts[key] += 1
 
     # Ensure we've processed all the events that were generated in the run storage
     assert sum(event_counts.values()) == 0
 
     # Ensure we've handled the universe of event types
-    assert not unhandled_events
+    # Why are these retry events not handled? Because right now there is no way to configure retries
+    # on executePlan -- this needs to change, and we should separate the ExecutionParams that get
+    # sent to executePlan fromm those that get sent to startPipelineExecution and friends
+    assert unhandled_events == {DagsterEventType.STEP_UP_FOR_RETRY, DagsterEventType.STEP_RESTARTED}
 
 
 def test_parse_raw_log_lines():
