@@ -1,4 +1,3 @@
-import base64
 import os
 import subprocess
 import sys
@@ -8,8 +7,6 @@ from contextlib import contextmanager
 import kubernetes
 import psycopg2
 import pytest
-import six
-import yaml
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 
@@ -19,8 +16,9 @@ from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 
 from .cluster_config import ClusterConfig
+from .helm import helm_chart, helm_test_resources, test_namespace
 from .kind_cluster import kind_cluster, kind_cluster_exists
-from .utils import check_output, find_free_port, git_repository_root, test_repo_path, wait_for_pod
+from .utils import check_output, find_free_port, test_repo_path, wait_for_pod
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
@@ -94,6 +92,8 @@ def docker_image():
 
 
 def kind_build_and_load_images(local_dagster_image, cluster_name):
+    print('Building and loading images into kind cluster...')
+
     # We build the image because we aren't guaranteed to have it
     base_python = '.'.join(
         [str(x) for x in [sys.version_info.major, sys.version_info.minor, sys.version_info.micro]]
@@ -127,16 +127,18 @@ def cluster_provider(request, docker_image):
 
     # Use a kind cluster
     if cluster_provider == 'kind':
-        cluster_name = request.config.getoption("--kind-cluster")
+        cluster_name = request.config.getoption('--kind-cluster')
 
         # Cluster will be deleted afterwards unless this is set.
         # This is to allow users to reuse an existing cluster in local test by running
-        # `pytest --kind-cluster my-cluster` -- this avoids the per-test run overhead of cluster
-        # setup and teardown
-        keep_cluster = request.config.getoption("--keep-cluster")
+        # `pytest --kind-cluster my-cluster --no-cleanup` -- this avoids the per-test run overhead
+        # of cluster setup and teardown
+        should_cleanup = not request.config.getoption('--no-cleanup')
 
-        with kind_cluster(cluster_name, keep_cluster) as cluster_config:
-            if not IS_BUILDKITE and not kind_cluster_exists(cluster_config.name):
+        existing_cluster = kind_cluster_exists(cluster_name)
+
+        with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
+            if not IS_BUILDKITE and not existing_cluster:
                 kind_build_and_load_images(docker_image, cluster_config.name)
             yield cluster_config
 
@@ -151,130 +153,41 @@ def cluster_provider(request, docker_image):
 
 
 @pytest.fixture(scope='session')
-def helm_chart(
-    cluster_provider, docker_image, image_pull_policy
-):  # pylint: disable=redefined-outer-name,unused-argument
-    print('--- \033[32m:helm: Installing Helm chart\033[0m')
+def helm_namespace(
+    image_pull_policy, docker_image, cluster_provider, request
+):  # pylint: disable=unused-argument
+    '''If an existing Helm chart namespace is specified via pytest CLI with the argument
+    --existing-helm-namespace, we will use that chart.
 
-    # Install helm chart
-    try:
-        check_output('''kubectl create namespace dagster-test''', shell=True)
+    Otherwise, provision a test namespace and install Helm chart into that namespace.
 
-        print('Creating k8s test objects ConfigMap test-env-configmap and Secret test-env-secret')
-        kube_api = kubernetes.client.CoreV1Api()
+    Yields the Helm chart namespace.
+    '''
+    existing_helm_namespace = request.config.getoption('--existing-helm-namespace')
 
-        configmap = kubernetes.client.V1ConfigMap(
-            api_version='v1',
-            kind='ConfigMap',
-            data={'TEST_ENV_VAR': 'foobar'},
-            metadata=kubernetes.client.V1ObjectMeta(name='test-env-configmap'),
-        )
-        kube_api.create_namespaced_config_map(namespace='dagster-test', body=configmap)
+    if existing_helm_namespace:
+        yield existing_helm_namespace
 
-        # Secret values are expected to be base64 encoded
-        secret_val = six.ensure_str(base64.b64encode(six.ensure_binary('foobar')))
-        secret = kubernetes.client.V1Secret(
-            api_version='v1',
-            kind='Secret',
-            data={'TEST_SECRET_ENV_VAR': secret_val},
-            metadata=kubernetes.client.V1ObjectMeta(name='test-env-secret'),
-        )
-        kube_api.create_namespaced_secret(namespace='dagster-test', body=secret)
+    else:
+        # Never bother cleaning up on Buildkite
+        if IS_BUILDKITE:
+            should_cleanup = False
+        # Otherwise, always clean up unless --no-cleanup specified
+        else:
+            should_cleanup = not request.config.getoption('--no-cleanup')
 
-        try:
-            repository, tag = docker_image.split(':')
-
-            helm_config = {
-                'imagePullPolicy': image_pull_policy,
-                'dagit': {
-                    'image': {'repository': repository, 'tag': tag},
-                    'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
-                    'env_config_maps': ['test-env-configmap'],
-                    'env_secrets': ['test-env-secret'],
-                },
-                'job_runner': {
-                    'image': {'repository': repository, 'tag': tag},
-                    'env': {'TEST_SET_ENV_VAR': 'test_job_runner_env_var'},
-                    'env_config_maps': ['test-env-configmap'],
-                    'env_secrets': ['test-env-secret'],
-                },
-                'serviceAccount': {'name': 'dagit-admin'},
-                'postgresqlPassword': 'test',
-                'postgresqlDatabase': 'test',
-                'postgresqlUser': 'test',
-                'celery': {
-                    'extraWorkerQueues': [
-                        {'name': 'extra-queue-1', 'replicaCount': 1},
-                        {'name': 'extra-queue-2', 'replicaCount': 2},
-                    ]
-                },
-            }
-            helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
-
-            helm_cmd = [
-                'helm',
-                'install',
-                '--namespace',
-                'dagster-test',
-                '-f',
-                '-',
-                'dagster',
-                'helm/dagster/',
-            ]
-
-            print('Running Helm Install: \n', helm_cmd, '\nwith config:\n', helm_config_yaml)
-
-            p = subprocess.Popen(
-                helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            )
-            stdout, stderr = p.communicate(six.ensure_binary(helm_config_yaml))
-            print('\n\nstdout:\n', six.ensure_str(stdout))
-            print('\n\nstderr:\n', six.ensure_str(stderr))
-            assert p.returncode == 0
-
-            check_output(
-                helm_cmd,
-                shell=True,
-                cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
-            )
-
-            # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
-            success, _ = wait_for_pod('dagit')
-            assert success
-
-            # Wait for additional Celery worker queues to become ready
-            pods = kube_api.list_namespaced_pod(namespace='dagster-test')
-            for extra_queue in helm_config['celery']['extraWorkerQueues']:
-                pod_names = [
-                    p.metadata.name for p in pods.items if extra_queue['name'] in p.metadata.name
-                ]
-                assert len(pod_names) == extra_queue['replicaCount']
-                for pod in pod_names:
-                    success, _ = wait_for_pod(pod)
-                    assert success
-
-            yield
-
-        finally:
-            print('Uninstalling helm chart')
-            check_output(
-                ['helm uninstall dagster --namespace dagster-test'],
-                shell=True,
-                cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
-            )
-    finally:
-        if not IS_BUILDKITE:
-            print('Deleting namespace')
-            check_output(
-                ['kubectl delete namespace dagster-test'], shell=True,
-            )
-            print('Deleted namespace')
+        with test_namespace(should_cleanup) as namespace:
+            with helm_test_resources(namespace, should_cleanup):
+                with helm_chart(namespace, image_pull_policy, docker_image, should_cleanup):
+                    print('Helm chart successfully installed in namespace %s' % namespace)
+                    yield namespace
 
 
 @pytest.fixture(scope='session')
 def run_launcher(
-    helm_chart, docker_image, cluster_provider, image_pull_policy
+    docker_image, cluster_provider, image_pull_policy, helm_namespace
 ):  # pylint: disable=redefined-outer-name,unused-argument
+
     return K8sRunLauncher(
         image_pull_secrets=[{'name': 'element-dev-key'}],
         service_account_name='dagit-admin',
@@ -285,14 +198,14 @@ def run_launcher(
         load_kubeconfig=True,
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy,
-        job_namespace='dagster-test',
+        job_namespace=helm_namespace,
         env_config_maps=['dagster-job-runner-env', 'test-env-configmap'],
         env_secrets=['test-env-secret'],
     )
 
 
 @pytest.fixture(scope='session')
-def dagster_instance(run_launcher):
+def dagster_instance(helm_namespace, run_launcher):
     @contextmanager
     def local_port_forward_postgres():
         print('Port-forwarding postgres')
@@ -303,7 +216,7 @@ def dagster_instance(run_launcher):
                     'get',
                     'pods',
                     '--namespace',
-                    'dagster-test',
+                    helm_namespace,
                     '-l',
                     'app=postgresql,release=dagster',
                     '-o',
@@ -314,7 +227,9 @@ def dagster_instance(run_launcher):
             .strip('"')
         )
         forward_port = find_free_port()
-        success, _ = wait_for_pod(postgres_pod_name, wait_for_readiness=True)
+        success, _ = wait_for_pod(
+            postgres_pod_name, namespace=helm_namespace, wait_for_readiness=True
+        )
         assert success
         try:
             p = subprocess.Popen(
@@ -322,7 +237,7 @@ def dagster_instance(run_launcher):
                     'kubectl',
                     'port-forward',
                     '--namespace',
-                    'dagster-test',
+                    helm_namespace,
                     postgres_pod_name,
                     '{forward_port}:5432'.format(forward_port=forward_port),
                 ]

@@ -11,7 +11,7 @@ from .utils import environments_path, wait_for_job_success
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-name
+def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=redefined-outer-name
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
@@ -20,7 +20,9 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
+    success, raw_logs = wait_for_job_success(
+        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    )
     result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
@@ -37,7 +39,9 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
 
 
 @pytest.mark.integration
-def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined-outer-name
+def test_k8s_run_launcher_celery(
+    dagster_instance, helm_namespace
+):  # pylint: disable=redefined-outer-name
     environment_dict = merge_dicts(
         merge_yamls(
             [
@@ -57,7 +61,9 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
+    success, raw_logs = wait_for_job_success(
+        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    )
     result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success
@@ -73,7 +79,7 @@ def test_k8s_run_launcher_celery(dagster_instance):  # pylint: disable=redefined
 
 
 @pytest.mark.integration
-def test_failing_k8s_run_launcher(dagster_instance):
+def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
     run = dagster_instance.get_or_create_run(
@@ -81,7 +87,9 @@ def test_failing_k8s_run_launcher(dagster_instance):
     )
 
     dagster_instance.launch_run(run)
-    success, raw_logs = wait_for_job_success('dagster-job-%s' % run.run_id)
+    success, raw_logs = wait_for_job_success(
+        'dagster-job-%s' % run.run_id, namespace=helm_namespace
+    )
     result = parse_raw_log_lines(raw_logs.split('\n'))
 
     assert success

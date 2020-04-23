@@ -19,9 +19,9 @@ def kind_cluster_exists(cluster_name):
 
 
 @contextmanager
-def create_kind_cluster(cluster_name, keep_cluster=False):
+def create_kind_cluster(cluster_name, should_cleanup=True):
     check.str_param(cluster_name, 'cluster_name')
-    check.bool_param(keep_cluster, 'keep_cluster')
+    check.bool_param(should_cleanup, 'should_cleanup')
 
     try:
         print(
@@ -33,7 +33,7 @@ def create_kind_cluster(cluster_name, keep_cluster=False):
 
     finally:
         # ensure cleanup happens on error or normal exit
-        if not keep_cluster:
+        if should_cleanup:
             print('--- Cleaning up kind cluster {cluster_name}'.format(cluster_name=cluster_name))
             check_output(['kind', 'delete', 'cluster', '--name', cluster_name])
 
@@ -107,7 +107,7 @@ def kind_sync_dockerconfig():
 
 
 @contextmanager
-def kind_cluster(cluster_name=None, keep_cluster=False):
+def kind_cluster(cluster_name=None, should_cleanup=False):
     cluster_name = cluster_name or 'cluster-{uuid}'.format(uuid=uuid.uuid4().hex)
 
     # We need to use an internal address in a DinD context like Buildkite
@@ -118,14 +118,14 @@ def kind_cluster(cluster_name=None, keep_cluster=False):
             config.load_kube_config(config_file=kubeconfig_file)
             yield ClusterConfig(cluster_name, kubeconfig_file)
 
-            if not keep_cluster:
+            if not should_cleanup:
                 print(
                     "WARNING: keep_cluster is false, won't delete your existing cluster. If you'd "
                     "like to delete this cluster, please manually remove by running the command:\n"
                     "kind delete cluster --name %s" % cluster_name
                 )
     else:
-        with create_kind_cluster(cluster_name, keep_cluster=keep_cluster):
+        with create_kind_cluster(cluster_name, should_cleanup=should_cleanup):
             with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
                 config.load_kube_config(config_file=kubeconfig_file)
                 kind_sync_dockerconfig()

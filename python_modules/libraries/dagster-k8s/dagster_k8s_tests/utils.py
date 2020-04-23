@@ -1,4 +1,5 @@
 import os
+import random
 import socket
 import subprocess
 import time
@@ -6,6 +7,11 @@ from contextlib import closing
 
 import six
 from kubernetes import client
+
+
+def get_test_namespace():
+    namespace_suffix = hex(random.randint(0, 16 ** 6))[2:]
+    return 'dagster-test-%s' % namespace_suffix
 
 
 def within_docker():
@@ -73,7 +79,7 @@ def remove_none_recursively(obj):
         return obj
 
 
-def retrieve_pod_logs(pod_name):
+def retrieve_pod_logs(pod_name, namespace):
     '''Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
     '''
     # We set _preload_content to False here to prevent the k8 python api from processing the response.
@@ -83,37 +89,35 @@ def retrieve_pod_logs(pod_name):
     # https://github.com/kubernetes-client/python/issues/811
     raw_logs = (
         client.CoreV1Api()
-        .read_namespaced_pod_log(name=pod_name, namespace='dagster-test', _preload_content=False,)
+        .read_namespaced_pod_log(name=pod_name, namespace=namespace, _preload_content=False,)
         .data
     ).decode('utf-8')
 
     return raw_logs
 
 
-def wait_for_job_success(job_name):
+def wait_for_job_success(job_name, namespace):
     '''Poll the job for successful completion
     '''
     job = None
     while not job:
         # Ensure we found the job that we launched
-        jobs = client.BatchV1Api().list_namespaced_job(namespace='dagster-test', watch=False)
+        jobs = client.BatchV1Api().list_namespaced_job(namespace=namespace, watch=False)
         job = next((j for j in jobs.items if j.metadata.name == job_name), None)
         print('Job not yet launched, waiting')
         time.sleep(1)
 
-    success, job_pod_name = wait_for_pod(job.metadata.name, wait_for_termination=True)
+    success, job_pod_name = wait_for_pod(
+        job.metadata.name, namespace=namespace, wait_for_termination=True
+    )
 
-    raw_logs = retrieve_pod_logs(job_pod_name)
+    raw_logs = retrieve_pod_logs(job_pod_name, namespace=namespace)
 
     return success, raw_logs
 
 
 def wait_for_pod(
-    name,
-    wait_for_termination=False,
-    wait_for_readiness=False,
-    timeout=600.0,
-    namespace='dagster-test',
+    name, namespace, wait_for_termination=False, wait_for_readiness=False, timeout=600.0,
 ):
     '''Wait for the dagit pod to launch and be running, or wait for termination
 
@@ -190,7 +194,7 @@ def wait_for_pod(
                     % state.terminated.message
                 )
                 success = False
-                raw_logs = retrieve_pod_logs(name)
+                raw_logs = retrieve_pod_logs(name, namespace=namespace)
                 print('Pod logs: ', raw_logs)
             break
 
