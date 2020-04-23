@@ -208,6 +208,11 @@ def multiprocess_executor(init_context):
 
     check_cross_process_constraints(init_context)
 
+    # ExecutionTargetHandle.get_handle returns an ExecutionTargetHandleCacheEntry, which is a tuple
+    # (handle, solid_subset). Right now we are throwing away the solid_subset that we store in the
+    # cache -- this is fragile and we should fix this with
+    # https://github.com/dagster-io/dagster/issues/2115 and friends so there are not multiple
+    # sources of truth for the solid subset
     handle, _ = ExecutionTargetHandle.get_handle(init_context.pipeline_def)
     return MultiprocessExecutorConfig(
         handle=handle,
