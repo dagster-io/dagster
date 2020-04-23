@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.8 (Upcoming)
+## 0.7.8
 
 **Breaking Changes**
 
@@ -8,6 +8,31 @@
   favor of new top level arguments to `execute_pipeline`, `mode` and `preset`.
 - The use of `RunConfig` to pass options to `execute_pipeline` has been deprecated, and `RunConfig`
   will be removed in 0.8.0.
+- The `execute_solid_within_pipeline` and `execute_solids_within_pipeline` APIs, intended to support
+  tests, now take new top level arguments `mode` and `preset`.
+
+**New**
+
+- The dagster-aws Redshift resource now supports providing an error callback to debug failed
+  queries.
+- We now persist serialized execution plans for historical runs. They will render correctly even if
+  the pipeline structure has changed or if it does not exist in the current loaded repository.
+- Clicking on a pipeline tag in the `Runs` view will apply that tag as a filter.
+
+**Bugfix**
+
+- Fixed a bug where telemetry logger would create a log file (but not write any logs) even when
+  telemetry was disabled.
+
+**Experimental**
+
+- The dagster-airflow package supports ingesting Airflow dags and running them as dagster pipelines
+  (see: `make_dagster_pipeline_from_airflow_dag`). This is in the early experimentation phase.
+- Improved the layout of the experimental partition runs table on the `Schedules` detailed view.
+
+**Documentation**
+
+- Fixed a grammatical error (Thanks @flowersw!)
 
 ## 0.7.7
 
