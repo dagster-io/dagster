@@ -169,7 +169,7 @@ def test_solid_subset():
         __file__, 'define_diamond_pipeline'
     ).build_pipeline_definition()
 
-    result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp(),)
+    result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp())
 
     assert result.success
 

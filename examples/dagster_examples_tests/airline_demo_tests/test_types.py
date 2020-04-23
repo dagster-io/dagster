@@ -11,7 +11,6 @@ from dagster import (
     InputDefinition,
     LocalFileHandle,
     OutputDefinition,
-    RunConfig,
     execute_pipeline,
     file_relative_path,
     pipeline,
@@ -37,7 +36,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        run_config=RunConfig(mode='spark'),
+        mode='spark',
         environment_dict={
             'storage': {'filesystem': {}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
@@ -82,7 +81,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
             'storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
             'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
         },
-        run_config=RunConfig(mode='spark'),
+        mode='spark',
     )
 
     assert result.success
