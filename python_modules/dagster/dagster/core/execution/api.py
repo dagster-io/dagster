@@ -7,7 +7,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.plan.execute import inner_plan_execution_iterator
+from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance

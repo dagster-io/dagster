@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.execution.plan.execute import inner_plan_execution_iterator
+from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.utils.timing import format_duration, time_execution_scope
 

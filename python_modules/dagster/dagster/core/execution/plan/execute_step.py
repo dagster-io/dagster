@@ -22,11 +22,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import (
-    SystemPipelineExecutionContext,
-    SystemStepExecutionContext,
-)
-from dagster.core.execution.memoization import copy_required_intermediates_for_execution
+from dagster.core.execution.context.system import SystemStepExecutionContext
 from dagster.core.execution.plan.objects import (
     StepFailureData,
     StepInputData,
@@ -37,158 +33,14 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
     UserFailureData,
 )
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import Retries
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import time_execution_scope
 
 
-def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(retries, 'retries', Retries)
-
-    for event in copy_required_intermediates_for_execution(pipeline_context, execution_plan):
-        yield event
-
-    # It would be good to implement a reference tracking algorithm here to
-    # garbage collect results that are no longer needed by any steps
-    # https://github.com/dagster-io/dagster/issues/811
-    active_execution = execution_plan.start(retries=retries)
-    while not active_execution.is_complete:
-        step = active_execution.get_next_step()
-
-        step_context = pipeline_context.for_step(step)
-        check.invariant(
-            all(
-                hasattr(step_context.resources, resource_key)
-                for resource_key in step_context.required_resource_keys
-            ),
-            'expected step context to have all required resources',
-        )
-
-        with pipeline_context.instance.compute_log_manager.watch(
-            step_context.pipeline_run, step_context.step.key
-        ):
-            # capture all of the logs for this step
-            uncovered_inputs = pipeline_context.intermediates_manager.uncovered_inputs(
-                step_context, step
-            )
-            if uncovered_inputs:
-                # In partial pipeline execution, we may end up here without having validated the
-                # missing dependent outputs were optional
-                _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
-
-                step_context.log.info(
-                    (
-                        'Not all inputs covered for {step}. Not executing. Output missing for '
-                        'inputs: {uncovered_inputs}'
-                    ).format(uncovered_inputs=uncovered_inputs, step=step.key)
-                )
-                yield DagsterEvent.step_skipped_event(step_context)
-                active_execution.mark_skipped(step.key)
-            else:
-                for step_event in check.generator(
-                    dagster_event_sequence_for_step(step_context, retries)
-                ):
-                    check.inst(step_event, DagsterEvent)
-                    yield step_event
-                    active_execution.handle_event(step_event)
-
-            active_execution.verify_complete(pipeline_context, step.key)
-
-        # process skips from failures or uncovered inputs
-        for event in active_execution.skipped_step_events_iterator(pipeline_context):
-            yield event
-
-
-def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
-    nonoptionals = [
-        handle for handle in uncovered_inputs if not execution_plan.get_step_output(handle).optional
-    ]
-    if nonoptionals:
-        raise DagsterStepOutputNotFoundError(
-            (
-                'When executing {step} discovered required outputs missing '
-                'from previous step: {nonoptionals}'
-            ).format(nonoptionals=nonoptionals, step=step_key),
-            step_key=nonoptionals[0].step_key,
-            output_name=nonoptionals[0].output_name,
-        )
-
-
 class MultipleStepOutputsListWrapper(list):
     pass
-
-
-def _generate_error_boundary_msg_for_step_input(context, input_):
-    return lambda: '''Error occurred during input hydration:
-    input name: "{input_}"
-    step key: "{key}"
-    solid invocation: "{solid}"
-    solid definition: "{solid_def}"
-    '''.format(
-        input_=input_.name,
-        key=context.step.key,
-        solid_def=context.solid_def.name,
-        solid=context.solid.name,
-    )
-
-
-def _input_values_from_intermediates_manager(step_context):
-    step = step_context.step
-
-    for step_input in step.step_inputs:
-        if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
-            continue
-
-        if step_input.is_from_multiple_outputs:
-            if (
-                step_input.dagster_type.kind == DagsterTypeKind.LIST
-                or step_input.dagster_type.kind == DagsterTypeKind.NULLABLE
-            ):
-                dagster_type = step_input.dagster_type.inner_type
-            else:  # This is the case where the fan-in is typed Any
-                dagster_type = step_input.dagster_type
-            input_value = [
-                step_context.intermediates_manager.get_intermediate(
-                    context=step_context,
-                    step_output_handle=source_handle,
-                    dagster_type=dagster_type,
-                )
-                for source_handle in step_input.source_handles
-            ]
-            # When we're using an object store-backed intermediate store, we wrap the
-            # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
-            # so we can yield the relevant object store events and unpack the values in the caller
-            if all((isinstance(x, ObjectStoreOperation) for x in input_value)):
-                input_value = MultipleStepOutputsListWrapper(input_value)
-
-        elif step_input.is_from_single_output:
-            input_value = step_context.intermediates_manager.get_intermediate(
-                context=step_context,
-                step_output_handle=step_input.source_handles[0],
-                dagster_type=step_input.dagster_type,
-            )
-
-        elif step_input.is_from_config:
-            with user_code_error_boundary(
-                DagsterInputHydrationConfigError,
-                msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
-            ):
-                input_value = step_input.dagster_type.input_hydration_config.construct_from_config_value(
-                    step_context, step_input.config_data
-                )
-
-        elif step_input.is_from_default_value:
-            input_value = step_input.config_data
-
-        else:
-            check.failed('Unhandled step_input type!')
-
-        yield step_input.name, input_value
 
 
 def dagster_event_sequence_for_step(step_context, retries):
@@ -688,3 +540,71 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
         if gen is not None:
             for event in gen:
                 yield event
+
+
+def _generate_error_boundary_msg_for_step_input(context, input_):
+    return lambda: '''Error occurred during input hydration:
+    input name: "{input_}"
+    step key: "{key}"
+    solid invocation: "{solid}"
+    solid definition: "{solid_def}"
+    '''.format(
+        input_=input_.name,
+        key=context.step.key,
+        solid_def=context.solid_def.name,
+        solid=context.solid.name,
+    )
+
+
+def _input_values_from_intermediates_manager(step_context):
+    step = step_context.step
+
+    for step_input in step.step_inputs:
+        if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
+            continue
+
+        if step_input.is_from_multiple_outputs:
+            if (
+                step_input.dagster_type.kind == DagsterTypeKind.LIST
+                or step_input.dagster_type.kind == DagsterTypeKind.NULLABLE
+            ):
+                dagster_type = step_input.dagster_type.inner_type
+            else:  # This is the case where the fan-in is typed Any
+                dagster_type = step_input.dagster_type
+            input_value = [
+                step_context.intermediates_manager.get_intermediate(
+                    context=step_context,
+                    step_output_handle=source_handle,
+                    dagster_type=dagster_type,
+                )
+                for source_handle in step_input.source_handles
+            ]
+            # When we're using an object store-backed intermediate store, we wrap the
+            # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
+            # so we can yield the relevant object store events and unpack the values in the caller
+            if all((isinstance(x, ObjectStoreOperation) for x in input_value)):
+                input_value = MultipleStepOutputsListWrapper(input_value)
+
+        elif step_input.is_from_single_output:
+            input_value = step_context.intermediates_manager.get_intermediate(
+                context=step_context,
+                step_output_handle=step_input.source_handles[0],
+                dagster_type=step_input.dagster_type,
+            )
+
+        elif step_input.is_from_config:
+            with user_code_error_boundary(
+                DagsterInputHydrationConfigError,
+                msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
+            ):
+                input_value = step_input.dagster_type.input_hydration_config.construct_from_config_value(
+                    step_context, step_input.config_data
+                )
+
+        elif step_input.is_from_default_value:
+            input_value = step_input.config_data
+
+        else:
+            check.failed('Unhandled step_input type!')
+
+        yield step_input.name, input_value
