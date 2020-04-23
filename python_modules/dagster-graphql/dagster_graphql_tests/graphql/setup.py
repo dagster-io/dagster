@@ -167,6 +167,7 @@ def define_repository():
             csv_hello_world_df_input,
             csv_hello_world_two,
             csv_hello_world_with_expectations,
+            hello_world_with_tags,
             eventually_successful,
             infinite_loop_pipeline,
             materialization_pipeline,
@@ -305,6 +306,16 @@ def csv_hello_world_with_expectations():
 @pipeline
 def csv_hello_world_two():
     return sum_solid()
+
+
+@solid
+def solid_that_gets_tags(context):
+    return context.pipeline_run.tags
+
+
+@pipeline(tags={'tag_key': 'tag_value'})
+def hello_world_with_tags():
+    return solid_that_gets_tags()
 
 
 @solid(name='solid_with_list', input_defs=[], output_defs=[], config=[int])

@@ -12,6 +12,7 @@ from dagster.core.instance import InstanceCreateRunArgs
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
+from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
@@ -105,7 +106,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
                     instance, pipeline_def, execution_params
                 )
                 or execution_params.step_keys,
-                tags=execution_params.execution_metadata.tags,
+                tags=merge_dicts(pipeline_def.tags, execution_params.execution_metadata.tags),
                 status=PipelineRunStatus.NOT_STARTED,
                 root_run_id=(
                     execution_params.execution_metadata.root_run_id
