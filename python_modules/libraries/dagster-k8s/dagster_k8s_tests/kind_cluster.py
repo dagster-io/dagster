@@ -8,6 +8,7 @@ from kubernetes import client, config
 from dagster import check
 from dagster.utils import safe_tempfile_path
 
+from .cluster_config import ClusterConfig
 from .utils import check_output, which_, within_docker
 
 
@@ -109,21 +110,23 @@ def kind_sync_dockerconfig():
 def kind_cluster(cluster_name=None, keep_cluster=False):
     cluster_name = cluster_name or 'cluster-{uuid}'.format(uuid=uuid.uuid4().hex)
 
+    # We need to use an internal address in a DinD context like Buildkite
+    use_internal_address = within_docker()
+
     if kind_cluster_exists(cluster_name):
-        yield cluster_name
+        with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
+            config.load_kube_config(config_file=kubeconfig_file)
+            yield ClusterConfig(cluster_name, kubeconfig_file)
 
-        if not keep_cluster:
-            print(
-                "WARNING: keep_cluster is false, won't delete your existing cluster. If you'd "
-                "like to delete this cluster, please manually remove by running the command:\n\n"
-                "kind delete cluster --name %s" % cluster_name
-            )
+            if not keep_cluster:
+                print(
+                    "WARNING: keep_cluster is false, won't delete your existing cluster. If you'd "
+                    "like to delete this cluster, please manually remove by running the command:\n"
+                    "kind delete cluster --name %s" % cluster_name
+                )
     else:
-        # We need to use an internal address in a DinD context like Buildkite
-        use_internal_address = within_docker()
-
         with create_kind_cluster(cluster_name, keep_cluster=keep_cluster):
             with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
                 config.load_kube_config(config_file=kubeconfig_file)
                 kind_sync_dockerconfig()
-                yield cluster_name, kubeconfig_file
+                yield ClusterConfig(cluster_name, kubeconfig_file)

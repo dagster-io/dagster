@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import time
-from collections import namedtuple
 
 import pytest
 import six
@@ -12,13 +11,13 @@ from dagster_k8s.launcher import K8sRunLauncher
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
 from kubernetes import client, config
 
-from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.instance.ref import compute_logs_directory
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 
-from .kind_cluster import kind_cluster
+from .cluster_config import ClusterConfig
+from .kind_cluster import kind_cluster, kind_cluster_exists
 from .utils import check_output, find_free_port, git_repository_root, test_repo_path, wait_for_pod
 
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
@@ -112,18 +111,6 @@ def kind_build_and_load_images(local_dagster_image, cluster_name):
         check_output(['kind', 'load', 'docker-image', '--name', cluster_name, image])
 
 
-class ClusterConfig(namedtuple('_ClusterConfig', 'name kubeconfig_file')):
-    '''Used to represent a cluster, returned by the cluster_provider fixture below.
-    '''
-
-    def __new__(cls, name, kubeconfig_file):
-        return super(ClusterConfig, cls).__new__(
-            cls,
-            name=check.str_param(name, 'name'),
-            kubeconfig_file=check.str_param(kubeconfig_file, 'kubeconfig_file'),
-        )
-
-
 @pytest.fixture(scope='session')
 def cluster_provider(request, docker_image):
     if IS_BUILDKITE:
@@ -142,11 +129,10 @@ def cluster_provider(request, docker_image):
         # setup and teardown
         keep_cluster = request.config.getoption("--keep-cluster")
 
-        with kind_cluster(cluster_name, keep_cluster) as (cluster_name, kubeconfig_file):
-            if not IS_BUILDKITE:
-                kind_build_and_load_images(docker_image, cluster_name)
-
-            yield ClusterConfig(cluster_name, kubeconfig_file)
+        with kind_cluster(cluster_name, keep_cluster) as cluster_config:
+            if not IS_BUILDKITE and not kind_cluster_exists(cluster_config.name):
+                kind_build_and_load_images(docker_image, cluster_config.name)
+            yield cluster_config
 
     # Use cluster from kubeconfig
     elif cluster_provider == 'kubeconfig':
