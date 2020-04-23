@@ -1,12 +1,10 @@
 import PyObject from 'components/PyObject';
 
-# Scheduling pipeline runs
-
 Dagster includes a simple built-in scheduler that works with Dagit for
 control and monitoring. Suppose that we need to run our simple cereal
 pipeline every morning before breakfast, at 6:45 AM.
 
-## Requirements
+### Requirements
 
 You'll need to install the `dagster-cron` library.
 
@@ -17,17 +15,17 @@ $ pip install dagster-cron
 You must also ensure that `cron` is installed on the machine you're
 running the scheduler on.
 
-## Pipeline
+### Pipeline
 
 ```python literalinclude
-file:/intro_tutorial/scheduler.py
+file:/dagster_examples/intro_tutorial/scheduler.py
 caption:scheduler.py
 lines:1-34
 ```
 
 As before, we've defined some solids, a pipeline, and a repository.
 
-## Defining the scheduler
+### Defining the scheduler
 
 We first need to define the Scheduler on our <PyObject module="dagster.core.instance" object="DagsterInstance" />. For
 now, the only implemented scheduler is <PyObject module="dagster_cron" object="SystemCronScheduler"/>,
@@ -40,7 +38,7 @@ scheduler:
   class: SystemCronScheduler
 ```
 
-## Defining schedules
+### Defining schedules
 
 Now we'll write a <PyObject module="dagster" object="ScheduleDefinition" /> to
 define the schedule we want. We pass the `cron_schedule` parameter to this class to define when the pipeline
@@ -51,7 +49,7 @@ its config.
 We wrap the schedule definition in a function decorated with <PyObject module="dagster" object="schedules" displayText="@schedules" />
 
 ```python literalinclude
-file:/intro_tutorial/scheduler.py
+file:/dagster_examples/intro_tutorial/scheduler.py
 caption:scheduler.py
 lineno-start:38
 lines:36-45
@@ -61,11 +59,11 @@ To complete the picture, we'll need to extend the `repository.yaml`
 structure we've met before with a new key, `scheduler`.
 
 ```YAML literalinclude
-file:/intro_tutorial/scheduler.yaml
+file:/dagster_examples/intro_tutorial/scheduler.yaml
 caption:scheduler.yaml
 ```
 
-## Starting schedules
+### Starting schedules
 
 Whenever we make changes to schedule definitions using the
 `SystemCronScheduler`, we need to run `dagster schedule up`. This
@@ -107,7 +105,7 @@ Now, we can load dagit to view the schedule and monitor runs:
 $ dagit -y scheduler.yaml
 ```
 
-## Cron filters
+### Cron filters
 
 If you need to define a more specific schedule than cron allows, you can
 pass a function in the `should_execute` argument to <PyObject module="dagster" object="ScheduleDefinition" />.

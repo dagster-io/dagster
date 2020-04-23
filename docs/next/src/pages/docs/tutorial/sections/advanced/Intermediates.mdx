@@ -1,9 +1,7 @@
 import PyObject from 'components/PyObject';
 
-# Intermediates
-
 We've already seen how solids can describe their persistent artifacts to the
-system using [materializations](materializations).
+system using [materializations](#materializations).
 
 Dagster also has a facility for automatically materializing the intermediate
 values that actually pass between solids.
@@ -17,7 +15,7 @@ computations.
 To turn intermediate storage on, just set another key in the pipeline config:
 
 ```YAML literalinclude
-file:/intro_tutorial/intermediates.yaml
+file:/dagster_examples/intro_tutorial/intermediates.yaml
 caption:intermediates.yaml
 emphasize-lines:6-7
 ```
@@ -28,7 +26,7 @@ on the filesystem.
 
 ![intermediates.png](/assets/images/tutorial/intermediates.png)
 
-## Intermediate storage for types that cannot be pickled
+### Intermediate storage for types that cannot be pickled
 
 By default, Dagster will try to pickle intermediate values to store them on
 the filesystem. Some custom data types cannot be pickled (for instance, a
@@ -39,7 +37,7 @@ supposing it was not, let's set a custom **`SerializationStrategy`** on
 it to tell Dagster how to store intermediates of this type.
 
 ```python literalinclude
-file:/intro_tutorial/serialization_strategy.py
+file:/dagster_examples/intro_tutorial/serialization_strategy.py
 caption:serialization_strategy.py
 lineno-start:16
 lines:16-39
@@ -51,7 +49,7 @@ human-readable .csv:
 
 ![serialization_strategy.png](/assets/images/tutorial/serialization_strategy.png)
 
-## Reexecution
+### Re-execution
 
 Once intermediates are being stored, Dagit makes it possible to individually
 execute solids whose outputs are satisfied by previously materialized
@@ -71,10 +69,10 @@ or while you're actively debugging them.
 You can also manually specify intermediates from previous runs as inputs to
 solids. Recall the syntax we used to set input values using the config system:
 
-::literalinclude (file:/intro_tutorial/inputs_env.yaml) (caption:inputs_env.yaml) (language:YAML)
+::literalinclude (file:/dagster_examples/intro_tutorial/inputs_env.yaml) (caption:inputs_env.yaml) (language:YAML)
 
 ```YAML literalinclude
-file:/intro_tutorial/inputs_env.yaml
+file:/dagster_examples/intro_tutorial/inputs_env.yaml
 caption:inputs_env.yaml
 ```
 
@@ -82,7 +80,7 @@ Instead of setting the key `value` (i.e., providing a ), we can
 also set `pickle`, as follows:
 
 ```YAML literalinclude
-file:/intro_tutorial/reexecution_env.yaml
+file:/dagster_examples/intro_tutorial/reexecution_env.yaml
 caption:reexecution_env.yaml
 ```
 

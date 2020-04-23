@@ -1,14 +1,10 @@
 import PyObject from 'components/PyObject';
 
-# Connecting solids together
+Our pipelines wouldn't be very interesting if they were limited to solids acting in isolation from each other.
+Pipelines are useful because they let us connect solids into arbitrary DAGs ([directed acyclic graphs](https://en.wikipedia.org/wiki/Directed_acyclic_graph))
+of computation.
 
-Our pipelines wouldn\'t be very interesting if they were limited to
-solids acting in isolation from each other. Pipelines are useful because
-they let us connect solids into arbitrary DAGs ([directed acyclic
-graphs](https://en.wikipedia.org/wiki/Directed_acyclic_graph)) of
-computation.
-
-## Let's get serial
+### Let's Get Serial
 
 We'll add a second solid to the pipeline we worked with in the first
 section of the tutorial.
@@ -18,7 +14,7 @@ the cereal dataset in from disk, and in turn will sort the list of
 cereals by their calorie content per serving.
 
 ```python literalinclude emphasize-lines=15,19,37
-file:/intro_tutorial/serial_pipeline.py
+file:/dagster_examples/intro_tutorial/serial_pipeline.py
 caption:serial_pipeline.py
 lines:1-37
 ```
@@ -46,14 +42,16 @@ Navigate to [http://127.0.0.1:3000/pipeline/serial_pipeline/](http://127.0.0.1:3
 
 ![serial_pipeline_figure_one.png](/assets/images/tutorial/serial_pipeline_figure_one.png)
 
-## A more complex DAG
+<br />
+
+### A More Complex DAG
 
 Solids don't need to be wired together serially. The output of one
 solid can be consumed by any number of other solids, and the outputs of
 several different solids can be consumed by a single solid.
 
 ```python literalinclude emphasize-lines=55-59 startLine=6
-file:/intro_tutorial/complex_pipeline.py
+file:/dagster_examples/intro_tutorial/complex_pipeline.py
 caption:complex_pipeline.py
 lines:6-64
 ```
@@ -85,7 +83,7 @@ We'll write a simple test for this pipeline showing how we can assert
 that all four of its solids executed successfully.
 
 ```python literalinclude startLine=72
-file:/intro_tutorial/complex_pipeline.py
+file:/dagster_examples/intro_tutorial/complex_pipeline.py
 caption:complex_pipeline.py
 lines:72-77
 ```

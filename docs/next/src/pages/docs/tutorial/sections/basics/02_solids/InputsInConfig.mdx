@@ -1,0 +1,42 @@
+import PyObject from 'components/PyObject';
+
+### Parametrizing Solids with Inputs
+
+So far, we've only seen solids whose behavior is the same every time
+they're run:
+
+```python literalinclude
+file:/dagster_examples/intro_tutorial/serial_pipeline.py
+caption:serial_pipeline.py
+lineno-start:6
+lines:6-15
+```
+
+In general, though, rather than relying on hardcoded values like
+`dataset_path`, we'd like to be able to parametrize our solid logic.
+Appropriately parameterized solids are more testable, and also more
+reusable. Consider the following more generic solid:
+
+```python literalinclude
+file:/dagster_examples/intro_tutorial/inputs.py
+caption:inputs.py
+lineno-start:6
+lines:6-12
+```
+
+Here, rather than hardcoding the value of `dataset_path`, we use an
+input, `csv_path`. It's easy to see why this is better. We can reuse
+the same solid in all the different places we might need to read in a
+.csv from a filepath. We can test the solid by pointing it at some known
+test csv file. And we can use the output of another upstream solid to
+determine which file to load.
+
+Let's rebuild a pipeline we've seen before, but this time using our
+newly parameterized solid.
+
+```python literalinclude
+file:/dagster_examples/intro_tutorial/inputs.py
+caption:inputs.py
+lines:1-36
+emphasize-lines:36
+```

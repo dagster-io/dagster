@@ -1,8 +1,6 @@
 import PyObject from 'components/PyObject';
 
-# User-defined types
-
-Note that this section requires Python 3.
+### Dagster Types
 
 We've seen how we can type the inputs and outputs of solids using
 Python 3's typing system, and how to use Dagster's built-in config
@@ -11,10 +9,21 @@ define config schemas for our solids.
 
 But what about when you want to define your own types?
 
+This section will talk about the basics of Dagster's user defined types in the following order. You
+can also learn more about Typing in Dagster by reading [Dagster Types Guide](learn/guides/dagster_types).
+
+- [Complex Type Checks](#complex-type-checks)
+- [Providing Input Values for Custom Types in Config](#providing-input-values-for-custom-types-in-config)
+- [Testing Custom Types](#testing-custom-types)
+- [MyPy Compliance](#mypy-compliance)
+- [Metadata and Custom Type Checks](#Metadata-and-custom-type-checks)
+
+<br />
+
 Let's look back at our simple `read_csv` solid.
 
 ```python literalinclude
-file:/intro_tutorial/inputs_typed.py
+file:/dagster_examples/intro_tutorial/inputs_typed.py
 caption:inputs_typed.py
 lineno-start:6
 lines:6-12
@@ -51,7 +60,7 @@ expects to receive a data frame.
 To do this, we'll use the <PyObject module="dagster" object="DagsterType" displayText="DagsterType" /> class:
 
 ```python literalinclude
-file:/intro_tutorial/custom_types.py
+file:/dagster_examples/intro_tutorial/custom_types.py
 caption:custom_types.py
 lineno-start:5
 lines:5-9
@@ -60,7 +69,7 @@ lines:5-9
 Now we can annotate the rest of our pipeline with our new type:
 
 ```python literalinclude
-file:/intro_tutorial/custom_types.py
+file:/dagster_examples/intro_tutorial/custom_types.py
 caption:custom_types.py
 lineno-start:13
 lines:13-35
@@ -80,7 +89,9 @@ $ dagit -f custom_types.py -n custom_type_pipeline
 You can see that the output of `read_csv` (which by default has the name
 `result`) is marked to be of type `SimpleDataFrame`.
 
-## Complex type checks
+<br />
+
+#### Complex Type Checks
 
 The Dagster framework will fail type checks when a value isn't an
 instance of the type we're expecting, e.g., if `read_csv` were to
@@ -93,11 +104,11 @@ of these OrderedDicts to have the same fields, in the same order.
 
 The type check function allows us to do this.
 
-```python literalinclude
-file:/intro_tutorial/custom_types_2.py
+```python literalinclude showLines
+file:/dagster_examples/intro_tutorial/custom_types_2.py
 caption:custom_types_2.py
 lineno-start:6
-lines:6-2
+lines:6-28
 emphasize-lines:1, 21
 ```
 
@@ -105,10 +116,8 @@ Now, if our solid logic fails to return the right type, we'll see a
 type check failure. Let's replace our `read_csv` solid with the
 following bad logic:
 
-::literalinclude (file:/intro_tutorial/custom_types_2.py) (caption:custom_types_2.py) (language:python) (lineno-start:30) (lines:30-35)
-
-```python literalinclude
-file:/intro_tutorial/custom_types_2.py
+```python literalinclude showLines startLine=30
+file:/dagster_examples/intro_tutorial/custom_types_2.py
 caption:custom_types_2.py
 lineno-start:30
 lines:30-35
@@ -117,26 +126,30 @@ lines:30-35
 When we run the pipeline with this solid, we'll see an error like:
 
 ```bash
-2019-10-12 13:19:19 - dagster - ERROR - custom_type_pipeline - 266c6a93-75e2-46dc-8bd7-d684ce91d0d1 - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
+2019-10-12 13:19:19 - dagster - ERROR - custom_type_pipeline - 266c6a93-75e2-46dc-8bd7-d684ce91d0d1 - STEP_FAILURE
+- Execution of step "bad_read_csv.compute" failed.
             cls_name = "Failure"
             solid = "bad_read_csv"
     solid_definition = "bad_read_csv"
             step_key = "bad_read_csv.compute"
-user_failure_data = {"description": "LessSimpleDataFrame should be a list of OrderedDicts, got <class 'str'> for row 1", "label": "intentional-failure", "metadata_entries": []}
+user_failure_data = {"description": "LessSimpleDataFrame should be a list of OrderedDicts, got <class 'str'>
+for row 1", "label": "intentional-failure", "metadata_entries": []}
 ```
 
-## Providing input values for custom types in config
+<br />
+
+#### Providing Input Values for Custom Types in Config
 
 We saw earlier how, when a solid doesn't receive all of its inputs from
 other solids further upstream in the pipeline, we can specify its input
 values in config:
 
 ```YAML literalinclude
-file:/intro_tutorial/inputs_env.yaml
+file:/dagster_examples/intro_tutorial/inputs_env.yaml
 caption:inputs_env.yaml
 ```
 
-The Dagster framework knows how to intepret values provided via config
+The Dagster framework knows how to interpret values provided via config
 as scalar inputs. In this case, `read_csv` just takes the string
 representation of the filepath from which it'll read a csv. But for
 more complex, custom types, we need to tell Dagster how to interpret
@@ -151,10 +164,8 @@ the full configuration surface of a general purpose `read_csv` solid.
 
 What we want to be able to do is write:
 
-::literalinclude (file:/intro_tutorial/custom_type_input.yaml) (caption:custom_type_input.yaml)
-
 ```YAML literalinclude
-file:/intro_tutorial/custom_type_input.yaml
+file:/dagster_examples/intro_tutorial/custom_type_input.yaml
 caption:custom_type_input.yaml
 ```
 
@@ -164,7 +175,7 @@ In order for the Dagster machinery to be able to decode the config value
 hydration config.
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_3.py
+file:/dagster_examples/intro_tutorial/custom_types_3.py
 caption:custom_types_3.py
 lineno-start:31
 lines:31-37
@@ -185,7 +196,7 @@ fields like `parquet`, `xlsx`, `sql`, etc.
 Then insert this into the original declaration:
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_3.py
+file:/dagster_examples/intro_tutorial/custom_types_3.py
 caption:custom_types_3.py
 lineno-start:45
 lines:40-47
@@ -196,13 +207,15 @@ Now if you run a pipeline with this solid from dagit you will be able to
 provide sources for these inputs via config:
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_3.py
+file:/dagster_examples/intro_tutorial/custom_types_3.py
 caption:custom_types_3.py
 lineno-start:69
 lines:69-78
 ```
 
-## Testing custom types
+<br />
+
+#### Testing Custom Types
 
 As you write your own custom types, you'll also want to set up unit
 tests that ensure your types are doing what you expect them to. Dagster
@@ -210,7 +223,7 @@ includes a utility function, <PyObject module="dagster" object="check_dagster_ty
 that lets you type check any Dagster type against any value.
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_test.py
+file:/dagster_examples/intro_tutorial/custom_types_test.py
 caption:custom_types_test.py
 lineno-start:100
 lines:100-112
@@ -220,7 +233,9 @@ Well tested library types can be reused across solids and pipelines to
 provide standardized type checking within your organization's data
 applications.
 
-## MyPy Compliance
+<br />
+
+#### MyPy Compliance
 
 In cases where DagsterTypes are created that do not have corresponding
 usable Python types, and the user wishes to remain mypy compliant, there
@@ -231,7 +246,7 @@ dagster types, and reserving type annotations for naked Python types
 _only_. This is verbose, but is explicit and clear.
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_mypy_verbose.py
+file:/dagster_examples/intro_tutorial/custom_types_mypy_verbose.py
 caption:custom_types_mypy_verbose.py
 lineno-start:20
 lines:20-44
@@ -247,9 +262,41 @@ While inelegant, this centralizes boilerplate to the type instantiation,
 rather than have it on all places where the type is referenced.
 
 ```python literalinclude
-file:/intro_tutorial/custom_types_mypy_typing_trick.py
+file:/dagster_examples/intro_tutorial/custom_types_mypy_typing_trick.py
 caption:custom_types_mypy_typing_trick.py
 lineno-start:6
 lines:6-22
 emphasize-lines:1-8
 ```
+
+<br />
+
+#### Metadata and Custom Type Checks
+
+Custom types can also yield metadata about the type check. For example, in the
+case of our data frame, we might want to record the number of rows and columns
+in the dataset when our type checks succeed, and provide more information
+about why type checks failed when they fail.
+User-defined type check functions can optionally return a <PyObject module="dagster" object="TypeCheck" /> object
+that contains metadata about the success or failure of the type check.
+Let's see how to use this to emit some summary statistics about our DataFrame
+type:
+
+```python literalinclude
+file:/dagster_examples/intro_tutorial/custom_types_4.py
+caption:custom_types_4.py
+lineno-start:17
+lines:17-29
+emphasize-lines:3-9, 33-53
+```
+
+A <PyObject module="dagster" object="TypeCheck" displayText="TypeCheck" /> must include a
+`success` argument describing whether the check
+passed or failed, and may include a description and/or a list of <PyObject module="dagster" object="EventMetadataEntry" /> objects.
+You should use the static constructors on <PyObject module="dagster" object="EventMetadataEntry" /> to
+construct these objects, which are flexible enough to support arbitrary metadata in JSON or Markdown format.
+
+Dagit knows how to display and archive structured metadata of this kind for
+future review:
+
+![custom_types_figure_two.png](/assets/images/tutorial/custom_types_figure_two.png)

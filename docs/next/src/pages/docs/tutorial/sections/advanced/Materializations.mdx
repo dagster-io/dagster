@@ -1,7 +1,5 @@
 import PyObject from 'components/PyObject';
 
-# Materializations
-
 Steps in a data pipeline often produce persistent artifacts, for instance,
 graphs or tables describing the result of some computation. Typically these
 artifacts are saved to disk (or to cloud storage) with a [name](https://xkcd.com/1459/) that
@@ -19,7 +17,7 @@ Suppose that we rewrite our `sort_calories` solid so that it saves
 the newly sorted data frame to disk.
 
 ```python literalinclude
-file:/intro_tutorial/materializations.py
+file:/dagster_examples/intro_tutorial/materializations.py
 caption:materializations.py
 lines:23-46
 ```
@@ -29,7 +27,7 @@ different filename for each run of the pipeline. But there's no way for Dagit
 to know about this persistent artifact. So we'll add the following lines:
 
 ```python literalinclude
-file:/intro_tutorial/materializations.py
+file:/dagster_examples/intro_tutorial/materializations.py
 caption:materializations.py
 lineno-start:23
 lines:23-56
@@ -46,7 +44,7 @@ Now, if we run this pipeline in Dagit:
 
 ![materializations.png](/assets/images/tutorial/materializations.png)
 
-## Configurably materializing custom data types
+### Configurably Materializing Custom Data Types
 
 Data types can also be configured so that outputs materialize themselves,
 obviating the need to explicitly yield a <PyObject module="dagster" object="Materialization" /> from solid logic.
@@ -59,7 +57,7 @@ are human-readable and manipulable by a wide variety of third party tools,
 while pickle is a binary format.)
 
 ```python literalinclude
-file:/intro_tutorial/output_materialization.py
+file:/dagster_examples/intro_tutorial/output_materialization.py
 caption:output_materialization.py
 lineno-start:28
 lines:28-61
@@ -68,7 +66,7 @@ lines:28-61
 We set the output materialization config on the type:
 
 ```python literalinclude
-file:/intro_tutorial/output_materialization.py
+file:/dagster_examples/intro_tutorial/output_materialization.py
 caption:output_materialization.py
 lineno-start:64
 lines:64-71
@@ -79,7 +77,7 @@ Now we can tell Dagster to materialize intermediate outputs of this type by
 providing config:
 
 ```YAML literalinclude
-file:/intro_tutorial/output_materialization.yaml
+file:/dagster_examples/intro_tutorial/output_materialization.yaml
 caption:output_materialization.yaml
 emphasize-lines:6-10
 ```

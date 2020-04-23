@@ -1,0 +1,127 @@
+import AnchorHeading from 'components/AnchorHeading';
+import NavButtonGroup from 'components/NavButtonGroup';
+
+import HelloSolid from './sections/basics/01_first_pipeline/HelloSolid.mdx';
+import HelloPipeline from './sections/basics/01_first_pipeline/HelloPipeline.mdx';
+import ExecutePipeline from './sections/basics/01_first_pipeline/ExecutePipeline.mdx';
+
+import InputsInConfig from './sections/basics/02_solids/InputsInConfig.mdx';
+import ExecuteWithConfig from './sections/basics/02_solids/ExecuteWithConfig.mdx';
+import ConfigInConfig from './sections/basics/02_solids/ConfigInConfig.mdx';
+import MultipleOutputs from './sections/basics/02_solids/MultipleOutputs.mdx';
+
+import ConnectSolids from './sections/basics/03_pipelines/ConnectSolids.mdx';
+
+import TestingDagster from './sections/basics/04_data_quality/TestingDagster.mdx';
+import PythonTypedInputs from './sections/basics/04_data_quality/PythonTypedInputs.mdx';
+import DagsterTypes from './sections/basics/04_data_quality/DagsterTypes.mdx';
+import Expectations from './sections/basics/04_data_quality/Expectations.mdx';
+
+# ETL with Dagster
+
+We now have the basic building blocks for our cereal pipeline. To construct and execute a data
+pipeline using Dagster, we will need solids as our computational units to contain business logics,
+a pipeline to connect solids, and a way to execute the pipeline.
+
+## Execute Our First Pipeline
+
+> The code mentioned in this section is available in our examples folder
+>
+> - You can find it on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/01_first_pipeline/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `dagster/examples/dagster_examples/intro_tutorial/basics/01_first_pipeline/`
+
+<br />
+
+Let's write our first Dagster pipeline.
+
+<HelloSolid />
+
+<br />
+
+<HelloPipeline />
+
+<br />
+
+<ExecutePipeline />
+
+<br />
+
+<br />
+
+## Basics of Solids
+
+> The code mentioned in this section is available in our examples folder
+>
+> - You can find it on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/02_solids/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `dagster/examples/dagster_examples/intro_tutorial/basics/02_solids/`
+
+<InputsInConfig />
+
+<br />
+
+<ExecuteWithConfig />
+
+<br />
+
+<ConfigInConfig />
+
+<br />
+
+<MultipleOutputs />
+
+<br />
+
+<br />
+
+## Basics of Pipelines
+
+> The code mentioned in this section is available in our examples folder
+>
+> - You can find it on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/basics/03_pipelines/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `dagster/examples/dagster_examples/intro_tutorial/basics/03_pipelines/`
+
+<br />
+
+<ConnectSolids />
+
+<br />
+
+<br />
+
+## Making Your Pipelines Testable and Maintainable
+
+The reality of building data applications is that they are notoriously difficult to test and are
+therefore typically un- or under-tested. Besides, pipeline authors generally do not have control
+over their input data, which led to an even more unfortunate reality — even if data pipelines are
+covered by sophisticated tests, pipeline breakage could still happen.
+
+Creating testable and verifiable data applications is one of the focuses of Dagster. We believe
+ensuring data quality is critical for managing the complexity of data systems. This section will
+talk about how you can build maintainable and testable data applications with Dagster.
+
+<TestingDagster />
+
+<br />
+
+<PythonTypedInputs />
+
+<br />
+
+<DagsterTypes />
+
+<br />
+
+<Expectations />
+
+<br />
+
+Congratulations! Having reached this far, you now have a working, testable, and maintainable data pipeline. You’ve also learned the basics of Dagster, and you should now be able to build your own data applications using Dagster!
+
+<NavButtonGroup
+  prevText="Overview"
+  prevLink="/docs/tutorial/overview"
+  nextText="Advanced Tutorials"
+  nextLink="/docs/tutorial/advanced"
+/>
+
+<br />

@@ -1,0 +1,89 @@
+import AnchorHeading from 'components/AnchorHeading';
+import NavButtonGroup from 'components/NavButtonGroup';
+
+import ReusableSolids from './sections/advanced/solids/ReusableSolids.mdx';
+import CompositeSolids from './sections/advanced/solids/CompositeSolids.mdx';
+import Modes from './sections/advanced/pipelines/Modes.mdx';
+import Presets from './sections/advanced/pipelines/Presets.mdx';
+import Resources from './sections/advanced/pipelines/Resources.mdx';
+
+# Advanced Tutorials
+
+This section will introduce some advanced features and give you deeper insight into Dagster. It's worth reading if you have needs including things like
+
+- Reusing the same solids over and over again
+- Configuring pipeline-wide facilities to avoiding repeated code or config with unchanged business logic
+- Persisting artifacts
+- Scheduling data pipelines
+- Better organizing multiple pipelines
+
+## More about Solids
+
+Abstracting business logic into reusable, configurable solids is one
+important step towards making data applications like other software
+applications.
+
+<ReusableSolids />
+<br />
+
+<CompositeSolids />
+
+<br />
+
+## More about Pipelines
+
+Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with such systems, so that your business logic can remain the same across local/test, dev, prod, etc. environments. Resources represent these external systems, and modes/presets support swapping resource implementations across different environments.
+
+<Resources />
+
+<br />
+
+<Modes />
+
+<br />
+
+<Presets />
+
+<br />
+
+<br />
+
+## Materializations
+
+import Materializations from './sections/advanced/Materializations.mdx';
+
+<Materializations />
+
+<br />
+
+<br />
+
+## Intermediates
+
+import Intermediates from './sections/advanced/Intermediates.mdx';
+
+<Intermediates />
+
+<br />
+
+<br />
+
+## Scheduling Pipeline Runs
+
+import Scheduling from './sections/advanced/Scheduling.mdx';
+
+<Scheduling />
+
+<br />
+
+<br />
+
+## Organizing Pipelines in Repositories
+
+import Repositories from './sections/advanced/Repositories.mdx';
+
+<Repositories />
+
+<NavButtonGroup prevText="ETL with Dagster" prevLink="/docs/tutorial/basics" />
+
+<br />

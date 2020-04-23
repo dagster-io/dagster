@@ -1,6 +1,6 @@
 import PyObject from 'components/PyObject';
 
-# Parametrizing solids with config
+### Parametrizing Solids with Config
 
 Solids often depend in predictable ways on features of the external world or
 the pipeline in which they're invoked. For example, consider an extended
@@ -8,13 +8,13 @@ version of our csv-reading solid that implements more of the options available
 in the underlying Python API:
 
 ```python literalinclude startLine=6 emphasize-lines=8-14
-file:/intro_tutorial/config_bad_1.py
+file:/dagster_examples/intro_tutorial/config_bad_1.py
 caption:config_bad_1.py
 lines:6-25
 ```
 
 We obviously don't want to have to write a separate solid for each permutation
-of these parameters that we use in our pipelines -- especially because, in
+of these parameters that we use in our pipelines — especially because, in
 more realistic cases like configuring a Spark job or even parametrizing the
 `read_csv` function from a popular package like [Pandas](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv), we
 might have dozens or hundreds of parameters like these.
@@ -23,7 +23,7 @@ But hoisting all of these parameters into the signature of the solid function
 as inputs isn't the right answer either:
 
 ```python literalinclude startLine=6 emphasize-lines=5-11
-file:/intro_tutorial/config_bad_2.py
+file:/dagster_examples/intro_tutorial/config_bad_2.py
 caption:config_bad_2.py
 lines:6-35
 ```
@@ -42,7 +42,7 @@ these with true input values.
 The solution is to define a config schema for our solid:
 
 ```python literalinclude emphasize-lines=15,33-41,87
-file:/intro_tutorial/config.py
+file:/dagster_examples/intro_tutorial/config.py
 caption:config.py
 lines:1-102
 ```
@@ -82,7 +82,7 @@ the `inputs` section, which we'll still use to set the{' '}
 we can set values defined in the `config` argument to <PyObject module="dagster" object="solid" displayText="@solid" />.
 
 ```YAML literalinclude
-file:/intro_tutorial/config_env_bad.yaml
+file:/dagster_examples/intro_tutorial/config_env_bad.yaml
 caption:config_env_bad.yaml
 ```
 

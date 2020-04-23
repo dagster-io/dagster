@@ -1,4 +1,6 @@
-# Reusable solids
+import PyObject from 'components/PyObject';
+
+### Reusable Solids
 
 Solids are intended to abstract chunks of business logic, but
 abstractions aren't very meaningful unless they can be reused.
@@ -17,7 +19,7 @@ Let's replace `sort_hot_cereals_by_calories` and
 solid:
 
 ```python literalinclude
-file:/intro_tutorial/reusable_solids.py
+file:/dagster_examples/intro_tutorial/reusable_solids.py
 caption:reusable_solids.py
 lineno-start:57
 lines:57-73
@@ -35,7 +37,7 @@ invoked many times within this pipeline.
 Configuring solids also uses the aliases, as in the following YAML:
 
 ```YAML literalinclude
-file:/intro_tutorial/reusable_solids.yaml
+file:/dagster_examples/intro_tutorial/reusable_solids.yaml
 caption:reusable_solids.yaml
 lineno-start:
 lines:-

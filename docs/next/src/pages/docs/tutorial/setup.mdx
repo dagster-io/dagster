@@ -1,0 +1,93 @@
+import AnchorHeading from 'components/AnchorHeading';
+import NavButtonGroup from 'components/NavButtonGroup';
+
+# Setup for the Tutorial
+
+## Python and pip
+
+We’ll assume that you have some familiarity with Python, but you should be able to follow along even
+if you’re coming from a different programming language. To check that Python and the pip package
+manager are already installed in your environment or install them, you can follow the instructions
+[here](/docs/install/python).
+
+## Dagster and Dagit
+
+```bash
+$ pip install dagster dagit
+```
+
+This installs two modules:
+
+- **Dagster**: the core programming model and abstraction stack; stateless, single-node, single-process
+  and multi-process execution engines; and a CLI tool for driving those engines.
+- **Dagit**: a UI and rich development environment for Dagster, including a DAG browser, a type-aware
+  config editor, and a streaming execution interface.
+
+## Quick Start
+
+Let's get your first Dagster code running.
+
+```python
+from dagster import execute_pipeline, pipeline, solid
+
+
+@solid
+def get_name(_):
+    return 'dagster'
+
+
+@solid
+def hello(context, name: str):
+    context.log.info('Hello, {name}!'.format(name=name))
+
+
+@pipeline
+def hello_pipeline():
+    hello(get_name())
+```
+
+Save the code above in a file named `hello_dagster.py`. You can execute the pipeline
+using any one of the following methods:
+
+(1) Dagster Python API
+
+```python
+if __name__ == "__main__":
+    execute_pipeline(hello_pipeline)   Hello, dagster!
+```
+
+(2) Dagster CLI
+
+```bash
+$ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
+```
+
+(3) Dagit web UI
+
+```bash
+$ dagit -f hello_dagster.py -n hello_pipeline
+```
+
+And then navigate to http://localhost:3000 to start using Dagit
+
+## If You Get Stuck
+
+If you have questions on getting started, we'd love to hear from you:
+
+<p align="center">
+  <a href="https://dagster-slackin.herokuapp.com/" target="_blank">
+    <img
+      src="https://user-images.githubusercontent.com/609349/63558739-f60a7e00-c502-11e9-8434-c8a95b03ce62.png"
+      width="160px"
+    />
+  </a>
+</p>
+
+<NavButtonGroup
+  prevText="Before We Start"
+  prevLink="/docs/tutorial/"
+  nextText="Overview"
+  nextLink="/docs/tutorial/overview"
+/>
+
+<br />

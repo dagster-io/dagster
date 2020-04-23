@@ -1,7 +1,5 @@
 import PyObject from 'components/PyObject';
 
-# Organizing pipelines in repositories
-
 In all of the examples we've seen so far, we've specified a file (`-f`) or a module
 (`-m`) and named a pipeline definition function (`-n`) in order to tell the
 CLI tools how to load a pipeline, e.g.:
@@ -20,7 +18,7 @@ the Dagster tools can target as a whole. Repositories are declared using the <Py
 as follows:
 
 ```python literalinclude
-file:/intro_tutorial/repos.py
+file:/dagster_examples/intro_tutorial/repos.py
 caption:repos.py
 lineno-start:14
 lines:14-24
@@ -51,7 +49,7 @@ file, although you can tell the CLI tools to use any file you like with the
 `-y` flag.
 
 ```YAML literalinclude
-file:/intro_tutorial/repository.yaml
+file:/dagster_examples/intro_tutorial/repository.yaml
 caption:repository.yaml
 ```
 

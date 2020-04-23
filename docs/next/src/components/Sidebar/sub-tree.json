@@ -19,96 +19,24 @@
   ],
   "Tutorial": [
     {
-      "name": "Hello, cereal!",
-      "path": "/index"
+      "name": "Before We Start",
+      "path": "#"
     },
     {
-      "path": "/hello_solid",
-      "name": "Hello, solid!"
+      "name": "Setup for the Tutorial",
+      "path": "/setup"
     },
     {
-      "path": "/hello_pipeline",
-      "name": "Hello, pipeline!"
+      "name": "Overview",
+      "path": "/overview"
     },
     {
-      "path": "/execute_pipeline",
-      "name": "Executing our first pipeline"
+      "name": "ETL with Dagster",
+      "path": "/basics"
     },
     {
-      "path": "/testing",
-      "name": "Testing solids and pipelines"
-    },
-    {
-      "path": "/hello_dag",
-      "name": "Connecting solids together"
-    },
-    {
-      "path": "/inputs",
-      "name": "Parametrizing solids with inputs"
-    },
-    {
-      "path": "/dagit_config_editor",
-      "name": "Using the Dagit config editor"
-    },
-    {
-      "path": "/typed_inputs",
-      "name": "Type-checking inputs"
-    },
-    {
-      "path": "/config",
-      "name": "Parametrizing solids with config"
-    },
-    {
-      "path": "/types",
-      "name": "User-defined types"
-    },
-    {
-      "path": "/metadata",
-      "name": "Metadata and custom type checks"
-    },
-    {
-      "path": "/expectations",
-      "name": "Expectations"
-    },
-    {
-      "path": "/multiple_outputs",
-      "name": "Multiple and conditional outputs"
-    },
-    {
-      "path": "/reusable",
-      "name": "Reusable solids"
-    },
-    {
-      "path": "/composite_solids",
-      "name": "Composing solids"
-    },
-    {
-      "path": "/materializations",
-      "name": "Materializations"
-    },
-    {
-      "path": "/intermediates",
-      "name": "Intermediates"
-    },
-    {
-      "path": "/resources",
-      "name": "Parametrizing pipelines with resources"
-    },
-    {
-      "path": "/modes",
-      "name": "Pipeline modes"
-    },
-    {
-      "path": "/presets",
-      "name": "Pipeline config presets"
-    },
-    {
-      "path": "/repos",
-      "name": "Organizing pipelines in repositories"
-    },
-    {
-      "path": "/scheduler",
-      "name": "Scheduling pipeline runs"
+      "name": "Advanced Tutorials",
+      "path": "/advanced"
     }
   ],
   "Community": [

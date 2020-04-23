@@ -117,6 +117,8 @@ python_modules/dagit/yarn.lock
 docs/gatsby/**/node_modules/
 docs/gatsby/**/_build
 docs/gatsby/**/public
+# Next stuff
+docs/next/.mdx-data
 # Data
 data
 

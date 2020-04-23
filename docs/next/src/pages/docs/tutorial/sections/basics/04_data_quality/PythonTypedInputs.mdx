@@ -1,6 +1,6 @@
 import PyObject from 'components/PyObject';
 
-# Type-checking inputs
+### Type-checking Inputs with Python Type Annotation
 
 Note that this section requires Python 3.
 
@@ -18,7 +18,7 @@ For example, when we execute our pipeline with this config, it'll fail at
 runtime:
 
 ```YAML literalinclude
-file:/intro_tutorial/inputs_env_bad.yaml
+file:/dagster_examples/intro_tutorial/inputs_env_bad.yaml
 caption:inputs_env_bad.yaml
 ```
 
@@ -37,11 +37,10 @@ It would be better if we could catch this error earlier, when we specify the
 config. So let's make the inputs typed.
 
 A user can apply types to inputs and outputs using Python 3's type annotation
-syntax. In this case, we just want to type the input as the built-in{' '}
-`str`.
+syntax. In this case, we just want to type the input as the built-in `str`.
 
 ```python literalinclude
-file:/intro_tutorial/inputs_typed.py
+file:/dagster_examples/intro_tutorial/inputs_typed.py
 caption:inputs_typed.py
 lineno-start:6
 lines:6-12

@@ -1,6 +1,6 @@
 import PyObject from 'components/PyObject';
 
-# Pipeline config presets
+### Pipeline Config Presets
 
 Useful as the Dagit config editor and the ability to stitch together
 YAML fragments is, once pipelines have been productionized and config is
@@ -12,7 +12,7 @@ from different environment variables.
 Dagster calls this a config preset:
 
 ```python literalinclude
-file:/intro_tutorial/presets.py
+file:/dagster_examples/intro_tutorial/presets.py
 caption:presets.py
 lineno-start:128
 lines:128-167
@@ -43,9 +43,9 @@ $ dagster pipeline execute -f presets.py -n presets_pipeline -p unittest
 From Python, you can use <PyObject module="dagster" object="execute_pipeline_with_preset" />
 
 ```python literalinclude
-file:/intro_tutorial/presets.py
+file:/dagster_examples/intro_tutorial/presets.py
 caption:presets.py
-lines:171
+lines:172
 dedent:4
 ```
 

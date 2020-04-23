@@ -1,16 +1,14 @@
 import PyObject from 'components/PyObject';
-import AnchorHeading from 'components/AnchorHeading';
 
-# Executing our first pipeline
+### Executing Our First Pipeline
 
-Assuming you've saved this pipeline as `hello_cereal.py`, we can
-execute it via any of three different mechanisms:
+Assuming you’ve saved this pipeline as `hello_cereal.py`, we can execute it via any of three different
+mechanisms:
 
-1. From the command line, using the `dagster` CLI.
-2. From a rich graphical interface, using the `dagit` GUI tool.
-3. From arbitrary Python scripts, using dagster's Python API.
+<details className="markdown">
+  <summary>From arbitrary Python scripts, use Dagster’s Python API</summary>
 
-## Using the dagster CLI to execute a pipeline
+<br />
 
 From the directory in which you've saved the pipeline file, just run:
 
@@ -31,7 +29,38 @@ a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals
 
 Success!
 
-## Using dagit to execute a pipeline
+</details>
+
+<details className="markdown">
+  <summary>From the command line, use the Dagster CLI</summary>
+
+<br />
+
+If you'd rather execute your pipelines as a script, you can do that without
+using the dagster CLI at all. Just add a few lines to
+`hello_cereal.py`
+
+```python literalinclude showLines startLine=26
+file:/dagster_examples/intro_tutorial/hello_cereal.py
+caption:hello_cereal.py
+lines:26-28
+```
+
+Now you can just run:
+
+```bash
+$ python hello_cereal.py
+```
+
+The <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> function
+called here is the core Python API for executing Dagster pipelines from code.
+
+</details>
+
+<details className="markdown">
+  <summary>From a GUI, use the Dagit tool</summary>
+
+<br />
 
 To visualize your pipeline (which only has one node) in dagit, from the
 directory in which you've saved the pipeline file, just run:
@@ -59,8 +88,7 @@ The top pane is empty here, but in more complicated pipelines, this is where
 you'll be able to edit pipeline configuration on the fly.
 
 The bottom pane shows the concrete execution plan corresponding to the logical
-structure of the pipeline -- which also only has one node,{' '}
-`hello_cereal.compute`.
+structure of the pipeline -- which also only has one node, `hello_cereal.compute`.
 
 Click the "Start Execution" button to execute this plan directly from dagit. A
 new window should open, and you'll see a much more structured view of the
@@ -75,23 +103,4 @@ this, and every run of your pipeline.)
 In this view, you can filter and search through the logs corresponding to your
 pipeline run.
 
-## Using the Python API to execute a pipeline
-
-If you'd rather execute your pipelines as a script, you can do that without
-using the dagster CLI at all. Just add a few lines to
-`hello_cereal.py`
-
-```python literalinclude showLines startLine=26
-file:/intro_tutorial/hello_cereal.py
-caption:hello_cereal.py
-lines:26-28
-```
-
-Now you can just run:
-
-```bash
-$ python hello_cereal.py
-```
-
-The <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> function
-called here is the core Python API for executing Dagster pipelines from code.
+</details>

@@ -1,9 +1,7 @@
 import PyObject from 'components/PyObject';
 
-# Parametrizing pipelines with resources
+### Parametrizing Pipelines with Resources
 
-Often, we'll want to be able to configure pipeline-wide facilities,
-like uniform access to the file system, databases, or cloud services.
 Dagster models interactions with features of the external environment
 like these as resources (and library modules such as `dagster_aws`,
 `dagster_gcp`, and even `dagster_slack` provide out-of-the-box
@@ -24,7 +22,7 @@ Let's transform our dataset and then store it in a normalized table in
 the warehouse:
 
 ```python literalinclude
-file:/intro_tutorial/resources.py
+file:/dagster_examples/intro_tutorial/resources.py
 caption:resources.py
 lineno-start:57
 lines:57-80
@@ -41,17 +39,14 @@ database; to abstract software changes, such as swapping raw SQL for
 SQLAlchemy; or to accomodate changes in business logic, like moving from
 an overwriting scheme to append-only, date-partitioned tables.
 
-To implement a resource and specify its config schema, we use the
-:py`@resource <dagster.resource>`{.interpreted-text role="class"}
-decorator. The decorated function should return whatever object you wish
-to make available under the specific resource's slot in
+To implement a resource and specify its config schema, we use the <PyObject module="dagster" object="resource" displayText="@resource" /> decorator. The decorated function should return whatever object you wish to make available under the specific resource's slot in
 `context.resources`. Resource constructor functions have access to their
 own `context` argument, which gives access to resource-specific config.
 (Unlike the contexts we've seen so far, which are instances of <PyObject module="dagster" object="SystemComputeExecutionContext" />, this
 context is an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
 ```python literalinclude
-file:/intro_tutorial/resources.py
+file:/dagster_examples/intro_tutorial/resources.py
 caption:resources.py
 lineno-start:16
 lines:16-45
@@ -63,7 +58,7 @@ so that it's properly initialized when the pipeline run begins and made
 available to our solid logic as `context.resources.warehouse`.
 
 ```python literalinclude
-file:/intro_tutorial/resources.py
+file:/dagster_examples/intro_tutorial/resources.py
 caption:resources.py
 lineno-start:83
 lines:83-91
@@ -79,7 +74,7 @@ we won't have to specify which mode to use (it will take the place of the `defau
 We can put it all together with the following config:
 
 ```YAML literalinclude
-file:/intro_tutorial/resources.yaml
+file:/dagster_examples/intro_tutorial/resources.yaml
 caption:resources.yaml
 emphasize-lines:1-4
 ```
@@ -88,7 +83,9 @@ emphasize-lines:1-4
 connection string for our database -- this is how SQLite designates an
 in-memory database.)
 
-## Expressing resource dependencies
+<br />
+
+### Expressing Resource Dependencies
 
 We've provided a `warehouse` resource to our pipeline, but we're still
 manually managing our pipeline's dependency on this resource. Dagster
@@ -97,7 +94,7 @@ to make it easier to keep track of which resources need to be provided
 for a pipeline.
 
 ```python literalinclude
-file:/intro_tutorial/required_resources.py
+file:/dagster_examples/intro_tutorial/required_resources.py
 caption:required_resources.py
 lineno-start:55
 lines:55-78

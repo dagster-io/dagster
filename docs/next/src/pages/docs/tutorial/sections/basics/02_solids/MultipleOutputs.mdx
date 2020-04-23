@@ -1,6 +1,6 @@
 import PyObject from 'components/PyObject';
 
-# Multiple and conditional outputs
+### Multiple and Conditional Outputs
 
 Solids can have arbitrarily many outputs, and downstream solids can
 depends on any number of these.
@@ -13,7 +13,7 @@ Suppose we're interested in splitting hot and cold cereals into
 separate datasets and processing them separately, based on config.
 
 ```python literalinclude
-file:/intro_tutorial/multiple_outputs.py
+file:/dagster_examples/intro_tutorial/multiple_outputs.py
 caption:multiple_outputs.py
 lineno-start:33
 lines:33-58
@@ -29,7 +29,7 @@ We'll define two downstream solids and hook them up to the multiple
 outputs from `split_cereals`.
 
 ```python literalinclude
-file:/intro_tutorial/multiple_outputs.py
+file:/dagster_examples/intro_tutorial/multiple_outputs.py
 caption:multiple_outputs.py
 lineno-start:56
 lines:56-80
@@ -41,7 +41,7 @@ As usual, we can visualize this in Dagit:
 ![multiple_outputs.png](/assets/images/tutorial/multiple_outputs.png)
 
 Notice that the logical DAG corresponding to the pipeline definition
-includes both dependencies --we won't know about the conditionality in
+includes both dependencies -- we won't know about the conditionality in
 the pipeline until runtime, when one of the outputs is not yielded by
 `split_cereal`.
 
@@ -56,7 +56,7 @@ corresponding to the downstream solid is marked skipped in the right
 hand pane:
 
 ```YAML literalinclude
-file:/intro_tutorial/multiple_outputs.yaml
+file:/dagster_examples/intro_tutorial/multiple_outputs.yaml
 caption:multiple_outputs.yaml
 ```
 

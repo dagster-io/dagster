@@ -1,10 +1,12 @@
 import PyObject from 'components/PyObject';
 
-# Testing solids and pipelines
+### Testing solids and pipelines
 
-Our first solid and pipeline wouldn't be complete without some tests to ensure
-they're working as expected. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" /> to test our pipeline,
-as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" /> to test our solid in isolation.
+Let's go back to our first solid and pipeline [`hello_cereal.py`](#execute-our-first-pipeline).
+
+It wouldn't be complete without some tests to ensure they're working as expected. We'll use <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />
+to test our pipeline, as well as <PyObject module="dagster" object="execute_solid" displayText="execute_solid()" />
+to test our solid in isolation.
 
 These functions synchronously execute a pipeline or solid and return results
 objects (the <PyObject module="dagster" object="SolidExecutionResult" /> and <PyObject module="dagster" object="PipelineExecutionResult" />)
@@ -13,7 +15,7 @@ the outputs produced by solids, and (as we'll see later) other events associated
 with execution.
 
 ```python literalinclude
-file:/intro_tutorial/hello_cereal.py
+file:/dagster_examples/intro_tutorial/hello_cereal.py
 caption:hello_cereal.py
 lineno-start:31
 lines:31-40
@@ -34,6 +36,4 @@ Obviously, in production we'll often execute pipelines in a parallel,
 streaming way that doesn't admit this kind of API, which is intended to enable
 local tests like this.
 
-Dagster is written to make testing easy in a domain where it has historically
-been very difficult. Throughout the rest of this tutorial, we'll explore the
-writing of unit tests for each piece of the framework as we learn about it.
+Dagster is written to make testing easy in a domain where it has historically been very difficult. Throughout the rest of this tutorial, we'll explore the writing of unit tests for each piece of the framework as we learn about it. You can learn more about Testing in Dagster by reading [Testing Guide](learn/guides/testing/testing).
