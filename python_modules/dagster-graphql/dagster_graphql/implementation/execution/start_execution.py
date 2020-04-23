@@ -10,7 +10,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import InstanceCreateRunArgs
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils.error import SerializableErrorInfo
 
@@ -74,14 +74,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     )
 
     execution_plan = create_execution_plan(
-        pipeline_def,
-        execution_params.environment_dict,
-        pipeline_run=PipelineRun(
-            mode=execution_params.mode,
-            parent_run_id=execution_params.previous_run_id,
-            root_run_id=execution_params.previous_run_id,
-            tags=execution_params.execution_metadata.tags,
-        ),
+        pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
     )
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
@@ -196,7 +189,10 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         )
 
     create_execution_plan(
-        pipeline_def, pipeline_run.environment_dict, pipeline_run=pipeline_run,
+        pipeline_def,
+        pipeline_run.environment_dict,
+        mode=pipeline_run.mode,
+        step_keys_to_execute=pipeline_run.step_keys_to_execute,
     )
 
     graphene_info.context.execution_manager.execute_pipeline(

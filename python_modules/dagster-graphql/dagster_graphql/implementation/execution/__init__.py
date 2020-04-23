@@ -111,7 +111,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
         if is_config_valid(pipeline_def, run.environment_dict, run.mode):
             execution_plan = create_execution_plan(
-                pipeline_def, run.environment_dict, pipeline_run=PipelineRun(mode=run.mode)
+                pipeline_def, run.environment_dict, mode=run.mode
             )
 
             execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
@@ -175,7 +175,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
     execution_plan = create_execution_plan(
         pipeline=pipeline_def,
         environment_dict=execution_params.environment_dict,
-        pipeline_run=pipeline_run,
+        mode=pipeline_run.mode,
     )
 
     if execution_params.step_keys:

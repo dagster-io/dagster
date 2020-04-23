@@ -75,14 +75,17 @@ def check_pipeline_run(pipeline_run, pipeline_def):
     return pipeline_run
 
 
-def create_execution_plan(pipeline, environment_dict=None, pipeline_run=None):
+def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
     check.inst_param(pipeline, 'pipeline', PipelineDefinition)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-    pipeline_run = check.opt_inst_param(pipeline_run, 'pipeline_run', PipelineRun, PipelineRun())
+    mode = check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name())
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-    environment_config = EnvironmentConfig.build(pipeline, environment_dict, pipeline_run)
+    environment_config = EnvironmentConfig.build(pipeline, environment_dict, mode=mode)
 
-    return ExecutionPlan.build(pipeline, environment_config, pipeline_run)
+    return ExecutionPlan.build(
+        pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute
+    )
 
 
 def _pipeline_execution_iterator(pipeline_context, execution_plan, pipeline_run):
@@ -128,7 +131,10 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     execution_plan = create_execution_plan(
-        pipeline, environment_dict=pipeline_run.environment_dict, pipeline_run=pipeline_run
+        pipeline,
+        environment_dict=pipeline_run.environment_dict,
+        mode=pipeline_run.mode,
+        step_keys_to_execute=pipeline_run.step_keys_to_execute,
     )
 
     return _execute_run_iterator_with_plan(pipeline, pipeline_run, instance, execution_plan)
@@ -232,7 +238,10 @@ def _check_execute_pipeline_args(
     )
 
     execution_plan = create_execution_plan(
-        pipeline, environment_dict, fake_pipeline_run_to_pass_to_create_run,
+        pipeline,
+        environment_dict,
+        mode=fake_pipeline_run_to_pass_to_create_run.mode,
+        step_keys_to_execute=fake_pipeline_run_to_pass_to_create_run.step_keys_to_execute,
     )
 
     pipeline_run = _create_run(

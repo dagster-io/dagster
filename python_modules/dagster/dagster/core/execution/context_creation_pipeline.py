@@ -79,7 +79,9 @@ ContextCreationData = namedtuple(
 def create_context_creation_data(
     pipeline_def, environment_dict, pipeline_run, instance, execution_plan
 ):
-    environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, pipeline_run)
+    environment_config = EnvironmentConfig.build(
+        pipeline_def, environment_dict, mode=pipeline_run.mode
+    )
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)

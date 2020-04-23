@@ -148,7 +148,12 @@ class Manager(object):
         self.solid_def = solid_def
         self.pipeline_def = pipeline_def
 
-        execution_plan = create_execution_plan(self.pipeline_def, environment_dict, pipeline_run)
+        execution_plan = create_execution_plan(
+            self.pipeline_def,
+            environment_dict,
+            mode=pipeline_run.mode,
+            step_keys_to_execute=pipeline_run.step_keys_to_execute,
+        )
 
         with scoped_pipeline_context(
             self.pipeline_def,
@@ -231,7 +236,9 @@ class Manager(object):
         self.solid_def = solid_def
         self.pipeline_def = pipeline_def
 
-        execution_plan = create_execution_plan(self.pipeline_def, environment_dict, pipeline_run)
+        execution_plan = create_execution_plan(
+            self.pipeline_def, environment_dict, mode=mode_def.name
+        )
         with scoped_pipeline_context(
             self.pipeline_def,
             environment_dict,

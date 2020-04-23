@@ -49,14 +49,7 @@ def get_step_keys_to_execute(instance, pipeline_def, execution_params):
 
     if not execution_params.step_keys and execution_params.previous_run_id:
         execution_plan = create_execution_plan(
-            pipeline_def,
-            execution_params.environment_dict,
-            pipeline_run=PipelineRun(
-                mode=execution_params.mode,
-                parent_run_id=execution_params.previous_run_id,
-                root_run_id=execution_params.previous_run_id,
-                tags=execution_params.execution_metadata.tags,
-            ),
+            pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
         )
         return get_retry_steps_from_execution_plan(
             instance, execution_plan, execution_params.previous_run_id

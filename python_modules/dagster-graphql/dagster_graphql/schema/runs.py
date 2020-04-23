@@ -351,7 +351,8 @@ class DauphinLogMessageConnection(dauphin.ObjectType):
             execution_plan = create_execution_plan(
                 pipeline_def,
                 self._pipeline_run.environment_dict,
-                pipeline_run=PipelineRun(mode=self._pipeline_run.mode),
+                mode=self._pipeline_run.mode,
+                step_keys_to_execute=self._pipeline_run.step_keys_to_execute,
             )
             execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
                 execution_plan, pipeline_def.get_pipeline_index()

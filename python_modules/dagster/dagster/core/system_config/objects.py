@@ -5,7 +5,6 @@ from dagster import check
 from dagster.core.definitions.environment_schema import create_environment_type
 from dagster.core.definitions.pipeline import PipelineDefinition
 from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import ensure_single_item
 
 
@@ -62,7 +61,7 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def build(pipeline, environment_dict=None, pipeline_run=None):
+    def build(pipeline, environment_dict=None, mode=None):
         '''This method validates a given environment dict against the pipeline config schema. If
         successful, we instiate an EnvironmentConfig object.
 
@@ -73,11 +72,9 @@ class EnvironmentConfig(
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-        pipeline_run = check.opt_inst_param(
-            pipeline_run, 'pipeline_run', PipelineRun, default=PipelineRun()
-        )
+        check.opt_str_param(mode, 'mode')
 
-        mode = pipeline_run.mode or pipeline.get_default_mode_name()
+        mode = mode or pipeline.get_default_mode_name()
         environment_type = create_environment_type(pipeline, mode)
 
         config_evr = process_config(environment_type, environment_dict)

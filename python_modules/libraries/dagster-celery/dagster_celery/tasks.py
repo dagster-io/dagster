@@ -38,7 +38,10 @@ def create_task(celery_app, **task_kwargs):
         step_keys_str = ", ".join(step_keys)
 
         execution_plan = create_execution_plan(
-            pipeline_def, pipeline_run.environment_dict, pipeline_run
+            pipeline_def,
+            pipeline_run.environment_dict,
+            mode=pipeline_run.mode,
+            step_keys_to_execute=pipeline_run.step_keys_to_execute,
         ).build_subset_plan(step_keys)
 
         engine_event = instance.report_engine_event(

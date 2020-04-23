@@ -108,7 +108,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     pipeline = handle.build_pipeline_definition()
     mode = pipeline.get_default_mode_name()
     pipeline_run = PipelineRun(mode=mode)
-    execution_plan = create_execution_plan(pipeline, {}, pipeline_run=pipeline_run)
+    execution_plan = create_execution_plan(pipeline, mode=mode)
     step_levels = execution_plan.topological_step_levels()
 
     unhandled_events = STEP_EVENTS.copy()

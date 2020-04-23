@@ -98,9 +98,7 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     run_id = make_new_run_id()
 
-    execution_plan = create_execution_plan(
-        pipeline_def, environment_dict=environment_dict, pipeline_run=PipelineRun(run_id=run_id)
-    )
+    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     assert execution_plan.get_step_by_key('return_one.compute')
 
@@ -293,7 +291,7 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
     result = execute_pipeline(pipe, environment_dict=environment_dict,)
     assert result.success
 
-    execution_plan = create_execution_plan(pipe, environment_dict, pipeline_run=pipeline_run)
+    execution_plan = create_execution_plan(pipe, environment_dict)
     with scoped_pipeline_context(
         pipe, environment_dict, pipeline_run, instance, execution_plan
     ) as context:

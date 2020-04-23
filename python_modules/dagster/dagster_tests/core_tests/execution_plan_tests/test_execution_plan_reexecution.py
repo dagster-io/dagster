@@ -73,9 +73,7 @@ def test_execution_plan_reexecution():
         root_run_id=result.run_id,
     )
 
-    execution_plan = create_execution_plan(
-        pipeline_def, environment_dict=environment_dict, pipeline_run=pipeline_run
-    )
+    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     step_events = execute_plan(
         execution_plan.build_subset_plan(['add_two.compute']),
@@ -106,9 +104,7 @@ def test_execution_plan_wrong_run_id():
         root_run_id=unrun_id,
     )
 
-    execution_plan = create_execution_plan(
-        pipeline_def, environment_dict=environment_dict, pipeline_run=pipeline_run,
-    )
+    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     with pytest.raises(DagsterRunNotFoundError) as exc_info:
         execute_plan(
@@ -143,9 +139,7 @@ def test_execution_plan_reexecution_with_in_memory():
         root_run_id=result.run_id,
     )
 
-    execution_plan = create_execution_plan(
-        pipeline_def, environment_dict=environment_dict, pipeline_run=pipeline_run,
-    )
+    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
