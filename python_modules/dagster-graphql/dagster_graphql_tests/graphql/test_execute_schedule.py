@@ -1,4 +1,3 @@
-import sys
 import time
 import uuid
 
@@ -464,11 +463,13 @@ def test_tags_scheduler_error(snapshot):
         schedule_handle = context.scheduler_handle
         schedule_handle.up("", "", repository, instance)
 
-        execute_dagster_graphql(
+        result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'tags_error_schedule'},
         )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        run_id = result.data['startScheduledExecution']['run']['runId']
 
         # Check tick data and stats through gql
         result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
@@ -477,19 +478,16 @@ def test_tags_scheduler_error(snapshot):
             for x in result.data['scheduler']['runningSchedules']
             if x['scheduleDefinition']['name'] == 'tags_error_schedule'
         )
-        assert schedule_result['stats']['ticksFailed'] == 1
+
+        assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(repository, 'tags_error_schedule')
 
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.status == ScheduleTickStatus.FAILURE
-        assert tick.error
-        assert (
-            "Error occurred during the execution of tags_fn for schedule tags_error_schedule"
-            in tick.error.message
-        )
+        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.run_id == run_id
 
 
 def test_enviornment_dict_scheduler_error(snapshot):
@@ -502,11 +500,13 @@ def test_enviornment_dict_scheduler_error(snapshot):
         schedule_handle = context.scheduler_handle
         schedule_handle.up("", "", repository, instance)
 
-        execute_dagster_graphql(
+        result = execute_dagster_graphql(
             context,
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'environment_dict_error_schedule'},
         )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        run_id = result.data['startScheduledExecution']['run']['runId']
 
         # Check tick data and stats through gql
         result = execute_dagster_graphql(context, SCHEDULE_TICKS_QUERY)
@@ -515,7 +515,7 @@ def test_enviornment_dict_scheduler_error(snapshot):
             for x in result.data['scheduler']['runningSchedules']
             if x['scheduleDefinition']['name'] == 'environment_dict_error_schedule'
         )
-        assert schedule_result['stats']['ticksFailed'] == 1
+        assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(
@@ -524,13 +524,8 @@ def test_enviornment_dict_scheduler_error(snapshot):
 
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.status == ScheduleTickStatus.FAILURE
-        assert tick.error
-
-        assert (
-            "Error occurred during the execution of environment_dict_fn for schedule "
-            "environment_dict_error_schedule" in tick.error.message
-        )
+        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.run_id == run_id
 
 
 def test_enviornment_dict_scheduler_error_serialize_cauze():
@@ -548,17 +543,8 @@ def test_enviornment_dict_scheduler_error_serialize_cauze():
             START_SCHEDULED_EXECUTION_QUERY,
             variables={'scheduleName': 'environment_dict_error_schedule'},
         )
-
-        # Exception cause is only available in py3
-        assert result.data
-        assert result.data['startScheduledExecution']
-        if sys.version_info.major >= 3:
-            assert result.data['startScheduledExecution']['cause']
-            assert result.data['startScheduledExecution']['cause']['message']
-            assert (
-                result.data['startScheduledExecution']['cause']['message']
-                == "NameError: name 'asdf' is not defined\n"
-            )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        run_id = result.data['startScheduledExecution']['run']['runId']
 
         ticks = instance.get_schedule_ticks_by_schedule(
             repository, 'environment_dict_error_schedule'
@@ -566,9 +552,8 @@ def test_enviornment_dict_scheduler_error_serialize_cauze():
 
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick
-        if sys.version_info.major >= 3:
-            assert tick.error.cause.message == "NameError: name 'asdf' is not defined\n"
+        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.run_id == run_id
 
 
 def test_query_multiple_schedule_ticks(snapshot):

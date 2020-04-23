@@ -1,16 +1,18 @@
 from __future__ import absolute_import
 
+import sys
+
 from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import create_environment_schema
-from dagster.core.errors import DagsterInvalidConfigError
+from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap import snapshot_from_execution_plan
-from dagster.utils.error import SerializableErrorInfo
+from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
@@ -125,16 +127,21 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
             ),
         )
 
-        # TODO: also insert a pipeline init failure event
-        # https://github.com/dagster-io/dagster/issues/2385
+        instance.report_run_failed(pipeline_run)
 
         return DauphinPipelineConfigValidationInvalid.for_validation_errors(
             pipeline_def, validated_config.errors
         )
 
-    # This can potentially fail, which leaves the run in a bad state
-    run = instance.launch_run(pipeline_run.run_id)
+    try:
+        pipeline_run = instance.launch_run(pipeline_run.run_id)
+    except DagsterLaunchFailedError:
+        error = serializable_error_info_from_exc_info(sys.exc_info())
+        instance.report_engine_event(
+            error.message, pipeline_run, EngineEventData.engine_error(error),
+        )
+        instance.report_run_failed(pipeline_run)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(run)
+        run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )

@@ -153,8 +153,8 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
                 )
             ),
         )
-        # TODO: also insert a pipeline init failure event
-        # https://github.com/dagster-io/dagster/issues/2385
+
+        instance.report_run_failed(pipeline_run)
 
         return DauphinPipelineConfigValidationInvalid.for_validation_errors(
             pipeline_def, validated_config.errors

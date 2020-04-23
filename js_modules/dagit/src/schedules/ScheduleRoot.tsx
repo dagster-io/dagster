@@ -164,7 +164,7 @@ const TickTag: React.FunctionComponent<{ status: ScheduleTickStatus }> = ({
     case ScheduleTickStatus.SKIPPED:
       return (
         <Tag minimal={true} intent={Intent.WARNING}>
-          Failure
+          Skipped
         </Tag>
       );
     case ScheduleTickStatus.FAILURE:

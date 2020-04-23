@@ -14,6 +14,7 @@ from dagster.core.errors import (
     ScheduleExecutionError,
     user_code_error_boundary,
 )
+from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
@@ -77,7 +78,9 @@ def start_scheduled_execution(graphene_info, schedule_name):
                 ' True'.format(schedule_name=schedule_name)
             )
 
-        environment_dict = None
+        errors = []
+
+        environment_dict = {}
         schedule_tags = {}
         try:
             with user_code_error_boundary(
@@ -86,10 +89,9 @@ def start_scheduled_execution(graphene_info, schedule_name):
                 '{schedule_name}'.format(schedule_name=schedule_def.name),
             ):
                 environment_dict = schedule_def.get_environment_dict(schedule_context)
-        except DagsterUserCodeExecutionError as e:
-            # TODO: Instead of re-raising error, we will want to add the serialized
-            # exception to the errors list and just continue on
-            raise e
+        except DagsterUserCodeExecutionError as exc:
+            error_data = serializable_error_info_from_exc_info(sys.exc_info())
+            errors.append(error_data)
 
         try:
             with user_code_error_boundary(
@@ -98,10 +100,9 @@ def start_scheduled_execution(graphene_info, schedule_name):
                 '{schedule_name}'.format(schedule_name=schedule_def.name),
             ):
                 schedule_tags = schedule_def.get_tags(schedule_context)
-        except DagsterUserCodeExecutionError as e:
-            # TODO: Instead of re-raising error, we will want to add the serialized
-            # exception to the errors list and just continue on
-            raise e
+        except DagsterUserCodeExecutionError:
+            error_data = serializable_error_info_from_exc_info(sys.exc_info())
+            errors.append(error_data)
 
         pipeline_def = get_pipeline_def_from_selector(graphene_info, schedule_def.selector)
         pipeline_tags = pipeline_def.tags or {}
@@ -119,9 +120,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
             step_keys=None,
         )
 
-        result = _execute_schedule(graphene_info, pipeline_def, execution_params)
-
-        run = result.run
+        run, result = _execute_schedule(graphene_info, pipeline_def, execution_params, errors)
         graphene_info.context.instance.update_schedule_tick(
             repository, tick.with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id),
         )
@@ -139,7 +138,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
         raise exc
 
 
-def _execute_schedule(graphene_info, pipeline_def, execution_params):
+def _execute_schedule(graphene_info, pipeline_def, execution_params, errors):
 
     instance = graphene_info.context.instance
 
@@ -166,6 +165,11 @@ def _execute_schedule(graphene_info, pipeline_def, execution_params):
     )
 
     # Inject errors into event log at this point
+    if len(errors) > 0:
+        for error in errors:
+            instance.report_engine_event(
+                error.message, pipeline_run, EngineEventData.engine_error(error)
+            )
 
     # Launch run if run launcher is defined
     run_launcher = graphene_info.context.instance.run_launcher
@@ -174,4 +178,4 @@ def _execute_schedule(graphene_info, pipeline_def, execution_params):
     else:
         result = _start_pipeline_execution_for_created_run(graphene_info, pipeline_run.run_id)
 
-    return result
+    return pipeline_run, result

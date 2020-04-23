@@ -6,9 +6,9 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_tick_success 1'] = {
+snapshots['test_tags_scheduler_error 1'] = {
     'scheduleDefinition': {
-        'name': 'no_config_pipeline_hourly_schedule'
+        'name': 'tags_error_schedule'
     },
     'stats': {
         'ticksFailed': 0,
@@ -44,47 +44,47 @@ snapshots['test_tick_skip 1'] = {
     'ticksCount': 1
 }
 
-snapshots['test_should_execute_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'should_execute_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 1,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'FAILURE',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
-snapshots['test_tags_scheduler_error 1'] = {
-    'scheduleDefinition': {
-        'name': 'tags_error_schedule'
-    },
-    'stats': {
-        'ticksFailed': 1,
-        'ticksSkipped': 0,
-        'ticksStarted': 0,
-        'ticksSucceeded': 0
-    },
-    'ticks': [
-        {
-            'status': 'FAILURE',
-            'tickId': '1'
-        }
-    ],
-    'ticksCount': 1
-}
-
 snapshots['test_enviornment_dict_scheduler_error 1'] = {
     'scheduleDefinition': {
         'name': 'environment_dict_error_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
+
+snapshots['test_tick_success 1'] = {
+    'scheduleDefinition': {
+        'name': 'no_config_pipeline_hourly_schedule'
+    },
+    'stats': {
+        'ticksFailed': 0,
+        'ticksSkipped': 0,
+        'ticksStarted': 0,
+        'ticksSucceeded': 1
+    },
+    'ticks': [
+        {
+            'status': 'SUCCESS',
+            'tickId': '1'
+        }
+    ],
+    'ticksCount': 1
+}
+
+snapshots['test_should_execute_scheduler_error 1'] = {
+    'scheduleDefinition': {
+        'name': 'should_execute_error_schedule'
     },
     'stats': {
         'ticksFailed': 1,
@@ -121,14 +121,14 @@ snapshots['test_query_multiple_schedule_ticks 1'] = [
             'name': 'environment_dict_error_schedule'
         },
         'stats': {
-            'ticksFailed': 1,
+            'ticksFailed': 0,
             'ticksSkipped': 0,
             'ticksStarted': 0,
-            'ticksSucceeded': 0
+            'ticksSucceeded': 1
         },
         'ticks': [
             {
-                'status': 'FAILURE',
+                'status': 'SUCCESS',
                 'tickId': '3'
             }
         ],
