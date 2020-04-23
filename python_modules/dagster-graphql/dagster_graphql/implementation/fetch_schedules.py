@@ -92,13 +92,6 @@ def get_dagster_schedule_def(graphene_info, schedule_name):
 
     scheduler_handle = get_scheduler_handle(graphene_info)
     schedule_definition = scheduler_handle.get_schedule_def_by_name(schedule_name)
-    if not schedule_definition:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('ScheduleDefinitionNotFoundError')(
-                schedule_name=schedule_name
-            )
-        )
-
     return schedule_definition
 
 

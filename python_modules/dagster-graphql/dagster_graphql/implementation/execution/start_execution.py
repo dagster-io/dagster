@@ -49,7 +49,6 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
     instance = graphene_info.context.instance
-
     execution_manager_settings = instance.dagit_settings.get('execution_manager')
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
@@ -115,7 +114,6 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
     instance = graphene_info.context.instance
-
     execution_manager_settings = instance.dagit_settings.get('execution_manager')
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()

@@ -132,7 +132,9 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
             pipeline_def, validated_config.errors
         )
 
+    # This can potentially fail, which leaves the run in a bad state
     run = instance.launch_run(pipeline_run)
+
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
     )
