@@ -44,18 +44,18 @@ colored messages in the console:
 
 Logs also stream back to the Dagit frontend in real time:
 
-![Dagit log display](logging.png)
+![Dagit log display](/assets/images/learn/guides/logging/logging.png)
 
 Dagit exposes a powerful facility for filtering log messages based on free-text search and log
 level:
 
-![Dagit log filtering](logging2.png)
+![Dagit log filtering](/assets/images/learn/guides/logging/logging2.png)
 
 ## Debugging with logs
 
 What happens if we introduce an error into our solid logic?
 
-```
+```python
 from dagster import solid
 
 @solid
@@ -87,7 +87,7 @@ and back to Dagit.
 Messages at level `ERROR` or above are highlighted both in Dagit and in the console logs, so
 we can easily pick them out of logs even without filtering.
 
-![Dagit error logs](logging3.png)
+![Dagit error logs](/assets/images/learn/guides/logging/logging3.png)
 
 In many cases, especially for local development, this log viewer, coupled with solid reexecution,
 is sufficient to enable a fast debug cycle for data pipelines.
@@ -154,7 +154,7 @@ aggregated by a tool such as Logstash. In this kind of environment, where logs w
 and parsed by machine, the multi-line output from the default colored console logger is unhelpful.
 Instead, we'd much prefer to see single-line, structured log messages like:
 
-```
+```json
 {"orig_message": "Hello, world!", "log_message_id": "49854579-e4d1-4289-8453-b3e177b20056", ...}
 ```
 

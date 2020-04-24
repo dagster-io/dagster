@@ -30,13 +30,20 @@ const transform = () => (tree) => {
 
       const REPO = process.env.DAGSTER_REPO || path.join(__dirname, '../../');
 
+      // TODO: Remove this (I think it's not needed anymore since we're defaultin to dirname)
       if (!REPO) {
         node.value =
           'Unable to produce literal include: Environment variable $DAGSTER_REPO is not set';
         return;
       }
 
-      const root = path.join(REPO, '/examples/');
+      const isRelativeToProject =
+        Object.keys(map).indexOf('relativeToProject') !== -1;
+
+      const root = isRelativeToProject
+        ? __dirname
+        : path.join(REPO, '/examples/');
+        
       const filePath = path.join(root, map.file);
       try {
         // TODO: Fix all other literal includes because now they need to include /dagster_examples/ in their paths
