@@ -13,10 +13,10 @@ WORKDIR /tmp/
 # ADD dagster dagster
 # ADD dagit dagit
 
-RUN pip install --upgrade pip && pip install dagster && pip install dagit && pip install dagster-pandas
-
 ADD . .
 
-ENTRYPOINT [ "dagit" ]
+RUN pip install --upgrade pip && pip install -e dagster && pip install dagit && pip install dagster-pandas && pip install dagstermill && pip install pytest
 
-EXPOSE 3000
+# ENTRYPOINT [ "dagit" ]
+# 
+# EXPOSE 3000

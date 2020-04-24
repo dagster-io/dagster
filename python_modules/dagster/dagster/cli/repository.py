@@ -5,7 +5,7 @@ import click
 
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.active_data import active_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -28,9 +28,9 @@ def snapshot_command(output_file, **kwargs):
     sys.path.append(os.getcwd())
 
     definition = handle.entrypoint.perform_load()
-    repository_snapshot = RepositorySnapshot.from_repository_definition(definition)
+    active_repo_data = active_repository_data_from_def(definition)
     with open(os.path.abspath(output_file), 'w+') as fp:
-        fp.write(serialize_dagster_namedtuple(repository_snapshot))
+        fp.write(serialize_dagster_namedtuple(active_repo_data))
 
 
 repository_cli = create_repository_cli_group()

@@ -30,7 +30,7 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.active_data import ActiveRepositoryData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
@@ -196,8 +196,8 @@ def get_execution_manager(instance):
     return SubprocessExecutionManager(instance)
 
 
-def create_app_with_snapshot(repository_snapshot, instance):
-    check.inst_param(repository_snapshot, 'snapshot', RepositorySnapshot)
+def create_app_with_active_repository_data(active_repository_data, instance):
+    check.inst_param(active_repository_data, 'active_repository_data', ActiveRepositoryData)
     check.inst_param(instance, 'instance', DagsterInstance)
 
     execution_manager = get_execution_manager(instance)
@@ -205,7 +205,7 @@ def create_app_with_snapshot(repository_snapshot, instance):
 
     print('Loading repository...')
     context = DagsterSnapshotGraphQLContext(
-        repository_snapshot=repository_snapshot,
+        active_repository_data=active_repository_data,
         instance=instance,
         execution_manager=execution_manager,
         version=__version__,

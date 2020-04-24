@@ -15,7 +15,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
 
-from .app import create_app_with_execution_handle, create_app_with_snapshot
+from .app import create_app_with_active_repository_data, create_app_with_execution_handle
 from .reloader import DagitReloader
 from .version import __version__
 
@@ -136,7 +136,7 @@ def host_dagit_ui(host, port, storage_fallback, reload_trigger=None, port_lookup
 def host_dagit_ui_with_dagster_image(image, host, port, storage_fallback, port_lookup=True):
     check.str_param(image, 'image')
     instance = DagsterInstance.get(storage_fallback)
-    app = create_app_with_snapshot(get_container_snapshot(image), instance)
+    app = create_app_with_active_repository_data(get_container_snapshot(image), instance)
 
     start_server(host, port, app, port_lookup)
 

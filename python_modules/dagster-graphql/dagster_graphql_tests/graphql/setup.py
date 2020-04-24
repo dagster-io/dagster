@@ -41,7 +41,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.active_data import active_repository_data_from_def
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
 
@@ -82,7 +82,7 @@ def define_test_snapshot_context():
     return DagsterSnapshotGraphQLContext(
         instance=DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
-        repository_snapshot=RepositorySnapshot.from_repository_definition(define_repository()),
+        active_repository_data=active_repository_data_from_def(define_repository()),
     )
 
 

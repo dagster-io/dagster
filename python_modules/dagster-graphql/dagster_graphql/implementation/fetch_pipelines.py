@@ -140,7 +140,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     )
 
     repository_index = graphene_info.context.get_repository_index()
-    if not repository_index.has_pipeline_index(selector.name):
+    if not repository_index.has_pipeline(selector.name):
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=selector.name)
         )

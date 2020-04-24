@@ -2,7 +2,7 @@ import os
 
 from dagster import RepositoryDefinition, pipeline, solid
 from dagster.core.definitions.container import get_container_snapshot
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.active_data import ActiveRepositoryData, active_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -20,11 +20,11 @@ def noop_repo():
 
 # pylint: disable=unused-argument
 def mock_snapshot_provider(image, command, volumes):
-    repo_snapshot = RepositorySnapshot.from_repository_definition(noop_repo())
+    active_repo_data = active_repository_data_from_def(noop_repo())
     with open(
         os.path.abspath(os.path.join(list(volumes.keys())[0], 'asuperuniqueid.json')), 'w+'
     ) as fp:
-        fp.write(serialize_dagster_namedtuple(repo_snapshot))
+        fp.write(serialize_dagster_namedtuple(active_repo_data))
 
 
 def test_container_snapshot_provider(mocker):
@@ -42,5 +42,5 @@ def test_container_snapshot_provider(mocker):
         ),
         volumes=mocker.ANY,
     )
-    assert isinstance(snapshot, RepositorySnapshot)
-    assert snapshot == RepositorySnapshot.from_repository_definition(noop_repo())
+    assert isinstance(snapshot, ActiveRepositoryData)
+    assert snapshot == active_repository_data_from_def(noop_repo())

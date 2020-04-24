@@ -1,10 +1,10 @@
 import pytest
-from dagit.app import create_app_with_execution_handle, create_app_with_snapshot
+from dagit.app import create_app_with_active_repository_data, create_app_with_execution_handle
 from dagit.cli import host_dagit_ui_with_execution_handle
 
 from dagster import ExecutionTargetHandle, seven
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.snap.active_data import active_repository_data_from_def
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 
@@ -14,12 +14,12 @@ def test_create_app_with_execution_handle():
     assert create_app_with_execution_handle(handle, DagsterInstance.ephemeral())
 
 
-def test_create_app_with_snapshot():
+def test_create_app_with_active_repo_data():
     handle = ExecutionTargetHandle.for_repo_yaml(file_relative_path(__file__, './repository.yaml'))
-    repository_snapshot = RepositorySnapshot.from_repository_definition(
-        handle.build_repository_definition()
+    active_repository_data = active_repository_data_from_def(handle.build_repository_definition())
+    assert create_app_with_active_repository_data(
+        active_repository_data, DagsterInstance.ephemeral()
     )
-    assert create_app_with_snapshot(repository_snapshot, DagsterInstance.ephemeral())
 
 
 def test_notebook_view():
