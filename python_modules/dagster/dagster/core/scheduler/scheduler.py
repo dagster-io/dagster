@@ -61,78 +61,66 @@ class SchedulerHandle(object):
         self, schedule_defs,
     ):
         check.list_param(schedule_defs, 'schedule_defs', ScheduleDefinition)
-        self._schedule_defs = schedule_defs
+        self.schedule_defs = schedule_defs
 
-    def up(self, python_path, repository_path, repository, instance):
-        '''SchedulerHandle stores a list of up-to-date ScheduleDefinitions and a reference to a
-        ScheduleStorage. When `up` is called, it reconciles the ScheduleDefinitions list and
-        ScheduleStorage to ensure there is a 1-1 correlation between ScheduleDefinitions and
-        Schedules, where the ScheduleDefinitions list is the source of truth.
 
-        If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
-        ScheduleStatus.STOPPED.
+def reconcile_scheduler_state(python_path, repository_path, repository, instance):
+    '''Reconcile the ScheduleDefinitions list from the repository and ScheduleStorage
+    on the instance to ensure there is a 1-1 correlation between ScheduleDefinitions and
 
-        For every previously existing ScheduleDefinition (where schedule_name is the primary key),
-        any changes to the definition are persisted in the corresponding Schedule and the status is
-        left unchanged. The schedule is also restarted to make sure the external artifacts (such
-        as a cron job) are up to date.
+    Schedules, where the ScheduleDefinitions list is the source of truth.
 
-        For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
-        the storage and the corresponding Schedule is ended.
-        '''
+    If a new ScheduleDefinition is introduced, a new Schedule is added to storage with status
+    ScheduleStatus.STOPPED.
 
-        schedules_to_restart = []
-        for schedule_def in self._schedule_defs:
-            # If a schedule already exists for schedule_def, overwrite bash script and
-            # metadata file
-            existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
-            if existing_schedule:
-                # Keep the status, but replace schedule_def, python_path, and repository_path
-                schedule = Schedule(
-                    schedule_def.schedule_definition_data,
-                    existing_schedule.status,
-                    python_path,
-                    repository_path,
-                )
+    For every previously existing ScheduleDefinition (where schedule_name is the primary key),
+    any changes to the definition are persisted in the corresponding Schedule and the status is
+    left unchanged. The schedule is also restarted to make sure the external artifacts (such
+    as a cron job) are up to date.
 
-                instance.update_schedule(repository, schedule)
-                schedules_to_restart.append(schedule)
-            else:
-                schedule = Schedule(
-                    schedule_def.schedule_definition_data,
-                    ScheduleStatus.STOPPED,
-                    python_path,
-                    repository_path,
-                )
+    For every ScheduleDefinitions that is removed, the corresponding Schedule is removed from
+    the storage and the corresponding Schedule is ended.
+    '''
 
-                instance.add_schedule(repository, schedule)
+    schedules_to_restart = []
+    for schedule_def in repository.schedule_defs:
+        # If a schedule already exists for schedule_def, overwrite bash script and
+        # metadata file
+        existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
+        if existing_schedule:
+            # Keep the status, but replace schedule_def, python_path, and repository_path
+            schedule = Schedule(
+                schedule_def.schedule_definition_data,
+                existing_schedule.status,
+                python_path,
+                repository_path,
+            )
 
-        # Delete all existing schedules that are not in schedule_defs
-        schedule_def_names = {s.name for s in self._schedule_defs}
-        existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
-        schedule_names_to_delete = existing_schedule_names - schedule_def_names
+            instance.update_schedule(repository, schedule)
+            schedules_to_restart.append(schedule)
+        else:
+            schedule = Schedule(
+                schedule_def.schedule_definition_data,
+                ScheduleStatus.STOPPED,
+                python_path,
+                repository_path,
+            )
 
-        for schedule in schedules_to_restart:
-            # Restart is only needed if the schedule was previously running
-            if schedule.status == ScheduleStatus.RUNNING:
-                instance.stop_schedule(repository, schedule.name)
-                instance.start_schedule(repository, schedule.name)
+            instance.add_schedule(repository, schedule)
 
-        for schedule_name in schedule_names_to_delete:
-            instance.end_schedule(repository, schedule_name)
+    # Delete all existing schedules that are not in schedule_defs
+    schedule_def_names = {s.name for s in repository.schedule_defs}
+    existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
+    schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
-    def get_change_set(self, repository, instance):
-        schedule_defs = self.all_schedule_defs()
-        schedules = instance.all_schedules(repository)
-        return get_schedule_change_set(schedules, schedule_defs)
+    for schedule in schedules_to_restart:
+        # Restart is only needed if the schedule was previously running
+        if schedule.status == ScheduleStatus.RUNNING:
+            instance.stop_schedule(repository, schedule.name)
+            instance.start_schedule(repository, schedule.name)
 
-    def all_schedule_defs(self):
-        return self._schedule_defs
-
-    def get_schedule_def_by_name(self, name):
-        return next(
-            schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
-        )
+    for schedule_name in schedule_names_to_delete:
+        instance.end_schedule(repository, schedule_name)
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):

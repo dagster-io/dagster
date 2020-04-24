@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.10 (Upcoming)
+
+**New**
+
+- `RepositoryDefinition` now takes `schedule_defs` and `partition_set_defs` directly. The loading scheme
+  for these definitions via `repository.yaml` under the `scheduler:` and `partitions:` keys is deprecated
+  and expected to be removed in 0.8.0.
+
 ## 0.7.9
 
 **Breaking Changes**

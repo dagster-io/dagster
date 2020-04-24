@@ -534,20 +534,13 @@ def validate_partition_slice(partitions, name, value):
 
 def get_partition_sets_for_handle(handle):
     check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    partitions_handle = handle.build_partitions_handle()
-    scheduler_handle = handle.build_scheduler_handle()
-    partition_sets = []
-    if partitions_handle:
-        partition_sets.extend(partitions_handle.get_partition_sets())
-    if scheduler_handle:
-        partition_sets.extend(
-            [
-                schedule_def.get_partition_set()
-                for schedule_def in scheduler_handle.all_schedule_defs()
-                if isinstance(schedule_def, PartitionScheduleDefinition)
-            ]
-        )
-    return partition_sets
+    repo = handle.build_repository_definition()
+
+    return repo.partition_set_defs + [
+        schedule_def.get_partition_set()
+        for schedule_def in repo.schedule_defs
+        if isinstance(schedule_def, PartitionScheduleDefinition)
+    ]
 
 
 @click.command(

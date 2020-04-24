@@ -7,4 +7,5 @@ from .scheduler import (
     Scheduler,
     SchedulerHandle,
     get_schedule_change_set,
+    reconcile_scheduler_state,
 )

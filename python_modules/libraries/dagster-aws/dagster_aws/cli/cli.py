@@ -194,7 +194,7 @@ def shell():
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     help='Specify a path to a script with post-init actions',
 )
-def up(post_up_script):
+def reconcile_scheduler_state(post_up_script):
     '''🌱 Sync your Dagster project to the remote server.
 
     This command will rsync the current folder to the remote host as /opt/dagster/app, and if there

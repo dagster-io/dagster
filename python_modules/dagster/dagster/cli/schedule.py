@@ -8,7 +8,11 @@ import six
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import ScheduleStatus
+from dagster.core.scheduler import (
+    ScheduleStatus,
+    get_schedule_change_set,
+    reconcile_scheduler_state,
+)
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 
 
@@ -51,21 +55,19 @@ def repository_target_argument(f):
     )
 
 
-def print_changes(scheduler_handle, repository, instance, print_fn=print, preview=False):
-    changeset = scheduler_handle.get_change_set(repository, instance)
+def print_changes(repository, instance, print_fn=print, preview=False):
+    changeset = get_schedule_change_set(
+        instance.all_schedules(repository), repository.schedule_defs
+    )
     if len(changeset) == 0:
         if preview:
             print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
             print_fn(
-                '{num} schedules will remain unchanged'.format(
-                    num=len(scheduler_handle.all_schedule_defs())
-                )
+                '{num} schedules will remain unchanged'.format(num=len(repository.schedule_defs))
             )
         else:
             print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
-            print_fn(
-                '{num} schedules unchanged'.format(num=len(scheduler_handle.all_schedule_defs()))
-            )
+            print_fn('{num} schedules unchanged'.format(num=len(repository.schedule_defs)))
         return
 
     print_fn(click.style('Planned Changes:' if preview else 'Changes:', fg='magenta', bold=True))
@@ -100,8 +102,8 @@ def print_changes(scheduler_handle, repository, instance, print_fn=print, previe
 def check_handle_and_scheduler(handle, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
 
-    if not handle.build_scheduler_handle():
-        repository = handle.build_repository_definition()
+    repository = handle.build_repository_definition()
+    if not repository.schedule_defs:
         raise click.UsageError(
             "There are no schedules defined for repository {name}.".format(name=repository.name)
         )
@@ -128,10 +130,9 @@ def execute_preview_command(cli_args, print_fn):
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    scheduler_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
 
-    print_changes(scheduler_handle, repository, instance, print_fn, preview=True)
+    print_changes(repository, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -154,17 +155,16 @@ def execute_up_command(preview, cli_args, print_fn):
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    scheduler_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
     python_path = sys.executable
     repository_path = handle.data.repository_yaml
 
-    print_changes(scheduler_handle, repository, instance, print_fn, preview=preview)
+    print_changes(repository, instance, print_fn, preview=preview)
     if preview:
         return
 
     try:
-        scheduler_handle.up(python_path, repository_path, repository, instance=instance)
+        reconcile_scheduler_state(python_path, repository_path, repository, instance=instance)
     except DagsterInvariantViolationError as ex:
         raise click.UsageError(ex)
 
@@ -188,7 +188,6 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    schedule_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
 
     if not name_filter:
@@ -210,7 +209,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
         schedules = instance.all_schedules(repository)
 
     for schedule in schedules:
-        schedule_def = schedule_handle.get_schedule_def_by_name(schedule.name)
+        schedule_def = repository.get_schedule_def(schedule.name)
 
         # If --name filter is present, only print the schedule name
         if name_filter:
@@ -260,7 +259,6 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    schedule_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
 
     if all_flag:
@@ -293,7 +291,6 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    schedule_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
 
     try:
@@ -323,7 +320,6 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    schedule_handle = handle.build_scheduler_handle()
     repository = handle.build_repository_definition()
 
     if all_running_flag:

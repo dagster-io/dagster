@@ -7,7 +7,7 @@ from dagster_cron import SystemCronScheduler
 from dagster import ScheduleDefinition, check
 from dagster.core.definitions import RepositoryDefinition
 from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.scheduler import Schedule, ScheduleStatus, SchedulerHandle
+from dagster.core.scheduler import Schedule, ScheduleStatus, reconcile_scheduler_state
 from dagster.core.storage.event_log import InMemoryEventLogStorage
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -30,7 +30,7 @@ class MockSystemCronScheduler(SystemCronScheduler):
             os.remove(script_file)
 
 
-def define_scheduler():
+def define_schedules():
     no_config_pipeline_daily_schedule = ScheduleDefinition(
         name="no_config_pipeline_daily_schedule",
         cron_schedule="0 0 * * *",
@@ -51,13 +51,11 @@ def define_scheduler():
         pipeline_name="no_config_pipeline",
     )
 
-    return SchedulerHandle(
-        schedule_defs=[
-            default_config_pipeline_every_min_schedule,
-            no_config_pipeline_daily_schedule,
-            no_config_pipeline_every_min_schedule,
-        ],
-    )
+    return [
+        default_config_pipeline_every_min_schedule,
+        no_config_pipeline_daily_schedule,
+        no_config_pipeline_every_min_schedule,
+    ]
 
 
 def define_scheduler_instance(tempdir):
@@ -74,15 +72,11 @@ def define_scheduler_instance(tempdir):
 
 def test_init():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
@@ -100,15 +94,11 @@ def test_init():
 
 def test_re_init():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
@@ -119,7 +109,7 @@ def test_re_init():
         schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
 
         # Re-initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
@@ -137,22 +127,18 @@ def test_re_init():
 
 def test_start_and_stop_schedule():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
             instance=instance,
         )
 
-        schedule_def = scheduler_handle.get_schedule_def_by_name(
-            "no_config_pipeline_every_min_schedule"
-        )
+        schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
 
         # Start schedule
         schedule = instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
@@ -175,22 +161,18 @@ def test_start_and_stop_schedule():
 
 def test_start_schedule_fails():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
             instance=instance,
         )
 
-        schedule_def = scheduler_handle.get_schedule_def_by_name(
-            "no_config_pipeline_every_min_schedule"
-        )
+        schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
 
         def raises(*args, **kwargs):
             raise Exception('Patch')
@@ -206,22 +188,18 @@ def test_start_schedule_fails():
 
 def test_stop_schedule_fails():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,
             instance=instance,
         )
 
-        schedule_def = scheduler_handle.get_schedule_def_by_name(
-            "no_config_pipeline_every_min_schedule"
-        )
+        schedule_def = repository.get_schedule_def("no_config_pipeline_every_min_schedule")
 
         def raises(*args, **kwargs):
             raise Exception('Patch')
@@ -250,13 +228,11 @@ def test_stop_schedule_fails():
 
 def test_wipe():
     with TemporaryDirectory() as tempdir:
-        repository = RepositoryDefinition(name="test_repository")
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
         instance = define_scheduler_instance(tempdir)
-        scheduler_handle = define_scheduler()
-        assert scheduler_handle
 
         # Initialize scheduler
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",
             repository=repository,

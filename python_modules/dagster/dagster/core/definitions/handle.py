@@ -2,6 +2,7 @@ import importlib
 import inspect
 import os
 import sys
+import warnings
 import weakref
 from collections import namedtuple
 from enum import Enum
@@ -18,163 +19,55 @@ from dagster.utils import load_yaml_from_path
 EPHEMERAL_NAME = '<<unnamed>>'
 
 
-class PartitionLoaderEntrypoint(
-    namedtuple('_PartitionLoaderEntrypoint', 'module module_name fn_name from_handle')
-):
-    def __new__(cls, module, module_name, fn_name, from_handle=None):
-        return super(PartitionLoaderEntrypoint, cls).__new__(
-            cls, module, module_name, fn_name, from_handle
-        )
+def _handle_backcompat_loaders(config, file_path):
+    check.dict_param(config, 'config')
+    partitions = config.get('partitions')
+    scheduler = config.get('scheduler')
+    if not (partitions or scheduler):
+        return None
 
-    def perform_load(self):
-        # in the decorator case the attribute will be the actual definition
-        if not hasattr(self.module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
-            )
+    warnings.warn(
+        '"scheduler" and "partitions" keys in repository.yaml are deprecated. '
+        'Add definitions directly via RepositoryDefinition'
+    )
 
-        fn_partitions = getattr(self.module, self.fn_name)
-
-        if isinstance(fn_partitions, RepositoryPartitionsHandle):
-            inst = fn_partitions
-        elif callable(fn_partitions):
-            handle = fn_partitions()
-
-            if not isinstance(handle, RepositoryPartitionsHandle):
-                raise DagsterInvariantViolationError(
-                    '{fn_name} is a function but must return a RepositoryPartitionsHandle.'.format(
-                        fn_name=self.fn_name
-                    )
-                )
-
-            inst = handle
-
-        else:
-            raise DagsterInvariantViolationError(
-                '{fn_name} must be a function that returns a RepositoryPartitionsHandle.'.format(
-                    fn_name=self.fn_name
-                )
-            )
-
-        return inst
-
-    @staticmethod
-    def from_file_target(python_file, fn_name, from_handle=None):
-        file_directory = os.path.dirname(python_file)
-        if file_directory not in sys.path:
-            sys.path.append(file_directory)
-
-        module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = import_module_from_path(module_name, python_file)
-
-        return PartitionLoaderEntrypoint(module, module_name, fn_name, from_handle)
-
-    @staticmethod
-    def from_module_target(module_name, fn_name, from_handle=None):
-        module = importlib.import_module(module_name)
-        return PartitionLoaderEntrypoint(module, module_name, fn_name, from_handle)
-
-    @staticmethod
-    def from_yaml(file_path, from_handle=None):
-        check.str_param(file_path, 'file_path')
-
-        config = load_yaml_from_path(file_path)
-        if not config.get('partitions'):
-            return None
-
-        partitions = check.dict_elem(config, 'partitions')
-        module_name = check.opt_str_elem(partitions, 'module')
-        file_name = check.opt_str_elem(partitions, 'file')
-        fn_name = check.str_elem(partitions, 'fn')
-
-        if module_name:
-            return PartitionLoaderEntrypoint.from_module_target(module_name, fn_name, from_handle)
-        else:
-            # rebase file in config off of the path in the config file
-            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-            return PartitionLoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
-
-
-class SchedulerLoaderEntrypoint(
-    namedtuple('_SchedulerLoaderEntrypoint', 'module module_name fn_name from_handle')
-):
-    def __new__(cls, module, module_name, fn_name, from_handle=None):
-        return super(SchedulerLoaderEntrypoint, cls).__new__(
-            cls, module, module_name, fn_name, from_handle
-        )
-
-    def perform_load(self):
-        # in the decorator case the attribute will be the actual definition
-        if not hasattr(self.module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
-            )
-
-        fn_scheduler = getattr(self.module, self.fn_name)
-
-        if isinstance(fn_scheduler, SchedulerHandle):
-            inst = fn_scheduler
-        elif callable(fn_scheduler):
-            scheduler = fn_scheduler()
-
-            if not isinstance(scheduler, SchedulerHandle):
-                raise DagsterInvariantViolationError(
-                    '{fn_name} is a function but must return a SchedulerHandle.'.format(
-                        fn_name=self.fn_name
-                    )
-                )
-
-            inst = scheduler
-
-        else:
-            raise DagsterInvariantViolationError(
-                '{fn_name} must be a function that returns a SchedulerHandle.'.format(
-                    fn_name=self.fn_name
-                )
-            )
-
-        return inst
-
-    @staticmethod
-    def from_file_target(python_file, fn_name, from_handle=None):
-        file_directory = os.path.dirname(python_file)
-        if file_directory not in sys.path:
-            sys.path.append(file_directory)
-
-        module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = import_module_from_path(module_name, python_file)
-
-        return SchedulerLoaderEntrypoint(module, module_name, fn_name, from_handle)
-
-    @staticmethod
-    def from_module_target(module_name, fn_name, from_handle=None):
-        module = importlib.import_module(module_name)
-        return SchedulerLoaderEntrypoint(module, module_name, fn_name, from_handle)
-
-    @staticmethod
-    def from_yaml(file_path, from_handle=None):
-        check.str_param(file_path, 'file_path')
-
-        config = load_yaml_from_path(file_path)
-        if not config.get('scheduler'):
-            return None
-
-        scheduler = check.dict_elem(config, 'scheduler')
+    backcompat_loaders = {}
+    if scheduler:
         module_name = check.opt_str_elem(scheduler, 'module')
         file_name = check.opt_str_elem(scheduler, 'file')
         fn_name = check.str_elem(scheduler, 'fn')
 
         if module_name:
-            return SchedulerLoaderEntrypoint.from_module_target(module_name, fn_name, from_handle)
+            backcompat_loaders['scheduler'] = LoaderEntrypoint.from_module_target(
+                module_name, fn_name
+            )
         else:
             # rebase file in config off of the path in the config file
             file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-            return SchedulerLoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
+            backcompat_loaders['scheduler'] = LoaderEntrypoint.from_file_target(file_name, fn_name)
+
+    if partitions:
+        module_name = check.opt_str_elem(partitions, 'module')
+        file_name = check.opt_str_elem(partitions, 'file')
+        fn_name = check.str_elem(partitions, 'fn')
+
+        if module_name:
+            return LoaderEntrypoint.from_module_target(module_name, fn_name)
+        else:
+            # rebase file in config off of the path in the config file
+            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
+            backcompat_loaders['partitions'] = LoaderEntrypoint.from_file_target(file_name, fn_name)
+
+    return backcompat_loaders
 
 
-class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_name from_handle')):
-    def __new__(cls, module, module_name, fn_name, from_handle=None):
-        return super(LoaderEntrypoint, cls).__new__(cls, module, module_name, fn_name, from_handle)
+class LoaderEntrypoint(
+    namedtuple('_LoaderEntrypoint', 'module module_name fn_name from_handle backcompat_loaders')
+):
+    def __new__(cls, module, module_name, fn_name, from_handle=None, backcompat_loaders=None):
+        return super(LoaderEntrypoint, cls).__new__(
+            cls, module, module_name, fn_name, from_handle, backcompat_loaders
+        )
 
     def perform_load(self):
         # in the decorator case the attribute will be the actual definition
@@ -203,6 +96,21 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
 
             inst = repo_or_pipeline
 
+            if self.backcompat_loaders:
+                check.invariant(
+                    isinstance(inst, RepositoryDefinition),
+                    'backcompat_loaders only for repository',
+                )
+                partitions_loader = self.backcompat_loaders.get('partitions')
+                scheduler_loader = self.backcompat_loaders.get('scheduler')
+                if partitions_loader:
+                    partition_handle = partitions_loader.backcompat_load(RepositoryPartitionsHandle)
+                    inst.backcompat_add_partition_set_defs(partition_handle.get_partition_sets())
+
+                if scheduler_loader:
+                    schedule_handle = scheduler_loader.backcompat_load(SchedulerHandle)
+                    inst.backcompat_add_schedule_defs(schedule_handle.schedule_defs)
+
         else:
             raise DagsterInvariantViolationError(
                 '{fn_name} must be a function that returns a PipelineDefinition '
@@ -216,8 +124,35 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
 
         return inst
 
+    def backcompat_load(self, klass):
+        if not hasattr(self.module, self.fn_name):
+            raise DagsterInvariantViolationError(
+                '{name} not found in module {module}.'.format(name=self.fn_name, module=self.module)
+            )
+
+        target = getattr(self.module, self.fn_name)
+
+        if isinstance(target, klass):
+            return target
+
+        if callable(target):
+            handle = target()
+            if not isinstance(handle, klass):
+                raise DagsterInvariantViolationError(
+                    '{fn_name} is a function but must return a {klass.__name__}.'.format(
+                        fn_name=self.fn_name, klass=klass
+                    )
+                )
+            return handle
+
+        raise DagsterInvariantViolationError(
+            '{fn_name} must be a function that returns a {klass.__name__}.'.format(
+                fn_name=self.fn_name, klass=klass
+            )
+        )
+
     @staticmethod
-    def from_file_target(python_file, fn_name, from_handle=None):
+    def from_file_target(python_file, fn_name, from_handle=None, backcompat_loaders=None):
         file_directory = os.path.dirname(python_file)
         if file_directory not in sys.path:
             sys.path.append(file_directory)
@@ -225,12 +160,12 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
         module_name = os.path.splitext(os.path.basename(python_file))[0]
         module = import_module_from_path(module_name, python_file)
 
-        return LoaderEntrypoint(module, module_name, fn_name, from_handle)
+        return LoaderEntrypoint(module, module_name, fn_name, from_handle, backcompat_loaders)
 
     @staticmethod
-    def from_module_target(module_name, fn_name, from_handle=None):
+    def from_module_target(module_name, fn_name, from_handle=None, backcompat_loaders=None):
         module = importlib.import_module(module_name)
-        return LoaderEntrypoint(module, module_name, fn_name, from_handle)
+        return LoaderEntrypoint(module, module_name, fn_name, from_handle, backcompat_loaders)
 
     @staticmethod
     def from_yaml(file_path, from_handle=None):
@@ -242,12 +177,19 @@ class LoaderEntrypoint(namedtuple('_LoaderEntrypoint', 'module module_name fn_na
         file_name = check.opt_str_elem(repository_config, 'file')
         fn_name = check.str_elem(repository_config, 'fn')
 
+        # Back compat
+        backcompat_loaders = _handle_backcompat_loaders(config, file_path)
+
         if module_name:
-            return LoaderEntrypoint.from_module_target(module_name, fn_name, from_handle)
+            return LoaderEntrypoint.from_module_target(
+                module_name, fn_name, from_handle, backcompat_loaders
+            )
         else:
             # rebase file in config off of the path in the config file
             file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
-            return LoaderEntrypoint.from_file_target(file_name, fn_name, from_handle)
+            return LoaderEntrypoint.from_file_target(
+                file_name, fn_name, from_handle, backcompat_loaders
+            )
 
 
 class ExecutionTargetHandleCacheEntry(
@@ -457,29 +399,6 @@ class ExecutionTargetHandle(object):
             data, mode=_ExecutionTargetMode.PIPELINE, is_resolved_to_pipeline=True
         )
 
-    def build_scheduler_handle(self):
-        # Cannot create a scheduler handle if the target mode is not a repository
-        if self.mode != _ExecutionTargetMode.REPOSITORY:
-            return None
-
-        entrypoint = self.scheduler_handle_entrypoint
-        # entrypoint will be None if the repository yaml file does not define a scheduler entrypoint
-        if not entrypoint:
-            return None
-
-        return self.scheduler_handle_entrypoint.perform_load()
-
-    def build_partitions_handle(self):
-        if self.mode != _ExecutionTargetMode.REPOSITORY:
-            return None
-
-        entrypoint = self.partition_handle_entrypoint
-
-        if not entrypoint:
-            return None
-
-        return self.partition_handle_entrypoint.perform_load()
-
     def build_repository_definition(self):
         '''Rehydrates a RepositoryDefinition from an ExecutionTargetHandle object.
 
@@ -531,14 +450,6 @@ class ExecutionTargetHandle(object):
                 )
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
-
-    @property
-    def partition_handle_entrypoint(self):
-        return self.data.get_partition_entrypoint(from_handle=self)
-
-    @property
-    def scheduler_handle_entrypoint(self):
-        return self.data.get_scheduler_entrypoint(from_handle=self)
 
     @property
     def entrypoint(self):
@@ -611,18 +522,6 @@ class _ExecutionTargetHandleData(
             fn_name=check.opt_str_param(fn_name, 'fn_name'),
             pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
         )
-
-    def get_partition_entrypoint(self, from_handle=None):
-        if self.repository_yaml:
-            return PartitionLoaderEntrypoint.from_yaml(
-                self.repository_yaml, from_handle=from_handle
-            )
-
-    def get_scheduler_entrypoint(self, from_handle=None):
-        if self.repository_yaml:
-            return SchedulerLoaderEntrypoint.from_yaml(
-                self.repository_yaml, from_handle=from_handle
-            )
 
     def get_repository_entrypoint(self, from_handle=None):
         if self.repository_yaml:

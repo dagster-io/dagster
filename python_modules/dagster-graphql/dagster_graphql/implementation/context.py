@@ -61,8 +61,6 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         self.version = version
 
         self._cached_pipelines = {}
-        self.scheduler_handle = self.get_handle().build_scheduler_handle()
-        self.partitions_handle = self.get_handle().build_partitions_handle()
 
     def get_handle(self):
         return self._handle
@@ -78,18 +76,11 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         )
 
     def get_all_partition_sets(self):
-        partition_sets = []
-        if self.partitions_handle:
-            partition_sets.extend(self.partitions_handle.get_partition_sets())
-        if self.scheduler_handle:
-            partition_sets.extend(
-                [
-                    schedule_def.get_partition_set()
-                    for schedule_def in self.scheduler_handle.all_schedule_defs()
-                    if isinstance(schedule_def, PartitionScheduleDefinition)
-                ]
-            )
-        return partition_sets
+        return self.repository_definition.partition_set_defs + [
+            schedule_def.get_partition_set()
+            for schedule_def in self.repository_definition.schedule_defs
+            if isinstance(schedule_def, PartitionScheduleDefinition)
+        ]
 
     def get_repository(self):
         return self.repository_definition

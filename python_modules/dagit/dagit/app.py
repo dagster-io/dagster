@@ -31,6 +31,7 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
+from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.snap import ActiveRepositoryData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -228,16 +229,15 @@ def create_app_with_execution_handle(handle, instance, reloader=None):
     )
 
     # Automatically initialize scheduler everytime Dagit loads
-    scheduler_handle = context.scheduler_handle
     scheduler = instance.scheduler
+    repository = context.get_repository()
 
-    if scheduler_handle:
+    if repository.schedule_defs:
         if scheduler:
             handle = context.get_handle()
             python_path = sys.executable
             repository_path = handle.data.repository_yaml
-            repository = context.get_repository()
-            scheduler_handle.up(
+            reconcile_scheduler_state(
                 python_path, repository_path, repository=repository, instance=instance
             )
         else:

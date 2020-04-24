@@ -78,20 +78,11 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
     )
 
 
-def get_scheduler_handle(graphene_info):
-    scheduler_handle = graphene_info.context.scheduler_handle
-    if not scheduler_handle:
-        raise UserFacingGraphQLError(graphene_info.schema.type_named('SchedulerNotDefinedError')())
-
-    return scheduler_handle
-
-
 def get_dagster_schedule_def(graphene_info, schedule_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(schedule_name, 'schedule_name')
-
-    scheduler_handle = get_scheduler_handle(graphene_info)
-    schedule_definition = scheduler_handle.get_schedule_def_by_name(schedule_name)
+    repository = graphene_info.context.get_repository()
+    schedule_definition = repository.get_schedule_def(schedule_name)
     return schedule_definition
 
 

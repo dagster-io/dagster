@@ -1,11 +1,13 @@
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
+from .partition import PartitionSetDefinition
 from .pipeline import PipelineDefinition
+from .schedule import ScheduleDefinition
 
 
 class RepositoryDefinition(object):
-    '''Define a repository that contains a collection of pipelines.
+    '''Define a repository that contains a collection of definitions.
 
     Args:
         name (str): The name of the repository.
@@ -23,13 +25,28 @@ class RepositoryDefinition(object):
             definitions. You may provided both a ``pipeline_dict`` and ``pipeline_defs``, but the
             names of the instantiated definitions may not collide with the keys of the lazily
             evaluated dict.
+        partition_set_defs (Optional[List[PartitionSetDefinition]]):
+        schedule_defs (Optional[List[ScheduleDefinition]]):
     '''
 
-    def __init__(self, name, pipeline_dict=None, pipeline_defs=None):
+    def __init__(
+        self,
+        name,
+        pipeline_dict=None,
+        pipeline_defs=None,
+        schedule_defs=None,
+        partition_set_defs=None,
+    ):
         self._name = check.str_param(name, 'name')
 
         pipeline_dict = check.opt_dict_param(pipeline_dict, 'pipeline_dict', key_type=str)
         pipeline_defs = check.opt_list_param(pipeline_defs, 'pipeline_defs', PipelineDefinition)
+        self._schedule_defs = check.opt_list_param(
+            schedule_defs, 'schedule_defs', ScheduleDefinition
+        )
+        self._partition_set_defs = check.opt_list_param(
+            partition_set_defs, 'partition_set_defs', PartitionSetDefinition
+        )
 
         for val in pipeline_dict.values():
             check.is_callable(val, 'Value in pipeline_dict must be function')
@@ -179,3 +196,30 @@ class RepositoryDefinition(object):
             check.failed('could not find solid_def {}'.format(name))
 
         return self._solid_defs[name]
+
+    @property
+    def partition_set_defs(self):
+        return self._partition_set_defs
+
+    def backcompat_add_partition_set_defs(self, partition_set_defs):
+        check.invariant(
+            not self._partition_set_defs,
+            'legacy load path not supported when schedules are defined on the repository',
+        )
+        self._partition_set_defs = partition_set_defs
+
+    @property
+    def schedule_defs(self):
+        return self._schedule_defs
+
+    def backcompat_add_schedule_defs(self, schedule_defs):
+        check.invariant(
+            not self._schedule_defs,
+            'legacy load path not supported when schedules are defined on the repository',
+        )
+        self._schedule_defs = schedule_defs
+
+    def get_schedule_def(self, name):
+        return next(
+            schedule_def for schedule_def in self._schedule_defs if schedule_def.name == name
+        )

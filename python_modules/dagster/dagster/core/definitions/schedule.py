@@ -2,7 +2,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -16,7 +15,7 @@ from .mode import DEFAULT_MODE_NAME
 class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance repository')):
     '''Schedule-specific execution context.
 
-    An instance of this class is made avaiable as the first argument to various ScheduleDefinition
+    An instance of this class is made available as the first argument to various ScheduleDefinition
     functions. It is passed as the first argument to ``environment_dict_fn``, ``tags_fn``,
     and ``should_execute``.
 
@@ -27,6 +26,8 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance 
     '''
 
     def __new__(cls, instance, repository):
+        from dagster.core.definitions.repository import RepositoryDefinition
+
         return super(ScheduleExecutionContext, cls).__new__(
             cls,
             check.inst_param(instance, 'instance', DagsterInstance),
@@ -52,7 +53,7 @@ class ScheduleDefinition(object):
 
     Args:
         name (str): The name of the schedule to create.
-        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g., 
+        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         environment_dict (Optional[Dict]): The environment config that parameterizes this execution,
@@ -72,7 +73,7 @@ class ScheduleDefinition(object):
             runs.
         mode (Optional[str]): The mode to apply when executing this schedule. (default: 'default')
         should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the

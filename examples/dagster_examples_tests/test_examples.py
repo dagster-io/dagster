@@ -9,6 +9,7 @@ from dagster_graphql.test.utils import define_context_for_repository_yaml, execu
 from dagster import seven
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.instance import DagsterInstance
+from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.utils import file_relative_path, script_relative_path
 
 
@@ -46,9 +47,8 @@ def test_schedules():
         # We need to call up on the scheduler handle to persist
         # state about the schedules to disk before running them.
         # Note: This dependency will be removed soon.
-        scheduler_handle = context.scheduler_handle
         repository = context.get_repository()
-        scheduler_handle.up(
+        reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '../'),
             repository=repository,
