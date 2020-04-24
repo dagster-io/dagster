@@ -1,3 +1,4 @@
+import os
 import time
 
 from dagster import (
@@ -181,25 +182,30 @@ def define_subdag_pipeline():
         done = False
         while not done:
             time.sleep(0.15)
-            with open(context.solid_config, 'r') as fd:
-                if fd.read() == '111':
-                    done = True
-                    time.sleep(1)
+            if os.path.isfile(context.solid_config):
+                return
 
     @solid(
-        input_defs=[InputDefinition('after', Nothing)],
-        output_defs=[OutputDefinition(Nothing)],
-        config=Field(String),
+        input_defs=[InputDefinition('after', Nothing)], config=Field(String),
     )
-    def counter(context):
-        with open(context.solid_config, 'a') as fd:
+    def writer(context):
+        with open(context.solid_config, 'w') as fd:
             fd.write('1')
         return
+
+    @lambda_solid(
+        input_defs=[InputDefinition('after', Nothing)], output_def=OutputDefinition(Nothing),
+    )
+    def noop():
+        pass
 
     @pipeline
     def separate():
         waiter()
-        counter.alias('counter_3')(counter.alias('counter_2')(counter.alias('counter_1')()))
+        a = noop.alias('noop_1')()
+        b = noop.alias('noop_2')(a)
+        c = noop.alias('noop_3')(b)
+        writer(c)
 
     return separate
 
@@ -214,19 +220,16 @@ def test_separate_sub_dags():
             pipe,
             environment_dict={
                 'storage': {'filesystem': {}},
-                'execution': {'multiprocess': {'config': {'max_concurrent': 4}}},
-                'solids': {
-                    'waiter': {'config': filename},
-                    'counter_1': {'config': filename},
-                    'counter_2': {'config': filename},
-                    'counter_3': {'config': filename},
-                },
+                'execution': {'multiprocess': {'config': {'max_concurrent': 2}}},
+                'solids': {'waiter': {'config': filename}, 'writer': {'config': filename},},
             },
             instance=DagsterInstance.local_temp(),
         )
 
     assert result.success
-    # ensure that
-    assert [
-        str(event.solid_handle) for event in result.step_event_list if event.is_step_success
-    ] == ['counter_1', 'counter_2', 'counter_3', 'waiter']
+
+    # this test is to ensure that the chain of noop -> noop -> noop -> writer is not blocked by waiter
+    order = [str(event.solid_handle) for event in result.step_event_list if event.is_step_success]
+
+    # the writer and waiter my finish in different orders so just ensure the proceeding chain
+    assert order[0:3] == ['noop_1', 'noop_2', 'noop_3']
