@@ -1,4 +1,4 @@
-from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.implementation.pipeline_execution_manager import (
     SubprocessExecutionManager,
     SynchronousExecutionManager,
@@ -33,7 +33,7 @@ def execute_dagster_graphql(context, query, variables=None):
 
 
 def define_context(repo_fn, instance=None):
-    return DagsterGraphQLContext(
+    return DagsterGraphQLInProcessRepositoryContext(
         handle=ExecutionTargetHandle.for_repo_fn(repo_fn),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
@@ -41,7 +41,7 @@ def define_context(repo_fn, instance=None):
 
 
 def define_subprocess_context(repo_fn, instance):
-    return DagsterGraphQLContext(
+    return DagsterGraphQLInProcessRepositoryContext(
         handle=ExecutionTargetHandle.for_repo_fn(repo_fn),
         instance=instance,
         execution_manager=SubprocessExecutionManager(instance),
@@ -49,7 +49,7 @@ def define_subprocess_context(repo_fn, instance):
 
 
 def define_context_for_file(python_file, fn_name, instance=None):
-    return DagsterGraphQLContext(
+    return DagsterGraphQLInProcessRepositoryContext(
         handle=ExecutionTargetHandle.for_repo_python_file(python_file, fn_name),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
@@ -57,7 +57,7 @@ def define_context_for_file(python_file, fn_name, instance=None):
 
 
 def define_subprocess_context_for_file(python_file, fn_name, instance=None):
-    return DagsterGraphQLContext(
+    return DagsterGraphQLInProcessRepositoryContext(
         handle=ExecutionTargetHandle.for_repo_python_file(python_file, fn_name),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SubprocessExecutionManager(instance),
@@ -65,7 +65,7 @@ def define_subprocess_context_for_file(python_file, fn_name, instance=None):
 
 
 def define_context_for_repository_yaml(path, instance=None):
-    return DagsterGraphQLContext(
+    return DagsterGraphQLInProcessRepositoryContext(
         handle=ExecutionTargetHandle.for_repo_yaml(path),
         instance=instance or DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),

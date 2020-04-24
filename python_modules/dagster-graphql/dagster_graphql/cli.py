@@ -23,7 +23,7 @@ from .client.query import (
     START_PIPELINE_EXECUTION_MUTATION,
     START_SCHEDULED_EXECUTION_MUTATION,
 )
-from .implementation.context import DagsterGraphQLContext
+from .implementation.context import DagsterGraphQLInProcessRepositoryContext
 from .implementation.pipeline_execution_manager import SynchronousExecutionManager
 from .schema import create_schema
 from .version import __version__
@@ -49,7 +49,7 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
 
     execution_manager = SynchronousExecutionManager()
 
-    context = DagsterGraphQLContext(
+    context = DagsterGraphQLInProcessRepositoryContext(
         handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
     )
 

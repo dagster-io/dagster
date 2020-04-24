@@ -4,7 +4,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.implementation.context import DagsterSnapshotGraphQLContext
+from dagster_graphql.implementation.context import DagsterGraphQLOutOfProcessRepositoryContext
 from dagster_graphql.implementation.pipeline_execution_manager import SynchronousExecutionManager
 from dagster_graphql.test.utils import define_context_for_file, define_subprocess_context_for_file
 
@@ -79,7 +79,7 @@ def define_test_context(instance=None):
 
 
 def define_test_snapshot_context():
-    return DagsterSnapshotGraphQLContext(
+    return DagsterGraphQLOutOfProcessRepositoryContext(
         instance=DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
         active_repository_data=active_repository_data_from_def(define_repository()),

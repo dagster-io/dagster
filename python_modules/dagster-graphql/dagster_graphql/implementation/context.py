@@ -7,7 +7,11 @@ from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
 
 
-class DagsterSnapshotGraphQLContext(object):
+class DagsterGraphQLContext(object):
+    pass
+
+
+class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, active_repository_data, execution_manager, instance, version=None):
         self.active_repository_data = check.inst_param(
             active_repository_data, 'active_repository_data', ActiveRepositoryData
@@ -27,7 +31,7 @@ class DagsterSnapshotGraphQLContext(object):
         return self._repository_index
 
 
-class DagsterGraphQLContext(object):
+class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)

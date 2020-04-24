@@ -1,6 +1,6 @@
 import sys
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
@@ -123,7 +123,7 @@ def get_dauphin_pipelines(graphene_info):
 def get_dauphin_pipeline_from_pipeline_index(graphene_info, pipeline_index):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-    if isinstance(graphene_info.context, DagsterGraphQLContext):
+    if isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext):
         pipeline = get_pipeline_definition(graphene_info, pipeline_index.pipeline_snapshot.name)
         return DauphinPipeline(pipeline_index, presets=pipeline.get_presets())
     return DauphinPipeline(pipeline_index)
@@ -133,14 +133,14 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
 
-    if isinstance(graphene_info.context, DagsterGraphQLContext):
+    if isinstance(graphene_info.context, DagsterGraphQLInProcessRepositoryContext):
         pipeline_definition = get_pipeline_def_from_selector(graphene_info, selector)
         return DauphinPipeline.from_pipeline_def(pipeline_definition)
 
     # TODO: Support solid sub selection.
     check.invariant(
         not selector.solid_subset,
-        desc="DagsterSnapshotGraphQLContext doesn't support pipeline sub-selection.",
+        desc="DagsterGraphQLOutOfProcessRepositoryContext doesn't support pipeline sub-selection.",
     )
 
     repository_index = graphene_info.context.get_repository_index()

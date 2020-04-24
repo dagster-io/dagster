@@ -9,7 +9,8 @@ import warnings
 import nbformat
 from dagster_graphql.implementation.context import (
     DagsterGraphQLContext,
-    DagsterSnapshotGraphQLContext,
+    DagsterGraphQLInProcessRepositoryContext,
+    DagsterGraphQLOutOfProcessRepositoryContext,
 )
 from dagster_graphql.implementation.pipeline_execution_manager import (
     QueueingSubprocessExecutionManager,
@@ -56,9 +57,7 @@ class DagsterGraphQLView(GraphQLView):
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(
-        context, 'context', (DagsterGraphQLContext, DagsterSnapshotGraphQLContext)
-    )
+    context = check.inst_param(context, 'context', DagsterGraphQLContext)
 
     def view(ws):
         subscription_server.handle(ws, request_context=context)
@@ -110,9 +109,7 @@ def notebook_view(request_args):
 
 
 def download_view(context):
-    context = check.inst_param(
-        context, 'context', (DagsterGraphQLContext, DagsterSnapshotGraphQLContext)
-    )
+    context = check.inst_param(context, 'context', DagsterGraphQLContext)
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
@@ -204,7 +201,7 @@ def create_app_with_active_repository_data(active_repository_data, instance):
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
-    context = DagsterSnapshotGraphQLContext(
+    context = DagsterGraphQLOutOfProcessRepositoryContext(
         active_repository_data=active_repository_data,
         instance=instance,
         execution_manager=execution_manager,
@@ -222,7 +219,7 @@ def create_app_with_execution_handle(handle, instance, reloader=None):
     warn_if_compute_logs_disabled()
 
     print('Loading repository...')
-    context = DagsterGraphQLContext(
+    context = DagsterGraphQLInProcessRepositoryContext(
         handle=handle,
         instance=instance,
         execution_manager=execution_manager,
