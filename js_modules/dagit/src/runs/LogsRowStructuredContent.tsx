@@ -2,17 +2,25 @@ import * as React from "react";
 import { Tag, Colors, Intent } from "@blueprintjs/core";
 import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
 import { EventTypeColumn } from "./LogsRowComponents";
-import { MetadataEntries } from "./MetadataEntry";
+import {
+  MetadataEntries,
+  createLogRowStructuredContentTable,
+  MetadataEntryLink
+} from "./MetadataEntry";
 import { assertUnreachable } from "../Util";
 import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
 import { PythonErrorFragment } from "../types/PythonErrorFragment";
+import { ComputeLogLink } from "./ComputeLogModal";
+import { IRunMetadataDict } from "../RunMetadataProvider";
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;
+  metadata: IRunMetadataDict;
 }
 
 export const LogsRowStructuredContent: React.FunctionComponent<IStructuredContentProps> = ({
-  node
+  node,
+  metadata
 }) => {
   switch (node.__typename) {
     // Errors
@@ -39,7 +47,27 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       );
 
     case "ExecutionStepStartEvent":
-      return <DefaultContent message={node.message} eventType="Step Start" />;
+      if (!node.step) {
+        return <DefaultContent message={node.message} eventType="Step Start" />;
+      } else {
+        return (
+          <DefaultContent message={node.message} eventType="Step Start">
+            {createLogRowStructuredContentTable([
+              {
+                label: "step_logs",
+                item: (
+                  <ComputeLogLink
+                    stepKey={node.step.key}
+                    runState={metadata.steps[node.step.key]?.state}
+                  >
+                    <MetadataEntryLink>View Raw Step Output</MetadataEntryLink>
+                  </ComputeLogLink>
+                )
+              }
+            ])}
+          </DefaultContent>
+        );
+      }
     case "ExecutionStepSkippedEvent":
       return (
         <DefaultContent

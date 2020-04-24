@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Dialog, Spinner, Intent, Button } from "@blueprintjs/core";
+import { Dialog, Spinner, Intent } from "@blueprintjs/core";
 import { RunContext } from "../runs/RunContext";
 import { IStepState } from "../RunMetadataProvider";
 import { DirectGraphQLSubscription } from "../DirectGraphQLSubscription";
@@ -36,12 +36,9 @@ export const ComputeLogLink = ({
     setOpen(true);
   };
   const close = () => setOpen(false);
-
   return (
     <>
-      <Button icon={"console"} small onClick={open}>
-        {children}
-      </Button>
+      <span onClick={open}>{children}</span>
       <Dialog
         onClose={close}
         style={{

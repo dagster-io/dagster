@@ -296,6 +296,7 @@ const ReexecuteWithData = ({
                 nodes={filteredNodes}
                 loading={logsLoading}
                 filterKey={JSON.stringify(logsFilter)}
+                metadata={metadata}
               />
             </LogsContainer>
           }

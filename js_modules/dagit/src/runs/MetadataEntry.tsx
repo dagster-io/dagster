@@ -16,17 +16,14 @@ import {
 } from "@blueprintjs/core";
 import ReactMarkdown from "react-markdown";
 
-export const MetadataEntries: React.FunctionComponent<{
-  entries?: MetadataEntryFragment[];
-}> = ({ entries }) => {
-  if (!entries || !entries.length) {
-    return null;
-  }
+export function createLogRowStructuredContentTable(
+  rows: { label: string; item: JSX.Element }[]
+) {
   return (
     <div>
-      <MetadataEntriesTable cellPadding="0" cellSpacing="0">
+      <LogRowStructuredContentTable cellPadding="0" cellSpacing="0">
         <tbody>
-          {entries.map((item, idx) => (
+          {rows.map(({ label, item }, idx) => (
             <tr key={idx} style={{ display: "flex" }}>
               <td
                 style={{
@@ -34,16 +31,27 @@ export const MetadataEntries: React.FunctionComponent<{
                   maxWidth: "max-content"
                 }}
               >
-                {item.label}
+                {label}
               </td>
-              <td style={{ flex: 1 }}>
-                <MetadataEntry entry={item} />
-              </td>
+              <td style={{ flex: 1 }}>{item}</td>
             </tr>
           ))}
         </tbody>
-      </MetadataEntriesTable>
+      </LogRowStructuredContentTable>
     </div>
+  );
+}
+export const MetadataEntries: React.FunctionComponent<{
+  entries?: MetadataEntryFragment[];
+}> = ({ entries }) => {
+  if (!entries || !entries.length) {
+    return null;
+  }
+  return createLogRowStructuredContentTable(
+    entries.map(entry => ({
+      label: entry.label,
+      item: <MetadataEntry entry={entry} />
+    }))
   );
 };
 
@@ -81,6 +89,7 @@ export class MetadataEntry extends React.Component<{
 
   render() {
     const { entry } = this.props;
+
     switch (entry.__typename) {
       case "EventPathMetadataEntry":
         return (
@@ -245,7 +254,7 @@ export const MetadataEntryLink = styled.a`
   }
 `;
 
-const MetadataEntriesTable = styled.table`
+export const LogRowStructuredContentTable = styled.table`
   padding: 0;
   margin-top: 4px;
   border-top: 1px solid #dbc5ad;

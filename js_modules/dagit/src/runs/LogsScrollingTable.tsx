@@ -13,6 +13,7 @@ import {
 import * as LogsRow from "./LogsRow";
 import { LogsScrollingTableMessageFragment } from "./types/LogsScrollingTableMessageFragment";
 import { Headers, ColumnWidthsProvider } from "./LogsScrollingTableHeader";
+import { IRunMetadataDict } from "../RunMetadataProvider";
 
 interface ILogsScrollingTableProps {
   nodes?: (LogsScrollingTableMessageFragment & { clientsideKey: string })[];
@@ -23,6 +24,8 @@ interface ILogsScrollingTableProps {
   // removing some rows requires the whole list be "reflowed" again. Checking
   // `nodes` for equality doesn't let us optimize for the append- case.
   filterKey: string;
+
+  metadata: IRunMetadataDict;
 }
 
 interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
@@ -160,6 +163,7 @@ class LogsScrollingTableSized extends React.Component<
   rowRenderer = ({ parent, index, style }: ListRowProps) => {
     if (!this.props.nodes) return;
     const node = this.props.nodes[index];
+    const metadata = this.props.metadata;
     if (!node) return <span />;
 
     return (
@@ -177,6 +181,7 @@ class LogsScrollingTableSized extends React.Component<
         ) : (
           <LogsRow.Structured
             node={node}
+            metadata={metadata}
             style={{ ...style, width: this.props.width }}
           />
         )}

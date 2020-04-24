@@ -87,7 +87,9 @@ export default class LogsToolbar extends React.PureComponent<
         {filterStep && <LogsToolbarDivider />}
         {filterStep && (
           <ComputeLogLink stepKey={filterStep} runState={filterStepState}>
-            View Raw Step Output
+            <Button icon={"console"} small>
+              View Raw Step Output
+            </Button>
           </ComputeLogLink>
         )}
         <div style={{ minWidth: 15, flex: 1 }} />

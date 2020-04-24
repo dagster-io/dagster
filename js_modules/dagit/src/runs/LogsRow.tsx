@@ -20,9 +20,11 @@ import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
 import InfoModal from "../InfoModal";
 import PythonErrorInfo from "../PythonErrorInfo";
 import { isEqual } from "apollo-utilities";
+import { IRunMetadataDict } from "../RunMetadataProvider";
 
 interface StructuredProps {
   node: LogsRowStructuredFragment;
+  metadata: IRunMetadataDict;
   style: React.CSSProperties;
 }
 
@@ -137,7 +139,7 @@ export class Structured extends React.Component<
   };
 
   renderExpanded() {
-    const { node } = this.props;
+    const { node, metadata } = this.props;
     const { expanded } = this.state;
     if (!expanded) {
       return null;
@@ -176,7 +178,7 @@ export class Structured extends React.Component<
         onRequestClose={this.onCollapse}
       >
         <StructuredContent>
-          <LogsRowStructuredContent node={node} />
+          <LogsRowStructuredContent node={node} metadata={metadata} />
         </StructuredContent>
       </InfoModal>
     );
@@ -185,7 +187,10 @@ export class Structured extends React.Component<
   render() {
     return (
       <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <StructuredMemoizedContent node={this.props.node} />
+        <StructuredMemoizedContent
+          node={this.props.node}
+          metadata={this.props.metadata}
+        />
         {this.renderExpanded()}
       </CellTruncationProvider>
     );
@@ -194,8 +199,9 @@ export class Structured extends React.Component<
 
 const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
+  metadata: IRunMetadataDict;
 }> = React.memo(
-  ({ node }) => (
+  ({ node, metadata }) => (
     <Row
       level={LogLevel.INFO}
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
@@ -203,7 +209,7 @@ const StructuredMemoizedContent: React.FunctionComponent<{
     >
       <SolidColumn stepKey={"step" in node && node.step && node.step.key} />
       <StructuredContent>
-        <LogsRowStructuredContent node={node} />
+        <LogsRowStructuredContent node={node} metadata={metadata} />
       </StructuredContent>
       <TimestampColumn time={"timestamp" in node && node.timestamp} />
     </Row>
