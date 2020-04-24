@@ -226,7 +226,6 @@ input ExecutionParams {
   executionMetadata: ExecutionMetadata
   stepKeys: [String!]
   preset: String
-  retryRunId: String
 }
 
 type ExecutionPlan {

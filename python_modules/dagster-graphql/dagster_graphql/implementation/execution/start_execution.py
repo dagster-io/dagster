@@ -83,13 +83,8 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
             ),
             tags=merge_dicts(pipeline_def.tags, execution_params.execution_metadata.tags),
             status=PipelineRunStatus.NOT_STARTED,
-            root_run_id=(
-                execution_params.execution_metadata.root_run_id or execution_params.previous_run_id
-            ),
-            parent_run_id=(
-                execution_params.execution_metadata.parent_run_id
-                or execution_params.previous_run_id
-            ),
+            root_run_id=execution_params.execution_metadata.root_run_id,
+            parent_run_id=execution_params.execution_metadata.parent_run_id,
             pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
                 execution_plan, pipeline_def.get_pipeline_snapshot_id()
@@ -160,7 +155,6 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
                 )
             ),
         )
-
         # TODO: also insert a pipeline init failure event
         # https://github.com/dagster-io/dagster/issues/2385
 

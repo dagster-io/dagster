@@ -4,10 +4,21 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import DagsterEventType
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
-from .execution_queries import START_PIPELINE_EXECUTION_QUERY, START_PIPELINE_REEXECUTION_QUERY
+from .execution_queries import (
+    PIPELINE_REEXECUTION_INFO_QUERY,
+    START_PIPELINE_EXECUTION_QUERY,
+    START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+    START_PIPELINE_REEXECUTION_QUERY,
+    START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+)
 from .setup import (
+    PoorMansDataFrame,
+    csv_hello_world_solids_config,
+    csv_hello_world_solids_config_fs_storage,
     define_test_context,
     define_test_subprocess_context,
     get_retry_multi_execution_params,
@@ -78,6 +89,29 @@ def step_did_not_run_in_records(records, step_key):
     )
 
 
+def first_event_of_type(logs, message_type):
+    for log in logs:
+        if log['__typename'] == message_type:
+            return log
+    return None
+
+
+def has_event_of_type(logs, message_type):
+    return first_event_of_type(logs, message_type) is not None
+
+
+def get_step_output_event(logs, step_key, output_name='result'):
+    for log in logs:
+        if (
+            log['__typename'] == 'ExecutionStepOutputEvent'
+            and log['step']['key'] == step_key
+            and log['outputName'] == output_name
+        ):
+            return log
+
+    return None
+
+
 def test_retry_requires_intermediates():
     context = define_test_context()
     result = execute_dagster_graphql(
@@ -109,8 +143,11 @@ def test_retry_requires_intermediates():
             'executionParams': {
                 'mode': 'default',
                 'selector': {'name': 'eventually_successful'},
-                'retryRunId': run_id,
-                'executionMetadata': {'rootRunId': run_id, 'parentRunId': run_id,},
+                'executionMetadata': {
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
             }
         },
     )
@@ -153,8 +190,11 @@ def test_retry_pipeline_execution():
                 'mode': 'default',
                 'selector': {'name': 'eventually_successful'},
                 'environmentConfigData': retry_config(1),
-                'retryRunId': run_id,
-                'executionMetadata': {'rootRunId': run_id, 'parentRunId': run_id,},
+                'executionMetadata': {
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
             }
         },
     )
@@ -175,8 +215,11 @@ def test_retry_pipeline_execution():
                 'mode': 'default',
                 'selector': {'name': 'eventually_successful'},
                 'environmentConfigData': retry_config(2),
-                'retryRunId': run_id,
-                'executionMetadata': {'rootRunId': run_id, 'parentRunId': run_id,},
+                'executionMetadata': {
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
             }
         },
     )
@@ -198,8 +241,11 @@ def test_retry_pipeline_execution():
                 'mode': 'default',
                 'selector': {'name': 'eventually_successful'},
                 'environmentConfigData': retry_config(3),
-                'retryRunId': run_id,
-                'executionMetadata': {'rootRunId': run_id, 'parentRunId': run_id,},
+                'executionMetadata': {
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
             }
         },
     )
@@ -241,8 +287,11 @@ def test_retry_resource_pipeline():
                 'mode': 'default',
                 'selector': {'name': 'retry_resource_pipeline'},
                 'environmentConfigData': {'storage': {'filesystem': {}}},
-                'retryRunId': run_id,
-                'executionMetadata': {'rootRunId': run_id, 'parentRunId': run_id,},
+                'executionMetadata': {
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
             }
         },
     )
@@ -364,11 +413,11 @@ def test_retry_early_terminate():
                     },
                     'storage': {'filesystem': {}},
                 },
-                'retryRunId': run_id,
                 'executionMetadata': {
                     'runId': new_run_id,
                     'rootRunId': run_id,
                     'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
                 },
             }
         },
@@ -383,3 +432,177 @@ def test_retry_early_terminate():
     assert step_did_succeed_in_records(retry_records, 'get_input_one.compute')
     assert step_did_succeed_in_records(retry_records, 'get_input_two.compute')
     assert step_did_succeed_in_records(retry_records, 'sum_inputs.compute')
+
+
+def test_successful_pipeline_reexecution():
+    run_id = make_new_run_id()
+    instance = DagsterInstance.ephemeral()
+    result_one = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
+        },
+    )
+
+    assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+
+    expected_value_repr = (
+        '''[OrderedDict([('num1', '1'), ('num2', '2'), ('sum', 3), '''
+        '''('sum_sq', 9)]), OrderedDict([('num1', '3'), ('num2', '4'), ('sum', 7), '''
+        '''('sum_sq', 49)])]'''
+    )
+
+    store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    assert (
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
+        == expected_value_repr
+    )
+
+    # retry
+    new_run_id = make_new_run_id()
+
+    result_two = execute_dagster_graphql(
+        define_test_context(instance=instance),
+        START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_sq_solid.compute'],
+                'executionMetadata': {
+                    'runId': new_run_id,
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
+                'mode': 'default',
+            }
+        },
+    )
+
+    query_result = result_two.data['startPipelineReexecution']
+    assert query_result['__typename'] == 'StartPipelineRunSuccess'
+    logs = query_result['run']['logs']['nodes']
+
+    assert isinstance(logs, list)
+    assert has_event_of_type(logs, 'PipelineStartEvent')
+    assert has_event_of_type(logs, 'PipelineSuccessEvent')
+    assert not has_event_of_type(logs, 'PipelineFailureEvent')
+
+    assert not get_step_output_event(logs, 'sum_solid.compute')
+    assert get_step_output_event(logs, 'sum_sq_solid.compute')
+
+    store = build_fs_intermediate_store(instance.intermediates_directory, new_run_id)
+    assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
+    assert store.has_intermediate(None, 'sum_solid.compute')
+    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    assert (
+        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
+        == expected_value_repr
+    )
+
+
+def test_pipeline_reexecution_info_query(snapshot):
+    context = define_test_context()
+
+    run_id = make_new_run_id()
+    execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
+        },
+    )
+
+    # retry
+    new_run_id = make_new_run_id()
+    execute_dagster_graphql(
+        context,
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config_fs_storage(),
+                'stepKeys': ['sum_sq_solid.compute'],
+                'executionMetadata': {
+                    'runId': new_run_id,
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
+                'mode': 'default',
+            }
+        },
+    )
+
+    result_one = execute_dagster_graphql(
+        context, PIPELINE_REEXECUTION_INFO_QUERY, variables={'runId': run_id}
+    )
+    query_result_one = result_one.data['pipelineRunOrError']
+    assert query_result_one['__typename'] == 'PipelineRun'
+    assert query_result_one['stepKeysToExecute'] is None
+
+    result_two = execute_dagster_graphql(
+        context, PIPELINE_REEXECUTION_INFO_QUERY, variables={'runId': new_run_id}
+    )
+    query_result_two = result_two.data['pipelineRunOrError']
+    assert query_result_two['__typename'] == 'PipelineRun'
+    stepKeysToExecute = query_result_two['stepKeysToExecute']
+    print(query_result_two)
+    assert stepKeysToExecute is not None
+    snapshot.assert_match(stepKeysToExecute)
+
+
+def test_pipeline_reexecution_invalid_step_in_subset():
+    run_id = make_new_run_id()
+    execute_dagster_graphql(
+        define_test_context(),
+        START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
+                'executionMetadata': {'runId': run_id},
+                'mode': 'default',
+            }
+        },
+    )
+
+    # retry
+    new_run_id = make_new_run_id()
+
+    result_two = execute_dagster_graphql(
+        define_test_context(),
+        START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'csv_hello_world'},
+                'environmentConfigData': csv_hello_world_solids_config(),
+                'stepKeys': ['nope'],
+                'executionMetadata': {
+                    'runId': new_run_id,
+                    'rootRunId': run_id,
+                    'parentRunId': run_id,
+                    'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+                },
+                'mode': 'default',
+            }
+        },
+    )
+
+    query_result = result_two.data['startPipelineReexecution']
+    assert query_result['__typename'] == 'InvalidStepError'
+    assert query_result['invalidStepKey'] == 'nope'

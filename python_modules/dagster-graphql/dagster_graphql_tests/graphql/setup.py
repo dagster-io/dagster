@@ -42,6 +42,7 @@ from dagster import (
 )
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.snap.repository_snapshot import RepositorySnapshot
+from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
 
 
@@ -751,6 +752,9 @@ def get_retry_multi_execution_params(should_fail, retry_id=None):
             'storage': {'filesystem': {}},
             'solids': {'can_fail': {'config': {'fail': should_fail}}},
         },
-        'retryRunId': retry_id,
-        'executionMetadata': {'rootRunId': retry_id, 'parentRunId': retry_id,},
+        'executionMetadata': {
+            'rootRunId': retry_id,
+            'parentRunId': retry_id,
+            'tags': [{'key': RESUME_RETRY_TAG, 'value': 'true'}],
+        },
     }

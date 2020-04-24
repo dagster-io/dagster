@@ -81,7 +81,6 @@ export interface ExecutionParams {
   executionMetadata?: ExecutionMetadata | null;
   stepKeys?: string[] | null;
   preset?: string | null;
-  retryRunId?: string | null;
 }
 
 export interface ExecutionSelector {

@@ -6,7 +6,13 @@ from dagster.core.execution.config import IRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 
-from .tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG, SCHEDULE_NAME_TAG
+from .tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    RESUME_RETRY_TAG,
+    SCHEDULE_NAME_TAG,
+)
 
 
 @whitelist_for_serdes
@@ -160,6 +166,10 @@ class PipelineRun(
     @property
     def is_finished(self):
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def is_retry_resume(self):
+        return self.tags.get(RESUME_RETRY_TAG) == 'true'
 
     @property
     def previous_run_id(self):

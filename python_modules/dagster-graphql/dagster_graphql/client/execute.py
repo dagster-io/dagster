@@ -27,7 +27,6 @@ def execute_remote_pipeline_run(
         mode=mode,
         execution_metadata=ExecutionMetadata(run_id=None, tags=tags or {}),
         step_keys=None,
-        previous_run_id=None,
     )
 
     result = execute_query_against_remote(

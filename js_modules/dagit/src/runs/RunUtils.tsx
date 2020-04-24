@@ -133,15 +133,33 @@ export function handleReexecutionResult(
   }
 }
 
-function getExecutionMetadata(run: RunFragment | RunTableRunFragment) {
+function getExecutionMetadata(
+  run: RunFragment | RunTableRunFragment,
+  resumeRetry = false
+) {
   return {
     parentRunId: run.runId,
     rootRunId: run.rootRunId ? run.rootRunId : run.runId,
     tags: [
-      ...run.tags.map(tag => ({
-        key: tag.key,
-        value: tag.value
-      }))
+      ...run.tags
+        .filter(tag => tag.key !== "dagster/is_resume_retry")
+        .map(tag => ({
+          key: tag.key,
+          value: tag.value
+        })),
+      // pass resume/retry indicator via tags
+      {
+        key: "dagster/is_resume_retry",
+        value: resumeRetry.toString()
+      },
+      {
+        key: "dagster/parent_run_id",
+        value: run.runId
+      },
+      {
+        key: "dagster/root_run_id",
+        value: run.rootRunId ? run.rootRunId : run.runId
+      }
     ]
   };
 }
@@ -180,13 +198,13 @@ export function getReexecutionVariables(input: {
       const step = executionPlan.steps.find(s => s.key === stepKey);
       if (!step) return;
       executionParams["stepKeys"] = [stepKey];
-      executionParams["retryRunId"] = run.runId;
-    } else {
-      if (resumeRetry) {
-        executionParams["retryRunId"] = run.runId;
-      }
     }
-    executionParams["executionMetadata"] = getExecutionMetadata(run);
+
+    executionParams["executionMetadata"] = getExecutionMetadata(
+      run,
+      resumeRetry
+    );
+
     return { executionParams };
   } else {
     if (!envYaml) {

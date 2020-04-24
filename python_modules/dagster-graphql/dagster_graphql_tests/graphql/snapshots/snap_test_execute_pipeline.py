@@ -308,6 +308,10 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
                 'name': 'csv_hello_world'
             },
             'tags': [
+                {
+                    'key': 'dagster/is_resume_retry',
+                    'value': 'true'
+                }
             ]
         }
     }

@@ -11,7 +11,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.object_store import ObjectStoreOperation, ObjectStoreOperationType
 
 
-def validate_retry_memoization(pipeline_context, execution_plan):
+def validate_reexecution_memoization(pipeline_context, execution_plan):
     check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
     check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
@@ -27,10 +27,8 @@ def validate_retry_memoization(pipeline_context, execution_plan):
             invalid_run_id=parent_run_id,
         )
 
+    # exclude full pipeline re-execution
     if len(execution_plan.step_keys_to_execute) == len(execution_plan.steps):
-        # this is a short-term proxy to distinguish between re-execution and retries.
-        # Resume/retry will always have a subset of the execution plan, and re-execution will
-        # always be the full execution plan (until we change dagit to enable re-execution subsets)
         return
 
     if not pipeline_context.intermediates_manager.is_persistent:

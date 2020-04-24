@@ -507,7 +507,6 @@ def create_execution_params(graphene_info, graphql_execution_params):
                 graphql_execution_params.get('executionMetadata')
             ),
             step_keys=graphql_execution_params.get('stepKeys'),
-            previous_run_id=graphql_execution_params.get('retryRunId'),
         )
 
     return execution_params_from_graphql(graphql_execution_params)
@@ -522,7 +521,6 @@ def execution_params_from_graphql(graphql_execution_params):
             graphql_execution_params.get('executionMetadata')
         ),
         step_keys=graphql_execution_params.get('stepKeys'),
-        previous_run_id=graphql_execution_params.get('retryRunId'),
     )
 
 
@@ -633,7 +631,6 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     executionMetadata = dauphin.Field('ExecutionMetadata')
     stepKeys = dauphin.Field(dauphin.List(dauphin.NonNull(dauphin.String)))
     preset = dauphin.Field(dauphin.String)
-    retryRunId = dauphin.Field(dauphin.String)
 
 
 class DauphinExecutionSelector(dauphin.InputObjectType):

@@ -75,7 +75,6 @@ def execution_params_for_schedule(graphene_info, schedule_def, pipeline_def):
         mode=mode,
         execution_metadata=ExecutionMetadata(tags=tags, run_id=None),
         step_keys=None,
-        previous_run_id=None,
     )
 
 

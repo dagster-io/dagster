@@ -18,7 +18,6 @@ def test_roundtrip_run():
         status=PipelineRunStatus.NOT_STARTED,
         root_run_id='previousID',
         parent_run_id='previousID',
-        previous_run_id='previousID',
         pipeline_snapshot_id='pipey_mcpipeface_snapshot_id',
         execution_plan_snapshot_id='mcexecutionplanface_snapshot_id',
     )

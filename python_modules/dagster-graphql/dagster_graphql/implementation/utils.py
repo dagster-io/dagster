@@ -31,14 +31,9 @@ class UserFacingGraphQLError(Exception):
 
 
 class ExecutionParams(
-    namedtuple(
-        '_ExecutionParams',
-        'selector environment_dict mode execution_metadata step_keys previous_run_id',
-    )
+    namedtuple('_ExecutionParams', 'selector environment_dict mode execution_metadata step_keys',)
 ):
-    def __new__(
-        cls, selector, environment_dict, mode, execution_metadata, step_keys, previous_run_id
-    ):
+    def __new__(cls, selector, environment_dict, mode, execution_metadata, step_keys):
         check.dict_param(environment_dict, 'environment_dict', key_type=str)
         check.opt_list_param(step_keys, 'step_keys', of_type=str)
 
@@ -51,7 +46,6 @@ class ExecutionParams(
                 execution_metadata, 'execution_metadata', ExecutionMetadata
             ),
             step_keys=step_keys,
-            previous_run_id=check.opt_str_param(previous_run_id, 'previous_run_id'),
         )
 
     def to_graphql_input(self):
@@ -61,7 +55,6 @@ class ExecutionParams(
             'mode': self.mode,
             'executionMetadata': self.execution_metadata.to_graphql_input(),
             'stepKeys': self.step_keys,
-            'retryRunId': self.previous_run_id,
         }
 
 
