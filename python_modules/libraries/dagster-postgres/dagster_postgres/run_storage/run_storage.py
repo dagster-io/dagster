@@ -78,10 +78,3 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
         run_alembic_upgrade(alembic_config, self._engine)
-
-    def __del__(self):
-        # Keep the inherent limitations of __del__ in Python in mind!
-        self.dispose()
-
-    def dispose(self):
-        self._engine.dispose()

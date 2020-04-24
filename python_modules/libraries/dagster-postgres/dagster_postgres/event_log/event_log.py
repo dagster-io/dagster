@@ -134,7 +134,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def dispose(self):
         self._event_watcher.close()
-        self._engine.dispose()
 
 
 EventWatcherProcessStartedEvent = namedtuple('EventWatcherProcessStartedEvent', '')
