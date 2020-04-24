@@ -24,12 +24,17 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
         step = active_execution.get_next_step()
 
         step_context = pipeline_context.for_step(step)
+        missing_resources = [
+            resource_key
+            for resource_key in step_context.required_resource_keys
+            if not hasattr(step_context.resources, resource_key)
+        ]
         check.invariant(
-            all(
-                hasattr(step_context.resources, resource_key)
-                for resource_key in step_context.required_resource_keys
-            ),
-            'expected step context to have all required resources',
+            len(missing_resources) == 0,
+            (
+                'Expected step context for solid {solid_name} to have all required resources, but '
+                'missing {missing_resources}.'
+            ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
         )
 
         with pipeline_context.instance.compute_log_manager.watch(
