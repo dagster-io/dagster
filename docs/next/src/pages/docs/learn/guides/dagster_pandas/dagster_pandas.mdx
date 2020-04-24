@@ -1,12 +1,10 @@
-Validating Pandas DataFrames with Dagster Types
-===============================================
+import AnchorHeading from 'components/AnchorHeading';
 
-> -   `Creating Dagster DataFrame Types <creating_dagster_dataframes>`{.interpreted-text
->     role="ref"}
-> -   `Dagster DataFrame Level Validation <dataframe_level_validation>`{.interpreted-text
->     role="ref"}
-> -   `Dagster DataFrame Custom Validation <custom_validation>`{.interpreted-text
->     role="ref"}
+# Validating Pandas DataFrames with Dagster Types
+
+- [Creating Dagster DataFrame Types](/docs/learn/guides/dagster_pandas#creating-dagster-dataframe-types)
+- [Dagster DataFrame Level Validation](/docs/learn/guides/dagster_pandas#dagster-dataframe-level-validation)
+- [Dagster DataFrame Custom Validation](/docs/learn/guides/dagster_pandas#dagster-dataframe-custom-validation)
 
 Pandas is a broadly adopted library for data transformations. Dagster
 pandas is a library that provides the ability to easily express custom
@@ -15,8 +13,7 @@ and enable reliable dataframe serialization/deserialization. On top of
 this, the dagster type system generates documentation of your dataframe
 constraints and makes it accessible via Dagit.
 
-Creating Dagster DataFrame Types {#creating_dagster_dataframes}
---------------------------------
+## Creating Dagster DataFrame Types
 
 To create a custom dagster pandas type, use
 `create_dagster_pandas_dataframe_type` and provide a list of
@@ -24,28 +21,29 @@ To create a custom dagster pandas type, use
 constraints. For example, we can construct a custom dataframe type to
 represent a set of e-bike trips in the following way:
 
-::: {.literalinclude caption="core_trip_pipeline.py" lines="9-22" language="python"}
-../../../../../examples/dagster\_examples/dagster\_pandas\_guide/core\_trip\_pipeline.py
-:::
+```python literalinclude
+file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
+caption:core_trip_pipeline.py
+lines:9-22
+```
 
 Once our custom data type is defined, we can use it as the type
 declaration for the inputs / outputs of our solid:
 
-::: {.literalinclude caption="core_trip_pipeline.py" lines="25-31" language="python"}
-../../../../../examples/dagster\_examples/dagster\_pandas\_guide/core\_trip\_pipeline.py
-:::
+```python literalinclude
+file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
+caption:hello_cereal.py
+lines:25-31
+```
 
 By passing in these `PandasColumn` objects, we are expressing the schema
 and constraints we expect our dataframes to follow when dagster performs
 type checks for our solids. Moreover, if we go to the solid viewer, we
 can follow our schema documented in dagit:
 
-::: {.thumbnail}
-tutorial2.png
-:::
+![tutorial2.png](/assets/images/learn/guides/dagster_pandas/tutorial2.png)
 
-Dagster DataFrame Level Validation {#dataframe_level_validation}
-----------------------------------
+## Dagster DataFrame Level Validation
 
 Now that we have a custom dataframe type that performs schema validation
 during a pipeline run, we can start to express dataframe level
@@ -58,16 +56,17 @@ We can do this by providing a list of dataframe constraints to
 
 This looks like:
 
-::: {.literalinclude lines="9-11" caption="shape_constrained_pipeline.py" language="python"}
-../../../../../examples/dagster\_examples/dagster\_pandas\_guide/shape\_constrained\_pipeline.py
-:::
+```python literalinclude
+file:/dagster_examples/dagster_pandas_guide/shape_constrained_pipeline.py
+caption:shape_constrained_pipeline.py
+lines:9-11
+```
 
 If we rerun the above example with this dataframe, nothing should
 change. However, if we pass in 100 to the row count constraint, we can
 watch our pipeline fail that type check.
 
-Dagster DataFrame Summary Statistics {#dataframe_summary_statistics}
-------------------------------------
+## Dagster DataFrame Summary Statistics
 
 Aside from constraint validation, `create_dagster_pandas_dataframe_type`
 also takes in a summary statistics function that emits
@@ -75,33 +74,35 @@ also takes in a summary statistics function that emits
 Since data systems seldom control the quality of the data they receive,
 it becomes important to monitor data as it flows through your systems.
 In complex pipelines, this can help debug and monitor data drift over
-time. Let\'s illustrate how this works in our example:
+time. Let's illustrate how this works in our example:
 
-::: {.literalinclude lines="10-39" caption="summary_stats_pipeline.py" language="python"}
-../../../../../examples/dagster\_examples/dagster\_pandas\_guide/summary\_stats\_pipeline.py
-:::
+```python literalinclude
+file:/dagster_examples/dagster_pandas_guide/summary_stats_pipeline.py
+caption:summary_stats_pipeline.py
+lines:10-39
+```
 
 Now if we run this pipeline in the dagit playground:
 
-::: {.thumbnail}
-tutorial1.png
-:::
+![tutorial1.png](/assets/images/learn/guides/dagster_pandas/tutorial1.png)
 
-Dagster DataFrame Custom Validation {#custom_validation}
------------------------------------
+# Dagster DataFrame Custom Validation
 
 `PandasColumn` is user-pluggable with custom constraints. They can be
 constructed directly and passed a list of `ColumnConstraint` objects.
 
-To tie this back to our example, let\'s say that we want to validate
+To tie this back to our example, let's say that we want to validate
 that the amount paid for a e-bike must be in 5 dollar increments because
-that is the price per mile rounded up. As a result, let\'s implement a
+that is the price per mile rounded up. As a result, let's implement a
 `DivisibleByFiveConstraint`. To do this, all it needs is a
 `markdown_description` for dagit which accepts and renders markdown
 syntax, an `error_description` for error logs, and a validation method
 which throws a `ColumnConstraintViolationException` if a row fails
 validation. This would look like the following:
 
-::: {.literalinclude lines="15-40" caption="custom_column_constraint_pipeline.py" emphasize-lines="22-24" language="python"}
-../../../../../examples/dagster\_examples/dagster\_pandas\_guide/custom\_column\_constraint\_pipeline.py
-:::
+```python literalinclude
+file:/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
+caption:custom_column_constraint_pipeline.py
+lines:15-40
+emphasize-lines:22-24
+```
