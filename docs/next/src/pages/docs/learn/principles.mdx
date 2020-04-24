@@ -1,5 +1,4 @@
-Principles
-==========
+# Principles
 
 Dagster is opinionated about how data pipelines should be built and
 structured. What do we think is important?
@@ -15,9 +14,9 @@ produce the same output. If these computations have external
 dependencies, these should be parametrizable, so that the computations
 may execute in different environments.
 
-> -   See Maxime Beauchemin\'s Medium article on [Functional Data
->     Engineering](https://bit.ly/2LxDgnr) for an excellent overview of
->     functional programing in batch computations.
+> - See Maxime Beauchemin's Medium article on [Functional Data
+>   Engineering](https://bit.ly/2LxDgnr) for an excellent overview of
+>   functional programing in batch computations.
 
 **Self-describing**
 
@@ -25,15 +24,15 @@ Data pipelines should be self-describing, with rich metadata and types.
 Users should be able to approach an unfamiliar pipeline and use tooling
 to inspect it and discover its structure, capabilities, and
 requirements. Pipeline metadata should be co-located with the
-pipeline\'s actual code: documentation and code should be delivered as a
+pipeline's actual code: documentation and code should be delivered as a
 single artifact.
 
 **Compute-agnostic**
 
 Heterogeneity in data pipelines is the norm, rather than the exception.
 Data pipelines are written collaboratively by many people in different
-personas \-- data engineers, machine-learning engineers, data
-scientists, analysts and so on \-- who have different needs and tools,
+personas -- data engineers, machine-learning engineers, data
+scientists, analysts and so on -- who have different needs and tools,
 and are particular about those tools.
 
 Dagster has opinions about best practices for structuring data
@@ -47,7 +46,7 @@ other DSL or library deemed appropriate to the task.
 Testing data pipelines is notoriously difficult. Because testing is so
 difficult, it is often never done, or done poorly. Dagster pipelines are
 designed to be tested. Dagster provides explicit support for pipeline
-authors to manage and maintain multiple execution environments \-- for
+authors to manage and maintain multiple execution environments -- for
 example, unit testing, integration testing, and production environments.
 Dagster can also execute arbitrary subsets and nodes of pipelines, which
 is critical for testability (and useful in operational contexts as
@@ -56,8 +55,8 @@ well).
 **Verifiable data quality**
 
 Testing code is important in data pipelines, but it is not sufficient.
-Data quality tests \-- run during every meaningful stage of computation
-in production \-- are critical to reduce the maintenance burden of data
+Data quality tests -- run during every meaningful stage of computation
+in production -- are critical to reduce the maintenance burden of data
 pipelines. Pipeline authors generally do not have control over their
 input data, and make many implicit assumptions about that data. Data
 formats can also change over time. In order to control this entropy,
@@ -67,8 +66,8 @@ when those assumptions break, the breakage can be reported quickly,
 easily, and with rich metadata and diagnostic information. These
 expectations can also serve as contracts between teams.
 
-> -   See [Down with Pipeline Debt!](https://bit.ly/2mxDS1R) for a
->     primer on pipeline tests for data quality.
+> - See [Down with Pipeline Debt!](https://bit.ly/2mxDS1R) for a
+>   primer on pipeline tests for data quality.
 
 **Gradual, optional typing**
 

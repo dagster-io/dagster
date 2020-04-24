@@ -28,18 +28,23 @@ const transform = () => (tree) => {
         map[val[0]] = val[1];
       }
 
-      const { DAGSTER_REPO } = process.env;
+      const REPO = process.env.DAGSTER_REPO || path.join(__dirname, '../../');
 
-      if (!DAGSTER_REPO) {
+      if (!REPO) {
         node.value =
           'Unable to produce literal include: Environment variable $DAGSTER_REPO is not set';
         return;
       }
 
-      const root = path.join(DAGSTER_REPO, '/examples/dagster_examples/');
+      const root = path.join(REPO, '/examples/');
       const filePath = path.join(root, map.file);
-      const content = fs.readFileSync(filePath).toString();
-      node.value = limitSnippetLines(content, map.lines);
+      try {
+        // TODO: Fix all other literal includes because now they need to include /dagster_examples/ in their paths
+        const content = fs.readFileSync(filePath).toString();
+        node.value = limitSnippetLines(content, map.lines);
+      } catch (error) {
+        node.value = `Unable to read file at: ${filePath}`;
+      }
     }
   };
 
