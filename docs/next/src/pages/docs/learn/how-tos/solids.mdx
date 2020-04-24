@@ -1,205 +1,190 @@
-Solids
-======
+import PyObject from 'components/PyObject';
 
-What is a solid?
-----------------
+# Solids
+
+## What is a solid?
 
 A solid is a functional unit of computation. It has defined inputs and
-outputs, and multiple solids can be wired together to form a
-`Pipeline <dagster.PipelineDefinition>`{.interpreted-text role="class"}
-by defining dependencies between solid inputs and outputs.
+outputs, and multiple solids can be wired together to form a <PyObject module="dagster" object="PipelineDefinition" displayText="Pipeline" /> by
+defining dependencies between solid inputs and outputs.
 
 There are two ways to define a solid:
 
-1.  Wrap a python function in the
-    `@solid <dagster.solid>`{.interpreted-text role="func"} decorator
-    *\[Preferred\]*
-2.  Construct a
-    `SolidDefinition <dagster.SolidDefinition>`{.interpreted-text
-    role="class"} object
+1.  Wrap a python function in the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator
+    _\[Preferred\]_
+2.  Construct a <PyObject module="dagster" object="SolidDefinition"/> object
 
-*Method 1: Using the decorator*
+_Method 1: Using the decorator_
 
-To use the `@solid <dagster.solid>`{.interpreted-text role="func"}
-decorator, wrap a function that takes a `context` argument as the first
+To use the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator,
+wrap a function that takes a `context` argument as the first
 parameter. The context is provides access to system information such as
 resources and solid configuration. See [What is a solid
 context](#what-is-solid-context) for more information.
 
-::: {.literalinclude linenos="" lines="6-8" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lineno-start:
+lines:6-8
+```
 
-*Method 2: Constructing the SolidDefinition object*
+_Method 2: Constructing the SolidDefinition object_
 
-To construct a
-`SolidDefinition <dagster.SolidDefinition>`{.interpreted-text
-role="class"} object, you need to pass the constructor a solid name,
+To construct a <PyObject module="dagster" object="SolidDefinition"/> object,
+you need to pass the constructor a solid name,
 input definitions, output definitions, and a `compute_fn`. The compute
-function is the same as the function you would decorate using the
-`@solid <dagster.solid>`{.interpreted-text role="func"} decorator.
+function is the same as the function you would decorate using the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
 
-::: {.literalinclude linenos="" lines="11-17" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:11-17
+```
 
-What is solid context?
-----------------------
+## What is solid context?
 
 A context object is passed as the first parameter to a solid's
-`compute_fn`. The context is an instance of
-`SystemComputeExecutionContext <dagster.SystemComputeExecutionContext>`{.interpreted-text
-role="class"}, and provides access to:
+`compute_fn`. The context is an instance of <PyObject module="dagster" object="SystemComputeExecutionContext" />,
+and provides access to:
 
--   solid configuration (`context.solid_config`)
--   loggers (`context.log`)
--   resources (`context.resources`)
--   run ID (`context.run_id`)
+- solid configuration (`context.solid_config`)
+- loggers (`context.log`)
+- resources (`context.resources`)
+- run ID (`context.run_id`)
 
 For example, to access the logger
 
-::: {.literalinclude linenos="" lines="20-22" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:20-22
+```
 
-How do I define inputs and outputs for a solid?
------------------------------------------------
+## How do I define inputs and outputs for a solid?
 
-Dependencies between solids in Dagster are defined using
-`InputDefinitions <dagster.InputDefinition>`{.interpreted-text
-role="class"} and
-`OutputDefinitions <dagster.OutputDefinition>`{.interpreted-text
-role="class"}.
-
+Dependencies between solids in Dagster are defined using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" /> and <PyObject module="dagster" object="OutputDefinition" displayText="OutputDefinitions" />.
 Input and Output definitions are:
 
--   Named
--   Optionally typed
--   Optionally have human readable descriptions
+- Named
+- Optionally typed
+- Optionally have human readable descriptions
 
-*Inputs:*
+_Inputs:_
 
-Inputs are arguments to a solid's `compute_fn`, and are specified using
-`InputDefinitions <dagster.InputDefinition>`{.interpreted-text
-role="class"}. They can be passed from outputs of other solids, or
-stubbed using config.
+Inputs are arguments to a solid's `compute_fn`, and are specified using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitionss" />.
+They can be passed from outputs of other solids, or stubbed using config.
 
 A solid only executes once all of its inputs have been resolved, which
 means that the all of the outputs that the solid depends on have been
 successfully yielded.
 
-The argument names of the `compute_fn` must match the
-`InputDefinitions <dagster.InputDefinition>`{.interpreted-text
-role="class"} names, and must be in the same order after the context
-argument.
+The argument names of the `compute_fn` must match the <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitionss" /> names,
+and must be in the same order after the context argument.
 
 For example, if we wanted a solid with two inputs of type `int`:
 
-::: {.literalinclude linenos="" lines="25-27" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:25-27
+```
 
-*Outputs:*
+_Outputs:_
 
 Outputs are yielded from a solid's `compute_fn`. A solid can yield
 multiple outputs.
 
-::: {.literalinclude linenos="" lines="30-36" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:30-36
+```
 
-Using typehints to automatically infer `InputDefinitions` and `OutputDefinitions`
----------------------------------------------------------------------------------
+## Using typehints to automatically infer `InputDefinitions` and `OutputDefinitions`
 
-If you are using python typehints, Dagster can automatically infer
-`InputDefinitions <dagster.InputDefinition>`{.interpreted-text
-role="class"} and
-`OutputDefinitions <dagster.OutputDefinition>`{.interpreted-text
-role="class"}.
+If you are using python typehints, Dagster can automatically infer <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" /> and <PyObject module="dagster" object="OutputDefinition" displayText="OutputDefinitions" />.
 
 The restriction is that you can only use return type hints when
-returning one output. This is because Dagster solids `yield` one or more
-`Outputs <dagster.Output>`{.interpreted-text role="class"}, among other
-events, and returning a single value is equivalent to yielding one
-output.
+returning one output. This is because Dagster solids `yield` one or more <PyObject module="dagster" object="Output" displayText="Outputs" />,
+among other events, and returning a single value is equivalent to yielding one output.
 
-If you need to return *multiple* outputs from a solid, you still need to
-explicitly define
-`OutputDefinitions <dagster.OutputDefinition>`{.interpreted-text
-role="class"}.
+If you need to return _multiple_ outputs from a solid, you still need to
+explicitly define <PyObject module="dagster" object="OutputDefinition" displayText="OutputDefinitions" />.
 
 For example, the following are equivalent:
 
-::: {.literalinclude linenos="" lines="39-49" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:39-49
+```
 
-What does a solid return?
--------------------------
+## What does a solid return?
 
 A solid can yield a stream of events within its `compute_fn` to
 communicate with the Dagster framework. These events must be one of the
 following types:
 
--   `Output <dagster.Output>`{.interpreted-text role="class"}
--   `Materialization <dagster.Materialization>`{.interpreted-text
-    role="class"}
--   `ExpectationResult <dagster.ExpectationResult>`{.interpreted-text
-    role="class"}
--   `TypeCheck <dagster.TypeCheck>`{.interpreted-text role="class"}
--   `Failure <dagster.Failure>`{.interpreted-text role="class"} (meant
-    to be raised)
+- <PyObject module="dagster" object="Output" />
+- <PyObject module="dagster" object="Materialization" />
+- <PyObject module="dagster" object="ExpectationResult" />
+- <PyObject module="dagster" object="TypeCheck" />
+- <PyObject module="dagster" object="Failure" /> (meant to be raised)
 
-To return an output from a solid, simply `yield` an
-`Output <dagster.Output>`{.interpreted-text role="class"} event:
+To return an output from a solid, simply `yield` an <PyObject module="dagster" object="Output" /> event:
 
-::: {.literalinclude linenos="" lines="52-54" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:52-54
+```
 
 Many solids yield only one output, like the example above. Returning a
 single value from a solid's `compute_fn` is equivalent to yielding a
-single `Outputs <dagster.Output>`{.interpreted-text role="class"} event
+single <PyObject module="dagster" object="Output" /> event
 with the default output name "result". For example:
 
-::: {.literalinclude linenos="" lines="57-65" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:57-65
+```
 
-Note that you cannot `yield` a single value without wrapping it
-`Outputs <dagster.Output>`{.interpreted-text role="class"}. This is
-because a solid can yield arbitrarily many values, and there's no way
+Note that you cannot `yield` a single value without wrapping it <PyObject module="dagster" object="Output" />.
+This is because a solid can yield arbitrarily many values, and there's no way
 for the system to tell which one the author of the solid meant to use as
 its output. For example:
 
-::: {.literalinclude linenos="" lines="68-71" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:68-71
+```
 
 If you want to have multiple outputs for a solid, you cannot return
-anything from the solid. Instead, you need to `yield` multiple
-`Outputs <dagster.Output>`{.interpreted-text role="class"} events, each
-of which is named and defined on `output_defs` to prevent ambiguity:
+anything from the solid. Instead, you need to `yield` multiple <PyObject module="dagster" object="Output" /> events,
+each of which is named and defined on `output_defs` to prevent ambiguity:
 
-::: {.literalinclude linenos="" lines="74-77" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:74-77
+```
 
-Programmatically generating solids (Solid factories):
------------------------------------------------------
+## Programmatically generating solids (Solid factories):
 
 You may find the need to create utilities that help generate solids.
 
 Generally, you want to parameterize solid behavior by adding solid
 configuration. You should reach for this pattern if you find yourself
-needing to vary the
-`SolidDefinition <dagster.SolidDefinition>`{.interpreted-text
-role="class"} or `@solid <dagster.solid>`{.interpreted-text role="func"}
-decorator arguments themselves, since they cannot be modified based on
-solid configuration.
+needing to vary the <PyObject module="dagster" object="SolidDefinition" /> or <PyObject module="dagster" object="solid" displayText="@solid" /> decorator
+arguments themselves, since they cannot be modified based on solid configuration.
 
 General solid factory pattern:
 
-::: {.literalinclude linenos="" lines="80-98" language="python"}
-../../../../examples/dagster\_examples/how\_tos/solids.py
-:::
+```python literalinclude
+file:/dagster_examples/how_tos/solids.py
+caption:solids.py
+lines:80-98
+```
