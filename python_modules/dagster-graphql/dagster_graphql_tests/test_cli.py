@@ -98,7 +98,7 @@ START_PIPELINE_EXECUTION_QUERY = '''
 mutation ($executionParams: ExecutionParams!) {
     startPipelineExecution(executionParams: $executionParams) {
         __typename
-        ... on StartPipelineExecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -157,8 +157,7 @@ def test_start_execution_text():
     try:
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename']
-            == 'StartPipelineExecutionSuccess'
+            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
         )
     except Exception as e:
         raise Exception('Failed with {} Exception: {}'.format(result.output, e))
@@ -193,10 +192,7 @@ def test_start_execution_file():
 
     assert result.exit_code == 0
     result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-    assert (
-        result_data['data']['startPipelineExecution']['__typename']
-        == 'StartPipelineExecutionSuccess'
-    )
+    assert result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
 
 def test_start_execution_save_output():
@@ -244,7 +240,7 @@ def test_start_execution_save_output():
             result_data = json.loads(lines[-1])
             assert (
                 result_data['data']['startPipelineExecution']['__typename']
-                == 'StartPipelineExecutionSuccess'
+                == 'StartPipelineRunSuccess'
             )
 
 
@@ -267,10 +263,7 @@ def test_start_execution_predefined():
     result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
     assert result.exit_code == 0
     result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-    assert (
-        result_data['data']['startPipelineExecution']['__typename']
-        == 'StartPipelineExecutionSuccess'
-    )
+    assert result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
 
 def test_start_scheduled_execution_predefined():
@@ -290,7 +283,7 @@ def test_start_scheduled_execution_predefined():
 
         assert (
             result_data['data']['startScheduledExecution']['__typename']
-            == 'StartPipelineExecutionSuccess'
+            == 'StartPipelineRunSuccess'
         )
 
 
@@ -318,8 +311,7 @@ def test_start_execution_predefined_with_logs():
         assert result.exit_code == 0
         result_data = json.loads(result.output.strip('\n').split('\n')[-1])
         assert (
-            result_data['data']['startPipelineExecution']['__typename']
-            == 'StartPipelineExecutionSuccess'
+            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
         )
         run_id = result_data['data']['startPipelineExecution']['run']['runId']
 

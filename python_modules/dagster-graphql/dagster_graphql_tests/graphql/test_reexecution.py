@@ -65,9 +65,7 @@ def test_full_pipeline_reexecution_fs_storage(snapshot):
         },
     )
 
-    assert (
-        result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    )
+    assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
     snapshot.assert_match(sanitize_result_data(result_one.data))
 
@@ -92,7 +90,7 @@ def test_full_pipeline_reexecution_fs_storage(snapshot):
     )
 
     query_result = result_two.data['startPipelineReexecution']
-    assert query_result['__typename'] == 'StartPipelineReexecutionSuccess'
+    assert query_result['__typename'] == 'StartPipelineRunSuccess'
     assert query_result['run']['rootRunId'] == run_id
     assert query_result['run']['parentRunId'] == run_id
 
@@ -113,9 +111,7 @@ def test_full_pipeline_reexecution_in_memory_storage(snapshot):
         },
     )
 
-    assert (
-        result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    )
+    assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
     snapshot.assert_match(sanitize_result_data(result_one.data))
 
@@ -140,7 +136,7 @@ def test_full_pipeline_reexecution_in_memory_storage(snapshot):
     )
 
     query_result = result_two.data['startPipelineReexecution']
-    assert query_result['__typename'] == 'StartPipelineReexecutionSuccess'
+    assert query_result['__typename'] == 'StartPipelineRunSuccess'
     assert query_result['run']['rootRunId'] == run_id
     assert query_result['run']['parentRunId'] == run_id
 
@@ -176,7 +172,7 @@ def test_pipeline_reexecution_successful_launch():
         },
     )
 
-    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
+    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
     assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
     test_queue.run_one(instance)
     result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
@@ -201,9 +197,7 @@ def test_pipeline_reexecution_successful_launch():
             }
         },
     )
-    assert (
-        result.data['launchPipelineReexecution']['__typename'] == 'LaunchPipelineReexecutionSuccess'
-    )
+    assert result.data['launchPipelineReexecution']['__typename'] == 'LaunchPipelineRunSuccess'
 
     test_queue.run_one(instance)
 

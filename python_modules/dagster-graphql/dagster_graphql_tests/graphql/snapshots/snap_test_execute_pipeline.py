@@ -6,9 +6,13 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_pipeline_reexecution_info_query 1'] = [
+    'sum_sq_solid.compute'
+]
+
 snapshots['test_successful_pipeline_reexecution 1'] = {
     'startPipelineExecution': {
-        '__typename': 'StartPipelineExecutionSuccess',
+        '__typename': 'StartPipelineRunSuccess',
         'run': {
             'logs': {
                 'nodes': [
@@ -182,7 +186,7 @@ snapshots['test_successful_pipeline_reexecution 1'] = {
 
 snapshots['test_successful_pipeline_reexecution 2'] = {
     'startPipelineExecution': {
-        '__typename': 'StartPipelineExecutionSuccess',
+        '__typename': 'StartPipelineRunSuccess',
         'run': {
             'logs': {
                 'nodes': [
@@ -308,7 +312,3 @@ snapshots['test_successful_pipeline_reexecution 2'] = {
         }
     }
 }
-
-snapshots['test_pipeline_reexecution_info_query 1'] = [
-    'sum_sq_solid.compute'
-]

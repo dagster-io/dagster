@@ -35,7 +35,7 @@ def sync_execute_get_payload(variables, context=None):
 
     assert result.data
 
-    if result.data['startPipelineExecution']['__typename'] != 'StartPipelineExecutionSuccess':
+    if result.data['startPipelineExecution']['__typename'] != 'StartPipelineRunSuccess':
         raise Exception(result.data)
     run_id = result.data['startPipelineExecution']['run']['runId']
 

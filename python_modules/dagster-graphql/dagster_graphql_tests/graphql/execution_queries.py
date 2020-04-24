@@ -123,7 +123,7 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
                 stack
             }
         }
-        ... on LaunchPipelineExecutionSuccess {
+        ... on LaunchPipelineRunSuccess {
             run {
                 runId
                 pipeline {
@@ -153,7 +153,7 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
 START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
     fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
         __typename
-        ... on StartPipelineExecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -195,7 +195,7 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
 START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
     fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
         __typename
-        ... on StartPipelineExecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -239,7 +239,7 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
 START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
     fragment startPipelineReexecutionResultFragment on StartPipelineReexecutionResult {
         __typename
-        ... on StartPipelineReexecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
@@ -378,7 +378,7 @@ mutation (
         executionParams: $executionParams
     ) {
         __typename
-        ... on StartPipelineExecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 pipeline { ...on PipelineReference { name } }
                 logs {
@@ -433,7 +433,7 @@ mutation (
         executionParams: $executionParams
     ) {
         __typename
-        ... on StartPipelineReexecutionSuccess {
+        ... on StartPipelineRunSuccess {
             run {
                 pipeline { ...on PipelineReference { name } }
                 logs {

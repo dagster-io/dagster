@@ -47,7 +47,7 @@ def test_basic_start_pipeline_execution():
     assert result.data
 
     # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
     assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
     assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
@@ -65,7 +65,7 @@ def test_basic_start_pipeline_execution_with_preset():
     assert result.data
 
     # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
     assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
     assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
@@ -85,7 +85,7 @@ def test_basic_start_pipeline_execution_with_pipeline_def_tags():
     ]
 
     # just test existence
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
     assert uuid.UUID(result.data['startPipelineExecution']['run']['runId'])
     assert (
         result.data['startPipelineExecution']['run']['pipeline']['name'] == 'hello_world_with_tags'
@@ -412,9 +412,7 @@ def test_successful_pipeline_reexecution(snapshot):
         },
     )
 
-    assert (
-        result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-    )
+    assert result_one.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
     snapshot.assert_match(sanitize_result_data(result_one.data))
 
@@ -450,7 +448,7 @@ def test_successful_pipeline_reexecution(snapshot):
     )
 
     query_result = result_two.data['startPipelineExecution']
-    assert query_result['__typename'] == 'StartPipelineExecutionSuccess'
+    assert query_result['__typename'] == 'StartPipelineRunSuccess'
     logs = query_result['run']['logs']['nodes']
 
     assert isinstance(logs, list)
@@ -578,7 +576,7 @@ def test_basic_start_pipeline_execution_with_tags():
 
     assert not result.errors
     assert result.data
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
     run = result.data['startPipelineExecution']['run']
     run_id = run['runId']
@@ -648,9 +646,7 @@ def test_start_pipeline_execution_with_start_disabled():
     )
 
     assert result.data
-    assert (
-        result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionDisabledError'
-    )
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunDisabledError'
 
 
 def test_start_pipeline_execution_for_created_run():
@@ -669,7 +665,7 @@ def test_start_pipeline_execution_for_created_run():
     assert result.data
     assert (
         result.data['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineExecutionSuccess'
+        == 'StartPipelineRunSuccess'
     )
 
 

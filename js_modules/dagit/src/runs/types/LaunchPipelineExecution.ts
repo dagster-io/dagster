@@ -13,20 +13,20 @@ export interface LaunchPipelineExecution_launchPipelineExecution_RunLauncherNotD
   __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess_run_pipeline {
+export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess_run {
+export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess_run_pipeline;
+  pipeline: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run_pipeline;
 }
 
-export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess {
-  __typename: "LaunchPipelineExecutionSuccess";
-  run: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess_run;
+export interface LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess {
+  __typename: "LaunchPipelineRunSuccess";
+  run: LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess_run;
 }
 
 export interface LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError {
@@ -50,7 +50,7 @@ export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_RunLauncherNotDefinedError | LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineExecutionSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
+export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_RunLauncherNotDefinedError | LaunchPipelineExecution_launchPipelineExecution_LaunchPipelineRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_PipelineConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;
 
 export interface LaunchPipelineExecution {
   launchPipelineExecution: LaunchPipelineExecution_launchPipelineExecution;

@@ -48,20 +48,11 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         check.str_param(execution_metadata.root_run_id, 'root_run_id')
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
-    error_type = (
-        'StartPipelineExecutionDisabledError'
-        if not is_reexecuted
-        else 'DauphinStartPipelineReexecutionDisabledError'
-    )
-    success_type = (
-        'StartPipelineExecutionSuccess' if not is_reexecuted else 'StartPipelineReexecutionSuccess'
-    )
-
     instance = graphene_info.context.instance
 
     execution_manager_settings = instance.dagit_settings.get('execution_manager')
     if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named(error_type)()
+        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
 
@@ -111,7 +102,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
     )
 
-    return graphene_info.schema.type_named(success_type)(
+    return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )
 
@@ -132,7 +123,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
 
     execution_manager_settings = instance.dagit_settings.get('execution_manager')
     if execution_manager_settings and execution_manager_settings.get('disabled'):
-        return graphene_info.schema.type_named('StartPipelineExecutionDisabledError')()
+        return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
@@ -188,6 +179,6 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
     )
 
-    return graphene_info.schema.type_named('StartPipelineExecutionSuccess')(
+    return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
     )

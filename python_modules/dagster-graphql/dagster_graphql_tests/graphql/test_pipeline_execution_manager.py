@@ -43,7 +43,7 @@ def test_term_event_lifecycle():
     # Make sure pipeline ran successfully
     assert not result.errors
     assert result.data
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
+    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
 
     # Clean up
     execution_manager.join()

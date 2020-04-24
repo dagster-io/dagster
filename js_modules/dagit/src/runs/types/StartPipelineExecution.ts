@@ -9,31 +9,31 @@ import { ExecutionParams } from "./../../types/globalTypes";
 // GraphQL mutation operation: StartPipelineExecution
 // ====================================================
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionDisabledError {
-  __typename: "StartPipelineExecutionDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunDisabledError {
+  __typename: "StartPipelineRunDisabledError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline {
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_tags {
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run {
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_pipeline;
-  tags: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run_tags[];
+  pipeline: StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_pipeline;
+  tags: StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run_tags[];
 }
 
-export interface StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess {
-  __typename: "StartPipelineExecutionSuccess";
-  run: StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess_run;
+export interface StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess {
+  __typename: "StartPipelineRunSuccess";
+  run: StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess_run;
 }
 
 export interface StartPipelineExecution_startPipelineExecution_PipelineNotFoundError {
@@ -57,7 +57,7 @@ export interface StartPipelineExecution_startPipelineExecution_PythonError {
   stack: string[];
 }
 
-export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_StartPipelineExecutionDisabledError | StartPipelineExecution_startPipelineExecution_StartPipelineExecutionSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid | StartPipelineExecution_startPipelineExecution_PythonError;
+export type StartPipelineExecution_startPipelineExecution = StartPipelineExecution_startPipelineExecution_StartPipelineRunDisabledError | StartPipelineExecution_startPipelineExecution_StartPipelineRunSuccess | StartPipelineExecution_startPipelineExecution_PipelineNotFoundError | StartPipelineExecution_startPipelineExecution_PipelineConfigValidationInvalid | StartPipelineExecution_startPipelineExecution_PythonError;
 
 export interface StartPipelineExecution {
   startPipelineExecution: StartPipelineExecution_startPipelineExecution;

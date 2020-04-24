@@ -52,9 +52,7 @@ def test_basic_cancellation():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
         run_id = result.data['startPipelineExecution']['run']['runId']
 
         assert run_id
@@ -99,9 +97,7 @@ def test_terminate_failed():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startPipelineExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
         run_id = result.data['startPipelineExecution']['run']['runId']
         # ensure the execution has happened
         while not os.path.exists(path):

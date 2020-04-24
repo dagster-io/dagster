@@ -13,22 +13,22 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_RunLauncher
   __typename: "RunLauncherNotDefinedError" | "InvalidStepError" | "InvalidOutputError" | "PipelineRunConflict";
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess_run_pipeline {
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run_pipeline {
   __typename: "Pipeline" | "UnknownPipeline";
   name: string;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess_run {
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run {
   __typename: "PipelineRun";
   runId: string;
-  pipeline: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess_run_pipeline;
+  pipeline: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run_pipeline;
   rootRunId: string | null;
   parentRunId: string | null;
 }
 
-export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess {
-  __typename: "LaunchPipelineReexecutionSuccess";
-  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess_run;
+export interface LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess {
+  __typename: "LaunchPipelineRunSuccess";
+  run: LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess_run;
 }
 
 export interface LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError {
@@ -52,7 +52,7 @@ export interface LaunchPipelineReexecution_launchPipelineReexecution_PythonError
   stack: string[];
 }
 
-export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_RunLauncherNotDefinedError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineReexecutionSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
+export type LaunchPipelineReexecution_launchPipelineReexecution = LaunchPipelineReexecution_launchPipelineReexecution_RunLauncherNotDefinedError | LaunchPipelineReexecution_launchPipelineReexecution_LaunchPipelineRunSuccess | LaunchPipelineReexecution_launchPipelineReexecution_PipelineNotFoundError | LaunchPipelineReexecution_launchPipelineReexecution_PipelineConfigValidationInvalid | LaunchPipelineReexecution_launchPipelineReexecution_PythonError;
 
 export interface LaunchPipelineReexecution {
   launchPipelineReexecution: LaunchPipelineReexecution_launchPipelineReexecution;

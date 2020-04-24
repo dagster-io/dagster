@@ -105,7 +105,7 @@ def test_k8s_run_launcher(dagster_instance):  # pylint: disable=redefined-outer-
     assert result['data']
     assert (
         result['data']['startPipelineExecutionForCreatedRun']['__typename']
-        == 'StartPipelineExecutionSuccess'
+        == 'StartPipelineRunSuccess'
     )
 
 

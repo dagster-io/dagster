@@ -38,17 +38,11 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         check.str_param(execution_metadata.root_run_id, 'root_run_id')
         check.str_param(execution_metadata.parent_run_id, 'parent_run_id')
 
-    error_type = 'RunLauncherNotDefinedError'
-    success_type = (
-        'LaunchPipelineExecutionSuccess'
-        if not is_reexecuted
-        else 'LaunchPipelineReexecutionSuccess'
-    )
     instance = graphene_info.context.instance
     run_launcher = instance.run_launcher
 
     if run_launcher is None:
-        return graphene_info.schema.type_named(error_type)()
+        return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
 
     pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
 
@@ -76,6 +70,6 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     run = instance.launch_run(pipeline_run)
 
-    return graphene_info.schema.type_named(success_type)(
+    return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
     )

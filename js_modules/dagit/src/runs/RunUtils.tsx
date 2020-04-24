@@ -56,8 +56,8 @@ export function handleExecutionResult(
     : (result.data as LaunchPipelineExecution).launchPipelineExecution;
 
   if (
-    obj.__typename === "LaunchPipelineExecutionSuccess" ||
-    obj.__typename === "StartPipelineExecutionSuccess"
+    obj.__typename === "LaunchPipelineRunSuccess" ||
+    obj.__typename === "StartPipelineRunSuccess"
   ) {
     const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
@@ -69,7 +69,7 @@ export function handleExecutionResult(
     console.log(obj);
     const message = `${obj.message}`;
     showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineExecutionDisabledError") {
+  } else if (obj.__typename === "StartPipelineRunDisabledError") {
     const message = `Your instance has been configured to disable local execution.  Please check
     the run launcher configuration on your dagster instance for more options.`;
     showCustomAlert({ body: message });
@@ -103,8 +103,8 @@ export function handleReexecutionResult(
     : (result.data as LaunchPipelineReexecution).launchPipelineReexecution;
 
   if (
-    obj.__typename === "LaunchPipelineReexecutionSuccess" ||
-    obj.__typename === "StartPipelineReexecutionSuccess"
+    obj.__typename === "LaunchPipelineRunSuccess" ||
+    obj.__typename === "StartPipelineRunSuccess"
   ) {
     const url = `/runs/${obj.run.pipeline.name}/${obj.run.runId}`;
     if (opts.openInNewWindow) {
@@ -116,7 +116,7 @@ export function handleReexecutionResult(
     console.log(obj);
     const message = `${obj.message}`;
     showCustomAlert({ body: message });
-  } else if (obj.__typename === "StartPipelineReexecutionDisabledError") {
+  } else if (obj.__typename === "StartPipelineRunDisabledError") {
     const message = `Your instance has been configured to disable local execution.  Please check
     the run launcher configuration on your dagster instance for more options.`;
     showCustomAlert({ body: message });
@@ -241,7 +241,7 @@ export const START_PIPELINE_EXECUTION_MUTATION = gql`
   mutation StartPipelineExecution($executionParams: ExecutionParams!) {
     startPipelineExecution(executionParams: $executionParams) {
       __typename
-      ... on StartPipelineExecutionSuccess {
+      ... on StartPipelineRunSuccess {
         run {
           runId
           pipeline {
@@ -273,7 +273,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
   mutation LaunchPipelineExecution($executionParams: ExecutionParams!) {
     launchPipelineExecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineExecutionSuccess {
+      ... on LaunchPipelineRunSuccess {
         run {
           runId
           pipeline {
@@ -335,7 +335,7 @@ export const START_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation StartPipelineReexecution($executionParams: ExecutionParams!) {
     startPipelineReexecution(executionParams: $executionParams) {
       __typename
-      ... on StartPipelineReexecutionSuccess {
+      ... on StartPipelineRunSuccess {
         run {
           runId
           pipeline {
@@ -369,7 +369,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
   mutation LaunchPipelineReexecution($executionParams: ExecutionParams!) {
     launchPipelineReexecution(executionParams: $executionParams) {
       __typename
-      ... on LaunchPipelineReexecutionSuccess {
+      ... on LaunchPipelineRunSuccess {
         run {
           runId
           pipeline {

@@ -64,7 +64,7 @@ def test_run_launcher():
         },
     )
 
-    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
+    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
     assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
 
     run_id = result.data['launchPipelineExecution']['run']['runId']

@@ -175,13 +175,13 @@ class DauphinRunLauncherNotDefinedError(dauphin.ObjectType):
         self.message = 'RunLauncher is not defined for the current instance.'
 
 
-class DauphinStartPipelineExecutionDisabledError(dauphin.ObjectType):
+class DauphinStartPipelineRunDisabledError(dauphin.ObjectType):
     class Meta(object):
-        name = 'StartPipelineExecutionDisabledError'
+        name = 'StartPipelineRunDisabledError'
         interfaces = (DauphinError,)
 
     def __init__(self):
-        super(DauphinStartPipelineExecutionDisabledError, self).__init__()
+        super(DauphinStartPipelineRunDisabledError, self).__init__()
         self.message = (
             'Starting pipeline execution is disabled on this instance.  Runs can only be initiated '
             'using the configured run launcher.'
@@ -450,16 +450,16 @@ class DauphinExecutionPlanResult(dauphin.Union):
         )
 
 
-class DauphinStartPipelineExecutionSuccess(dauphin.ObjectType):
+class DauphinStartPipelineRunSuccess(dauphin.ObjectType):
     class Meta(object):
-        name = 'StartPipelineExecutionSuccess'
+        name = 'StartPipelineRunSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
 
-class DauphinLaunchPipelineExecutionSuccess(dauphin.ObjectType):
+class DauphinLaunchPipelineRunSuccess(dauphin.ObjectType):
     class Meta(object):
-        name = 'LaunchPipelineExecutionSuccess'
+        name = 'LaunchPipelineRunSuccess'
 
     run = dauphin.Field(dauphin.NonNull('PipelineRun'))
 
@@ -479,33 +479,6 @@ class DauphinInvalidOutputError(dauphin.ObjectType):
     invalid_output_name = dauphin.NonNull(dauphin.String)
 
 
-class DauphinStartPipelineReexecutionSuccess(dauphin.ObjectType):
-    class Meta(object):
-        name = 'StartPipelineReexecutionSuccess'
-
-    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
-
-
-class DauphinStartPipelineReexecutionDisabledError(dauphin.ObjectType):
-    class Meta(object):
-        name = 'StartPipelineReexecutionDisabledError'
-        interfaces = (DauphinError,)
-
-    def __init__(self):
-        super(DauphinStartPipelineReexecutionDisabledError, self).__init__()
-        self.message = (
-            'Starting pipeline re-execution is disabled on this instance. Runs can only be initiated '
-            'using the configured run launcher.'
-        )
-
-
-class DauphinLaunchPipelineReexecutionSuccess(dauphin.ObjectType):
-    class Meta(object):
-        name = 'LaunchPipelineReexecutionSuccess'
-
-    run = dauphin.Field(dauphin.NonNull('PipelineRun'))
-
-
 class DauphinPipelineRunConflict(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineRunConflict'
@@ -521,23 +494,13 @@ pipeline_execution_error_types = (
     DauphinPythonError,
 )
 
-start_pipeline_execution_result_types = (
-    DauphinStartPipelineExecutionSuccess,
-    DauphinStartPipelineExecutionDisabledError,
+start_pipeline_run_result_types = (
+    DauphinStartPipelineRunSuccess,
+    DauphinStartPipelineRunDisabledError,
 )
 
-launch_pipeline_execution_result_types = (
-    DauphinLaunchPipelineExecutionSuccess,
-    DauphinRunLauncherNotDefinedError,
-)
-
-start_pipeline_reexecution_result_types = (
-    DauphinStartPipelineReexecutionSuccess,
-    DauphinStartPipelineReexecutionDisabledError,
-)
-
-launch_pipeline_reexecution_result_types = (
-    DauphinLaunchPipelineReexecutionSuccess,
+launch_pipeline_run_result_types = (
+    DauphinLaunchPipelineRunSuccess,
     DauphinRunLauncherNotDefinedError,
 )
 
@@ -552,14 +515,14 @@ class DauphinStartPipelineExecution(dauphin.Interface):
 class DauphinStartPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'StartPipelineExecutionResult'
-        types = start_pipeline_execution_result_types + pipeline_execution_error_types
+        types = start_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinStartPipelineExecutionForCreatedRunResult(dauphin.Union):
     class Meta(object):
         name = 'StartPipelineExecutionForCreatedRunResult'
         types = (
-            start_pipeline_execution_result_types
+            start_pipeline_run_result_types
             + pipeline_execution_error_types
             + (DauphinPipelineRunNotFoundError,)
         )
@@ -568,7 +531,7 @@ class DauphinStartPipelineExecutionForCreatedRunResult(dauphin.Union):
 class DauphinLaunchPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = 'LaunchPipelineExecutionResult'
-        types = launch_pipeline_execution_result_types + pipeline_execution_error_types
+        types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinScheduledExecutionBlocked(dauphin.ObjectType):
@@ -587,8 +550,8 @@ class DauphinStartScheduledExecutionResult(dauphin.Union):
                 DauphinSchedulerNotDefinedError,
                 DauphinScheduledExecutionBlocked,
             )
-            + start_pipeline_execution_result_types
-            + launch_pipeline_execution_result_types
+            + start_pipeline_run_result_types
+            + launch_pipeline_run_result_types
             + pipeline_execution_error_types
         )
 
@@ -618,13 +581,13 @@ class DauphinExecutePlanResult(dauphin.Union):
 class DauphinStartPipelineReexecutionResult(dauphin.Union):
     class Meta(object):
         name = 'StartPipelineReexecutionResult'
-        types = start_pipeline_reexecution_result_types + pipeline_execution_error_types
+        types = start_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinLaunchPipelineReexecutionResult(dauphin.Union):
     class Meta(object):
         name = 'LaunchPipelineReexecutionResult'
-        types = launch_pipeline_reexecution_result_types + pipeline_execution_error_types
+        types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
 
 class DauphinConfigTypeNotFoundError(dauphin.ObjectType):

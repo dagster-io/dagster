@@ -88,9 +88,7 @@ def test_basic_start_scheduled_execution():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -122,9 +120,7 @@ def test_basic_start_scheduled_execution_with_run_launcher():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineRunSuccess'
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -156,9 +152,7 @@ def test_basic_start_scheduled_execution_with_environment_dict_fn():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -207,9 +201,7 @@ def test_partition_based_execution():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
@@ -253,9 +245,7 @@ def test_partition_based_custom_selector():
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name']
@@ -298,9 +288,7 @@ def test_partition_based_decorator():
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
 
 
 @pytest.mark.parametrize(
@@ -325,9 +313,7 @@ def test_solid_subset_schedule_decorator(schedule_name):
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
         execution_step_names = [
             log['step']['key']
             for log in result.data['startScheduledExecution']['run']['logs']['nodes']
@@ -351,9 +337,7 @@ def test_partition_based_multi_mode_decorator():
 
         assert not result.errors
         assert result.data
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
 
 
 # Tests for ticks and execution user error boundary
@@ -624,9 +608,7 @@ def test_tagged_pipeline_schedule():
         )
 
         assert not result.errors
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
         )
@@ -651,9 +633,7 @@ def test_tagged_pipeline_override_schedule():
         )
 
         assert not result.errors
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'StartPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
         assert (
             result.data['startScheduledExecution']['run']['pipeline']['name'] == 'tagged_pipeline'
         )
@@ -685,9 +665,7 @@ def test_tagged_pipeline_scheduled_execution_with_run_launcher():
         assert result.data
 
         # just test existence
-        assert (
-            result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineExecutionSuccess'
-        )
+        assert result.data['startScheduledExecution']['__typename'] == 'LaunchPipelineRunSuccess'
 
         assert uuid.UUID(result.data['startScheduledExecution']['run']['runId'])
         assert (

@@ -67,7 +67,4 @@ def test_schedules():
 
             assert not result.errors
             assert result.data
-            assert (
-                result.data['startScheduledExecution']['__typename']
-                == 'StartPipelineExecutionSuccess'
-            )
+            assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'

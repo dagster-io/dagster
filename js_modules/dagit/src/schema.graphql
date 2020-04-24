@@ -436,15 +436,11 @@ interface ISolidDefinition {
   requiredResources: [ResourceRequirement!]!
 }
 
-union LaunchPipelineExecutionResult = LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
-type LaunchPipelineExecutionSuccess {
-  run: PipelineRun!
-}
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
-union LaunchPipelineReexecutionResult = LaunchPipelineReexecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type LaunchPipelineReexecutionSuccess {
+type LaunchPipelineRunSuccess {
   run: PipelineRun!
 }
 
@@ -1138,29 +1134,21 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
-type StartPipelineExecutionDisabledError implements Error {
+union StartPipelineExecutionForCreatedRunResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
+
+union StartPipelineExecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+
+union StartPipelineReexecutionResult = StartPipelineRunSuccess | StartPipelineRunDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+
+type StartPipelineRunDisabledError implements Error {
   message: String!
 }
 
-union StartPipelineExecutionForCreatedRunResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PipelineRunNotFoundError
-
-union StartPipelineExecutionResult = StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type StartPipelineExecutionSuccess {
+type StartPipelineRunSuccess {
   run: PipelineRun!
 }
 
-type StartPipelineReexecutionDisabledError implements Error {
-  message: String!
-}
-
-union StartPipelineReexecutionResult = StartPipelineReexecutionSuccess | StartPipelineReexecutionDisabledError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
-
-type StartPipelineReexecutionSuccess {
-  run: PipelineRun!
-}
-
-union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineExecutionSuccess | StartPipelineExecutionDisabledError | LaunchPipelineExecutionSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
+union StartScheduledExecutionResult = ScheduleNotFoundError | SchedulerNotDefinedError | ScheduledExecutionBlocked | StartPipelineRunSuccess | StartPipelineRunDisabledError | LaunchPipelineRunSuccess | RunLauncherNotDefinedError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError
 
 interface StepEvent {
   step: ExecutionStep

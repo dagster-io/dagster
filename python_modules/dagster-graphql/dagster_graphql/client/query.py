@@ -195,7 +195,7 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
     message
     stack
   }
-	... on StartPipelineExecutionSuccess {
+	... on StartPipelineRunSuccess {
 		run {
 			runId
 			status
@@ -257,7 +257,7 @@ fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecu
     message
     stack
   }
-	... on StartPipelineExecutionSuccess {
+	... on StartPipelineRunSuccess {
 		run {
 			runId
 			status
@@ -364,7 +364,7 @@ mutation(
         stack
       }
     }
-    ... on StartPipelineExecutionSuccess {
+    ... on StartPipelineRunSuccess {
       run {
         runId
         status
@@ -376,7 +376,7 @@ mutation(
     ... on RunLauncherNotDefinedError {
       message
     }
-    ... on LaunchPipelineExecutionSuccess {
+    ... on LaunchPipelineRunSuccess {
       run {
         runId
         status
@@ -542,7 +542,7 @@ mutation(
       message
       stack
     }
-    ... on LaunchPipelineExecutionSuccess {
+    ... on LaunchPipelineRunSuccess {
       run {
         runId
         status
@@ -594,7 +594,7 @@ mutation(
       message
       stack
     }
-    ... on LaunchPipelineReexecutionSuccess {
+    ... on LaunchPipelineRunSuccess {
       run {
         runId
         status
