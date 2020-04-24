@@ -1,6 +1,7 @@
 import json
 import os
 
+import pytest
 import yaml
 from click.testing import CliRunner
 
@@ -22,6 +23,9 @@ def path_to_tutorial_file(path):
     )
 
 
+@pytest.mark.skipif(
+    os.name == 'nt', reason="TemporaryDirectory disabled for win because of event.log contention"
+)
 def test_dagster_telemetry_enabled(caplog):
     with seven.TemporaryDirectory() as temp_dir:
         with environ({'DAGSTER_HOME': temp_dir}):
@@ -49,6 +53,9 @@ def test_dagster_telemetry_enabled(caplog):
                 assert result.exit_code == 0
 
 
+@pytest.mark.skipif(
+    os.name == 'nt', reason="TemporaryDirectory disabled for win because of event.log contention"
+)
 def test_dagster_telemetry_disabled(caplog):
     with seven.TemporaryDirectory() as temp_dir:
         with environ({'DAGSTER_HOME': temp_dir}):
@@ -74,6 +81,9 @@ def test_dagster_telemetry_disabled(caplog):
             assert result.exit_code == 0
 
 
+@pytest.mark.skipif(
+    os.name == 'nt', reason="TemporaryDirectory disabled for win because of event.log contention"
+)
 def test_dagster_telemetry_unset(caplog):
     with seven.TemporaryDirectory() as temp_dir:
         with environ({'DAGSTER_HOME': temp_dir}):

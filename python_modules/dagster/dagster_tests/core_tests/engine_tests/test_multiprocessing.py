@@ -1,4 +1,3 @@
-import os
 import time
 
 from dagster import (
@@ -12,10 +11,10 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
-    seven,
     solid,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.utils import safe_tempfile_path
 
 
 def test_diamond_simple_execution():
@@ -182,9 +181,10 @@ def define_subdag_pipeline():
         done = False
         while not done:
             time.sleep(0.15)
-            if os.path.isfile(context.solid_config):
-                done = True
-                time.sleep(0.15)
+            with open(context.solid_config, 'r') as fd:
+                if fd.read() == '111':
+                    done = True
+                    time.sleep(1)
 
     @solid(
         input_defs=[InputDefinition('after', Nothing)],
@@ -197,33 +197,29 @@ def define_subdag_pipeline():
         return
 
     @pipeline
-    def seperate():
+    def separate():
         waiter()
         counter.alias('counter_3')(counter.alias('counter_2')(counter.alias('counter_1')()))
 
-    return seperate
+    return separate
 
 
-def test_seperate_sub_dags():
+def test_separate_sub_dags():
     pipe = ExecutionTargetHandle.for_pipeline_python_file(
         __file__, 'define_subdag_pipeline'
     ).build_pipeline_definition()
 
-    with seven.TemporaryDirectory() as tempdir:
-        file_one = os.path.join(tempdir, 'foo_one')
-        file_two = os.path.join(tempdir, 'foo_two')
-        file_three = os.path.join(tempdir, 'foo_three')
-
+    with safe_tempfile_path() as filename:
         result = execute_pipeline(
             pipe,
             environment_dict={
                 'storage': {'filesystem': {}},
                 'execution': {'multiprocess': {'config': {'max_concurrent': 4}}},
                 'solids': {
-                    'waiter': {'config': file_three},
-                    'counter_1': {'config': file_one},
-                    'counter_2': {'config': file_two},
-                    'counter_3': {'config': file_three},
+                    'waiter': {'config': filename},
+                    'counter_1': {'config': filename},
+                    'counter_2': {'config': filename},
+                    'counter_3': {'config': filename},
                 },
             },
             instance=DagsterInstance.local_temp(),

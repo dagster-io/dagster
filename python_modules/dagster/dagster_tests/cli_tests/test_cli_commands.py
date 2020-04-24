@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import string
 from contextlib import contextmanager
 
@@ -878,6 +879,9 @@ def test_schedules_restart_all(_patch_scheduler_instance):
     assert result.output == 'Restarted all running schedules for repository bar\n'
 
 
+@pytest.mark.skipif(
+    os.name == 'nt', reason="multiproc directory test disabled for windows because of fs contention"
+)
 def test_multiproc():
     with seven.TemporaryDirectory() as temp:
         runner = CliRunner(env={'DAGSTER_HOME': temp})
