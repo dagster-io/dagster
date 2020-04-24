@@ -58,6 +58,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-snowflake \
 				-e python_modules/libraries/dagster-ssh \
 				-e python_modules/libraries/dagster-twilio \
+				-e python_modules/libraries/dagstermill \
 				-e python_modules/libraries/lakehouse \
 				-e python_modules/automation \
 				-r python_modules/dagster/dev-requirements.txt \
