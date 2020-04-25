@@ -241,10 +241,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return job
 
     def launch_run(self, instance, run):
-        check.inst_param(run, 'run', PipelineRun)
         check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(run, 'run', PipelineRun)
 
-        run = instance.get_run_by_id(run.run_id)
         job = self.construct_job(run)
         api_response = self._kube_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         # FIXME add an event here

@@ -415,7 +415,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
         tags=run_tags,
     )
 
-    return instance.launch_run(pipeline_run)
+    return instance.launch_run(pipeline_run.run_id)
 
 
 @click.command(
@@ -702,7 +702,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
                 mode=cli_args.get('mode') or 'default',
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
-            instance.launch_run(run)
+            instance.launch_run(run.run_id)
             # Remove once we can handle synchronous execution... currently limited by sqlite
             time.sleep(0.1)
 

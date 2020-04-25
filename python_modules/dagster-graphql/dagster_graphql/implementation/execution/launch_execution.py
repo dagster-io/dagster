@@ -74,7 +74,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         )
     )
 
-    run = instance.launch_run(pipeline_run)
+    run = instance.launch_run(pipeline_run.run_id)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)
@@ -133,7 +133,7 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
         )
 
     # This can potentially fail, which leaves the run in a bad state
-    run = instance.launch_run(pipeline_run)
+    run = instance.launch_run(pipeline_run.run_id)
 
     return graphene_info.schema.type_named('LaunchPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(run)

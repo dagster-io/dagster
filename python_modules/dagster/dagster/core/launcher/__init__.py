@@ -6,14 +6,19 @@ import six
 class RunLauncher(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def launch_run(self, instance, run):
-        '''Launch a run on a remote instance.
-        
-        This method should kick off the execution of the run. This method may emit engine events.
+        '''Launch a run.
+
+        This method should begin the execution of the specified run, and may emit engine events.
+        Runs should be created in the instance (e.g., by calling
+        ``DagsterInstance.get_or_create_run()``) *before* this method is called, and
+        should be in the ``PipelineRunStatus.NOT_STARTED`` state. Typically, this method will not
+        be invoked directly, but should be invoked through ``DagsterInstance.launch_run()``.
         
         Args:
-            instance (DagsterInstance): The instance to use to launch the run.
-            run (PipelineRun): The run to launch.
+            instance (DagsterInstance): The instance in which the run has been created.
+            run (PipelineRun): The PipelineRun to launch.
 
         Returns:
-            PipelineRun: The newly created run.
+            PipelineRun: The launched run. This should be in the ``PipelineRunStatus.STARTED``
+                state, or, if a synchronous failure occurs, the ``PipelineRunStatus.FAILURE`` state.
         '''

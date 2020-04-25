@@ -95,7 +95,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=
         pipeline_name=pipeline_name, environment_dict=environment_dict, mode='default'
     )
 
-    dagster_instance.launch_run(run)
+    dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
         job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
@@ -115,7 +115,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
         pipeline_name=pipeline_name, environment_dict=environment_dict
     )
 
-    dagster_instance.launch_run(run)
+    dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
         job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
     )
