@@ -1,8 +1,6 @@
-Deploying to AWS {#deployment-aws}
-================
+# Deploying to AWS
 
-Quick start with dagster-aws
-----------------------------
+## Quick start with dagster-aws
 
 The `dagster_aws` package includes a CLI tool intended to help you get a
 demo Dagster deployment up and running as quickly as possible.
@@ -17,9 +15,9 @@ an infrastructure-as-code toolchain, such as
 [Pulumi](https://www.pulumi.com/), to manage your cloud deployments.
 
 Ensure you have AWS credentials on your local machine, and that the
-[DAGSTER\_HOME]{.title-ref} environment variable is set, and then run:
+_DAGSTER_HOME_ environment variable is set, and then run:
 
-``` {.shell}
+```shell
 pip install dagster dagit dagster-aws
 dagster-aws init
 ```
@@ -35,7 +33,7 @@ This script will output a local configuration file at
 script needs to manage your minimal cloud deploy and will look something
 like this:
 
-``` {.YAML}
+```yaml
 ec2:
   ami_id: ami-08fd8ae3806f09a08
   instance_id: i-07330e77c4dd1bc81
@@ -68,7 +66,7 @@ for details on how we initialize the VM and how Dagit is run as a
 Once the EC2 instance is launched and ready, you can synchronize your
 Dagster code to it using:
 
-``` {.shell}
+```shell
 cd /path/to/your/dagster/code
 dagster-aws up
 ```
@@ -80,29 +78,28 @@ requirements on the remote host using `pip install -r`. Finally, it will
 ensure Dagit is running, and print a URL at which you can connect to
 Dagit.
 
-Hosting Dagit on EC2 or ECS
----------------------------
+## Hosting Dagit on EC2 or ECS
 
 To host dagit on a bare VM or in Docker on ECS, see [Running Dagit as a
-service](local.html).
+service](/docs/deploying/local).
 
-Using RDS for run and event log storage
----------------------------------------
+## Using RDS for run and event log storage
 
 You can use a hosted RDS PostgreSQL database for your Dagster run/events
 data. You can do this by setting blocks in your
 `$DAGSTER_HOME/dagster.yaml` appropriately.
 
-::: {.literalinclude caption="dagster.yaml
-:language: YAML"}
-dagster-pg.yaml
-:::
+```python literalinclude
+file:src/pages/docs/deploying/dagster-pg.yaml
+relativeToProject
+caption:dagster.yaml
+```
 
-In this case, you\'ll want to ensure you provide the right connection
+In this case, you'll want to ensure you provide the right connection
 strings for your RDS instance, and ensure that the node or container
 hosting Dagit is able to connect to RDS.
 
-Be sure that this file is present, and [DAGSTER\_HOME]{.title-ref} is
+Be sure that this file is present, and _DAGSTER_HOME_ is
 set, on the node where Dagit is running.
 
 Note that using RDS for run and event log storage does not require that
@@ -110,18 +107,16 @@ Dagit be running in the cloud. If you are connecting a local Dagit
 instance to a remote RDS storage, double check that your local node is
 able to connect to RDS.
 
-Using S3 for intermediates storage
-----------------------------------
+## Using S3 for intermediates storage
 
 To enable parallel computation (e.g., with the multiprocessing or
 Dagster celery executors), you will also need to configure persistent
-intermediate storage \-- for instance, using an S3 bucket to store
+intermediate storage -- for instance, using an S3 bucket to store
 intermediates.
 
-You\'ll first need to need to add S3 storage to your
-:py`ModeDefinition`{.interpreted-text role="class"}:
+You'll first need to need to add S3 storage to your **`ModeDefinition`**.
 
-``` {.python}
+```python
 from dagster_aws.s3.resources import s3_resource
 from dagster_aws.s3.system_storage import s3_plus_default_storage_defs
 from dagster import ModeDefinition
@@ -135,7 +130,7 @@ prod_mode = ModeDefinition(
 
 Then, just add the following YAML block in your pipeline config:
 
-``` {.yaml}
+```yaml
 storage:
   s3:
     config:

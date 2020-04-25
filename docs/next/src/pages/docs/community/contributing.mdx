@@ -1,4 +1,4 @@
-# Contributing {#Contributing}
+# Contributing
 
 If you are planning to contribute to Dagster, you will first need to set
 up a local development environment.
@@ -20,8 +20,7 @@ $ pyenv virtualenv 3.7.4 dagster37
 $ pyenv activate dagster37
 ```
 
-3.  Ensure that you have node installed by running [node
-    -v]{.title-ref}, and that you have
+3.  Ensure that you have node installed by running _node -v_, and that you have
     [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS,
     you can install yarn with Homebrew:
 
@@ -56,7 +55,7 @@ Some notes on developing in Dagster:
 
 - **Python 2**: We plan to continue supporting Python 2 for some time;
   it is worth testing your changes with Python 2 to ensure
-  compatibility. You can use [tox]{.title-ref} for this, from within
+  compatibility. You can use _tox_ for this, from within
   any of the Python packages:
 
 ```console
@@ -104,7 +103,7 @@ $ yarn test
 In webapp development it's handy to run `yarn run jest --watch` to have
 an interactive test runner.
 
-Some webapp tests use snapshots\--auto-generated results to which the
+Some webapp tests use snapshots--auto-generated results to which the
 test render tree is compared. Those tests are supposed to break when you
 change something.
 

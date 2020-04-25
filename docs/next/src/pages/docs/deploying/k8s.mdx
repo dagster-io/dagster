@@ -1,19 +1,19 @@
-Deploying on Kubernetes
-=======================
+import PyObject from 'components/PyObject';
+
+# Deploying on Kubernetes
 
 The `dagster-k8s` package includes a template [Helm](https://helm.sh/)
 chart that you can use to get up and running quickly on a Kubernetes
-cluster. It\'s still early days for this chart, so it\'s not as yet
+cluster. It's still early days for this chart, so it's not as yet
 available on the Helm Hub.
 
-Even if you don\'t use Helm, you may find the Helm charts useful as a
+Even if you don't use Helm, you may find the Helm charts useful as a
 reference for all the components you will probably want as part of a
 Kubernetes-based deployment of Dagster.
 
-Helm chart
-----------
+## Helm chart
 
-If you\'ve cloned the source for the Dagster repo, you can find the Helm
+If you've cloned the source for the Dagster repo, you can find the Helm
 chart at (from the root of the repo)
 `./python_modules/libraries/dagster-k8s/helm/dagster`.
 
@@ -21,50 +21,47 @@ The Helm chart sets up a simple but complete deployment with the
 following components (strangely capitalized nouns are Kubernetes
 objects):
 
--   Dagit running as a Deployment behind a Service. Dagit is configured
-    with a ConfigMap (from which the instance config/`dagster.yaml` is
-    read) to use a Postgres database of your choice for run and event
-    log storage, and to use the `K8sRunLauncher` to launch each pipeline
-    run in a separate Job. Each Jobs also gets its instance config from
-    the ConfigMap.
--   Optionally, a Postgres database for run and event log storage.
--   Optionally, a RabbitMQ as a dagster-celery broker.
--   Optionally, a set of dagster-celery workers running as a Deployment.
-    Each workers also gets its instance config from the ConfigMap.
--   An additional ConfigMap from which the dagster-celery workers, if
-    configured, can read the celery config (i.e., the broker URL,
-    backend, etc.; `celery.yaml`).
--   An additional ConfigMap which can be used to inject environment
-    variables into the dagster-k8s Jobs.
--   A ServiceAccount (to launch the Jobs) bound to a properly scoped
-    Role.
+- Dagit running as a Deployment behind a Service. Dagit is configured
+  with a ConfigMap (from which the instance config/`dagster.yaml` is
+  read) to use a Postgres database of your choice for run and event
+  log storage, and to use the `K8sRunLauncher` to launch each pipeline
+  run in a separate Job. Each Jobs also gets its instance config from
+  the ConfigMap.
+- Optionally, a Postgres database for run and event log storage.
+- Optionally, a RabbitMQ as a dagster-celery broker.
+- Optionally, a set of dagster-celery workers running as a Deployment.
+  Each workers also gets its instance config from the ConfigMap.
+- An additional ConfigMap from which the dagster-celery workers, if
+  configured, can read the celery config (i.e., the broker URL,
+  backend, etc.; `celery.yaml`).
+- An additional ConfigMap which can be used to inject environment
+  variables into the dagster-k8s Jobs.
+- A ServiceAccount (to launch the Jobs) bound to a properly scoped
+  Role.
 
 All of the parameters for this chart live in the `values.yaml` file.
 
-K8sRunLauncher
---------------
+## K8sRunLauncher
 
-We use the :py`~dagster.RunLauncher`{.interpreted-text role="class"} to
+We use the **`RunLauncher`** to
 express the difference between asking Dagit to execute a pipeline
 directly (on the same node) and asking Dagit to launch execution
-\"somewhere else\" \-- perhaps just on a remote Dagit instance, or
+"somewhere else" -- perhaps just on a remote Dagit instance, or
 perhaps in another environment such as a Kubernetes Job.
 
 Note that **where** execution is launched is independent from **how** it
-is executed, that is, which executor is used. The
-:py`~dagster.RunLauncher`{.interpreted-text role="class"} abstraction is
+is executed, that is, which executor is used. The **`RunLauncher`** abstraction is
 layered on top of the executor abstraction. You might choose to launch
 execution in a Kubernetes Job so that execution is isolated from your
 instance of Dagit, but users may still run their pipelines using the
 single-process executor, the multiprocess executor, or the
 dagster-celery executor.
 
-A concrete :py`~dagster.RunLauncher`{.interpreted-text role="class"}, in
-this case the :py`~dagster_k8s.K8sRunLauncher`{.interpreted-text
-role="class"}, can be configured on the Dagster instance using a config
-block such as the following:
+A concrete **`RunLauncher`**, in
+this case the <PyObject module="dagster_k8s" object="K8sRunLauncher" />,
+can be configured on the Dagster instance using a config block such as the following:
 
-``` {.yaml}
+```yaml
 run_launcher:
   module: dagster_k8s.launcher
   class: K8sRunLauncher
@@ -77,8 +74,7 @@ run_launcher:
 ```
 
 The most important thing to note here is the `job_image` config
-parameter. As currently written, the
-:py`~dagster_k8s.K8sRunLauncher`{.interpreted-text role="class"}
+parameter. As currently written, the <PyObject module="dagster_k8s" object="K8sRunLauncher" />
 requires an image that can run CLI invocations of `dagster-graphql`
 corresponding to the execution of your pipeline runs. That means that
 your Dagster code (as well as dagster-graphql, and any system or Python

@@ -139,5 +139,61 @@
       "isAbsolutePath": true,
       "name": "Stack Overflow"
     }
+  ],
+  "Learn": [
+    {
+      "name": "Guides",
+      "path": "/guides"
+    },
+    {
+      "name": "How-Tos",
+      "path": "/how-tos"
+    },
+    {
+      "name": "Principles",
+      "path": "/principles"
+    },
+    {
+      "name": "Concepts",
+      "path": "/concepts"
+    },
+    {
+      "name": "Demos",
+      "path": "/demos"
+    }
+  ],
+  "Deploying": [
+    {
+      "name": "The Dagster instance",
+      "path": "/instance"
+    },
+    {
+      "name": "Running Dagit as a service",
+      "path": "/local"
+    },
+    {
+      "name": "Celery executor",
+      "path": "/celery"
+    },
+    {
+      "name": "Deploying on Kubernetes",
+      "path": "/k8s"
+    },
+    {
+      "name": "Deploying to AWS",
+      "path": "/aws"
+    },
+    {
+      "name": "Deploying to GCP",
+      "path": "/gcp"
+    },
+    {
+      "name": "Executing on Dask",
+      "path": "/dask"
+    },
+    {
+      "name": "Deploying to Airflow",
+      "path": "/airflow"
+    }
   ]
 }

@@ -1,29 +1,27 @@
-Deploying to GCP {#deployment-gcp}
-================
+# Deploying to GCP
 
-Hosting Dagit on GCE
---------------------
+## Hosting Dagit on GCE
 
-To host dagit on a bare VM or in Docker on GCE, see [Running Dagit as a
-service](local.html).
+To host dagit on a bare VM or in Docker on GCE, see [Running Dagit as a service](/docs/deploying/local).
 
-Using Cloud SQL for run and event log storage
----------------------------------------------
+## Using Cloud SQL for run and event log storage
 
 We recommend launching a Cloud SQL PostgreSQL instance for run and
 events data. You can configure Dagit to use Cloud SQL to run and events
 data by setting blocks in your `$DAGSTER_HOME/dagster.yaml`
 appropriately:
 
-::: {.literalinclude caption="dagster.yaml" language="YAML"}
-dagster-pg.yaml
-:::
+```python literalinclude
+file:src/pages/docs/deploying/dagster-pg.yaml
+relativeToProject
+caption:dagster-pg.yaml
+```
 
-In this case, you\'ll want to ensure you provide the right connection
+In this case, you'll want to ensure you provide the right connection
 strings for your Cloud SQL instance, and that the node or container
 hosting Dagit is able to connect to Cloud SQL.
 
-Be sure that this file is present, and [DAGSTER\_HOME]{.title-ref} is
+Be sure that this file is present, and _DAGSTER_HOME_ is
 set, on the node where Dagit is running.
 
 Note that using Cloud SQL for run and event log storage does not require
@@ -31,18 +29,16 @@ that Dagit be running in the cloud. If you are connecting a local Dagit
 instance to a remote Cloud SQL storage, double check that your local
 node is able to connect to Cloud SQL.
 
-Using GCS for intermediates storage
------------------------------------
+## Using GCS for intermediates storage
 
-You\'ll probably also want to configure a GCS bucket to store
+You'll probably also want to configure a GCS bucket to store
 intermediates. This enables reexecution, review and audit of
 intermediate results, and cross-node cooperation (e.g., with the
 multiprocessing or Dagster celery executors).
 
-You\'ll first need to add GCS storage to your
-:py`ModeDefinition`{.interpreted-text role="class"}:
+You'll first need to add GCS storage to your **`ModeDefinition`**
 
-``` {.python}
+```python
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 from dagster import ModeDefinition
@@ -56,7 +52,7 @@ prod_mode = ModeDefinition(
 
 Then, just add the following YAML to your pipeline config:
 
-``` {.yaml}
+```yaml
 storage:
   gcs:
     config:
