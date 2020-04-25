@@ -2,7 +2,7 @@ import os
 
 from dagster import RepositoryDefinition, pipeline, solid
 from dagster.core.definitions.container import get_active_repository_data_from_image
-from dagster.core.snap import ActiveRepositoryData, active_repository_data_from_def
+from dagster.core.snap import active_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -34,7 +34,7 @@ def test_container_snapshot_provider(mocker):
         'dagster.core.definitions.container.run_serialized_container_command',
         side_effect=mock_snapshot_provider,
     )
-    snapshot = get_active_repository_data_from_image("foo:latest")
+    active_repository_data = get_active_repository_data_from_image("foo:latest")
     execute_container_mock.assert_called_with(
         image="foo:latest",
         command='dagster repository snapshot {}'.format(
@@ -42,5 +42,4 @@ def test_container_snapshot_provider(mocker):
         ),
         volumes=mocker.ANY,
     )
-    assert isinstance(snapshot, ActiveRepositoryData)
-    assert snapshot == active_repository_data_from_def(noop_repo())
+    assert active_repository_data == active_repository_data_from_def(noop_repo())

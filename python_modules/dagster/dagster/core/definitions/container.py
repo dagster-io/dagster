@@ -27,7 +27,7 @@ def run_serialized_container_command(image, command, volumes):
         raise
 
 
-def _get_snapshot(path):
+def _get_active_repo_data(path):
     with open(path, 'r') as fp:
         return deserialize_json_to_dagster_namedtuple(fp.read())
 
@@ -45,11 +45,11 @@ def get_active_repository_data_from_image(image):
             volumes={tmp_dir: {'bind': DEFAULT_INTERNAL_VOLUME, 'mode': DEFAULT_MODE}},
         )
 
-        snapshot = _get_snapshot(os.path.join(tmp_dir, output_file_name))
-        if not isinstance(snapshot, ActiveRepositoryData):
+        active_repo_data = _get_active_repo_data(os.path.join(tmp_dir, output_file_name))
+        if not isinstance(active_repo_data, ActiveRepositoryData):
             raise DagsterInvariantViolationError(
                 "Deserialized snapshot is of type {received} must be a ActiveRepositoryData".format(
-                    received=type(snapshot)
+                    received=type(active_repo_data)
                 )
             )
-        return snapshot
+        return active_repo_data

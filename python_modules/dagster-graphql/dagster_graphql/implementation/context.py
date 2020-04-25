@@ -1,55 +1,56 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import ActiveRepositoryData, RepositoryIndex
+from dagster.core.snap import ActiveRepositoryData, RepositoryIndex, active_repository_data_from_def
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
 
 
 class DagsterGraphQLContext(object):
-    pass
-
-
-class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
-    def __init__(self, active_repository_data, execution_manager, instance, version=None):
+    def __init__(self, active_repository_data, instance):
         self.active_repository_data = check.inst_param(
             active_repository_data, 'active_repository_data', ActiveRepositoryData
         )
-        self._repository_index = RepositoryIndex(self.active_repository_data)
+        self._repository_index = RepositoryIndex(active_repository_data)
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
-        self.execution_manager = check.inst_param(
-            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
-        )
-        self.version = version
+
+    def get_repository_index(self):
+        return self._repository_index
 
     @property
     def instance(self):
         return self._instance
 
-    def get_repository_index(self):
-        return self._repository_index
+
+class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
+    def __init__(self, active_repository_data, execution_manager, instance, version=None):
+        super(DagsterGraphQLOutOfProcessRepositoryContext, self).__init__(
+            active_repository_data=active_repository_data, instance=instance
+        )
+        self.execution_manager = check.inst_param(
+            execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
+        )
+        self.version = version
 
 
 class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
+        self.repository_definition = handle.build_repository_definition()
+        super(DagsterGraphQLInProcessRepositoryContext, self).__init__(
+            active_repository_data=active_repository_data_from_def(self.repository_definition),
+            instance=instance,
+        )
         self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.version = version
-        self.repository_definition = self.get_handle().build_repository_definition()
-        self._repository_index = RepositoryIndex.from_repository_def(self.repository_definition)
 
         self._cached_pipelines = {}
         self.scheduler_handle = self.get_handle().build_scheduler_handle()
         self.partitions_handle = self.get_handle().build_partitions_handle()
-
-    @property
-    def instance(self):
-        return self._instance
 
     def get_handle(self):
         return self._handle
@@ -80,9 +81,6 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
 
     def get_repository(self):
         return self.repository_definition
-
-    def get_repository_index(self):
-        return self._repository_index
 
     def get_pipeline(self, pipeline_name):
         if not pipeline_name in self._cached_pipelines:
