@@ -116,6 +116,9 @@ class DependencyStructureIndex:
         check.str_param(solid_name, 'solid_name')
         return self._invocations_dict[solid_name]
 
+    def has_invocation(self, solid_name):
+        return solid_name in self._invocations_dict
+
     def get_upstream_outputs(self, solid_name, input_name):
         check.str_param(solid_name, 'solid_name')
         check.str_param(input_name, 'input_name')

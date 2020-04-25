@@ -95,6 +95,9 @@ class PipelineIndex:
         dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
         return list(dt_namespace.all_dagster_type_snaps_by_key.values())
 
+    def has_solid_invocation(self, solid_name):
+        return self.dep_structure_index.has_invocation(solid_name)
+
 
 def create_pipeline_snapshot_id(snapshot):
     check.inst_param(snapshot, 'snapshot', PipelineSnapshot)

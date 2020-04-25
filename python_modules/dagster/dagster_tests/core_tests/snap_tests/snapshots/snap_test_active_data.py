@@ -8,7 +8,7 @@ snapshots = Snapshot()
 
 snapshots['test_active_data 1'] = '''{
   "__class__": "ActiveRepositoryData",
-  "active_pipelines": [
+  "active_pipeline_datas": [
     {
       "__class__": "ActivePipelineData",
       "active_presets": [

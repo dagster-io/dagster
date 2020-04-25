@@ -33,17 +33,17 @@ class RepositoryIndex:
 
 @whitelist_for_serdes
 class ActiveRepositoryData(
-    namedtuple('_ActiveRepositoryData', 'name pipeline_snapshots active_pipelines')
+    namedtuple('_ActiveRepositoryData', 'name pipeline_snapshots active_pipeline_datas')
 ):
-    def __new__(cls, name, pipeline_snapshots, active_pipelines):
+    def __new__(cls, name, pipeline_snapshots, active_pipeline_datas):
         return super(ActiveRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             pipeline_snapshots=check.list_param(
                 pipeline_snapshots, 'pipeline_snapshots', of_type=PipelineSnapshot
             ),
-            active_pipelines=check.list_param(
-                active_pipelines, 'active_pipelines', of_type=ActivePipelineData
+            active_pipeline_datas=check.list_param(
+                active_pipeline_datas, 'active_pipeline_datas', of_type=ActivePipelineData
             ),
         )
 
@@ -55,6 +55,15 @@ class ActiveRepositoryData(
                 return pipeline_snapshot
 
         check.failed('Could not find pipeline snapshot named ' + name)
+
+    def get_active_pipeline_data(self, name):
+        check.str_param(name, 'name')
+
+        for active_pipeline in self.active_pipeline_datas:
+            if active_pipeline.name == name:
+                return active_pipeline
+
+        check.failed('Could not find active pipeline data named ' + name)
 
 
 @whitelist_for_serdes
@@ -95,14 +104,14 @@ def active_repository_data_from_def(repository_def):
             ],
             key=lambda ps: ps.name,
         ),
-        active_pipelines=sorted(
-            list(map(active_pipeline_from_def, repository_def.get_all_pipelines())),
+        active_pipeline_datas=sorted(
+            list(map(active_pipeline_data_from_def, repository_def.get_all_pipelines())),
             key=lambda pd: pd.name,
         ),
     )
 
 
-def active_pipeline_from_def(pipeline_def):
+def active_pipeline_data_from_def(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     return ActivePipelineData(
         name=pipeline_def.name,

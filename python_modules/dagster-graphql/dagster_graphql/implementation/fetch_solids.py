@@ -1,6 +1,6 @@
 from collections import OrderedDict, defaultdict
 
-from dagster_graphql.implementation.fetch_pipelines import get_dauphin_pipeline_from_pipeline_index
+from dagster_graphql.schema.pipelines import DauphinPipeline
 from dagster_graphql.schema.solids import (
     DauphinSolidInvocationSite,
     DauphinUsedSolid,
@@ -17,11 +17,11 @@ def get_solids(graphene_info):
 
 
 def get_used_solid_map(graphene_info):
-    repository_index = graphene_info.context.get_repository_index()
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for pipeline_index in repository_index.get_pipeline_indices():
+    for active_pipeline in graphene_info.context.get_all_external_pipelines():
+        pipeline_index = active_pipeline.pipeline_index
         for handle in build_dauphin_solid_handles(
             pipeline_index, pipeline_index.dep_structure_index
         ):
@@ -30,10 +30,7 @@ def get_used_solid_map(graphene_info):
                 definitions.append(definition)
             inv_by_def_name[definition.name].append(
                 DauphinSolidInvocationSite(
-                    pipeline=get_dauphin_pipeline_from_pipeline_index(
-                        graphene_info, pipeline_index
-                    ),
-                    solidHandle=handle,
+                    pipeline=DauphinPipeline(active_pipeline), solidHandle=handle,
                 )
             )
     return OrderedDict(

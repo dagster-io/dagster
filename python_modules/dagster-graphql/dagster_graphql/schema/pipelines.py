@@ -1,15 +1,19 @@
 from __future__ import absolute_import
 
+import yaml
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
-from dagster import PresetDefinition, check
+from dagster import check
 from dagster.core.snap import (
+    ActivePresetData,
     ConfigSchemaSnapshot,
     LoggerDefSnap,
     ModeDefSnap,
     PipelineIndex,
     ResourceDefSnap,
+    active_pipeline_data_from_def,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
@@ -177,18 +181,19 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     presets = dauphin.non_null_list('PipelinePreset')
     runs = dauphin.non_null_list('PipelineRun')
 
-    def __init__(self, pipeline_index, presets=None):
-        self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        self._presets = check.opt_list_param(presets, 'presets', of_type=PresetDefinition)
+    def __init__(self, external_pipeline):
+        self._external_pipeline = check.inst_param(
+            external_pipeline, 'external_pipeline', ExternalPipeline
+        )
+        self._pipeline_index = external_pipeline.pipeline_index
 
     def get_pipeline_index(self):
         return self._pipeline_index
 
     def resolve_presets(self, _graphene_info):
-        check.list_param(self._presets, '_presets', of_type=PresetDefinition)
         return [
             DauphinPipelinePreset(preset, self._pipeline_index.name)
-            for preset in sorted(self._presets, key=lambda item: item.name)
+            for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
 
     def resolve_runs(self, graphene_info):
@@ -202,7 +207,10 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     @staticmethod
     def from_pipeline_def(pipeline_definition):
         return DauphinPipeline(
-            pipeline_definition.get_pipeline_index(), presets=pipeline_definition.get_presets()
+            ExternalPipeline(
+                pipeline_index=pipeline_definition.get_pipeline_index(),
+                active_pipeline_data=active_pipeline_data_from_def(pipeline_definition),
+            )
         )
 
 
@@ -328,22 +336,24 @@ class DauphinPipelinePreset(dauphin.ObjectType):
     environmentConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
 
-    def __init__(self, preset, pipeline_name):
-        self._preset = check.inst_param(preset, 'preset', PresetDefinition)
+    def __init__(self, active_preset_data, pipeline_name):
+        self._active_preset_data = check.inst_param(
+            active_preset_data, 'active_preset_data', ActivePresetData
+        )
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
 
     def resolve_name(self, _graphene_info):
-        return self._preset.name
+        return self._active_preset_data.name
 
     def resolve_solidSubset(self, _graphene_info):
-        return self._preset.solid_subset
+        return self._active_preset_data.solid_subset
 
     def resolve_environmentConfigYaml(self, _graphene_info):
-        yaml = self._preset.get_environment_yaml()
-        return yaml if yaml else ''
+        yaml_str = yaml.dump(self._active_preset_data.environment_dict, default_flow_style=False)
+        return yaml_str if yaml_str else ''
 
     def resolve_mode(self, _graphene_info):
-        return self._preset.mode
+        return self._active_preset_data.mode
 
 
 class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
