@@ -1,14 +1,13 @@
-Peforming a backfill
-====================
+# Peforming a backfill
 
 Now that we have a partition set defined for a pipeline, we can perform
 a backfill over all the partitions.
 
-To do backfills, make sure you\'ve set up a Run Launcher. In a separate
-terminal window, run `dagit` for our current repository. Now let\'s run
+To do backfills, make sure you've set up a Run Launcher. In a separate
+terminal window, run `dagit` for our current repository. Now let's run
 `dagster pipeline backfill` and follow the prompts
 
-``` {.console}
+```bash
 $ dagster pipeline backfill compute_total_stock_volume
     Pipeline: compute_total_stock_volume
 Partition set: stock_ticker_partition_sets
@@ -22,8 +21,6 @@ Launched backfill job `uufbdyqg`
 
 The backfill script just launched 4 runs configured individually for
 each partition. If we load dagit and filter for the tag
-`dagster/backfill=uufbdyqg` we\'ll be able to see our four runs:
+`dagster/backfill=uufbdyqg` we'll be able to see our four runs:
 
-::: {.thumbnail}
-backfill.png
-:::
+![backfill.png](/assets/images/learn/guides/partitioning/backfill.png)

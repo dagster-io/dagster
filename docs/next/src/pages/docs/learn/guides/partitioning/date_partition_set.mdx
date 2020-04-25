@@ -1,48 +1,50 @@
-Creating a Date Partition Set
-=============================
+import PyObject from 'components/PyObject';
 
-The most common partitioning scheme is date based partitions. We\'ll now
-create a
-:py`PartitionSetDefinition <dagster.PartitionSetDefinition>`{.interpreted-text
-role="class"} for a set of dates.
+# Creating a Date Partition Set
 
-First, let\'s modify our solid to take a date range as config:
+The most common partitioning scheme is date based partitions. We'll now
+create a <PyObject module="dagster" object="PartitionSetDefinition" /> for a set of dates.
 
-::: {.literalinclude linenos="" lines="4-19" language="python" caption="repository.py"}
-../../../../../examples/dagster\_examples/stocks/repository.py
-:::
+First, let's modify our solid to take a date range as config:
+
+```python literalinclude
+file:/dagster_examples/stocks/repository.py
+caption:hello_cereal.py
+lines:4-19
+```
 
 Just as before, we write a function that returns a list of partitions,
 but this time we return a list of `datetime` objects.
 
-::: {.literalinclude linenos="" lines="9-15" language="python" caption="repository.py"}
-../../../../../examples/dagster\_examples/stocks/date\_partitions.py
-:::
+```python literalinclude
+file:/dagster_examples/stocks/date_partitions.py
+caption:date_partitions.py
+lines:9-15
+```
 
-Next, we define a function that takes a date
-:py`Partition <dagster.Partition>`{.interpreted-text role="class"} and
+Next, we define a function that takes a date <PyObject module="dagster" object="Partition" /> and
 returns config. Here, we calculate the first and last days of the
 previous month for each date partition to pass to the solid config.
 
-::: {.literalinclude linenos="" lines="18-34" language="python" caption="repository.py"}
-../../../../../examples/dagster\_examples/stocks/date\_partitions.py
-:::
+```python literalinclude
+file:/dagster_examples/stocks/date_partitions.py
+caption:hello_cereal.py
+lines:18-34
+```
 
-Since it\'s not practical to hardcode all the possible date partitions,
+Since it's not practical to hardcode all the possible date partitions,
 and we usually want date partitions between two date ranges, Dagster
 provides a utility to generate a list of partitions given a date range
-and time interval:
-:py`date_partition_range <dagster.utils.partitions.date_partition_range>`{.interpreted-text
-role="func"}. We\'ll use this function instead of the one we wrote
-above.
+and time interval: <PyObject module="dagster.utils.partitions" object="date_partition_range" />.
+We'll use this function instead of the one we wrote above.
 
-::: {.literalinclude linenos="" lines="37-46" language="python" caption="repository.py"}
-../../../../../examples/dagster\_examples/stocks/date\_partitions.py
-:::
+```python literalinclude
+file:/dagster_examples/stocks/date_partitions.py
+caption:repository.py
+lines:37-46
+```
 
-Now, let\'s load dagit again and head to the Playground tab. This time,
-we\'ll see our date partitions in the partition selector.
+Now, let's load dagit again and head to the Playground tab. This time,
+we'll see our date partitions in the partition selector.
 
-::: {.thumbnail}
-playground\_date\_partitions.png
-:::
+![playground_date_partitions.png](/assets/images/learn/guides/partitioning/playground_date_partitions.png)
