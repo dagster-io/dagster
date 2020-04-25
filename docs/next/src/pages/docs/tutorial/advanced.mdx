@@ -2,9 +2,15 @@ import AnchorHeading from 'components/AnchorHeading';
 
 import ReusableSolids from './sections/advanced/solids/ReusableSolids.mdx';
 import CompositeSolids from './sections/advanced/solids/CompositeSolids.mdx';
+
 import Modes from './sections/advanced/pipelines/Modes.mdx';
 import Presets from './sections/advanced/pipelines/Presets.mdx';
 import Resources from './sections/advanced/pipelines/Resources.mdx';
+
+import Materializations from './sections/advanced/Materializations.mdx';
+import Intermediates from './sections/advanced/Intermediates.mdx';
+import Scheduling from './sections/advanced/Scheduling.mdx';
+import Repositories from './sections/advanced/Repositories.mdx';
 
 # Advanced Tutorials
 
@@ -22,6 +28,9 @@ Abstracting business logic into reusable, configurable solids is one
 important step towards making data applications like other software
 applications.
 
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/solids/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/solids/`
+
 <ReusableSolids />
 <br />
 
@@ -32,6 +41,9 @@ applications.
 ## More about Pipelines
 
 Pipelines often interact with external resources like Hadoop/Spark clusters or data warehouses like Snowflake or BigQuery. Dagster provides various facilities to avoid hard-coding interactions with such systems, so that your business logic can remain the same across local/test, dev, prod, etc. environments. Resources represent these external systems, and modes/presets support swapping resource implementations across different environments.
+
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/pipelines/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/pipelines/`
 
 <Resources />
 
@@ -49,7 +61,8 @@ Pipelines often interact with external resources like Hadoop/Spark clusters or d
 
 ## Materializations
 
-import Materializations from './sections/advanced/Materializations.mdx';
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/materializations/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/materializations/`
 
 <Materializations />
 
@@ -59,7 +72,8 @@ import Materializations from './sections/advanced/Materializations.mdx';
 
 ## Intermediates
 
-import Intermediates from './sections/advanced/Intermediates.mdx';
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/intermediates/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/intermediates/`
 
 <Intermediates />
 
@@ -67,20 +81,24 @@ import Intermediates from './sections/advanced/Intermediates.mdx';
 
 <br />
 
+## Organizing Pipelines in Repositories
+
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/repositories/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/repositories/`
+
+<Repositories />
+
+<br />
+
+<br />
+
 ## Scheduling Pipeline Runs
 
-import Scheduling from './sections/advanced/Scheduling.mdx';
+> - You can find the tutorial code on [Github](https://github.com/dagster-io/dagster/tree/master/examples/dagster_examples/intro_tutorial/advanced/scheduling/)
+> - If you’ve cloned the dagster git repository, you’ll find this example at `examples/dagster_examples/intro_tutorial/advanced/scheduling/`
 
 <Scheduling />
 
 <br />
-
-<br />
-
-## Organizing Pipelines in Repositories
-
-import Repositories from './sections/advanced/Repositories.mdx';
-
-<Repositories />
 
 <br />

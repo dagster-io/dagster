@@ -17,8 +17,8 @@ running the scheduler on.
 
 ### Pipeline
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/scheduler.py
+```python literalinclude showLines
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
 caption:scheduler.py
 lines:1-34
 ```
@@ -48,10 +48,9 @@ its config.
 
 We wrap the schedule definition in a function decorated with <PyObject module="dagster" object="schedules" displayText="@schedules" />
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/scheduler.py
+```python literalinclude showLines startLine=36
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.py
 caption:scheduler.py
-lineno-start:38
 lines:36-45
 ```
 
@@ -59,7 +58,7 @@ To complete the picture, we'll need to extend the `repository.yaml`
 structure we've met before with a new key, `scheduler`.
 
 ```YAML literalinclude
-file:/dagster_examples/intro_tutorial/scheduler.yaml
+file:/dagster_examples/intro_tutorial/advanced/scheduling/scheduler.yaml
 caption:scheduler.yaml
 ```
 

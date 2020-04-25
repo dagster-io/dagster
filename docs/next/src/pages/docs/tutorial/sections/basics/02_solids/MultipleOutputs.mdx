@@ -12,12 +12,10 @@ based on the presence of an upstream output.
 Suppose we're interested in splitting hot and cold cereals into
 separate datasets and processing them separately, based on config.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/multiple_outputs.py
+```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26
+file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
 caption:multiple_outputs.py
-lineno-start:33
-lines:33-58
-emphasize-lines:7-12, 21, 26
+lines:35-66
 ```
 
 Solids that yield multiple outputs must declare, and name, their outputs
@@ -28,12 +26,10 @@ solid's compute function must have a name that corresponds to one of these decla
 We'll define two downstream solids and hook them up to the multiple
 outputs from `split_cereals`.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/multiple_outputs.py
+```python literalinclude showLines startLine=58 emphasize-lines=23-25
+file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
 caption:multiple_outputs.py
-lineno-start:56
-lines:56-80
-emphasize-lines:23-25
+lines:58-84
 ```
 
 As usual, we can visualize this in Dagit:
@@ -55,8 +51,8 @@ the cold cereals output is omitted and that the execution step
 corresponding to the downstream solid is marked skipped in the right
 hand pane:
 
-```YAML literalinclude
-file:/dagster_examples/intro_tutorial/multiple_outputs.yaml
+```YAML literalinclude showLines
+file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.yaml
 caption:multiple_outputs.yaml
 ```
 

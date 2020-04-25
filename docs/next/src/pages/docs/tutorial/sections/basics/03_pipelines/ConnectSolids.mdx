@@ -13,10 +13,9 @@ This new solid will consume the output of the first solid, which read
 the cereal dataset in from disk, and in turn will sort the list of
 cereals by their calorie content per serving.
 
-```python literalinclude emphasize-lines=15,19,37
-file:/dagster_examples/intro_tutorial/serial_pipeline.py
-caption:serial_pipeline.py
-lines:1-37
+```python literalinclude emphasize-lines=16,20,38
+file:/dagster_examples/intro_tutorial/basics/e02_solids/serial_pipeline.py
+lines:1-40
 ```
 
 You'll see that we've modified our existing `load_cereals` solid to
@@ -50,10 +49,10 @@ Solids don't need to be wired together serially. The output of one
 solid can be consumed by any number of other solids, and the outputs of
 several different solids can be consumed by a single solid.
 
-```python literalinclude emphasize-lines=55-59 startLine=6
-file:/dagster_examples/intro_tutorial/complex_pipeline.py
+```python literalinclude showLines emphasize-lines=55-59 startLine=7
+file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
 caption:complex_pipeline.py
-lines:6-64
+lines:7-66
 ```
 
 First we introduce the intermediate variable `cereals` into our pipeline
@@ -82,8 +81,8 @@ depends on both of their outputs).
 We'll write a simple test for this pipeline showing how we can assert
 that all four of its solids executed successfully.
 
-```python literalinclude startLine=72
-file:/dagster_examples/intro_tutorial/complex_pipeline.py
+```python literalinclude showLines startLine=73
+file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
 caption:complex_pipeline.py
-lines:72-77
+lines:73-80
 ```

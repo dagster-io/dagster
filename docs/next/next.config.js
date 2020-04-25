@@ -22,7 +22,6 @@ const transform = () => (tree) => {
     if (metaValues.includes(DIRECTIVE_PATTERN)) {
       const data = value.trim();
       const values = data.split('\n').map((i) => i.trim().split(':'));
-
       const map = {};
       for (const val of values) {
         map[val[0]] = val[1];
@@ -43,7 +42,7 @@ const transform = () => (tree) => {
       const root = isRelativeToProject
         ? __dirname
         : path.join(REPO, '/examples/');
-        
+
       const filePath = path.join(root, map.file);
       try {
         // TODO: Fix all other literal includes because now they need to include /dagster_examples/ in their paths

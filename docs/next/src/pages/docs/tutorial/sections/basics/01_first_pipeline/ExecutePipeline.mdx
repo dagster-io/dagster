@@ -20,8 +20,8 @@ You'll see the full stream of events emitted by dagster appear in the console,
 including our call to the logging machinery, which will look like:
 
 ```bash
-2019-10-10 11:46:50 - dagster - INFO - system -
-a91a4cc4-d218-4c2b-800c-aac50fced1a5 - Found 77 cereals
+2019-10-10 11:46:50 - dagster - INFO - system - a91a4cc4-d218-4c2b-800c-aac50fced1a5
+- Found 77 cereals
     solid             = "hello_cereal"
     solid_definition  = "hello_cereal"
     step_key          = "hello_cereal.compute"
@@ -40,10 +40,10 @@ If you'd rather execute your pipelines as a script, you can do that without
 using the dagster CLI at all. Just add a few lines to
 `hello_cereal.py`
 
-```python literalinclude showLines startLine=26
-file:/dagster_examples/intro_tutorial/hello_cereal.py
+```python literalinclude showLines startLine=27
+file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
 caption:hello_cereal.py
-lines:26-28
+lines:27-29
 ```
 
 Now you can just run:

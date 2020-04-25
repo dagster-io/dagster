@@ -16,22 +16,20 @@ structure a pipeline's DAG.
 Suppose that we rewrite our `sort_calories` solid so that it saves
 the newly sorted data frame to disk.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/materializations.py
+```python literalinclude showLines startLine=25 emphasize-lines=20-23
+file:/dagster_examples/intro_tutorial/advanced/materializations/materializations.py
 caption:materializations.py
-lines:23-46
+lines:25-47
 ```
 
 We've taken the basic precaution of ensuring that the saved csv file has a
 different filename for each run of the pipeline. But there's no way for Dagit
 to know about this persistent artifact. So we'll add the following lines:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/materializations.py
+```python literalinclude showLines startLine=24 emphasize-lines=25-33
+file:/dagster_examples/intro_tutorial/advanced/materializations/materializations.py
 caption:materializations.py
-lineno-start:23
-lines:23-56
-emphasize-lines:24-33
+lines:24-57
 ```
 
 Note that we've had to add the last line, yielding an <PyObject module="dagster" object="Output" />.
@@ -44,7 +42,7 @@ Now, if we run this pipeline in Dagit:
 
 ![materializations.png](/assets/images/tutorial/materializations.png)
 
-### Configurably Materializing Custom Data Types
+### Custom Materializing Data Types
 
 Data types can also be configured so that outputs materialize themselves,
 obviating the need to explicitly yield a <PyObject module="dagster" object="Materialization" /> from solid logic.
@@ -56,30 +54,27 @@ both as a pickle and as a .csv. (This is a reasonable idea, since .csv files
 are human-readable and manipulable by a wide variety of third party tools,
 while pickle is a binary format.)
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/output_materialization.py
+```python literalinclude showLines startLine=29
+file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.py
 caption:output_materialization.py
-lineno-start:28
-lines:28-61
+lines:29-70
 ```
 
 We set the output materialization config on the type:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/output_materialization.py
+```python literalinclude showLines startLine=93 emphasize-lines=5
+file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.py
 caption:output_materialization.py
-lineno-start:64
-lines:64-71
-emphasize-lines:5
+lines:93-98
 ```
 
 Now we can tell Dagster to materialize intermediate outputs of this type by
 providing config:
 
-```YAML literalinclude
-file:/dagster_examples/intro_tutorial/output_materialization.yaml
+```YAML literalinclude emphasize-lines=6-10
+file:/dagster_examples/intro_tutorial/advanced/materializations/output_materialization.yaml
 caption:output_materialization.yaml
-emphasize-lines:6-10
+lines:1-10
 ```
 
 When we run this pipeline, we'll see that materializations are yielded (and

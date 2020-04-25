@@ -14,18 +14,17 @@ whose methods let us investigate, in detail, the success or failure of execution
 the outputs produced by solids, and (as we'll see later) other events associated
 with execution.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/hello_cereal.py
+```python literalinclude showLines startLine=32
+file:/dagster_examples/intro_tutorial/basics/e04_quality/hello_cereal_with_tests.py
 caption:hello_cereal.py
-lineno-start:31
-lines:31-40
+lines:32-43
 ```
 
 Now you can use pytest, or your test runner of choice, to run unit tests as
 you develop your data applications.
 
 ```bash
-$ pytest hello_cereal.py
+$ pytest hello_cereal_with_tests.py
 ```
 
 Note: by convention, pytest tests are typically kept in separate files

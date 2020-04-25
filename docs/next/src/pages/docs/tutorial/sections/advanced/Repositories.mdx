@@ -5,8 +5,8 @@ In all of the examples we've seen so far, we've specified a file (`-f`) or a mod
 CLI tools how to load a pipeline, e.g.:
 
 ```bash
-$ dagit -f hello_cereal.py -n hello_cereal_pipeline $ dagster pipeline
-execute -f hello_cereal.py \ -n hello_cereal_pipeline
+$ dagit -f hello_cereal.py -n hello_cereal_pipeline
+$ dagster pipeline execute -f hello_cereal.py -n hello_cereal_pipeline
 ```
 
 But most of the time, especially when working on long-running projects with
@@ -17,10 +17,9 @@ Dagster provides the concept of a repository, a collection of pipelines that
 the Dagster tools can target as a whole. Repositories are declared using the <PyObject module="dagster" object="RepositoryDefinition" /> API
 as follows:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/repos.py
+```python literalinclude showLines startLine=14
+file:/dagster_examples/intro_tutorial/advanced/repositories/repos.py
 caption:repos.py
-lineno-start:14
 lines:14-24
 ```
 
@@ -49,7 +48,7 @@ file, although you can tell the CLI tools to use any file you like with the
 `-y` flag.
 
 ```YAML literalinclude
-file:/dagster_examples/intro_tutorial/repository.yaml
+file:/dagster_examples/intro_tutorial/advanced/repositories/repository.yaml
 caption:repository.yaml
 ```
 

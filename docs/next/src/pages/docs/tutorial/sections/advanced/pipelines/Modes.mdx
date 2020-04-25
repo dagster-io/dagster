@@ -14,10 +14,9 @@ fundamental operations they expose are tested in each environment, we
 can test business logic independent of environments that may be very
 costly or difficult to test against.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/modes.py
+```python literalinclude showLines startLine=75
+file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
 caption:modes.py
-lineno-start:75
 lines:75-84
 ```
 
@@ -25,11 +24,10 @@ Even if you're not familiar with SQLAlchemy, it's enough to note that
 this is a very different implementation of the `warehouse` resource. To
 make this implementation available to Dagster, we attach it to a <PyObject module="dagster" object="ModeDefinition" />.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/modes.py
+```python literalinclude showLines startLine=128
+file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
 caption:modes.py
-lineno-start:127
-lines:127-142
+lines:128-143
 ```
 
 Each of the ways we can invoke a Dagster pipeline lets us select which
@@ -39,17 +37,15 @@ From the command line, we can set `-d` or `--mode` and select the name
 of the mode:
 
 ```bash
-$ dagster pipeline execute -f modes.py -n modes_pipeline -d dev
+$ dagster pipeline execute -f modes.py -n modes_pipeline -e resources.yaml -d unittest
 ```
 
 Or, from the Python API:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/modes.py
+```python literalinclude showLines startLine=146 emphasize-lines=12
+file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
 caption:modes.py
-lineno-start:152
-lines:152-156
-emphasize-lines:4
+lines:146-159
 ```
 
 And in Dagit, we can use the "Mode" selector to pick the mode in which

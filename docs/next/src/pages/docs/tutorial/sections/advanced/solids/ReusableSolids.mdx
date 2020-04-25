@@ -18,12 +18,10 @@ Let's replace `sort_hot_cereals_by_calories` and
 `sort_cold_cereals_by_calories` by two aliases of the same library
 solid:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/reusable_solids.py
+```python literalinclude showLines startLine=56 emphasize-lines=17-18
+file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.py
 caption:reusable_solids.py
-lineno-start:57
-lines:57-73
-emphasize-lines:17-18
+lines:56-75
 ```
 
 You'll see that Dagit distinguishes between the two invocations of the
@@ -36,10 +34,7 @@ invoked many times within this pipeline.
 
 Configuring solids also uses the aliases, as in the following YAML:
 
-```YAML literalinclude
-file:/dagster_examples/intro_tutorial/reusable_solids.yaml
+```YAML literalinclude emphasize-lines=6,8
+file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.yaml
 caption:reusable_solids.yaml
-lineno-start:
-lines:-
-emphasize-lines:6, 8
 ```

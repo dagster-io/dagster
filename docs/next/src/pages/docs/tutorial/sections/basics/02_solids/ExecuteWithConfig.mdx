@@ -25,11 +25,10 @@ execute a pipeline. As such, it can have [a lot of sections](/docs/apidocs/execu
 we'll only use one of them here: per-solid configuration, which is
 specified under the key `solids`:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/inputs.py
+```python literalinclude showLines startLine=41
+file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
 caption:inputs.py
-lineno-start:40
-lines:40-44
+lines:41-48
 dedent:4
 ```
 
@@ -40,11 +39,10 @@ value of the input `csv_path`.
 
 Now you can pass this environment dict to <PyObject module="dagster" object="execute_pipeline" displayText="execute_pipeline()" />:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/inputs.py
+```python literalinclude showLines startLine=49
+file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
 caption:inputs.py
-lineno-start:45
-lines:45-47
+lines:49-51
 dedent:4
 ```
 
@@ -60,10 +58,8 @@ dict in a config file. We use YAML for the file-based representation of an envir
 dict, but the values are the same as before:
 
 ```YAML literalinclude showLines
-file:/dagster_examples/intro_tutorial/inputs_env.yaml
+file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
 caption:inputs_env.yaml
-lineno-start:1
-lines:1-5
 dedent:4
 ```
 

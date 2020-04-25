@@ -18,7 +18,7 @@ For example, when we execute our pipeline with this config, it'll fail at
 runtime:
 
 ```YAML literalinclude
-file:/dagster_examples/intro_tutorial/inputs_env_bad.yaml
+file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_env_bad.yaml
 caption:inputs_env_bad.yaml
 ```
 
@@ -39,12 +39,10 @@ config. So let's make the inputs typed.
 A user can apply types to inputs and outputs using Python 3's type annotation
 syntax. In this case, we just want to type the input as the built-in `str`.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/inputs_typed.py
+```python literalinclude showLines startLine=7 emphasize-lines=2
+file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
 caption:inputs_typed.py
-lineno-start:6
-lines:6-12
-emphasize-lines:2
+lines:7-15
 ```
 
 By using typed input instead we can catch this error prior to execution, and

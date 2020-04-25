@@ -1,0 +1,3 @@
+repository:
+  module: dagster_examples.intro_tutorial.repos
+  fn: define_repo

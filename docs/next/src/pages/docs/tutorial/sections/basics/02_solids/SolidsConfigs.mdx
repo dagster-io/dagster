@@ -7,10 +7,10 @@ the pipeline in which they're invoked. For example, consider an extended
 version of our csv-reading solid that implements more of the options available
 in the underlying Python API:
 
-```python literalinclude startLine=6 emphasize-lines=8-14
-file:/dagster_examples/intro_tutorial/config_bad_1.py
+```python literalinclude showLines startLine=7 emphasize-lines=9-15
+file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_1.py
 caption:config_bad_1.py
-lines:6-25
+lines:7-29
 ```
 
 We obviously don't want to have to write a separate solid for each permutation
@@ -22,10 +22,10 @@ might have dozens or hundreds of parameters like these.
 But hoisting all of these parameters into the signature of the solid function
 as inputs isn't the right answer either:
 
-```python literalinclude startLine=6 emphasize-lines=5-11
-file:/dagster_examples/intro_tutorial/config_bad_2.py
+```python literalinclude showLines startLine=7 emphasize-lines=5-11
+file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
 caption:config_bad_2.py
-lines:6-35
+lines:7-39
 ```
 
 Defaults are often sufficient for configuation values like these, and sets of
@@ -41,8 +41,8 @@ these with true input values.
 
 The solution is to define a config schema for our solid:
 
-```python literalinclude emphasize-lines=15,33-41,87
-file:/dagster_examples/intro_tutorial/config.py
+```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89
+file:/dagster_examples/intro_tutorial/basics/e02_solids/config.py
 caption:config.py
 lines:1-102
 ```
@@ -77,12 +77,11 @@ individual solid definition.
 ![config_figure_two.png](/assets/images/tutorial/config_figure_two.png)
 
 You can see that we've added a new section to the solid config. In addition to
-the `inputs` section, which we'll still use to set the{' '}
-`csv_path` input, we now have a `config` section, where
-we can set values defined in the `config` argument to <PyObject module="dagster" object="solid" displayText="@solid" />.
+the `inputs` section, which we'll still use to set the `csv_path` input, we now have a `config`
+section, where we can set values defined in the `config` argument to <PyObject module="dagster" object="solid" displayText="@solid" />.
 
 ```YAML literalinclude
-file:/dagster_examples/intro_tutorial/config_env_bad.yaml
+file:/dagster_examples/intro_tutorial/basics/e02_solids/config_env_bad.yaml
 caption:config_env_bad.yaml
 ```
 

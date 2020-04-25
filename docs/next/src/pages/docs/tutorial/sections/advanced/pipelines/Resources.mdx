@@ -21,12 +21,10 @@ understates the nutritional difference between our different cereals.
 Let's transform our dataset and then store it in a normalized table in
 the warehouse:
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/resources.py
+```python literalinclude showLines startLine=59 emphasize-lines=18
+file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
 caption:resources.py
-lineno-start:57
-lines:57-80
-emphasize-lines:24
+lines:59-82
 ```
 
 Resources are another facility that Dagster makes available on the
@@ -45,24 +43,20 @@ own `context` argument, which gives access to resource-specific config.
 (Unlike the contexts we've seen so far, which are instances of <PyObject module="dagster" object="SystemComputeExecutionContext" />, this
 context is an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/resources.py
+```python literalinclude showLines startLine=17 emphasize-lines=28-30
+file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
 caption:resources.py
-lineno-start:16
-lines:16-45
-emphasize-lines:28-30
+lines:17-46
 ```
 
 The last thing we need to do is to attach the resource to our pipeline,
 so that it's properly initialized when the pipeline run begins and made
 available to our solid logic as `context.resources.warehouse`.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/resources.py
+```python literalinclude showLines startLine=85 emphasize-lines=2-6
+file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
 caption:resources.py
-lineno-start:83
-lines:83-91
-emphasize-lines:2-6
+lines:85-94
 ```
 
 All resources are associated with a <PyObject module="dagster" object="ModeDefinition" /> So far,
@@ -73,10 +67,9 @@ we won't have to specify which mode to use (it will take the place of the `defau
 
 We can put it all together with the following config:
 
-```YAML literalinclude
-file:/dagster_examples/intro_tutorial/resources.yaml
+```YAML literalinclude emphasize-lines=1-4
+file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.yaml
 caption:resources.yaml
-emphasize-lines:1-4
 ```
 
 (Here, we pass the special string `":memory:"` in config as the
@@ -85,7 +78,7 @@ in-memory database.)
 
 <br />
 
-### Expressing Resource Dependencies
+#### Expressing Resource Dependencies
 
 We've provided a `warehouse` resource to our pipeline, but we're still
 manually managing our pipeline's dependency on this resource. Dagster
@@ -93,12 +86,10 @@ also provides a way for solids to advertise their resource requirements,
 to make it easier to keep track of which resources need to be provided
 for a pipeline.
 
-```python literalinclude
-file:/dagster_examples/intro_tutorial/required_resources.py
+```python literalinclude showLines startLine=57 emphasize-lines=1
+file:/dagster_examples/intro_tutorial/advanced/pipelines/required_resources.py
 caption:required_resources.py
-lineno-start:55
-lines:55-78
-emphasize-lines:1
+lines:57-80
 ```
 
 Now, the Dagster machinery knows that this solid requires a resource

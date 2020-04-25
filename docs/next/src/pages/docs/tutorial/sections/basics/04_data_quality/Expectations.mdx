@@ -13,10 +13,10 @@ What's more, these additional, deeper semantic assertions are often non-stationa
 
 We've already encountered the <PyObject module="dagster" object="TypeCheck" /> event, which is typically yielded by the type machinery (but can also be yielded manually from the body of a solid's compute function); <PyObject module="dagster" object="ExpectationResult" /> is another kind of structured side-channel result that a solid can yield. These extra events don't get passed to downstream solids and they aren't used to define the data dependencies of a pipeline DAG.
 
-```python literalinclude startLine=91 emphasize-lines=1-3,31
-file:/dagster_examples/intro_tutorial/custom_types_bad_5.py
+```python literalinclude showLines startLine=93 emphasize-lines=1-3,31
+file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_bad_5.py
 caption:custom_types_bad_5.py
-lines:91-133
+lines:93-133
 ```
 
 Until now, every solid we've encountered has returned its result value, or `None`. But solids can also yield events of various types for side-channel communication about the results of their computations.
@@ -27,10 +27,10 @@ Running this pipeline yields an <PyObject module="dagster" object="ExpectationRe
 
 To fix this, we can cast `calories` to `int` during the hydration process:
 
-```python literalinclude startLine=74 emphasize-lines=6
-file:/dagster_examples/intro_tutorial/custom_types_5.py
+```python literalinclude showLines startLine=75 emphasize-lines=7
+file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_5.py
 caption:custom_types_5.py
-lines:74-83
+lines:75-86
 ```
 
 Running this pipeline yields an <PyObject module="dagster" object="ExpectationResult" /> with
