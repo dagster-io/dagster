@@ -1,3 +1,7 @@
+import abc
+
+import six
+
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
@@ -7,7 +11,7 @@ from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
 
 
-class DagsterGraphQLContext(object):
+class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
     def __init__(self, active_repository_data, instance):
         self.active_repository_data = check.inst_param(
             active_repository_data, 'active_repository_data', ActiveRepositoryData
@@ -22,6 +26,10 @@ class DagsterGraphQLContext(object):
     def instance(self):
         return self._instance
 
+    @abc.abstractproperty
+    def is_reload_supported(self):
+        pass
+
 
 class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, active_repository_data, execution_manager, instance, version=None):
@@ -32,6 +40,10 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.version = version
+
+    @property
+    def is_reload_supported(self):
+        return False
 
 
 class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
@@ -101,3 +113,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
             )
             return pipeline_def
         return self.get_handle().with_pipeline_name(pipeline_name).build_pipeline_definition()
+
+    @property
+    def is_reload_supported(self):
+        return self.reloader and self.reloader.is_reload_supported

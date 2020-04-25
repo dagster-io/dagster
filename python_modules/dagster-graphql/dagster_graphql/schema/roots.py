@@ -1,6 +1,5 @@
 # commment
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.context import DagsterGraphQLOutOfProcessRepositoryContext
 from dagster_graphql.implementation.environment_schema import (
     resolve_environment_schema_or_error,
     resolve_is_environment_config_valid,
@@ -173,9 +172,7 @@ class DauphinQuery(dauphin.ObjectType):
         return graphene_info.context.version
 
     def resolve_reloadSupported(self, graphene_info):
-        if isinstance(graphene_info.context, DagsterGraphQLOutOfProcessRepositoryContext):
-            return False
-        return graphene_info.context.reloader.is_reload_supported
+        return graphene_info.context.is_reload_supported
 
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
