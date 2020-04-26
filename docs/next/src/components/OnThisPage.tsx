@@ -15,9 +15,9 @@ const OnThisPage: React.FC<{
   };
 
   return (
-    <div className="ml-8 pr-2 pt-2 w-1/4 hidden lg:block">
+    <div className="ml-8 pr-2 pt-2 w-1/4 hidden lg:block lg:relative">
       {anchors.length > 0 && (
-        <div className="py-4 border-l border-gray-300">
+        <div className="py-4 border-l border-gray-300 fixed">
           {anchors.map((anchor) => (
             <a
               key={anchor.href}
