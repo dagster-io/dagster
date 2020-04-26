@@ -7,6 +7,7 @@ import cx from 'classnames';
 import { useRouter } from 'next/router';
 import OnThisPage from './OnThisPage';
 import { useAnchorHeadings } from 'hooks/AnchorHeadings';
+import { PrevNext } from './PrevNext';
 
 const Layout: React.FunctionComponent = (props) => {
   const [isNavigationVisible, setIsNavigationVisible] = useState(false);
@@ -25,7 +26,7 @@ const Layout: React.FunctionComponent = (props) => {
         }}
       />
 
-      <div className="h-screen flex overflow-hidden bg-white">
+      <div className="h-screen flex overflow-hidden bg-white pt-16">
         <SidebarMobile
           isNavigationVisible={isNavigationVisible}
           setIsNavigationVisible={setIsNavigationVisible}
@@ -45,7 +46,10 @@ const Layout: React.FunctionComponent = (props) => {
                       router.pathname.indexOf('_modules') > 0,
                   })}
                 >
-                  {props.children}
+                  <>
+                    {props.children}
+                    <PrevNext />
+                  </>
                 </div>
                 <OnThisPage anchors={anchorHeadings} />
               </div>

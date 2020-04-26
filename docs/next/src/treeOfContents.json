@@ -1,0 +1,161 @@
+{
+  "Install": {
+    "name": "Install",
+    "path": "/docs/install",
+    "ignore": true,
+    "children": [
+      {
+        "name": "Quick Start",
+        "path": "/docs/install"
+      },
+      {
+        "name": "Dagster Package",
+        "path": "/docs/install/packages"
+      },
+      {
+        "name": "Python",
+        "path": "/docs/install/python"
+      },
+      {
+        "name": "Telemetry",
+        "path": "/docs/install/telemetry"
+      }
+    ]
+  },
+  "Tutorial": {
+    "name": "Tutorial",
+    "path": "/docs/tutorial",
+    "ignore": true,
+    "children": [
+      {
+        "name": "Before We Start",
+        "path": "/docs/tutorial"
+      },
+      {
+        "name": "Setup for the Tutorial",
+        "path": "/docs/tutorial/setup"
+      },
+      {
+        "name": "Overview",
+        "path": "/docs/tutorial/overview"
+      },
+      {
+        "name": "ETL with Dagster",
+        "path": "/docs/tutorial/basics"
+      },
+      {
+        "name": "Advanced Tutorials",
+        "path": "/docs/tutorial/advanced"
+      }
+    ]
+  },
+  "Learn": {
+    "name": "Learn",
+    "path": "/docs/learn",
+    "children": [
+      {
+        "name": "Getting Started",
+        "path": "/docs/learn"
+      },
+      {
+        "name": "Guides",
+        "path": "/docs/learn/guides/index"
+      },
+      {
+        "name": "How-Tos",
+        "path": "/docs/learn/how-tos/index"
+      },
+      {
+        "name": "Principles",
+        "path": "/docs/learn/principles"
+      },
+      {
+        "name": "Concepts",
+        "path": "/docs/learn/concepts"
+      },
+      {
+        "name": "Demos",
+        "path": "/docs/learn/demos"
+      }
+    ]
+  },
+  "API Docs": {
+    "name": "API Docs",
+    "path": "/docs/apidocs"
+  },
+  "Deploying": {
+    "name": "Deploying",
+    "path": "/docs/deploying",
+    "children": [
+      {
+        "name": "The Dagster instance",
+        "path": "/docs/deploying/instance"
+      },
+      {
+        "name": "Running Dagit as a service",
+        "path": "/docs/deploying/local"
+      },
+      {
+        "name": "Celery executor",
+        "path": "/docs/deploying/celery"
+      },
+      {
+        "name": "Deploying on Kubernetes",
+        "path": "/docs/deploying/k8s"
+      },
+      {
+        "name": "Deploying to AWS",
+        "path": "/docs/deploying/aws"
+      },
+      {
+        "name": "Deploying to GCP",
+        "path": "/docs/deploying/gcp"
+      },
+      {
+        "name": "Executing on Dask",
+        "path": "/docs/deploying/dask"
+      },
+      {
+        "name": "Deploying to Airflow",
+        "path": "/docs/deploying/airflow"
+      }
+    ]
+  },
+  "Community": {
+    "name": "Community",
+    "path": "/docs/community",
+    "ignore": true,
+    "children": [
+      {
+        "path": "/docs/community",
+        "name": "Community"
+      },
+      {
+        "path": "/docs/community/code_of_conduct",
+        "name": "Code of Conduct"
+      },
+      {
+        "path": "/docs/community/contributing",
+        "name": "Contributing"
+      },
+      {
+        "path": "https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU",
+        "isAbsolutePath": true,
+        "isExternal": true,
+        "name": "Slack"
+      },
+      {
+        "path": "https://www.github.com/dagster-io/dagster/",
+        "isAbsolutePath": true,
+        "isExternal": true,
+        "name": "Github"
+      },
+      {
+        "path": "https://stackoverflow.com/questions/tagged/dagster",
+        "isAbsolutePath": true,
+        "isExternal": true,
+        "name": "Stack Overflow"
+      }
+    ]
+  }
+}

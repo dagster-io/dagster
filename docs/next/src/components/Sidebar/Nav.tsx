@@ -1,26 +1,8 @@
 import cx from 'classnames';
-import data from 'data/searchindex.json';
 import { useRouter } from 'next/router';
-
 import CommunityLinks from 'components/CommunityLinks';
-import { ArrowDown, Book, Code, Community, Cog, File } from './Icons';
-
-import { contents as CONTENTS } from './contents.json';
-import subTree from './subTree';
-
-const API_DOCS_PAGES = [];
-
-const docnames = data.docnames;
-for (const i in docnames) {
-  const doc = docnames[i];
-  const title = data.titles[i];
-  if (doc.includes('sections')) {
-    API_DOCS_PAGES.push({
-      name: title,
-      path: doc.replace('sections/api/apidocs/', '/'),
-    });
-  }
-}
+import { flatten, TreeLink } from 'utils/treeOfContents/flatten';
+import { useTreeOfContents } from 'hooks/useTreeOfContents';
 
 export type TreeElement = {
   name: string;
@@ -28,15 +10,13 @@ export type TreeElement = {
   isAbsolutePath?: boolean;
 };
 
-const SUBTREE = subTree(API_DOCS_PAGES as TreeElement[]);
-
 type MainItemProps = {
   name: string;
   path: string;
   icon?: JSX.Element;
 };
 
-const MainItem: React.FC<MainItemProps> = ({ name, path, icon }) => {
+const MainItem: React.FC<MainItemProps> = ({ name, path }) => {
   const router = useRouter();
   const selected = router.pathname.includes(path);
   return (
@@ -51,7 +31,6 @@ const MainItem: React.FC<MainItemProps> = ({ name, path, icon }) => {
         'transition ease-in-out duration-150',
       )}
     >
-      {/* {icon} */}
       <span className="truncate">{name}</span>
       <div
         className={cx(
@@ -71,72 +50,51 @@ type NavProps = {
 };
 
 const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
+  const treeOfContents = useTreeOfContents();
   const router = useRouter();
-  const selectedSection = CONTENTS.find((i) =>
-    router.pathname.includes(i.path),
-  );
+  const allLinks = flatten(Object.values(treeOfContents), true);
+  const selectedSection = allLinks.find((l) => router.asPath.includes(l.path));
+  const selectedSectionChildren = (treeOfContents as Record<string, any>)[
+    selectedSection?.name || ''
+  ]?.children;
   return (
     <nav className={className}>
       {isMobile && <CommunityLinks className="mb-5" />}
       <div className="border-b border-gray-200 pb-2">
-        <MainItem name={'Install'} path="/docs/install" icon={<ArrowDown />} />
-        <MainItem name={'Tutorial'} path="/docs/tutorial" icon={<File />} />
-        <MainItem name={'Learn'} path="/docs/learn" icon={<Book />} />
-        <MainItem name={'API Docs'} path="/docs/apidocs" icon={<Code />} />
-        <MainItem name={'Deploying'} path="/docs/deploying" icon={<Cog />} />
-        <MainItem
-          name={'Community'}
-          path="/docs/community"
-          icon={<Community />}
-        />
+        {Object.values(treeOfContents).map((element) => (
+          <MainItem
+            key={element.name}
+            name={element.name}
+            path={element.path}
+          />
+        ))}
       </div>
-
       {selectedSection &&
-      SUBTREE[selectedSection.name] &&
-      SUBTREE[selectedSection.name].length > 0 ? (
+      selectedSectionChildren &&
+      selectedSectionChildren.length > 0 ? (
         <div className="mt-8">
           <h3 className="px-3 text-xs leading-4 font-semibold text-gray-500 uppercase tracking-wider">
-            {selectedSection?.name}
+            {selectedSection.name}
           </h3>
           <div className="mt-1">
-            {selectedSection?.name &&
-              SUBTREE[selectedSection.name] &&
-              SUBTREE[selectedSection.name].map((i: any, idx) => {
-                let subsectionPath = '';
-                let subSelected = false;
-
-                if (i.isAbsolutePath === true) {
-                  subsectionPath = i.path;
-                } else {
-                  subsectionPath = selectedSection.path + i.path;
-                  if (router.pathname.includes(subsectionPath)) {
-                    subSelected = true;
-                  }
-                  // Handle dynamic docs
-                  if (
-                    router.query.page instanceof Array &&
-                    '/' + router.query.page.join('/') === i.path
-                  ) {
-                    subSelected = true;
-                  }
-                }
-
-                return (
-                  <a
-                    key={idx}
-                    href={subsectionPath}
-                    className={cx(
-                      `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none focus:bg-gray-100 transition ease-in-out duration-150`,
-                      {
-                        'text-blue-800 bg-blue-200': subSelected,
-                        'hover:bg-gray-200': !subSelected,
-                      },
-                    )}
-                  >
-                    <span className="truncate">{i.name}</span>
-                  </a>
-                );
-              })}
+            {selectedSectionChildren.map((c: TreeLink) => {
+              const subSelected = router.asPath === c.path;
+              return (
+                <a
+                  key={`${c.path}-${c.name}`}
+                  href={c.path}
+                  className={cx(
+                    `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none focus:bg-gray-100 transition ease-in-out duration-150`,
+                    {
+                      'text-blue-800 bg-blue-200': subSelected,
+                      'hover:bg-gray-200': !subSelected,
+                    },
+                  )}
+                >
+                  <span className="truncate">{c.name}</span>
+                </a>
+              );
+            })}
           </div>
         </div>
       ) : null}
