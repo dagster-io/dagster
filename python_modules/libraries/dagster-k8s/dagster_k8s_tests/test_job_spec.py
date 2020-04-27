@@ -91,7 +91,7 @@ def test_valid_job_format(
 def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=redefined-outer-name
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
-    run = dagster_instance.get_or_create_run(
+    run = dagster_instance.create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, mode='default'
     )
 
@@ -111,7 +111,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):  # pylint: disable=
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = dagster_instance.get_or_create_run(
+    run = dagster_instance.create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict
     )
 

@@ -235,7 +235,7 @@ def expected_outer_prefix():
 def test_single():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    pipeline_run = instance.get_or_create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
+    pipeline_run = instance.create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
 
     step_keys = ['A', 'B', 'C']
 
@@ -266,7 +266,7 @@ def test_single():
 def test_multi():
     instance = DagsterInstance.local_temp()
     pipeline_name = 'foo_pipeline'
-    pipeline_run = instance.get_or_create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
+    pipeline_run = instance.create_run(pipeline_name=pipeline_name, pipeline_snapshot=None)
     context = get_multiprocessing_context()
 
     step_keys = ['A', 'B', 'C']

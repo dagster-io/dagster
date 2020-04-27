@@ -12,7 +12,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = instance.get_or_create_run(
+    pipeline_run = instance.create_run(
         pipeline_name='foo_pipeline', run_id='new_run', pipeline_snapshot=None
     )
 

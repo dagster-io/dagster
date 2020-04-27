@@ -155,7 +155,7 @@ def _execute_schedule(graphene_info, pipeline_def, execution_params):
             execution_plan, pipeline_def.get_pipeline_snapshot_id()
         )
 
-    pipeline_run = instance.get_or_create_run(
+    pipeline_run = instance.create_run(
         pipeline_name=pipeline_def.name,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,

@@ -467,7 +467,7 @@ class DagsterInstance:
             ),
         )
 
-    def get_or_create_run(
+    def _construct_run_with_snapshots(
         self,
         pipeline_name=None,
         run_id=None,
@@ -529,6 +529,78 @@ class DagsterInstance:
                 check.invariant(execution_plan_snapshot_id == returned_execution_plan_snapshot_id)
 
             pipeline_run = pipeline_run.with_execution_plan_snapshot_id(execution_plan_snapshot_id)
+
+        return pipeline_run
+
+    def create_run(
+        self,
+        pipeline_name=None,
+        run_id=None,
+        environment_dict=None,
+        mode=None,
+        selector=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot=None,
+        execution_plan_snapshot=None,
+    ):
+
+        # This logic is factored out since it's shared with `get_or_create_run`, which will soon be
+        # deleted. When it is deleted, the body of `_construct_run_with_snapshots` can be brought
+        # back into this function.
+        # https://github.com/dagster-io/dagster/issues/2412
+        pipeline_run = self._construct_run_with_snapshots(
+            pipeline_name,
+            run_id,
+            environment_dict,
+            mode,
+            selector,
+            step_keys_to_execute,
+            status,
+            tags,
+            root_run_id,
+            parent_run_id,
+            pipeline_snapshot,
+            execution_plan_snapshot,
+        )
+        return self._run_storage.add_run(pipeline_run)
+
+    def get_or_create_run(
+        self,
+        pipeline_name=None,
+        run_id=None,
+        environment_dict=None,
+        mode=None,
+        selector=None,
+        step_keys_to_execute=None,
+        status=None,
+        tags=None,
+        root_run_id=None,
+        parent_run_id=None,
+        pipeline_snapshot=None,
+        execution_plan_snapshot=None,
+    ):
+        # The last usage of this method is in dagster-airflow. When the usage is removed, this method
+        # should be deleted.
+        # https://github.com/dagster-io/dagster/issues/2412
+
+        pipeline_run = self._construct_run_with_snapshots(
+            pipeline_name,
+            run_id,
+            environment_dict,
+            mode,
+            selector,
+            step_keys_to_execute,
+            status,
+            tags,
+            root_run_id,
+            parent_run_id,
+            pipeline_snapshot,
+            execution_plan_snapshot,
+        )
 
         if self.has_run(pipeline_run.run_id):
             candidate_run = self.get_run_by_id(pipeline_run.run_id)

@@ -64,7 +64,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
-    pipeline_run = instance.get_or_create_run(
+    pipeline_run = instance.create_run(
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
         execution_plan_snapshot=snapshot_from_execution_plan(
             execution_plan, pipeline_def.get_pipeline_snapshot_id()

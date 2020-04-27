@@ -16,7 +16,7 @@ def test_k8s_run_launcher_default(
     environment_dict = load_yaml_from_path(os.path.join(environments_path(), 'env.yaml'))
     pipeline_name = 'demo_pipeline'
     tags = {'key': 'value'}
-    run = dagster_instance.get_or_create_run(
+    run = dagster_instance.create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
     )
 
@@ -56,7 +56,7 @@ def test_k8s_run_launcher_celery(
 
     pipeline_name = 'demo_pipeline_celery'
     tags = {'key': 'value'}
-    run = dagster_instance.get_or_create_run(
+    run = dagster_instance.create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict, tags=tags, mode='default'
     )
 
@@ -80,7 +80,7 @@ def test_k8s_run_launcher_celery(
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
     environment_dict = {'blah blah this is wrong': {}}
     pipeline_name = 'demo_pipeline'
-    run = dagster_instance.get_or_create_run(
+    run = dagster_instance.create_run(
         pipeline_name=pipeline_name, environment_dict=environment_dict
     )
 

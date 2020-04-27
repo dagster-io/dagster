@@ -253,7 +253,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     instance = check.opt_inst_param(
         instance, 'instance', DagsterInstance, default=DagsterInstance.ephemeral()
     )
-    pipeline_run = instance.get_or_create_run(
+    pipeline_run = instance.create_run(
         run_id=run_id, pipeline_name='<empty>', pipeline_snapshot=None
     )
     with scoped_pipeline_context(

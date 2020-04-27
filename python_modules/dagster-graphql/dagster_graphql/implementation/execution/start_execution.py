@@ -68,7 +68,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
 
     try:
-        pipeline_run = instance.get_or_create_run(
+        pipeline_run = instance.create_run(
             pipeline_name=pipeline_def.name,
             run_id=execution_params.execution_metadata.run_id
             if execution_params.execution_metadata.run_id
