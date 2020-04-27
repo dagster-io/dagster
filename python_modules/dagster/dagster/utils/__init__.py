@@ -14,6 +14,7 @@ from collections import namedtuple
 from enum import Enum
 from warnings import warn
 
+import six
 import yaml
 from six.moves import configparser
 
@@ -410,3 +411,7 @@ def utc_datetime_from_timestamp(timestamp):
 
 def is_enum_value(value):
     return False if value is None else issubclass(value.__class__, Enum)
+
+
+def git_repository_root():
+    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())

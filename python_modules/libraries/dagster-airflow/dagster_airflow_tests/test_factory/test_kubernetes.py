@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pytest
 from airflow.exceptions import AirflowException
@@ -13,32 +14,22 @@ from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
 from dagster.core.utils import make_new_run_id
-from dagster.utils import file_relative_path, load_yaml_from_glob_list
+from dagster.utils import git_repository_root, load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution
 
-# TODO (Nate): Will remove in follow-up diff
-ENVIRONMENTS_PATH = file_relative_path(
-    __file__,
-    os.path.join(
-        '..',
-        '..',
-        '..',
-        '..',
-        '.buildkite',
-        'images',
-        'docker',
-        'test_project',
-        'test_pipelines',
-        'environments',
-    ),
-)
+sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
+from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 @nettest
 def test_s3_storage(
-    dagster_airflow_k8s_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
+    _check_aws_creds_available()
+
+    environments_path = test_project_environments_path()
+
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
@@ -48,14 +39,22 @@ def test_s3_storage(
             os.path.join(environments_path, 'env_s3.yaml'),
         ],
         image=dagster_docker_image,
+        op_kwargs={
+            'env_vars': {
+                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
+                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            }
+        },
     )
     validate_pipeline_execution(results)
 
 
 @nettest
 def test_gcs_storage(
-    dagster_airflow_k8s_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_k8s_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
+    environments_path = test_project_environments_path()
+
     pipeline_name = 'demo_pipeline_gcs'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
@@ -69,11 +68,12 @@ def test_gcs_storage(
     validate_pipeline_execution(results)
 
 
-def test_error_dag_k8s(
-    dagster_docker_image, environments_path
-):  # pylint: disable=redefined-outer-name
+def test_error_dag_k8s(dagster_docker_image):  # pylint: disable=redefined-outer-name
+    _check_aws_creds_available()
+
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)
+    environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]
@@ -88,9 +88,26 @@ def test_error_dag_k8s(
         image=dagster_docker_image,
         namespace='default',
         environment_dict=environment_dict,
+        op_kwargs={
+            'env_vars': {
+                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
+                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            }
+        },
     )
 
     with pytest.raises(AirflowException) as exc_info:
         execute_tasks_in_dag(dag, tasks, run_id, execution_date)
 
     assert 'Exception: Unusual error' in str(exc_info.value)
+
+
+def _check_aws_creds_available():
+    for expected_env_var in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']:
+        if expected_env_var not in os.environ:
+            raise Exception(
+                'Could not find %s in environment; AWS credentials AWS_ACCESS_KEY_ID and '
+                'AWS_SECRET_ACCESS_KEY must be set in environment for dagster-airflow k8s tests to '
+                'run, as credentials are needed to access S3 from within the Docker container '
+                'running on kind.' % expected_env_var
+            )

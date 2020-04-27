@@ -10,8 +10,6 @@ from dagster import pipeline, solid
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
-from .conftest import dagster_docker_image  # pylint: disable=unused-import
-
 
 @solid
 def nonce_solid(_):
@@ -30,9 +28,7 @@ nonce_execution_plan_snapshot = snapshot_from_execution_plan(
 )
 
 
-def test_init_modified_docker_operator(
-    dagster_docker_image,
-):  # pylint: disable=redefined-outer-name
+def test_init_modified_docker_operator(dagster_docker_image):
     dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -45,9 +41,7 @@ def test_init_modified_docker_operator(
     DagsterDockerOperator(dagster_operator_parameters)
 
 
-def test_modified_docker_operator_bad_docker_conn(
-    dagster_docker_image,
-):  # pylint: disable=redefined-outer-name
+def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
     dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -68,7 +62,7 @@ def test_modified_docker_operator_bad_docker_conn(
         operator.execute({})
 
 
-def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=redefined-outer-name
+def test_modified_docker_operator_env(dagster_docker_image):
     dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -87,9 +81,7 @@ def test_modified_docker_operator_env(dagster_docker_image):  # pylint: disable=
         operator.execute({})
 
 
-def test_modified_docker_operator_bad_command(
-    dagster_docker_image,
-):  # pylint: disable=redefined-outer-name
+def test_modified_docker_operator_bad_command(dagster_docker_image):
     dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
         environment_dict={'storage': {'filesystem': {}}},
@@ -108,7 +100,7 @@ def test_modified_docker_operator_bad_command(
         operator.execute({})
 
 
-def test_modified_docker_operator_url(dagster_docker_image):  # pylint: disable=redefined-outer-name
+def test_modified_docker_operator_url(dagster_docker_image):
     try:
         docker_host = os.getenv('DOCKER_HOST')
         docker_tls_verify = os.getenv('DOCKER_TLS_VERIFY')

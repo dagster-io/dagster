@@ -24,9 +24,9 @@ run_launcher:
     job_namespace: "dagster"
     instance_config_map: "dagster-instance"
     env_config_maps:
-    - "dagster-k8s-job-runner-env"
+      - "dagster-k8s-job-runner-env"
     env_secrets:
-    - "dagster-k8s-some-secret"
+      - "dagster-k8s-some-secret"
 ```
 
 ## Helm chart
@@ -81,7 +81,7 @@ Instructions are below.
 You may find that the kind cluster creation, image loading, and kind cluster creation loop
 is too slow for effective local dev.
 
-You may bypass cluster creation and image loading in the following way. First add the `--no-cleanup` 
+You may bypass cluster creation and image loading in the following way. First add the `--no-cleanup`
 flag to your pytest invocation:
 
 ```shell
@@ -106,14 +106,14 @@ export KUBECONFIG=/tmp/kubeconfig
 ```
 
 #### Manual kind cluster setup
+
 The test fixtures provided by `dagster-k8s` automate the process described below, but sometimes its useful to manually configure a kind cluster and load images onto it.
 
 First, ensure you have a Docker image appropriate for your Python version. Run, from the root of
 the repo:
 
 ```shell
-./.buildkite/images/docker/test_project/build.sh 3.7.6
-docker tag dagster-docker-buildkite:latest \
+./.buildkite/images/docker/test_project/build.sh 3.7.6 \
     dagster.io.priv/dagster-docker-buildkite:py37-latest
 ```
 
@@ -145,9 +145,9 @@ Then you can run pytest as follows:
 pytest --kind-cluster=kind-test
 ```
 
-
 ### Faster local development (with an existing K8s cluster)
-If you already have a development K8s cluster available, you can run tests on that cluster vs. running locally in `kind`. 
+
+If you already have a development K8s cluster available, you can run tests on that cluster vs. running locally in `kind`.
 
 For this to work, first build and deploy the test image to a registry available to your cluster. For example, with ECR:
 
@@ -165,9 +165,9 @@ Then, you can run tests on EKS with:
 export DAGSTER_DOCKER_IMAGE_TAG="2020-04-21T21-04-06"
 export DAGSTER_DOCKER_REPOSITORY="$AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com"
 export DAGSTER_DOCKER_IMAGE="dagster-k8s-tests"
- 
+
 # First run with --no-cleanup to leave Helm chart in place
-pytest --cluster-provider="kubeconfig" --no-cleanup -s -vvv 
+pytest --cluster-provider="kubeconfig" --no-cleanup -s -vvv
 
 # Subsequent runs against existing Helm chart
 pytest --cluster-provider="kubeconfig" --existing-helm-namespace="dagster-test-<some id>" -s -vvv

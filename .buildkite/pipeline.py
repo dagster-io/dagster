@@ -90,13 +90,12 @@ def publish_test_images():
                 "export GOOGLE_APPLICATION_CREDENTIALS=\"/tmp/gcp-key-elementl-dev.json\"",
                 "aws s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
                 #
-                # build test image
-                "./.buildkite/images/docker/test_project/build.sh " + version,
-                #
-                # tag and push the built image
+                # build and tag test image
                 "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
                 + version,
-                "docker tag dagster-docker-buildkite $${TEST_IMAGE}",
+                "./.buildkite/images/docker/test_project/build.sh " + version + " $${TEST_IMAGE}",
+                #
+                # push the built image
                 "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
                 "docker push $${TEST_IMAGE}",
             )
@@ -207,6 +206,8 @@ def airflow_tests():
         tests.append(
             StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
             .run(
+                "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
+                "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,

@@ -7,34 +7,33 @@ fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 # pylint: disable=redefined-outer-name, unused-argument
 import os
 import shutil
-import subprocess
+import sys
 import tempfile
-import uuid
 
 import docker
 import pytest
 import six
 
-from dagster import check
-from dagster.utils import file_relative_path, load_yaml_from_path, mkdir_p, pushd
+from dagster.utils import git_repository_root, load_yaml_from_path, mkdir_p
 
-
-@pytest.fixture(scope='session')
-def git_repository_root():
-    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
-
-
-@pytest.fixture(scope='session')
-def test_repo_path(git_repository_root):  # pylint: disable=redefined-outer-name
-    return file_relative_path(
-        __file__,
-        os.path.join(git_repository_root, '.buildkite', 'images', 'docker', 'test_project'),
+try:
+    sys.path.append(
+        os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
+    )
+    from dagster_k8s_tests.test_project import (  # isort:skip
+        build_and_tag_test_image,
+        test_project_docker_image,
+    )
+except ImportError as import_exc:
+    six.raise_from(
+        Exception(
+            'Expected to find dagster-k8s in python_modules/libraries/dagster-k8s, please run these'
+            ' tests from a clean checkout of the dagster repository'
+        ),
+        import_exc,
     )
 
-
-@pytest.fixture(scope='session')
-def environments_path(test_repo_path):  # pylint: disable=redefined-outer-name
-    return os.path.join(test_repo_path, 'test_pipelines', 'environments')
+IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
 
 @pytest.fixture(scope='module')
@@ -45,18 +44,6 @@ def airflow_home():
     airflow_home_dir = os.path.abspath(os.path.expanduser(airflow_home_dir))
 
     return airflow_home_dir
-
-
-@pytest.fixture(scope='module')
-def temp_dir():
-    '''Context manager for temporary directories.
-
-    pytest implicitly wraps in try/except.
-    '''
-    dir_path = os.path.join('/tmp', str(uuid.uuid4()))
-    mkdir_p(dir_path)
-    yield dir_path
-    shutil.rmtree(dir_path)
 
 
 @pytest.fixture(scope='module')
@@ -93,51 +80,21 @@ def clean_airflow_home(airflow_home):
 
 
 @pytest.fixture(scope='session')
-def docker_client():
-    '''Instantiate a Docker Python client.'''
-    try:
-        client = docker.from_env()
-        client.info()
-    except docker.errors.APIError:
-        # pylint: disable=protected-access
-        check.failed('Couldn\'t find docker at {url} -- is it running?'.format(url=client._url('')))
-    return client
-
-
-@pytest.fixture(scope='session')
 def dagster_docker_image():
-    assert (
-        'DAGSTER_DOCKER_IMAGE' in os.environ
-    ), 'DAGSTER_DOCKER_IMAGE must be set in your environment for these tests'
+    docker_image = test_project_docker_image()
 
-    # Will be set in environment by .buildkite/pipeline.py -> tox.ini to:
-    # ${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:${BUILDKITE_BUILD_ID}-${TOX_PY_VERSION}
-    return os.environ['DAGSTER_DOCKER_IMAGE']
-
-
-@pytest.fixture(scope='session')
-def build_docker_image(test_repo_path, docker_client, dagster_docker_image):
-    with pushd(test_repo_path):
-        subprocess.check_output(['./build.sh'], shell=True)
-
-    return dagster_docker_image
-
-
-@pytest.fixture(scope='session')
-def docker_image(docker_client, build_docker_image):
-    '''Check that the airflow image exists.'''
-    try:
-        docker_client.images.get(build_docker_image)
-    except docker.errors.ImageNotFound:
-        check.failed(
-            'Couldn\'t find docker image {image} required for test: please run the script at '
-            '{script_path}'.format(
-                image=build_docker_image,
-                script_path=file_relative_path(__file__, 'test_project/build.sh'),
+    if not IS_BUILDKITE:
+        try:
+            client = docker.from_env()
+            client.images.get(docker_image)
+            print(
+                'Found existing image tagged {image}, skipping image build. To rebuild, first run: '
+                'docker rmi {image}'.format(image=docker_image)
             )
-        )
+        except docker.errors.ImageNotFound:
+            build_and_tag_test_image(docker_image)
 
-    return build_docker_image
+    return docker_image
 
 
 @pytest.fixture(scope='module')

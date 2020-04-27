@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 # pylint: disable=unused-import
 from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
@@ -7,14 +8,21 @@ from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_examples.dagster_airflow.custom_operator import CustomOperator
 
 from dagster import ExecutionTargetHandle
+from dagster.utils import git_repository_root
+
+sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
+from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 def test_my_custom_operator(
-    dagster_airflow_custom_operator_pipeline, environments_path, caplog,
+    dagster_airflow_custom_operator_pipeline, caplog,
 ):  # pylint: disable=redefined-outer-name
     caplog.set_level(logging.INFO, logger='CustomOperatorLogger')
     pipeline_name = 'demo_pipeline'
     operator = CustomOperator
+
+    environments_path = test_project_environments_path()
+
     results = dagster_airflow_custom_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),

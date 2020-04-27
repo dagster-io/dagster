@@ -1,5 +1,6 @@
 # pylint: disable=unused-import
 import os
+import sys
 import uuid
 
 import pytest
@@ -10,20 +11,24 @@ from dagster_airflow.test_fixtures import (
     dagster_airflow_docker_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.conftest import dagster_docker_image, environments_path
+from dagster_airflow_tests.conftest import dagster_docker_image
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
 from dagster.core.utils import make_new_run_id
-from dagster.utils import load_yaml_from_glob_list
+from dagster.utils import git_repository_root, load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
+sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
+from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
+
 
 def test_fs_storage_no_explicit_base_dir(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
+    environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
@@ -37,9 +42,10 @@ def test_fs_storage_no_explicit_base_dir(
 
 
 def test_fs_storage(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
+    environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
@@ -54,9 +60,10 @@ def test_fs_storage(
 
 @nettest
 def test_s3_storage(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline'
+    environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
@@ -71,9 +78,10 @@ def test_s3_storage(
 
 @nettest
 def test_gcs_storage(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_pipeline_gcs'
+    environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
@@ -87,10 +95,10 @@ def test_gcs_storage(
 
 
 def test_skip_operator(
-    dagster_airflow_docker_operator_pipeline, dagster_docker_image, environments_path,
+    dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = 'optional_outputs'
-
+    environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
         handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
@@ -101,11 +109,10 @@ def test_skip_operator(
     validate_skip_pipeline_execution(results)
 
 
-def test_error_dag_containerized(
-    dagster_docker_image, environments_path
-):  # pylint: disable=redefined-outer-name
+def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)
+    environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),
     ]

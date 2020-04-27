@@ -10,8 +10,9 @@ import yaml
 from dagster_k8s.utils import wait_for_pod
 
 from dagster import check
+from dagster.utils import git_repository_root
 
-from .utils import check_output, get_test_namespace, git_repository_root
+from .utils import check_output, get_test_namespace
 
 
 @contextmanager

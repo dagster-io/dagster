@@ -52,18 +52,6 @@ def find_free_port():
         return s.getsockname()[1]
 
 
-def git_repository_root():
-    return six.ensure_str(check_output(['git', 'rev-parse', '--show-toplevel']).strip())
-
-
-def test_repo_path():
-    return os.path.join(git_repository_root(), '.buildkite', 'images', 'docker', 'test_project')
-
-
-def environments_path():
-    return os.path.join(test_repo_path(), 'test_pipelines', 'environments')
-
-
 def remove_none_recursively(obj):
     '''Remove none values from a dict. This is used here to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
