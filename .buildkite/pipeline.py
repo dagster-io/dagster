@@ -206,14 +206,16 @@ def airflow_tests():
         tests.append(
             StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
             .run(
+                "export AIRFLOW_HOME=\"/airflow\"",
+                "mkdir -p $${AIRFLOW_HOME}",
                 "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
                 "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
                 "aws ecr get-login --no-include-email --region us-west-1 | sh",
                 r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-                "./.buildkite/scripts/dagster_airflow.sh %s %s" % (version, TOX_MAP[version]),
                 "pushd python_modules/libraries/dagster-airflow/",
+                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",

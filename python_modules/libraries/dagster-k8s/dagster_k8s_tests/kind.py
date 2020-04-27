@@ -1,15 +1,33 @@
 import os
 import subprocess
+import time
 import uuid
 from contextlib import contextmanager
 
-from kubernetes import client, config
+import kubernetes
 
 from dagster import check
 from dagster.utils import safe_tempfile_path
 
-from .cluster_config import ClusterConfig
+from .cluster import ClusterConfig
 from .utils import check_output, which_, within_docker
+
+
+def kind_load_images(cluster_name, local_dagster_test_image, additional_images=None):
+    check.str_param(cluster_name, 'cluster_name')
+    check.str_param(local_dagster_test_image, 'local_dagster_test_image')
+    additional_images = check.opt_list_param(additional_images, 'additional_images', of_type=str)
+
+    print('Loading images into kind cluster...')
+
+    # Pull rabbitmq/pg images
+    for image in additional_images:
+        print('kind: Loading image %s into kind cluster %s' % (image, cluster_name))
+        check_output(['docker', 'pull', image])
+        check_output(['kind', 'load', 'docker-image', '--name', cluster_name, image])
+
+    print('kind: Loading image %s into kind cluster %s' % (local_dagster_test_image, cluster_name))
+    check_output(['kind', 'load', 'docker-image', '--name', cluster_name, local_dagster_test_image])
 
 
 def kind_cluster_exists(cluster_name):
@@ -78,6 +96,8 @@ def kind_sync_dockerconfig():
     '''
     print('--- Syncing docker config to nodes...')
 
+    docker_exe = which_('docker')
+
     # https://github.com/kubernetes-client/python/issues/895#issuecomment-515025300
     from kubernetes.client.models.v1_container_image import V1ContainerImage
 
@@ -86,11 +106,9 @@ def kind_sync_dockerconfig():
 
     V1ContainerImage.names = V1ContainerImage.names.setter(names)  # pylint: disable=no-member
 
-    nodes = client.CoreV1Api().list_node().items
+    nodes = kubernetes.client.CoreV1Api().list_node().items
     for node in nodes:
         node_name = node.metadata.name
-
-        docker_exe = which_('docker')
 
         # copy the config to where kubelet will look
         cmd = os.path.expandvars(
@@ -99,6 +117,7 @@ def kind_sync_dockerconfig():
                 docker_exe=docker_exe, node_name=node_name
             )
         )
+        print('Running cmd: %s' % cmd)
         check_output(cmd, shell=True)
 
         # restart kubelet to pick up the config
@@ -107,15 +126,17 @@ def kind_sync_dockerconfig():
 
 
 @contextmanager
-def kind_cluster(cluster_name=None, should_cleanup=False):
+def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.0):
     cluster_name = cluster_name or 'cluster-{uuid}'.format(uuid=uuid.uuid4().hex)
 
     # We need to use an internal address in a DinD context like Buildkite
     use_internal_address = within_docker()
 
     if kind_cluster_exists(cluster_name):
+        print('Using existing cluster %s' % cluster_name)
+
         with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
-            config.load_kube_config(config_file=kubeconfig_file)
+            kubernetes.config.load_kube_config(config_file=kubeconfig_file)
             yield ClusterConfig(cluster_name, kubeconfig_file)
 
             if not should_cleanup:
@@ -127,6 +148,30 @@ def kind_cluster(cluster_name=None, should_cleanup=False):
     else:
         with create_kind_cluster(cluster_name, should_cleanup=should_cleanup):
             with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
-                config.load_kube_config(config_file=kubeconfig_file)
+                kubernetes.config.load_kube_config(config_file=kubeconfig_file)
                 kind_sync_dockerconfig()
+
+                # Ensure cluster is up by listing svc accounts in the default namespace
+                # Otherwise if not ready yet, pod creation on kind cluster will fail with error
+                # like:
+                #
+                # pods "dagster.demo-error-pipeline.error-solid-e748d5c2" is forbidden: error
+                # looking up service account default/default: serviceaccount "default" not found
+                print('Testing service account listing...')
+                start = time.time()
+                while True:
+                    if time.time() - start > kind_ready_timeout:
+                        raise Exception('Timed out while waiting for kind cluster to be ready')
+
+                    api = kubernetes.client.CoreV1Api()
+                    service_accounts = [
+                        s.metadata.name
+                        for s in api.list_namespaced_service_account('default').items
+                    ]
+                    print('Service accounts: ', service_accounts)
+                    if 'default' in service_accounts:
+                        break
+
+                    time.sleep(1)
+
                 yield ClusterConfig(cluster_name, kubeconfig_file)

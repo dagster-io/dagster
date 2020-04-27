@@ -1,3 +1,5 @@
+# pylint: disable=redefined-outer-name, unused-argument
+
 import os
 import sys
 
@@ -9,7 +11,6 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.conftest import dagster_docker_image  # pylint: disable=unused-import
 from dagster_airflow_tests.marks import nettest
 
 from dagster import ExecutionTargetHandle
@@ -23,11 +24,9 @@ from dagster_k8s_tests.test_project import test_project_environments_path  # iso
 
 
 @nettest
-def test_s3_storage(
-    dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
-):  # pylint: disable=redefined-outer-name
+def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider):
+    print('--- :airflow: test_kubernetes.test_s3_storage')
     _check_aws_creds_available()
-
     environments_path = test_project_environments_path()
 
     pipeline_name = 'demo_pipeline'
@@ -40,10 +39,11 @@ def test_s3_storage(
         ],
         image=dagster_docker_image,
         op_kwargs={
+            'config_file': os.environ['KUBECONFIG'],
             'env_vars': {
                 'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
                 'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
-            }
+            },
         },
     )
     validate_pipeline_execution(results)
@@ -51,8 +51,10 @@ def test_s3_storage(
 
 @nettest
 def test_gcs_storage(
-    dagster_airflow_k8s_operator_pipeline, dagster_docker_image
-):  # pylint: disable=redefined-outer-name
+    dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider,
+):
+    print('--- :airflow: test_kubernetes.test_gcs_storage')
+
     environments_path = test_project_environments_path()
 
     pipeline_name = 'demo_pipeline_gcs'
@@ -64,11 +66,13 @@ def test_gcs_storage(
             os.path.join(environments_path, 'env_gcs.yaml'),
         ],
         image=dagster_docker_image,
+        op_kwargs={'config_file': os.environ['KUBECONFIG']},
     )
     validate_pipeline_execution(results)
 
 
-def test_error_dag_k8s(dagster_docker_image):  # pylint: disable=redefined-outer-name
+def test_error_dag_k8s(dagster_docker_image, cluster_provider):
+    print('--- :airflow: test_kubernetes.test_error_dag_k8s')
     _check_aws_creds_available()
 
     pipeline_name = 'demo_error_pipeline'
@@ -89,10 +93,11 @@ def test_error_dag_k8s(dagster_docker_image):  # pylint: disable=redefined-outer
         namespace='default',
         environment_dict=environment_dict,
         op_kwargs={
+            'config_file': os.environ['KUBECONFIG'],
             'env_vars': {
                 'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
                 'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
-            }
+            },
         },
     )
 

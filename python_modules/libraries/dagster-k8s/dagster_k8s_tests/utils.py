@@ -10,6 +10,8 @@ from dagster_k8s.utils import get_pod_names_in_job, retrieve_pod_logs, wait_for_
 
 from dagster import check
 
+IS_BUILDKITE = os.getenv('BUILDKITE') is not None
+
 
 def get_test_namespace():
     namespace_suffix = hex(random.randint(0, 16 ** 6))[2:]

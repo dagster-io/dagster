@@ -20,6 +20,7 @@ try:
     sys.path.append(
         os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
     )
+    from dagster_k8s_tests.cluster import define_cluster_provider_fixture  # isort:skip
     from dagster_k8s_tests.test_project import (  # isort:skip
         build_and_tag_test_image,
         test_project_docker_image,
@@ -128,3 +129,6 @@ def s3_bucket():
 @pytest.fixture(scope='session')
 def gcs_bucket():
     yield 'dagster-scratch-ccdfe1e'
+
+
+cluster_provider = define_cluster_provider_fixture()

@@ -3,7 +3,6 @@ import subprocess
 import time
 from contextlib import contextmanager
 
-import kubernetes
 import psycopg2
 import pytest
 from dagster_k8s.launcher import K8sRunLauncher
@@ -15,12 +14,9 @@ from dagster.core.instance.ref import compute_logs_directory
 from dagster.core.storage.local_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 
-from .cluster_config import ClusterConfig
+from .cluster import define_cluster_provider_fixture
 from .helm import helm_chart, helm_test_resources, test_namespace
-from .kind_cluster import kind_cluster, kind_cluster_exists
-from .utils import check_output, find_free_port
-
-IS_BUILDKITE = os.getenv('BUILDKITE') is not None
+from .utils import IS_BUILDKITE, check_output, find_free_port
 
 # How long to wait before giving up on trying to establish postgres port forwarding
 PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute
@@ -47,62 +43,9 @@ def image_pull_policy():
         return 'IfNotPresent'
 
 
-def kind_build_and_load_images(local_dagster_test_image, cluster_name):
-    from .test_project import build_and_tag_test_image
-
-    print('Building and loading images into kind cluster...')
-
-    # Pull rabbitmq/pg images
-    check_output(['docker', 'pull', 'docker.io/bitnami/rabbitmq'])
-    check_output(['docker', 'pull', 'docker.io/bitnami/postgresql'])
-
-    build_and_tag_test_image(local_dagster_test_image)
-
-    # load all images into the kind cluster
-    for image in [
-        'docker.io/bitnami/postgresql',
-        'docker.io/bitnami/rabbitmq',
-        local_dagster_test_image,
-    ]:
-        check_output(['kind', 'load', 'docker-image', '--name', cluster_name, image])
-
-
-@pytest.fixture(scope='session')
-def cluster_provider(request):
-    from .test_project import test_project_docker_image
-
-    if IS_BUILDKITE:
-        print('Installing ECR credentials...')
-        check_output('aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True)
-
-    provider = request.config.getoption('--cluster-provider')
-
-    # Use a kind cluster
-    if provider == 'kind':
-        cluster_name = request.config.getoption('--kind-cluster')
-
-        # Cluster will be deleted afterwards unless this is set.
-        # This is to allow users to reuse an existing cluster in local test by running
-        # `pytest --kind-cluster my-cluster --no-cleanup` -- this avoids the per-test run overhead
-        # of cluster setup and teardown
-        should_cleanup = not request.config.getoption('--no-cleanup')
-
-        existing_cluster = kind_cluster_exists(cluster_name)
-
-        with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
-            if not IS_BUILDKITE and not existing_cluster:
-                docker_image = test_project_docker_image()
-                kind_build_and_load_images(docker_image, cluster_config.name)
-            yield cluster_config
-
-    # Use cluster from kubeconfig
-    elif provider == 'kubeconfig':
-        kubeconfig_file = os.getenv('KUBECONFIG', os.path.expandvars('${HOME}/.kube/config'))
-        kubernetes.config.load_kube_config(config_file=kubeconfig_file)
-        yield ClusterConfig(name='from_system_kubeconfig', kubeconfig_file=kubeconfig_file)
-
-    else:
-        raise Exception('unknown cluster provider %s' % cluster_provider)
+cluster_provider = define_cluster_provider_fixture(
+    additional_kind_images=['docker.io/bitnami/rabbitmq', 'docker.io/bitnami/postgresql']
+)
 
 
 @pytest.fixture(scope='session')
