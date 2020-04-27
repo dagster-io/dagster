@@ -108,6 +108,28 @@ def materialization_schedule():
     )
 
 
+def longitudinal_schedule():
+    from .toys.longitudinal import longitudinal_config
+
+    schedule_name = 'longitudinal_demo'
+    partition_set = PartitionSetDefinition(
+        name='ingest_and_train',
+        pipeline_name='longitudinal_pipeline',
+        partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
+        environment_dict_fn_for_partition=longitudinal_config,
+    )
+
+    def _should_execute(context):
+        return backfill_should_execute(context, partition_set, schedule_name)
+
+    return partition_set.create_schedule_definition(
+        schedule_name=schedule_name,
+        cron_schedule="* * * * *",  # tick every minute
+        partition_selector=backfilling_partition_selector,
+        should_execute=_should_execute,
+    )
+
+
 def get_bay_bikes_schedules():
     from dagster_examples.bay_bikes.schedules import (
         daily_weather_ingest_schedule,
@@ -123,6 +145,7 @@ def get_toys_schedules():
 
     return [
         backfill_test_schedule(),
+        longitudinal_schedule(),
         materialization_schedule(),
         ScheduleDefinition(
             name="many_events_every_min",

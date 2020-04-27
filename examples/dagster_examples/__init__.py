@@ -10,6 +10,7 @@ def get_toys_pipelines():
         pandas_hello_world_pipeline_with_read_csv,
     )
     from dagster_examples.toys.unreliable import unreliable_pipeline
+    from dagster_examples.toys.longitudinal import longitudinal_pipeline
 
     return [
         composition,
@@ -21,6 +22,7 @@ def get_toys_pipelines():
         sleepy_pipeline,
         stdout_spew_pipeline,
         unreliable_pipeline,
+        longitudinal_pipeline,
     ]
 
 

@@ -5,8 +5,10 @@ from dateutil.relativedelta import relativedelta
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 
+DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 
-def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt="%Y-%m-%d"):
+
+def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=None):
     ''' Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
 
@@ -26,7 +28,7 @@ def date_partition_range(start, end=None, delta=datetime.timedelta(days=1), fmt=
     check.inst_param(start, 'start', datetime.datetime)
     check.opt_inst_param(end, 'end', datetime.datetime)
     check.inst_param(delta, 'timedelta', (datetime.timedelta, relativedelta))
-    check.str_param(fmt, 'fmt')
+    fmt = check.opt_str_param(fmt, 'fmt', default=DEFAULT_DATE_FORMAT)
 
     if end and start > end:
         raise DagsterInvariantViolationError(
