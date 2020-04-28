@@ -9,7 +9,7 @@ from dagster.core.definitions.environment_schema import create_environment_schem
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap import snapshot_from_execution_plan
 from dagster.utils.error import SerializableErrorInfo
 
 from ..fetch_pipelines import get_pipeline_def_from_selector

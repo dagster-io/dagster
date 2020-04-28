@@ -17,7 +17,7 @@ from dagster.core.errors import (
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.tags import check_tags
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.merger import merge_dicts

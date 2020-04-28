@@ -11,11 +11,12 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster.core.snap import (
     ExecutionPlanSnapshot,
+    PipelineSnapshot,
     create_execution_plan_snapshot_id,
+    create_pipeline_snapshot_id,
 )
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 

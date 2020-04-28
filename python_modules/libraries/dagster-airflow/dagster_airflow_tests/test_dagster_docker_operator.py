@@ -8,7 +8,7 @@ from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
 from dagster import pipeline, solid
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap import snapshot_from_execution_plan
 
 
 @solid

@@ -4,7 +4,7 @@ from dagit.cli import host_dagit_ui_with_execution_handle
 
 from dagster import ExecutionTargetHandle, seven
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.active_data import active_repository_data_from_def
+from dagster.core.snap import active_repository_data_from_def
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 

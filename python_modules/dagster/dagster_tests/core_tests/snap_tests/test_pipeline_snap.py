@@ -14,15 +14,18 @@ from dagster import (
     solid,
 )
 from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, String
-from dagster.core.snap.config_types import snap_from_config_type
-from dagster.core.snap.dep_snapshot import (
+from dagster.core.snap import (
     DependencyStructureIndex,
+    PipelineSnapshot,
+    SolidInvocationSnap,
+    create_pipeline_snapshot_id,
+    snap_from_config_type,
+)
+from dagster.core.snap.dep_snapshot import (
     InputHandle,
     OutputHandleSnap,
-    SolidInvocationSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,

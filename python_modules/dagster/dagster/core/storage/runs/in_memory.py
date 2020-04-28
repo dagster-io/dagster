@@ -3,11 +3,12 @@ from collections import OrderedDict, defaultdict
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster.core.snap import (
     ExecutionPlanSnapshot,
+    PipelineSnapshot,
     create_execution_plan_snapshot_id,
+    create_pipeline_snapshot_id,
 )
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot, create_pipeline_snapshot_id
 from dagster.utils import frozendict
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter

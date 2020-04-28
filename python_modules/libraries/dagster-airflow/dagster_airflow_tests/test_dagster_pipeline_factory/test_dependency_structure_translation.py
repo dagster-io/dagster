@@ -6,7 +6,7 @@ from airflow.utils.dates import days_ago
 from airflow.utils.helpers import chain
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import serialize_pp
 
 default_args = {

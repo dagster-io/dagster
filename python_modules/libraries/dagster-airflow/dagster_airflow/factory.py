@@ -10,11 +10,7 @@ from dagster import ExecutionTargetHandle, check, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshot,
-    snapshot_from_execution_plan,
-)
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot, snapshot_from_execution_plan
 
 from .compile import coalesce_execution_steps
 from .operators.docker_operator import DagsterDockerOperator

@@ -465,7 +465,7 @@ class PipelineDefinition(IContainSolids, object):
 
     def get_pipeline_index(self):
         if self._cached_pipeline_index is None:
-            from dagster.core.snap.pipeline_snapshot import PipelineIndex, PipelineSnapshot
+            from dagster.core.snap import PipelineIndex, PipelineSnapshot
 
             self._cached_pipeline_index = PipelineIndex(PipelineSnapshot.from_pipeline_def(self))
 

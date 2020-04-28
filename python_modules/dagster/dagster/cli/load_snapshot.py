@@ -1,6 +1,6 @@
 from dagster.cli.load_handle import _cli_load_invariant, handle_for_pipeline_cli_args
 from dagster.core.definitions.container import get_active_repository_data_from_image
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap import PipelineSnapshot
 from dagster.seven import is_module_available
 
 

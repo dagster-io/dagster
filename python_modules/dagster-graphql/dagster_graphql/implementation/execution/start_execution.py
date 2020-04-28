@@ -10,7 +10,7 @@ from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts

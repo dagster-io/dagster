@@ -14,7 +14,7 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
-from dagster.core.snap.config_types import ConfigSchemaSnapshot, snap_from_field
+from dagster.core.snap import ConfigSchemaSnapshot, snap_from_field
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import DauphinConfigTypeField

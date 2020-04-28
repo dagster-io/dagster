@@ -6,7 +6,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import ExecutionPlanIndex
+from dagster.core.snap import ExecutionPlanIndex
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .fetch_pipelines import get_pipeline_def_from_selector

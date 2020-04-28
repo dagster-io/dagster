@@ -2,7 +2,7 @@ import pytest
 
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
-from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import serialize_pp
@@ -521,7 +521,7 @@ class TestRunStorage:
 
     def test_add_get_execution_snapshot(self, storage):
         from dagster.core.execution.api import create_execution_plan
-        from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+        from dagster.core.snap import snapshot_from_execution_plan
 
         pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
         execution_plan = create_execution_plan(pipeline_def)

@@ -1,5 +1,5 @@
 from dagster import ModeDefinition, PresetDefinition, RepositoryDefinition, pipeline, solid
-from dagster.core.snap.active_data import active_repository_data_from_def
+from dagster.core.snap import active_repository_data_from_def
 from dagster.serdes import serialize_pp
 
 

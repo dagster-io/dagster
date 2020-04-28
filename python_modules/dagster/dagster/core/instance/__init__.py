@@ -432,7 +432,7 @@ class DagsterInstance:
     ):
         from dagster.core.execution.api import create_execution_plan
         from dagster.core.execution.plan.plan import ExecutionPlan
-        from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+        from dagster.core.snap import snapshot_from_execution_plan
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
@@ -501,7 +501,7 @@ class DagsterInstance:
         )
 
         if pipeline_snapshot is not None:
-            from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
+            from dagster.core.snap import create_pipeline_snapshot_id
 
             pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
 
@@ -515,7 +515,7 @@ class DagsterInstance:
             pipeline_run = pipeline_run.with_pipeline_snapshot_id(pipeline_snapshot_id)
 
         if execution_plan_snapshot is not None:
-            from dagster.core.snap.execution_plan_snapshot import create_execution_plan_snapshot_id
+            from dagster.core.snap import create_execution_plan_snapshot_id
 
             check.invariant(execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id)
 

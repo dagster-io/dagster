@@ -4,13 +4,13 @@ from dagster_graphql import dauphin
 from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 
 from dagster import check
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster.core.snap import (
     ExecutionPlanIndex,
     ExecutionStepInputSnap,
     ExecutionStepOutputSnap,
     ExecutionStepSnap,
+    PipelineSnapshot,
 )
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):

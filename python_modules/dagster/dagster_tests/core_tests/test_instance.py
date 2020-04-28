@@ -1,11 +1,11 @@
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster.core.snap import (
     create_execution_plan_snapshot_id,
+    create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.snap.pipeline_snapshot import create_pipeline_snapshot_id
 
 
 def test_get_run_by_id():

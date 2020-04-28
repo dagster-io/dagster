@@ -1,7 +1,7 @@
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.active_data import ActiveRepositoryData, RepositoryIndex
+from dagster.core.snap import ActiveRepositoryData, RepositoryIndex
 
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader

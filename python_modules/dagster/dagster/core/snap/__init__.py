@@ -1,21 +1,63 @@
 '''
 This module contains serializable classes that contain all the meta information
-in our definitions and type systems. The purpose to be able to power our graphql
-interface without having access to all the definitions in and types in process.
+in our definitions and type systems. The purpose is to be able to represent
+user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
+so that they can be persisted and manipulated in remote processes.
 
 This will have a number of uses, but the most immediately germane are:
 
 1) Persist *historical* pipeline and repository structures. This
 will enable, in the short term, for the user to be able to go to a historical
 run and view the meta information at that point in time.
-2) Cache the meta information about a repository when, for example, interacting
-with a repository that is not in the same process but is instead resident in
-a container. This way one does not have query the meta information about
-a pipeline/repository in the critical path of a user interaction.
+2) Access metadata about dagster artifiacts that are resident in an external
+process or container. For example, dagit uses these classes load and represent
+metadata from user repositories that reside in different processes.
 
-I suspect also that the ability to hash the entire construct of meta information
-to identify the repository will also end up being quite useful.
+There are a few varietals of classes:
 
-    -- schrockn 11-22-2019
+1) Snapshots. These are chunks of metadata that end up being persisted for
+historical purposes. Examples include the PipelineSnapshot and
+the ExecutionPlanSnapshot.
+
+2) Indexes. These are classes (not persistable) that build indexes over the
+snapshot data for fast access.
+
+3) "Active Data". These classes are serializable but not meant to be persisted.
+For example we do not persist preset configuration blocks since config
+can contain sensitive information. However this information needs to be
+communicated between user repositories and host processes such as dagit.
 
 '''
+
+
+from .active_data import (
+    ActivePipelineData,
+    ActivePresetData,
+    ActiveRepositoryData,
+    RepositoryIndex,
+    active_pipeline_from_def,
+    active_preset_data_from_def,
+    active_repository_data_from_def,
+)
+from .config_types import (
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    ConfigTypeSnap,
+    build_config_schema_snapshot,
+    snap_from_config_type,
+    snap_from_field,
+)
+from .dagster_types import build_dagster_type_namespace_snapshot
+from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap
+from .execution_plan_snapshot import (
+    ExecutionPlanIndex,
+    ExecutionPlanSnapshot,
+    ExecutionStepInputSnap,
+    ExecutionStepOutputSnap,
+    ExecutionStepSnap,
+    create_execution_plan_snapshot_id,
+    snapshot_from_execution_plan,
+)
+from .mode import LoggerDefSnap, ModeDefSnap, ResourceDefSnap
+from .pipeline_snapshot import PipelineIndex, PipelineSnapshot, create_pipeline_snapshot_id
+from .solid import CompositeSolidDefSnap, SolidDefSnap, build_composite_solid_def_snap

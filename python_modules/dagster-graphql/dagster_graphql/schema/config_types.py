@@ -2,7 +2,7 @@ from dagster_graphql import dauphin
 
 from dagster import check
 from dagster.config.config_type import ConfigTypeKind
-from dagster.core.snap.config_types import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 
 def to_dauphin_config_type(config_schema_snapshot, config_type_key):

@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagster import file_relative_path
 from dagster.check import ParameterCheckError
 from dagster.cli.repository import snapshot_command
-from dagster.core.snap.active_data import ActiveRepositoryData
+from dagster.core.snap import ActiveRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import safe_tempfile_path
 

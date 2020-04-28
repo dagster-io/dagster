@@ -17,8 +17,7 @@ from dagster.core.definitions import ExecutionTargetHandle
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap.dep_snapshot import SolidInvocationSnap
-from dagster.core.snap.pipeline_snapshot import PipelineSnapshot
+from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id

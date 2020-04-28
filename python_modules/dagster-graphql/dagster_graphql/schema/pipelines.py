@@ -4,9 +4,13 @@ from dagster_graphql import dauphin
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import PresetDefinition, check
-from dagster.core.snap.config_types import ConfigSchemaSnapshot
-from dagster.core.snap.mode import LoggerDefSnap, ModeDefSnap, ResourceDefSnap
-from dagster.core.snap.pipeline_snapshot import PipelineIndex
+from dagster.core.snap import (
+    ConfigSchemaSnapshot,
+    LoggerDefSnap,
+    ModeDefSnap,
+    PipelineIndex,
+    ResourceDefSnap,
+)
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
 
