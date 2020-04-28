@@ -1,6 +1,3 @@
 repository:
   module: dagster_examples
   fn: define_demo_repo
-scheduler:
-  module: dagster_examples.schedules
-  fn: define_scheduler

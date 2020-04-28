@@ -1,6 +1,5 @@
 import datetime
 
-from dagster import schedules
 from dagster.core.definitions.decorators import daily_schedule
 
 from .repo import optional_outputs
@@ -13,6 +12,5 @@ def daily_optional_outputs(_date):
     return {}
 
 
-@schedules
 def define_schedules():
     return [daily_optional_outputs]

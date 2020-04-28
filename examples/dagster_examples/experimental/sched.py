@@ -1,6 +1,6 @@
 import datetime
 
-from dagster import daily_schedule, hourly_schedule, schedule, schedules
+from dagster import daily_schedule, hourly_schedule, schedule
 
 
 @hourly_schedule(
@@ -48,6 +48,5 @@ def test_schedule(_):
     }
 
 
-@schedules
-def define_scheduler():
+def define_schedules():
     return [daily_ingest_schedule, daily_rollup_schedule, test_schedule]

@@ -40,13 +40,12 @@ file:/dagster_examples/stocks/simple_partitions.py
 lines:19-29
 ```
 
-Finally, we add a reference to this function in `repository.yaml`,
-alongside our repository definition function reference.
+Finally, we add the partitions to our repository definition:
 
-```yaml
-partitions:
-  file: repository.py
-  fn: define_partitions
+```python literalinclude emphasize-lines=6
+file:/dagster_examples/stocks/repository.py
+caption:repository.py
+lines:43-49
 ```
 
 Now, let's load dagit again and head to the playground. If we click on

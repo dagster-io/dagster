@@ -22,7 +22,6 @@ from dagster import (
     execute_solid,
     lambda_solid,
     pipeline,
-    schedules,
     solid,
 )
 from dagster.core.definitions.decorators import (
@@ -298,8 +297,7 @@ def test_solid_no_arg():
 
 
 def test_scheduler():
-    @schedules
-    def define_scheduler():
+    def define_schedules():
         return [
             ScheduleDefinition(
                 name="my_schedule",

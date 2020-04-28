@@ -1,15 +1,16 @@
 import datetime
 
-from dagster import RepositoryDefinition, daily_schedule, schedules
+from dagster import RepositoryDefinition, daily_schedule
 
 from .final_pipeline import gcp_pipeline
 
 
 def define_repo():
-    return RepositoryDefinition(name='gcp_pipeline', pipeline_defs=[gcp_pipeline])
+    return RepositoryDefinition(
+        name='gcp_pipeline', pipeline_defs=[gcp_pipeline], schedule_defs=define_schedule()
+    )
 
 
-@schedules
 def define_schedule():
     @daily_schedule(
         pipeline_name='gcp_pipeline', start_date=datetime.datetime(2020, 1, 1),

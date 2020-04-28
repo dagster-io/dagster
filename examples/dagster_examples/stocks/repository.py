@@ -2,6 +2,9 @@ import requests
 
 from dagster import InputDefinition, RepositoryDefinition, pipeline, solid
 
+from .schedules import define_schedules
+from .simple_partitions import define_partitions
+
 API_URL = "https://financialmodelingprep.com/api/v3/historical-price-full"
 
 
@@ -39,5 +42,8 @@ def compute_total_stock_volume():
 
 def define_repo():
     return RepositoryDefinition(
-        name='partitioning-tutorial', pipeline_defs=[compute_total_stock_volume]
+        name='partitioning-tutorial',
+        pipeline_defs=[compute_total_stock_volume],
+        schedule_defs=define_schedules(),
+        partition_set_defs=define_partitions(),
     )

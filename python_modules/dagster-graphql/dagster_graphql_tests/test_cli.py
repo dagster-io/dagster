@@ -13,7 +13,6 @@ from dagster import (
     ScheduleDefinition,
     lambda_solid,
     pipeline,
-    schedules,
     seven,
 )
 from dagster.core.instance import DagsterInstance
@@ -37,10 +36,9 @@ def math():
 
 
 def define_repository():
-    return RepositoryDefinition(name='test', pipeline_defs=[math])
+    return RepositoryDefinition(name='test', pipeline_defs=[math], schedule_defs=define_schedules())
 
 
-@schedules
 def define_schedules():
     math_hourly_schedule = ScheduleDefinition(
         name="math_hourly_schedule",

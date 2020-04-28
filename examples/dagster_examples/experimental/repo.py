@@ -2,6 +2,8 @@
 
 from dagster import PresetDefinition, RepositoryDefinition, pipeline, solid
 
+from .sched import define_schedules
+
 
 @solid
 def save_metrics(context, data_path):
@@ -51,5 +53,7 @@ def rollup_pipeline():
 
 def define_repo():
     return RepositoryDefinition(
-        name='experimental_repository', pipeline_defs=[metrics_pipeline, rollup_pipeline]
+        name='experimental_repository',
+        pipeline_defs=[metrics_pipeline, rollup_pipeline],
+        schedule_defs=define_schedules(),
     )

@@ -67,6 +67,7 @@ def get_bay_bikes_pipelines():
 def define_demo_repo():
     # Lazy import here to prevent deps issues
     from dagster import RepositoryDefinition
+    from .schedules import get_bay_bikes_schedules, get_toys_schedules
 
     pipeline_defs = (
         get_airline_demo_pipelines()
@@ -77,4 +78,8 @@ def define_demo_repo():
         + get_toys_pipelines()
     )
 
-    return RepositoryDefinition(name='internal-dagit-repository', pipeline_defs=pipeline_defs,)
+    return RepositoryDefinition(
+        name='internal-dagit-repository',
+        pipeline_defs=pipeline_defs,
+        schedule_defs=get_bay_bikes_schedules() + get_toys_schedules(),
+    )

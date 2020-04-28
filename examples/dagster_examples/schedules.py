@@ -2,14 +2,8 @@ import datetime
 from collections import defaultdict
 
 from dagster import PartitionSetDefinition, ScheduleExecutionContext
-from dagster.core.scheduler import SchedulerHandle
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.partitions import date_partition_range
-
-
-def define_scheduler():
-    # Done instead of using schedules to avoid circular dependency issues.
-    return SchedulerHandle(schedule_defs=get_bay_bikes_schedules() + get_toys_schedules())
 
 
 def _fetch_runs_by_partition(instance, partition_set_def):

@@ -1,6 +1,3 @@
 repository:
   module: dagster_examples.bay_bikes.repository
   fn: define_repo
-scheduler:
-  file: schedules.py
-  fn: define_scheduler

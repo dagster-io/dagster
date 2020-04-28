@@ -22,12 +22,12 @@ definition for our pipeline:
 file:/dagster_examples/stocks/schedules.py
 ```
 
-Make sure to include a reference to the function in `repository.yaml`:
+Then add the schedule definition to our repository
 
-``` YAML
-scheduler:
-     file: schedules.py
-     fn: define_schedules
+```python literalinclude emphasize-lines=5
+file:/dagster_examples/stocks/repository.py
+caption:repository.py
+lines:43-49
 ```
 
 When we load dagit, we'll see our schedule as expected:

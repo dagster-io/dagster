@@ -1,6 +1,5 @@
 import datetime
 
-from dagster import schedules
 from dagster.core.definitions.decorators import monthly_schedule
 
 
@@ -25,6 +24,5 @@ def daily_stock_schedule(date):
     }
 
 
-@schedules
 def define_schedules():
     return [daily_stock_schedule]

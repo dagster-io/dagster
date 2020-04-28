@@ -1,4 +1,4 @@
-from dagster import Partition, PartitionSetDefinition, repository_partitions
+from dagster import Partition, PartitionSetDefinition
 
 
 def get_stock_ticker_partitions():
@@ -24,6 +24,5 @@ stock_ticker_partition_sets = PartitionSetDefinition(
 )
 
 
-@repository_partitions
 def define_partitions():
     return [stock_ticker_partition_sets]

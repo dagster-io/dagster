@@ -16,8 +16,6 @@ from dagster import (
     ScheduleDefinition,
     lambda_solid,
     pipeline,
-    repository_partitions,
-    schedules,
     seven,
     solid,
 )
@@ -86,7 +84,12 @@ def baz_pipeline():
 
 
 def define_bar_repo():
-    return RepositoryDefinition('bar', {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},)
+    return RepositoryDefinition(
+        'bar',
+        {'foo': define_foo_pipeline, 'baz': lambda: baz_pipeline},
+        schedule_defs=define_bar_schedules(),
+        partition_set_defs=define_baz_partitions(),
+    )
 
 
 @solid
@@ -648,8 +651,7 @@ def test_run_wipe_incorrect_delete_message():
     assert result.exit_code == 0
 
 
-@schedules
-def define_bar_scheduler():
+def define_bar_schedules():
     return [
         ScheduleDefinition(
             "foo_schedule",
@@ -940,7 +942,6 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         return self._inst_data
 
 
-@repository_partitions
 def define_baz_partitions():
     return [
         PartitionSetDefinition(

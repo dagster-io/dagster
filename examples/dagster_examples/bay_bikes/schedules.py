@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from dagster_examples.bay_bikes.pipelines import generate_training_set_and_train_model
 
-from dagster import daily_schedule, schedules
+from dagster import daily_schedule
 from dagster.core.definitions.decorators import monthly_schedule
 from dagster.utils.merger import deep_merge_dicts
 
@@ -123,6 +123,5 @@ def monthly_trip_ingest_schedule(date):
     )
 
 
-@schedules
-def define_scheduler():
+def define_schedules():
     return [daily_weather_ingest_schedule, daily_weather_schedule, monthly_trip_ingest_schedule]
