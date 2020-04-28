@@ -25,6 +25,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.utils import PICKLE_PROTOCOL
 
 try:
     from dagster_pandas import DataFrame
@@ -309,7 +310,7 @@ class FilePickleList(object):
 
     def write(self):
         with open(self.path, 'wb') as fd:
-            pickle.dump(self.list, fd)
+            pickle.dump(self.list, fd, protocol=PICKLE_PROTOCOL)
 
     def close(self):
         self.append('Closed')

@@ -162,6 +162,8 @@ class Manager(object):
             instance,
             execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
+            # Set this flag even though we're not in test for clearer error reporting
+            raise_on_error=True,
         ) as pipeline_context:
             self.context = DagstermillRuntimeExecutionContext(
                 pipeline_context=pipeline_context,

@@ -33,6 +33,7 @@ else:
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
+# 2/3 compatibility
 PICKLE_PROTOCOL = 2
 
 
