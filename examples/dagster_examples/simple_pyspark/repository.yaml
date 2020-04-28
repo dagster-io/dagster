@@ -1,0 +1,3 @@
+repository:
+  module: dagster_examples.simple_pyspark.repository
+  fn: define_repo

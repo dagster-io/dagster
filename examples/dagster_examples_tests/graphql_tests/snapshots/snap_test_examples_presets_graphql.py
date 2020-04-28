@@ -915,6 +915,34 @@ snapshots['test_presets_on_examples 13'] = {
 
 snapshots['test_presets_on_examples 14'] = {
     'pipeline': {
+        'name': 'simple_pyspark_sfo_weather_pipeline',
+        'presets': [
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  pyspark:
+    config:
+      spark_conf:
+        spark:
+          jars:
+            packages: com.databricks:spark-csv_2.11:1.5.0
+solids:
+  make_weather_samples:
+    inputs:
+      file_path: dagster_examples/simple_pyspark/sfo_q2_weather_sample.csv
+storage:
+  filesystem: null
+''',
+                'mode': 'local',
+                'name': 'local',
+                'solidSubset': None
+            }
+        ]
+    }
+}
+
+snapshots['test_presets_on_examples 15'] = {
+    'pipeline': {
         'name': 'sleepy_pipeline',
         'presets': [
             {
@@ -939,7 +967,7 @@ storage:
     }
 }
 
-snapshots['test_presets_on_examples 15'] = {
+snapshots['test_presets_on_examples 16'] = {
     'pipeline': {
         'name': 'stdout_spew_pipeline',
         'presets': [
@@ -947,7 +975,7 @@ snapshots['test_presets_on_examples 15'] = {
     }
 }
 
-snapshots['test_presets_on_examples 16'] = {
+snapshots['test_presets_on_examples 17'] = {
     'pipeline': {
         'name': 'unreliable_pipeline',
         'presets': [
