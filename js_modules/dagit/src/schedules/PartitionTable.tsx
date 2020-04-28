@@ -19,6 +19,9 @@ export const PartitionTable: React.FunctionComponent<{
   title: string;
   partitions: Partition[];
 }> = ({ title, partitions }) => {
+  React.useEffect(() => {
+    return destroyCustomTooltip;
+  });
   const chart = React.useRef<any>(undefined);
   let max = 1;
   const runs: { [status: string]: Point[] } = {};
@@ -190,6 +193,15 @@ const buildCustomTooltip = (chart: any, datasets: any[]) => {
       position.top + window.pageYOffset + tooltipModel.caretY - 18 + "px";
     tooltipEl.style.opacity = "1";
   };
+};
+
+const destroyCustomTooltip = () => {
+  const element: HTMLElement | null = document.getElementById(
+    "partition-table-tooltip"
+  );
+  if (element) {
+    element.parentNode?.removeChild(element);
+  }
 };
 
 const TooltipStyles = createGlobalStyle`
