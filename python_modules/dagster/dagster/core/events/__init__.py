@@ -253,10 +253,6 @@ class DagsterEvent(
         return self.solid_handle.name
 
     @property
-    def solid_definition_name(self):
-        return self.solid_handle.definition_name
-
-    @property
     def event_type(self):
         '''DagsterEventType: The type of this event.'''
         return DagsterEventType(self.event_type_value)

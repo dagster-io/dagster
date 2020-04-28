@@ -251,9 +251,7 @@ def define_solid_dictionary_cls(solids, dependency_structure, parent_handle=None
     for solid in solids:
         if solid.definition.has_config_entry:
             fields[solid.name] = define_isolid_field(
-                solid,
-                SolidHandle(solid.name, solid.definition.name, parent_handle),
-                dependency_structure,
+                solid, SolidHandle(solid.name, parent_handle), dependency_structure,
             )
 
     return Shape(fields)

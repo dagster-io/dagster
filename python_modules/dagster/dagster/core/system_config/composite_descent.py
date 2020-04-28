@@ -47,9 +47,7 @@ class DescentStack(namedtuple('_DescentStack', 'pipeline_def handle')):
         return self.handle.to_string()
 
     def descend(self, solid):
-        return self._replace(
-            handle=SolidHandle(solid.name, solid.definition.name, parent=self.handle)
-        )
+        return self._replace(handle=SolidHandle(solid.name, parent=self.handle))
 
 
 def composite_descent(pipeline_def, solids_config):

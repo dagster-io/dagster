@@ -229,6 +229,7 @@ class ExecutionStep(
         compute_fn,
         kind,
         solid_handle,
+        solid,
         logging_tags=None,
         tags=None,
     ):
@@ -248,7 +249,7 @@ class ExecutionStep(
                     'step_key': str(solid_handle) + '.' + key_suffix,
                     'pipeline': pipeline_name,
                     'solid': solid_handle.name,
-                    'solid_definition': solid_handle.definition_name,
+                    'solid_definition': solid.definition.name,
                 },
                 check.opt_dict_param(logging_tags, 'logging_tags'),
             ),
@@ -262,10 +263,6 @@ class ExecutionStep(
     @property
     def solid_name(self):
         return self.solid_handle.name
-
-    @property
-    def solid_definition_name(self):
-        return self.solid_handle.definition_name
 
     def has_step_output(self, name):
         check.str_param(name, 'name')

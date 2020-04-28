@@ -510,8 +510,7 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         check.invariant(mapping, 'Can only resolve outputs for valid output names')
         mapped_solid = self.solid_named(mapping.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
-            mapping.output_name,
-            SolidHandle(mapped_solid.name, mapped_solid.definition.name, handle),
+            mapping.output_name, SolidHandle(mapped_solid.name, handle),
         )
 
     def input_has_default(self, input_name):

@@ -481,7 +481,7 @@ def build_dauphin_solid_handles(pipeline_index, current_dep_index, parent=None):
         solid_name, solid_def_name = solid_invocation.solid_name, solid_invocation.solid_def_name
         handle = DauphinSolidHandle(
             solid=DauphinSolid(pipeline_index, solid_name, current_dep_index),
-            handle=SolidHandle(solid_name, solid_def_name, parent.handleID if parent else None),
+            handle=SolidHandle(solid_name, parent.handleID if parent else None),
             parent=parent if parent else None,
         )
         solid_def_snap = pipeline_index.get_solid_def_snap(solid_def_name)

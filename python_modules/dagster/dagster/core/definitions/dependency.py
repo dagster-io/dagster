@@ -150,13 +150,10 @@ class Solid(object):
 
 
 @whitelist_for_serdes
-class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
-    def __new__(cls, name, definition_name, parent):
+class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
+    def __new__(cls, name, parent):
         return super(SolidHandle, cls).__new__(
-            cls,
-            check.str_param(name, 'name'),
-            check.opt_str_param(definition_name, 'definition_name'),
-            check.opt_inst_param(parent, 'parent', SolidHandle),
+            cls, check.str_param(name, 'name'), check.opt_inst_param(parent, 'parent', SolidHandle),
         )
 
     def __str__(self):
@@ -192,7 +189,7 @@ class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
         stack = handle_str.split('.')
         cur = None
         while len(stack) > 0:
-            cur = SolidHandle(name=stack.pop(0), parent=cur, definition_name=None)
+            cur = SolidHandle(name=stack.pop(0), parent=cur)
         return cur
 
     def camelcase(self):
@@ -212,23 +209,15 @@ class SolidHandle(namedtuple('_SolidHandle', 'name definition_name parent')):
             'name' in dict_repr, 'Dict representation of SolidHandle must have a \'name\' key'
         )
         check.invariant(
-            'definition_name' in dict_repr,
-            'Dict representation of SolidHandle must have a \'definition_name\' key',
-        )
-        check.invariant(
             'parent' in dict_repr, 'Dict representation of SolidHandle must have a \'parent\' key'
         )
 
         if isinstance(dict_repr['parent'], (list, tuple)):
             dict_repr['parent'] = SolidHandle.from_dict(
-                {
-                    'name': dict_repr['parent'][0],
-                    'definition_name': dict_repr['parent'][1],
-                    'parent': dict_repr['parent'][2],
-                }
+                {'name': dict_repr['parent'][0], 'parent': dict_repr['parent'][1],}
             )
 
-        return SolidHandle(**dict_repr)
+        return SolidHandle(**{k: dict_repr[k] for k in ['name', 'parent']})
 
 
 class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
@@ -241,10 +230,7 @@ class SolidInputHandle(namedtuple('_SolidInputHandle', 'solid input_def')):
 
     def _inner_str(self):
         return struct_to_string(
-            'SolidInputHandle',
-            solid_name=self.solid.name,
-            definition_name=self.solid.definition.name,
-            input_name=self.input_def.name,
+            'SolidInputHandle', solid_name=self.solid.name, input_name=self.input_def.name,
         )
 
     def __str__(self):
@@ -270,10 +256,7 @@ class SolidOutputHandle(namedtuple('_SolidOutputHandle', 'solid output_def')):
 
     def _inner_str(self):
         return struct_to_string(
-            'SolidOutputHandle',
-            solid_name=self.solid.name,
-            definition_name=self.solid.definition.name,
-            output_name=self.output_def.name,
+            'SolidOutputHandle', solid_name=self.solid.name, output_name=self.output_def.name,
         )
 
     def __str__(self):

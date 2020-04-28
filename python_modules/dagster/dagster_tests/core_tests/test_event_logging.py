@@ -75,7 +75,6 @@ def test_single_solid_pipeline_success():
     start_event = single_dagster_event(events, DagsterEventType.STEP_START)
     assert start_event.pipeline_name == 'single_solid_pipeline'
     assert start_event.dagster_event.solid_name == 'solid_one'
-    assert start_event.dagster_event.solid_definition_name == 'solid_one'
 
     output_event = single_dagster_event(events, DagsterEventType.STEP_OUTPUT)
     assert output_event
@@ -85,7 +84,6 @@ def test_single_solid_pipeline_success():
     success_event = single_dagster_event(events, DagsterEventType.STEP_SUCCESS)
     assert success_event.pipeline_name == 'single_solid_pipeline'
     assert success_event.dagster_event.solid_name == 'solid_one'
-    assert success_event.dagster_event.solid_definition_name == 'solid_one'
 
     assert isinstance(success_event.dagster_event.step_success_data.duration_ms, float)
     assert success_event.dagster_event.step_success_data.duration_ms > 0.0
@@ -113,14 +111,12 @@ def test_single_solid_pipeline_failure():
     assert start_event.pipeline_name == 'single_solid_pipeline'
 
     assert start_event.dagster_event.solid_name == 'solid_one'
-    assert start_event.dagster_event.solid_definition_name == 'solid_one'
     assert start_event.level == logging.DEBUG
 
     failure_event = single_dagster_event(events, DagsterEventType.STEP_FAILURE)
     assert failure_event.pipeline_name == 'single_solid_pipeline'
 
     assert failure_event.dagster_event.solid_name == 'solid_one'
-    assert failure_event.dagster_event.solid_definition_name == 'solid_one'
     assert failure_event.level == logging.ERROR
 
 

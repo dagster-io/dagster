@@ -119,7 +119,7 @@ class _PlanBuilder(object):
         self, solids, dependency_structure, parent_handle=None, parent_step_inputs=None
     ):
         for solid in solids:
-            handle = SolidHandle(solid.name, solid.definition.name, parent_handle)
+            handle = SolidHandle(solid.name, parent_handle)
 
             ### 1. INPUTS
             # Create and add execution plan steps for solid inputs

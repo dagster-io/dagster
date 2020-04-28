@@ -60,23 +60,19 @@ def test_solid_def():
     assert len(solid_one_solid.output_dict) == 1
 
     assert str(solid_one_solid.input_handle('input_one')) == (
-        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
-        'solid_name="\'solid_one\'")'
+        'SolidInputHandle(input_name="\'input_one\'", solid_name="\'solid_one\'")'
     )
 
     assert repr(solid_one_solid.input_handle('input_one')) == (
-        'SolidInputHandle(definition_name="\'solid_one\'", input_name="\'input_one\'", '
-        'solid_name="\'solid_one\'")'
+        'SolidInputHandle(input_name="\'input_one\'", solid_name="\'solid_one\'")'
     )
 
     assert str(solid_one_solid.output_handle('result')) == (
-        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
-        'solid_name="\'solid_one\'")'
+        'SolidOutputHandle(output_name="\'result\'", solid_name="\'solid_one\'")'
     )
 
     assert repr(solid_one_solid.output_handle('result')) == (
-        'SolidOutputHandle(definition_name="\'solid_one\'", output_name="\'result\'", '
-        'solid_name="\'solid_one\'")'
+        'SolidOutputHandle(output_name="\'result\'", solid_name="\'solid_one\'")'
     )
 
     assert solid_one_solid.output_handle('result') == SolidOutputHandle(
@@ -169,56 +165,40 @@ def test_materialization():
 
 
 def test_rehydrate_solid_handle():
-    h = SolidHandle.from_dict({'name': 'foo', 'definition_name': 'foo', 'parent': None})
+    h = SolidHandle.from_dict({'name': 'foo', 'parent': None})
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert h.parent is None
 
     h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert h.parent is None
 
-    h = SolidHandle.from_dict(
-        {'name': 'foo', 'definition_name': 'foo', 'parent': ['bar', 'bar', None]}
-    )
+    h = SolidHandle.from_dict({'name': 'foo', 'parent': ['bar', None]})
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert isinstance(h.parent, SolidHandle)
     assert h.parent.name == 'bar'
-    assert h.parent.definition_name == 'bar'
     assert h.parent.parent is None
 
     h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert isinstance(h.parent, SolidHandle)
     assert h.parent.name == 'bar'
-    assert h.parent.definition_name == 'bar'
     assert h.parent.parent is None
 
-    h = SolidHandle.from_dict(
-        {'name': 'foo', 'definition_name': 'foo', 'parent': ['bar', 'bar', ['baz', 'baz', None]]}
-    )
+    h = SolidHandle.from_dict({'name': 'foo', 'parent': ['bar', ['baz', None]]})
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert isinstance(h.parent, SolidHandle)
     assert h.parent.name == 'bar'
-    assert h.parent.definition_name == 'bar'
     assert isinstance(h.parent.parent, SolidHandle)
     assert h.parent.parent.name == 'baz'
-    assert h.parent.parent.definition_name == 'baz'
     assert h.parent.parent.parent is None
 
     h = SolidHandle.from_dict(json.loads(json.dumps(h._asdict())))
     assert h.name == 'foo'
-    assert h.definition_name == 'foo'
     assert isinstance(h.parent, SolidHandle)
     assert h.parent.name == 'bar'
-    assert h.parent.definition_name == 'bar'
     assert isinstance(h.parent.parent, SolidHandle)
     assert h.parent.parent.name == 'baz'
-    assert h.parent.parent.definition_name == 'baz'
     assert h.parent.parent.parent is None
 
 

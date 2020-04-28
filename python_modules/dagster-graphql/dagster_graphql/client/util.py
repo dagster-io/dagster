@@ -197,7 +197,7 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         step_kind_value = event_dict['step']['kind']
         keys = event_dict['step']['solidHandleID'].split('.')
         while keys:
-            handle = SolidHandle(keys.pop(0), definition_name=None, parent=handle)
+            handle = SolidHandle(keys.pop(0), parent=handle)
 
     return DagsterEvent(
         event_type_value=event_type.value,
