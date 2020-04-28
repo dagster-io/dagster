@@ -1,7 +1,7 @@
 import os
 
 from dagster import RepositoryDefinition, pipeline, solid
-from dagster.core.definitions.container import get_container_snapshot
+from dagster.core.definitions.container import get_active_repository_data_from_image
 from dagster.core.snap.active_data import ActiveRepositoryData, active_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
@@ -34,7 +34,7 @@ def test_container_snapshot_provider(mocker):
         'dagster.core.definitions.container.run_serialized_container_command',
         side_effect=mock_snapshot_provider,
     )
-    snapshot = get_container_snapshot("foo:latest")
+    snapshot = get_active_repository_data_from_image("foo:latest")
     execute_container_mock.assert_called_with(
         image="foo:latest",
         command='dagster repository snapshot {}'.format(

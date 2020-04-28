@@ -10,7 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 from dagster import ExecutionTargetHandle, check, seven
 from dagster.cli.load_handle import handle_for_repo_cli_args
 from dagster.cli.pipeline import repository_target_argument
-from dagster.core.definitions.container import get_container_snapshot
+from dagster.core.definitions.container import get_active_repository_data_from_image
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import upload_logs
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, pushd
@@ -135,8 +135,10 @@ def host_dagit_ui(host, port, storage_fallback, reload_trigger=None, port_lookup
 
 def host_dagit_ui_with_dagster_image(image, host, port, storage_fallback, port_lookup=True):
     check.str_param(image, 'image')
+
     instance = DagsterInstance.get(storage_fallback)
-    app = create_app_with_active_repository_data(get_container_snapshot(image), instance)
+    active_repository_data = get_active_repository_data_from_image(image)
+    app = create_app_with_active_repository_data(active_repository_data, instance)
 
     start_server(host, port, app, port_lookup)
 

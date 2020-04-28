@@ -22,8 +22,12 @@ def get_pipeline_snapshot(graphene_info, snapshot_id):
 @capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
-    pipeline_def = get_pipeline_definition(graphene_info, pipeline_name)
-    return DauphinPipelineSnapshot(pipeline_def.get_pipeline_index())
+    repository_index = graphene_info.context.get_repository_index()
+    if not repository_index.has_pipeline(pipeline_name):
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+        )
+    return DauphinPipelineSnapshot(repository_index.get_pipeline_index(pipeline_name))
 
 
 @capture_dauphin_error
@@ -157,8 +161,8 @@ def get_pipeline_def_from_selector(graphene_info, selector):
 
 def get_pipeline_definition(graphene_info, pipeline_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    repository = graphene_info.context.get_repository()
-    if not repository.has_pipeline(pipeline_name):
+    repository_index = graphene_info.context.get_repository_index()
+    if not repository_index.has_pipeline(pipeline_name):
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
         )

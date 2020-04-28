@@ -32,7 +32,7 @@ def _get_snapshot(path):
         return deserialize_json_to_dagster_namedtuple(fp.read())
 
 
-def get_container_snapshot(image):
+def get_active_repository_data_from_image(image):
     check.str_param(image, 'image')
 
     with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:

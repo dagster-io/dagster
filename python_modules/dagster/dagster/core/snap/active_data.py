@@ -47,6 +47,15 @@ class ActiveRepositoryData(
             ),
         )
 
+    def get_pipeline_snapshot(self, name):
+        check.str_param(name, 'name')
+
+        for pipeline_snapshot in self.pipeline_snapshots:
+            if pipeline_snapshot.name == name:
+                return pipeline_snapshot
+
+        check.failed('Could not find pipeline snapshot named ' + name)
+
 
 @whitelist_for_serdes
 class ActivePipelineData(namedtuple('_ActivePipelineData', 'name active_presets')):
