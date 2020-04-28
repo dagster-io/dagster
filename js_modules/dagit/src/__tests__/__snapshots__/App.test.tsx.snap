@@ -714,7 +714,7 @@ exports[`renders pipeline page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
+        className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 fRzUJI"
       >
         <span
           className="bp3-popover-wrapper"
@@ -724,7 +724,7 @@ exports[`renders pipeline page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -756,6 +756,7 @@ exports[`renders pipeline page 1`] = `
                 style={
                   Object {
                     "paddingRight": 10,
+                    "width": "30vw",
                   }
                 }
                 title="graph-query-input"
@@ -5040,7 +5041,7 @@ exports[`renders pipeline solid page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
+        className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 fRzUJI"
       >
         <span
           className="bp3-popover-wrapper"
@@ -5050,7 +5051,7 @@ exports[`renders pipeline solid page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -5082,6 +5083,7 @@ exports[`renders pipeline solid page 1`] = `
                 style={
                   Object {
                     "paddingRight": 10,
+                    "width": "30vw",
                   }
                 }
                 title="graph-query-input"
@@ -10830,7 +10832,7 @@ exports[`renders type page 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
+        className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 fRzUJI"
       >
         <span
           className="bp3-popover-wrapper"
@@ -10840,7 +10842,7 @@ exports[`renders type page 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -10872,6 +10874,7 @@ exports[`renders type page 1`] = `
                 style={
                   Object {
                     "paddingRight": 10,
+                    "width": "30vw",
                   }
                 }
                 title="graph-query-input"
@@ -15156,7 +15159,7 @@ exports[`renders type page 2`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
+        className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 fRzUJI"
       >
         <span
           className="bp3-popover-wrapper"
@@ -15166,7 +15169,7 @@ exports[`renders type page 2`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -15198,6 +15201,7 @@ exports[`renders type page 2`] = `
                 style={
                   Object {
                     "paddingRight": 10,
+                    "width": "30vw",
                   }
                 }
                 title="graph-query-input"
@@ -19482,7 +19486,7 @@ exports[`renders without error 1`] = `
         </span>
       </div>
       <div
-        className="GraphQueryInput__GraphQueryInputContainer-sc-9vs20u-0 epgPwk"
+        className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 fRzUJI"
       >
         <span
           className="bp3-popover-wrapper"
@@ -19492,7 +19496,7 @@ exports[`renders without error 1`] = `
             onClick={[Function]}
           >
             <div
-              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-1 drSFcY"
+              className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
             >
               <span
                 className="bp3-icon bp3-icon-send-to-graph"
@@ -19524,6 +19528,7 @@ exports[`renders without error 1`] = `
                 style={
                   Object {
                     "paddingRight": 10,
+                    "width": "30vw",
                   }
                 }
                 title="graph-query-input"

@@ -308,7 +308,7 @@ export default class ExecutionSessionContainer extends React.Component<
               />
               <div style={{ width: 5 }} />
               <SolidSelector
-                subsetError={subsetError}
+                serverProvidedSubsetError={subsetError}
                 pipelineName={pipeline.name}
                 value={currentSession.solidSubset || null}
                 query={currentSession.solidSubsetQuery || null}

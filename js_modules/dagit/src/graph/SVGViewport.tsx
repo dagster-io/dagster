@@ -128,12 +128,28 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
   }
 };
 
+const NoneInteractor: SVGViewportInteractor = {
+  onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+  },
+
+  onWheel() {
+    return;
+  },
+
+  render() {
+    return <span />;
+  }
+};
+
 export default class SVGViewport extends React.Component<
   SVGViewportProps,
   SVGViewportState
 > {
   static Interactors = {
-    PanAndZoom: PanAndZoomInteractor
+    PanAndZoom: PanAndZoomInteractor,
+    None: NoneInteractor
   };
 
   element: React.RefObject<HTMLDivElement> = React.createRef();

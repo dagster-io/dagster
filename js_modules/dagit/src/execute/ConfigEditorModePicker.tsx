@@ -20,80 +20,60 @@ const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeli
 
 const ModeSelect = Select.ofType<Mode>();
 
-export class ConfigEditorModePicker extends React.PureComponent<
-  ConfigEditorModePickerProps
-> {
-  getModeFromProps = (props: ConfigEditorModePickerProps) => {
-    return props.modeName
-      ? props.modes.find(m => m.name === props.modeName)
-      : props.modes[0];
+export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePickerProps> = props => {
+  const resolvedMode = props.modeName
+    ? props.modes.find(m => m.name === props.modeName)
+    : props.modes[0];
+
+  React.useEffect(() => {
+    if (resolvedMode && resolvedMode.name !== props.modeName) {
+      props.onModeChange?.(resolvedMode.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedMode, props.modeName]);
+
+  const singleMode = props.modes.length === 1;
+  const valid = !props.modeError;
+  const disabled = singleMode && valid;
+
+  const onItemSelect = (mode: Mode) => {
+    props.onModeChange?.(mode.name);
   };
 
-  getCurrentMode = () => {
-    return this.getModeFromProps(this.props);
-  };
-
-  componentDidMount() {
-    const currentMode = this.getCurrentMode();
-    if (currentMode) {
-      this.props.onModeChange && this.props.onModeChange(currentMode.name);
-    }
-  }
-
-  componentDidUpdate(prevProps: ConfigEditorModePickerProps) {
-    const currentMode = this.getCurrentMode();
-    const prevMode = this.getModeFromProps(prevProps);
-
-    if (currentMode && currentMode !== prevMode) {
-      this.props.onModeChange && this.props.onModeChange(currentMode.name);
-    }
-  }
-
-  render() {
-    const singleMode = this.props.modes.length === 1;
-    const currentMode = this.getCurrentMode();
-    const valid = !this.props.modeError;
-    const disabled = singleMode && valid;
-
-    return (
-      <ModeSelect
-        activeItem={currentMode}
-        filterable={true}
-        disabled={singleMode && valid}
-        items={this.props.modes}
-        itemPredicate={(query, mode) =>
-          query.length === 0 || mode.name.includes(query)
-        }
-        itemRenderer={(mode, props) => (
-          <Menu.Item
-            active={props.modifiers.active}
-            key={mode.name}
-            text={mode.name}
-            onClick={props.handleClick}
-          />
-        )}
-        onItemSelect={this.onItemSelect}
-      >
-        <Button
-          icon={valid ? undefined : IconNames.ERROR}
-          intent={valid ? Intent.NONE : Intent.WARNING}
-          title={disabled ? MODE_PICKER_HINT_TEXT : "Current execution mode"}
-          text={
-            valid
-              ? currentMode
-                ? `Mode: ${currentMode.name}`
-                : "Select Mode"
-              : "Invalid Mode Selection"
-          }
-          disabled={disabled}
-          rightIcon="caret-down"
-          data-test-id="mode-picker-button"
+  return (
+    <ModeSelect
+      activeItem={resolvedMode}
+      filterable={true}
+      disabled={singleMode && valid}
+      items={props.modes}
+      itemPredicate={(query, mode) =>
+        query.length === 0 || mode.name.includes(query)
+      }
+      itemRenderer={(mode, props) => (
+        <Menu.Item
+          active={props.modifiers.active}
+          key={mode.name}
+          text={mode.name}
+          onClick={props.handleClick}
         />
-      </ModeSelect>
-    );
-  }
-
-  private onItemSelect = (mode: Mode) => {
-    this.props.onModeChange && this.props.onModeChange(mode.name);
-  };
-}
+      )}
+      onItemSelect={onItemSelect}
+    >
+      <Button
+        icon={valid ? undefined : IconNames.ERROR}
+        intent={valid ? Intent.NONE : Intent.DANGER}
+        title={disabled ? MODE_PICKER_HINT_TEXT : "Current execution mode"}
+        text={
+          valid
+            ? resolvedMode
+              ? `Mode: ${resolvedMode.name}`
+              : "Select Mode"
+            : "Invalid Mode Selection"
+        }
+        disabled={disabled}
+        rightIcon="caret-down"
+        data-test-id="mode-picker-button"
+      />
+    </ModeSelect>
+  );
+};

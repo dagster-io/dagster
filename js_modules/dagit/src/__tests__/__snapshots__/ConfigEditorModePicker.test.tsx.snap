@@ -13,7 +13,7 @@ exports[`renders error mode 1`] = `
       onKeyDown={[Function]}
     >
       <button
-        className="bp3-button bp3-intent-warning"
+        className="bp3-button bp3-intent-danger"
         data-test-id="mode-picker-button"
         onKeyDown={[Function]}
         onKeyUp={[Function]}

@@ -69,6 +69,8 @@ export class ConfigEditorConfigPicker extends React.Component<
       name: preset.name,
       environmentConfigYaml: preset.environmentConfigYaml || "",
       solidSubset: preset.solidSubset,
+      solidSubsetQuery:
+        preset.solidSubset === null ? "*" : preset.solidSubset.join(","),
       mode: preset.mode,
       tags: [...(pipeline?.tags || [])]
     });
@@ -82,6 +84,8 @@ export class ConfigEditorConfigPicker extends React.Component<
       }),
       environmentConfigYaml: partition.environmentConfigYaml || "",
       solidSubset: partition.solidSubset,
+      solidSubsetQuery:
+        partition.solidSubset === null ? "*" : partition.solidSubset.join(","),
       mode: partition.mode,
       tags: [...(pipeline?.tags || []), ...partition.tags]
     });
@@ -425,13 +429,13 @@ function usePresetsAndPartitions(
   pipeline?: Pipeline;
 } {
   const presetsQuery = useQuery<ConfigPresetsQuery>(CONFIG_PRESETS_QUERY, {
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     variables: { pipelineName }
   });
   const partitionSetsQuery = useQuery<ConfigPartitionSetsQuery>(
     CONFIG_PARTITION_SETS_QUERY,
     {
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
       variables: { pipelineName }
     }
   );

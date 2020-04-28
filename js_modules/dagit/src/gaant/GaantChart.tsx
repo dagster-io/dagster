@@ -430,13 +430,17 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
         )}
       </div>
 
-      <GraphQueryInput
-        items={props.graph}
-        value={props.query}
-        placeholder="Type a Step Subset"
-        onChange={props.onUpdateQuery}
-        presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-      />
+      <GraphQueryInputContainer>
+        <GraphQueryInput
+          items={props.graph}
+          value={props.query}
+          placeholder="Type a Step Subset"
+          onChange={props.onUpdateQuery}
+          presets={
+            metadata ? interestingQueriesFor(metadata, layout) : undefined
+          }
+        />
+      </GraphQueryInputContainer>
     </>
   );
 
@@ -802,4 +806,13 @@ const OptionsDivider = styled.div`
   padding-left: 7px;
   margin-left: 7px;
   border-left: 1px solid ${Colors.LIGHT_GRAY3};
+`;
+
+const GraphQueryInputContainer = styled.div`
+  z-index: 2;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
 `;

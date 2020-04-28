@@ -221,12 +221,14 @@ export default class PipelineExplorer extends React.Component<
               />
             </PathOverlay>
             {solidsQueryEnabled && (
-              <GraphQueryInput
-                items={solids}
-                value={visibleSolidsQuery}
-                placeholder="Type a Solid Subset"
-                onChange={this.handleQueryChange}
-              />
+              <PipelineGraphQueryInputContainer>
+                <GraphQueryInput
+                  items={solids}
+                  value={visibleSolidsQuery}
+                  placeholder="Type a Solid Subset"
+                  onChange={this.handleQueryChange}
+                />
+              </PipelineGraphQueryInputContainer>
             )}
 
             <SearchOverlay style={{ background: backgroundTranslucent }}>
@@ -396,4 +398,13 @@ const LargeDAGInstructionBox = styled.div`
     font-weight: 500;
     padding: 0 4px;
   }
+`;
+
+const PipelineGraphQueryInputContainer = styled.div`
+  z-index: 2;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
 `;

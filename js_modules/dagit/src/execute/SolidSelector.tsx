@@ -1,198 +1,57 @@
-import {
-  Colors,
-  Button,
-  Classes,
-  Dialog,
-  Intent,
-  Spinner
-} from "@blueprintjs/core";
+import { Colors, Intent } from "@blueprintjs/core";
 import * as React from "react";
 import gql from "graphql-tag";
 import PipelineGraph from "../graph/PipelineGraph";
 import { useQuery } from "react-apollo";
 import {
   SolidSelectorQuery,
-  SolidSelectorQuery_pipeline
+  SolidSelectorQuery_pipeline,
+  SolidSelectorQuery_pipeline_solids
 } from "./types/SolidSelectorQuery";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import { IconNames } from "@blueprintjs/icons";
 import { SubsetError } from "./ExecutionSessionContainer";
 import { ShortcutHandler } from "../ShortcutHandler";
 import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery, MAX_RENDERED_FOR_EMPTY_QUERY } from "../GraphQueryImpl";
+import { filterByQuery } from "../GraphQueryImpl";
+import SVGViewport from "../graph/SVGViewport";
+import styled from "styled-components/macro";
 
 interface ISolidSelectorProps {
   pipelineName: string;
-  subsetError: SubsetError;
+  serverProvidedSubsetError: SubsetError;
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
   onRequestClose?: () => void;
 }
 
-interface ISolidSelectorInnerProps extends ISolidSelectorProps {
+interface SolidSelectorModalProps {
   pipeline: SolidSelectorQuery_pipeline;
+  queryResultSolids: SolidSelectorQuery_pipeline_solids[];
+  errorMessage: string | null;
 }
 
-interface ISolidSelectorState {
-  query: string;
-}
-
-const SolidSelectorModalContainer = (props: ISolidSelectorProps) => {
-  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { name: props.pipelineName }
-  });
-
-  if (data?.pipeline?.__typename !== "Pipeline") {
-    return (
-      <div
-        style={{
-          height: `calc(100% - 85px)`,
-          display: "flex",
-          justifyContent: "center"
-        }}
-      >
-        <div style={{ alignSelf: "center" }}>
-          <Spinner size={32} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <SolidSelectorModal pipeline={data.pipeline} {...props} />
-    </>
-  );
-};
-
-class SolidSelectorModal extends React.PureComponent<
-  ISolidSelectorInnerProps,
-  ISolidSelectorState
-> {
-  state: ISolidSelectorState = {
-    query: ""
-  };
-
+class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   graphRef = React.createRef<PipelineGraph>();
 
-  componentDidMount() {
-    const { query, pipeline } = this.props;
-
-    const initialIsSlowRender =
-      query === "*" && pipeline.solids.length > MAX_RENDERED_FOR_EMPTY_QUERY;
-    const initial = initialIsSlowRender ? "" : query || "";
-
-    this.handleSetQuery(initial);
-  }
-
-  handleSetQuery = (query: string) => {
-    this.setState({ query }, () =>
-      this.graphRef.current?.viewportEl.current?.autocenter()
-    );
-  };
-
-  handleSave = () => {
-    const { pipeline, onChange } = this.props;
-    let { query } = this.state;
-
-    const queryResultSolids = filterByQuery(pipeline.solids, query);
-    let solidSubset: string[] | null = queryResultSolids.all.map(s => s.name);
-    if (queryResultSolids.all.length === 0) {
-      alert(
-        "Please type a solid query that matches at least one solid " +
-          "or `*` to execute the entire pipeline."
-      );
-      return;
-    }
-
-    // If all solids are returned, we set the subset to null rather than sending
-    // a comma separated list of evey solid to the API
-    if (queryResultSolids.all.length === pipeline.solids.length) {
-      solidSubset = null;
-      query = "*";
-    }
-
-    onChange(solidSubset, query);
-  };
-
   render() {
-    const { pipeline } = this.props;
-    const { query } = this.state;
-
-    const queryResultSolids = pipeline
-      ? filterByQuery(pipeline.solids, query).all
-      : [];
-
-    const queryInvalid = queryResultSolids.length === 0 || query.length === 0;
-
+    const { pipeline, queryResultSolids, errorMessage } = this.props;
     return (
-      <>
-        <div
-          className={Classes.DIALOG_BODY}
-          style={{
-            margin: 0,
-            marginBottom: 17,
-            height: `calc(100% - 85px)`,
-            position: "relative"
-          }}
-        >
-          <PipelineGraph
-            ref={this.graphRef}
-            backgroundColor={Colors.LIGHT_GRAY5}
-            pipelineName={pipeline ? pipeline.name : ""}
-            solids={queryResultSolids}
-            layout={getDagrePipelineLayout(queryResultSolids)}
-            focusSolids={[]}
-            highlightedSolids={[]}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: 10,
-              left: "50%",
-              transform: "translateX(-50%)"
-            }}
-          >
-            <GraphQueryInput
-              items={pipeline ? pipeline.solids : []}
-              value={query}
-              placeholder="Type a Solid Subset"
-              onChange={this.handleSetQuery}
-              autoFocus={true}
-            />
-          </div>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button onClick={this.close}>Cancel</Button>
-            <ShortcutHandler
-              shortcutLabel="⌥Enter"
-              shortcutFilter={e => e.keyCode === 13 && e.altKey}
-              onShortcut={this.handleSave}
-            >
-              <Button
-                intent="primary"
-                onClick={this.handleSave}
-                disabled={queryInvalid}
-                title={
-                  queryInvalid
-                    ? `You must provie a solid query or * to execute the entire pipeline.`
-                    : `Apply solid query`
-                }
-              >
-                Apply
-              </Button>
-            </ShortcutHandler>
-          </div>
-        </div>
-      </>
+      <SolidSelectorModalContainer>
+        {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
+        <PipelineGraph
+          ref={this.graphRef}
+          backgroundColor={Colors.WHITE}
+          pipelineName={pipeline.name}
+          solids={queryResultSolids}
+          layout={getDagrePipelineLayout(queryResultSolids)}
+          interactor={SVGViewport.Interactors.None}
+          focusSolids={[]}
+          highlightedSolids={[]}
+        />
+      </SolidSelectorModalContainer>
     );
   }
-
-  close = () => {
-    this.props.onRequestClose && this.props.onRequestClose();
-  };
 }
 
 export const SOLID_SELECTOR_QUERY = gql`
@@ -209,51 +68,110 @@ export const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export default (props: ISolidSelectorProps) => {
-  const { subsetError, query } = props;
-  const [open, setOpen] = React.useState(false);
+  const { serverProvidedSubsetError, query, onChange } = props;
+  const [pending, setPending] = React.useState<string>(query || "");
+  const [focused, setFocused] = React.useState(false);
+  const { data } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: { name: props.pipelineName },
+    fetchPolicy: "cache-and-network"
+  });
 
-  const onRequestClose = () => setOpen(false);
+  const queryResultSolids = data?.pipeline
+    ? filterByQuery(data.pipeline.solids, pending).all
+    : [];
 
-  let buttonText;
-  if (subsetError) {
-    buttonText = `Solids: Invalid Selection`;
-  } else {
-    buttonText = `Solids: ${query || "*"}`;
-  }
+  const errorMessage =
+    queryResultSolids.length === 0 || pending.length === 0
+      ? `You must provie a valid solid query or * to execute the entire pipeline.`
+      : serverProvidedSubsetError
+      ? serverProvidedSubsetError.message
+      : null;
+
+  const onCommitPendingValue = (applied: string) => {
+    if (!data?.pipeline) return;
+
+    if (applied === "") {
+      applied = "*";
+    }
+    const queryResultSolids = filterByQuery(data.pipeline.solids, applied).all;
+
+    // If all solids are returned, we set the subset to null rather than sending
+    // a comma separated list of evey solid to the API
+    if (queryResultSolids.length === data.pipeline.solids.length) {
+      onChange(null, applied);
+    } else {
+      onChange(
+        queryResultSolids.map(s => s.name),
+        applied
+      );
+    }
+  };
+
+  React.useEffect(() => {
+    setPending(query || "");
+  }, [query, focused]);
 
   return (
-    <ShortcutHandler
-      shortcutLabel={"⌥S"}
-      shortcutFilter={e => e.keyCode === 83 && e.altKey}
-      onShortcut={() => setOpen(true)}
-    >
-      <div>
-        <Dialog
-          icon="info-sign"
-          onClose={() => setOpen(false)}
-          style={{ width: "80vw", maxWidth: 1400, height: "80vh" }}
-          title={"Specify Solids to Execute"}
-          usePortal={true}
-          isOpen={open}
-        >
-          <SolidSelectorModalContainer
-            {...props}
-            onRequestClose={onRequestClose}
-            onChange={(value, query) => {
-              props.onChange(value, query);
-              onRequestClose();
-            }}
-          />
-        </Dialog>
-        <Button
-          icon={subsetError ? IconNames.ERROR : undefined}
-          intent={subsetError ? Intent.WARNING : Intent.NONE}
-          onClick={() => setOpen(true)}
-          title="solid-subset-selector"
-        >
-          {buttonText}
-        </Button>
-      </div>
-    </ShortcutHandler>
+    <div style={{ position: "relative" }}>
+      <ShortcutHandler
+        shortcutLabel={"⌥S"}
+        shortcutFilter={e => e.keyCode === 83 && e.altKey}
+      >
+        <GraphQueryInput
+          width={(pending !== "*" && pending !== "") || focused ? 350 : 90}
+          intent={errorMessage ? Intent.DANGER : Intent.NONE}
+          items={data?.pipeline ? data?.pipeline.solids : []}
+          value={pending}
+          placeholder="Type a Solid Subset"
+          onChange={setPending}
+          onBlur={pending => {
+            onCommitPendingValue(pending);
+            setFocused(false);
+          }}
+          onFocus={() => setFocused(true)}
+          onKeyDown={e => {
+            if (e.isDefaultPrevented()) {
+              return;
+            }
+            if (e.key === "Enter" || e.key === "Return" || e.key === "Escape") {
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </ShortcutHandler>
+      {focused && data?.pipeline && (
+        <SolidSelectorModal
+          pipeline={data?.pipeline}
+          errorMessage={errorMessage}
+          queryResultSolids={queryResultSolids}
+        />
+      )}
+    </div>
   );
 };
+
+const SolidSelectorModalContainer = styled.div`
+  position: absolute;
+  border-radius: 4px;
+  box-shadow: 0 3px 20px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+  top: 45px;
+  left: 0;
+  width: 60vw;
+  height: 60vh;
+  background: ${Colors.WHITE};
+  & > div {
+    border-radius: 4px;
+  }
+`;
+
+const ModalErrorOverlay = styled.div`
+  position: absolute;
+  margin: 5px;
+  padding: 4px 8px;
+  z-index: 2;
+  border-radius: 2px;
+  border: 1px solid ${Colors.RED3};
+  background: ${Colors.RED5};
+  color: white;
+`;

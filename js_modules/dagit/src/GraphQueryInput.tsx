@@ -1,6 +1,13 @@
 import * as React from "react";
 import styled from "styled-components/macro";
-import { MenuItem, Menu, Popover, InputGroup, Button } from "@blueprintjs/core";
+import {
+  MenuItem,
+  Menu,
+  Popover,
+  InputGroup,
+  Button,
+  Intent
+} from "@blueprintjs/core";
 import { GraphQueryItem } from "./GraphQueryImpl";
 import { IconNames } from "@blueprintjs/icons";
 import gql from "graphql-tag";
@@ -8,11 +15,17 @@ import { isEqual } from "lodash";
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
+  intent?: Intent;
   value: string;
   placeholder: string;
-  onChange: (value: string) => void;
   autoFocus?: boolean;
   presets?: { name: string; value: string }[];
+  width?: string | number;
+
+  onChange: (value: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent<any>) => void;
+  onFocus?: () => void;
+  onBlur?: (value: string) => void;
 }
 
 interface ActiveSuggestionInfo {
@@ -89,7 +102,7 @@ export const GraphQueryInput = React.memo(
 
     if (suggestions.length && focused) {
       menu = (
-        <StyledMenu>
+        <Menu style={{ width: props.width || "30vw" }}>
           {suggestions.slice(0, 15).map(suggestion => (
             <StyledMenuItem
               key={suggestion}
@@ -102,7 +115,7 @@ export const GraphQueryInput = React.memo(
               }}
             />
           ))}
-        </StyledMenu>
+        </Menu>
       );
     }
 
@@ -146,6 +159,8 @@ export const GraphQueryInput = React.memo(
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
         setActive({ text: suggestions[idx], idx });
       }
+
+      props.onKeyDown?.(e);
     };
 
     const onKeyUp = (e: React.KeyboardEvent<any>) => {
@@ -163,7 +178,7 @@ export const GraphQueryInput = React.memo(
     };
 
     return (
-      <GraphQueryInputContainer>
+      <>
         <Popover
           minimal={true}
           isOpen={menu !== undefined}
@@ -171,6 +186,7 @@ export const GraphQueryInput = React.memo(
           content={menu}
         >
           <GraphQueryInputField
+            intent={props.intent}
             title="graph-query-input"
             type="text"
             value={pendingValue}
@@ -183,13 +199,18 @@ export const GraphQueryInput = React.memo(
             onChange={(e: React.ChangeEvent<any>) =>
               setPendingValue(e.target.value)
             }
-            onFocus={() => setFocused(true)}
+            onFocus={() => {
+              setFocused(true);
+              props.onFocus?.();
+            }}
             onBlur={() => {
               setFocused(false);
               props.onChange(pendingValue);
+              props.onBlur?.(pendingValue);
             }}
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
+            style={{ width: props.width || "30vw" }}
           />
         </Popover>
         {props.presets &&
@@ -227,12 +248,13 @@ export const GraphQueryInput = React.memo(
               />
             </Popover>
           ))}
-      </GraphQueryInputContainer>
+      </>
     );
   },
 
   (prevProps, nextProps) =>
     prevProps.items === nextProps.items &&
+    prevProps.width === nextProps.width &&
     prevProps.value === nextProps.value &&
     isEqual(prevProps.presets, nextProps.presets)
 );
@@ -259,23 +281,11 @@ export const GraphQueryInput = React.memo(
   `
 };
 
-const GraphQueryInputContainer = styled.div`
-  z-index: 2;
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-`;
-
 const GraphQueryInputField = styled(InputGroup)`
   font-size: 14px;
-  width: 30vw;
-  font-size: 14px;
-`;
-
-const StyledMenu = styled(Menu)`
-  width: 30vw;
+  & > input {
+    transition: width 100ms ease-in-out;
+  }
 `;
 
 const StyledMenuItem = styled(MenuItem)`
