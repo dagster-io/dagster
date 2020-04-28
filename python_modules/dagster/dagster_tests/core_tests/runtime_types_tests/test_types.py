@@ -4,6 +4,7 @@ import pytest
 
 from dagster import (
     DagsterEventType,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     EventMetadataEntry,
@@ -18,6 +19,7 @@ from dagster import (
     check_dagster_type,
     execute_pipeline,
     lambda_solid,
+    make_python_type_usable_as_dagster_type,
     pipeline,
     resource,
     solid,
@@ -602,3 +604,17 @@ def test_type_equality():
     assert not (
         resolve_dagster_type(Optional[List[int]]) != resolve_dagster_type(Optional[List[int]])
     )
+
+
+def test_make_usable_as_dagster_type_called_twice():
+    class AType:
+        pass
+
+    ADagsterType = PythonObjectDagsterType(AType, name='ADagsterType',)
+    BDagsterType = PythonObjectDagsterType(AType, name='BDagsterType',)
+
+    make_python_type_usable_as_dagster_type(AType, ADagsterType)
+    make_python_type_usable_as_dagster_type(AType, ADagsterType)  # should not raise an error
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        make_python_type_usable_as_dagster_type(AType, BDagsterType)

@@ -683,7 +683,10 @@ def make_python_type_usable_as_dagster_type(python_type, dagster_type):
     on a given python type.
     '''
     check.inst_param(dagster_type, 'dagster_type', DagsterType)
-    if python_type in _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY:
+    if (
+        _PYTHON_TYPE_TO_DAGSTER_TYPE_MAPPING_REGISTRY.get(python_type, dagster_type)
+        is not dagster_type
+    ):
         # This would be just a great place to insert a short URL pointing to the type system
         # documentation into the error message
         # https://github.com/dagster-io/dagster/issues/1831
