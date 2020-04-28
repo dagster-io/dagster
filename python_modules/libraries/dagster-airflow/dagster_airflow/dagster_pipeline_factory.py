@@ -7,6 +7,7 @@ import dateutil
 from airflow.models import TaskInstance
 from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
+from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
 
 from dagster import (
@@ -17,12 +18,98 @@ from dagster import (
     Nothing,
     OutputDefinition,
     PipelineDefinition,
+    RepositoryDefinition,
     SolidDefinition,
     check,
     solid,
 )
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+
+
+class DagsterAirflowError(Exception):
+    pass
+
+
+def make_dagster_repo_from_airflow_dag_bag(dag_bag, repo_name):
+    ''' Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
+
+    DagBag.get_dag() dependency requires Airflow DB to be initialized
+
+    Usage:
+        Create `make_dagster_repo.py`:
+            from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dag_bag
+            from airflow_home import my_dag_bag
+
+            def make_repo_from_dag_bag():
+                return make_dagster_repo_from_airflow_dag_bag(my_dag_bag, 'my_repo_name')
+
+        Use RepositoryDefinition as usual, for example:
+            `dagit -f path/to/make_dagster_repo.py -n make_repo_from_dag_bag`
+
+    Args:
+        dag_path (str): Path to directory or file that contains Airflow Dags
+        repo_name (str): Name for generated RepositoryDefinition
+
+    Returns:
+        RepositoryDefinition
+    '''
+    check.inst_param(dag_bag, 'dag_bag', DagBag)
+    check.str_param(repo_name, 'repo_name')
+
+    pipeline_defs = []
+    for dag_id in dag_bag.dag_ids:
+        pipeline_defs.append(make_dagster_pipeline_from_airflow_dag(dag_bag.get_dag(dag_id)))
+
+    return RepositoryDefinition(name=repo_name, pipeline_defs=pipeline_defs)
+
+
+def make_dagster_repo_from_airflow_dags_path(
+    dag_path, repo_name, safe_mode=True, store_serialized_dags=False
+):
+    ''' Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
+
+    DagBag.get_dag() dependency requires Airflow DB to be initialized.
+
+    Usage:
+
+        Create `make_dagster_repo.py`:
+            from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dags_path
+
+            def make_repo_from_dir():
+                return make_dagster_repo_from_airflow_dags_path(
+                    '/path/to/dags/', 'my_repo_name'
+                )
+        Use RepositoryDefinition as usual, for example:
+            `dagit -f path/to/make_dagster_repo.py -n make_repo_from_dir`
+
+    Args:
+        dag_path (str): Path to directory or file that contains Airflow Dags
+        repo_name (str): Name for generated RepositoryDefinition
+        safe_mode (bool): True to use Airflow's default heuristic to find files that contain DAGs
+            (ie find files that contain both b'DAG' and b'airflow') (default: True)
+        store_serialized_dags (bool): True to read Airflow DAGS from Airflow DB. False to read DAGS
+            from Python files. (default: False)
+
+    Returns:
+        RepositoryDefinition
+    '''
+    check.str_param(dag_path, 'dag_path')
+    check.str_param(repo_name, 'repo_name')
+    check.bool_param(safe_mode, 'safe_mode')
+    check.bool_param(store_serialized_dags, 'store_serialized_dags')
+
+    try:
+        dag_bag = DagBag(
+            dag_folder=dag_path,
+            include_examples=False,  # Exclude Airflow example DAGs
+            safe_mode=safe_mode,
+            store_serialized_dags=store_serialized_dags,
+        )
+    except Exception:  # pylint: disable=broad-except
+        raise DagsterAirflowError('Error initializing airflow.models.dagbag object with arguments')
+
+    return make_dagster_repo_from_airflow_dag_bag(dag_bag, repo_name)
 
 
 def make_dagster_pipeline_from_airflow_dag(dag, tags=None):

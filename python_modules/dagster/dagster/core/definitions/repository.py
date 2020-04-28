@@ -8,7 +8,7 @@ class RepositoryDefinition(object):
     '''Define a repository that contains a collection of pipelines.
 
     Args:
-        name (str): The name of the pipeline.
+        name (str): The name of the repository.
         pipeline_dict (Optional[Dict[str, Callable[[], PipelineDefinition]]]):
             An dictionary of pipeline names to callables that take no parameters and return a
             :py:class:`PipelineDefinition`.
@@ -63,7 +63,7 @@ class RepositoryDefinition(object):
 
     def get_pipeline(self, name):
         '''Get a pipeline by name.
-        
+
         If this pipeline is present in the lazily evaluated ``pipeline_dict`` passed to the
         constructor, but has not yet been constructed, only this pipeline is constructed, and will
         be cached for future calls.
