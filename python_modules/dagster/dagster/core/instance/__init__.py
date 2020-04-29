@@ -481,7 +481,7 @@ class DagsterInstance:
                 step_keys_to_execute=step_keys_to_execute,
             )
 
-        return self.get_or_create_run(
+        return self.create_run(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             environment_dict=environment_dict,
@@ -625,8 +625,15 @@ class DagsterInstance:
         pipeline_snapshot=None,
         execution_plan_snapshot=None,
     ):
-        # The last usage of this method is in dagster-airflow. When the usage is removed, this method
-        # should be deleted.
+        # The usage of this method is limited to dagster-airflow, specifically in Dagster
+        # Operators that are executed in Airflow. Because a common workflow in Airflow is to
+        # retry dags from arbitrary tasks, we need any node to be capable of creating a
+        # PipelineRun.
+        #
+        # The try-except DagsterRunAlreadyExists block handles the race when multiple "root" tasks
+        # simultaneously execute self._run_storage.add_run(pipeline_run). When this happens, only
+        # one task succeeds in creating the run, while the others get DagsterRunAlreadyExists
+        # error; at this point, the failed tasks try again to fetch the existing run.
         # https://github.com/dagster-io/dagster/issues/2412
 
         pipeline_run = self._construct_run_with_snapshots(
@@ -644,7 +651,7 @@ class DagsterInstance:
             execution_plan_snapshot=execution_plan_snapshot,
         )
 
-        if self.has_run(pipeline_run.run_id):
+        def get_run():
             candidate_run = self.get_run_by_id(pipeline_run.run_id)
 
             field_diff = _check_run_equality(pipeline_run, candidate_run)
@@ -658,7 +665,13 @@ class DagsterInstance:
                 )
             return candidate_run
 
-        return self._run_storage.add_run(pipeline_run)
+        if self.has_run(pipeline_run.run_id):
+            return get_run()
+
+        try:
+            return self._run_storage.add_run(pipeline_run)
+        except DagsterRunAlreadyExists:
+            return get_run()
 
     def add_run(self, pipeline_run):
         return self._run_storage.add_run(pipeline_run)
@@ -805,7 +818,7 @@ class DagsterInstance:
         This method delegates to the ``RunLauncher``, if any, configured on the instance, and will
         call its implementation of ``RunLauncher.launch_run()`` to begin the execution of the
         specified run. Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.get_or_create_run()``) *before* this method is called, and
+        ``DagsterInstance.create_run()``) *before* this method is called, and
         should be in the ``PipelineRunStatus.NOT_STARTED`` state.
 
         Args:
