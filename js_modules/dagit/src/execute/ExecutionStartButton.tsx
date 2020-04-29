@@ -6,6 +6,7 @@ import { WebsocketStatusContext } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
 
 interface IExecutionStartButtonProps {
+  children?: React.ReactNode;
   title: string;
   icon: "repeat" | "play" | "disable" | "send-to";
   tooltip?: string;
@@ -138,6 +139,10 @@ export default class ExecutionStartButton extends React.Component<
                 {this.props.title}
               </ExecutionStartButtonContainer>
             );
+          }
+          // Use custom button if it exists
+          if (this.props.children) {
+            return this.props.children;
           }
 
           return (
