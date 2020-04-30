@@ -112,6 +112,7 @@ def get_dict_value(cell_dict, keys):
     return get_dict_value(cell_dict[keys[0]], keys[1:])
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize('valid_notebook_path', valid_notebook_paths)
 def test_valid_notebooks(valid_notebook_path):
     notebook_filename = script_relative_path(valid_notebook_path)
@@ -128,6 +129,7 @@ def test_valid_notebooks(valid_notebook_path):
         )
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "invalid_notebook_path, cell_location, error_name, error_value, error_output_type",
     invalid_notebook_paths,
