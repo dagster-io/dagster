@@ -6,6 +6,65 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
+snapshots['test_get_partition_sets_for_pipeline 1'] = {
+    'partitionSetsOrError': {
+        '__typename': 'PartitionSets',
+        'results': [
+            {
+                'mode': 'default',
+                'name': 'integer_partition',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': [
+                    'return_hello'
+                ]
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_pipeline_daily',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'scheduled_integer_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'scheduled_integer_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_pipeline_daily',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_pipeline_daily',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            },
+            {
+                'mode': 'default',
+                'name': 'no_config_pipeline_daily',
+                'pipelineName': 'no_config_pipeline',
+                'solidSubset': None
+            }
+        ]
+    }
+}
+
+snapshots['test_get_partition_sets_for_pipeline 2'] = {
+    'partitionSetsOrError': {
+        '__typename': 'PipelineNotFoundError',
+        'message': 'Pipeline invalid_pipeline is not present in the currently loaded repository.'
+    }
+}
+
 snapshots['test_get_all_partition_sets 1'] = {
     'partitionSetsOrError': {
         '__typename': 'PartitionSets',
@@ -99,65 +158,6 @@ snapshots['test_get_all_partition_sets 1'] = {
                 'solidSubset': None
             }
         ]
-    }
-}
-
-snapshots['test_get_partition_sets_for_pipeline 1'] = {
-    'partitionSetsOrError': {
-        '__typename': 'PartitionSets',
-        'results': [
-            {
-                'mode': 'default',
-                'name': 'integer_partition',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': [
-                    'return_hello'
-                ]
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'scheduled_integer_partitions',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'scheduled_integer_partitions',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            },
-            {
-                'mode': 'default',
-                'name': 'no_config_pipeline_daily',
-                'pipelineName': 'no_config_pipeline',
-                'solidSubset': None
-            }
-        ]
-    }
-}
-
-snapshots['test_get_partition_sets_for_pipeline 2'] = {
-    'partitionSetsOrError': {
-        '__typename': 'PipelineNotFoundError',
-        'message': 'Pipeline invalid_pipeline is not present in the currently loaded repository.'
     }
 }
 

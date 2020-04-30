@@ -1,10 +1,8 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.definitions.pipeline import ExecutionSelector
 
-from .fetch_pipelines import get_pipeline_def_from_selector
-from .utils import capture_dauphin_error
+from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 @capture_dauphin_error
@@ -18,11 +16,15 @@ def _get_partition_sets(graphene_info, pipeline_name):
     partition_sets = graphene_info.context.get_all_partition_sets()
 
     if pipeline_name:
-        pipeline_def = get_pipeline_def_from_selector(
-            graphene_info, ExecutionSelector(pipeline_name)
-        )
+        if not graphene_info.context.has_external_pipeline(pipeline_name):
+            raise UserFacingGraphQLError(
+                graphene_info.schema.type_named('PipelineNotFoundError')(
+                    pipeline_name=pipeline_name
+                )
+            )
+
         matching_partition_sets = filter(
-            lambda partition_set: partition_set.pipeline_name == pipeline_def.name, partition_sets
+            lambda partition_set: partition_set.pipeline_name == pipeline_name, partition_sets
         )
     else:
         matching_partition_sets = partition_sets
