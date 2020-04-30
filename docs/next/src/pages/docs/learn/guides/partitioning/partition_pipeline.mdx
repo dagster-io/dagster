@@ -91,16 +91,14 @@ emphasize-lines:4-16
 Our second solid will take the json response and total the volume
 amounts over all the days:
 
-::: {.literalinclude linenos="" lines="23-32" language="python" caption="repository.py"}
-../../../../../examples/dagster_examples/stocks/pipelines_stock.py
-:::
+```python literalinclude
+file:/dagster_examples/stocks/pipelines_stock.py
+caption:repository.py
+lines:23-32
+```
 
 Great! Now we can wrap this up in a pipeline and repository, then open
 the repository in dagit to execute the pipeline.
-
-::: {.literalinclude linenos="" lines="23-32" language="python" caption="repository.py"}
-../../../../../examples/dagster_examples/stocks/pipelines_stock.py
-:::
 
 ```{.python}
 from dagster import pipeline, RepositoryDefinition
@@ -115,9 +113,7 @@ def define_repo():
     )
 ```
 
-::: {.thumbnail}
-pipeline.png
-:::
+![pipeline.png](/assets/images/learn/guides/partitioning/pipeline.png)
 
 We can configure the pipeline run in the playground to calculate the
 total volume for Apple shares:
@@ -129,9 +125,7 @@ solids:
             symbol: "AAPL"
 ```
 
-::: {.thumbnail}
-config_1.png
-:::
+![config_1.png](/assets/images/learn/guides/partitioning/config_1.png)
 
 Now if we wanted to calculate the total volume for several different
 stocks, it's easy to simply change our configuration to run for a
