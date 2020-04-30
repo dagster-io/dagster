@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.9
+
+**Bugfix**
+
+- Made boto3 dependency in dagster-aws more flexible (#2418)
+
 ## 0.7.8
 
 **Breaking Changes**

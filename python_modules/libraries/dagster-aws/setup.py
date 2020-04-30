@@ -39,7 +39,7 @@ def _do_setup(name='dagster-aws'):
         packages=find_packages(exclude=['test']),
         include_package_data=True,
         install_requires=[
-            'boto3==1.9.*',
+            'boto3>=1.9',
             'dagster',
             'psycopg2-binary',
             'requests',
