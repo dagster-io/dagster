@@ -84,18 +84,16 @@ Our first solid will take the stock ticker symbol as config, and query
 the API to return the volume traded from Jan 01 - Jan 31 2019. We pass
 the json response to the downstream solid.
 
-```python literalinclude emphasize-lines=4-16
+```python literalinclude emphasize-lines=4-16 caption=repository.py
 file:/dagster_examples/stocks/pipelines_stock.py
-caption:repository.py
 lines:5-20
 ```
 
 Our second solid will take the json response and total the volume
 amounts over all the days:
 
-```python literalinclude
+```python literalinclude caption=repository.py
 file:/dagster_examples/stocks/pipelines_stock.py
-caption:repository.py
 lines:23-32
 ```
 

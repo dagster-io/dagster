@@ -22,9 +22,8 @@ can also learn more about Typing in Dagster by reading [Dagster Types Guide](lea
 
 Let's look back at our simple `read_csv` solid.
 
-```python literalinclude showLines startLine=7
+```python literalinclude showLines startLine=7 caption=inputs_typed.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/inputs_typed.py
-caption:inputs_typed.py
 lines:7-15
 ```
 
@@ -58,17 +57,15 @@ expects to receive a data frame.
 
 To do this, we'll use the <PyObject module="dagster" object="DagsterType" displayText="DagsterType" /> class:
 
-```python literalinclude  showLines startLine=6
+```python literalinclude  showLines startLine=6 caption=custom_types.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types.py
-caption:custom_types.py
 lines:6-10
 ```
 
 Now we can annotate the rest of our pipeline with our new type:
 
-```python literalinclude showLines startLine=13 emphasize-lines=2,12
+```python literalinclude showLines startLine=13 emphasize-lines=2,12 caption=custom_types.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types.py
-caption:custom_types.py
 lines:13-36
 ```
 
@@ -100,9 +97,8 @@ of these OrderedDicts to have the same fields, in the same order.
 
 The type check function allows us to do this.
 
-```python literalinclude showLines startLine=7 emphasize-lines=1,21
+```python literalinclude showLines startLine=7 emphasize-lines=1,21 caption=custom_types_2.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_2.py
-caption:custom_types_2.py
 lines:7-30
 ```
 
@@ -110,9 +106,8 @@ Now, if our solid logic fails to return the right type, we'll see a
 type check failure. Let's replace our `read_csv` solid with the
 following bad logic:
 
-```python literalinclude showLines startLine=32
+```python literalinclude showLines startLine=32 caption=custom_types_2.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_2.py
-caption:custom_types_2.py
 lines:32-39
 ```
 
@@ -137,9 +132,8 @@ We saw earlier how, when a solid doesn't receive all of its inputs from
 other solids further upstream in the pipeline, we can specify its input
 values in config:
 
-```YAML literalinclude
+```YAML literalinclude caption=inputs_env.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
-caption:inputs_env.yaml
 ```
 
 The Dagster framework knows how to interpret values provided via config
@@ -157,9 +151,8 @@ the full configuration surface of a general purpose `read_csv` solid.
 
 What we want to be able to do is write:
 
-```YAML literalinclude
+```YAML literalinclude caption=custom_type_input.yaml
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_type_input.yaml
-caption:custom_type_input.yaml
 ```
 
 In order for the Dagster machinery to be able to decode the config value
@@ -167,9 +160,8 @@ In order for the Dagster machinery to be able to decode the config value
 `LessSimpleDataFrame` value, we need to write what we call an input
 hydration config.
 
-```python literalinclude showLines startLine=32
+```python literalinclude showLines startLine=32 caption=custom_types_3.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
-caption:custom_types_3.py
 lines:32-39
 ```
 
@@ -187,18 +179,16 @@ fields like `parquet`, `xlsx`, `sql`, etc.
 
 Then insert this into the original declaration:
 
-```python literalinclude showLines startLine=42 emphasize-lines=5
+```python literalinclude showLines startLine=42 emphasize-lines=5 caption=custom_types_3.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
-caption:custom_types_3.py
 lines:42-47
 ```
 
 Now if you run a pipeline with this solid from dagit you will be able to
 provide sources for these inputs via config:
 
-```python literalinclude showLines startLine=70
+```python literalinclude showLines startLine=70 caption=custom_types_3.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_3.py
-caption:custom_types_3.py
 lines:70-80
 ```
 
@@ -211,9 +201,8 @@ tests that ensure your types are doing what you expect them to. Dagster
 includes a utility function, <PyObject module="dagster" object="check_dagster_type" />,
 that lets you type check any Dagster type against any value.
 
-```python literalinclude showLines startLine=102
+```python literalinclude showLines startLine=102 caption=custom_types_test.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_test.py
-caption:custom_types_test.py
 lines:102-114
 ```
 
@@ -233,9 +222,8 @@ One is using `InputDefinition` and `OutputDefinition` exclusively for
 dagster types, and reserving type annotations for naked Python types
 _only_. This is verbose, but is explicit and clear.
 
-```python literalinclude showLines startLine=21 emphasize-lines=1-5,14-15
+```python literalinclude showLines startLine=21 emphasize-lines=1-5,14-15 caption=custom_types_mypy_verbose.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy_verbose.py
-caption:custom_types_mypy_verbose.py
 lines:21-47
 ```
 
@@ -247,9 +235,8 @@ property in the python typing module.
 While inelegant, this centralizes boilerplate to the type instantiation,
 rather than have it on all places where the type is referenced.
 
-```python literalinclude showLines startLine=7 emphasize-lines=1-8
+```python literalinclude showLines startLine=7 emphasize-lines=1-8 caption=custom_types_mypy_typing_trick.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_mypy_typing_trick.py
-caption:custom_types_mypy_typing_trick.py
 lines:7-25
 ```
 
@@ -266,9 +253,8 @@ that contains metadata about the success or failure of the type check.
 Let's see how to use this to emit some summary statistics about our DataFrame
 type:
 
-```python literalinclude showLines startLine=18 emphasize-lines=3-9,33-53
+```python literalinclude showLines startLine=18 emphasize-lines=3-9,33-53 caption=custom_types_4.py
 file:/dagster_examples/intro_tutorial/basics/e04_quality/custom_types_4.py
-caption:custom_types_4.py
 lines:18-71
 ```
 

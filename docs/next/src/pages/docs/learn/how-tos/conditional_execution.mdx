@@ -12,9 +12,8 @@ on the output will simply skip, such as short-circuiting or branching.
 
 For example:
 
-```python literalinclude
+```python literalinclude caption=conditional_execution.py
 file:/dagster_examples/how_tos/conditional_execution.py
-caption:conditional_execution.py
 lines:8-11
 ```
 
@@ -26,26 +25,23 @@ branching in our pipeline.
 For example, let's define a solid that has two optional outputs, and
 only yields one based on a conditional:
 
-```python literalinclude
+```python literalinclude caption=conditional_execution.py
 file:/dagster_examples/how_tos/conditional_execution.py
-caption:conditional_execution.py
 lines:14-24
 ```
 
 Then, we can have two downstream solids `path_1` and `path_2` that
 depend on output "a" and output "b", respectively:
 
-```python literalinclude
+```python literalinclude caption=conditional_execution.py
 file:/dagster_examples/how_tos/conditional_execution.py
-caption:conditional_execution.py
 lines:27-34
 ```
 
 Finally, we can wire these solids up in a pipeline:
 
-```python literalinclude
+```python literalinclude caption=conditional_execution.py
 file:/dagster_examples/how_tos/conditional_execution.py
-caption:conditional_execution.py
 lines:37-41
 ```
 
@@ -79,8 +75,7 @@ you have an external data store that is not ready/available.
 Any downstream solids that depend on the solid will be marked as skipped
 and will not execute.
 
-```python literalinclude
+```python literalinclude caption=hello_cereal.py
 file:/dagster_examples/how_tos/conditional_execution.py
-caption:hello_cereal.py
 lines:52-59
 ```

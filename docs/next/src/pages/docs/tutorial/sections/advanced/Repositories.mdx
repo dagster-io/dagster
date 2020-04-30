@@ -17,9 +17,8 @@ Dagster provides the concept of a repository, a collection of pipelines that
 the Dagster tools can target as a whole. Repositories are declared using the <PyObject module="dagster" object="RepositoryDefinition" /> API
 as follows:
 
-```python literalinclude showLines startLine=14
+```python literalinclude showLines startLine=14 caption=repos.py
 file:/dagster_examples/intro_tutorial/advanced/repositories/repos.py
-caption:repos.py
 lines:14-24
 ```
 
@@ -47,9 +46,8 @@ information to make using the command line tools easier. Save this file as
 file, although you can tell the CLI tools to use any file you like with the
 `-y` flag.
 
-```YAML literalinclude
+```YAML literalinclude caption=repository.yaml
 file:/dagster_examples/intro_tutorial/advanced/repositories/repository.yaml
-caption:repository.yaml
 ```
 
 Now you should be able to list the pipelines in this repo without all the

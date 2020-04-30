@@ -15,9 +15,8 @@ general-purpose `read_csv` solid along with some domain-specific logic
 for the specific purpose of joining our cereal dataset with a lookup
 table providing human-readable names for the cereal manufacturers.
 
-```python literalinclude showLines startLine=128
+```python literalinclude showLines startLine=128 caption=composite_solids.py
 file:/dagster_examples/intro_tutorial/advanced/solids/composite_solids.py
-caption:composite_solids.py
 lines:128-132
 ```
 
@@ -41,9 +40,8 @@ the output of the composite solid as a whole.
 Config for the individual solids making up the composite is nested, as
 follows:
 
-```YAML literalinclude emphasize-lines=1-3
+```YAML literalinclude emphasize-lines=1-3 caption=composite_solids.yaml
 file:/dagster_examples/intro_tutorial/advanced/solids/composite_solids.yaml
-caption:composite_solids.yaml
 ```
 
 When we execute this pipeline, Dagit includes information about the

@@ -1,5 +1,6 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import cx from 'classnames';
 
 type CodeProps = {
   children: string;
@@ -7,6 +8,7 @@ type CodeProps = {
   showLines?: boolean;
   startLine?: string;
   'emphasize-lines'?: string;
+  caption?: string;
 };
 
 const Code: React.FunctionComponent<CodeProps> = ({
@@ -17,8 +19,8 @@ const Code: React.FunctionComponent<CodeProps> = ({
   ...props
 }) => {
   const language = className ? className.replace(/language-/, '') : 'text';
-
   const emphasizeLines = props['emphasize-lines'];
+  const caption = props['caption'];
   const rangesToEmphasize = emphasizeLines
     ? emphasizeLines
         .split(',')
@@ -32,26 +34,35 @@ const Code: React.FunctionComponent<CodeProps> = ({
   const code = children.replace(/\n+$/, '');
 
   return (
-    <SyntaxHighlighter
-      language={language}
-      style={dracula}
-      showLineNumbers={showLines}
-      startingLineNumber={parseInt(startLine)}
-      wrapLines={true}
-      lineProps={(lineNumber: number) => {
-        const ln = lineNumber;
-        let shouldHighlightLine = false;
-        for (const [start, end] of rangesToEmphasize) {
-          if (!end) if (ln === start) shouldHighlightLine = true;
-          if (ln >= start && ln <= end) shouldHighlightLine = true;
-        }
-        return {
-          className: shouldHighlightLine ? 'highlighted-line' : '',
-        };
-      }}
-    >
-      {code}
-    </SyntaxHighlighter>
+    <>
+      {caption && (
+        <div className="inline-block bg-gray-800 px-2 pb-2 pt-1 text-white rounded text-sm">
+          {caption}
+        </div>
+      )}
+      <div className={cx({ '-mt-2': caption })}>
+        <SyntaxHighlighter
+          language={language}
+          style={dracula}
+          showLineNumbers={showLines}
+          startingLineNumber={parseInt(startLine)}
+          wrapLines={true}
+          lineProps={(lineNumber: number) => {
+            const ln = lineNumber;
+            let shouldHighlightLine = false;
+            for (const [start, end] of rangesToEmphasize) {
+              if (!end) if (ln === start) shouldHighlightLine = true;
+              if (ln >= start && ln <= end) shouldHighlightLine = true;
+            }
+            return {
+              className: shouldHighlightLine ? 'highlighted-line' : '',
+            };
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
+      </div>
+    </>
   );
 };
 

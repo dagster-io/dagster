@@ -15,9 +15,8 @@ Let's assume there's only four stocks in the world: `AAPL`, `GOOG`,
 First, we write a function that returns a list of partitions. Here, our
 partitions are simply the stock tickers, and we wrap them in <PyObject module="dagster" object="Partition"/> objects.
 
-```python literalinclude emphasize-lines=4-10
+```python literalinclude emphasize-lines=4-10 caption=repository.py
 file:/dagster_examples/stocks/simple_partitions.py
-caption:repository.py
 lines:1-10
 ```
 
@@ -26,9 +25,8 @@ returns config. We pass the <PyObject module="dagster" object="Partition"/> valu
 to the `query_historical_stock_data` solid config, just like we did in
 the previous section.
 
-```python literalinclude
+```python literalinclude caption=repository.py
 file:/dagster_examples/stocks/simple_partitions.py
-caption:repository.py
 lines:13-16
 ```
 
@@ -37,9 +35,8 @@ Finally, using these two functions, we create a <PyObject module="dagster" objec
 partitions decorating a function that returns a list of partition set
 definitions with the <PyObject module="dagster" object="repository_partitions" displayText="@repository_partitions" />
 
-```python literalinclude
+```python literalinclude caption=repository.py
 file:/dagster_examples/stocks/simple_partitions.py
-caption:repository.py
 lines:19-29
 ```
 

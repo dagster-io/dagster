@@ -73,9 +73,8 @@ Previously:
 Now:
 
 <pre>
-```python literalinclude showLines startLine=23 emphasize-lines=24-33,35
+```python literalinclude showLines startLine=23 emphasize-lines=24-33,35 caption=materializations.py
 file:/intro_tutorial/materializations.py
-caption:materializations.py
 lines:23-56
 ```
 </pre>

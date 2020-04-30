@@ -14,9 +14,8 @@ fundamental operations they expose are tested in each environment, we
 can test business logic independent of environments that may be very
 costly or difficult to test against.
 
-```python literalinclude showLines startLine=75
+```python literalinclude showLines startLine=75 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-caption:modes.py
 lines:75-84
 ```
 
@@ -24,9 +23,8 @@ Even if you're not familiar with SQLAlchemy, it's enough to note that
 this is a very different implementation of the `warehouse` resource. To
 make this implementation available to Dagster, we attach it to a <PyObject module="dagster" object="ModeDefinition" />.
 
-```python literalinclude showLines startLine=128
+```python literalinclude showLines startLine=128 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-caption:modes.py
 lines:128-143
 ```
 
@@ -42,9 +40,8 @@ $ dagster pipeline execute -f modes.py -n modes_pipeline -e resources.yaml -d un
 
 Or, from the Python API:
 
-```python literalinclude showLines startLine=146 emphasize-lines=12
+```python literalinclude showLines startLine=146 emphasize-lines=12 caption=modes.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/modes.py
-caption:modes.py
 lines:146-159
 ```
 

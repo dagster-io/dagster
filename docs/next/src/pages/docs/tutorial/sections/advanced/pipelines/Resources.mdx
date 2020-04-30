@@ -21,9 +21,8 @@ understates the nutritional difference between our different cereals.
 Let's transform our dataset and then store it in a normalized table in
 the warehouse:
 
-```python literalinclude showLines startLine=59 emphasize-lines=18
+```python literalinclude showLines startLine=59 emphasize-lines=18 caption=resources.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
-caption:resources.py
 lines:59-82
 ```
 
@@ -43,9 +42,8 @@ own `context` argument, which gives access to resource-specific config.
 (Unlike the contexts we've seen so far, which are instances of <PyObject module="dagster" object="SystemComputeExecutionContext" />, this
 context is an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
-```python literalinclude showLines startLine=17 emphasize-lines=28-30
+```python literalinclude showLines startLine=17 emphasize-lines=28-30 caption=resources.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
-caption:resources.py
 lines:17-46
 ```
 
@@ -53,9 +51,8 @@ The last thing we need to do is to attach the resource to our pipeline,
 so that it's properly initialized when the pipeline run begins and made
 available to our solid logic as `context.resources.warehouse`.
 
-```python literalinclude showLines startLine=85 emphasize-lines=2-6
+```python literalinclude showLines startLine=85 emphasize-lines=2-6 caption=resources.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.py
-caption:resources.py
 lines:85-94
 ```
 
@@ -67,9 +64,8 @@ we won't have to specify which mode to use (it will take the place of the `defau
 
 We can put it all together with the following config:
 
-```YAML literalinclude emphasize-lines=1-4
+```YAML literalinclude emphasize-lines=1-4 caption=resources.yaml
 file:/dagster_examples/intro_tutorial/advanced/pipelines/resources.yaml
-caption:resources.yaml
 ```
 
 (Here, we pass the special string `":memory:"` in config as the
@@ -86,9 +82,8 @@ also provides a way for solids to advertise their resource requirements,
 to make it easier to keep track of which resources need to be provided
 for a pipeline.
 
-```python literalinclude showLines startLine=57 emphasize-lines=1
+```python literalinclude showLines startLine=57 emphasize-lines=1 caption=required_resources.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/required_resources.py
-caption:required_resources.py
 lines:57-80
 ```
 

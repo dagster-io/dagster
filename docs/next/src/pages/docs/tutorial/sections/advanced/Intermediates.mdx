@@ -14,9 +14,8 @@ computations.
 
 To turn intermediate storage on, just set another key in the pipeline config:
 
-```YAML literalinclude
-file:/dagster_examples/intro_tutorial/advanced/intermediates/intermediates.yaml
-caption:intermediates.yaml
+```YAML literalinclude caption=intermediates.yaml emphasize-lines:6-7
+file:/dagster_examples/intro_tutorial/intermediates.yaml
 ```
 
 When you execute the pipeline using this config, you'll see new structured
@@ -35,9 +34,8 @@ Our toy `LessSimpleDataFrame` is, of course, pickleable, but
 supposing it was not, let's set a custom **`SerializationStrategy`** on
 it to tell Dagster how to store intermediates of this type.
 
-```python literalinclude showLines startLine=16
+```python literalinclude showLines startLine=16 caption=serialization_strategy.py
 file:/dagster_examples/intro_tutorial/advanced/intermediates/serialization_strategy.py
-caption:serialization_strategy.py
 lines:16-39
 ```
 
@@ -67,17 +65,15 @@ or while you're actively debugging them.
 You can also manually specify intermediates from previous runs as inputs to
 solids. Recall the syntax we used to set input values using the config system:
 
-```YAML literalinclude
+```YAML literalinclude caption=inputs_env.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs_env.yaml
-caption:inputs_env.yaml
 ```
 
 Instead of setting the key `value` (i.e., providing a ), we can
 also set `pickle`, as follows:
 
-```YAML literalinclude
+```YAML literalinclude caption=reexecution_env.yaml
 file:/dagster_examples/intro_tutorial//advanced/intermediates/reexecution_env.yaml
-caption:reexecution_env.yaml
 ```
 
 (Of course, you'll need to use the path to an intermediate that is actually

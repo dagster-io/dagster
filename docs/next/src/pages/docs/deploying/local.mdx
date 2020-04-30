@@ -26,10 +26,9 @@ In this configuration, Dagit will write execution logs to
 To run Dagit as a long-lived service, you can install a systemd service
 such as the following:
 
-```bash literalinclude
+```bash literalinclude caption=dagit.service
 file:src/pages/docs/deploying/systemd/dagit.service
 relativeToProject
-caption:dagit.service
 ```
 
 Note that this assumes you've got a virtualenv for Dagster at
@@ -45,20 +44,18 @@ Docker image.
 A minimal skeleton `Dockerfile` and entrypoint shell script that will
 run Dagit and the cron scheduler are shown below:
 
-```dockerfile literalinclude
+```dockerfile literalinclude caption=Dockerfile
 file:src/pages/docs/deploying/docker/Dockerfile
 relativeToProject
-caption:Dockerfile
 ```
 
 In this setup, the contents of `entrypoint.sh` should be something like
 the following. This script ensures that cron will run in the Docker
 container alongside Dagit:
 
-```shell literalinclude
+```shell literalinclude caption=entrypoint.sh
 file:src/pages/docs/deploying/docker/entrypoint.sh
 relativeToProject
-caption:entrypoint.sh
 ```
 
 In practice, you may want to volume your pipeline code into your

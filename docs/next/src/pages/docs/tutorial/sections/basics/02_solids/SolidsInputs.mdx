@@ -5,9 +5,8 @@ import PyObject from 'components/PyObject';
 So far, we've only seen solids whose behavior is the same every time
 they're run:
 
-```python literalinclude showLines startLine=7 emphasize-lines=4
+```python literalinclude showLines startLine=7 emphasize-lines=4 caption=hello_cereal.py
 file:/dagster_examples/intro_tutorial/basics/e01_first_pipeline/hello_cereal.py
-caption:hello_cereal.py
 lines:7-20
 ```
 
@@ -16,9 +15,8 @@ In general, though, rather than relying on hardcoded values like
 Appropriately parameterized solids are more testable, and also more
 reusable. Consider the following more generic solid:
 
-```python literalinclude showLines startLine=7
+```python literalinclude showLines startLine=7 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
-caption:inputs.py
 lines:7-15
 ```
 
@@ -32,8 +30,7 @@ determine which file to load.
 Let's rebuild a pipeline we've seen before, but this time using our
 newly parameterized solid.
 
-```python literalinclude showLines startLine=1 emphasize-lines=38
+```python literalinclude showLines startLine=1 emphasize-lines=38 caption=inputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/inputs.py
-caption:inputs.py
 lines:1-38
 ```

@@ -39,18 +39,16 @@ First, run `pip install dagster-dask`.
 
 Then, you'll need to add the dask executor to a **`ModeDefinition`** on your pipeline:
 
-```python literalinclude
+```python literalinclude caption=dask_hello_world.py
 file:src/pages/docs/deploying/dask_hello_world.py
 relativeToProject
-caption:dask_hello_world.py
 ```
 
 Now you can run this pipeline with a config block such as the following:
 
-```python literalinclude
+```python literalinclude caption=dask_hello_world.yaml
 file:src/pages/docs/deploying/dask_hello_world.yaml
 relativeToProject
-caption:dask_hello_world.yaml
 ```
 
 Executing this pipeline will spin up local Dask execution, run the
@@ -70,10 +68,9 @@ use the **`s3_system_storage`**)
 For distributing task execution on a Dask cluster, you must provide a
 config block that includes the address/port of the Dask scheduler:
 
-```python literalinclude
+```python literalinclude caption=dask_remote.yaml
 file:src/pages/docs/deploying/dask_remote.yaml
 relativeToProject
-caption:dask_remote.yaml
 ```
 
 Since Dask will invoke your pipeline code on the cluster workers, you

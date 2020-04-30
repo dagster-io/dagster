@@ -112,9 +112,8 @@ Let's start by looking at the pipeline definition (in
 `airline_demo/pipelines.py`); you'll notice that we use solid aliasing
 to reuse the `s3_to_df` solid for several ingest steps:
 
-```python literalinclude
+```python literalinclude caption=pipelines.py
 file:/dagster_examples/airline_demo/pipelines.py
-caption:pipelines.py
 lines:96-103
 ```
 
@@ -151,9 +150,8 @@ The config for each of our solids specifies everything it needs in order
 to interact with the external environment. In YAML, an entry in the
 config for one of our solids aliasing `s3_to_df` looks like this:
 
-```yaml literalinclude
+```yaml literalinclude caption=local_fast_ingest.yaml
 file:/dagster_examples/airline_demo/environments/local_fast_ingest.yaml
-caption:local_fast_ingest.yaml
 lines:32-38
 ```
 
@@ -218,9 +216,8 @@ scrubbed) subset of data and with limited compute resources; remotely in
 CI/CD, with access to a production or replica environment, but where
 speed is of the essence; and remotely in production on live data.
 
-```python literalinclude
+```python literalinclude caption=hello_cereal.py
 file:/dagster_examples/airline_demo/pipelines.py
-caption:hello_cereal.py
 lines:46-69
 ```
 
@@ -265,9 +262,8 @@ authentication schema.
 
 Finally, we bring it all together in the `postgres_db_info_resource`:
 
-```python literalinclude
+```python literalinclude caption=resources.py
 file:/dagster_examples/common/resources.py
-caption:resources.py
 lines:89-128
 ```
 
@@ -302,9 +298,8 @@ intermediate results.
 The terminal nodes of this pipeline are all aliased instances of
 `load_data_to_database_from_spark`:
 
-```python literalinclude
+```python literalinclude caption=solids.py
 file:/dagster_examples/airline_demo/solids.py
-caption:solids.py
 lines:198-216
 ```
 
@@ -351,9 +346,8 @@ define a new solid executing a relatively complex computation against
 the data warehouse, an analyst only needs to supply light metadata along
 with their SQL query:
 
-```python literalinclude
+```python literalinclude caption=solids.py
 file:/dagster_examples/airline_demo/solids.py
-caption:solids.py
 lines:403-429
 ```
 
@@ -391,9 +385,8 @@ down on the tag:
 
 Let's start with the definition of our `notebook_solid` helper:
 
-```python literalinclude
+```python literalinclude caption=solids.py
 file:/dagster_examples/airline_demo/solids.py
-caption:solids.py
 lines:38-39
 ```
 
@@ -401,9 +394,8 @@ This is just a wrapper around Dagstermill's `define_dagstermill_solid`
 which tells Dagstermill where to look for the notebooks. We define a new
 solid by using this function and referencing a notebook file:
 
-```python literalinclude
+```python literalinclude caption=solids.py
 file:/dagster_examples/airline_demo/solids.py
-caption:solids.py
 lines:431-453
 ```
 

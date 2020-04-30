@@ -11,9 +11,8 @@ from different environment variables.
 
 Dagster calls this a config preset:
 
-```python literalinclude showLines startLine=129 emphasize-lines=14-40
+```python literalinclude showLines startLine=129 emphasize-lines=14-40 caption=presets.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
-caption:presets.py
 lines:129-170
 ```
 
@@ -40,9 +39,8 @@ $ dagster pipeline execute -f presets.py -n presets_pipeline -p unittest
 
 From Python, you can use <PyObject module="dagster" object="execute_pipeline" />
 
-```python literalinclude showLines startLine=174
+```python literalinclude showLines startLine=174 caption=presets.py
 file:/dagster_examples/intro_tutorial/advanced/pipelines/presets.py
-caption:presets.py
 lines:174
 dedent:4
 ```

@@ -18,9 +18,8 @@ Let's replace `sort_hot_cereals_by_calories` and
 `sort_cold_cereals_by_calories` by two aliases of the same library
 solid:
 
-```python literalinclude showLines startLine=56 emphasize-lines=17-18
+```python literalinclude showLines startLine=56 emphasize-lines=17-18 caption=reusable_solids.py
 file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.py
-caption:reusable_solids.py
 lines:56-75
 ```
 
@@ -34,7 +33,6 @@ invoked many times within this pipeline.
 
 Configuring solids also uses the aliases, as in the following YAML:
 
-```YAML literalinclude emphasize-lines=6,8
+```YAML literalinclude emphasize-lines=6,8 caption=reusable_solids.yaml
 file:/dagster_examples/intro_tutorial/advanced/solids/reusable_solids.yaml
-caption:reusable_solids.yaml
 ```

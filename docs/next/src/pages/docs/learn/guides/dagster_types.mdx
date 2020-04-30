@@ -67,9 +67,8 @@ Features of Dagster Types:
 
 The core API for creating dagster types is DagsterType.
 
-```python literalinclude
+```python literalinclude caption=test_type_guide.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:test_type_guide.py
 lineno-start:1
 lines:28-31
 ```
@@ -77,9 +76,8 @@ lines:28-31
 Once created, this type can be attached to solids via either an a)
 `InputDefinition` and `OutputDefinition` or b) type annotations.
 
-```python literalinclude
+```python literalinclude caption=types_on_definitions.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:types_on_definitions.py
 lineno-start:1
 lines:51-56
 ```
@@ -87,9 +85,8 @@ lines:51-56
 Using python 3 and type annotations, the exact same declaration can be
 expressed:
 
-```python literalinclude
+```python literalinclude caption=type_annotations.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:type_annotations.py
 lineno-start:1
 lines:33-35
 ```
@@ -128,9 +125,8 @@ Although type checks are very flexible, it is also common to define
 types that just do _isinstance_ checks as the dagster type
 check. We provided an API to do just that.
 
-```python literalinclude
+```python literalinclude caption=python_object_dagster_type.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:python_object_dagster_type.py
 lineno-start:1
 lines:67-72
 ```
@@ -138,9 +134,8 @@ lines:67-72
 One can now declare the dagster type as the interface to the solid, and
 use the corresponding python type in business logic.
 
-```python literalinclude
+```python literalinclude caption=dagster_type_annotations.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:dagster_type_annotations.py
 lineno-start:1
 lines:74-80
 ```
@@ -162,18 +157,16 @@ declaring the input schema and a function which the validated config
 value and produces a valid in-memory value to be passed to the schema.
 This process is referred to as hydration.
 
-```python literalinclude
+```python literalinclude caption=input_hydration_config.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:input_hydration_config.py
 lineno-start:1
 lines:86-99
 ```
 
 With this the input can be specified via config as below:
 
-```python literalinclude
+```python literalinclude caption=execute_with_yaml.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:execute_with_yaml.py
 lineno-start:1
 lines:101-108
 ```
@@ -236,9 +229,8 @@ terms of pure business logic.
 
 Here is an example usage of the `Nothing` type:
 
-```python literalinclude
+```python literalinclude caption=serial_nothing_pipeline.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:serial_nothing_pipeline.py
 lineno-start:1
 lines:180-194
 ```
@@ -254,9 +246,8 @@ be used.
 with a `Nothing` type can depend on multiple outputs upstream. (Note:
 this is also true for dagster.List)
 
-```python literalinclude
+```python literalinclude caption=fanin_nothing_pipeline.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:fanin_nothing_pipeline.py
 lineno-start:1
 lines:198-233
 ```
@@ -278,17 +269,15 @@ direct annotations of class declarations -- and <PyObject module="dagster" objec
 mapping _existing_ classes. This is designed for importing python types libraries that cannot be altered and mapping them
 to dagster types.
 
-```python literalinclude
+```python literalinclude caption=usable_as_dagster_type.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:usable_as_dagster_type.py
 lineno-start:1
 lines:267-277
 ```
 And make_python_type_usable_as_dagster_type
 
-```python literalinclude
+```python literalinclude caption=hello_cereal.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:hello_cereal.py
 lineno-start:1
 lines:281-294
 ```
@@ -321,9 +310,8 @@ This is a challenge to do elegantly in light of the fact that as of mypy
 0.761 there is no way to directly annotate a object to treat it as a
 type during a type checking pass. However there is a way to do this.
 
-```python literalinclude
+```python literalinclude caption=type_checking_mypy_compliance.py
 file:/dagster_examples_tests/intro_tutorial_tests/test_type_guide.py
-caption:type_checking_mypy_compliance.py
 lineno-start:1
 lines:162-174
 ```

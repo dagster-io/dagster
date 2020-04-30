@@ -18,9 +18,8 @@ schedule definition and a corresponding date partition set:
 We can use the monthly decorator to create a partition set and schedule
 definition for our pipeline:
 
-```python literalinclude
+```python literalinclude caption=schedules.py
 file:/dagster_examples/stocks/schedules.py
-caption:schedules.py
 ```
 
 Make sure to include a reference to the function in `repository.yaml`:

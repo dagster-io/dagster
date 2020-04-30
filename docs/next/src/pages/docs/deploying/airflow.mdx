@@ -50,9 +50,8 @@ We support two modes of execution (each of which uses its own operator):
 
 For this quickstart, we'll use our familiar, simple demo pipeline:
 
-```python literalinclude
+```python literalinclude caption=airflow.py
 file:/dagster_examples/intro_tutorial/airflow.py
-caption:airflow.py
 ```
 
 To compile this existing pipeline to Airflow, we'll use the
@@ -68,9 +67,8 @@ Wrote DAG scaffold to file: $AIRFLOW_HOME/dags/hello_cereal_pipeline.py
 
 Let's take a look at the generated file:
 
-```python literalinclude
+```python literalinclude caption=hello_cereal_pipeline.py
 file:/dagster_examples/intro_tutorial/hello_cereal_pipeline.py
-caption:hello_cereal_pipeline.py
 ```
 
 This is a fairly straightforward file with four parts.

@@ -49,9 +49,8 @@ Solids don't need to be wired together serially. The output of one
 solid can be consumed by any number of other solids, and the outputs of
 several different solids can be consumed by a single solid.
 
-```python literalinclude showLines emphasize-lines=55-59 startLine=7
+```python literalinclude showLines emphasize-lines=55-59 startLine=7 caption=complex_pipeline.py
 file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
-caption:complex_pipeline.py
 lines:7-66
 ```
 
@@ -81,8 +80,7 @@ depends on both of their outputs).
 We'll write a simple test for this pipeline showing how we can assert
 that all four of its solids executed successfully.
 
-```python literalinclude showLines startLine=73
+```python literalinclude showLines startLine=73 caption=complex_pipeline.py
 file:/dagster_examples/intro_tutorial/basics/e03_pipelines/complex_pipeline.py
-caption:complex_pipeline.py
 lines:73-80
 ```

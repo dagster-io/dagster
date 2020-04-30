@@ -21,18 +21,16 @@ To create a custom dagster pandas type, use
 constraints. For example, we can construct a custom dataframe type to
 represent a set of e-bike trips in the following way:
 
-```python literalinclude
+```python literalinclude caption=core_trip_pipeline.py
 file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
-caption:core_trip_pipeline.py
 lines:9-22
 ```
 
 Once our custom data type is defined, we can use it as the type
 declaration for the inputs / outputs of our solid:
 
-```python literalinclude
+```python literalinclude caption=hello_cereal.py
 file:/dagster_examples/dagster_pandas_guide/core_trip_pipeline.py
-caption:hello_cereal.py
 lines:25-31
 ```
 
@@ -56,9 +54,8 @@ We can do this by providing a list of dataframe constraints to
 
 This looks like:
 
-```python literalinclude
+```python literalinclude caption=shape_constrained_pipeline.py
 file:/dagster_examples/dagster_pandas_guide/shape_constrained_pipeline.py
-caption:shape_constrained_pipeline.py
 lines:9-11
 ```
 
@@ -76,9 +73,8 @@ it becomes important to monitor data as it flows through your systems.
 In complex pipelines, this can help debug and monitor data drift over
 time. Let's illustrate how this works in our example:
 
-```python literalinclude
+```python literalinclude caption=summary_stats_pipeline.py
 file:/dagster_examples/dagster_pandas_guide/summary_stats_pipeline.py
-caption:summary_stats_pipeline.py
 lines:10-39
 ```
 
@@ -100,8 +96,7 @@ syntax, an `error_description` for error logs, and a validation method
 which throws a `ColumnConstraintViolationException` if a row fails
 validation. This would look like the following:
 
-```python literalinclude emphasize-lines=22-25
+```python literalinclude emphasize-lines=22-25 caption=custom_column_constraint_pipeline.py
 file:/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
-caption:custom_column_constraint_pipeline.py
 lines:15-40
 ```

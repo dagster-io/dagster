@@ -7,9 +7,8 @@ the pipeline in which they're invoked. For example, consider an extended
 version of our csv-reading solid that implements more of the options available
 in the underlying Python API:
 
-```python literalinclude showLines startLine=7 emphasize-lines=9-15
+```python literalinclude showLines startLine=7 emphasize-lines=9-15 caption=config_bad_1.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_1.py
-caption:config_bad_1.py
 lines:7-29
 ```
 
@@ -22,9 +21,8 @@ might have dozens or hundreds of parameters like these.
 But hoisting all of these parameters into the signature of the solid function
 as inputs isn't the right answer either:
 
-```python literalinclude showLines startLine=7 emphasize-lines=5-11
+```python literalinclude showLines startLine=7 emphasize-lines=5-11 caption=config_bad_2.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_bad_2.py
-caption:config_bad_2.py
 lines:7-39
 ```
 
@@ -41,9 +39,8 @@ these with true input values.
 
 The solution is to define a config schema for our solid:
 
-```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89
+```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89 caption=config.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config.py
-caption:config.py
 lines:1-102
 ```
 
@@ -80,9 +77,8 @@ You can see that we've added a new section to the solid config. In addition to
 the `inputs` section, which we'll still use to set the `csv_path` input, we now have a `config`
 section, where we can set values defined in the `config` argument to <PyObject module="dagster" object="solid" displayText="@solid" />.
 
-```YAML literalinclude
+```YAML literalinclude caption=config_env_bad.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/config_env_bad.yaml
-caption:config_env_bad.yaml
 ```
 
 Of course, this config won't give us the results we're expecting. The values

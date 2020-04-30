@@ -25,10 +25,9 @@ execute the steps to which the tasks correspond.
 Let's construct a very parallel toy pipeline and then execute it using
 the Celery executor.
 
-```python literalinclude
+```python literalinclude caption=celery_pipeline.py
 file:src/pages/docs/deploying/celery_pipeline.py
 relativeToProject
-caption:celery_pipeline.py
 ```
 
 Save this pipeline as `celery_pipeline.py`.
@@ -94,10 +93,9 @@ You can do this by adding a block such as the following to your
 `$DAGSTER_HOME/dagster.yaml` when the `DAGSTER_HOME` environment
 variable is set):
 
-```python literalinclude
+```python literalinclude caption=dagster-pg.yaml
 file:src/pages/docs/deploying/dagster-pg.yaml
 relativeToProject
-caption:dagster-pg.yaml
 ```
 
 **The same instance config must be present in Dagit's environment and

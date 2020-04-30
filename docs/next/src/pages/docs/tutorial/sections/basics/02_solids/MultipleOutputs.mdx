@@ -12,9 +12,8 @@ based on the presence of an upstream output.
 Suppose we're interested in splitting hot and cold cereals into
 separate datasets and processing them separately, based on config.
 
-```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26
+```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26 caption=multiple_outputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
-caption:multiple_outputs.py
 lines:35-66
 ```
 
@@ -26,9 +25,8 @@ solid's compute function must have a name that corresponds to one of these decla
 We'll define two downstream solids and hook them up to the multiple
 outputs from `split_cereals`.
 
-```python literalinclude showLines startLine=58 emphasize-lines=23-25
+```python literalinclude showLines startLine=58 emphasize-lines=23-25 caption=multiple_outputs.py
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.py
-caption:multiple_outputs.py
 lines:58-84
 ```
 
@@ -51,9 +49,8 @@ the cold cereals output is omitted and that the execution step
 corresponding to the downstream solid is marked skipped in the right
 hand pane:
 
-```YAML literalinclude showLines
+```YAML literalinclude showLines caption=multiple_outputs.yaml
 file:/dagster_examples/intro_tutorial/basics/e02_solids/multiple_outputs.yaml
-caption:multiple_outputs.yaml
 ```
 
 ![conditional_outputs.png](/assets/images/tutorial/conditional_outputs.png)
