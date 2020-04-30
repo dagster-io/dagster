@@ -165,8 +165,7 @@ fragment messageEventFragment on MessageEvent {
 )
 
 
-START_PIPELINE_EXECUTION_RESULT_FRAGMENT = (
-    '''
+START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
 fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 	__typename
 	... on InvalidStepError {
@@ -202,19 +201,6 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 			pipeline {
 				name
 			}
-			logs {
-				nodes {
-					__typename
-	        ...messageEventFragment
-				}
-				pageInfo {
-					lastCursor
-					hasNextPage
-					hasPreviousPage
-					count
-					totalCount
-				}
-			}
 			environmentConfigYaml
 			mode
 		}
@@ -224,11 +210,8 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
   }
 }
 '''
-    + MESSAGE_EVENT_FRAGMENTS
-)
 
-START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = (
-    '''
+START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
 fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecutionForCreatedRunResult {
 	__typename
 	... on InvalidStepError {
@@ -264,27 +247,12 @@ fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecu
 			pipeline {
 				name
 			}
-			logs {
-				nodes {
-					__typename
-	        ...messageEventFragment
-				}
-				pageInfo {
-					lastCursor
-					hasNextPage
-					hasPreviousPage
-					count
-					totalCount
-				}
-			}
 			environmentConfigYaml
 			mode
 		}
 	}
 }
 '''
-    + MESSAGE_EVENT_FRAGMENTS
-)
 
 START_PIPELINE_EXECUTION_MUTATION = (
     '''

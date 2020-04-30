@@ -33,10 +33,6 @@ def test_k8s_run_launcher_default(dagster_instance, helm_namespace):
         result['data']['startPipelineExecutionForCreatedRun']['__typename']
         == 'StartPipelineRunSuccess'
     )
-    assert 'PipelineSuccessEvent' in {
-        log['__typename']: log
-        for log in result['data']['startPipelineExecutionForCreatedRun']['run']['logs']['nodes']
-    }
 
 
 @pytest.mark.integration

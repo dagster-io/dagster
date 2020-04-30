@@ -269,10 +269,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
 
 
 def test_basic_sync_execution_no_config():
-    context = define_test_context()
-    result = execute_dagster_graphql(
-        context,
-        START_PIPELINE_EXECUTION_QUERY,
+    result = sync_execute_get_run_log_data(
         variables={
             'executionParams': {
                 'selector': {'name': 'no_config_pipeline'},
@@ -281,10 +278,7 @@ def test_basic_sync_execution_no_config():
             }
         },
     )
-
-    assert not result.errors
-    assert result.data
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = result['messages']
     assert isinstance(logs, list)
     assert has_event_of_type(logs, 'PipelineStartEvent')
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
@@ -292,10 +286,7 @@ def test_basic_sync_execution_no_config():
 
 
 def test_basic_inmemory_sync_execution():
-    context = define_test_context()
-    result = execute_dagster_graphql(
-        context,
-        START_PIPELINE_EXECUTION_QUERY,
+    result = sync_execute_get_run_log_data(
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
@@ -305,10 +296,7 @@ def test_basic_inmemory_sync_execution():
         },
     )
 
-    assert not result.errors
-    assert result.data
-
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = result['messages']
     assert isinstance(logs, list)
     assert has_event_of_type(logs, 'PipelineStartEvent')
     assert has_event_of_type(logs, 'PipelineSuccessEvent')
@@ -321,10 +309,7 @@ def test_basic_inmemory_sync_execution():
 
 
 def test_basic_filesystem_sync_execution():
-    context = define_test_context()
-    result = execute_dagster_graphql(
-        context,
-        START_PIPELINE_EXECUTION_QUERY,
+    result = sync_execute_get_run_log_data(
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
@@ -336,10 +321,7 @@ def test_basic_filesystem_sync_execution():
         },
     )
 
-    assert not result.errors
-    assert result.data
-
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = result['messages']
     assert isinstance(logs, list)
     assert has_event_of_type(logs, 'PipelineStartEvent')
     assert has_event_of_type(logs, 'PipelineSuccessEvent')

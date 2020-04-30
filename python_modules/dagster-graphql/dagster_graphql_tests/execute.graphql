@@ -1,30 +1,26 @@
-mutation ($executionParams: ExecutionParams!) {
-    startPipelineExecution(executionParams: $executionParams) {
-        __typename
-        ... on StartPipelineRunSuccess {
-            run {
-                runId
-                pipeline { ...on PipelineReference { name }}
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            message
-                            level
-                        }
-                        ... on ExecutionStepStartEvent {
-                            step { kind }
-                        }
-                    }
-                }
-            }
+mutation($executionParams: ExecutionParams!) {
+  startPipelineExecution(executionParams: $executionParams) {
+    __typename
+    ... on StartPipelineRunSuccess {
+      run {
+        runId
+        pipeline {
+          ... on PipelineReference {
+            name
+          }
         }
-        ... on PipelineConfigValidationInvalid {
-            pipeline { name }
-            errors { message }
-        }
-        ... on PipelineNotFoundError {
-            pipelineName
-        }
+      }
     }
+    ... on PipelineConfigValidationInvalid {
+      pipeline {
+        name
+      }
+      errors {
+        message
+      }
+    }
+    ... on PipelineNotFoundError {
+      pipelineName
+    }
+  }
 }

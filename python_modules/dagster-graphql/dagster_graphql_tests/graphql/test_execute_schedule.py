@@ -17,7 +17,7 @@ from dagster.utils import file_relative_path
 from dagster.utils.test import FilesytemTestScheduler
 
 from .execution_queries import START_SCHEDULED_EXECUTION_QUERY
-from .utils import InMemoryRunLauncher
+from .utils import InMemoryRunLauncher, sync_get_all_logs_for_run
 
 SCHEDULE_TICKS_QUERY = '''
 {
@@ -314,10 +314,12 @@ def test_solid_subset_schedule_decorator(schedule_name):
         assert not result.errors
         assert result.data
         assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+
+        run_id = result.data['startScheduledExecution']['run']['runId']
+
+        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
         execution_step_names = [
-            log['step']['key']
-            for log in result.data['startScheduledExecution']['run']['logs']['nodes']
-            if log['__typename'] == 'ExecutionStepStartEvent'
+            log['step']['key'] for log in logs if log['__typename'] == 'ExecutionStepStartEvent'
         ]
         assert execution_step_names == ['return_foo.compute']
 
@@ -338,6 +340,13 @@ def test_partition_based_multi_mode_decorator():
         assert not result.errors
         assert result.data
         assert result.data['startScheduledExecution']['__typename'] == 'StartPipelineRunSuccess'
+        run_id = result.data['startScheduledExecution']['run']['runId']
+
+        logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
+        execution_step_names = [
+            log['step']['key'] for log in logs if log['__typename'] == 'ExecutionStepStartEvent'
+        ]
+        assert execution_step_names == ['return_six.compute']
 
 
 # Tests for ticks and execution user error boundary

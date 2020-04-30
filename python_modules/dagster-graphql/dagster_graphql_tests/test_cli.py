@@ -100,18 +100,6 @@ mutation ($executionParams: ExecutionParams!) {
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            message
-                            level
-                        }
-                        ... on ExecutionStepStartEvent {
-                            step { kind }
-                        }
-                    }
-                }
             }
         }
         ... on PipelineConfigValidationInvalid {

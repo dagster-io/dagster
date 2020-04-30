@@ -24,6 +24,7 @@ from .setup import (
     get_retry_multi_execution_params,
     retry_config,
 )
+from .utils import sync_get_all_logs_for_run
 
 NON_PERSISTENT_INTERMEDIATES_ERROR = (
     'Cannot perform reexecution with non persistent intermediates manager'
@@ -127,7 +128,7 @@ def test_retry_requires_intermediates():
 
     run_id = result.data['startPipelineExecution']['run']['runId']
     assert run_id
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert isinstance(logs, list)
 
     assert step_did_succeed(logs, 'spawn.compute')
@@ -175,7 +176,7 @@ def test_retry_pipeline_execution():
     )
 
     run_id = result.data['startPipelineExecution']['run']['runId']
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_succeed(logs, 'spawn.compute')
     assert step_did_fail(logs, 'fail.compute')
     assert step_did_skip(logs, 'fail_2.compute')
@@ -200,7 +201,7 @@ def test_retry_pipeline_execution():
     )
 
     run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-    logs = retry_one.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_not_run(logs, 'spawn.compute')
     assert step_did_succeed(logs, 'fail.compute')
     assert step_did_fail(logs, 'fail_2.compute')
@@ -225,7 +226,7 @@ def test_retry_pipeline_execution():
     )
 
     run_id = retry_two.data['startPipelineReexecution']['run']['runId']
-    logs = retry_two.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
 
     assert step_did_not_run(logs, 'spawn.compute')
     assert step_did_not_run(logs, 'fail.compute')
@@ -251,7 +252,7 @@ def test_retry_pipeline_execution():
     )
 
     run_id = retry_three.data['startPipelineReexecution']['run']['runId']
-    logs = retry_three.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
 
     assert step_did_not_run(logs, 'spawn.compute')
     assert step_did_not_run(logs, 'fail.compute')
@@ -275,7 +276,7 @@ def test_retry_resource_pipeline():
     )
 
     run_id = result.data['startPipelineExecution']['run']['runId']
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_succeed(logs, 'start.compute')
     assert step_did_fail(logs, 'will_fail.compute')
 
@@ -296,7 +297,7 @@ def test_retry_resource_pipeline():
         },
     )
     run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-    logs = retry_one.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_not_run(logs, 'start.compute')
     assert step_did_fail(logs, 'will_fail.compute')
 
@@ -309,9 +310,8 @@ def test_retry_multi_output():
         variables={'executionParams': get_retry_multi_execution_params(should_fail=True)},
     )
 
-    print(result.data)
     run_id = result.data['startPipelineExecution']['run']['runId']
-    logs = result.data['startPipelineExecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_succeed(logs, 'multi.compute')
     assert step_did_skip(logs, 'child_multi_skip.compute')
     assert step_did_fail(logs, 'can_fail.compute')
@@ -328,7 +328,7 @@ def test_retry_multi_output():
     )
 
     run_id = retry_one.data['startPipelineReexecution']['run']['runId']
-    logs = retry_one.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_not_run(logs, 'multi.compute')
     assert step_did_not_run(logs, 'child_multi_skip.compute')
     assert step_did_fail(logs, 'can_fail.compute')
@@ -345,7 +345,7 @@ def test_retry_multi_output():
     )
 
     run_id = retry_two.data['startPipelineReexecution']['run']['runId']
-    logs = retry_two.data['startPipelineReexecution']['run']['logs']['nodes']
+    logs = sync_get_all_logs_for_run(context, run_id)['pipelineRunLogs']['messages']
     assert step_did_not_run(logs, 'multi.compute')
     assert step_did_not_run(logs, 'child_multi_skip.compute')
     assert step_did_succeed(logs, 'can_fail.compute')
@@ -437,8 +437,9 @@ def test_retry_early_terminate():
 def test_successful_pipeline_reexecution():
     run_id = make_new_run_id()
     instance = DagsterInstance.ephemeral()
+    context = define_test_context(instance=instance)
     result_one = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        context,
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -490,7 +491,9 @@ def test_successful_pipeline_reexecution():
 
     query_result = result_two.data['startPipelineReexecution']
     assert query_result['__typename'] == 'StartPipelineRunSuccess'
-    logs = query_result['run']['logs']['nodes']
+
+    result = sync_get_all_logs_for_run(context, new_run_id)
+    logs = result['pipelineRunLogs']['messages']
 
     assert isinstance(logs, list)
     assert has_event_of_type(logs, 'PipelineStartEvent')
@@ -561,7 +564,6 @@ def test_pipeline_reexecution_info_query(snapshot):
     query_result_two = result_two.data['pipelineRunOrError']
     assert query_result_two['__typename'] == 'PipelineRun'
     stepKeysToExecute = query_result_two['stepKeysToExecute']
-    print(query_result_two)
     assert stepKeysToExecute is not None
     snapshot.assert_match(stepKeysToExecute)
 

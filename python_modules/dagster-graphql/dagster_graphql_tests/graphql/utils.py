@@ -24,6 +24,18 @@ class InMemoryRunLauncher(RunLauncher):
         return [ev for ev in execute_run_iterator(pipeline, run, instance)]
 
 
+def sync_get_all_logs_for_run(context, run_id):
+    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
+    subscribe_results = []
+
+    subscription.subscribe(subscribe_results.append)
+    assert len(subscribe_results) == 1
+    subscribe_result = subscribe_results[0]
+    assert not subscribe_result.errors
+    assert subscribe_result.data
+    return subscribe_result.data
+
+
 def sync_execute_get_payload(variables, context=None):
     context = (
         context
@@ -38,19 +50,10 @@ def sync_execute_get_payload(variables, context=None):
     if result.data['startPipelineExecution']['__typename'] != 'StartPipelineRunSuccess':
         raise Exception(result.data)
     run_id = result.data['startPipelineExecution']['run']['runId']
-
-    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
-    subscribe_results = []
-
-    subscription.subscribe(subscribe_results.append)
-    assert len(subscribe_results) == 1
-    subscribe_result = subscribe_results[0]
-    assert not subscribe_result.errors
-    assert subscribe_result.data
-    return subscribe_result.data
+    return sync_get_all_logs_for_run(context, run_id)
 
 
-def sync_execute_get_run_log_data(variables,):
+def sync_execute_get_run_log_data(variables):
     payload_data = sync_execute_get_payload(variables)
     assert payload_data['pipelineRunLogs']
     return payload_data['pipelineRunLogs']

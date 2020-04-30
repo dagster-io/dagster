@@ -28,7 +28,6 @@ from dagster.core.definitions.events import (
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
-from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.core.snap import ExecutionPlanIndex, PipelineIndex
@@ -114,7 +113,6 @@ class DauphinPipelineRun(dauphin.ObjectType):
     pipeline = dauphin.NonNull('PipelineReference')
     stats = dauphin.NonNull('PipelineRunStatsOrError')
     stepStats = dauphin.non_null_list('PipelineRunStepStats')
-    logs = dauphin.NonNull('LogMessageConnection')
     computeLogs = dauphin.Field(
         dauphin.NonNull('ComputeLogs'),
         stepKey=dauphin.Argument(dauphin.NonNull(dauphin.String)),
@@ -143,9 +141,6 @@ class DauphinPipelineRun(dauphin.ObjectType):
 
     def resolve_pipelineSnapshotId(self, _):
         return self._pipeline_run.pipeline_snapshot_id
-
-    def resolve_logs(self, graphene_info):
-        return graphene_info.schema.type_named('LogMessageConnection')(self._pipeline_run)
 
     def resolve_stats(self, graphene_info):
         return get_stats(graphene_info, self.run_id)
@@ -327,57 +322,6 @@ class DauphinDisplayableEvent(dauphin.Interface):
     label = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     metadataEntries = dauphin.non_null_list(DauphinEventMetadataEntry)
-
-
-class DauphinLogMessageConnection(dauphin.ObjectType):
-    class Meta(object):
-        name = 'LogMessageConnection'
-
-    nodes = dauphin.non_null_list('PipelineRunEvent')
-    pageInfo = dauphin.NonNull('PageInfo')
-
-    def __init__(self, pipeline_run):
-        self._pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-
-    def resolve_nodes(self, graphene_info):
-
-        pipeline = get_pipeline_reference_or_raise(graphene_info, self._pipeline_run.selector)
-
-        if isinstance(pipeline, DauphinPipeline):
-            pipeline_def = get_pipeline_def_from_selector(
-                graphene_info, self._pipeline_run.selector
-            )
-            execution_plan = create_execution_plan(
-                pipeline_def,
-                self._pipeline_run.environment_dict,
-                mode=self._pipeline_run.mode,
-                step_keys_to_execute=self._pipeline_run.step_keys_to_execute,
-            )
-            execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
-                execution_plan, pipeline_def.get_pipeline_index()
-            )
-        else:
-            pipeline = None
-            execution_plan = None
-            execution_plan_index = None
-
-        return [
-            from_event_record(graphene_info, log, pipeline, execution_plan_index)
-            for log in graphene_info.context.instance.all_logs(self._pipeline_run.run_id)
-        ]
-
-    def resolve_pageInfo(self, graphene_info):
-        count = len(graphene_info.context.instance.all_logs(self._pipeline_run.run_id))
-        lastCursor = None
-        if count > 0:
-            lastCursor = str(count - 1)
-        return graphene_info.schema.type_named('PageInfo')(
-            lastCursor=lastCursor,
-            hasNextPage=None,
-            hasPreviousPage=None,
-            count=count,
-            totalCount=count,
-        )
 
 
 class DauphinPipelineRunLogsSubscriptionSuccess(dauphin.ObjectType):

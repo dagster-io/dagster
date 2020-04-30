@@ -131,16 +131,6 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
                         name
                     }
                 }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            message
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -157,16 +147,6 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent  {
-                            message
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -199,16 +179,6 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent  {
-                            message
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -243,16 +213,6 @@ START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
             run {
                 runId
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent  {
-                            message
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -278,8 +238,7 @@ START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
 '''
 
 START_PIPELINE_EXECUTION_QUERY = (
-    FRAGMENTS
-    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+    START_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
@@ -295,8 +254,7 @@ mutation (
 )
 
 START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY = (
-    FRAGMENTS
-    + START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
+    START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT
     + '''
 
 mutation (
@@ -313,8 +271,7 @@ mutation (
 
 
 START_PIPELINE_REEXECUTION_QUERY = (
-    FRAGMENTS
-    + START_PIPELINE_REEXECUTION_RESULT_FRAGMENT
+    START_PIPELINE_REEXECUTION_RESULT_FRAGMENT
     + '''
 
 mutation (
@@ -330,8 +287,7 @@ mutation (
 )
 
 START_SCHEDULED_EXECUTION_QUERY = (
-    FRAGMENTS
-    + START_PIPELINE_EXECUTION_RESULT_FRAGMENT
+    START_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT
     + '''
 
@@ -368,9 +324,7 @@ mutation (
 )
 
 
-START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = (
-    FRAGMENTS
-    + '''
+START_PIPELINE_EXECUTION_SNAPSHOT_QUERY = '''
 mutation (
     $executionParams: ExecutionParams!
 ) {
@@ -381,15 +335,6 @@ mutation (
         ... on StartPipelineRunSuccess {
             run {
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -421,11 +366,8 @@ mutation (
     }
 }
 '''
-)
 
-START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = (
-    FRAGMENTS
-    + '''
+START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY = '''
 mutation (
     $executionParams: ExecutionParams!
 ) {
@@ -436,15 +378,6 @@ mutation (
         ... on StartPipelineRunSuccess {
             run {
                 pipeline { ...on PipelineReference { name } }
-                logs {
-                    nodes {
-                        __typename
-                        ... on MessageEvent {
-                            level
-                        }
-                        ...stepEventFragment
-                    }
-                }
                 tags {
                     key
                     value
@@ -470,7 +403,6 @@ mutation (
     }
 }
 '''
-)
 
 SUBSCRIPTION_QUERY = (
     FRAGMENTS

@@ -24,14 +24,6 @@ fragment RunHistoryRunFragment on PipelineRun {
   pipeline {
     ...on PipelineReference { name }
   }
-  logs {
-    nodes {
-      __typename
-      ... on MessageEvent {
-        timestamp
-      }
-    }
-  }
   executionPlan {
     steps {
       key
@@ -126,16 +118,6 @@ def test_get_runs_over_graphql():
         read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}
     )
 
-    run_one_data = _get_runs_data(result, run_id_one)
-    assert [log['__typename'] for log in run_one_data['logs']['nodes']] == [
-        msg['__typename'] for msg in payload_one['messages']
-    ]
-
-    run_two_data = _get_runs_data(result, run_id_two)
-    assert [log['__typename'] for log in run_two_data['logs']['nodes']] == [
-        msg['__typename'] for msg in payload_two['messages']
-    ]
-
     # delete the second run
     result = execute_dagster_graphql(
         read_context, DELETE_RUN_MUTATION, variables={'runId': run_id_two}
@@ -150,9 +132,7 @@ def test_get_runs_over_graphql():
 
     # first is the same
     run_one_data = _get_runs_data(result, run_id_one)
-    assert [log['__typename'] for log in run_one_data['logs']['nodes']] == [
-        msg['__typename'] for msg in payload_one['messages']
-    ]
+    assert run_one_data
 
     # second is gone
     run_two_data = _get_runs_data(result, run_id_two)

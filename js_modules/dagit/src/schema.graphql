@@ -472,11 +472,6 @@ enum LogLevel {
   DEBUG
 }
 
-type LogMessageConnection {
-  nodes: [PipelineRunEvent!]!
-  pageInfo: PageInfo!
-}
-
 type LogMessageEvent implements MessageEvent {
   runId: String!
   message: String!
@@ -744,7 +739,6 @@ type PipelineRun {
   pipeline: PipelineReference!
   stats: PipelineRunStatsOrError!
   stepStats: [PipelineRunStepStats!]!
-  logs: LogMessageConnection!
   computeLogs(stepKey: String!): ComputeLogs!
   executionPlan: ExecutionPlan
   stepKeysToExecute: [String!]
