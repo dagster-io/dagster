@@ -28,6 +28,7 @@ class ExternalPipeline:
         self._active_pipeline_data = check.inst_param(
             active_pipeline_data, 'active_pipeline_data', ActivePipelineData
         )
+        self._active_preset_dict = {ap.name: ap for ap in active_pipeline_data.active_presets}
 
     @property
     def name(self):
@@ -38,7 +39,16 @@ class ExternalPipeline:
         return self._active_pipeline_data.active_presets
 
     def has_solid_invocation(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
         return self.pipeline_index.has_solid_invocation(solid_name)
+
+    def has_preset(self, preset_name):
+        check.str_param(preset_name, 'preset_name')
+        return preset_name in self._active_preset_dict
+
+    def get_preset(self, preset_name):
+        check.str_param(preset_name, 'preset_name')
+        return self._active_preset_dict[preset_name]
 
     @staticmethod
     def from_pipeline_def(pipeline_def):
