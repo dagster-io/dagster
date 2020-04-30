@@ -296,6 +296,31 @@ def celery_tests():
     return tests
 
 
+def flyte_tests():
+    tests = []
+    for version in SupportedPython3s:
+        coverage = ".coverage.examples.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        tests.append(
+            StepBuilder("dagster-flyte tests ({ver})".format(ver=TOX_MAP[version]))
+            .run(
+                "pushd python_modules/libraries/dagster-flyte",
+                "tox -e {ver}".format(ver=TOX_MAP[version]),
+                "mv .coverage {file}".format(file=coverage),
+                "buildkite-agent artifact upload {file}".format(file=coverage),
+            )
+            .on_integration_image(version)
+            .build()
+        )
+
+    tests.append(
+        StepBuilder("dagster-flyte build example")
+        .run("cd python_modules/libraries/dagster-flyte/examples", "make docker_build",)
+        .on_integration_image(SupportedPython.V3_6)
+        .build()
+    )
+    return tests
+
+
 def dagster_postgres_tests():
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
@@ -453,6 +478,7 @@ def library_tests():
     extra_test_libraries = {
         'dagster-airflow': airflow_tests(),
         'dagster-celery': celery_tests(),
+        'dagster-flyte': flyte_tests(),
         'dagster-dask': dask_tests(),
         'dagster-gcp': gcp_tests(),
         'dagster-k8s': k8s_tests(),
