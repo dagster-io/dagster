@@ -89,10 +89,6 @@ const SearchBox: React.FC<SearchBoxProps> = ({
   refine,
   onFocusChange,
 }) => {
-  const ref = useRef(null);
-  useClickAway(ref, () => {
-    onFocusChange(false);
-  });
   const handleInputFocus = () => {
     onFocusChange(true);
   };
@@ -117,7 +113,6 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         </div>
         <input
           id="search"
-          ref={ref}
           className="block w-full pl-2 md:pl-10 pr-2 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-blue-300 focus:shadow-outline-blue sm:text-sm transition duration-150 ease-in-out"
           placeholder="Search"
           type="search"
@@ -144,6 +139,11 @@ const CustomSearchBox = connectSearchBox<SearchBoxProps>(
 const Search = () => {
   const [focus, setFocus] = useState(false);
 
+  const ref = useRef(null);
+  useClickAway(ref, () => {
+    setFocus(false);
+  });
+
   const CustomHits = connectHits(Hits);
 
   return (
@@ -152,7 +152,10 @@ const Search = () => {
       searchClient={searchClient}
       createURL={(searchState) => console.log(searchState.query)}
     >
-      <div className="relative flex-1 flex items-center justify-center px-2 lg:ml-6 lg:justify-end">
+      <div
+        ref={ref}
+        className="relative flex-1 flex items-center justify-center px-2 lg:ml-6 lg:justify-end"
+      >
         <CustomSearchBox onFocusChange={(focusValue) => setFocus(focusValue)} />
         &nbsp;
         {focus && (
