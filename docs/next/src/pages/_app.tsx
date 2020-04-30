@@ -1,17 +1,14 @@
 import { AppProps } from 'next/app';
-import { useRouter } from 'next/router';
 import { MDXProvider, MDXProviderComponentsProp } from '@mdx-js/react';
 
 import Layout from 'components/Layout';
 import Code from 'components/Code';
-import {
-  AnchorHeadingsProvider,
-  useAnchorHeadingsActions,
-} from 'hooks/AnchorHeadings';
+import { AnchorHeadingsProvider } from 'hooks/AnchorHeadings';
 
 import 'styles/index.css';
-import { useCallback, useEffect } from 'react';
 import AnchorHeading from 'components/AnchorHeading';
+import useAnchorHeadingsCleanup from 'hooks/AnchorHeadings/useAnchorHeadingsCleanup';
+import useScrollToTopAfterRender from 'hooks/useScrollToTopAfterRender';
 
 const components: MDXProviderComponentsProp = {
   h2: (props) => <AnchorHeading tag={'h2'} {...props} />,
@@ -24,24 +21,8 @@ const components: MDXProviderComponentsProp = {
 };
 
 function App({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const { clearAnchorHeadings } = useAnchorHeadingsActions();
-
-  const onClearAnchorHeadings = useCallback(() => {
-    try {
-      clearAnchorHeadings();
-    } catch (error) {
-      console.log('Attempting to clean up not initialized context.');
-    }
-  }, [clearAnchorHeadings]);
-
-  useEffect(() => {
-    router.events.on('routeChangeStart', onClearAnchorHeadings);
-    return () => {
-      router.events.off('routeChangeStart', onClearAnchorHeadings);
-    };
-  }, [router]);
-
+  useAnchorHeadingsCleanup();
+  useScrollToTopAfterRender();
   return (
     <MDXProvider components={components}>
       <AnchorHeadingsProvider>
