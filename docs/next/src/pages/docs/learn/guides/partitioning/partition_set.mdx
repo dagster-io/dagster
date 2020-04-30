@@ -15,11 +15,10 @@ Let's assume there's only four stocks in the world: `AAPL`, `GOOG`,
 First, we write a function that returns a list of partitions. Here, our
 partitions are simply the stock tickers, and we wrap them in <PyObject module="dagster" object="Partition"/> objects.
 
-```python literalinclude
+```python literalinclude emphasize-lines=4-10
 file:/dagster_examples/stocks/simple_partitions.py
 caption:repository.py
 lines:1-10
-emphasize-lines:4-10
 ```
 
 Next, we define a function that takes a <PyObject module="dagster" object="Partition"/> and

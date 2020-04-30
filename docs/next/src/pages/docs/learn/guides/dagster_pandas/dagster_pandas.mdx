@@ -100,9 +100,8 @@ syntax, an `error_description` for error logs, and a validation method
 which throws a `ColumnConstraintViolationException` if a row fails
 validation. This would look like the following:
 
-```python literalinclude
+```python literalinclude emphasize-lines=22-25
 file:/dagster_examples/dagster_pandas_guide/custom_column_constraint_pipeline.py
 caption:custom_column_constraint_pipeline.py
 lines:15-40
-emphasize-lines:22-24
 ```

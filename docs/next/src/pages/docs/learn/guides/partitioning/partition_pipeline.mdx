@@ -10,7 +10,7 @@ API](https://financialmodelingprep.com/developer/docs) as our data
 source. The API has an endpoint that can give us historical price data
 for a given stock over a time range:
 
-``` bash
+```bash
 https://financialmodelingprep.com/api/v3/historical-price-full/AAPL?from=2019-01-01&to=2019-01-31
 ```
 
@@ -19,35 +19,38 @@ historical data (partitioned by day) for the stock we queried for - in
 this case AAPL. In the historical data, notice how we have volume traded
 information.
 
-``` json
+```json
 {
-  "symbol" : "AAPL",
-  "historical" : [ {
-    "date" : "2019-01-02",
-    "open" : 154.89,
-    "high" : 158.85,
-    "low" : 154.23,
-    "close" : 157.92,
-    "adjClose" : 156.05,
-    "volume" : 3.70397E7,
-    "unadjustedVolume" : 3.70397E7,
-    "change" : -3.03,
-    "changePercent" : -1.956,
-    "vwap" : 157.0,
-    "label" : "January 02, 19",
-    "changeOverTime" : -0.01956
-  }, {
-    "date" : "2019-01-03",
-    "open" : 143.98,
-    "high" : 145.72,
-    "low" : 142.0,
-    "close" : 142.19,
-    "adjClose" : 140.51,
-    "volume" : 9.13122E7,
-    "unadjustedVolume" : 9.13122E7,
-    "change" : 1.79,
-    "etc.": "..."
-  }]
+  "symbol": "AAPL",
+  "historical": [
+    {
+      "date": "2019-01-02",
+      "open": 154.89,
+      "high": 158.85,
+      "low": 154.23,
+      "close": 157.92,
+      "adjClose": 156.05,
+      "volume": 3.70397e7,
+      "unadjustedVolume": 3.70397e7,
+      "change": -3.03,
+      "changePercent": -1.956,
+      "vwap": 157.0,
+      "label": "January 02, 19",
+      "changeOverTime": -0.01956
+    },
+    {
+      "date": "2019-01-03",
+      "open": 143.98,
+      "high": 145.72,
+      "low": 142.0,
+      "close": 142.19,
+      "adjClose": 140.51,
+      "volume": 9.13122e7,
+      "unadjustedVolume": 9.13122e7,
+      "change": 1.79,
+      "etc.": "..."
+    }
+  ]
 }
 ```
 
@@ -56,17 +59,17 @@ total volume traded during January 2019.
 
 Before we begin, let's set up a project structure to organize our code:
 
-``` bash
+```bash
 partition-tutorial
 ├── repository.py
 └── repository.yaml
 ```
 
-And point our *repository.yaml* to our repository:
+And point our _repository.yaml_ to our repository:
 
 repository.yaml:
 
-``` YAML
+```YAML
 repository:
     file: repository.py
     fn: define_repo
@@ -81,11 +84,10 @@ Our first solid will take the stock ticker symbol as config, and query
 the API to return the volume traded from Jan 01 - Jan 31 2019. We pass
 the json response to the downstream solid.
 
-```python literalinclude
+```python literalinclude emphasize-lines=4-16
 file:/dagster_examples/stocks/pipelines_stock.py
 caption:repository.py
 lines:5-20
-emphasize-lines:4-16
 ```
 
 Our second solid will take the json response and total the volume

@@ -65,7 +65,7 @@ Previously:
    :lines: 23-56
    :linenos:
    :lineno-start: 23
-   :emphasize-lines: 24-33
+   :emphasize-lines: 24-33, 35
    :caption: materializations.py
    :language: python
 ```
@@ -73,11 +73,9 @@ Previously:
 Now:
 
 <pre>
-```python literalinclude
+```python literalinclude showLines startLine=23 emphasize-lines=24-33,35
 file:/intro_tutorial/materializations.py
 caption:materializations.py
-lineno-start:23
 lines:23-56
-emphasize-lines:24-33
 ```
 </pre>
