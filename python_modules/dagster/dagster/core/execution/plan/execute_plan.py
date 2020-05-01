@@ -1,11 +1,23 @@
+import sys
+
 from dagster import check
-from dagster.core.errors import DagsterStepOutputNotFoundError
+from dagster.core.definitions import Failure, RetryRequested
+from dagster.core.errors import (
+    DagsterError,
+    DagsterStepOutputNotFoundError,
+    DagsterUserCodeExecutionError,
+)
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.context.system import SystemPipelineExecutionContext
+from dagster.core.execution.context.system import (
+    SystemPipelineExecutionContext,
+    SystemStepExecutionContext,
+)
 from dagster.core.execution.memoization import copy_required_intermediates_for_execution
-from dagster.core.execution.plan.execute_step import dagster_event_sequence_for_step
+from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, UserFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
@@ -24,6 +36,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
         step = active_execution.get_next_step()
 
         step_context = pipeline_context.for_step(step)
+
         missing_resources = [
             resource_key
             for resource_key in step_context.required_resource_keys
@@ -59,7 +72,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan, retries):
                 active_execution.mark_skipped(step.key)
             else:
                 for step_event in check.generator(
-                    dagster_event_sequence_for_step(step_context, retries)
+                    _dagster_event_sequence_for_step(step_context, retries)
                 ):
                     check.inst(step_event, DagsterEvent)
                     yield step_event
@@ -85,3 +98,143 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
             step_key=nonoptionals[0].step_key,
             output_name=nonoptionals[0].output_name,
         )
+
+
+def _dagster_event_sequence_for_step(step_context, retries):
+    '''
+    Yield a sequence of dagster events for the given step with the step context.
+
+    This function also processes errors. It handles a few error cases:
+
+        (1) User code requests to be retried:
+            A RetryRequested has been raised. We will either put the step in to
+            up_for_retry state or a failure state depending on the number of previous attempts
+            and the max_retries on the received RetryRequested.
+
+        (2) User code fails successfully:
+            The user-space code has raised a Failure which may have
+            explicit metadata attached.
+
+        (3) User code fails unexpectedly:
+            The user-space code has raised an Exception. It has been
+            wrapped in an exception derived from DagsterUserCodeException. In that
+            case the original user exc_info is stashed on the exception
+            as the original_exc_info property.
+
+        (4) User error:
+            The framework raised a DagsterError that indicates a usage error
+            or some other error not communicated by a user-thrown exception. For example,
+            if the user yields an object out of a compute function that is not a
+            proper event (not an Output, ExpectationResult, etc).
+
+        (5) Framework failure or interrupt:
+            An unexpected error occurred. This is a framework error. Either there
+            has been an internal error in the framework OR we have forgotten to put a
+            user code error boundary around invoked user-space code. These terminate
+            the computation immediately (by re-raising).
+
+
+    The "raised_dagster_errors" context manager can be used to force these errors to be
+    re-raised and surfaced to the user. This is mostly to get sensible errors in test and
+    ad-hoc contexts, rather than forcing the user to wade through the
+    PipelineExecutionResult API in order to find the step that failed.
+
+    For tools, however, this option should be false, and a sensible error message
+    signaled to the user within that tool.
+    '''
+
+    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
+    check.inst_param(retries, 'retries', Retries)
+
+    try:
+        prior_attempt_count = retries.get_attempt_count(step_context.step.key)
+        if step_context.step_launcher:
+            step_events = step_context.step_launcher.launch_step(step_context, prior_attempt_count)
+        else:
+            step_events = core_dagster_event_sequence_for_step(step_context, prior_attempt_count)
+
+        for step_event in check.generator(step_events):
+            yield step_event
+
+    # case (1) in top comment
+    except RetryRequested as retry_request:
+        retry_err_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        if retries.disabled:
+            fail_err = SerializableErrorInfo(
+                message='RetryRequested but retries are disabled',
+                stack=retry_err_info.stack,
+                cls_name=retry_err_info.cls_name,
+                cause=retry_err_info.cause,
+            )
+            yield DagsterEvent.step_failure_event(
+                step_context=step_context,
+                step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+            )
+        else:  # retries.enabled or retries.deferred
+            prev_attempts = retries.get_attempt_count(step_context.step.key)
+            if prev_attempts >= retry_request.max_retries:
+                fail_err = SerializableErrorInfo(
+                    message='Exceeded max_retries of {}'.format(retry_request.max_retries),
+                    stack=retry_err_info.stack,
+                    cls_name=retry_err_info.cls_name,
+                    cause=retry_err_info.cause,
+                )
+                yield DagsterEvent.step_failure_event(
+                    step_context=step_context,
+                    step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+                )
+            else:
+                attempt_num = prev_attempts + 1
+                yield DagsterEvent.step_retry_event(
+                    step_context,
+                    StepRetryData(
+                        error=retry_err_info, seconds_to_wait=retry_request.seconds_to_wait,
+                    ),
+                )
+
+    # case (2) in top comment
+    except Failure as failure:
+        yield _step_failure_event_from_exc_info(
+            step_context,
+            sys.exc_info(),
+            UserFailureData(
+                label='intentional-failure',
+                description=failure.description,
+                metadata_entries=failure.metadata_entries,
+            ),
+        )
+        if step_context.raise_on_error:
+            raise failure
+
+    # case (3) in top comment
+    except DagsterUserCodeExecutionError as dagster_user_error:
+        yield _step_failure_event_from_exc_info(
+            step_context, dagster_user_error.original_exc_info,
+        )
+
+        if step_context.raise_on_error:
+            raise dagster_user_error.user_exception
+
+    # case (4) in top comment
+    except DagsterError as dagster_error:
+        yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
+
+        if step_context.raise_on_error:
+            raise dagster_error
+
+    # case (5) in top comment
+    except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
+        yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
+
+        raise unexpected_exception
+
+
+def _step_failure_event_from_exc_info(step_context, exc_info, user_failure_data=None):
+    return DagsterEvent.step_failure_event(
+        step_context=step_context,
+        step_failure_data=StepFailureData(
+            error=serializable_error_info_from_exc_info(exc_info),
+            user_failure_data=user_failure_data,
+        ),
+    )

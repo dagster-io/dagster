@@ -22,6 +22,10 @@ class StepExecutionContext(object):
         return self._system_step_execution_context.resources
 
     @property
+    def step_launcher(self):
+        return self._system_step_execution_context.step_launcher
+
+    @property
     def run_id(self):
         return self._system_step_execution_context.run_id
 

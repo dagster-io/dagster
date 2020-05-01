@@ -892,9 +892,9 @@ def schedule(
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
-    
+
     Args:
-        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g., 
+        cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             ``'45 23 * * 6'`` for a schedule that runs at 11:45 PM every Saturday.
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         name (Optional[str]): The name of the schedule to create.
@@ -910,7 +910,7 @@ def schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[[ScheduleExecutionContext], bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
@@ -956,7 +956,7 @@ def monthly_schedule(
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
-    
+
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.
@@ -973,7 +973,7 @@ def monthly_schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
@@ -1050,7 +1050,7 @@ def weekly_schedule(
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
-    
+
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.
@@ -1067,7 +1067,7 @@ def weekly_schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
@@ -1143,7 +1143,7 @@ def daily_schedule(
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
-    
+
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.
@@ -1158,7 +1158,7 @@ def daily_schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
@@ -1226,7 +1226,7 @@ def hourly_schedule(
     :py:class:`~dagster.ScheduleDefinition` and should take a
     :py:class:`~dagster.ScheduleExecutionContext` as its only argument, returning the environment
     dict for the scheduled execution.
-    
+
     Args:
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
         start_date (datetime.datetime): The date from which to run the schedule.
@@ -1243,7 +1243,7 @@ def hourly_schedule(
         mode (Optional[str]): The pipeline mode in which to execute this schedule.
             (Default: 'default')
         should_execute (Optional[Callable[ScheduleExecutionContext, bool]]): A function that runs at
-            schedule execution tie to determine whether a schedule should execute or skip. Takes a 
+            schedule execution tie to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleExecutionContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing

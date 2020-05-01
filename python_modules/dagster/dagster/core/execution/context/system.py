@@ -10,6 +10,8 @@ from dagster import check
 from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -182,7 +184,7 @@ class SystemPipelineExecutionContext(object):
 
 
 class SystemStepExecutionContext(SystemPipelineExecutionContext):
-    __slots__ = ['_step', '_resources', '_required_resource_keys']
+    __slots__ = ['_step', '_resources', '_required_resource_keys', '_step_launcher']
 
     def __init__(self, pipeline_context_data, log_manager, step):
         from dagster.core.execution.plan.objects import ExecutionStep
@@ -196,6 +198,21 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
         self._resources = self._pipeline_context_data.scoped_resources_builder.build(
             self._required_resource_keys
         )
+        step_launcher_resources = [
+            resource for resource in self._resources if isinstance(resource, StepLauncher)
+        ]
+        if len(step_launcher_resources) > 1:
+            raise DagsterInvariantViolationError(
+                'Multiple required resources for solid {solid_name} have inherit StepLauncher'
+                'There should be at most one step launcher resource per solid.'.format(
+                    solid_name=step.solid_handle.name
+                )
+            )
+        elif len(step_launcher_resources) == 1:
+            self._step_launcher = step_launcher_resources[0]
+        else:
+            self._step_launcher = None
+
         self._log_manager = log_manager
 
     def for_compute(self):
@@ -204,6 +221,10 @@ class SystemStepExecutionContext(SystemPipelineExecutionContext):
     @property
     def step(self):
         return self._step
+
+    @property
+    def step_launcher(self):
+        return self._step_launcher
 
     @property
     def solid_handle(self):
