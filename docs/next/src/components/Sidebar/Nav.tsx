@@ -85,7 +85,6 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
               const subSelected =
                 router.asPath.startsWith(c.path) &&
                 router.asPath.length - c.path.length < 2;
-              console.log(router.asPath, c.path);
               return (
                 <VersionedLink key={`${c.path}-${c.name}`} href={c.path}>
                   <a
