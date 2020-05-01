@@ -23,7 +23,7 @@ from dagster import (
     check,
     solid,
 )
-from dagster.core.definitions.utils import validate_tags
+from dagster.core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 
 
@@ -145,6 +145,9 @@ def make_dagster_pipeline_from_airflow_dag(dag, tags=None):
         (3) (Recommended) Add {'airflow_execution_date': utc_date_string} to the PipelineRun tags,
         such as in the Dagit UI. This will override behavior from (1) and (2)
 
+    We apply normalized_name() to the dag id and task ids when generating pipeline name and solid
+    names to ensure that names conform to Dagster's naming conventions.
+
     Args:
         dag (DAG): The Airflow DAG to compile into a Dagster pipeline
         tags (Dict[str, Field]): Pipeline tags. Optionally include
@@ -165,12 +168,19 @@ def make_dagster_pipeline_from_airflow_dag(dag, tags=None):
 
     pipeline_dependencies, solid_defs = _get_pipeline_definition_args(dag)
     pipeline_def = PipelineDefinition(
-        name='airflow_' + dag.dag_id,
+        name=normalized_name(dag.dag_id),
         solid_defs=solid_defs,
         dependencies=pipeline_dependencies,
         tags=tags,
     )
     return pipeline_def
+
+
+# Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
+# dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
+# underscores), so Dagster will strip invalid characters and replace with '_'
+def normalized_name(name):
+    return 'airflow_' + ''.join(c if VALID_NAME_REGEX.match(c) else '_' for c in name)
 
 
 def _get_pipeline_definition_args(dag):
@@ -203,7 +213,8 @@ def _traverse_airflow_dag(task, seen_tasks, pipeline_dependencies, solid_defs):
             'airflow_task_ready': MultiDependencyDefinition(
                 [
                     DependencyDefinition(
-                        solid='airflow_' + task_upstream.task_id, output='airflow_task_complete'
+                        solid=normalized_name(task_upstream.task_id),
+                        output='airflow_task_complete',
                     )
                     for task_upstream in task_upstream_list
                 ]
@@ -236,7 +247,7 @@ def make_dagster_solid_from_airflow_task(task):
     check.inst_param(task, 'task', BaseOperator)
 
     @solid(
-        name='airflow_' + task.task_id,
+        name=normalized_name(task.task_id),
         input_defs=[InputDefinition('airflow_task_ready', Nothing)],
         output_defs=[OutputDefinition(Nothing, 'airflow_task_complete')],
     )

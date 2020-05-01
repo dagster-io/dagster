@@ -20,6 +20,50 @@ default_args = {
 }
 
 
+# Airflow DAG ids and Task ids allow a larger valid character set (alphanumeric characters,
+# dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
+# underscores), so Dagster will strip invalid characters and replace with '_'
+def test_normalize_name():
+    dag = DAG(dag_id='dag-with.dot-dash', default_args=default_args, schedule_interval=None,)
+    dummy_operator = DummyOperator(task_id='task-with.dot-dash', dag=dag,)
+
+    pipeline_def = make_dagster_pipeline_from_airflow_dag(
+        dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+    )
+    result = execute_pipeline(pipeline_def)
+
+    assert result.success
+    assert result.pipeline.name == 'airflow_dag_with_dot_dash'
+    assert len(result.pipeline.solids) == 1
+    assert result.pipeline.solids[0].name == 'airflow_task_with_dot_dash'
+
+
+# Test names with 250 characters, Airflow's max allowed length
+def test_long_name():
+    dag_name = 'dag-with.dot-dash-lo00ong' * 10
+    dag = DAG(dag_id=dag_name, default_args=default_args, schedule_interval=None,)
+    long_name = 'task-with.dot-dash2-loong' * 10  # 250 characters, Airflow's max allowed length
+    dummy_operator = DummyOperator(task_id=long_name, dag=dag,)
+
+    pipeline_def = make_dagster_pipeline_from_airflow_dag(
+        dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat()},
+    )
+    result = execute_pipeline(pipeline_def)
+
+    assert result.success
+    print(result.pipeline.name)
+    assert (
+        result.pipeline.name
+        == 'airflow_dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong'
+    )
+
+    assert len(result.pipeline.solids) == 1
+    assert (
+        result.pipeline.solids[0].name
+        == 'airflow_task_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loong'
+    )
+
+
 def test_one_task_dag():
     dag = DAG(dag_id='dag', default_args=default_args, schedule_interval=None,)
     dummy_operator = DummyOperator(task_id='dummy_operator', dag=dag,)
