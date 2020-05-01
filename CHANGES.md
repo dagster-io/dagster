@@ -16,7 +16,7 @@
 - If you have implemented your own `RunLauncher`, there are two required changes:
   - `RunLauncher.launch_run` takes a pipeline run that has already been created. You should remove any calls to `instance.create_run` in this method.
   - Instead of calling `startPipelineExecution` (defined in the `dagster_graphql.client.query.START_PIPELINE_EXECUTION_MUTATION`) in the run launcher, you should call `startPipelineExecutionForCreatedRun` (defined in dagster_graphql.client.query.START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION`
-  - Refer to the `DagitRemoteRunLauncher` for an example implementation.
+  - Refer to the `RemoteDagitRunLauncher` for an example implementation.
 
 **New**
 
