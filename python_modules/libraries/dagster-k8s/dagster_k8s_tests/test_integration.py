@@ -24,7 +24,7 @@ def test_k8s_run_launcher_default(dagster_instance, helm_namespace):
     dagster_instance.launch_run(run.run_id)
 
     result = wait_for_job_and_get_logs(
-        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
 
     assert not result.get('errors')
@@ -57,7 +57,7 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
 
     dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
-        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
 
     assert not result.get('errors')
@@ -81,7 +81,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
 
     dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
-        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
 
     assert not result.get('errors')

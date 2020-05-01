@@ -1,8 +1,10 @@
 import os
 
 import yaml
+from dagster_k8s.job import construct_dagster_graphql_k8s_job
 
 from dagster import __version__ as dagster_version
+from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
@@ -14,19 +16,23 @@ api_version: batch/v1
 kind: Job
 metadata:
   labels:
+    app.kubernetes.io/component: runmaster
     app.kubernetes.io/instance: dagster
     app.kubernetes.io/name: dagster
+    app.kubernetes.io/part-of: dagster
     app.kubernetes.io/version: {dagster_version}
-  name: dagster-job-{run_id}
+  name: dagster-run-{run_id}
 spec:
   backoff_limit: 4
   template:
     metadata:
       labels:
+        app.kubernetes.io/component: runmaster
         app.kubernetes.io/instance: dagster
         app.kubernetes.io/name: dagster
+        app.kubernetes.io/part-of: dagster
         app.kubernetes.io/version: {dagster_version}
-      name: dagster-job-pod-{run_id}
+      name: dagster-run-{run_id}
     spec:
       containers:
       - args:
@@ -37,6 +43,8 @@ spec:
         command:
         - dagster-graphql
         env:
+        - name: DAGSTER_HOME
+          value: /opt/dagster/dagster_home
         - name: DAGSTER_PG_PASSWORD
           value_from:
             secret_key_ref:
@@ -51,7 +59,7 @@ spec:
             name: test-env-secret
         image: {job_image}
         image_pull_policy: {image_pull_policy}
-        name: dagster-job-{run_id}
+        name: dagster-run-{run_id}
         volume_mounts:
         - mount_path: /opt/dagster/dagster_home/dagster.yaml
           name: dagster-instance
@@ -64,7 +72,7 @@ spec:
       - config_map:
           name: dagster-instance
         name: dagster-instance
-  ttl_seconds_after_finished: 100
+  ttl_seconds_after_finished: 86400
 '''
 
 
@@ -77,7 +85,20 @@ def test_valid_job_format(image_pull_policy, run_launcher):
     pipeline_name = 'demo_pipeline'
     run = PipelineRun(pipeline_name=pipeline_name, environment_dict=environment_dict)
 
-    job = run_launcher.construct_job(run)
+    job_name = 'dagster-run-%s' % run.run_id
+    pod_name = 'dagster-run-%s' % run.run_id
+    job = construct_dagster_graphql_k8s_job(
+        run_launcher.job_config,
+        args=[
+            '-p',
+            'startPipelineExecutionForCreatedRun',
+            '-v',
+            seven.json.dumps({'runId': run.run_id}),
+        ],
+        job_name=job_name,
+        pod_name=pod_name,
+        component='runmaster',
+    )
 
     assert (
         yaml.dump(remove_none_recursively(job.to_dict()), default_flow_style=False).strip()
@@ -101,7 +122,7 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
 
     dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
-        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
 
     assert not result.get('errors')
@@ -121,7 +142,7 @@ def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
 
     dagster_instance.launch_run(run.run_id)
     result = wait_for_job_and_get_logs(
-        job_name='dagster-job-%s' % run.run_id, namespace=helm_namespace
+        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
     )
 
     assert not result.get('errors')
