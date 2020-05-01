@@ -1,6 +1,7 @@
 # pylint: disable=protected-access
 
 import os
+import re
 import subprocess
 
 import pytest
@@ -171,14 +172,10 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         def noop_pipeline():
             noop_solid()
 
-        with pytest.raises(DagsterInstanceMigrationRequired) as exc_info:
+        with pytest.raises(
+            DagsterInstanceMigrationRequired, match=_migration_regex(current_revision=None)
+        ):
             execute_pipeline(noop_pipeline, instance=instance)
-
-        assert str(exc_info.value) == (
-            'Instance is out of date and must be migrated (Postgres run storage '
-            'requires migration). Database is at revision None, head is c63a27054f08. '
-            'Please run `dagster instance migrate`.'
-        )
 
         # ensure migration is run
         instance.upgrade()
@@ -205,3 +202,18 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
         new_run = instance.get_run_by_id(new_run_id)
 
         assert new_run.pipeline_snapshot_id
+
+
+def _migration_regex(current_revision, expected_revision=None):
+    warning = re.escape(
+        'Instance is out of date and must be migrated (Postgres run storage requires migration).'
+    )
+    if expected_revision:
+        revision = re.escape(
+            'Database is at revision {}, head is {}.'.format(current_revision, expected_revision)
+        )
+    else:
+        revision = 'Database is at revision {}, head is [a-z0-9]+.'.format(current_revision)
+    instruction = re.escape('Please run `dagster instance migrate`.')
+
+    return '{} {} {}'.format(warning, revision, instruction)

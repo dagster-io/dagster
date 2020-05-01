@@ -1,4 +1,4 @@
-import datetime
+import logging
 import threading
 from collections import namedtuple
 from contextlib import contextmanager
@@ -6,19 +6,19 @@ from contextlib import contextmanager
 import psycopg2
 import sqlalchemy as db
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.event_log import (
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
+from dagster.core.storage.event_log.base import AssetAwareEventLogStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,
-    serialize_dagster_namedtuple,
 )
 
 from ..pynotify import await_pg_notifications
@@ -30,7 +30,7 @@ CHANNEL_NAME = 'run_events'
 WATCHER_POLL_INTERVAL = 0.2
 
 
-class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
+class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
     '''Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
@@ -86,26 +86,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event (EventRecord): The event to store.
         '''
         check.inst_param(event, 'event', EventRecord)
-
-        dagster_event_type = None
-        step_key = event.step_key
-
-        if event.is_dagster_event:
-            dagster_event_type = event.dagster_event.event_type_value
-            step_key = event.dagster_event.step_key
-
-        run_id = event.run_id
-
-        # https://stackoverflow.com/a/54386260/324449
-        event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-            run_id=run_id,
-            event=serialize_dagster_namedtuple(event),
-            dagster_event_type=dagster_event_type,
-            timestamp=datetime.datetime.fromtimestamp(event.timestamp),
-            step_key=step_key,
-        )
+        sql_statement = self.prepare_insert_statement(event)  # from SqlEventLogStorage.py
         result_proxy = self._engine.execute(
-            event_insert.returning(SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id)
+            sql_statement.returning(SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id)
         )
         res = result_proxy.fetchone()
         result_proxy.close()
@@ -113,6 +96,53 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
             (res[0] + '_' + str(res[1]),),
         )
+
+    def _add_cursor_limit_to_query(self, query, cursor, limit):
+        ''' Helper function to deal with cursor/limit pagination args '''
+
+        if cursor:
+            cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
+                SqlEventLogStorageTable.c.id == cursor
+            )
+            query = query.where(SqlEventLogStorageTable.c.id < cursor_query)
+
+        if limit:
+            query = query.limit(limit)
+
+        query = query.order_by(SqlEventLogStorageTable.c.timestamp.desc())
+        return query
+
+    def get_all_asset_keys(self):
+        query = db.select([SqlEventLogStorageTable.c.asset_key]).distinct()
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [asset_key for (asset_key,) in results if asset_key]
+
+    def get_asset_events(self, asset_key, cursor=None, limit=None):
+        check.str_param(asset_key, 'asset_key')
+        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
+            SqlEventLogStorageTable.c.asset_key == asset_key
+        )
+        query = self._add_cursor_limit_to_query(query, cursor, limit)
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        events = []
+        for row_id, json_str in results:
+            try:
+                event_record = deserialize_json_to_dagster_namedtuple(json_str)
+                if not isinstance(event_record, EventRecord):
+                    logging.warning(
+                        'Could not resolve asset event record as EventRecord for id `{}`.'.format(
+                            row_id
+                        )
+                    )
+                    continue
+                events.append(event_record)
+            except seven.JSONDecodeError:
+                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
+        return events
 
     @contextmanager
     def connect(self, run_id=None):

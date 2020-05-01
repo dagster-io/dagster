@@ -75,3 +75,13 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
 
     def dispose(self):
         '''Explicit lifecycle management.'''
+
+
+class AssetAwareEventLogStorage(six.with_metaclass(ABCMeta)):
+    @abstractmethod
+    def get_all_asset_keys(self):
+        pass
+
+    @abstractmethod
+    def get_asset_events(self, asset_key, cursor=None, limit=None):
+        pass

@@ -11,4 +11,8 @@ SqlEventLogStorageTable = db.Table(
     db.Column('dagster_event_type', db.Text),
     db.Column('timestamp', db.types.TIMESTAMP),
     db.Column('step_key', db.String),
+    db.Column('asset_key', db.String),
 )
+
+db.Index('idx_step_key', SqlEventLogStorageTable.c.step_key)
+db.Index('idx_asset_key', SqlEventLogStorageTable.c.asset_key)

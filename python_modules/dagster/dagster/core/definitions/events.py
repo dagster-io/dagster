@@ -223,7 +223,9 @@ class Output(namedtuple('_Output', 'value output_name')):
 
 
 @whitelist_for_serdes
-class Materialization(namedtuple('_Materialization', 'label description metadata_entries')):
+class Materialization(
+    namedtuple('_Materialization', 'label description metadata_entries asset_key')
+):
     '''Event indicating that a solid has materialized a value.
 
     Solid compute functions may yield events of this type whenever they wish to indicate to the
@@ -239,10 +241,12 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
         description (Optional[str]): A longer human-radable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
+        asset_key (Optional[str]): An optional key string to identify the materialized asset across
+            pipeline runs
     '''
 
     @staticmethod
-    def file(path, description=None):
+    def file(path, description=None, asset_key=None):
         '''Static constructor for standard materializations corresponding to files on disk.
 
         Args:
@@ -253,9 +257,10 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
             label=last_file_comp(path),
             description=description,
             metadata_entries=[EventMetadataEntry.fspath(path)],
+            asset_key=asset_key,
         )
 
-    def __new__(cls, label, description=None, metadata_entries=None):
+    def __new__(cls, label, description=None, metadata_entries=None, asset_key=None):
         return super(Materialization, cls).__new__(
             cls,
             label=check.str_param(label, 'label'),
@@ -263,6 +268,7 @@ class Materialization(namedtuple('_Materialization', 'label description metadata
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
             ),
+            asset_key=check.opt_str_param(asset_key, 'asset_key'),
         )
 
 

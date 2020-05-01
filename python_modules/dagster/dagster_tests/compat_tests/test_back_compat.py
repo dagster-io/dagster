@@ -13,6 +13,33 @@ from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.utils.test import restore_directory
 
 
+def _migration_regex(warning, current_revision, expected_revision=None):
+    instruction = re.escape('Please run `dagster instance migrate`.')
+    if expected_revision:
+        revision = re.escape(
+            'Database is at revision {}, head is {}.'.format(current_revision, expected_revision)
+        )
+    else:
+        revision = 'Database is at revision {}, head is [a-z0-9]+.'.format(current_revision)
+    return '{} {} {}'.format(warning, revision, instruction)
+
+
+def _run_storage_migration_regex(current_revision, expected_revision=None):
+    warning = re.escape(
+        'Instance is out of date and must be migrated (Sqlite run storage requires migration).'
+    )
+    return _migration_regex(warning, current_revision, expected_revision)
+
+
+def _event_log_migration_regex(run_id, current_revision, expected_revision=None):
+    warning = re.escape(
+        'Instance is out of date and must be migrated (SqliteEventLogStorage for run {}).'.format(
+            run_id
+        )
+    )
+    return _migration_regex(warning, current_revision, expected_revision)
+
+
 # test that we can load runs and events from an old instance
 def test_0_6_4():
     test_dir = file_relative_path(__file__, 'snapshot_0_6_4')
@@ -22,10 +49,8 @@ def test_0_6_4():
         runs = instance.get_runs()
         with pytest.raises(
             DagsterInstanceMigrationRequired,
-            match=re.escape(
-                'Instance is out of date and must be migrated (SqliteEventLogStorage for run '
-                'c7a6c4d7-6c88-46d0-8baa-d4937c3cefe5). Database is at revision None, head is '
-                '3b1e175a2be3. Please run `dagster instance migrate`.'
+            match=_event_log_migration_regex(
+                run_id='c7a6c4d7-6c88-46d0-8baa-d4937c3cefe5', current_revision=None
             ),
         ):
             for run in runs:
@@ -49,10 +74,8 @@ def test_0_6_6_sqlite_exc():
 
         with pytest.raises(
             DagsterInstanceMigrationRequired,
-            match=re.escape(
-                'Instance is out of date and must be migrated (SqliteEventLogStorage for run '
-                '89296095-892d-4a15-aa0d-9018d1580945). Database is at revision None, head is '
-                '3b1e175a2be3. Please run `dagster instance migrate`.'
+            match=_event_log_migration_regex(
+                run_id='89296095-892d-4a15-aa0d-9018d1580945', current_revision=None
             ),
         ):
             instance._event_storage.get_logs_for_run('89296095-892d-4a15-aa0d-9018d1580945')
@@ -79,7 +102,7 @@ def test_0_6_6_sqlite_migrate():
         assert os.path.exists(file_relative_path(__file__, 'snapshot_0_6_6/sqlite/history/runs.db'))
 
 
-def test_event_log_migration():
+def test_event_log_step_key_migration():
     test_dir = file_relative_path(__file__, 'snapshot_0_7_6_pre_event_log_migration/sqlite')
     with restore_directory(test_dir):
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
@@ -162,15 +185,11 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         def noop_pipeline():
             noop_solid()
 
-        with pytest.raises(DagsterInstanceMigrationRequired) as exc_info:
+        with pytest.raises(
+            DagsterInstanceMigrationRequired,
+            match=_run_storage_migration_regex(current_revision='9fe9e746268c'),
+        ):
             execute_pipeline(noop_pipeline, instance=instance)
-
-        assert str(exc_info.value) == (
-            'Instance is out of date and must be migrated (Sqlite run '
-            'storage requires migration). Database is at revision '
-            '9fe9e746268c, head is c63a27054f08. Please run `dagster '
-            'instance migrate`.'
-        )
 
         assert len(instance.get_runs()) == 1
 
@@ -252,3 +271,20 @@ def test_downgrade_and_upgrade():
         )
 
         assert len(instance.get_runs()) == 1
+
+
+def test_event_log_asset_key_migration():
+    test_dir = file_relative_path(__file__, 'snapshot_0_7_8_pre_asset_key_migration/sqlite')
+    with restore_directory(test_dir):
+        db_path = os.path.join(
+            test_dir, 'history', 'runs', '722183e4-119f-4a00-853f-e1257be82ddb.db'
+        )
+        assert get_current_alembic_version(db_path) == '3b1e175a2be3'
+        assert 'asset_key' not in set(get_sqlite3_columns(db_path, 'event_log'))
+
+        # Make sure the schema is migrated
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        instance.upgrade()
+
+        assert get_current_alembic_version(db_path) == 'c39c047fa021'
+        assert 'asset_key' in set(get_sqlite3_columns(db_path, 'event_logs'))

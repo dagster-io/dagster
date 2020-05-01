@@ -36,6 +36,34 @@ class SqlEventLogStorage(EventLogStorage):
         out-of-date instance of the storage up to date.
         '''
 
+    def prepare_insert_statement(self, event):
+        ''' Helper method for preparing the event log SQL insertion statement.  Abstracted away to
+        have a single place for the logical table representation of the event, while having a way
+        for SQL backends to implement different execution implementations for `store_event`. See
+        the `dagster-postgres` implementation which overrides the generic SQL implementation of
+        `store_event`.
+        '''
+
+        dagster_event_type = None
+        asset_key = None
+        step_key = event.step_key
+
+        if event.is_dagster_event:
+            dagster_event_type = event.dagster_event.event_type_value
+            step_key = event.dagster_event.step_key
+            if dagster_event_type == DagsterEventType.STEP_MATERIALIZATION.value:
+                asset_key = event.dagster_event.event_specific_data.materialization.asset_key
+
+        # https://stackoverflow.com/a/54386260/324449
+        return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
+            run_id=event.run_id,
+            event=serialize_dagster_namedtuple(event),
+            dagster_event_type=dagster_event_type,
+            timestamp=utc_datetime_from_timestamp(event.timestamp),
+            step_key=step_key,
+            asset_key=asset_key,
+        )
+
     def store_event(self, event):
         '''Store an event corresponding to a pipeline run.
 
@@ -43,27 +71,11 @@ class SqlEventLogStorage(EventLogStorage):
             event (EventRecord): The event to store.
         '''
         check.inst_param(event, 'event', EventRecord)
-
-        dagster_event_type = None
-        step_key = event.step_key
-
-        if event.is_dagster_event:
-            dagster_event_type = event.dagster_event.event_type_value
-            step_key = event.dagster_event.step_key
-
+        sql_statement = self.prepare_insert_statement(event)
         run_id = event.run_id
 
-        # https://stackoverflow.com/a/54386260/324449
-        event_insert = SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter
-            run_id=run_id,
-            event=serialize_dagster_namedtuple(event),
-            dagster_event_type=dagster_event_type,
-            timestamp=utc_datetime_from_timestamp(event.timestamp),
-            step_key=step_key,
-        )
-
         with self.connect(run_id) as conn:
-            conn.execute(event_insert)
+            conn.execute(sql_statement)
 
     def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
         check.str_param(run_id, 'run_id')

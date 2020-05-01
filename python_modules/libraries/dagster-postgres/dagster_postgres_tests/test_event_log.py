@@ -1,11 +1,23 @@
+import re
 import time
 from collections import Counter
 
+import mock
 import yaml
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.utils import get_conn
 
-from dagster import ModeDefinition, RunConfig, execute_pipeline, pipeline, solid
+from dagster import (
+    EventMetadataEntry,
+    Materialization,
+    ModeDefinition,
+    Output,
+    RunConfig,
+    execute_pipeline,
+    pipeline,
+    seven,
+    solid,
+)
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.instance import DagsterInstance
@@ -484,3 +496,85 @@ def test_load_from_config(hostname):
     )._event_storage
 
     assert from_url.postgres_url == from_explicit.postgres_url
+
+
+def test_asset_materialization(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    asset_key = 'asset one'
+
+    @solid
+    def materialize_one(_):
+        yield Materialization(
+            label='one',
+            asset_key=asset_key,
+            metadata_entries=[
+                EventMetadataEntry.text('hello', 'text'),
+                EventMetadataEntry.json({'hello': 'world'}, 'json'),
+            ],
+        )
+        yield Output(1)
+
+    def _solids():
+        materialize_one()
+
+    events_one, _ = gather_events(_solids)
+    for event in events_one:
+        event_log_storage.store_event(event)
+
+    assert asset_key in set(event_log_storage.get_all_asset_keys())
+    events = event_log_storage.get_asset_events(asset_key)
+    assert len(events) == 1
+    event = events[0]
+    assert isinstance(event, DagsterEventRecord)
+    assert event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
+
+
+def test_asset_events_error_parsing(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+    _logs = []
+
+    def mock_log(msg):
+        _logs.append(msg)
+
+    asset_key = 'asset one'
+
+    @solid
+    def materialize_one(_):
+        yield Materialization(
+            label='one', asset_key=asset_key,
+        )
+        yield Output(1)
+
+    def _solids():
+        materialize_one()
+
+    events_one, _ = gather_events(_solids)
+    for event in events_one:
+        event_log_storage.store_event(event)
+
+    with mock.patch(
+        'dagster_postgres.event_log.event_log.logging.warning', side_effect=mock_log,
+    ):
+        with mock.patch(
+            'dagster_postgres.event_log.event_log.deserialize_json_to_dagster_namedtuple',
+            return_value='not_an_event_record',
+        ):
+
+            assert asset_key in set(event_log_storage.get_all_asset_keys())
+            events = event_log_storage.get_asset_events(asset_key)
+            assert len(events) == 0
+            assert len(_logs) == 1
+            assert re.match('Could not resolve asset event record as EventRecord', _logs[0])
+
+        _logs = []  # reset logs
+
+        with mock.patch(
+            'dagster_postgres.event_log.event_log.deserialize_json_to_dagster_namedtuple',
+            side_effect=seven.JSONDecodeError('error', '', 0),
+        ):
+            assert asset_key in set(event_log_storage.get_all_asset_keys())
+            events = event_log_storage.get_asset_events(asset_key)
+            assert len(events) == 0
+            assert len(_logs) == 1
+            assert re.match('Could not parse asset event record id', _logs[0])
