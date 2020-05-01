@@ -48,7 +48,7 @@ export default class SchedulesRoot extends React.Component {
                             A scheduler must be configured to view schedules.
                             You can configure a scheduler on your instance
                             through <code>dagster.yaml</code>. See the{" "}
-                            <a href="https://docs.dagster.io/latest/tutorial/scheduler/">
+                            <a href="https://docs.dagster.io/docs/tutorial/scheduler/">
                               scheduler documentation
                             </a>{" "}
                             for more information.

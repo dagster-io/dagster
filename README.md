@@ -90,7 +90,7 @@ Let's execute our first pipeline via any of three different mechanisms:
 
 ## Learn
 
-Next, jump right into our [tutorial](https://docs.dagster.io/latest/tutorial/), or read our [complete documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
+Next, jump right into our [tutorial](https://docs.dagster.io/docs/tutorial/), or read our [complete documentation](https://docs.dagster.io). If you're actively using Dagster or have questions on getting started, we'd love to hear from you:
 
 <br />
 <p align="center">
@@ -99,7 +99,7 @@ Next, jump right into our [tutorial](https://docs.dagster.io/latest/tutorial/), 
 
 ## Contributing
 
-For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/latest/community/contributing/).
+For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/docs/community/contributing/).
 <br />
 
 ## Integrations

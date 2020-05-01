@@ -1,6 +1,6 @@
 ## dagster-dask
 
-Check out the docs for `dagster-dask` [here](https://docs.dagster.io/latest/deploying/dask/). Also checkout other deployment options in the [deployment section](https://docs.dagster.io/latest/deploying/) of Dagster's docs.
+Check out the docs for `dagster-dask` [here](https://docs.dagster.io/docs/deploying/dask/). Also checkout other deployment options in the [deployment section](https://docs.dagster.io/docs/deploying/) of Dagster's docs.
 
 ### Python version support
 

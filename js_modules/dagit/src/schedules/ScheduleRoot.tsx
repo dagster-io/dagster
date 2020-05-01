@@ -242,7 +242,7 @@ const AttemptsTable: React.FunctionComponent<AttemptsTableProps> = ({
           <p>
             The way Dagster stores schedule attempts has been updated to use a
             database, which can be configured using{" "}
-            <a href="https://docs.dagster.io/latest/deploying/instance/#scheduler-storage">
+            <a href="https://docs.dagster.io/docs/deploying/instance/#scheduler-storage">
               <Code>Scheduler Storage</Code>
             </a>
             . Previously, attempts were stored on the fileystem at{" "}

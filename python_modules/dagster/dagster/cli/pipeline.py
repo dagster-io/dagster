@@ -620,7 +620,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             'A run launcher must be configured before running a backfill. You can configure a run '
             'launcher (e.g. dagster_graphql.launcher.RemoteDagitRunLauncher) in your instance '
             '`dagster.yaml` settings. See '
-            'https://docs.dagster.io/latest/deploying/instance/ for more'
+            'https://docs.dagster.io/docs/deploying/instance/ for more'
             'information.'
         )
 

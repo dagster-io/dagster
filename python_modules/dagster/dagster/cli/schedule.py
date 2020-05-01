@@ -113,7 +113,7 @@ def check_handle_and_scheduler(handle, instance):
             'A scheduler must be configured to run schedule commands.\n'
             'You can configure a scheduler on your instance using dagster.yaml.\n'
             'For more information, see:\n\n'
-            'https://docs.dagster.io/latest/deploying/instance/#scheduler'
+            'https://docs.dagster.io/docs/deploying/instance/#scheduler'
         )
 
 
