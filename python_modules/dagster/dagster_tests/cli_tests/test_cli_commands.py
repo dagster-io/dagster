@@ -496,7 +496,7 @@ def test_stderr_execute_command():
 
 
 def test_fn_not_found_execute():
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(DagsterInvariantViolationError, match='nope not found in file'):
         execute_execute_command(
             env=None,
             cli_args={
@@ -508,8 +508,6 @@ def test_fn_not_found_execute():
             },
         )
 
-    assert 'nope not found in module' in str(exc_info.value)
-
 
 def not_a_repo_or_pipeline_fn():
     return 'kdjfkjdf'
@@ -519,9 +517,11 @@ not_a_repo_or_pipeline = 123
 
 
 def test_fn_is_wrong_thing():
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(
+        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+    ):
         execute_execute_command(
-            env={},
+            env=[],
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -531,17 +531,13 @@ def test_fn_is_wrong_thing():
             },
         )
 
-    assert str(exc_info.value) == (
-        'not_a_repo_or_pipeline must be a function that returns a '
-        'PipelineDefinition or a RepositoryDefinition, or a function '
-        'decorated with @pipeline.'
-    )
-
 
 def test_fn_returns_wrong_thing():
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+    with pytest.raises(
+        DagsterInvariantViolationError, match='must resolve to a PipelineDefinition',
+    ):
         execute_execute_command(
-            env={},
+            env=[],
             cli_args={
                 'repository_yaml': None,
                 'pipeline_name': (),
@@ -550,12 +546,6 @@ def test_fn_returns_wrong_thing():
                 'fn_name': 'not_a_repo_or_pipeline_fn',
             },
         )
-
-    assert str(exc_info.value) == (
-        'not_a_repo_or_pipeline_fn is a function but must return a '
-        'PipelineDefinition or a RepositoryDefinition, or be decorated '
-        'with @pipeline.'
-    )
 
 
 def runner_pipeline_execute(runner, cli_args):

@@ -126,7 +126,7 @@ class RepositoryDefinition(object):
             ).format(key=name),
         )
 
-        return pipeline
+        return self._pipeline_cache[name]
 
     def get_all_pipelines(self):
         '''Return all pipelines in the repository as a list.

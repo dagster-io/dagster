@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 
-from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.api import execute_run
@@ -16,16 +16,13 @@ def test_event_callback_logging():
         if record.is_dagster_event:
             events[record.dagster_event.event_type].append(record)
 
-    handle = handle_for_pipeline_cli_args(
-        {
-            'module_name': 'dagstermill.examples.repository',
-            'fn_name': 'define_hello_logging_pipeline',
-        }
+    pipeline = ReconstructablePipeline.for_module(
+        'dagstermill.examples.repository', 'define_hello_logging_pipeline',
     )
+    pipeline_def = pipeline.get_definition()
     instance = DagsterInstance.local_temp()
 
-    pipeline = handle.build_pipeline_definition()
-    pipeline_run = instance.create_run_for_pipeline(pipeline)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def)
 
     instance.watch_event_logs(pipeline_run.run_id, -1, _event_callback)
 

@@ -60,16 +60,16 @@ def compute_step_keys_to_execute(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    from .fetch_pipelines import get_pipeline_def_from_selector
+    from .fetch_pipelines import get_reconstructable_pipeline_from_selector
 
     instance = graphene_info.context.instance
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
+    pipeline = get_reconstructable_pipeline_from_selector(graphene_info, execution_params.selector)
 
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
         execution_plan = create_execution_plan(
-            pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
+            pipeline, execution_params.environment_dict, mode=execution_params.mode,
         )
         return get_retry_steps_from_execution_plan(
             instance, execution_plan, execution_params.execution_metadata.parent_run_id

@@ -1,8 +1,6 @@
-import pytest
 from click.testing import CliRunner
 
 from dagster import file_relative_path
-from dagster.check import ParameterCheckError
 from dagster.cli.api import pipeline_snapshot_command, repository_snapshot_command
 from dagster.core.snap import ActiveRepositoryData
 from dagster.core.snap.active_data import ActivePipelineData
@@ -20,17 +18,6 @@ def test_snapshot_command_repository():
     assert isinstance(active_repository_data, ActiveRepositoryData)
     assert active_repository_data.name == 'bar'
     assert len(active_repository_data.active_pipeline_datas) == 2
-
-
-def test_snapshot_command_repository_fail_on_pipeline_handle():
-    runner = CliRunner()
-    with pytest.raises(ParameterCheckError):
-        result = runner.invoke(
-            repository_snapshot_command,
-            ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-n', 'baz_pipeline',],
-        )
-        assert result.exit_code == 1
-        raise result.exception
 
 
 def test_snapshot_command_pipeline():

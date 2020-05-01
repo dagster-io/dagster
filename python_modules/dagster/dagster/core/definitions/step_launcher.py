@@ -4,7 +4,7 @@ from collections import namedtuple
 import six
 
 from dagster import check
-from dagster.core.definitions.handle import ExecutionTargetHandle
+from dagster.core.definitions.executable import InterProcessExecutablePipeline
 from dagster.core.execution.config import ExecutorConfig
 from dagster.core.storage.pipeline_run import PipelineRun
 
@@ -12,7 +12,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 class StepRunRef(
     namedtuple(
         '_StepRunRef',
-        'environment_dict pipeline_run run_id executor_config step_key execution_target_handle '
+        'environment_dict pipeline_run run_id executor_config step_key recon_pipeline '
         'prior_attempts_count',
     )
 ):
@@ -28,7 +28,7 @@ class StepRunRef(
         run_id,
         executor_config,
         step_key,
-        execution_target_handle,
+        recon_pipeline,
         prior_attempts_count,
     ):
         return super(StepRunRef, cls).__new__(
@@ -38,9 +38,7 @@ class StepRunRef(
             check.str_param(run_id, 'run_id'),
             check.inst_param(executor_config, 'executor_config', ExecutorConfig),
             check.str_param(step_key, 'step_key'),
-            check.inst_param(
-                execution_target_handle, 'execution_target_handle', ExecutionTargetHandle
-            ),
+            check.inst_param(recon_pipeline, 'recon_pipeline', InterProcessExecutablePipeline),
             check.int_param(prior_attempts_count, 'prior_attempts_count'),
         )
 

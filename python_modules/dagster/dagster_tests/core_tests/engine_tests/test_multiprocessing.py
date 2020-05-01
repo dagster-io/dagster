@@ -2,7 +2,6 @@ import os
 import time
 
 from dagster import (
-    ExecutionTargetHandle,
     Field,
     InputDefinition,
     Nothing,
@@ -12,6 +11,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
     pipeline,
+    reconstructable,
     solid,
 )
 from dagster.core.instance import DagsterInstance
@@ -29,9 +29,7 @@ def compute_event(result, solid_name):
 
 
 def test_diamond_multi_execution():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_diamond_pipeline'
-    ).build_pipeline_definition()
+    pipe = reconstructable(define_diamond_pipeline)
     result = execute_pipeline(
         pipe,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
@@ -111,7 +109,7 @@ def test_error_pipeline():
 
 def test_error_pipeline_multiprocess():
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_fn(define_error_pipeline).build_pipeline_definition(),
+        reconstructable(define_error_pipeline),
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
     )
@@ -120,7 +118,7 @@ def test_error_pipeline_multiprocess():
 
 def test_mem_storage_error_pipeline_multiprocess():
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
+        reconstructable(define_diamond_pipeline),
         environment_dict={'execution': {'multiprocess': {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
@@ -132,7 +130,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 
 def test_invalid_instance():
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_fn(define_diamond_pipeline).build_pipeline_definition(),
+        reconstructable(define_diamond_pipeline),
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
@@ -161,13 +159,11 @@ def test_no_handle():
         result.event_list[0].pipeline_init_failure_data.error.cls_name
         == 'DagsterUnmetExecutorRequirementsError'
     )
-    assert 'ExecutionTargetHandle' in result.event_list[0].pipeline_init_failure_data.error.message
+    assert 'is not reconstructable' in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_solid_subset():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_diamond_pipeline'
-    ).build_pipeline_definition()
+    pipe = reconstructable(define_diamond_pipeline)
 
     result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp())
 
@@ -211,9 +207,7 @@ def define_subdag_pipeline():
 
 
 def test_separate_sub_dags():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_subdag_pipeline'
-    ).build_pipeline_definition()
+    pipe = reconstructable(define_subdag_pipeline)
 
     with safe_tempfile_path() as filename:
         result = execute_pipeline(

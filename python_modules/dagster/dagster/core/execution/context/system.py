@@ -7,7 +7,6 @@ in the user_context module
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions import ExecutionTargetHandle
 from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
@@ -25,7 +24,7 @@ class SystemPipelineExecutionContextData(
         (
             'pipeline_run scoped_resources_builder environment_config pipeline '
             'mode_def system_storage_def instance intermediates_manager file_manager '
-            'execution_target_handle executor_config raise_on_error'
+            'executor_config raise_on_error'
         ),
     )
 ):
@@ -45,7 +44,6 @@ class SystemPipelineExecutionContextData(
         instance,
         intermediates_manager,
         file_manager,
-        execution_target_handle,
         executor_config,
         raise_on_error,
     ):
@@ -73,9 +71,6 @@ class SystemPipelineExecutionContextData(
                 intermediates_manager, 'intermediates_manager', IntermediatesManager
             ),
             file_manager=check.inst_param(file_manager, 'file_manager', FileManager),
-            execution_target_handle=check.opt_inst_param(
-                execution_target_handle, 'execution_target_handle', ExecutionTargetHandle
-            ),
             executor_config=check.inst_param(executor_config, 'executor_config', ExecutorConfig),
             raise_on_error=check.bool_param(raise_on_error, 'raise_on_error'),
         )
@@ -181,10 +176,6 @@ class SystemPipelineExecutionContext(object):
     @property
     def file_manager(self):
         return self._pipeline_context_data.file_manager
-
-    @property
-    def execution_target_handle(self):
-        return self._pipeline_context_data.execution_target_handle
 
     @property
     def raise_on_error(self):

@@ -6,7 +6,7 @@ import six
 import yaml
 
 from dagster import check, seven
-from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.indenting_printer import IndentingStringIoPrinter
 
@@ -22,7 +22,7 @@ def construct_environment_yaml(preset_name, env, pipeline_name, module_name):
             'pipeline_name': pipeline_name,
             'module_name': module_name,
         }
-        pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
+        pipeline = recon_repo_for_cli_args(cli_args).get_definition().get_pipeline(pipeline_name)
         environment_dict = pipeline.get_preset(preset_name).environment_dict
 
     else:

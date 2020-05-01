@@ -122,7 +122,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
     )
 
 
-def get_pipeline_def_from_selector(graphene_info, selector):
+def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(selector, 'selector', ExecutionSelector)
 
@@ -136,11 +136,11 @@ def get_pipeline_def_from_selector(graphene_info, selector):
     # for error check of pipeline existence
     get_external_pipeline_or_raise(graphene_info, pipeline_name)
 
-    orig_pipeline_def = graphene_info.context.get_pipeline(pipeline_name)
+    recon_pipeline = graphene_info.context.get_reconstructable_pipeline(pipeline_name)
 
     if not selector.solid_subset:
-        return orig_pipeline_def
+        return recon_pipeline
 
     # for error checking
     get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
-    return orig_pipeline_def.subset_for_execution(selector.solid_subset)
+    return recon_pipeline.subset_for_execution(selector.solid_subset)

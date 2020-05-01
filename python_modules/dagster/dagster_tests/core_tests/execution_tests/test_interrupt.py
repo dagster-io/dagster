@@ -7,12 +7,12 @@ import pytest
 from dagster import (
     DagsterEventType,
     DagsterSubprocessError,
-    ExecutionTargetHandle,
     Field,
     ModeDefinition,
     String,
     execute_pipeline_iterator,
     pipeline,
+    reconstructable,
     resource,
     seven,
     solid,
@@ -99,9 +99,7 @@ def test_interrupt_multiproc():
             # next time the launched thread wakes up it will send a keyboard
             # interrupt
             for result in execute_pipeline_iterator(
-                ExecutionTargetHandle.for_pipeline_python_file(
-                    __file__, 'write_files_pipeline'
-                ).build_pipeline_definition(),
+                reconstructable(write_files_pipeline),
                 environment_dict={
                     'solids': {
                         'write_1': {'config': {'tempfile': file_1}},

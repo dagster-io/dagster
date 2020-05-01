@@ -14,6 +14,7 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import check
+from dagster.core.definitions import ExecutablePipeline
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterInvalidConfigError,
@@ -34,6 +35,10 @@ from ..external import (
     ensure_valid_config,
     ensure_valid_step_keys,
     get_external_pipeline_subset_or_raise,
+)
+from ..fetch_pipelines import (
+    get_dauphin_pipeline_reference_from_selector,
+    get_reconstructable_pipeline_from_selector,
 )
 from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe

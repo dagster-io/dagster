@@ -8,9 +8,10 @@ from graphql import graphql
 from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
-from dagster import ExecutionTargetHandle, check, seven
-from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster import check, seven
+from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.cli.pipeline import repository_target_argument
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
@@ -38,8 +39,8 @@ def create_dagster_graphql_cli():
     return ui
 
 
-def execute_query(handle, query, variables=None, use_sync_executor=False, instance=None):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+def execute_query(recon_repo, query, variables=None, use_sync_executor=False, instance=None):
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
     instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
@@ -50,7 +51,10 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
     execution_manager = SynchronousExecutionManager()
 
     context = DagsterGraphQLInProcessRepositoryContext(
-        handle=handle, instance=instance, execution_manager=execution_manager, version=__version__
+        recon_repo=recon_repo,
+        instance=instance,
+        execution_manager=execution_manager,
+        version=__version__,
     )
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
@@ -81,8 +85,8 @@ def execute_query(handle, query, variables=None, use_sync_executor=False, instan
     return result_dict
 
 
-def execute_query_from_cli(handle, query, variables=None, output=None):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+def execute_query_from_cli(recon_repo, query, variables=None, output=None):
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(query, 'query')
     check.opt_str_param(variables, 'variables')
     check.opt_str_param(output, 'output')
@@ -90,7 +94,7 @@ def execute_query_from_cli(handle, query, variables=None, output=None):
     query = query.strip('\'" \n\t')
 
     result_dict = execute_query(
-        handle, query, variables=seven.json.loads(variables) if variables else None
+        recon_repo, query, variables=seven.json.loads(variables) if variables else None
     )
     str_res = seven.json.dumps(result_dict)
 
@@ -206,8 +210,8 @@ def ui(text, file, predefined, variables, remote, output, **kwargs):
         res = execute_query_against_remote(remote, query, variables)
         print(res)
     else:
-        handle = handle_for_repo_cli_args(kwargs)
-        execute_query_from_cli(handle, query, variables, output)
+        recon_repo = recon_repo_for_cli_args(kwargs)
+        execute_query_from_cli(recon_repo, query, variables, output)
 
 
 cli = create_dagster_graphql_cli()

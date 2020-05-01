@@ -13,7 +13,7 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
 )
 from dagster_airflow_tests.marks import nettest
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
 from dagster.utils import git_repository_root, load_yaml_from_glob_list
 
@@ -32,7 +32,7 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
     pipeline_name = 'demo_pipeline'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_s3.yaml'),
@@ -60,7 +60,7 @@ def test_gcs_storage(
     pipeline_name = 'demo_pipeline_gcs'
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_gcs.yaml'),
@@ -76,7 +76,7 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     _check_aws_creds_available()
 
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)
+    handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)
     environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),

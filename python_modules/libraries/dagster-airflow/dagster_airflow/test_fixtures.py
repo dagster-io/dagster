@@ -48,7 +48,7 @@ def dagster_airflow_python_operator_pipeline():
         def test_airflow(dagster_airflow_python_operator_pipeline):
             results = dagster_airflow_python_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                handle=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml']
             )
             assert len(results) == 3
@@ -93,7 +93,7 @@ def dagster_airflow_custom_operator_pipeline():
         def test_airflow(dagster_airflow_python_operator_pipeline):
             results = dagster_airflow_custom_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                handle=reconstructable(define_pipeline),
                 operator=MyCustomOperator,
                 environment_yaml=['environments/test_*.yaml']
             )
@@ -140,7 +140,7 @@ def dagster_airflow_docker_operator_pipeline():
         def test_airflow(dagster_airflow_docker_operator_pipeline):
             results = dagster_airflow_docker_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                handle=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml'],
                 image='myimage:latest'
             )
@@ -192,7 +192,7 @@ def dagster_airflow_k8s_operator_pipeline():
         def test_airflow(dagster_airflow_k8s_operator_pipeline):
             results = dagster_airflow_k8s_operator_pipeline(
                 pipeline_name='test_pipeline',
-                handle=ExecutionTargetHandle.for_pipeline_fn(define_pipeline),
+                handle=reconstructable(define_pipeline),
                 environment_yaml=['environments/test_*.yaml'],
                 image='myimage:latest'
             )

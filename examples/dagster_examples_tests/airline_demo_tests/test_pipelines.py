@@ -4,25 +4,17 @@ import os
 import pytest
 
 from dagster import execute_pipeline, file_relative_path
-from dagster.cli.load_handle import handle_for_pipeline_cli_args
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_globs
 
-ingest_pipeline_handle = handle_for_pipeline_cli_args(
-    {
-        'module_name': 'dagster_examples.airline_demo.pipelines',
-        'fn_name': 'define_airline_demo_ingest_pipeline',
-    }
+ingest_pipeline = ReconstructablePipeline.for_module(
+    'dagster_examples.airline_demo.pipelines', 'define_airline_demo_ingest_pipeline',
 )
-ingest_pipeline_def = ingest_pipeline_handle.build_pipeline_definition()
 
-warehouse_pipeline_handle = handle_for_pipeline_cli_args(
-    {
-        'module_name': 'dagster_examples.airline_demo.pipelines',
-        'fn_name': 'define_airline_demo_warehouse_pipeline',
-    }
+warehouse_pipeline = ReconstructablePipeline.for_module(
+    'dagster_examples.airline_demo.pipelines', 'define_airline_demo_warehouse_pipeline',
 )
-warehouse_pipeline_def = warehouse_pipeline_handle.build_pipeline_definition()
 
 
 def config_path(relative_path):
@@ -40,7 +32,7 @@ def test_ingest_pipeline_fast(postgres, pg_hostname):
         config_path('test_base.yaml'), config_path('local_fast_ingest.yaml')
     )
     result_ingest = execute_pipeline(
-        pipeline=ingest_pipeline_def,
+        pipeline=ingest_pipeline,
         mode='local',
         environment_dict=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
@@ -60,7 +52,7 @@ def test_ingest_pipeline_fast_filesystem_storage(postgres, pg_hostname):
         config_path('filesystem_storage.yaml'),
     )
     result_ingest = execute_pipeline(
-        pipeline=ingest_pipeline_def,
+        pipeline=ingest_pipeline,
         mode='local',
         environment_dict=ingest_config_dict,
         instance=DagsterInstance.local_temp(),
@@ -78,7 +70,7 @@ def test_airline_pipeline_1_warehouse(postgres, pg_hostname):
         config_path('test_base.yaml'), config_path('local_warehouse.yaml')
     )
     result_warehouse = execute_pipeline(
-        pipeline=warehouse_pipeline_def,
+        pipeline=warehouse_pipeline,
         mode='local',
         environment_dict=warehouse_config_object,
         instance=DagsterInstance.local_temp(),
@@ -98,7 +90,7 @@ def test_airline_pipeline_s3_0_ingest(postgres, pg_hostname):
     )
 
     result_ingest = execute_pipeline(
-        ingest_pipeline_def, ingest_config_dict, instance=DagsterInstance.local_temp()
+        ingest_pipeline, ingest_config_dict, instance=DagsterInstance.local_temp()
     )
 
     assert result_ingest.success
@@ -113,7 +105,7 @@ def test_airline_pipeline_s3_1_warehouse(postgres, pg_hostname):
     )
 
     result_warehouse = execute_pipeline(
-        warehouse_pipeline_def, warehouse_config_object, instance=DagsterInstance.local_temp()
+        warehouse_pipeline, warehouse_config_object, instance=DagsterInstance.local_temp()
     )
     assert result_warehouse.success
 

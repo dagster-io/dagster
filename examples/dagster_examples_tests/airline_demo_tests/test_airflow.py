@@ -7,7 +7,7 @@ from dagster_examples.airline_demo.pipelines import (  # pylint: disable=unused-
     define_airline_demo_warehouse_pipeline,
 )
 
-from dagster import ExecutionTargetHandle
+from dagster import reconstructable
 from dagster.utils import script_relative_path
 
 try:
@@ -20,7 +20,7 @@ except ImportError:
 @pytest.mark.slow
 @pytest.mark.airflow
 class TestAirflowPython_0IngestExecution(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_ingest_pipeline)
+    handle = reconstructable(define_airline_demo_ingest_pipeline)
     pipeline_name = 'airline_demo_ingest_pipeline'
     environment_yaml = [
         script_relative_path(
@@ -53,7 +53,7 @@ class TestAirflowPython_0IngestExecution(object):
 @pytest.mark.slow
 @pytest.mark.airflow
 class TestAirflowPython_1WarehouseExecution(object):
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_airline_demo_warehouse_pipeline)
+    handle = reconstructable(define_airline_demo_warehouse_pipeline)
     pipeline_name = 'airline_demo_warehouse_pipeline'
     environment_yaml = [
         script_relative_path(

@@ -12,7 +12,6 @@ from papermill.parameterize import _find_first_tagged_cell_index
 
 from dagster import (
     EventMetadataEntry,
-    ExecutionTargetHandle,
     InputDefinition,
     Materialization,
     Output,
@@ -22,6 +21,7 @@ from dagster import (
     seven,
 )
 from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.core.definitions.executable import InterProcessExecutablePipeline
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
@@ -100,17 +100,13 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
     marshal_dir = '/tmp/dagstermill/{run_id}/marshal'.format(run_id=run_id)
     mkdir_p(marshal_dir)
 
-    (handle, solid_subset) = ExecutionTargetHandle.get_handle(compute_context.pipeline_def)
-
-    if not handle:
+    if not isinstance(compute_context.pipeline, InterProcessExecutablePipeline):
         raise DagstermillError(
-            'Can\'t execute a dagstermill solid from a pipeline that wasn\'t instantiated using '
-            'an ExecutionTargetHandle'
+            'Can\'t execute a dagstermill solid from a pipeline that is not reconstructable. '
+            'Use the reconstructable() function if executing from python'
         )
 
-    dm_handle_kwargs = handle.data._asdict()
-
-    dm_handle_kwargs['pipeline_name'] = compute_context.pipeline_def.name
+    dm_executable_dict = compute_context.pipeline.to_dict()
 
     dm_context_dict = {
         'output_log_path': output_log_path,
@@ -134,10 +130,9 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
         parameters[input_name] = parameter_value
 
     parameters['__dm_context'] = dm_context_dict
-    parameters['__dm_handle_kwargs'] = dm_handle_kwargs
+    parameters['__dm_executable_dict'] = dm_executable_dict
     parameters['__dm_pipeline_run_dict'] = pack_value(compute_context.pipeline_run)
     parameters['__dm_solid_handle_kwargs'] = dm_solid_handle_kwargs
-    parameters['__dm_solid_subset'] = solid_subset
     parameters['__dm_instance_ref_dict'] = pack_value(compute_context.instance.get_ref())
 
     return parameters

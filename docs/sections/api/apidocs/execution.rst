@@ -32,10 +32,10 @@ Execution context
 .. autoclass:: SystemComputeExecutionContext
    :members:
 
-.. autoclass:: ExecutionTargetHandle
-   :members:
-
 .. currentmodule:: dagster
+
+.. autoclass:: reconstructable
+   :members:
 
 Pipeline and solid results
 --------------------------

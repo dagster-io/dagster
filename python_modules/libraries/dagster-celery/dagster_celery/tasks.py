@@ -8,7 +8,8 @@ from dagster_graphql.client.mutations import handle_execute_plan_result, handle_
 from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
 from kombu import Queue
 
-from dagster import DagsterInstance, EventMetadataEntry, ExecutionTargetHandle, check, seven
+from dagster import DagsterInstance, EventMetadataEntry, check, seven
+from dagster.core.definitions.executable import InterProcessExecutablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.retries import Retries
@@ -21,29 +22,33 @@ from .engine import DELEGATE_MARKER, CeleryEngine, CeleryK8sJobEngine
 
 def create_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name='execute_plan', **task_kwargs)
-    def _execute_plan(_self, instance_ref_dict, handle_dict, run_id, step_keys, retries_dict):
+    def _execute_plan(_self, instance_ref_dict, executable_dict, run_id, step_keys, retries_dict):
         check.dict_param(instance_ref_dict, 'instance_ref_dict')
-        check.dict_param(handle_dict, 'handle_dict')
+        check.dict_param(executable_dict, 'executable_dict')
         check.str_param(run_id, 'run_id')
         check.list_param(step_keys, 'step_keys', of_type=str)
         check.dict_param(retries_dict, 'retries_dict')
 
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
-        handle = ExecutionTargetHandle.from_dict(handle_dict)
+        pipeline = InterProcessExecutablePipeline.from_dict(executable_dict)
         retries = Retries.from_config(retries_dict)
 
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
-        pipeline_def = handle.build_pipeline_definition().subset_for_execution(
-            pipeline_run.selector.solid_subset
+        pipeline_def = pipeline.get_definition()
+        check.invariant(
+            pipeline_def.selector == pipeline_run.selector,
+            'Selector mismatch! PipelineDef: {pipe} vs PipelineRun: {run}'.format(
+                pipe=pipeline_def.selector, run=pipeline_run.selector,
+            ),
         )
 
         step_keys_str = ", ".join(step_keys)
 
         execution_plan = create_execution_plan(
-            pipeline_def,
+            pipeline,
             pipeline_run.environment_dict,
             mode=pipeline_run.mode,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,

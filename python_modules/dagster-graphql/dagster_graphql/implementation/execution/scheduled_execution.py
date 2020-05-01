@@ -44,7 +44,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
         # We first load the repository and schedule definition to create
         # and store a ScheduleTick.
         # If this fails, this error should be sent to the file based scheduler logs.
-        repository = graphene_info.context.get_repository()
+        repository = graphene_info.context.get_repository_definition()
         schedule_def = get_dagster_schedule_def(graphene_info, schedule_name)
         cron_schedule = "Unknown" if not schedule_def else schedule_def.cron_schedule
         tick = graphene_info.context.instance.create_schedule_tick(

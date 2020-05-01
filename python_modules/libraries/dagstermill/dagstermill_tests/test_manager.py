@@ -13,6 +13,7 @@ from dagstermill.manager import Manager
 
 from dagster import Materialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.utils import make_new_run_id
@@ -24,7 +25,7 @@ from dagster.utils import safe_tempfile_path
 def in_pipeline_manager(
     pipeline_name='hello_world_pipeline',
     solid_handle=SolidHandle('hello_world', None),
-    handle_kwargs=None,
+    executable_dict=None,
     mode=None,
     **kwargs
 ):
@@ -34,12 +35,10 @@ def in_pipeline_manager(
     instance = DagsterInstance.local_temp()
     marshal_dir = tempfile.mkdtemp()
 
-    if not handle_kwargs:
-        handle_kwargs = {
-            'pipeline_name': pipeline_name,
-            'module_name': 'dagstermill.examples.repository',
-            'fn_name': 'define_hello_world_pipeline',
-        }
+    if not executable_dict:
+        executable_dict = ReconstructablePipeline.for_module(
+            'dagstermill.examples.repository', 'define_hello_world_pipeline'
+        ).to_dict()
 
     pipeline_run_dict = pack_value(
         PipelineRun(
@@ -57,7 +56,7 @@ def in_pipeline_manager(
             context_dict = {
                 'pipeline_run_dict': pipeline_run_dict,
                 'solid_handle_kwargs': solid_handle._asdict(),
-                'handle_kwargs': handle_kwargs,
+                'executable_dict': executable_dict,
                 'marshal_dir': marshal_dir,
                 'environment_dict': {},
                 'output_log_path': output_log_file_path,
@@ -109,11 +108,11 @@ def test_yield_unserializable_result():
     assert manager.yield_result(threading.Lock())
 
     with in_pipeline_manager(
+        pipeline_name='hello_world_with_output_pipeline',
         solid_handle=SolidHandle('hello_world_output', None),
-        handle_kwargs={
-            'module_name': 'dagstermill.examples.repository',
-            'fn_name': 'define_hello_world_with_output_pipeline',
-        },
+        executable_dict=ReconstructablePipeline.for_module(
+            'dagstermill.examples.repository', 'define_hello_world_with_output_pipeline',
+        ).to_dict(),
     ) as manager:
         with pytest.raises(TypeError):
             manager.yield_result(threading.Lock())
@@ -150,21 +149,21 @@ def test_in_pipeline_manager_solid_config():
         assert manager.context.solid_config is None
 
     with in_pipeline_manager(
+        pipeline_name='hello_world_config_pipeline',
         solid_handle=SolidHandle('hello_world_config', None),
-        handle_kwargs={
-            'module_name': 'dagstermill.examples.repository',
-            'fn_name': 'define_hello_world_config_pipeline',
-        },
+        executable_dict=ReconstructablePipeline.for_module(
+            'dagstermill.examples.repository', 'define_hello_world_config_pipeline',
+        ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {'greeting': 'hello'}
 
     with in_pipeline_manager(
+        pipeline_name='hello_world_config_pipeline',
         solid_handle=SolidHandle('hello_world_config', None),
         environment_dict={'solids': {'hello_world_config': {'config': {'greeting': 'bonjour'}}}},
-        handle_kwargs={
-            'module_name': 'dagstermill.examples.repository',
-            'fn_name': 'define_hello_world_config_pipeline',
-        },
+        executable_dict=ReconstructablePipeline.for_module(
+            'dagstermill.examples.repository', 'define_hello_world_config_pipeline',
+        ).to_dict(),
     ) as manager:
         assert manager.context.solid_config == {'greeting': 'bonjour'}
 
@@ -175,11 +174,10 @@ def test_in_pipeline_manager_with_resources():
 
     try:
         with in_pipeline_manager(
-            handle_kwargs={
-                'pipeline_name': 'resource_pipeline',
-                'fn_name': 'define_resource_pipeline',
-                'module_name': 'dagstermill.examples.repository',
-            },
+            pipeline_name='resource_pipeline',
+            executable_dict=ReconstructablePipeline.for_module(
+                'dagstermill.examples.repository', 'define_resource_pipeline',
+            ).to_dict(),
             solid_handle=SolidHandle('hello_world_resource', None),
             environment_dict={'resources': {'list': {'config': path}}},
             mode='prod',

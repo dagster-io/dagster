@@ -10,8 +10,8 @@ from nbconvert.preprocessors import ExecutePreprocessor
 from papermill import PapermillExecutionError
 
 from dagster import execute_pipeline
-from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
 
@@ -60,12 +60,7 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-
-    handle = handle_for_pipeline_cli_args(
-        {'module_name': 'dagstermill.examples.repository', 'fn_name': fn_name}
-    )
-
-    pipeline = handle.build_pipeline_definition()
+    pipeline = ReconstructablePipeline.for_module('dagstermill.examples.repository', fn_name)
 
     try:
         result = execute_pipeline(
@@ -265,15 +260,9 @@ def test_hello_world_reexecution():
             reexecution_notebook_file.flush()
 
             result = None
-
-            handle = handle_for_pipeline_cli_args(
-                {
-                    'python_file': reexecution_notebook_file.name,
-                    'fn_name': 'define_reexecution_pipeline',
-                }
+            pipeline = ReconstructablePipeline.for_file(
+                reexecution_notebook_file.name, 'define_reexecution_pipeline'
             )
-
-            pipeline = handle.build_pipeline_definition()
 
             try:
                 reexecution_result = execute_pipeline(

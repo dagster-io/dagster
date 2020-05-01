@@ -10,11 +10,11 @@ import pytest
 
 from dagster import (
     DagsterEventType,
-    ExecutionTargetHandle,
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
     pipeline,
+    reconstructable,
     resource,
     solid,
 )
@@ -85,9 +85,7 @@ def test_compute_log_to_disk():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_compute_log_to_disk_multiprocess():
-    spew_pipeline = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_pipeline'
-    ).build_pipeline_definition()
+    spew_pipeline = reconstructable(define_pipeline)
     instance = DagsterInstance.local_temp()
     manager = instance.compute_log_manager
     result = execute_pipeline(

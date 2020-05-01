@@ -6,7 +6,6 @@ import pytest
 
 from dagster import (
     DagsterEventType,
-    ExecutionTargetHandle,
     Output,
     OutputDefinition,
     PipelineRun,
@@ -15,6 +14,7 @@ from dagster import (
     execute_pipeline_iterator,
     lambda_solid,
     pipeline,
+    reconstructable,
     seven,
     solid,
 )
@@ -69,9 +69,7 @@ def define_run_retry_pipeline():
 @executors
 def test_retries(environment):
     instance = DagsterInstance.local_temp()
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_run_retry_pipeline'
-    ).build_pipeline_definition()
+    pipe = reconstructable(define_run_retry_pipeline)
     fails = dict(environment)
     fails['solids'] = {'can_fail': {'config': {'fail': True}}}
 
@@ -120,9 +118,7 @@ def test_step_retry(environment):
         env = dict(environment)
         env['solids'] = {'fail_first_time': {'config': tempdir}}
         result = execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, 'define_step_retry_pipeline'
-            ).build_pipeline_definition(),
+            reconstructable(define_step_retry_pipeline),
             environment_dict=env,
             instance=DagsterInstance.local_temp(),
         )
@@ -157,9 +153,7 @@ def define_retry_limit_pipeline():
 @executors
 def test_step_retry_limit(environment):
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, 'define_retry_limit_pipeline'
-        ).build_pipeline_definition(),
+        reconstructable(define_retry_limit_pipeline),
         environment_dict=environment,
         raise_on_error=False,
         instance=DagsterInstance.local_temp(),
@@ -229,9 +223,7 @@ def test_step_retry_fixed_wait(environment):
         env['solids'] = {'fail_first_and_wait': {'config': tempdir}}
 
         event_iter = execute_pipeline_iterator(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, 'define_retry_wait_fixed_pipeline'
-            ).build_pipeline_definition(),
+            reconstructable(define_retry_wait_fixed_pipeline),
             environment_dict=env,
             instance=DagsterInstance.local_temp(),
         )

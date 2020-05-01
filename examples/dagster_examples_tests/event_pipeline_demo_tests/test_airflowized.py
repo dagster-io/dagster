@@ -4,7 +4,7 @@ import pytest
 from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
 from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.utils import script_relative_path
 
 
@@ -15,7 +15,7 @@ class TestAirflowizedEventPipeline(object):
     ]
 
     pipeline_name = 'event_ingest_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
+    handle = ReconstructableRepository.for_module(
         'dagster_examples.event_pipeline_demo', pipeline_name
     )
 

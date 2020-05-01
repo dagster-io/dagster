@@ -6,7 +6,8 @@ from airflow import DAG
 from airflow.operators import BaseOperator
 from dagster_airflow.operators.util import check_storage_specified
 
-from dagster import ExecutionTargetHandle, check, seven
+from dagster import check, seven
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
@@ -106,7 +107,7 @@ class DagsterOperatorParameters(
         check_storage_specified(environment_dict)
         return super(DagsterOperatorParameters, cls).__new__(
             cls,
-            handle=check.opt_inst_param(handle, 'handle', ExecutionTargetHandle),
+            handle=check.opt_inst_param(handle, 'handle', ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
             environment_dict=check.opt_dict_param(
                 environment_dict, 'environment_dict', key_type=str
@@ -151,7 +152,7 @@ def _make_airflow_dag(
     op_kwargs=None,
     operator=DagsterPythonOperator,
 ):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+    check.inst_param(handle, 'handle', ReconstructableRepository)
     check.str_param(pipeline_name, 'pipeline_name')
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode')
@@ -179,7 +180,7 @@ def _make_airflow_dag(
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
 
     dag = DAG(dag_id=dag_id, description=dag_description, **dag_kwargs)
-    pipeline = handle.build_pipeline_definition()
+    pipeline = handle.get_definition().get_pipeline(pipeline_name)
 
     if mode is None:
         mode = pipeline.get_default_mode_name()
@@ -271,7 +272,7 @@ def make_airflow_dag(
     '''
     check.str_param(module_name, 'module_name')
 
-    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+    handle = ReconstructableRepository.for_module(module_name, pipeline_name)
 
     return _make_airflow_dag(
         handle=handle,
@@ -310,8 +311,8 @@ def make_airflow_dag_for_operator(
     invocation of the dagster-airflow scaffold CLI tool.
 
     Args:
-        handle (:class:`dagster.ExecutionTargetHandle`): reference to a Dagster RepositoryDefinition
-            or PipelineDefinition
+        handle (:class:`dagster.ReconstructableRepository`): reference to a Dagster RepositoryDefinition
+            that can be reconstructed in another process
         pipeline_name (str): The name of the pipeline definition.
         operator (type): The operator to use. Must be a class that inherits from
             :py:class:`BaseOperator <airflow.models.BaseOperator>`
@@ -418,7 +419,7 @@ def make_airflow_dag_containerized(
     '''
     check.str_param(module_name, 'module_name')
 
-    handle = ExecutionTargetHandle.for_pipeline_module(module_name, pipeline_name)
+    handle = ReconstructableRepository.for_module(module_name, pipeline_name)
 
     op_kwargs = check.opt_dict_param(op_kwargs, 'op_kwargs', key_type=str)
     op_kwargs['image'] = image

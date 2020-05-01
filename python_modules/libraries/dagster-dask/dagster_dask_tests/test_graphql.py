@@ -6,13 +6,13 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
 
 def test_execute_hammer_through_dagit():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(
+    recon_repo = ReconstructableRepository.for_file(
         file_relative_path(__file__, '../../../../examples/dagster_examples/toys/hammer.py'),
         'hammer_pipeline',
     )
@@ -21,7 +21,7 @@ def test_execute_hammer_through_dagit():
     execution_manager = SubprocessExecutionManager(instance)
 
     context = DagsterGraphQLInProcessRepositoryContext(
-        handle=handle, execution_manager=execution_manager, instance=instance
+        recon_repo=recon_repo, execution_manager=execution_manager, instance=instance
     )
 
     executor = SyncExecutor()
@@ -29,7 +29,7 @@ def test_execute_hammer_through_dagit():
     variables = {
         'executionParams': {
             'environmentConfigData': {'storage': {'filesystem': {}}, 'execution': {'dask': {}}},
-            'selector': {'name': handle.build_pipeline_definition().name},
+            'selector': {'name': 'hammer_pipeline'},
             'mode': 'default',
         }
     }

@@ -7,7 +7,7 @@ from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeli
 from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_examples.dagster_airflow.custom_operator import CustomOperator
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.utils import git_repository_root
 
 sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
@@ -25,7 +25,7 @@ def test_my_custom_operator(
 
     results = dagster_airflow_custom_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         operator=operator,
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),

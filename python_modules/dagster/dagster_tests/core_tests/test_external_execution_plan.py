@@ -5,12 +5,12 @@ from dagster import (
     DagsterExecutionStepNotFoundError,
     DagsterStepOutputNotFoundError,
     DependencyDefinition,
-    ExecutionTargetHandle,
     InputDefinition,
     Int,
     OutputDefinition,
     PipelineDefinition,
     lambda_solid,
+    reconstructable,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
@@ -94,13 +94,11 @@ def test_using_file_system_for_subplan_multiprocessing():
     environment_dict = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.local_temp()
 
-    pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-        define_inty_pipeline
-    ).build_pipeline_definition()
+    pipeline = reconstructable(define_inty_pipeline)
 
-    execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, execution_plan=execution_plan
+        pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
     )
 
     assert execution_plan.get_step_by_key('return_one.compute')

@@ -10,7 +10,6 @@ from dagster_celery import celery_executor
 
 from dagster import (
     CompositeSolidExecutionResult,
-    ExecutionTargetHandle,
     InputDefinition,
     Int,
     ModeDefinition,
@@ -26,6 +25,8 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.definitions.pointer import FileCodePointer
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
@@ -168,9 +169,7 @@ def engine_error():
 def execute_pipeline_on_celery(pipeline_name,):
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, pipeline_name
-            ).build_pipeline_definition(),
+            ReconstructablePipeline(FileCodePointer(__file__, pipeline_name)),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {}},
@@ -185,9 +184,7 @@ def execute_eagerly_on_celery(pipeline_name, instance=None):
     with seven.TemporaryDirectory() as tempdir:
         instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, pipeline_name
-            ).build_pipeline_definition(),
+            ReconstructablePipeline(FileCodePointer(__file__, pipeline_name)),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
@@ -431,9 +428,7 @@ def test_engine_error():
         with seven.TemporaryDirectory() as tempdir:
             storage = os.path.join(tempdir, 'flakey_storage')
             execute_pipeline(
-                ExecutionTargetHandle.for_pipeline_python_file(
-                    __file__, 'engine_error',
-                ).build_pipeline_definition(),
+                ReconstructablePipeline(FileCodePointer(__file__, 'engine_error')),
                 environment_dict={
                     'storage': {'filesystem': {'config': {'base_dir': storage}}},
                     'execution': {

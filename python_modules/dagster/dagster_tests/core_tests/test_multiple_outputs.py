@@ -6,12 +6,12 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
-    ExecutionTargetHandle,
     InputDefinition,
     Output,
     OutputDefinition,
     execute_pipeline,
     pipeline,
+    reconstructable,
     solid,
 )
 
@@ -136,9 +136,7 @@ def test_multiple_outputs_only_emit_one():
 
 
 def test_multiple_outputs_only_emit_one_multiproc():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_multi_out'
-    ).build_pipeline_definition()
+    pipe = reconstructable(define_multi_out)
     result = execute_pipeline(
         pipe,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},

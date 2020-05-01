@@ -11,10 +11,11 @@ import six
 import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
-from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_repo_cli_args
+from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
-from dagster.core.definitions import ExecutionTargetHandle
+from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -82,7 +83,7 @@ def pipeline_target_command(f):
     # f = repository_config_argument(f)
     # nargs=-1 is used right now to make this argument optional
     # it can only handle 0 or 1 pipeline names
-    # see .pipeline.create_pipeline_from_cli_args
+    # see .pipeline.recon_pipeline_for_cli_args
     return apply_click_params(
         f,
         click.option(
@@ -111,7 +112,7 @@ def pipeline_list_command(**kwargs):
 
 
 def execute_list_command(cli_args, print_fn):
-    repository = handle_for_repo_cli_args(cli_args).build_repository_definition()
+    repository = recon_repo_for_cli_args(cli_args).get_definition()
 
     title = 'Repository {name}'.format(name=repository.name)
     print_fn(title)
@@ -141,10 +142,6 @@ def format_description(desc, indent):
     wrapper = textwrap.TextWrapper(initial_indent='', subsequent_indent=indent)
     filled = wrapper.fill(dedented)
     return filled
-
-
-def create_pipeline_from_cli_args(kwargs):
-    return handle_for_pipeline_cli_args(kwargs).build_pipeline_definition()
 
 
 def get_pipeline_instructions(command_name):
@@ -255,7 +252,7 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 @click.option('--only-solids', is_flag=True)
 @pipeline_target_command
 def pipeline_graphviz_command(only_solids, **kwargs):
-    pipeline = create_pipeline_from_cli_args(kwargs)
+    pipeline = recon_pipeline_for_cli_args(kwargs)
     build_graphviz_graph(pipeline, only_solids).view(cleanup=True)
 
 
@@ -274,12 +271,12 @@ def pipeline_graphviz_command(only_solids, **kwargs):
     help=(
         'Specify one or more environment files. These can also be file patterns. '
         'If more than one environment file is captured then those files are merged. '
-        'Files listed first take precendence. They will smash the values of subsequent '
+        'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
         'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
-        '\n\nYou can also specifiy multiple files:'
+        '\n\nYou can also specify multiple files:'
         '\n\nExample: '
         'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
@@ -312,13 +309,12 @@ def pipeline_execute_command(env, preset, mode, **kwargs):
 
 
 def execute_execute_command(env, cli_args, mode=None, tags=None):
-    pipeline = create_pipeline_from_cli_args(cli_args)
+    pipeline = recon_pipeline_for_cli_args(cli_args)
     return do_execute_command(pipeline, env, mode, tags)
 
 
 def execute_execute_command_with_preset(preset_name, cli_args, _mode):
-    pipeline = handle_for_pipeline_cli_args(cli_args).build_pipeline_definition()
-    cli_args.pop('pipeline_name')
+    pipeline = recon_pipeline_for_cli_args(cli_args)
     tags = get_tags_from_args(cli_args)
 
     return execute_pipeline(
@@ -330,14 +326,14 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     )
 
 
-def do_execute_command(pipeline_def, env_file_list, mode=None, tags=None):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
-        pipeline_def,
+        pipeline,
         environment_dict=environment_dict,
         mode=mode,
         tags=tags,
@@ -361,12 +357,12 @@ def do_execute_command(pipeline_def, env_file_list, mode=None, tags=None):
     help=(
         'Specify one or more environment files. These can also be file patterns. '
         'If more than one environment file is captured then those files are merged. '
-        'Files listed first take precendence. They will smash the values of subsequent '
+        'Files listed first take precedence. They will smash the values of subsequent '
         'files at the key-level granularity. If the file is a pattern then you must '
         'enclose it in double quotes'
         '\n\nExample: '
         'dagster pipeline execute pandas_hello_world -e "pandas_hello_world/*.yaml"'
-        '\n\nYou can also specifiy multiple files:'
+        '\n\nYou can also specify multiple files:'
         '\n\nExample: '
         'dagster pipeline execute pandas_hello_world -e pandas_hello_world/solids.yaml '
         '-e pandas_hello_world/env.yaml'
@@ -388,7 +384,7 @@ def do_execute_command(pipeline_def, env_file_list, mode=None, tags=None):
 def pipeline_launch_command(env, preset_name, mode, **kwargs):
     env = list(check.opt_tuple_param(env, 'env', default=(), of_type=str))
 
-    pipeline = create_pipeline_from_cli_args(kwargs)
+    pipeline = recon_pipeline_for_cli_args(kwargs)
 
     instance = DagsterInstance.get()
 
@@ -407,7 +403,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     # FIXME need to check the env against environment_dict
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline,
+        pipeline_def=pipeline.get_definition(),
         solid_subset=preset.solid_subset if preset else None,
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
@@ -430,9 +426,9 @@ def pipeline_scaffold_command(**kwargs):
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    pipeline_def = create_pipeline_from_cli_args(cli_args)
+    pipeline = recon_pipeline_for_cli_args(cli_args)
     skip_non_required = cli_args['print_only_required']
-    do_scaffold_command(pipeline_def, print_fn, skip_non_required)
+    do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 
 
 def do_scaffold_command(pipeline_def, printer, skip_non_required):
@@ -533,8 +529,8 @@ def validate_partition_slice(partitions, name, value):
 
 
 def get_partition_sets_for_handle(handle):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
-    repo = handle.build_repository_definition()
+    check.inst_param(handle, 'handle', ReconstructableRepository)
+    repo = handle.get_definition()
 
     return repo.partition_set_defs + [
         schedule_def.get_partition_set()
@@ -610,8 +606,8 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             pipeline_name = pipeline_name[0]
 
     instance = instance or DagsterInstance.get()
-    handle = handle_for_repo_cli_args(repo_args)
-    repository = handle.build_repository_definition()
+    handle = recon_repo_for_cli_args(repo_args)
+    repository = handle.get_definition()
     noprompt = cli_args.get('noprompt')
 
     # check run launcher
@@ -631,7 +627,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
         pipeline_name = click.prompt(
             'Select a pipeline to backfill: {}'.format(', '.join(repository.pipeline_names))
         )
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
     if not repository.has_pipeline(pipeline_name):
         raise click.UsageError('No pipeline found named `{}`'.format(pipeline_name))
 

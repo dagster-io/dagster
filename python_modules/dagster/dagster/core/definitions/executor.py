@@ -4,6 +4,7 @@ from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.core.definitions.executable import InterProcessExecutablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.config import InProcessExecutorConfig, MultiprocessExecutorConfig
 from dagster.core.execution.retries import Retries, get_retries_config
@@ -201,21 +202,14 @@ def multiprocess_executor(init_context):
     where the higher the number the higher the priority. 0 is the default and both positive
     and negative numbers can be used.
     '''
-    from dagster.core.definitions.handle import ExecutionTargetHandle
     from dagster.core.engine.init import InitExecutorContext
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 
     check_cross_process_constraints(init_context)
 
-    # ExecutionTargetHandle.get_handle returns an ExecutionTargetHandleCacheEntry, which is a tuple
-    # (handle, solid_subset). Right now we are throwing away the solid_subset that we store in the
-    # cache -- this is fragile and we should fix this with
-    # https://github.com/dagster-io/dagster/issues/2115 and friends so there are not multiple
-    # sources of truth for the solid subset
-    handle, _ = ExecutionTargetHandle.get_handle(init_context.pipeline_def)
     return MultiprocessExecutorConfig(
-        handle=handle,
+        pipeline=init_context.pipeline,
         max_concurrent=init_context.executor_config['max_concurrent'],
         retries=Retries.from_config(init_context.executor_config['retries']),
     )
@@ -229,22 +223,21 @@ def check_cross_process_constraints(init_context):
 
     check.inst_param(init_context, 'init_context', InitExecutorContext)
 
-    _check_pipeline_has_target_handle(init_context.pipeline_def)
+    _check_intra_process_pipeline(init_context.pipeline)
     _check_non_ephemeral_instance(init_context.instance)
     _check_persistent_storage_requirement(init_context.system_storage_def)
 
 
-def _check_pipeline_has_target_handle(pipeline_def):
-    from dagster.core.definitions.handle import ExecutionTargetHandle
-
-    handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
-    if not handle:
+def _check_intra_process_pipeline(pipeline):
+    if not isinstance(pipeline, InterProcessExecutablePipeline):
         raise DagsterUnmetExecutorRequirementsError(
             'You have attempted to use an executor that uses multiple processes with the pipeline "{name}" '
-            'that can not be re-hydrated. Pipelines must be loaded in a way that allows dagster to reconstruct '
+            'that is not reconstructable. Pipelines must be loaded in a way that allows dagster to reconstruct '
             'them in a new process. This means: \n'
             '  * using the file, module, or repository.yaml arguments of dagit/dagster-graphql/dagster\n'
-            '  * constructing an ExecutionTargetHandle directly\n'.format(name=pipeline_def.name)
+            '  * loading the pipeline through the reconstructable() function\n'.format(
+                name=pipeline.get_definition().name
+            )
         )
 
 

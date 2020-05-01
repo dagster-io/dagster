@@ -1,12 +1,8 @@
 import os
 
-from dagster_pandas.examples.pandas_hello_world.pipeline import (
-    pandas_hello_world,
-    pandas_hello_world_fails,
-)
-
 from dagster import execute_pipeline
 from dagster.cli.pipeline import do_execute_command
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.utils import file_relative_path
 
 
@@ -19,7 +15,12 @@ def test_execute_pipeline():
         }
     }
 
-    result = execute_pipeline(pandas_hello_world, environment_dict=environment)
+    result = execute_pipeline(
+        ReconstructablePipeline.for_module(
+            'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
+        ),
+        environment_dict=environment,
+    )
 
     assert result.success
 
@@ -47,7 +48,9 @@ def test_cli_execute():
         os.chdir(file_relative_path(__file__, '../..'))
 
         do_execute_command(
-            pipeline_def=pandas_hello_world,
+            pipeline=ReconstructablePipeline.for_module(
+                'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
+            ),
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
@@ -70,7 +73,9 @@ def test_cli_execute_failure():
         os.chdir(file_relative_path(__file__, '../..'))
 
         result = do_execute_command(
-            pipeline_def=pandas_hello_world_fails,
+            pipeline=ReconstructablePipeline.for_module(
+                'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world_fails'
+            ),
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'

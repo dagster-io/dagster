@@ -10,7 +10,6 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 )
 
 from dagster import (
-    ExecutionTargetHandle,
     Field,
     InputDefinition,
     Int,
@@ -23,6 +22,7 @@ from dagster import (
     lambda_solid,
     output_materialization_config,
     pipeline,
+    reconstructable,
     solid,
 )
 from dagster.core.events import DagsterEventType
@@ -64,7 +64,6 @@ def get_events_of_type(events, event_type):
 
 
 def test_running():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'passing_pipeline')
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
@@ -74,7 +73,9 @@ def test_running():
         pipeline_def=passing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(
+        reconstructable(get_passing_pipeline), pipeline_run, instance
+    )
     execution_manager.join()
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
     events = instance.all_logs(pipeline_run.run_id)
@@ -87,7 +88,6 @@ def test_running():
 
 
 def test_failing():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'failing_pipeline')
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
@@ -97,14 +97,15 @@ def test_failing():
         pipeline_def=failing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(
+        reconstructable(get_failing_pipeline), pipeline_run, instance
+    )
     execution_manager.join()
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
     assert instance.all_logs(pipeline_run.run_id)
 
 
 def test_execution_crash():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'crashy_pipeline')
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
@@ -114,7 +115,7 @@ def test_execution_crash():
         pipeline_def=crashy_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(reconstructable(get_crashy_pipeline), pipeline_run, instance)
     execution_manager.join()
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.FAILURE
     crash_log = instance.all_logs(pipeline_run.run_id)[
@@ -160,14 +161,26 @@ def passing_pipeline():
     return sum_solid()
 
 
+def get_passing_pipeline():
+    return passing_pipeline
+
+
 @pipeline
 def failing_pipeline():
     return error_solid(sum_solid())
 
 
+def get_failing_pipeline():
+    return failing_pipeline
+
+
 @pipeline
 def crashy_pipeline():
     crashy_solid(sum_solid())
+
+
+def get_crashy_pipeline():
+    return crashy_pipeline
 
 
 @solid(config={'foo': Field(String)})
@@ -190,6 +203,10 @@ def composite_pipeline():
     return composite_with_nested_config_solid()
 
 
+def get_composite_pipeline():
+    return composite_pipeline
+
+
 @composite_solid(
     config_fn=lambda cfg: {
         'node_a': {'config': {'foo': cfg['foo']}},
@@ -206,6 +223,10 @@ def composite_pipeline_with_config_mapping():
     return composite_with_nested_config_solid_and_config_mapping()
 
 
+def get_composite_pipeline_with_config_mapping():
+    return composite_pipeline_with_config_mapping
+
+
 def test_multiprocessing_execution_for_composite_solid():
     environment_dict = {
         'solids': {
@@ -215,14 +236,14 @@ def test_multiprocessing_execution_for_composite_solid():
         }
     }
 
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'composite_pipeline')
-
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(
+        reconstructable(get_composite_pipeline), pipeline_run, instance
+    )
     execution_manager.join()
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
@@ -240,7 +261,9 @@ def test_multiprocessing_execution_for_composite_solid():
         pipeline_def=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
-    execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
+    execution_manager.execute_pipeline(
+        reconstructable(get_composite_pipeline), pipeline_run, instance
+    )
     execution_manager.join()
 
 
@@ -253,17 +276,13 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
         }
     }
 
-    handle = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'composite_pipeline_with_config_mapping'
-    )
-
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=composite_pipeline_with_config_mapping, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(
-        handle, composite_pipeline_with_config_mapping, pipeline_run, instance
+        reconstructable(get_composite_pipeline_with_config_mapping), pipeline_run, instance
     )
     execution_manager.join()
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
@@ -283,7 +302,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(
-        handle, composite_pipeline_with_config_mapping, pipeline_run, instance
+        reconstructable(get_composite_pipeline_with_config_mapping), pipeline_run, instance
     )
 
     execution_manager.join()
@@ -304,9 +323,11 @@ def infinite_loop_pipeline():
     loop()
 
 
-def test_has_run_query_and_terminate():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
+def get_infinite_loop_pipeline():
+    return infinite_loop_pipeline
 
+
+def test_has_run_query_and_terminate():
     instance = DagsterInstance.local_temp()
 
     with safe_tempfile_path() as path:
@@ -315,7 +336,9 @@ def test_has_run_query_and_terminate():
             environment_dict={'solids': {'loop': {'config': {'file': path}}}},
         )
         execution_manager = SubprocessExecutionManager(instance)
-        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, pipeline_run, instance)
+        execution_manager.execute_pipeline(
+            reconstructable(get_infinite_loop_pipeline), pipeline_run, instance
+        )
 
         while not os.path.exists(path):
             time.sleep(0.1)
@@ -332,8 +355,6 @@ def test_has_run_query_and_terminate():
 
 
 def test_two_runs_running():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
-
     with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two:
         instance = DagsterInstance.local_temp()
 
@@ -344,7 +365,7 @@ def test_two_runs_running():
             environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
         )
         execution_manager.execute_pipeline(
-            handle, infinite_loop_pipeline, pipeline_run_one, instance
+            reconstructable(get_infinite_loop_pipeline), pipeline_run_one, instance
         )
 
         pipeline_run_two = instance.create_run_for_pipeline(
@@ -353,7 +374,7 @@ def test_two_runs_running():
         )
 
         execution_manager.execute_pipeline(
-            handle, infinite_loop_pipeline, pipeline_run_two, instance
+            reconstructable(get_infinite_loop_pipeline), pipeline_run_two, instance
         )
 
         # ensure both runs have begun execution
@@ -375,8 +396,6 @@ def test_two_runs_running():
 
 
 def test_max_concurrency_zero():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
-
     with safe_tempfile_path() as filepath:
         instance = DagsterInstance.local_temp()
         execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=0)
@@ -385,15 +404,16 @@ def test_max_concurrency_zero():
             pipeline_def=infinite_loop_pipeline,
             environment_dict={'solids': {'loop': {'config': {'file': filepath}}}},
         )
-        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, pipeline_run, instance)
+        execution_manager.execute_pipeline(
+            reconstructable(get_infinite_loop_pipeline), pipeline_run, instance
+        )
         assert not execution_manager.is_active(pipeline_run.run_id)
         assert not os.path.exists(filepath)
 
 
 def test_max_concurrency_one():
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, 'infinite_loop_pipeline')
-
-    pipeline_def = handle.build_pipeline_definition()
+    recon_pipeline = reconstructable(get_infinite_loop_pipeline)
+    pipeline_def = recon_pipeline.get_definition()
 
     with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two:
         instance = DagsterInstance.local_temp()
@@ -408,8 +428,8 @@ def test_max_concurrency_one():
             environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
         )
 
-        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, run_one, instance)
-        execution_manager.execute_pipeline(handle, infinite_loop_pipeline, run_two, instance)
+        execution_manager.execute_pipeline(recon_pipeline, run_one, instance)
+        execution_manager.execute_pipeline(recon_pipeline, run_two, instance)
 
         while not os.path.exists(file_one):
             execution_manager.check()

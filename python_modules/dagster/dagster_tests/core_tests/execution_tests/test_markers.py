@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, ExecutionTargetHandle, execute_pipeline, lambda_solid, pipeline
+from dagster import DagsterInstance, execute_pipeline, lambda_solid, pipeline, reconstructable
 
 
 def define_pipeline():
@@ -14,12 +14,9 @@ def define_pipeline():
 
 
 def test_multiproc_markers():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_pipeline'
-    ).build_pipeline_definition()
     instance = DagsterInstance.local_temp()
     result = execute_pipeline(
-        pipe,
+        reconstructable(define_pipeline),
         instance=instance,
         environment_dict={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
     )

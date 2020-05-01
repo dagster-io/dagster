@@ -73,7 +73,7 @@ def test_get_all_schedules():
         )
 
         # Initialize scheduler
-        repository = context.get_repository()
+        repository = context.get_repository_definition()
         reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path="",

@@ -14,12 +14,12 @@ class DagsterGraphQLClientError(DagsterError):
     dagster-graphql'''
 
 
-def execute_execute_plan_mutation(handle, variables, instance_ref=None):
+def execute_execute_plan_mutation(recon_repo, variables, instance_ref=None):
     instance = (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
     res = execute_query(
-        handle, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
+        recon_repo, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
     )
     instance.dispose()
     handle_execution_errors(res, 'executePlan')
@@ -39,7 +39,7 @@ def handle_execution_errors(res, expected_type):
         raise DagsterGraphQLClientError('Unexpected response type. Response: {}'.format(res))
 
 
-def execute_execute_plan_mutation_raw(handle, variables, instance_ref=None):
+def execute_execute_plan_mutation_raw(recon_repo, variables, instance_ref=None):
     '''The underlying mutation returns the DagsterEventRecords serialized as strings, rather
     than dict representations of the DagsterEvents, thus "raw". This method in turn returns a
     stream of DagsterEventRecords, not DagsterEvents.'''
@@ -47,7 +47,7 @@ def execute_execute_plan_mutation_raw(handle, variables, instance_ref=None):
     instance = (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
     )
-    res = execute_query(handle, RAW_EXECUTE_PLAN_MUTATION, variables, instance=instance)
+    res = execute_query(recon_repo, RAW_EXECUTE_PLAN_MUTATION, variables, instance=instance)
     handle_execution_errors(res, 'executePlan')
     return handle_execute_plan_result_raw(res)
 

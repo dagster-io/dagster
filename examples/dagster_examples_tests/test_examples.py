@@ -47,7 +47,7 @@ def test_schedules():
         # We need to call up on the scheduler handle to persist
         # state about the schedules to disk before running them.
         # Note: This dependency will be removed soon.
-        repository = context.get_repository()
+        repository = context.get_repository_definition()
         reconcile_scheduler_state(
             python_path=sys.executable,
             repository_path=file_relative_path(__file__, '../'),

@@ -3,7 +3,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.core.definitions import ExecutionTargetHandle, PipelineDefinition
+from dagster.core.definitions import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.engine.init import InitExecutorContext
@@ -72,7 +72,7 @@ class ContextCreationData(
     namedtuple(
         '_ContextCreationData',
         'pipeline environment_config pipeline_run mode_def system_storage_def '
-        'execution_target_handle executor_def instance resource_keys_to_init',
+        'executor_def instance resource_keys_to_init',
     )
 ):
     @property
@@ -92,15 +92,12 @@ def create_context_creation_data(
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)
     executor_def = executor_def_from_config(mode_def, environment_config)
 
-    execution_target_handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
-
     return ContextCreationData(
         pipeline=execution_plan.pipeline,
         environment_config=environment_config,
         pipeline_run=pipeline_run,
         mode_def=mode_def,
         system_storage_def=system_storage_def,
-        execution_target_handle=execution_target_handle,
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
@@ -312,7 +309,6 @@ def construct_pipeline_execution_context(
             instance=context_creation_data.instance,
             intermediates_manager=system_storage_data.intermediates_manager,
             file_manager=system_storage_data.file_manager,
-            execution_target_handle=context_creation_data.execution_target_handle,
             executor_config=executor_config,
             raise_on_error=raise_on_error,
         ),

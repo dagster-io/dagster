@@ -16,12 +16,12 @@ DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
 
 
 def query_on_dask_worker(
-    handle, variables, dependencies, instance_ref=None
+    recon_repo, variables, dependencies, instance_ref=None
 ):  # pylint: disable=unused-argument
     '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     '''
-    return execute_execute_plan_mutation(handle, variables, instance_ref=instance_ref)
+    return execute_execute_plan_mutation(recon_repo, variables, instance_ref=instance_ref)
 
 
 def get_dask_resource_requirements(tags):
@@ -100,7 +100,7 @@ class DaskEngine(Engine):  # pylint: disable=no-init
 
                     future = client.submit(
                         query_on_dask_worker,
-                        pipeline_context.execution_target_handle,
+                        pipeline_context.pipeline.get_reconstructable_repository(),
                         variables,
                         dependencies,
                         instance.get_ref(),

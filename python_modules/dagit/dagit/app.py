@@ -26,9 +26,9 @@ from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
 
-from dagster import ExecutionTargetHandle
 from dagster import __version__ as dagster_version
 from dagster import check, seven
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import reconcile_scheduler_state
@@ -211,8 +211,8 @@ def create_app_with_active_repository_data(active_repository_data, instance):
     return instantiate_app_with_views(context)
 
 
-def create_app_with_execution_handle(handle, instance, reloader=None):
-    check.inst_param(handle, 'handle', ExecutionTargetHandle)
+def create_app_with_reconstructable_repo(recon_repo, instance, reloader=None):
+    check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.inst_param(instance, 'instance', DagsterInstance)
     check.opt_inst_param(reloader, 'reloader', Reloader)
 
@@ -221,7 +221,7 @@ def create_app_with_execution_handle(handle, instance, reloader=None):
 
     print('Loading repository...')
     context = DagsterGraphQLInProcessRepositoryContext(
-        handle=handle,
+        recon_repo=recon_repo,
         instance=instance,
         execution_manager=execution_manager,
         reloader=reloader,
@@ -230,13 +230,12 @@ def create_app_with_execution_handle(handle, instance, reloader=None):
 
     # Automatically initialize scheduler everytime Dagit loads
     scheduler = instance.scheduler
-    repository = context.get_repository()
+    repository = context.get_repository_definition()
 
     if repository.schedule_defs:
         if scheduler:
-            handle = context.get_handle()
             python_path = sys.executable
-            repository_path = handle.data.repository_yaml
+            repository_path = context.get_reconstructable_repo().yaml_path
             reconcile_scheduler_state(
                 python_path, repository_path, repository=repository, instance=instance
             )

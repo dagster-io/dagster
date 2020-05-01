@@ -4,6 +4,12 @@ import subprocess
 import sys
 
 from dagster import Field, StringSource, check, resource
+from dagster.core.definitions.pointer import FileCodePointer, ModuleCodePointer
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    ReconstructablePipelineFromRepo,
+    ReconstructableRepository,
+)
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import pipeline_initialization_manager
@@ -61,23 +67,64 @@ class LocalExternalStepLauncher(StepLauncher):
             yield event
 
 
+def _module_in_package_dir(file_path, package_dir):
+    abs_path = os.path.abspath(file_path)
+    abs_package_dir = os.path.abspath(package_dir)
+    check.invariant(
+        os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
+        'File {abs_path} is not underneath package dir {abs_package_dir}'.format(
+            abs_path=abs_path, abs_package_dir=abs_package_dir,
+        ),
+    )
+
+    relative_path = os.path.relpath(abs_path, abs_package_dir)
+    without_extension, _ = os.path.splitext(relative_path)
+    return '.'.join(without_extension.split(os.sep))
+
+
 def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir=None):
     '''
     Args:
         step_context (SystemStepExecutionContext): The step context.
         prior_attempts_count (int): The number of times this time has been tried before in the same
             pipeline run.
-        package_dir (Optional[str]): If set, the execution target will be converted to be relative
-            to the package root.  This enables executing steps in remote setups where the package
-            containing the pipeline resides at a different location on the filesystem in the remote
-            environment than in the environment executing the plan process.
+        package_dir (Optional[str]): If set, the reconstruction file code pointer will be converted
+            to be relative a module pointer relative to the package root.  This enables executing
+            steps in remote setups where the package containing the pipeline resides at a different
+            location on the filesystem in the remote environment than in the environment executing
+            the plan process.
 
     Returns (StepRunRef):
         A reference to the step.
     '''
-    execution_target_handle = step_context.execution_target_handle
+    recon_pipeline = step_context.pipeline
     if package_dir:
-        execution_target_handle = execution_target_handle.to_module_name_based_handle(package_dir)
+
+        if isinstance(recon_pipeline, ReconstructablePipeline) and isinstance(
+            recon_pipeline.pointer, FileCodePointer
+        ):
+            recon_pipeline = ReconstructablePipeline(
+                pointer=ModuleCodePointer(
+                    _module_in_package_dir(recon_pipeline.pointer.python_file, package_dir),
+                    recon_pipeline.pointer.fn_name,
+                ),
+                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
+            )
+        elif isinstance(recon_pipeline, ReconstructablePipelineFromRepo) and isinstance(
+            recon_pipeline.repository.pointer, FileCodePointer
+        ):
+            recon_pipeline = ReconstructablePipelineFromRepo(
+                repository=ReconstructableRepository(
+                    pointer=ModuleCodePointer(
+                        _module_in_package_dir(
+                            recon_pipeline.repository.pointer.python_file, package_dir
+                        ),
+                        recon_pipeline.repository.pointer.fn_name,
+                    ),
+                ),
+                pipeline_name=recon_pipeline.pipeline_name,
+                frozen_solid_subset=recon_pipeline.frozen_solid_subset,
+            )
 
     return StepRunRef(
         environment_dict=step_context.environment_dict,
@@ -85,14 +132,13 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
         executor_config=step_context.executor_config,
-        execution_target_handle=execution_target_handle,
+        recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
     )
 
 
 def step_run_ref_to_step_context(step_run_ref):
-    execution_target_handle = step_run_ref.execution_target_handle
-    pipeline_def = execution_target_handle.build_pipeline_definition().subset_for_execution(
+    pipeline_def = step_run_ref.recon_pipeline.get_definition().subset_for_execution(
         step_run_ref.pipeline_run.selector.solid_subset
     )
 

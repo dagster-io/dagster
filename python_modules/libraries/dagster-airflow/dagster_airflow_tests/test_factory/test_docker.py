@@ -14,7 +14,7 @@ from dagster_airflow.test_fixtures import (
 from dagster_airflow_tests.conftest import dagster_docker_image
 from dagster_airflow_tests.marks import nettest
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
 from dagster.utils import git_repository_root, load_yaml_from_glob_list
 
@@ -31,7 +31,7 @@ def test_fs_storage_no_explicit_base_dir(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
@@ -48,7 +48,7 @@ def test_fs_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_filesystem.yaml'),
@@ -66,7 +66,7 @@ def test_s3_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_s3.yaml'),
@@ -84,7 +84,7 @@ def test_gcs_storage(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[
             os.path.join(environments_path, 'env.yaml'),
             os.path.join(environments_path, 'env_gcs.yaml'),
@@ -101,7 +101,7 @@ def test_skip_operator(
     environments_path = test_project_environments_path()
     results = dagster_airflow_docker_operator_pipeline(
         pipeline_name=pipeline_name,
-        handle=ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name),
+        handle=ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name),
         environment_yaml=[os.path.join(environments_path, 'env_filesystem.yaml')],
         op_kwargs={'host_tmp_dir': '/tmp'},
         image=dagster_docker_image,
@@ -111,7 +111,7 @@ def test_skip_operator(
 
 def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)
+    handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)
     environments_path = test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, 'env_s3.yaml'),

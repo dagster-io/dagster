@@ -8,7 +8,6 @@ from dagster import (
     Bool,
     DependencyDefinition,
     EventMetadataEntry,
-    ExecutionTargetHandle,
     ExpectationResult,
     InputDefinition,
     Materialization,
@@ -18,6 +17,7 @@ from dagster import (
     RetryRequested,
     execute_pipeline,
     lambda_solid,
+    reconstructable,
     solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
@@ -103,13 +103,13 @@ def test_pipeline():
 
 
 def test_all_step_events():  # pylint: disable=too-many-locals
-    handle = ExecutionTargetHandle.for_pipeline_fn(define_test_events_pipeline)
-    pipeline = handle.build_pipeline_definition()
-    mode = pipeline.get_default_mode_name()
+    pipeline = reconstructable(define_test_events_pipeline)
+    pipeline_def = pipeline.get_definition()
+    mode = pipeline_def.get_default_mode_name()
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, mode=mode)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline, execution_plan=execution_plan, mode=mode
+        pipeline_def=pipeline_def, execution_plan=execution_plan, mode=mode
     )
     step_levels = execution_plan.topological_step_levels()
 
@@ -130,14 +130,19 @@ def test_all_step_events():  # pylint: disable=too-many-locals
         for step in step_level:
             variables = {
                 'executionParams': {
-                    'selector': {'name': pipeline.name},
+                    'selector': {'name': pipeline_def.name},
                     'environmentConfigData': {'storage': {'filesystem': {}}},
                     'mode': mode,
                     'executionMetadata': {'runId': pipeline_run.run_id},
                     'stepKeys': [step.key],
                 }
             }
-            res = execute_query(handle, EXECUTE_PLAN_MUTATION, variables, instance=instance)
+            res = execute_query(
+                pipeline.get_reconstructable_repository(),
+                EXECUTE_PLAN_MUTATION,
+                variables,
+                instance=instance,
+            )
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
             # response
@@ -148,7 +153,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
                 step_events = res['data']['executePlan']['stepEvents']
 
                 events = [
-                    dagster_event_from_dict(e, pipeline.name)
+                    dagster_event_from_dict(e, pipeline_def.name)
                     for e in step_events
                     if e['__typename'] not in ignored_events
                 ]

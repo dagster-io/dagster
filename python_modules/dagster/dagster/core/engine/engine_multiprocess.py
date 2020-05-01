@@ -35,13 +35,13 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
     def execute(self):
         check.inst(self.executor_config, MultiprocessExecutorConfig)
-        pipeline_def = self.executor_config.load_pipeline(self.pipeline_run)
+        pipeline = self.executor_config.pipeline
         instance = DagsterInstance.from_ref(self.instance_ref)
 
         start_termination_thread(self.term_event)
 
         execution_plan = create_execution_plan(
-            pipeline=pipeline_def,
+            pipeline=pipeline,
             environment_dict=self.environment_dict,
             mode=self.pipeline_run.mode,
             step_keys_to_execute=self.pipeline_run.step_keys_to_execute,

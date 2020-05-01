@@ -4,14 +4,14 @@ import json
 
 from dagit import app
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 
 
 def test_smoke_app():
-    flask_app = app.create_app_with_execution_handle(
-        ExecutionTargetHandle.for_repo_module(
-            module_name='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
+    flask_app = app.create_app_with_reconstructable_repo(
+        ReconstructableRepository.for_module(
+            module='dagster_examples.intro_tutorial.repos', fn_name='define_repo'
         ),
         DagsterInstance.ephemeral(),
     )

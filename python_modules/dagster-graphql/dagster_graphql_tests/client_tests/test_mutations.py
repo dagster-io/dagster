@@ -3,7 +3,7 @@ from dagster_graphql.client.mutations import (
     execute_execute_plan_mutation_raw,
 )
 
-from dagster import ExecutionTargetHandle
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 
 EXPECTED_EVENTS = {
@@ -35,13 +35,10 @@ EXPECTED_EVENTS = {
 
 def test_execute_execute_plan_mutation():
     pipeline_name = 'sleepy_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_examples.toys.sleepy', pipeline_name
-    )
-    pipeline = handle.build_pipeline_definition()
+    pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
 
     instance = DagsterInstance.local_temp()
-    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
 
     variables = {
         'executionParams': {
@@ -51,7 +48,9 @@ def test_execute_execute_plan_mutation():
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
-    result = execute_execute_plan_mutation(handle, variables, instance_ref=instance.get_ref())
+    result = execute_execute_plan_mutation(
+        pipeline.get_reconstructable_repository(), variables, instance_ref=instance.get_ref()
+    )
     seen_events = set()
     for event in result:
         seen_events.add((event.event_type_value, event.step_key))
@@ -61,12 +60,10 @@ def test_execute_execute_plan_mutation():
 
 def test_execute_execute_plan_mutation_raw():
     pipeline_name = 'sleepy_pipeline'
-    handle = ExecutionTargetHandle.for_pipeline_module(
-        'dagster_examples.toys.sleepy', pipeline_name
-    )
-    pipeline = handle.build_pipeline_definition()
+    pipeline = ReconstructablePipeline.for_module('dagster_examples.toys.sleepy', pipeline_name)
+
     instance = DagsterInstance.local_temp()
-    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
         'executionParams': {
             'environmentConfigData': {},
@@ -75,31 +72,11 @@ def test_execute_execute_plan_mutation_raw():
             'executionMetadata': {'runId': pipeline_run.run_id},
         }
     }
-    result = execute_execute_plan_mutation_raw(handle, variables, instance_ref=instance.get_ref())
+    result = execute_execute_plan_mutation_raw(
+        pipeline.get_reconstructable_repository(), variables, instance_ref=instance.get_ref()
+    )
     seen_events = set()
     for event in result:
         seen_events.add((event.dagster_event.event_type_value, event.step_key))
 
     assert seen_events == EXPECTED_EVENTS
-
-
-# TODO: uncomment when resolving https://github.com/dagster-io/dagster/issues/1876
-# def test_execute_plan_for_unknown_run():
-#     pipeline_name = 'sleepy_pipeline'
-#     handle = ExecutionTargetHandle.for_pipeline_module(
-#         'dagster_examples.toys.sleepy', pipeline_name
-#     )
-#     unknown_run_id = '12345'
-#     variables = {
-#         'executionParams': {
-#             'environmentConfigData': {},
-#             'mode': 'default',
-#             'selector': {'name': pipeline_name},
-#             'executionMetadata': {'runId': unknown_run_id},
-#         }
-#     }
-#     with pytest.raises(DagsterGraphQLClientError) as exc_info:
-#         execute_execute_plan_mutation_raw(handle, variables)
-#     assert str(exc_info.value) == 'Pipeline run {run_id} could not be found.'.format(
-#         run_id=unknown_run_id
-#     )

@@ -2,8 +2,9 @@ import abc
 
 import six
 
-from dagster import ExecutionTargetHandle, check
+from dagster import check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import (
@@ -110,22 +111,23 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
 
 
 class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
-    def __init__(self, handle, execution_manager, instance, reloader=None, version=None):
-        self.repository_definition = handle.build_repository_definition()
+    def __init__(self, recon_repo, execution_manager, instance, reloader=None, version=None):
         super(DagsterGraphQLInProcessRepositoryContext, self).__init__(
-            active_repository_data=active_repository_data_from_def(self.repository_definition),
+            active_repository_data=active_repository_data_from_def(recon_repo.get_definition()),
             instance=instance,
         )
-        self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
         self.reloader = check.opt_inst_param(reloader, 'reloader', Reloader)
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
         )
         self.version = version
-        self._cached_pipelines = {}
 
-    def get_handle(self):
-        return self._handle
+    def get_reconstructable_repo(self):
+        return self._recon_repo
+
+    def get_repository_definition(self):
+        return self._recon_repo.get_definition()
 
     def get_partition_set(self, partition_set_name):
         return next(
@@ -138,39 +140,15 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         )
 
     def get_all_partition_sets(self):
-        return self.repository_definition.partition_set_defs + [
+        repo_def = self.get_repository_definition()
+        return repo_def.partition_set_defs + [
             schedule_def.get_partition_set()
-            for schedule_def in self.repository_definition.schedule_defs
+            for schedule_def in repo_def.schedule_defs
             if isinstance(schedule_def, PartitionScheduleDefinition)
         ]
 
-    def get_repository(self):
-        return self.repository_definition
-
-    def get_pipeline(self, pipeline_name, solid_subset=None):
-        if not pipeline_name in self._cached_pipelines:
-            self._cached_pipelines[pipeline_name] = self._build_pipeline(pipeline_name)
-
-        cached_full_pipeline = self._cached_pipelines[pipeline_name]
-
-        if solid_subset:
-            return cached_full_pipeline.subset_for_execution(solid_subset)
-        else:
-            return cached_full_pipeline
-
-    def _build_pipeline(self, pipeline_name):
-        orig_handle = self.get_handle()
-        if orig_handle.is_resolved_to_pipeline:
-            pipeline_def = orig_handle.build_pipeline_definition()
-            check.invariant(
-                pipeline_def.name == pipeline_name,
-                '''Dagster GraphQL Context resolved pipeline with name {handle_pipeline_name},
-                couldn't resolve {pipeline_name}'''.format(
-                    handle_pipeline_name=pipeline_def.name, pipeline_name=pipeline_name
-                ),
-            )
-            return pipeline_def
-        return self.get_handle().with_pipeline_name(pipeline_name).build_pipeline_definition()
+    def get_reconstructable_pipeline(self, pipeline_name):
+        return self._recon_repo.get_reconstructable_pipeline(pipeline_name)
 
     @property
     def is_reload_supported(self):
@@ -181,7 +159,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.list_param(solid_subset, 'solid_subset', of_type=str)
 
         return ExternalPipeline.from_pipeline_def(
-            self.get_pipeline(name), solid_subset=solid_subset
+            self.get_reconstructable_pipeline(name).get_definition(), solid_subset=solid_subset,
         )
 
     def create_execution_plan_index(
@@ -195,9 +173,9 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         return ExecutionPlanIndex(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 create_execution_plan(
-                    pipeline=self.get_pipeline(
-                        external_pipeline.name, external_pipeline.solid_subset
-                    ),
+                    pipeline=self.get_reconstructable_pipeline(
+                        external_pipeline.name
+                    ).subset_for_execution(external_pipeline.solid_subset),
                     environment_dict=environment_dict,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
@@ -214,7 +192,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
         execution_plan = create_execution_plan(
-            pipeline=self.get_pipeline(external_pipeline.name),
+            pipeline=self.get_reconstructable_pipeline(external_pipeline.name),
             environment_dict=environment_dict,
             mode=pipeline_run.mode,
             step_keys_to_execute=step_keys_to_execute,
@@ -231,12 +209,11 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         self.execution_manager.execute_pipeline(
-            self.get_handle(),
-            self.get_pipeline(external_pipeline.name).subset_for_execution(
+            self.get_reconstructable_pipeline(external_pipeline.name).subset_for_execution(
                 pipeline_run.solid_subset
             )
             if pipeline_run.solid_subset
-            else self.get_pipeline(external_pipeline.name),
+            else self.get_reconstructable_pipeline(external_pipeline.name),
             pipeline_run,
             instance=self.instance,
         )

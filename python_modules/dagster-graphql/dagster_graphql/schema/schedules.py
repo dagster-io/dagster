@@ -85,7 +85,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     def __init__(self, graphene_info, schedule_def):
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
         self._schedule_context = ScheduleExecutionContext(
-            graphene_info.context.instance, graphene_info.context.get_repository()
+            graphene_info.context.instance, graphene_info.context.get_repository_definition()
         )
         self._schedule_def = check.inst_param(schedule_def, 'schedule_def', ScheduleDefinition)
 
@@ -287,11 +287,11 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     # https://github.com/dagster-io/dagster/issues/228
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
-        repository = graphene_info.context.get_repository()
+        repository = graphene_info.context.get_repository_definition()
         return instance.log_path_for_schedule(repository, self._schedule.name)
 
     def resolve_stats(self, graphene_info):
-        repository = graphene_info.context.get_repository()
+        repository = graphene_info.context.get_repository_definition()
         stats = graphene_info.context.instance.get_schedule_tick_stats_by_schedule(
             repository, self._schedule.name
         )
@@ -299,7 +299,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
 
     def resolve_ticks(self, graphene_info, limit=None):
 
-        repository = graphene_info.context.get_repository()
+        repository = graphene_info.context.get_repository_definition()
 
         # TODO: Add cursor limit argument to get_schedule_ticks_by_schedule
         # https://github.com/dagster-io/dagster/issues/2291
@@ -323,7 +323,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         ]
 
     def resolve_ticks_count(self, graphene_info):
-        repository = graphene_info.context.get_repository()
+        repository = graphene_info.context.get_repository_definition()
         ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
             repository, self._schedule.name
         )

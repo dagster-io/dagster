@@ -15,8 +15,8 @@ from dagster import (
     check,
     seven,
 )
-from dagster.cli import load_handle
 from dagster.core.definitions.dependency import SolidHandle
+from dagster.core.definitions.executable import InterProcessExecutablePipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.resources_init import (
@@ -51,8 +51,7 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
 
 class Manager(object):
     def __init__(self):
-        self.handle = None
-        self.pipeline_def = None
+        self.pipeline = None
         self.solid_def = None
         self.in_pipeline = False
         self.marshal_dir = None
@@ -80,9 +79,8 @@ class Manager(object):
         output_log_path=None,
         marshal_dir=None,
         environment_dict=None,
-        handle_kwargs=None,
+        executable_dict=None,
         pipeline_run_dict=None,
-        solid_subset=None,
         solid_handle_kwargs=None,
         instance_ref_dict=None,
     ):
@@ -101,25 +99,12 @@ class Manager(object):
         check.opt_str_param(marshal_dir, 'marshal_dir')
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
         check.dict_param(pipeline_run_dict, 'pipeline_run_dict')
-        check.dict_param(handle_kwargs, 'handle_kwargs')
-        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        check.dict_param(executable_dict, 'executable_dict')
         check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
         check.dict_param(instance_ref_dict, 'instance_ref_dict')
 
-        try:
-            handle = load_handle.handle_for_pipeline_cli_args(
-                handle_kwargs, use_default_repository_yaml=False
-            )
-        except (check.CheckError, load_handle.UsageError) as err:
-            six.raise_from(
-                DagstermillError(
-                    'Cannot invoke a dagstermill solid from an in-memory pipeline that was not loaded '
-                    'from an ExecutionTargetHandle. Run this pipeline using dagit, the dagster CLI, '
-                    'through dagster-graphql, or in-memory after loading it through an '
-                    'ExecutionTargetHandle.'
-                ),
-                err,
-            )
+        pipeline = InterProcessExecutablePipeline.from_dict(executable_dict)
+        pipeline_def = pipeline.get_definition()
 
         try:
             instance_ref = unpack_value(instance_ref_dict)
@@ -132,24 +117,18 @@ class Manager(object):
                 err,
             )
 
-        pipeline_def = check.inst_param(
-            handle.build_pipeline_definition(),
-            'pipeline_def (from handle {handle_dict})'.format(handle_dict=handle.data._asdict()),
-            PipelineDefinition,
-        ).subset_for_execution(solid_subset)
+        pipeline_run = unpack_value(pipeline_run_dict)
 
         solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
         solid_def = pipeline_def.get_solid(solid_handle).definition
 
-        pipeline_run = unpack_value(pipeline_run_dict)
-
         self.marshal_dir = marshal_dir
         self.in_pipeline = True
         self.solid_def = solid_def
-        self.pipeline_def = pipeline_def
+        self.pipeline = pipeline
 
         execution_plan = create_execution_plan(
-            self.pipeline_def,
+            self.pipeline,
             environment_dict,
             mode=pipeline_run.mode,
             step_keys_to_execute=pipeline_run.step_keys_to_execute,
@@ -234,11 +213,9 @@ class Manager(object):
 
         self.in_pipeline = False
         self.solid_def = solid_def
-        self.pipeline_def = pipeline_def
+        self.pipeline = pipeline_def
 
-        execution_plan = create_execution_plan(
-            self.pipeline_def, environment_dict, mode=mode_def.name
-        )
+        execution_plan = create_execution_plan(self.pipeline, environment_dict, mode=mode_def.name)
         with scoped_pipeline_context(
             execution_plan,
             environment_dict,

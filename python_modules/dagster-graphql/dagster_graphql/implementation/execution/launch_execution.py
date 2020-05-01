@@ -103,7 +103,7 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
         graphene_info, pipeline_run.selector.name, pipeline_run.selector.solid_subset
     )
 
-    # Run config valudation
+    # Run config validation
     # If there are any config errors, then inject them into the event log
     validated_config = ensure_valid_config(
         external_pipeline, pipeline_run.mode, pipeline_run.environment_dict
@@ -115,7 +115,7 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
         # graphql error.
 
         # We currently re-use the engine events machinery to add the error to the event log, but
-        # may need to create a new event type and instance method to handle these erros.
+        # may need to create a new event type and instance method to handle these errors.
         invalid_config_exception = DagsterInvalidConfigError(
             'Error in config for pipeline {}'.format(external_pipeline.name),
             validated_config.errors,

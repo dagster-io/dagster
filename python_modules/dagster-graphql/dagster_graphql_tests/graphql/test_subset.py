@@ -28,6 +28,10 @@ query EnvironmentQuery($pipelineName: String!, $solidSubset: [String!]){
         ... on InvalidSubsetError {
             message
         }
+        ... on PythonError {
+            message
+            stack
+        }
     }
 }
 '''

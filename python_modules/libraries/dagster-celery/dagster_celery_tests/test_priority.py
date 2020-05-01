@@ -12,15 +12,9 @@ from click.testing import CliRunner
 from dagster_celery import celery_executor
 from dagster_celery.cli import main
 
-from dagster import (
-    ExecutionTargetHandle,
-    ModeDefinition,
-    default_executors,
-    execute_pipeline,
-    pipeline,
-    seven,
-    solid,
-)
+from dagster import ModeDefinition, default_executors, execute_pipeline, pipeline, seven, solid
+from dagster.core.definitions.pointer import FileCodePointer
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
@@ -47,11 +41,10 @@ def start_celery_worker():
 
 
 def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
-    handle = ExecutionTargetHandle.for_pipeline_python_file(__file__, pipeline_name)
-    pipeline_def = handle.build_pipeline_definition()
+    pipe = ReconstructablePipeline(FileCodePointer(__file__, pipeline_name))
     instance = DagsterInstance.local_temp(tempdir=tempdir)
     return execute_pipeline(
-        pipeline_def,
+        pipe,
         environment_dict={
             'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
             'execution': {'celery': {}},
@@ -63,9 +56,7 @@ def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
 
 def execute_eagerly_on_celery(tempdir, pipeline_name, tags=None):
     return execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, pipeline_name
-        ).build_pipeline_definition(),
+        ReconstructablePipeline(FileCodePointer(__file__, pipeline_name)),
         environment_dict={
             'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
             'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},

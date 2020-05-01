@@ -2,16 +2,18 @@ import dagster_pandas as dagster_pd
 from dagster_dask import dask_executor
 
 from dagster import (
-    ExecutionTargetHandle,
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
     file_relative_path,
     pipeline,
+    reconstructable,
     seven,
     solid,
 )
 from dagster.core.definitions.executor import default_executors
+from dagster.core.definitions.pointer import FileCodePointer
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
 
@@ -26,12 +28,14 @@ def dask_engine_pipeline():
     return simple()
 
 
+def get_dask_engine_pipeline():
+    return dask_engine_pipeline
+
+
 def test_execute_on_dask():
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, 'dask_engine_pipeline'
-            ).build_pipeline_definition(),
+            reconstructable(get_dask_engine_pipeline),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'dask': {'config': {'timeout': 30}}},
@@ -49,9 +53,7 @@ def dask_composite_pipeline():
 
 def test_composite_execute():
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, 'dask_composite_pipeline'
-        ).build_pipeline_definition(),
+        reconstructable(dask_composite_pipeline),
         environment_dict={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'timeout': 30}}},
@@ -81,9 +83,7 @@ def test_pandas_dask():
     }
 
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_python_file(
-            __file__, pandas_pipeline.name
-        ).build_pipeline_definition(),
+        ReconstructablePipeline(FileCodePointer(__file__, pandas_pipeline.name)),
         environment_dict={
             'storage': {'filesystem': {}},
             'execution': {'dask': {'config': {'timeout': 30}}},

@@ -1,10 +1,10 @@
 from dagster import (
-    ExecutionTargetHandle,
     Field,
     Int,
     ModeDefinition,
     execute_pipeline,
     pipeline,
+    reconstructable,
     resource,
     solid,
 )
@@ -51,6 +51,6 @@ def resource_pipeline():
 
 if __name__ == '__main__':
     result = execute_pipeline(
-        ExecutionTargetHandle.for_pipeline_fn(resource_pipeline).build_pipeline_definition(),
+        reconstructable(resource_pipeline),
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocessing': {}}},
     )

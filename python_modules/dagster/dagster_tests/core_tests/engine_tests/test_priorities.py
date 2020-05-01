@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, ExecutionTargetHandle, execute_pipeline, pipeline, solid
+from dagster import DagsterInstance, execute_pipeline, pipeline, reconstructable, solid
 
 
 @solid(tags={'dagster/priority': '-1'})
@@ -35,10 +35,12 @@ def test_priorities():
     ] == ['high', 'high_2', 'none', 'none_2', 'low', 'low_2']
 
 
+def get_priority_test():
+    return priority_test
+
+
 def test_priorities_mp():
-    pipe = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'priority_test'
-    ).build_pipeline_definition()
+    pipe = reconstructable(get_priority_test)
     result = execute_pipeline(
         pipe,
         {

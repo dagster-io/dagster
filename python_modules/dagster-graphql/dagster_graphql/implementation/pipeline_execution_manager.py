@@ -8,7 +8,8 @@ from queue import Empty
 import gevent
 import six
 
-from dagster import DagsterInstance, ExecutionTargetHandle, PipelineDefinition, PipelineRun, check
+from dagster import DagsterInstance, PipelineRun, check
+from dagster.core.definitions.executable import ExecutablePipeline, InterProcessExecutablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run
@@ -18,7 +19,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 class PipelineExecutionManager(six.with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
-    def execute_pipeline(self, handle, pipeline_def, pipeline_run, instance):
+    def execute_pipeline(self, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
 
     @abc.abstractmethod
@@ -42,13 +43,14 @@ class SynchronousExecutionManager(PipelineExecutionManager):
     def __init__(self):
         self._active = set()
 
-    def execute_pipeline(self, _, pipeline_def, pipeline_run, instance):
-        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    def execute_pipeline(self, pipeline, pipeline_run, instance):
+        check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         check.inst_param(instance, 'instance', DagsterInstance)
 
         self._active.add(pipeline_run.run_id)
-        result = execute_run(pipeline_def, pipeline_run, instance)
+
+        result = execute_run(pipeline, pipeline_run, instance)
         self._active.remove(pipeline_run.run_id)
         return result
 
@@ -151,14 +153,14 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         '''
         self._check_for_zombies()
 
-    def execute_pipeline(self, handle, pipeline_def, pipeline_run, instance):
+    def execute_pipeline(self, pipeline, pipeline_run, instance):
         '''Subclasses must implement this method.'''
-        check.inst_param(handle, 'handle', ExecutionTargetHandle)
+        check.inst_param(pipeline, 'pipeline', InterProcessExecutablePipeline)
         term_event = self._multiprocessing_context.Event()
         mp_process = self._multiprocessing_context.Process(
             target=self.__class__.in_mp_process,
             kwargs={
-                'handle': handle,
+                'pipeline_dict': pipeline.to_dict(),
                 'pipeline_run': pipeline_run,
                 'instance_ref': instance.get_ref(),
                 'term_event': term_event,
@@ -236,12 +238,11 @@ class SubprocessExecutionManager(PipelineExecutionManager):
             return run_id in self._living_process_by_run_id
 
     @classmethod
-    def in_mp_process(cls, handle, pipeline_run, instance_ref, term_event):
+    def in_mp_process(cls, pipeline_dict, pipeline_run, instance_ref, term_event):
         """
         Execute pipeline using message queue as a transport
         """
         pipeline_name = pipeline_run.pipeline_name
-
         instance = DagsterInstance.from_ref(instance_ref)
         pid = os.getpid()
         instance.report_engine_event(
@@ -254,8 +255,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         start_termination_thread(term_event)
 
         try:
-            handle.build_repository_definition()
-            pipeline_def = handle.with_pipeline_name(pipeline_name).build_pipeline_definition()
+            pipeline = InterProcessExecutablePipeline.from_dict(pipeline_dict)
         except Exception:  # pylint: disable=broad-except
             instance.report_engine_event(
                 'Failed attempting to load pipeline "{}"'.format(pipeline_name),
@@ -267,7 +267,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
         try:
             return execute_run(
-                pipeline_def.subset_for_execution(pipeline_run.selector.solid_subset),
+                pipeline.subset_for_execution(pipeline_run.selector.solid_subset),
                 pipeline_run,
                 instance,
             )
@@ -329,17 +329,16 @@ class QueueingSubprocessExecutionManager(PipelineExecutionManager):
                 self._start_pipeline_execution(job_args)
 
     def _start_pipeline_execution(self, job_args):
-        handle = job_args['handle']
+        pipeline_dict = job_args['pipeline_dict']
         pipeline_run = job_args['pipeline_run']
-        pipeline = handle.build_repository_definition().get_pipeline(pipeline_run.pipeline_name)
+        pipeline = InterProcessExecutablePipeline.from_dict(pipeline_dict)
         instance = DagsterInstance.from_ref(job_args['instance_ref'])
-        self._delegate.execute_pipeline(handle, pipeline, pipeline_run, instance)
+        self._delegate.execute_pipeline(pipeline, pipeline_run, instance)
 
-    def execute_pipeline(self, handle, pipeline_def, pipeline_run, instance):
-        check.inst_param(handle, 'handle', ExecutionTargetHandle)
-        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    def execute_pipeline(self, pipeline, pipeline_run, instance):
+        check.inst_param(pipeline, 'pipeline', InterProcessExecutablePipeline)
         job_args = {
-            'handle': handle,
+            'pipeline_dict': pipeline.to_dict(),
             'pipeline_run': pipeline_run,
             'instance_ref': instance.get_ref(),
         }

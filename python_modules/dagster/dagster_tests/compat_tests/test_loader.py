@@ -1,5 +1,4 @@
 from dagster import (
-    ExecutionTargetHandle,
     PartitionSetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
@@ -8,13 +7,14 @@ from dagster import (
     repository_partitions,
     schedules,
 )
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.utils import file_relative_path
 
 
 def test_deprecated_load():
-    repo = ExecutionTargetHandle.for_repo_yaml(
+    repo = ReconstructableRepository.from_yaml(
         file_relative_path(__file__, 'repository.yaml')
-    ).build_repository_definition()
+    ).get_definition()
     assert len(repo.get_all_pipelines()) == 1
     assert len(repo.schedule_defs) == 1
     assert len(repo.partition_set_defs) == 1

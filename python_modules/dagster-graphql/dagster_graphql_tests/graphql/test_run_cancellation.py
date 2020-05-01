@@ -129,7 +129,7 @@ def test_run_finished():
     instance = DagsterInstance.local_temp()
     context = define_test_subprocess_context(instance)
     pipeline_result = execute_pipeline(
-        context.repository_definition.get_pipeline('noop_pipeline'), instance=instance
+        context.get_reconstructable_pipeline('noop_pipeline'), instance=instance
     )
     assert pipeline_result.success
     assert pipeline_result.run_id

@@ -5,11 +5,10 @@ from dagster import seven
 RESERVED_INPUT_NAMES = [
     '__dm_context',
     '__dm_dagstermill',
-    '__dm_handle_kwargs',
+    '__dm_executable_dict',
     '__dm_json',
     '__dm_pipeline_run_dict',
     '__dm_solid_handle_kwargs',
-    '__dm_solid_subset',
     '__dm_instance_ref_dict',
 ]
 
@@ -31,18 +30,16 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
     @classmethod
     def codify(cls, parameters):
         assert '__dm_context' in parameters
-        assert '__dm_handle_kwargs' in parameters
+        assert '__dm_executable_dict' in parameters
         assert '__dm_pipeline_run_dict' in parameters
         assert '__dm_solid_handle_kwargs' in parameters
-        assert '__dm_solid_subset' in parameters
         assert '__dm_instance_ref_dict' in parameters
 
         context_args = parameters['__dm_context']
         pipeline_context_args = dict(
-            handle_kwargs=parameters['__dm_handle_kwargs'],
+            executable_dict=parameters['__dm_executable_dict'],
             pipeline_run_dict=parameters['__dm_pipeline_run_dict'],
             solid_handle_kwargs=parameters['__dm_solid_handle_kwargs'],
-            solid_subset=parameters['__dm_solid_subset'],
             instance_ref_dict=parameters['__dm_instance_ref_dict'],
             **context_args
         )

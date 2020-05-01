@@ -39,7 +39,7 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
-from .executable import ExecutablePipeline
+from .executable import ExecutablePipeline, InterProcessExecutablePipeline
 from .executor import (
     ExecutorDefinition,
     default_executors,
@@ -47,7 +47,6 @@ from .executor import (
     in_process_executor,
     multiprocess_executor,
 )
-from .handle import ExecutionTargetHandle, LoaderEntrypoint
 from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
@@ -55,6 +54,7 @@ from .output import OutputDefinition, OutputMapping
 from .partition import Partition, PartitionSetDefinition, repository_partitions
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
+from .reconstructable import reconstructable
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
 from .schedule import ScheduleDefinition, ScheduleExecutionContext

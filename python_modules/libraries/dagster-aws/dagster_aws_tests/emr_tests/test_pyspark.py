@@ -17,9 +17,9 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
+    reconstructable,
     solid,
 )
-from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.errors import DagsterSubprocessError
 from dagster.seven import mock
@@ -136,11 +136,8 @@ def test_pyspark_emr(mock_wait, mock_get_step_events):
     context = create_test_pipeline_execution_context()
     cluster_id = job_runner.run_job_flow(context.log, run_job_flow_args)
 
-    pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-        define_do_nothing_pipe
-    ).build_pipeline_definition()
     result = execute_pipeline(
-        pipeline=pipeline_def,
+        pipeline=reconstructable(define_do_nothing_pipe),
         mode='prod',
         environment_dict={
             'resources': {
@@ -213,14 +210,8 @@ def sync_code():
 def test_do_it_live_emr():
     sync_code()
 
-    # Retrieving the pipeline this way stores pipeline definition in the ExecutionTargetHandle
-    # cache, where it can be retrieved and sent to the remote cluster at launch time.
-    pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-        define_pyspark_pipe
-    ).build_pipeline_definition()
-
     result = execute_pipeline(
-        pipeline_def,
+        reconstructable(define_pyspark_pipe),
         mode='prod',
         environment_dict={
             'solids': {'blah': {'config': {'foo': 'a string', 'bar': 123}}},

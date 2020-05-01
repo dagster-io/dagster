@@ -501,8 +501,6 @@ def _subset_for_execution(pipeline_def, solid_names):
     Only includes the solids which are in solid_names.
     '''
 
-    from dagster.core.definitions.handle import ExecutionTargetHandle
-
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.list_param(solid_names, 'solid_names', of_type=str)
 
@@ -537,9 +535,6 @@ def _subset_for_execution(pipeline_def, solid_names):
         dependencies=deps,
         _parent_pipeline_def=pipeline_def,
     )
-    handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
-    if handle:
-        ExecutionTargetHandle.cache_handle(sub_pipeline_def, handle, solid_names=solid_names)
 
     return sub_pipeline_def
 

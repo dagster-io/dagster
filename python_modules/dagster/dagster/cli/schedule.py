@@ -6,7 +6,7 @@ import click
 import six
 
 from dagster import DagsterInvariantViolationError, check
-from dagster.cli.load_handle import handle_for_repo_cli_args
+from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
     ScheduleStatus,
@@ -31,7 +31,7 @@ def create_schedule_cli_group():
 
 # With the SystemCronScheduler, we currently only target a repository.yaml file since we need
 # an absolute path to the repository that we can use in the cron job bash script. When using
-# the combination of --python-file --fn-name flags, ExecutionTargetHandle doesn't contain an
+# the combination of --python-file --fn-name flags, ReconstructableRepository doesn't contain an
 # absolute path to the python file, but we can eventually change that to support these flags.
 REPO_TARGET_WARNING = 'Can only use --repository-yaml/-y'
 
@@ -103,7 +103,7 @@ def print_changes(repository, instance, print_fn=print, preview=False):
 def check_handle_and_scheduler(handle, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
     if not repository.schedule_defs:
         raise click.UsageError(
             "There are no schedules defined for repository {name}.".format(name=repository.name)
@@ -127,11 +127,11 @@ def schedule_preview_command(**kwargs):
 
 
 def execute_preview_command(cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
 
     print_changes(repository, instance, print_fn, preview=True)
 
@@ -152,13 +152,13 @@ def schedule_up_command(preview, **kwargs):
 
 
 def execute_up_command(preview, cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
     python_path = sys.executable
-    repository_path = handle.data.repository_yaml
+    repository_path = handle.yaml_path
 
     print_changes(repository, instance, print_fn, preview=preview)
     if preview:
@@ -185,11 +185,11 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
 
     if not name_filter:
         title = 'Repository {name}'.format(name=repository.name)
@@ -256,11 +256,11 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
 
     if all_flag:
         for schedule in instance.all_schedules(repository):
@@ -288,11 +288,11 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
 
     try:
         instance.stop_schedule(repository, schedule_name)
@@ -317,11 +317,11 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 
-    repository = handle.build_repository_definition()
+    repository = handle.get_definition()
 
     if all_running_flag:
         for schedule in instance.all_schedules(repository):
@@ -360,7 +360,7 @@ def schedule_wipe_command(**kwargs):
 
 
 def execute_wipe_command(cli_args, print_fn):
-    handle = handle_for_repo_cli_args(cli_args)
+    handle = recon_repo_for_cli_args(cli_args)
     instance = DagsterInstance.get()
     check_handle_and_scheduler(handle, instance)
 

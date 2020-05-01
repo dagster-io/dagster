@@ -176,7 +176,7 @@ def _submit_task(app, pipeline_context, step, queue, priority):
 
     task_signature = task.si(
         instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
-        handle_dict=pipeline_context.execution_target_handle.to_dict(),
+        executable_dict=pipeline_context.pipeline.to_dict(),
         run_id=pipeline_context.pipeline_run.run_id,
         step_keys=[step.key],
         retries_dict=pipeline_context.executor_config.retries.for_inner_plan().to_config(),

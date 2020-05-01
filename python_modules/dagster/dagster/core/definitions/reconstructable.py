@@ -1,8 +1,11 @@
 import os
+import warnings
 from collections import namedtuple
 
 from dagster import check
+from dagster.core.definitions.partition import RepositoryPartitionsHandle
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.scheduler import SchedulerHandle
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import lru_cache
 from dagster.utils import load_yaml_from_path
@@ -19,24 +22,40 @@ EPHEMERAL_NAME = '<<unnamed>>'
 
 
 @whitelist_for_serdes
-class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointer yaml_path')):
-    def __new__(cls, pointer, yaml_path=None):
+class ReconstructableRepository(
+    namedtuple(
+        '_ReconstructableRepository', 'pointer yaml_path scheduler_pointer partitions_pointer'
+    )
+):
+    def __new__(cls, pointer, yaml_path=None, scheduler_pointer=None, partitions_pointer=None):
         return super(ReconstructableRepository, cls).__new__(
             cls,
             pointer=check.inst_param(pointer, 'pointer', CodePointer),
             yaml_path=check.opt_str_param(yaml_path, 'yaml_path'),
+            scheduler_pointer=check.opt_inst_param(
+                scheduler_pointer, 'scheduler_pointer', CodePointer
+            ),
+            partitions_pointer=check.opt_inst_param(
+                partitions_pointer, 'partitions_pointer', CodePointer
+            ),
         )
 
     @lru_cache(maxsize=1)
     def get_definition(self):
-        return _load_repo(self.pointer)
+        repo = _load_repo(self.pointer)
+
+        if self.partitions_pointer:
+            partition_handle = _backcompat_load(self.partitions_pointer, RepositoryPartitionsHandle)
+            repo.backcompat_add_partition_set_defs(partition_handle.get_partition_sets())
+
+        if self.scheduler_pointer:
+            schedule_handle = _backcompat_load(self.scheduler_pointer, SchedulerHandle)
+            repo.backcompat_add_schedule_defs(schedule_handle.schedule_defs)
+
+        return repo
 
     def get_reconstructable_pipeline(self, name):
         return ReconstructablePipelineFromRepo(self, name)
-
-    def get_only_reconstructable_pipeline(self):
-        name = self.get_definition().get_only_pipeline().name
-        return self.get_reconstructable_pipeline(name)
 
     @classmethod
     def for_file(cls, file, fn_name):
@@ -56,6 +75,8 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
         file_name = check.opt_str_elem(repository_config, 'file')
         fn_name = check.str_elem(repository_config, 'fn')
 
+        scheduler_pointer, partitions_pointer = _handle_backcompat_pointers(config, file_path)
+
         if module_name:
             pointer = ModuleCodePointer(module_name, fn_name)
         else:
@@ -63,7 +84,12 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
             file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
             pointer = FileCodePointer(file_name, fn_name)
 
-        return cls(pointer=pointer, yaml_path=file_path)
+        return cls(
+            pointer=pointer,
+            yaml_path=file_path,
+            scheduler_pointer=scheduler_pointer,
+            partitions_pointer=partitions_pointer,
+        )
 
 
 @whitelist_for_serdes
@@ -206,3 +232,67 @@ def _load_repo(pointer):
         )
 
     return repo_def
+
+
+def _backcompat_load(pointer, klass):
+    target = pointer.load_target()
+
+    if isinstance(target, klass):
+        return target
+
+    if callable(target):
+        handle = target()
+        if not isinstance(handle, klass):
+            raise DagsterInvariantViolationError(
+                '{fn_name} is a function but must return a {klass.__name__}.'.format(
+                    fn_name=pointer.fn_name, klass=klass
+                )
+            )
+        return handle
+
+    raise DagsterInvariantViolationError(
+        '{fn_name} must be a function that returns a {klass.__name__}.'.format(
+            fn_name=pointer.fn_name, klass=klass
+        )
+    )
+
+
+def _handle_backcompat_pointers(config, file_path):
+    check.dict_param(config, 'config')
+    partitions = config.get('partitions')
+    scheduler = config.get('scheduler')
+    if not (partitions or scheduler):
+        return None, None
+
+    warnings.warn(
+        '"scheduler" and "partitions" keys in repository.yaml are deprecated. '
+        'Add definitions directly via RepositoryDefinition'
+    )
+
+    scheduler_pointer = None
+    partitions_pointer = None
+    if scheduler:
+        module_name = check.opt_str_elem(scheduler, 'module')
+        file_name = check.opt_str_elem(scheduler, 'file')
+        fn_name = check.str_elem(scheduler, 'fn')
+
+        if module_name:
+            scheduler_pointer = ModuleCodePointer(module_name, fn_name)
+        else:
+            # rebase file in config off of the path in the config file
+            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
+            scheduler_pointer = FileCodePointer(file_name, fn_name)
+
+    if partitions:
+        module_name = check.opt_str_elem(partitions, 'module')
+        file_name = check.opt_str_elem(partitions, 'file')
+        fn_name = check.str_elem(partitions, 'fn')
+
+        if module_name:
+            partitions_pointer = ModuleCodePointer(module_name, fn_name)
+        else:
+            # rebase file in config off of the path in the config file
+            file_name = os.path.join(os.path.dirname(os.path.abspath(file_path)), file_name)
+            partitions_pointer = FileCodePointer(file_name, fn_name)
+
+    return (scheduler_pointer, partitions_pointer)

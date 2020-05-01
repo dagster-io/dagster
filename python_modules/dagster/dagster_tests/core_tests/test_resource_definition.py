@@ -3,7 +3,6 @@ import pytest
 from dagster import (
     DagsterEventType,
     DagsterResourceFunctionError,
-    ExecutionTargetHandle,
     Field,
     Int,
     ModeDefinition,
@@ -12,6 +11,7 @@ from dagster import (
     String,
     execute_pipeline,
     execute_pipeline_iterator,
+    reconstructable,
     resource,
     solid,
 )
@@ -708,9 +708,7 @@ def define_resource_teardown_failure_pipeline():
 
 
 def test_multiprocessing_resource_teardown_failure():
-    pipeline = ExecutionTargetHandle.for_pipeline_python_file(
-        __file__, 'define_resource_teardown_failure_pipeline'
-    ).build_pipeline_definition()
+    pipeline = reconstructable(define_resource_teardown_failure_pipeline)
     result = execute_pipeline(
         pipeline,
         environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},

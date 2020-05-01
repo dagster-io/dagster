@@ -8,11 +8,11 @@ from dagster import (
     RetryRequested,
     execute_pipeline,
     pipeline,
+    reconstructable,
     resource,
     seven,
     solid,
 )
-from dagster.core.definitions.handle import ExecutionTargetHandle
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan
@@ -104,10 +104,6 @@ def define_basic_pipeline():
 
 
 def initialize_step_context(scratch_dir):
-    pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-        define_basic_pipeline
-    ).build_pipeline_definition()
-
     pipeline_run = PipelineRun(
         pipeline_name='foo_pipeline',
         run_id=str(uuid.uuid4()),
@@ -115,7 +111,9 @@ def initialize_step_context(scratch_dir):
         mode='external',
     )
 
-    plan = create_execution_plan(pipeline_def, pipeline_run.environment_dict, mode='external')
+    plan = create_execution_plan(
+        reconstructable(define_basic_pipeline), pipeline_run.environment_dict, mode='external'
+    )
 
     initialization_manager = pipeline_initialization_manager(
         plan, pipeline_run.environment_dict, pipeline_run, DagsterInstance.ephemeral(),
@@ -165,11 +163,10 @@ def test_local_external_step_launcher():
 @pytest.mark.parametrize('mode', ['external', 'internal_and_external'])
 def test_pipeline(mode):
     with seven.TemporaryDirectory() as tmpdir:
-        pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-            define_basic_pipeline
-        ).build_pipeline_definition()
         result = execute_pipeline(
-            pipeline=pipeline_def, mode=mode, environment_dict=make_environment_dict(tmpdir, mode),
+            pipeline=reconstructable(define_basic_pipeline),
+            mode=mode,
+            environment_dict=make_environment_dict(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3
@@ -178,11 +175,10 @@ def test_pipeline(mode):
 def test_launcher_requests_retry():
     mode = 'request_retry'
     with seven.TemporaryDirectory() as tmpdir:
-        pipeline_def = ExecutionTargetHandle.for_pipeline_fn(
-            define_basic_pipeline
-        ).build_pipeline_definition()
         result = execute_pipeline(
-            pipeline=pipeline_def, mode=mode, environment_dict=make_environment_dict(tmpdir, mode),
+            pipeline=reconstructable(define_basic_pipeline),
+            mode=mode,
+            environment_dict=make_environment_dict(tmpdir, mode),
         )
         assert result.result_for_solid('return_two').output_value() == 2
         assert result.result_for_solid('add_one').output_value() == 3
