@@ -173,14 +173,13 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
         # Return unique name of the solid and its lineage (omits solid definition names)
         return self.parent.to_string() + '.' + self.name if self.parent else self.name
 
-    def is_or_descends_from(self, handle_str):
-        check.str_param(handle_str, 'handle_str')
+    def is_or_descends_from(self, handle):
+        check.inst_param(handle, 'handle', SolidHandle)
 
-        handle_path = handle_str.split('.')
-        for idx in range(len(handle_path)):
+        for idx in range(len(handle.path)):
             if idx >= len(self.path):
                 return False
-            if self.path[idx] != handle_path[idx]:
+            if self.path[idx] != handle.path[idx]:
                 return False
         return True
 

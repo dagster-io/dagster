@@ -196,6 +196,10 @@ def filtered_system_dict(fields):
 
 
 def construct_leaf_solid_config(solid, handle, dependency_structure, config_field):
+    check.inst_param(solid, 'solid', Solid)
+    check.inst_param(handle, 'handle', SolidHandle)
+    check.inst_param(dependency_structure, 'dependency_structure', DependencyStructure)
+
     return filtered_system_dict(
         {
             'inputs': get_inputs_field(solid, handle, dependency_structure),

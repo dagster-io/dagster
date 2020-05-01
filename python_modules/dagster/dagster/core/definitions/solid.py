@@ -248,7 +248,7 @@ class SolidDefinition(ISolidDefinition):
         metadata=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, 'compute_fn')
-        self._config_field = check_user_facing_opt_config_param(config, 'config',)
+        self._config_field = check_user_facing_opt_config_param(config, 'config')
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, 'required_resource_keys', of_type=str)
         )
@@ -431,14 +431,18 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return list(self._solid_dict.values())
 
     def solid_named(self, name):
+        check.str_param(name, 'name')
+
         return self._solid_dict[name]
 
     def has_solid_named(self, name):
         check.str_param(name, 'name')
+
         return name in self._solid_dict
 
     def get_solid(self, handle):
         check.inst_param(handle, 'handle', SolidHandle)
+
         current = handle
         lineage = []
         while current:
@@ -488,24 +492,32 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         )
 
     def mapped_input(self, solid_name, input_name):
+        check.str_param(solid_name, 'solid_name')
+        check.str_param(input_name, 'input_name')
+
         for mapping in self._input_mappings:
             if mapping.solid_name == solid_name and mapping.input_name == input_name:
                 return mapping
         return None
 
     def get_output_mapping(self, output_name):
+        check.str_param(output_name, 'output_name')
         for mapping in self._output_mappings:
             if mapping.definition.name == output_name:
                 return mapping
         return None
 
     def get_input_mapping(self, input_name):
+        check.str_param(input_name, 'input_name')
         for mapping in self._input_mappings:
             if mapping.definition.name == input_name:
                 return mapping
         return None
 
     def resolve_output_to_origin(self, output_name, handle):
+        check.str_param(output_name, 'output_name')
+        check.inst_param(handle, 'handle', SolidHandle)
+
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, 'Can only resolve outputs for valid output names')
         mapped_solid = self.solid_named(mapping.solid_name)
@@ -514,6 +526,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         )
 
     def input_has_default(self, input_name):
+        check.str_param(input_name, 'input_name')
+
         # base case
         if self.input_def_named(input_name).has_default_value:
             return True
@@ -525,6 +539,8 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return mapped_solid.definition.input_has_default(mapping.input_name)
 
     def default_value_for_input(self, input_name):
+        check.str_param(input_name, 'input_name')
+
         # base case
         if self.input_def_named(input_name).has_default_value:
             return self.input_def_named(input_name).default_value

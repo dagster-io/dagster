@@ -129,7 +129,7 @@ class MultiprocessExecutorConfig(ExecutorConfig):
     def __init__(self, handle, retries, max_concurrent=None):
         from dagster import ExecutionTargetHandle
 
-        self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle,)
+        self._handle = check.inst_param(handle, 'handle', ExecutionTargetHandle)
         self.retries = check.inst_param(retries, 'retries', Retries)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
         self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')

@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import six
+
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, Solid, SolidHandle
 from dagster.core.definitions.events import ObjectStoreOperation
@@ -65,21 +67,21 @@ class PipelineExecutionResult(object):
                 )
             )
 
-        return self.result_for_handle(name)
+        return self.result_for_handle(SolidHandle(name, None))
 
-    def output_for_solid(self, handle, output_name=DEFAULT_OUTPUT):
+    def output_for_solid(self, handle_str, output_name=DEFAULT_OUTPUT):
         '''Get the output of a solid by its solid handle string and output name.
 
         Args:
-            handle (str): The string handle for the solid.
+            handle_str (str): The string handle for the solid.
             output_name (str): Optional. The name of the output, default to DEFAULT_OUTPUT.
 
         Returns:
             The output value for the handle and output_name.
         '''
-        check.str_param(handle, 'handle')
+        check.str_param(handle_str, 'handle_str')
         check.str_param(output_name, 'output_name')
-        return self.result_for_handle(handle).output_value(output_name)
+        return self.result_for_handle(SolidHandle.from_string(handle_str)).output_value(output_name)
 
     @property
     def solid_result_list(self):
@@ -88,24 +90,29 @@ class PipelineExecutionResult(object):
         return [self.result_for_solid(solid.name) for solid in self.pipeline.solids]
 
     def result_for_handle(self, handle):
-        '''Get the result of a solid by its solid handle string.
+        '''Get the result of a solid by its solid handle.
 
         This allows indexing into top-level solids to retrieve the results of children of
         composite solids.
 
         Args:
-            handle (str): The string handle for the solid.
+            handle (Union[str,SolidHandle]): The handle for the solid.
 
         Returns:
             Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of the given
             solid.
         '''
-        check.str_param(handle, 'handle')
+        if isinstance(handle, six.string_types):
+            handle = SolidHandle.from_string(handle)
+        else:
+            check.inst_param(handle, 'handle', SolidHandle)
 
-        solid = self.pipeline.get_solid(SolidHandle.from_string(handle))
+        solid = self.pipeline.get_solid(handle)
         if not solid:
             raise DagsterInvariantViolationError(
-                'Can not find solid handle {handle} in pipeline.'.format(handle=handle)
+                'Can not find solid handle {handle_str} in pipeline.'.format(
+                    handle_str=handle.to_string()
+                )
             )
 
         events_by_kind = defaultdict(list)
@@ -121,7 +128,7 @@ class PipelineExecutionResult(object):
                     if event.solid_handle.is_or_descends_from(handle):
                         events.append(event)
             return CompositeSolidExecutionResult(
-                solid, handle, events, events_by_kind, self.reconstruct_context
+                solid, handle.to_string(), events, events_by_kind, self.reconstruct_context
             )
 
         return SolidExecutionResult(solid, events_by_kind, self.reconstruct_context)
@@ -133,14 +140,14 @@ class CompositeSolidExecutionResult(object):
     Users should not instantiate this class.
     '''
 
-    def __init__(self, solid, handle, event_list, step_events_by_kind, reconstruct_context):
+    def __init__(self, solid, handle_str, event_list, step_events_by_kind, reconstruct_context):
         check.inst_param(solid, 'solid', Solid)
         check.invariant(
             solid.is_composite,
             desc='Tried to instantiate a CompositeSolidExecutionResult with a noncomposite solid',
         )
         self.solid = solid
-        self.handle = check.str_param(handle, 'handle')
+        self.handle_str = check.str_param(handle_str, 'handle_str')
         self.event_list = check.list_param(event_list, 'step_event_list', of_type=DagsterEvent)
         self.step_events_by_kind = check.dict_param(
             step_events_by_kind, 'step_events_by_kind', key_type=StepKind, value_type=list
@@ -197,29 +204,31 @@ class CompositeSolidExecutionResult(object):
         top level solid.'''
         return [self.result_for_solid(solid.name) for solid in self.solid.definition.solids]
 
-    def result_for_handle(self, handle):
+    def result_for_handle(self, handle_str):
         '''Get the result of a solid by its solid handle string.
 
         This allows indexing into top-level solids to retrieve the results of children of
         composite solids.
 
         Args:
-            handle (str): The string handle for the solid.
+            handle_str (str): The string handle for the solid.
 
         Returns:
             [CompositeSolidExecutionResult, SolidExecutionResult]: The result of the given solid.
         '''
-        check.str_param(handle, 'handle')
+        check.str_param(handle_str, 'handle_str')
 
-        solid = self.solid.definition.get_solid(SolidHandle.from_string(handle))
+        solid = self.solid.definition.get_solid(SolidHandle.from_string(handle_str))
 
-        return self._result_for_handle(solid, '.'.join([self.handle, handle]))
+        return self._result_for_handle(solid, '.'.join([self.handle_str, handle_str]))
 
-    def _result_for_handle(self, solid, handle):
+    def _result_for_handle(self, solid, handle_str):
         if not solid:
             raise DagsterInvariantViolationError(
-                'Can not find solid handle {handle} in pipeline.'.format(handle=handle)
+                'Can not find solid handle {handle_str} in pipeline.'.format(handle_str=handle_str)
             )
+
+        handle = SolidHandle.from_string(handle_str)
 
         events_by_kind = defaultdict(list)
         for event in self.event_list:
@@ -234,22 +243,31 @@ class CompositeSolidExecutionResult(object):
                     if event.solid_handle.is_or_descends_from(handle):
                         events.append(event)
             return CompositeSolidExecutionResult(
-                solid, handle, events, events_by_kind, self.reconstruct_context
+                solid, handle_str, events, events_by_kind, self.reconstruct_context
             )
 
         return SolidExecutionResult(solid, events_by_kind, self.reconstruct_context)
 
     def output_values_for_solid(self, name):
+        check.str_param(name, 'name')
         return self.result_for_solid(name).output_values
 
-    def output_values_for_handle(self, handle):
-        return self.result_for_handle(handle).output_values
+    def output_values_for_handle(self, handle_str):
+        check.str_param(handle_str, 'handle_str')
+
+        return self.result_for_handle(handle_str).output_values
 
     def output_value_for_solid(self, name, output_name=DEFAULT_OUTPUT):
+        check.str_param(name, 'name')
+        check.str_param(output_name, 'output_name')
+
         return self.result_for_solid(name).output_value(output_name)
 
-    def output_value_for_handle(self, handle, output_name=DEFAULT_OUTPUT):
-        return self.result_for_handle(handle).output_value(output_name)
+    def output_value_for_handle(self, handle_str, output_name=DEFAULT_OUTPUT):
+        check.str_param(handle_str, 'handle_str')
+        check.str_param(output_name, 'output_name')
+
+        return self.result_for_handle(handle_str).output_value(output_name)
 
     @property
     def output_values(self):
@@ -281,7 +299,7 @@ class CompositeSolidExecutionResult(object):
 
         return self._result_for_handle(
             self.solid.definition.solid_named(output_mapping.solid_name),
-            '.'.join([self.handle, output_mapping.solid_name]),
+            '.'.join([self.handle_str, output_mapping.solid_name]),
         ).output_value(output_mapping.output_name)
 
 
