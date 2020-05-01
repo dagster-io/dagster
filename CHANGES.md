@@ -2,9 +2,33 @@
 
 ## 0.7.9
 
+**Breaking Changes**
+
+- If you are launching runs using `DagsterInstance.launch_run`, this method now takes a run id instead of an instance of `PipelineRun`. Additionally, `DagsterInstance.create_run` and `DagsterInstance.create_empty_run` have been replaced by `DagsterInstance.get_or_create_run` and `DagsterInstance.create_run_for_pipeline`.
+- If you have implemented your own `RunLauncher`, there are two required changes:
+  - `RunLauncher.launch_run` takes a pipeline run that has already been created. You should remove any calls to `instance.create_run` in this method.
+  - Instead of calling `startPipelineExecution` (defined in the `dagster_graphql.client.query.START_PIPELINE_EXECUTION_MUTATION`) in the run launcher, you should call `startPipelineExecutionForCreatedRun` (defined in dagster_graphql.client.query.START_PIPELINE_EXECUTION_FOR_CREATED_RUN_MUTATION`
+  - Refer to the `DagitRemoteRunLauncher` for an example implementation.
+
+**New**
+
+- Improvements to preset and solid subselection in the playground. An inline preview of the pipeline instead of a modal when doing subselection, and the correct subselection is chosen when selecting a preset.
+- Improvements to the log searching. Tokenization and autocompletion for searching messages types and for specific steps.
+- You can now view the structure of pipelines from historical runs, even if that pipeline no longer exists in the loaded repository or has changed structure.
+- Historical execution plans are now viewable, even if the pipeline has changed structure.
+- Added metadata link to raw compute logs for all StepStart events in PipelineRun view and Step view.
+- Improved error handling for the scheduler. If a scheduled run has config errors, the errors are persisted to the event log for the run and can be viewed in Dagit. 
+
 **Bugfix**
 
+- No longer manually dispose sqlalchemy engine in dagster-postgres
 - Made boto3 dependency in dagster-aws more flexible (#2418)
+- Fixed tooltip UI cleanup in partitioned schedule view
+
+
+**Documentation**
+- Brand new documentation site, available at https://docs.dagster.io
+- The tutorial has been restructured to multiple sections, and the examples in intro_tutorial have been rearranged to separate folders to reflect this.
 
 ## 0.7.8
 
