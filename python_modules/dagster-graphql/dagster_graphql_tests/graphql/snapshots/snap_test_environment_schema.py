@@ -10,9 +10,7 @@ snapshots['test_basic_valid_config_on_environment_schema 1'] = {
     'environmentSchemaOrError': {
         'isEnvironmentConfigValid': {
             '__typename': 'PipelineConfigValidationValid',
-            'pipeline': {
-                'name': 'csv_hello_world'
-            }
+            'pipelineName': 'csv_hello_world'
         }
     }
 }
@@ -45,9 +43,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                     }
                 }
             ],
-            'pipeline': {
-                'name': 'csv_hello_world'
-            }
+            'pipelineName': 'String!'
         }
     }
 }

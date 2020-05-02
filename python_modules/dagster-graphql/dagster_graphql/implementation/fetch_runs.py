@@ -1,4 +1,3 @@
-from dagster_graphql.schema.pipelines import DauphinPipeline
 from graphql.execution.base import ResolveInfo
 
 from dagster import PipelineDefinition, check
@@ -88,7 +87,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
     get_validated_config(pipeline_def, environment_dict, mode)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
-        DauphinPipeline.from_pipeline_def(pipeline_def)
+        pipeline_name=pipeline_def.name
     )
 
 

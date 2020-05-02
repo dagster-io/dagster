@@ -103,7 +103,7 @@ mutation ($executionParams: ExecutionParams!) {
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {

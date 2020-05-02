@@ -50,7 +50,7 @@ query PipelineQuery($environmentConfigData: EnvironmentConfigData, $pipeline: Ex
         pipelineName
     }
     ... on PipelineConfigValidationInvalid {
-        pipeline { name }
+        pipelineName
         errors { message }
     }
     ... on PythonError {
@@ -108,7 +108,7 @@ mutation ($executionParams: ExecutionParams!) {
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {

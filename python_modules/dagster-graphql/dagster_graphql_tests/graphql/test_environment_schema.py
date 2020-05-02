@@ -94,10 +94,10 @@ query PipelineQuery(
       isEnvironmentConfigValid(environmentConfigData: $environmentConfigData) {
         __typename
         ... on PipelineConfigValidationValid {
-            pipeline { name }
+            pipelineName
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {

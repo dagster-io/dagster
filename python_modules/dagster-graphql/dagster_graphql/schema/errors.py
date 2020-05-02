@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from dagster_graphql import dauphin
-from dagster_graphql.schema.pipelines import DauphinPipeline
 
 from dagster import check
 from dagster.config.errors import (
@@ -192,20 +191,20 @@ class DauphinPipelineConfigValidationValid(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineConfigValidationValid'
 
-    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
+    pipeline_name = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPipelineConfigValidationInvalid(dauphin.ObjectType):
     class Meta(object):
         name = 'PipelineConfigValidationInvalid'
 
-    pipeline = dauphin.Field(dauphin.NonNull('Pipeline'))
+    pipeline_name = dauphin.NonNull(dauphin.String)
     errors = dauphin.non_null_list('PipelineConfigValidationError')
 
     @staticmethod
     def for_validation_errors(pipeline, errors):
         return DauphinPipelineConfigValidationInvalid(
-            pipeline=DauphinPipeline.from_pipeline_def(pipeline),
+            pipeline_name=pipeline.name,
             errors=[
                 DauphinPipelineConfigValidationError.from_dagster_error(
                     pipeline.get_config_schema_snapshot(), err

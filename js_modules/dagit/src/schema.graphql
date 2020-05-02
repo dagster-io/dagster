@@ -699,14 +699,14 @@ interface PipelineConfigValidationError {
 }
 
 type PipelineConfigValidationInvalid {
-  pipeline: Pipeline!
+  pipelineName: String!
   errors: [PipelineConfigValidationError!]!
 }
 
 union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
 
 type PipelineConfigValidationValid {
-  pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineConnection {

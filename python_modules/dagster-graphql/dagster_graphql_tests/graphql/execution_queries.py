@@ -101,9 +101,7 @@ LAUNCH_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
             invalidOutputName
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline {
-                name
-            }
+            pipelineName
             errors {
                 __typename
                 message
@@ -154,7 +152,7 @@ START_PIPELINE_EXECUTION_RESULT_FRAGMENT = '''
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {
@@ -186,7 +184,7 @@ START_PIPELINE_EXECUTION_FOR_CREATED_RUN_RESULT_FRAGMENT = '''
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {
@@ -220,7 +218,7 @@ START_PIPELINE_REEXECUTION_RESULT_FRAGMENT = '''
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {
@@ -342,7 +340,7 @@ mutation (
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {
@@ -387,7 +385,7 @@ mutation (
             }
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors { message }
         }
         ... on PipelineNotFoundError {

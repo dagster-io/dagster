@@ -509,9 +509,7 @@ snapshots['test_invalid_config_fetch_execute_plan 1'] = {
                 'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
             }
         ],
-        'pipeline': {
-            'name': 'csv_hello_world'
-        }
+        'pipelineName': 'csv_hello_world'
     }
 }
 
@@ -523,9 +521,7 @@ snapshots['test_invalid_config_execute_plan 1'] = {
                 'message': 'Invalid scalar at path root:solids:sum_solid:inputs:num'
             }
         ],
-        'pipeline': {
-            'name': 'csv_hello_world'
-        }
+        'pipelineName': 'csv_hello_world'
     }
 }
 

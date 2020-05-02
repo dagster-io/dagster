@@ -19,10 +19,10 @@ query PipelineQuery(
     ) {
         __typename
         ... on PipelineConfigValidationValid {
-            pipeline { name }
+            pipelineName
         }
         ... on PipelineConfigValidationInvalid {
-            pipeline { name }
+            pipelineName
             errors {
                 __typename
                 ... on RuntimeMismatchConfigError {
@@ -127,7 +127,7 @@ def test_basic_valid_config():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
 
 
 def test_root_field_not_defined():
@@ -145,7 +145,7 @@ def test_root_field_not_defined():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     errors = result.data['isPipelineConfigValid']['errors']
     assert len(errors) == 1
     error = errors[0]
@@ -164,7 +164,7 @@ def test_basic_invalid_not_defined_field():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
@@ -188,7 +188,7 @@ def test_multiple_not_defined_fields():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert ['solids', 'sum_solid', 'inputs'] == field_stack(error_data)
@@ -204,7 +204,7 @@ def test_root_wrong_type():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
@@ -220,7 +220,7 @@ def test_basic_invalid_config_type_mismatch():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
     assert error_data['message']
@@ -242,7 +242,7 @@ def test_basic_invalid_config_missing_field():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationInvalid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'csv_hello_world'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
     assert len(result.data['isPipelineConfigValid']['errors']) == 1
     error_data = result.data['isPipelineConfigValid']['errors'][0]
 
@@ -261,7 +261,7 @@ def test_mode_resource_config_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
     result = execute_config_graphql(
         pipeline_name='multi_mode_with_resources',
@@ -272,7 +272,7 @@ def test_mode_resource_config_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
     result = execute_config_graphql(
         pipeline_name='multi_mode_with_resources',
@@ -283,7 +283,7 @@ def test_mode_resource_config_works():
     assert not result.errors
     assert result.data
     assert result.data['isPipelineConfigValid']['__typename'] == 'PipelineConfigValidationValid'
-    assert result.data['isPipelineConfigValid']['pipeline']['name'] == 'multi_mode_with_resources'
+    assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
 
 def test_missing_resource():
@@ -338,7 +338,7 @@ def test_more_complicated_works():
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
-    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
 
 
 def test_multiple_missing_fields():
@@ -354,7 +354,7 @@ def test_multiple_missing_fields():
     valid_data = result.data['isPipelineConfigValid']
 
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
     assert len(valid_data['errors']) == 1
     error_data = valid_data['errors'][0]
     missing_names = {field_data['name'] for field_data in error_data['fields']}
@@ -391,7 +391,7 @@ def test_more_complicated_multiple_errors():
     valid_data = result.data['isPipelineConfigValid']
 
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipeline']['name'] == 'more_complicated_nested_config'
+    assert valid_data['pipelineName'] == 'more_complicated_nested_config'
     assert len(valid_data['errors']) == 4
 
     missing_error_one = find_error(
@@ -451,7 +451,7 @@ def test_config_list():
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
     assert valid_data['__typename'] == 'PipelineConfigValidationValid'
-    assert valid_data['pipeline']['name'] == 'pipeline_with_list'
+    assert valid_data['pipelineName'] == 'pipeline_with_list'
 
 
 def test_config_list_invalid():
@@ -465,7 +465,7 @@ def test_config_list_invalid():
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipeline']['name'] == 'pipeline_with_list'
+    assert valid_data['pipelineName'] == 'pipeline_with_list'
     assert len(valid_data['errors']) == 1
     assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
 
@@ -481,7 +481,7 @@ def test_config_list_item_invalid():
     assert result.data
     valid_data = result.data['isPipelineConfigValid']
     assert valid_data['__typename'] == 'PipelineConfigValidationInvalid'
-    assert valid_data['pipeline']['name'] == 'pipeline_with_list'
+    assert valid_data['pipelineName'] == 'pipeline_with_list'
     assert len(valid_data['errors']) == 1
     entries = valid_data['errors'][0]['stack']['entries']
     assert len(entries) == 4

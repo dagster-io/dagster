@@ -176,9 +176,7 @@ fragment startPipelineExecutionResultFragment on StartPipelineExecutionResult {
 		invalidOutputName
 	}
 	... on PipelineConfigValidationInvalid {
-		pipeline {
-			name
-		}
+    pipelineName
 		errors {
 			__typename
 			message
@@ -222,9 +220,7 @@ fragment startPipelineExecutionForCreatedRunResultFragment on StartPipelineExecu
 		invalidOutputName
 	}
 	... on PipelineConfigValidationInvalid {
-		pipeline {
-			name
-		}
+    pipelineName
 		errors {
 			__typename
 			message
@@ -310,9 +306,7 @@ mutation(
       invalidOutputName
     }
     ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
+      pipelineName
       errors {
         __typename
         message
@@ -371,9 +365,7 @@ mutation(
       invalidStepKey
     }
     ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
+      pipelineName
       errors {
         __typename
         message
@@ -417,9 +409,7 @@ mutation(
       invalidStepKey
     }
     ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
+      pipelineName
       errors {
         __typename
         message
@@ -492,9 +482,7 @@ mutation(
       invalidOutputName
     }
     ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
+      pipelineName
       errors {
         __typename
         message
@@ -544,9 +532,7 @@ mutation(
       invalidOutputName
     }
     ... on PipelineConfigValidationInvalid {
-      pipeline {
-        name
-      }
+      pipelineName
       errors {
         __typename
         message

@@ -48,7 +48,7 @@ def resolve_is_environment_config_valid(
     if not validated_config.success:
         raise UserFacingGraphQLError(
             graphene_info.schema.type_named('PipelineConfigValidationInvalid')(
-                pipeline=dauphin_pipeline,
+                pipeline_name=dauphin_pipeline.name,
                 errors=[
                     graphene_info.schema.type_named(
                         'PipelineConfigValidationError'
@@ -60,4 +60,4 @@ def resolve_is_environment_config_valid(
             )
         )
 
-    return graphene_info.schema.type_named('PipelineConfigValidationValid')(dauphin_pipeline)
+    return graphene_info.schema.type_named('PipelineConfigValidationValid')(dagster_pipeline.name)
