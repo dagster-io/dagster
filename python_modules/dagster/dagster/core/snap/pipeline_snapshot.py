@@ -109,6 +109,14 @@ class PipelineIndex:
 
         return False
 
+    def get_mode_def_snap(self, name):
+        check.str_param(name, 'name')
+        for mode_def_snap in self.pipeline_snapshot.mode_def_snaps:
+            if mode_def_snap.name == name:
+                return mode_def_snap
+
+        check.failed('Mode {mode} not found'.format(mode=name))
+
     @property
     def config_schema_snapshot(self):
         return self.pipeline_snapshot.config_schema_snapshot
@@ -172,7 +180,12 @@ class PipelineSnapshot(
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(pipeline_def),
             solid_definitions_snapshot=build_solid_definitions_snapshot(pipeline_def),
             dep_structure_snapshot=build_dep_structure_snapshot_from_icontains_solids(pipeline_def),
-            mode_def_snaps=list(map(build_mode_def_snap, pipeline_def.mode_definitions)),
+            mode_def_snaps=[
+                build_mode_def_snap(
+                    md, pipeline_def.get_environment_schema(md.name).environment_type.key
+                )
+                for md in pipeline_def.mode_definitions
+            ],
         )
 
     def get_solid_def_snap(self, solid_def_name):

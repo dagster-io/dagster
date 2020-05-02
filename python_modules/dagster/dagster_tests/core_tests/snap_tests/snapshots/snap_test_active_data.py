@@ -1033,7 +1033,8 @@ snapshots['test_active_data 1'] = '''{
             }
           ],
           "name": "default",
-          "resource_def_snaps": []
+          "resource_def_snaps": [],
+          "root_config_key": "Shape.2022d535a250739e8b2cb15f1304230d93101054"
         },
         {
           "__class__": "ModeDefSnap",
@@ -1055,7 +1056,8 @@ snapshots['test_active_data 1'] = '''{
             }
           ],
           "name": "mode_one",
-          "resource_def_snaps": []
+          "resource_def_snaps": [],
+          "root_config_key": "Shape.2022d535a250739e8b2cb15f1304230d93101054"
         }
       ],
       "name": "a_pipeline",

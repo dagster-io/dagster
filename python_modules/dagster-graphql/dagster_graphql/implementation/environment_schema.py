@@ -31,6 +31,7 @@ def resolve_environment_schema_or_error(graphene_info, selector, mode):
     return graphene_info.schema.type_named('EnvironmentSchema')(
         pipeline_index=pipeline_index,
         environment_schema=create_environment_schema(pipeline_def, mode),
+        mode=mode,
     )
 
 

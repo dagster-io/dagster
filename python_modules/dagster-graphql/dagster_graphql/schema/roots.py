@@ -703,13 +703,12 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
 
 
 class DauphinEnvironmentSchema(dauphin.ObjectType):
-    def __init__(self, environment_schema, pipeline_index):
-
+    def __init__(self, environment_schema, pipeline_index, mode):
         self._environment_schema = check.inst_param(
             environment_schema, 'environment_schema', EnvironmentSchema
         )
-
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        self._mode = check.str_param(mode, 'mode')
 
     class Meta(object):
         name = 'EnvironmentSchema'
@@ -747,10 +746,10 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
         return sorted(
             list(
                 map(
-                    lambda ct: to_dauphin_config_type(
-                        self._pipeline_index.config_schema_snapshot, ct.key
+                    lambda key: to_dauphin_config_type(
+                        self._pipeline_index.config_schema_snapshot, key
                     ),
-                    self._environment_schema.all_config_types(),
+                    self._pipeline_index.config_schema_snapshot.all_config_keys,
                 )
             ),
             key=lambda ct: ct.key,
@@ -759,7 +758,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
     def resolve_rootEnvironmentType(self, _graphene_info):
         return to_dauphin_config_type(
             self._pipeline_index.config_schema_snapshot,
-            self._environment_schema.environment_type.key,
+            self._pipeline_index.get_mode_def_snap(self._mode).root_config_key,
         )
 
     def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):

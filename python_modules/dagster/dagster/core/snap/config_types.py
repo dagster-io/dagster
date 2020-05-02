@@ -34,6 +34,10 @@ class ConfigSchemaSnapshot(namedtuple('_ConfigSchemaSnapshot', 'all_config_snaps
             ),
         )
 
+    @property
+    def all_config_keys(self):
+        return list(self.all_config_snaps_by_key.keys())
+
     def get_config_snap(self, key):
         check.str_param(key, 'key')
         return self.all_config_snaps_by_key[key]

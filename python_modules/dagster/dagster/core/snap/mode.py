@@ -8,8 +8,9 @@ from dagster.serdes import whitelist_for_serdes
 from .config_types import ConfigFieldSnap, snap_from_field
 
 
-def build_mode_def_snap(mode_def):
+def build_mode_def_snap(mode_def, root_config_key):
     check.inst_param(mode_def, 'mode_def', ModeDefinition)
+    check.str_param(root_config_key, 'root_config_key')
 
     return ModeDefSnap(
         name=mode_def.name,
@@ -22,14 +23,25 @@ def build_mode_def_snap(mode_def):
             [build_logger_def_snap(name, ld) for name, ld in mode_def.loggers.items()],
             key=lambda item: item.name,
         ),
+        root_config_key=root_config_key,
     )
 
 
 @whitelist_for_serdes
 class ModeDefSnap(
-    namedtuple('_ModeDefSnap', 'name description resource_def_snaps logger_def_snaps')
+    namedtuple(
+        '_ModeDefSnap', 'name description resource_def_snaps logger_def_snaps root_config_key'
+    )
 ):
-    def __new__(cls, name, description, resource_def_snaps, logger_def_snaps):
+    def __new__(
+        cls,
+        name,
+        description,
+        resource_def_snaps,
+        logger_def_snaps,
+        # root_config_key was added after pipeline snapshots started getting persisted
+        root_config_key=None,
+    ):
         return super(ModeDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
@@ -40,6 +52,7 @@ class ModeDefSnap(
             logger_def_snaps=check.list_param(
                 logger_def_snaps, 'logger_def_snaps', of_type=LoggerDefSnap
             ),
+            root_config_key=check.opt_str_param(root_config_key, 'root_config_key'),
         )
 
 
