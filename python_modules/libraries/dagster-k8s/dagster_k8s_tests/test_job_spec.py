@@ -9,7 +9,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
 from .test_project import test_project_docker_image, test_project_environments_path
-from .utils import remove_none_recursively, wait_for_job_and_get_logs
+from .utils import image_pull_policy, remove_none_recursively, wait_for_job_and_get_logs
 
 EXPECTED_JOB_SPEC = '''
 api_version: batch/v1
@@ -76,7 +76,7 @@ spec:
 '''
 
 
-def test_valid_job_format(image_pull_policy, run_launcher):
+def test_valid_job_format(run_launcher):
     docker_image = test_project_docker_image()
 
     environment_dict = load_yaml_from_path(
@@ -105,7 +105,7 @@ def test_valid_job_format(image_pull_policy, run_launcher):
         == EXPECTED_JOB_SPEC.format(
             run_id=run.run_id,
             job_image=docker_image,
-            image_pull_policy=image_pull_policy,
+            image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
         ).strip()
     )

@@ -13,6 +13,17 @@ from dagster import check
 IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
 
+def image_pull_policy():
+    # This is because when running local tests, we need to load the image into the kind cluster (and
+    # then not attempt to pull it) because we don't want to require credentials for a private
+    # registry / pollute the private registry / set up and network a local registry as a condition
+    # of running tests
+    if IS_BUILDKITE:
+        return 'Always'
+    else:
+        return 'IfNotPresent'
+
+
 def get_test_namespace():
     namespace_suffix = hex(random.randint(0, 16 ** 6))[2:]
     return 'dagster-test-%s' % namespace_suffix

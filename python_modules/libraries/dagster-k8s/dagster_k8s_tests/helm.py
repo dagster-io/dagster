@@ -1,10 +1,12 @@
 import base64
 import os
 import subprocess
+import sys
 import time
 from contextlib import contextmanager
 
 import kubernetes
+import pytest
 import six
 import yaml
 from dagster_k8s.utils import wait_for_pod
@@ -12,7 +14,41 @@ from dagster_k8s.utils import wait_for_pod
 from dagster import check
 from dagster.utils import git_repository_root
 
-from .utils import check_output, get_test_namespace
+from .utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
+
+
+@pytest.fixture(scope='session')
+def helm_namespace(
+    cluster_provider, request
+):  # pylint: disable=unused-argument, redefined-outer-name
+    '''If an existing Helm chart namespace is specified via pytest CLI with the argument
+    --existing-helm-namespace, we will use that chart.
+
+    Otherwise, provision a test namespace and install Helm chart into that namespace.
+
+    Yields the Helm chart namespace.
+    '''
+    from .test_project import test_project_docker_image
+
+    existing_helm_namespace = request.config.getoption('--existing-helm-namespace')
+
+    if existing_helm_namespace:
+        yield existing_helm_namespace
+
+    else:
+        # Never bother cleaning up on Buildkite
+        if IS_BUILDKITE:
+            should_cleanup = False
+        # Otherwise, always clean up unless --no-cleanup specified
+        else:
+            should_cleanup = not request.config.getoption('--no-cleanup')
+
+        with test_namespace(should_cleanup) as namespace:
+            with helm_test_resources(namespace, should_cleanup):
+                docker_image = test_project_docker_image()
+                with helm_chart(namespace, docker_image, should_cleanup):
+                    print('Helm chart successfully installed in namespace %s' % namespace)
+                    yield namespace
 
 
 @contextmanager
@@ -79,11 +115,10 @@ def helm_test_resources(namespace, should_cleanup=True):
 
 
 @contextmanager
-def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
+def helm_chart(namespace, docker_image, should_cleanup=True):
     '''Install dagster-k8s helm chart.
     '''
     check.str_param(namespace, 'namespace')
-    check.str_param(image_pull_policy, 'image_pull_policy')
     check.str_param(docker_image, 'docker_image')
     check.bool_param(should_cleanup, 'should_cleanup')
 
@@ -93,7 +128,7 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
         repository, tag = docker_image.split(':')
 
         helm_config = {
-            'imagePullPolicy': image_pull_policy,
+            'imagePullPolicy': image_pull_policy(),
             'dagit': {
                 'image': {'repository': repository, 'tag': tag},
                 'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
@@ -119,6 +154,10 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
         }
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
 
+        dagster_k8s_path = os.path.join(
+            git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'
+        )
+
         helm_cmd = [
             'helm',
             'install',
@@ -127,24 +166,14 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
             '-f',
             '-',
             'dagster',
-            'helm/dagster/',
+            os.path.join(dagster_k8s_path, 'helm', 'dagster'),
         ]
 
         print('Running Helm Install: \n', ' '.join(helm_cmd), '\nWith config:\n', helm_config_yaml)
 
-        p = subprocess.Popen(
-            helm_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        )
-        stdout, stderr = p.communicate(six.ensure_binary(helm_config_yaml))
-        print('\n\nHelm install stdout:\n', six.ensure_str(stdout))
-        print('\n\nHelm install stderr:\n', six.ensure_str(stderr))
+        p = subprocess.Popen(helm_cmd, stdin=subprocess.PIPE, stdout=sys.stdout, stderr=sys.stderr)
+        p.communicate(six.ensure_binary(helm_config_yaml))
         assert p.returncode == 0
-
-        check_output(
-            helm_cmd,
-            shell=True,
-            cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
-        )
 
         # Wait for Dagit pod to be ready (won't actually stay up w/out js rebuild)
         kube_api = kubernetes.client.CoreV1Api()
@@ -158,16 +187,13 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
                 dagit_pod = pod_names[0]
             time.sleep(1)
 
-        # Wait for additional Celery worker queues to become ready
+        # Wait for Celery worker queues to become ready
+        print('Waiting for celery workers')
         pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
-        for extra_queue in helm_config['celery']['extraWorkerQueues']:
-            pod_names = [
-                p.metadata.name for p in pods.items if extra_queue['name'] in p.metadata.name
-            ]
-            assert len(pod_names) == extra_queue['replicaCount']
-            for pod in pod_names:
-                print('Waiting for pod %s' % pod)
-                wait_for_pod(pod, namespace=namespace)
+        pod_names = [p.metadata.name for p in pods.items if 'celery-workers' in p.metadata.name]
+        for pod_name in pod_names:
+            print('Waiting for Celery worker pod %s' % pod_name)
+            wait_for_pod(pod_name, namespace=namespace)
 
         yield
 
@@ -177,7 +203,5 @@ def helm_chart(namespace, image_pull_policy, docker_image, should_cleanup=True):
         if should_cleanup:
             print('Uninstalling helm chart')
             check_output(
-                ['helm', 'uninstall', 'dagster', '--namespace', namespace],
-                shell=True,
-                cwd=os.path.join(git_repository_root(), 'python_modules/libraries/dagster-k8s/'),
+                ['helm', 'uninstall', 'dagster', '--namespace', namespace], cwd=dagster_k8s_path,
             )
