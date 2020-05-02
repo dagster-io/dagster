@@ -6,15 +6,6 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_basic_valid_config_on_environment_schema 1'] = {
-    'environmentSchemaOrError': {
-        'isEnvironmentConfigValid': {
-            '__typename': 'PipelineConfigValidationValid',
-            'pipelineName': 'csv_hello_world'
-        }
-    }
-}
-
 snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
     'environmentSchemaOrError': {
         'isEnvironmentConfigValid': {
@@ -43,7 +34,16 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                     }
                 }
             ],
-            'pipelineName': 'String!'
+            'pipelineName': 'csv_hello_world'
+        }
+    }
+}
+
+snapshots['test_basic_valid_config_on_environment_schema 1'] = {
+    'environmentSchemaOrError': {
+        'isEnvironmentConfigValid': {
+            '__typename': 'PipelineConfigValidationValid',
+            'pipelineName': 'csv_hello_world'
         }
     }
 }

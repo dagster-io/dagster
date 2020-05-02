@@ -98,6 +98,21 @@ class PipelineIndex:
     def has_solid_invocation(self, solid_name):
         return self.dep_structure_index.has_invocation(solid_name)
 
+    def get_default_mode_name(self):
+        return self.pipeline_snapshot.mode_def_snaps[0].name
+
+    def has_mode_def(self, name):
+        check.str_param(name, 'name')
+        for mode_def_snap in self.pipeline_snapshot.mode_def_snaps:
+            if mode_def_snap.name == name:
+                return True
+
+        return False
+
+    @property
+    def config_schema_snapshot(self):
+        return self.pipeline_snapshot.config_schema_snapshot
+
 
 def create_pipeline_snapshot_id(snapshot):
     check.inst_param(snapshot, 'snapshot', PipelineSnapshot)

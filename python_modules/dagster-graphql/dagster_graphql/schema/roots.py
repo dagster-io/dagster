@@ -49,9 +49,11 @@ from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
+from dagster.core.definitions.environment_schema import EnvironmentSchema
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
+from dagster.core.snap import PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 
@@ -701,17 +703,13 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
 
 
 class DauphinEnvironmentSchema(dauphin.ObjectType):
-    def __init__(self, environment_schema, dagster_pipeline):
-        from dagster.core.definitions.environment_schema import EnvironmentSchema
-        from dagster.core.definitions.pipeline import PipelineDefinition
+    def __init__(self, environment_schema, pipeline_index):
 
         self._environment_schema = check.inst_param(
             environment_schema, 'environment_schema', EnvironmentSchema
         )
 
-        self._dagster_pipeline = check.inst_param(
-            dagster_pipeline, 'dagster_pipeline', PipelineDefinition
-        )
+        self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
 
     class Meta(object):
         name = 'EnvironmentSchema'
@@ -750,7 +748,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             list(
                 map(
                     lambda ct: to_dauphin_config_type(
-                        self._dagster_pipeline.get_config_schema_snapshot(), ct.key
+                        self._pipeline_index.config_schema_snapshot, ct.key
                     ),
                     self._environment_schema.all_config_types(),
                 )
@@ -760,7 +758,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_rootEnvironmentType(self, _graphene_info):
         return to_dauphin_config_type(
-            self._dagster_pipeline.get_config_schema_snapshot(),
+            self._pipeline_index.config_schema_snapshot,
             self._environment_schema.environment_type.key,
         )
 
@@ -768,7 +766,7 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
         return resolve_is_environment_config_valid(
             graphene_info,
             self._environment_schema,
-            self._dagster_pipeline,
+            self._pipeline_index,
             kwargs.get('environmentConfigData', {}),
         )
 
