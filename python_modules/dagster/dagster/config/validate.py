@@ -3,7 +3,7 @@ import six
 from dagster import check
 from dagster.utils import ensure_single_item, frozendict
 
-from .config_type import Bool, ConfigScalar, ConfigType, ConfigTypeKind, Float, Int, Path, String
+from .config_type import ConfigScalar, ConfigScalarKind, ConfigType, ConfigTypeKind
 from .errors import (
     create_array_error,
     create_dict_type_mismatch_error,
@@ -28,22 +28,18 @@ from .traversal_context import TraversalContext, TraversalType
 VALID_FLOAT_TYPES = tuple(list(six.integer_types) + [float])
 
 
-def is_config_scalar_valid(config_type, config_value):
-    check.inst_param(config_type, 'config_type', ConfigType)
-    if isinstance(config_type, Int):
+def is_config_scalar_valid(config_scalar_type, config_value):
+    check.inst_param(config_scalar_type, 'config_scalar_type', ConfigScalar)
+    if config_scalar_type.scalar_kind == ConfigScalarKind.INT:
         return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
-    elif isinstance(config_type, String) or isinstance(config_type, Path):
+    elif config_scalar_type.scalar_kind == ConfigScalarKind.STRING:
         return isinstance(config_value, six.string_types)
-    elif isinstance(config_type, Bool):
+    elif config_scalar_type.scalar_kind == ConfigScalarKind.BOOL:
         return isinstance(config_value, bool)
-    elif isinstance(config_type, Float):
+    elif config_scalar_type.scalar_kind == ConfigScalarKind.FLOAT:
         return isinstance(config_value, VALID_FLOAT_TYPES)
-    elif isinstance(config_type, ConfigScalar):
-        # TODO: remove (disallow custom scalars)
-        # https://github.com/dagster-io/dagster/issues/1991
-        return config_type.is_custom_config_scalar_valid(config_value)
     else:
-        check.failed('Not a supported scalar {}'.format(config_type))
+        check.failed('Not a supported scalar {}'.format(config_scalar_type))
 
 
 def validate_config(config_type, config_value):

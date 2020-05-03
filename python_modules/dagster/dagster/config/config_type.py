@@ -79,50 +79,59 @@ class ConfigType(object):
         return value
 
 
+@whitelist_for_serdes
+class ConfigScalarKind(PythonEnum):
+    INT = 'INT'
+    STRING = 'STRING'
+    FLOAT = 'FLOAT'
+    BOOL = 'BOOL'
+
+
 # Scalars, Composites, Selectors, Lists, Optional, Any
 
 
 class ConfigScalar(ConfigType):
-    def __init__(self, key, given_name, **kwargs):
+    def __init__(self, key, given_name, scalar_kind, **kwargs):
+        self.scalar_kind = check.inst_param(scalar_kind, 'scalar_kind', ConfigScalarKind)
         super(ConfigScalar, self).__init__(
             key, given_name=given_name, kind=ConfigTypeKind.SCALAR, **kwargs
         )
 
 
 class BuiltinConfigScalar(ConfigScalar):
-    def __init__(self, description=None):
+    def __init__(self, scalar_kind, description=None):
         super(BuiltinConfigScalar, self).__init__(
-            key=type(self).__name__, given_name=type(self).__name__, description=description,
+            key=type(self).__name__,
+            given_name=type(self).__name__,
+            scalar_kind=scalar_kind,
+            description=description,
         )
 
 
 class Int(BuiltinConfigScalar):
     def __init__(self):
-        super(Int, self).__init__(description='')
+        super(Int, self).__init__(scalar_kind=ConfigScalarKind.INT, description='')
 
 
-class _StringishBuiltin(BuiltinConfigScalar):
-    pass
-
-
-class String(_StringishBuiltin):
+class String(BuiltinConfigScalar):
     def __init__(self):
-        super(String, self).__init__(description='')
+        super(String, self).__init__(scalar_kind=ConfigScalarKind.STRING, description='')
 
 
-class Path(_StringishBuiltin):
+# Consider eliminating
+class Path(BuiltinConfigScalar):
     def __init__(self):
-        super(Path, self).__init__(description='')
+        super(Path, self).__init__(scalar_kind=ConfigScalarKind.STRING, description='')
 
 
 class Bool(BuiltinConfigScalar):
     def __init__(self):
-        super(Bool, self).__init__(description='')
+        super(Bool, self).__init__(scalar_kind=ConfigScalarKind.BOOL, description='')
 
 
 class Float(BuiltinConfigScalar):
     def __init__(self):
-        super(Float, self).__init__(description='')
+        super(Float, self).__init__(scalar_kind=ConfigScalarKind.FLOAT, description='')
 
     def post_process(self, value):
         return float(value)

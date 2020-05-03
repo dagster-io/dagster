@@ -29,7 +29,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.config.validate import validate_config
+from dagster.config.validate import process_config, validate_config
 from dagster.core.definitions import create_environment_type
 from dagster.seven import mock
 
@@ -105,16 +105,6 @@ def test_bad_config():
             'Value at path root:solids:test:config:query_job_config:create_disposition not in enum type BQCreateDisposition',
         ),
         (
-            # Dataset must be of form project_name.dataset_name
-            {'default_dataset': 'this is not a valid dataset'},
-            'Invalid scalar at path root:solids:test:config:query_job_config:default_dataset',
-        ),
-        (
-            # Table must be of form project_name.dataset_name.table_name
-            {'destination': 'this is not a valid table'},
-            'Invalid scalar at path root:solids:test:config:query_job_config:destination',
-        ),
-        (
             # Priority must match enum values
             {'priority': 'this is not a valid priority'},
             'Value at path root:solids:test:config:query_job_config:priority not in enum type BQPriority got this is not a valid priority',
@@ -126,7 +116,7 @@ def test_bad_config():
         ),
         (
             {'schema_update_options': ['this is not valid schema update options']},
-            'alue at path root:solids:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption',
+            'Value at path root:solids:test:config:query_job_config:schema_update_options[0] not in enum type BQSchemaUpdateOption',
         ),
         (
             {'write_disposition': 'this is not a valid write disposition'},
@@ -142,6 +132,22 @@ def test_bad_config():
     for config_fragment, error_message in configs_and_expected_errors:
         config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
         result = validate_config(env_type, config)
+        assert error_message in result.errors[0].message
+
+    configs_and_expected_validation_errors = [
+        (
+            {'default_dataset': 'this is not a valid dataset'},
+            'Datasets must be of the form',  # project_name.dataset_name',
+        ),
+        (
+            {'destination': 'this is not a valid table'},
+            'Tables must be of the form',  # project_name.dataset_name.table_name'
+        ),
+    ]
+
+    for config_fragment, error_message in configs_and_expected_validation_errors:
+        config = {'solids': {'test': {'config': {'query_job_config': config_fragment}}}}
+        result = process_config(env_type, config)
         assert error_message in result.errors[0].message
 
 

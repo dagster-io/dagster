@@ -1,7 +1,6 @@
 import re
 from enum import Enum as PyEnum
 
-import six
 from google.cloud.bigquery.job import (
     CreateDisposition,
     Encoding,
@@ -12,7 +11,7 @@ from google.cloud.bigquery.job import (
 )
 
 from dagster import Enum, EnumValue
-from dagster.config.config_type import ConfigScalar
+from dagster.config import ConfigScalar, ConfigScalarKind, PostProcessingError
 
 
 class BigQueryLoadSource(PyEnum):
@@ -119,24 +118,36 @@ def _is_valid_table(config_value):
 
 class _Dataset(ConfigScalar):
     def __init__(self):
-        super(_Dataset, self).__init__(key=type(self).__name__, given_name=type(self).__name__)
+        super(_Dataset, self).__init__(
+            key=type(self).__name__,
+            given_name=type(self).__name__,
+            scalar_kind=ConfigScalarKind.STRING,
+        )
 
-    def is_custom_config_scalar_valid(self, config_value):
-        if not isinstance(config_value, six.string_types):
-            return False
-
-        return _is_valid_dataset(config_value)
+    def post_process(self, value):
+        if not _is_valid_dataset(value):
+            raise PostProcessingError('Datasets must be of the form "project.dataset" or "dataset"')
+        return value
 
 
 class _Table(ConfigScalar):
     def __init__(self):
-        super(_Table, self).__init__(key=type(self).__name__, given_name=type(self).__name__)
+        super(_Table, self).__init__(
+            key=type(self).__name__,
+            given_name=type(self).__name__,
+            scalar_kind=ConfigScalarKind.STRING,
+        )
 
-    def is_custom_config_scalar_valid(self, config_value):
-        if not isinstance(config_value, six.string_types):
-            return False
+    def post_process(self, value):
+        if not _is_valid_table(value):
+            raise PostProcessingError(
+                (
+                    'Tables must be of the form "project.dataset.table" or "dataset.table" '
+                    'with optional date-partition suffix'
+                )
+            )
 
-        return _is_valid_table(config_value)
+        return value
 
 
 # https://github.com/dagster-io/dagster/issues/1971
