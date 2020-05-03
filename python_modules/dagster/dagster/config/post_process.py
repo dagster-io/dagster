@@ -5,7 +5,7 @@ from dagster.utils import ensure_single_item, frozendict, frozenlist
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config_type import ConfigType, ConfigTypeKind
-from .errors import create_failed_post_processing_error
+from .errors import PostProcessingError, create_failed_post_processing_error
 from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
 from .traversal_context import TraversalContext, TraversalType
@@ -71,7 +71,7 @@ def _post_process(context, config_value):
     try:
         new_value = context.config_type.post_process(config_value)
         return EvaluateValueResult.for_value(new_value)
-    except Exception:  # pylint: disable=broad-except
+    except PostProcessingError:
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
         return EvaluateValueResult.for_error(
             create_failed_post_processing_error(context, config_value, error_data)

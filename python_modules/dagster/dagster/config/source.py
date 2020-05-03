@@ -1,9 +1,28 @@
 import os
 
+import six
+
 from dagster import check
 
 from .config_type import ConfigIntInstance, ConfigStringInstance, ScalarUnion
+from .errors import PostProcessingError
 from .field_utils import Selector
+
+VALID_STRING_SOURCE_TYPES = six.string_types + (dict,)
+
+
+def _ensure_env_variable(var):
+    check.str_param(var, 'var')
+    value = os.getenv(var)
+    if value is None:
+        raise PostProcessingError(
+            (
+                'You have attempted to fetch the environment variable "{var}" '
+                'which is not set. In order for this execution to succeed it '
+                'must be set in this environment.'
+            ).format(var=var)
+        )
+    return value
 
 
 class StringSourceType(ScalarUnion):
@@ -15,18 +34,14 @@ class StringSourceType(ScalarUnion):
         )
 
     def post_process(self, value):
+        check.param_invariant(isinstance(value, VALID_STRING_SOURCE_TYPES), 'value')
+
         if not isinstance(value, dict):
             return value
 
         key, cfg = list(value.items())[0]
-        if key == 'env':
-            value = os.getenv(cfg)
-            check.invariant(
-                value is not None, 'Environment variable "{var}" is not set.'.format(var=cfg)
-            )
-            return value
-        else:
-            check.failed('Invalid source selector key')
+        check.invariant(key == 'env', 'Only valid key is env')
+        return str(_ensure_env_variable(cfg))
 
 
 class IntSourceType(ScalarUnion):
@@ -38,18 +53,25 @@ class IntSourceType(ScalarUnion):
         )
 
     def post_process(self, value):
+        check.param_invariant(isinstance(value, (dict, int)), 'value', 'Should be pre-validated')
+
         if not isinstance(value, dict):
             return value
 
+        check.invariant(len(value) == 1, 'Selector should have one entry')
+
         key, cfg = list(value.items())[0]
-        if key == 'env':
-            value = os.getenv(cfg)
-            check.invariant(
-                value is not None, 'Environment variable "{var}" is not set.'.format(var=cfg)
-            )
+        check.invariant(key == 'env', 'Only valid key is env')
+        value = _ensure_env_variable(cfg)
+        try:
             return int(value)
-        else:
-            check.failed('Invalid source selector key')
+        except ValueError:
+            raise PostProcessingError(
+                (
+                    'Value "{value}" stored in env variable "{var}" cannot be '
+                    'coerced into an int.'
+                ).format(value=value, var=cfg)
+            )
 
 
 StringSource = StringSourceType()

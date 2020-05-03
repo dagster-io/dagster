@@ -69,6 +69,13 @@ class ConfigType(object):
         return []
 
     def post_process(self, value):
+        '''
+        Implement this in order to take a value provided by the user
+        and perform computation on it. This can be done to coerce data types,
+        fetch things from the environment (e.g. environment variables), or
+        to do custom validation. If the value is not valid, throw a
+        PostProcessingError. Otherwise return the coerced value.
+        '''
         return value
 
 

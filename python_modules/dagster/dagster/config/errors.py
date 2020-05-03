@@ -357,3 +357,13 @@ def create_failed_post_processing_error(context, original_value, error_data):
         ),
         error_data=error_data,
     )
+
+
+class PostProcessingError(Exception):
+    '''
+    This is part of the formal API for implementing post_process
+    methods on config types. Throw this error to indicate a
+    that post processing cannot happen, and that the user
+    must make a configuration and environment change in
+    order resolve.
+    '''
