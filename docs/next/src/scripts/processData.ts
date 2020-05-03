@@ -33,13 +33,17 @@ async function rewriteRelativeLinks() {
     const fileData = JSON.parse(rawData);
     const body: string = fileData.body;
     if (body) {
-      const transformed = body
+      let transformed = body
         .replace(/href="\.\.\/.*?(\/#.*?)"/g, (match) => {
           return match.replace('/#', '#');
         })
         .replace(/href="(\.\.\/)[^.]/g, (match, p1) => {
           return match.replace(p1, '');
         });
+
+      if (entry.includes('/libraries/')) {
+        transformed = body.replace(/href="\.\.\/\.\.\//g, 'href="../');
+      }
       fileData.body = transformed;
       await fs.writeFile(entry, JSON.stringify(fileData), 'utf8');
     }

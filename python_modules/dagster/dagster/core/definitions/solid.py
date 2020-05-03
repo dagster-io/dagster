@@ -166,7 +166,7 @@ class SolidDefinition(ISolidDefinition):
     The definition of a Solid that peforms a user defined computation.
 
     For more details on what a solid is, refer to the
-    `Solid Guide <../../learn/guides/solid/solid.html>`_ .
+    `Solid Guide <../../learn/guides/solid/solid>`_ .
 
     End users should prefer the :func:`@solid <solid>` and :func:`@lambda_solid <lambda_solid>`
     decorators. SolidDefinition is generally intended to be used by framework authors.

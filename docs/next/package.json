@@ -55,7 +55,7 @@
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-react-hooks": "^3.0.0",
     "extra-watch-webpack-plugin": "^1.0.3",
-    "tailwindcss": "^1.2.0",
+    "tailwindcss": "^1.4.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
     "typescript": "^3.8.3"
   }

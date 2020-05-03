@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
                 </VersionedLink>
 
                 <div className="group ml-3 relative tracking-wide border-b font-medium cursor-pointer">
-                  <a href="/versions.html">{version}</a>
+                  <a href="/versions">{version}</a>
                 </div>
               </div>
             </div>
