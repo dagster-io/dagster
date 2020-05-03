@@ -19,7 +19,6 @@ def fail_me():
 def test_scalars():
     assert scaffold_type(config_type.Int()) == 0
     assert scaffold_type(config_type.String()) == ''
-    assert scaffold_type(config_type.Path()) == 'path/to/something'
     assert scaffold_type(config_type.Bool()) is True
     assert scaffold_type(config_type.Any()) == 'AnyType'
 

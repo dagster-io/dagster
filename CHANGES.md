@@ -12,6 +12,7 @@
 
 - Runs created prior to 0.7.8 will no longer render their execution plans as DAGs. We are only rendering
   execution plans that have been persisted. Logs are still available.
+- `Path` is no longer valid in config schemas. Use `str` or `dagster.String` instead.
 
 ## 0.7.9
 

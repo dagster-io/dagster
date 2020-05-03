@@ -16,7 +16,6 @@ from dagster import (
     Int,
     Materialization,
     OutputDefinition,
-    Path,
     PythonObjectDagsterType,
     String,
     composite_solid,
@@ -33,13 +32,13 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import file_relative_path, safe_tempfile_path
 
 
-@input_hydration_config(Path)
+@input_hydration_config(String)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@output_materialization_config(Path)
+@output_materialization_config(String)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -299,7 +298,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-@solid(config={'file': Field(Path)})
+@solid(config={'file': Field(String)})
 def loop(context):
     with open(context.solid_config['file'], 'w') as ff:
         ff.write('yup')

@@ -42,7 +42,7 @@ def scaffold_type(config_type, skip_non_required=True):
     elif config_type.kind == ConfigTypeKind.ANY:
         return 'AnyType'
     elif config_type.kind == ConfigTypeKind.SCALAR:
-        defaults = {'String': '', 'Path': 'path/to/something', 'Int': 0, 'Bool': True}
+        defaults = {'String': '', 'Int': 0, 'Bool': True}
 
         return defaults[config_type.given_name]
     elif config_type.kind == ConfigTypeKind.ARRAY:

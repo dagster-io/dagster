@@ -1,7 +1,6 @@
 import csv
 
 from dagster import (
-    Path,
     Selector,
     SerializationStrategy,
     execute_pipeline,
@@ -29,7 +28,7 @@ class CsvSerializationStrategy(SerializationStrategy):
         return LessSimpleDataFrame([row for row in reader])
 
 
-@input_hydration_config(Selector({'pickle': Path}))
+@input_hydration_config(Selector({'pickle': str}))
 def less_simple_data_frame_input_hydration_config(context, selector):
     with open(selector['pickle'], 'r') as fd:
         lines = [row for row in csv.DictReader(fd)]

@@ -14,7 +14,7 @@ snapshots['test_basic_invalid_config_on_environment_schema 1'] = {
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Undefined field "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: Path } outputs?: [{ result?: Path }] } sum_sq_solid?: { outputs?: [{ result?: Path }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }".',
+                    'message': 'Undefined field "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { } solids: { sum_solid: { inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { outputs?: [{ result?: String }] } } storage?: { filesystem?: { config?: { base_dir?: String } } in_memory?: { } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [

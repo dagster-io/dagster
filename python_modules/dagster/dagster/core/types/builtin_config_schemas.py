@@ -6,7 +6,6 @@ from dagster.config.config_type import (
     ConfigBoolInstance,
     ConfigFloatInstance,
     ConfigIntInstance,
-    ConfigPathInstance,
     ConfigStringInstance,
     ConfigType,
     ConfigTypeKind,
@@ -15,7 +14,7 @@ from dagster.config.config_type import (
 from dagster.config.field import Field
 from dagster.config.field_utils import Selector
 
-from .config_schema import input_hydration_config, make_bare_input_schema, output_selector_schema
+from .config_schema import input_hydration_config, output_selector_schema
 
 
 def define_typed_input_schema_dict(value_config_type):
@@ -70,7 +69,7 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
 
 
 def define_path_dict_field():
-    return {'path': Field(ConfigPathInstance)}
+    return {'path': Field(ConfigStringInstance)}
 
 
 def define_builtin_scalar_output_schema(scalar_name):
@@ -111,9 +110,6 @@ class BuiltinSchemas(object):
 
     INT_INPUT = define_builtin_scalar_input_schema('Int', ConfigIntInstance)
     INT_OUTPUT = define_builtin_scalar_output_schema('Int')
-
-    PATH_INPUT = make_bare_input_schema(ConfigPathInstance)
-    PATH_OUTPUT = define_builtin_scalar_output_schema('Path')
 
     STRING_INPUT = define_builtin_scalar_input_schema('String', ConfigStringInstance)
     STRING_OUTPUT = define_builtin_scalar_output_schema('String')

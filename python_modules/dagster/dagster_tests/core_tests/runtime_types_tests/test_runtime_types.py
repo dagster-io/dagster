@@ -137,7 +137,7 @@ def test_comparison():
     assert resolve_dagster_type(Nothing) == resolve_dagster_type(Nothing)
     assert resolve_dagster_type(Optional[String]) == resolve_dagster_type(Optional[String])
 
-    types = [Any, Bool, Float, Int, Path, String, Nothing]
+    types = [Any, Bool, Float, Int, String, Nothing]
     non_equal_pairs = [(t1, t2) for t1 in types for t2 in types if t1 != t2]
     for t1, t2 in non_equal_pairs:
         assert resolve_dagster_type(t1) != resolve_dagster_type(t2)

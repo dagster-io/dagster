@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Int, Path, String, StringSource
+from dagster import Bool, Field, Int, String, StringSource
 
 
 def define_snowflake_config():
@@ -83,7 +83,7 @@ def define_snowflake_config():
     )
 
     ocsp_response_cache_filename = Field(
-        Path,
+        String,
         description='''URI for the OCSP response cache file.
          By default, the OCSP response cache file is created in the cache directory.''',
         is_required=False,

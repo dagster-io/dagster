@@ -32,7 +32,7 @@ from .version import __version__
     Selector(
         {
             'csv': {
-                'path': Field(Path),
+                'path': Field(String),
                 'sep': Field(String, is_required=False),
                 'header': Field(Bool, is_required=False),
             }
@@ -54,7 +54,7 @@ def load_rdd(context, file_type, file_options):
         {
             'csv': Field(
                 {
-                    'path': Field(Path),
+                    'path': Field(String),
                     'sep': Field(String, is_required=False),
                     'header': Field(Bool, is_required=False),
                 }
@@ -86,7 +86,7 @@ SparkRDD = PythonObjectDagsterType(
     Selector(
         {
             'csv': {
-                'path': Field(Path),
+                'path': Field(String),
                 'sep': Field(String, is_required=False),
                 'header': Field(Bool, is_required=False),
             },

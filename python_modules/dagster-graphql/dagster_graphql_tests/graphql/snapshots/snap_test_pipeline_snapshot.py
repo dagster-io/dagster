@@ -16,7 +16,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_epheme
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "5a42688874bb1e5ea35c9daec23079705d02c312",
+    "pipelineSnapshotId": "50e2efc35a02ada40b7e1a45d9392d1c1c6a639e",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -32,9 +32,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_epheme
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "String"
@@ -64,7 +61,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "5a42688874bb1e5ea35c9daec23079705d02c312",
+    "pipelineSnapshotId": "50e2efc35a02ada40b7e1a45d9392d1c1c6a639e",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -80,9 +77,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "String"
@@ -112,7 +106,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "5a42688874bb1e5ea35c9daec23079705d02c312",
+    "pipelineSnapshotId": "50e2efc35a02ada40b7e1a45d9392d1c1c6a639e",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -128,9 +122,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "String"
@@ -160,7 +151,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
       }
     ],
     "name": "noop_pipeline",
-    "pipelineSnapshotId": "5a42688874bb1e5ea35c9daec23079705d02c312",
+    "pipelineSnapshotId": "50e2efc35a02ada40b7e1a45d9392d1c1c6a639e",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -176,9 +167,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "String"
@@ -222,7 +210,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "6798e3885d42872e5aa8978c05c86bb7e423980c",
+    "pipelineSnapshotId": "2fbb3b6487006569a9e83775815deb422c0a5d57",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -238,9 +226,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "PoorMansDataFrame"
@@ -279,7 +264,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "6798e3885d42872e5aa8978c05c86bb7e423980c",
+    "pipelineSnapshotId": "2fbb3b6487006569a9e83775815deb422c0a5d57",
     "runtimeTypes": [
       {
         "key": "Any"
@@ -295,9 +280,6 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
       },
       {
         "key": "Nothing"
-      },
-      {
-        "key": "Path"
       },
       {
         "key": "PoorMansDataFrame"

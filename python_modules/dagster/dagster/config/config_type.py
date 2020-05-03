@@ -118,12 +118,6 @@ class String(BuiltinConfigScalar):
         super(String, self).__init__(scalar_kind=ConfigScalarKind.STRING, description='')
 
 
-# Consider eliminating
-class Path(BuiltinConfigScalar):
-    def __init__(self):
-        super(Path, self).__init__(scalar_kind=ConfigScalarKind.STRING, description='')
-
-
 class Bool(BuiltinConfigScalar):
     def __init__(self):
         super(Bool, self).__init__(scalar_kind=ConfigScalarKind.BOOL, description='')
@@ -317,14 +311,12 @@ ConfigAnyInstance = Any()
 ConfigBoolInstance = Bool()
 ConfigFloatInstance = Float()
 ConfigIntInstance = Int()
-ConfigPathInstance = Path()
 ConfigStringInstance = String()
 _CONFIG_MAP = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
     BuiltinEnum.INT: ConfigIntInstance,
-    BuiltinEnum.PATH: ConfigPathInstance,
     BuiltinEnum.STRING: ConfigStringInstance,
 }
 
@@ -334,7 +326,6 @@ _CONFIG_MAP_BY_NAME = {
     'Bool': ConfigBoolInstance,
     'Float': ConfigFloatInstance,
     'Int': ConfigIntInstance,
-    'Path': ConfigPathInstance,
     'String': ConfigStringInstance,
 }
 

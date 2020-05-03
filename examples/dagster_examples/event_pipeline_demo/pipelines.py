@@ -18,7 +18,6 @@ from dagster import (
     ModeDefinition,
     Nothing,
     OutputDefinition,
-    Path,
     PresetDefinition,
     String,
     TypeCheck,
@@ -93,7 +92,7 @@ def _download_from_s3_to_file(session, context, bucket, key, target_folder, skip
         'bucket': Field(String, description='S3 bucket name'),
         'key': Field(String, description='S3 key name'),
         'target_folder': Field(
-            Path, description=('Specifies the path at which to download the object.')
+            String, description=('Specifies the path at which to download the object.')
         ),
         'skip_if_present': Field(Bool, is_required=False, default_value=False),
     },

@@ -310,8 +310,8 @@ class _Path(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Path, self).__init__(
             name='Path',
-            input_hydration_config=BuiltinSchemas.PATH_INPUT,
-            output_materialization_config=BuiltinSchemas.PATH_OUTPUT,
+            input_hydration_config=BuiltinSchemas.STRING_INPUT,
+            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
             type_check_fn=self.type_check_fn,
         )
 
@@ -666,7 +666,6 @@ _RUNTIME_MAP = {
     BuiltinEnum.BOOL: Bool,
     BuiltinEnum.FLOAT: Float,
     BuiltinEnum.INT: Int,
-    BuiltinEnum.PATH: Path,
     BuiltinEnum.STRING: String,
     BuiltinEnum.NOTHING: Nothing,
 }

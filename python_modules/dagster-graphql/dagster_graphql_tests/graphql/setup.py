@@ -28,7 +28,6 @@ from dagster import (
     OutputDefinition,
     Partition,
     PartitionSetDefinition,
-    Path,
     PresetDefinition,
     PythonObjectDagsterType,
     RepositoryDefinition,
@@ -55,13 +54,13 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
 
 
-@input_hydration_config(Path)
+@input_hydration_config(String)
 def df_input_schema(_context, path):
     with open(path, 'r') as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
-@output_materialization_config(Path)
+@output_materialization_config(String)
 def df_output_schema(_context, path, value):
     with open(path, 'w') as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -144,7 +143,7 @@ def csv_hello_world_solids_config_fs_storage():
     }
 
 
-@solid(config={'file': Field(Path)})
+@solid(config={'file': Field(String)})
 def loop(context):
     with open(context.solid_config['file'], 'w') as ff:
         ff.write('yup')

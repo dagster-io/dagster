@@ -261,7 +261,7 @@ def test_set_solid_configable_input_bad():
 
     expected = (
         'Value at path root:solids:set_solid:inputs:set_input must be list. '
-        'Expected: [(String | { json: { path: Path } pickle: { path: Path } value: String })]'
+        'Expected: [(String | { json: { path: String } pickle: { path: String } value: String })]'
     )
 
     assert expected in str(exc_info.value)
@@ -324,7 +324,7 @@ def hello(context) -> str:
     return 'Hello, {friend}!'.format(friend=context.solid_config)
 
 
-@solid(config=Field(Path))
+@solid(config=Field(String))
 def unpickle(context) -> Any:
     with open(context.solid_config, 'rb') as fd:
         return pickle.load(fd)

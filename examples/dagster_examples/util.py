@@ -9,7 +9,7 @@ from dagster import Field, OutputDefinition, Path, String, solid
     name='download_file',
     config={
         'url': Field(String, description='The URL from which to download the file'),
-        'path': Field(Path, description='The path to which to download the file'),
+        'path': Field(String, description='The path to which to download the file'),
     },
     output_defs=[
         OutputDefinition(Path, name='path', description='The path to which the file was downloaded')

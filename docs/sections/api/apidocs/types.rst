@@ -182,7 +182,7 @@ Built-in primitive types
         def exists_py2(_, path):
             return os.path.exists(path)
 
-        @solid(config=Field(Path))
+        @solid(config=Field(str))
         def unpickle(context) -> Any:
             with open(context.solid_config, 'rb') as fd:
                 return pickle.load(fd)

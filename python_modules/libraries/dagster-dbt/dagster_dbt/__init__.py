@@ -16,7 +16,6 @@ from dagster import (
     Nothing,
     Output,
     OutputDefinition,
-    Path,
     check,
     solid,
 )
@@ -98,7 +97,7 @@ def create_dbt_run_solid(project_dir, name=None, profiles_dir=None, dbt_executab
         input_defs=[InputDefinition('run_after', Nothing)],
         config={
             'dbt_executable': Field(
-                Path,
+                str,
                 default_value=dbt_executable,
                 is_required=False,
                 description=(
@@ -209,7 +208,7 @@ def create_dbt_test_solid(project_dir, name=None, profiles_dir=None, dbt_executa
         output_defs=[OutputDefinition(dagster_type=Nothing, name='test_complete')],
         config={
             'dbt_executable': Field(
-                Path,
+                str,
                 default_value=dbt_executable,
                 is_required=False,
                 description=(
