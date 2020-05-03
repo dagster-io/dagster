@@ -29,6 +29,14 @@ communicated between user repositories and host processes such as dagit.
 
 '''
 
+from dagster.config.snap import (
+    ConfigEnumValueSnap,
+    ConfigFieldSnap,
+    ConfigSchemaSnapshot,
+    ConfigTypeSnap,
+    snap_from_config_type,
+    snap_from_field,
+)
 
 from .active_data import (
     ActivePipelineData,
@@ -39,14 +47,7 @@ from .active_data import (
     active_preset_data_from_def,
     active_repository_data_from_def,
 )
-from .config_types import (
-    ConfigFieldSnap,
-    ConfigSchemaSnapshot,
-    ConfigTypeSnap,
-    build_config_schema_snapshot,
-    snap_from_config_type,
-    snap_from_field,
-)
+from .config_types import build_config_schema_snapshot
 from .dagster_types import build_dagster_type_namespace_snapshot
 from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap
 from .execution_plan_snapshot import (

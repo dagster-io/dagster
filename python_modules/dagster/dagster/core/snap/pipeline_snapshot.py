@@ -11,16 +11,16 @@ from dagster.config.config_type import (
     get_builtin_scalar_by_name,
 )
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED
-from dagster.core.definitions import PipelineDefinition
-from dagster.serdes import deserialize_value, whitelist_for_serdes
-
-from .config_types import (
+from dagster.config.snap import (
     ConfigEnumValueSnap,
     ConfigFieldSnap,
     ConfigSchemaSnapshot,
     ConfigTypeSnap,
-    build_config_schema_snapshot,
 )
+from dagster.core.definitions import PipelineDefinition
+from dagster.serdes import deserialize_value, whitelist_for_serdes
+
+from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
 from .dep_snapshot import (
     DependencyStructureIndex,

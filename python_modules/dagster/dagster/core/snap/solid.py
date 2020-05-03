@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import (
     CompositeSolidDefinition,
     InputDefinition,
@@ -10,7 +11,6 @@ from dagster.core.definitions import (
 )
 from dagster.serdes import whitelist_for_serdes
 
-from .config_types import ConfigFieldSnap, snap_from_field
 from .dep_snapshot import (
     DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_icontains_solids,

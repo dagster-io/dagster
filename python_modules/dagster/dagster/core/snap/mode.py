@@ -2,10 +2,9 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.config.snap import ConfigFieldSnap, snap_from_field
 from dagster.core.definitions import LoggerDefinition, ModeDefinition, ResourceDefinition
 from dagster.serdes import whitelist_for_serdes
-
-from .config_types import ConfigFieldSnap, snap_from_field
 
 
 def build_mode_def_snap(mode_def, root_config_key):
