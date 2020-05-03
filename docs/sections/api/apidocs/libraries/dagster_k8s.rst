@@ -1,5 +1,5 @@
-dagster_k8s
----------------
+Kubernetes (dagster_k8s)
+------------------------
 
 .. currentmodule:: dagster_k8s
 

@@ -1,5 +1,5 @@
-dagster_airflow
----------------
+Airflow (dagster_airflow)
+-------------------------
 
 .. currentmodule:: dagster_airflow
 

@@ -1,5 +1,5 @@
-dagster_cron
----------------
+Cron (dagster_cron)
+-------------------
 
 .. currentmodule:: dagster_cron
 

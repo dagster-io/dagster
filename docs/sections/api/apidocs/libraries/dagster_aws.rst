@@ -1,5 +1,5 @@
-dagster_aws
-===========
+AWS (dagster_aws)
+=================
 
 .. currentmodule:: dagster_aws
 

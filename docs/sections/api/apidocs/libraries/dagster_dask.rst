@@ -1,5 +1,5 @@
-dagster_dask
----------------
+Dask (dagster_dask)
+-------------------
 
 .. currentmodule:: dagster_dask
 

@@ -1,5 +1,5 @@
-dagster_postgres
-----------------
+PostgreSQL (dagster_postgres)
+-----------------------------
 
 .. currentmodule:: dagster_postgres
 

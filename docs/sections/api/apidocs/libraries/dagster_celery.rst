@@ -1,5 +1,5 @@
-dagster_celery
----------------
+Celery (dagster_celery)
+-----------------------
 
 .. currentmodule:: dagster_celery
 

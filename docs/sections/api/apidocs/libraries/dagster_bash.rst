@@ -1,5 +1,5 @@
-dagster_bash
-------------
+Bash (dagster_bash)
+-------------------
 
 .. currentmodule:: dagster_bash
 

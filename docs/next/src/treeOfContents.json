@@ -129,43 +129,43 @@
         "path": "/docs/apidocs/internals"
       },
       {
-        "name": "dagstermill",
+        "name": "Dagstermill",
         "path": "/docs/apidocs/libraries/dagstermill"
       },
       {
-        "name": "dagster_airflow",
+        "name": "Airflow (dagster_airflow)",
         "path": "/docs/apidocs/libraries/dagster_airflow"
       },
       {
-        "name": "dagster_aws",
+        "name": "AWS (dagster_aws)",
         "path": "/docs/apidocs/libraries/dagster_aws"
       },
       {
-        "name": "dagster_bash",
+        "name": "Bash (dagster_bash)",
         "path": "/docs/apidocs/libraries/dagster_bash"
       },
       {
-        "name": "dagster_celery",
+        "name": "Celery (dagster_celery)",
         "path": "/docs/apidocs/libraries/dagster_celery"
       },
       {
-        "name": "dagster_cron",
+        "name": "Cron (dagster_cron)",
         "path": "/docs/apidocs/libraries/dagster_cron"
       },
       {
-        "name": "dagster_dask",
+        "name": "Dask (dagster_dask)",
         "path": "/docs/apidocs/libraries/dagster_dask"
       },
       {
-        "name": "dagster_gcp",
+        "name": "GCP (dagster_gcp)",
         "path": "/docs/apidocs/libraries/dagster_gcp"
       },
       {
-        "name": "dagster_k8s",
+        "name": "Kubernetes (dagster_k8s)",
         "path": "/docs/apidocs/libraries/dagster_k8s"
       },
       {
-        "name": "dagster_postgres",
+        "name": "PostgreSQL (dagster_postgres)",
         "path": "/docs/apidocs/libraries/dagster_postgres"
       }
     ]
