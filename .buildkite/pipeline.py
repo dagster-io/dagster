@@ -515,9 +515,7 @@ def dagit_tests():
         tests.append(
             StepBuilder("dagit tests ({ver})".format(ver=TOX_MAP[version]))
             .run(
-                "pushd python_modules",
                 "make rebuild_dagit",
-                "popd",
                 "cd python_modules/dagit",
                 "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),

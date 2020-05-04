@@ -38,7 +38,6 @@ install_dev_python_modules:
 				-e python_modules/dagster-graphql \
 				-e python_modules/dagit \
 				-e python_modules/libraries/dagster-pandas \
-				-e python_modules/libraries/dagstermill \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-bash \
 				-e python_modules/libraries/dagster-celery \
@@ -61,7 +60,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-twilio \
 				-e python_modules/libraries/dagstermill \
 				-e python_modules/libraries/lakehouse \
-				-e python_modules/automation \
 				-r python_modules/dagster/dev-requirements.txt \
 				-r python_modules/libraries/dagster-aws/dev-requirements.txt \
 				-r bin/requirements.txt \
@@ -75,7 +73,8 @@ install_dev_python_modules:
 	# NOTE: This installation will fail for Python 2.7 (Dask doesn't work w/ py27 on macOS)
 	-pip install -e python_modules/libraries/dagster-dask $(QUIET)
 
-	pip install -r .read-the-docs-requirements.txt
+	# This fails on py2
+	-pip install -r .read-the-docs-requirements.txt
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules
