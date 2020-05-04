@@ -1,14 +1,14 @@
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 
 import gevent.lock
 
 from dagster import check
 from dagster.core.events.log import EventRecord
 
-from .base import EventLogSequence, EventLogStorage
+from .base import AssetAwareEventLogStorage, EventLogSequence, EventLogStorage
 
 
-class InMemoryEventLogStorage(EventLogStorage):
+class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage):
     def __init__(self):
         self._logs = defaultdict(EventLogSequence)
         self._lock = defaultdict(gevent.lock.Semaphore)
@@ -55,3 +55,50 @@ class InMemoryEventLogStorage(EventLogStorage):
     @property
     def is_persistent(self):
         return False
+
+    def get_all_asset_keys(self):
+        asset_records = []
+        for records in self._logs.values():
+            asset_records += [
+                record
+                for record in records
+                if record.is_dagster_event and record.dagster_event.asset_key
+            ]
+
+        asset_events = [
+            record.dagster_event
+            for record in sorted(asset_records, key=lambda x: x.timestamp, reverse=True)
+        ]
+        asset_keys = OrderedDict()
+        for event in asset_events:
+            asset_keys[event.asset_key] = True
+        return list(asset_keys.keys())
+
+    def get_asset_events(self, asset_key, cursor=None, limit=None):
+        asset_events = []
+        for records in self._logs.values():
+            asset_events += [
+                record
+                for record in records
+                if record.is_dagster_event and record.dagster_event.asset_key == asset_key
+            ]
+
+        asset_events = sorted(asset_events, key=lambda x: x.timestamp, reverse=True)
+
+        if cursor:
+            asset_events = asset_events[cursor:]
+
+        if limit:
+            asset_events = asset_events[:limit]
+
+        return asset_events
+
+    def get_asset_run_ids(self, asset_key):
+        asset_run_ids = set()
+        for run_id, records in self._logs.items():
+            for record in records:
+                if record.is_dagster_event and record.dagster_event.asset_key == asset_key:
+                    asset_run_ids.add(run_id)
+                    break
+
+        return list(asset_run_ids)

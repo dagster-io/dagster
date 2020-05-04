@@ -10,6 +10,7 @@ type ArrayConfigType implements ConfigType & WrappingConfigType {
 type Asset {
   key: String!
   assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
 }
 
 type AssetConnection {

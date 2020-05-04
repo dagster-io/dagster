@@ -51,8 +51,7 @@ class SqlEventLogStorage(EventLogStorage):
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
             step_key = event.dagster_event.step_key
-            if dagster_event_type == DagsterEventType.STEP_MATERIALIZATION.value:
-                asset_key = event.dagster_event.event_specific_data.materialization.asset_key
+            asset_key = event.dagster_event.asset_key
 
         # https://stackoverflow.com/a/54386260/324449
         return SqlEventLogStorageTable.insert().values(  # pylint: disable=no-value-for-parameter

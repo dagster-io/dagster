@@ -103,10 +103,76 @@ export interface AssetQuery_assetOrError_Asset_assetMaterializations {
   materializationEvent: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent;
 }
 
+export interface AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline {
+  __typename: "UnknownPipeline";
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline_solids {
+  __typename: "Solid";
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline {
+  __typename: "Pipeline";
+  name: string;
+  pipelineSnapshotId: string;
+  solids: AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline_solids[];
+}
+
+export type AssetQuery_assetOrError_Asset_runs_pipeline = AssetQuery_assetOrError_Asset_runs_pipeline_UnknownPipeline | AssetQuery_assetOrError_Asset_runs_pipeline_Pipeline;
+
+export interface AssetQuery_assetOrError_Asset_runs_stats_PipelineRunStatsSnapshot {
+  __typename: "PipelineRunStatsSnapshot";
+  stepsSucceeded: number;
+  stepsFailed: number;
+  startTime: number | null;
+  endTime: number | null;
+  expectations: number;
+  materializations: number;
+}
+
+export interface AssetQuery_assetOrError_Asset_runs_stats_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_runs_stats_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: AssetQuery_assetOrError_Asset_runs_stats_PythonError_cause | null;
+}
+
+export type AssetQuery_assetOrError_Asset_runs_stats = AssetQuery_assetOrError_Asset_runs_stats_PipelineRunStatsSnapshot | AssetQuery_assetOrError_Asset_runs_stats_PythonError;
+
+export interface AssetQuery_assetOrError_Asset_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_runs {
+  __typename: "PipelineRun";
+  runId: string;
+  status: PipelineRunStatus;
+  stepKeysToExecute: string[] | null;
+  canCancel: boolean;
+  mode: string;
+  rootRunId: string | null;
+  parentRunId: string | null;
+  pipelineSnapshotId: string | null;
+  pipeline: AssetQuery_assetOrError_Asset_runs_pipeline;
+  stats: AssetQuery_assetOrError_Asset_runs_stats;
+  tags: AssetQuery_assetOrError_Asset_runs_tags[];
+}
+
 export interface AssetQuery_assetOrError_Asset {
   __typename: "Asset";
   key: string;
   assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[];
+  runs: AssetQuery_assetOrError_Asset_runs[];
 }
 
 export type AssetQuery_assetOrError = AssetQuery_assetOrError_AssetsNotSupportedError | AssetQuery_assetOrError_Asset;

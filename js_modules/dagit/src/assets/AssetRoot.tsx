@@ -5,8 +5,17 @@ import { Colors } from "@blueprintjs/core";
 import { useQuery } from "react-apollo";
 import Loading from "../Loading";
 import { AssetQuery_assetOrError_Asset_assetMaterializations } from "./types/AssetQuery";
-import { Header, RowContainer, RowColumn } from "../ListComponents";
+import {
+  Header,
+  Legend,
+  LegendColumn,
+  RowContainer,
+  RowColumn
+} from "../ListComponents";
 import { MetadataEntries, MetadataEntry } from "../runs/MetadataEntry";
+import { RunTable } from "../runs/RunTable";
+import { RunStatus, titleForRun } from "../runs/RunUtils";
+import { PipelineRunStatus } from "../types/globalTypes";
 
 type AssetMaterialization = AssetQuery_assetOrError_Asset_assetMaterializations;
 
@@ -20,14 +29,25 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
         if (assetOrError.__typename !== "Asset") {
           return null;
         }
+        if (!assetOrError.assetMaterializations.length) {
+          return (
+            <Container>
+              <TitleHeader>Asset: {assetKey}</TitleHeader>
+            </Container>
+          );
+        }
+
+        const lastMaterialization = assetOrError.assetMaterializations[0];
         return (
           <Container>
             <TitleHeader>Asset: {assetKey}</TitleHeader>
-            {assetOrError.assetMaterializations.length ? (
-              <AssetMaterialization
-                assetMaterialization={assetOrError.assetMaterializations[0]}
-              />
-            ) : null}
+            <AssetLastMaterialization
+              assetMaterialization={lastMaterialization}
+            />
+            <div>
+              <Header>Recent Runs</Header>
+              <RunTable runs={assetOrError.runs} onSetFilter={_ => {}} />
+            </div>
           </Container>
         );
       }}
@@ -35,7 +55,7 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
   );
 };
 
-const AssetMaterialization = ({
+const AssetLastMaterialization = ({
   assetMaterialization
 }: {
   assetMaterialization: AssetMaterialization;
@@ -51,42 +71,61 @@ const AssetMaterialization = ({
   } = assetMaterialization.materializationEvent;
   const metadataEntries = materialization.metadataEntries;
   return (
-    <div>
+    <Section>
       <Header>Last Materialized Event</Header>
-      <TableContainer>
-        <RowContainer>
-          <RowColumn>Run</RowColumn>
-          <RowColumn>Label</RowColumn>
-          <RowColumn>Description</RowColumn>
-          <RowColumn>Timestamp</RowColumn>
-          <RowColumn>Details</RowColumn>
-        </RowContainer>
+      <div>
+        <Legend>
+          <LegendColumn style={{ maxWidth: 30 }}></LegendColumn>
+          <LegendColumn style={{ maxWidth: 250 }}>Run</LegendColumn>
+          <LegendColumn>Materialization</LegendColumn>
+          <LegendColumn>Details</LegendColumn>
+          <LegendColumn style={{ maxWidth: 400 }}>Timestamp</LegendColumn>
+        </Legend>
 
         <RowContainer>
-          <RowColumn>
+          <RowColumn
+            style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}
+          >
             {run ? (
-              <a href={`/runs/${run.pipeline.name}/${run.runId}`}>{runId}</a>
+              <RunStatus status={run.status} />
+            ) : (
+              <RunStatus status={PipelineRunStatus.NOT_STARTED} />
+            )}
+          </RowColumn>
+          <RowColumn style={{ maxWidth: 250 }}>
+            {run ? (
+              <a href={`/runs/${run.pipeline.name}/${run.runId}`}>
+                {titleForRun(run)}
+              </a>
             ) : (
               runId
             )}
           </RowColumn>
-          <RowColumn>{materialization.label}</RowColumn>
-          <RowColumn>{materialization.description || "-"}</RowColumn>
           <RowColumn>
-            {new Date(parseInt(timestamp)).toLocaleString()}
+            {materialization.label}
+            {materialization.description ? (
+              <div style={{ fontSize: "0.8rem", marginTop: 10 }}>
+                {materialization.description}
+              </div>
+            ) : null}
           </RowColumn>
           <RowColumn>
             {metadataEntries && metadataEntries.length ? (
               <MetadataEntries entries={metadataEntries} />
             ) : null}
           </RowColumn>
+          <RowColumn style={{ maxWidth: 400 }}>
+            {new Date(parseInt(timestamp)).toLocaleString()}
+          </RowColumn>
         </RowContainer>
-      </TableContainer>
-    </div>
+      </div>
+    </Section>
   );
 };
 
-const TableContainer = styled.div``;
+const Section = styled.div`
+  margin-bottom: 30px;
+`;
 const TitleHeader = styled.div`
   color: ${Colors.BLACK};
   font-size: 1.3rem;
@@ -123,8 +162,12 @@ export const ASSET_QUERY = gql`
             }
           }
         }
+        runs {
+          ...RunTableRunFragment
+        }
       }
     }
   }
   ${MetadataEntry.fragments.MetadataEntryFragment}
+  ${RunTable.fragments.RunTableRunFragment}
 `;

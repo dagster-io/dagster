@@ -1,10 +1,11 @@
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_assets import get_asset_events
+from dagster_graphql.implementation.fetch_assets import get_asset_events, get_asset_run_ids
 from dagster_graphql.implementation.fetch_runs import get_run_by_id
 from dagster_graphql.schema.runs import construct_basic_params
 
 from dagster import check
 from dagster.core.events.log import EventRecord
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .errors import DauphinError
 
@@ -17,12 +18,39 @@ class DauphinAsset(dauphin.ObjectType):
     assetMaterializations = dauphin.Field(
         dauphin.non_null_list('AssetMaterialization'), cursor=dauphin.String(), limit=dauphin.Int(),
     )
+    runs = dauphin.Field(
+        dauphin.non_null_list('PipelineRun'), cursor=dauphin.String(), limit=dauphin.Int(),
+    )
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         return [
             graphene_info.schema.type_named('AssetMaterialization')(event=event)
             for event in get_asset_events(
                 graphene_info, self.key, kwargs.get('cursor'), kwargs.get('limit')
+            )
+        ]
+
+    def resolve_runs(self, graphene_info, **kwargs):
+        cursor = kwargs.get('cursor')
+        limit = kwargs.get('limit')
+
+        run_ids = get_asset_run_ids(graphene_info, self.key)
+
+        # for now, handle cursor/limit here instead of in the DB layer
+        if cursor:
+            try:
+                idx = run_ids.index(cursor)
+                run_ids = run_ids[idx:]
+            except ValueError:
+                return []
+
+        if limit:
+            run_ids = run_ids[:limit]
+
+        return [
+            graphene_info.schema.type_named('PipelineRun')(r)
+            for r in graphene_info.context.instance.get_runs(
+                filters=PipelineRunsFilter(run_ids=run_ids)
             )
         ]
 

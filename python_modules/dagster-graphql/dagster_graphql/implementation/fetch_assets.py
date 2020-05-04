@@ -46,3 +46,13 @@ def get_asset_events(graphene_info, asset_key, cursor=None, limit=None):
         if event.is_dagster_event
         and event.dagster_event.event_type_value == DagsterEventType.STEP_MATERIALIZATION.value
     ]
+
+
+def get_asset_run_ids(graphene_info, asset_key):
+    check.str_param(asset_key, 'asset_key')
+    event_storage = (
+        graphene_info.context.instance._event_storage  # pylint: disable=protected-access
+    )
+    check.inst(event_storage, AssetAwareEventLogStorage)
+    run_ids = event_storage.get_asset_run_ids(asset_key)
+    return run_ids

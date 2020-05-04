@@ -144,6 +144,22 @@ class PostgresEventLogStorage(SqlEventLogStorage, AssetAwareEventLogStorage, Con
                 logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
         return events
 
+    def get_asset_run_ids(self, asset_key):
+        check.str_param(asset_key, 'asset_key')
+        query = (
+            db.select(
+                [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
+            )
+            .where(SqlEventLogStorageTable.c.asset_key == asset_key)
+            .group_by(SqlEventLogStorageTable.c.run_id,)
+            .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
+        )
+
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return [run_id for (run_id, _timestamp) in results]
+
     @contextmanager
     def connect(self, run_id=None):
         yield self._engine
