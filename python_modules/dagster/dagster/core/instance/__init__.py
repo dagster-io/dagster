@@ -787,6 +787,43 @@ class DagsterInstance:
     def end_schedule(self, repository, schedule_name):
         return self._scheduler.end_schedule(self, repository, schedule_name)
 
+    def scheduler_debug_info(self):
+        output = ""
+
+        title = "Scheduler Configuration"
+        output += "{title}\n{sep}\n{info}\n".format(
+            title=title,
+            sep="=" * len(title),
+            info=self.info_str_for_component('Scheduler', self.scheduler),
+        )
+
+        title = "Scheduler Info"
+        output += "{title}\n{sep}\n{info}\n".format(
+            title=title, sep="=" * len(title), info=self.scheduler.debug_info(),
+        )
+
+        title = "Scheduler Storage Info"
+        schedule_info = self.all_schedules_info()
+        schedules = []
+        for repository, schedule in schedule_info:
+            schedule_info = {
+                schedule.name: {
+                    "status": schedule.status.value,
+                    "cron_schedule": schedule.cron_schedule,
+                    "python_path": schedule.python_path,
+                    "repository_name": repository,
+                    "repository_path": schedule.repository_path,
+                }
+            }
+
+            schedules.append(yaml.safe_dump(schedule_info, default_flow_style=False))
+
+        output += "{title}\n{sep}\n{info}\n".format(
+            title=title, sep="=" * len(title), info="\n".join(schedules),
+        )
+
+        return output
+
     # Schedule Storage
 
     def create_schedule_tick(self, repository, schedule_tick_data):

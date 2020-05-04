@@ -4,7 +4,6 @@ import sys
 
 import click
 import six
-import yaml
 
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.load_handle import handle_for_repo_cli_args
@@ -382,33 +381,7 @@ def schedule_debug_command():
 
 def execute_debug_command(print_fn):
     instance = DagsterInstance.get()
-
-    title = "Scheduler Configuration:"
-    print_fn(title)
-    print_fn('=' * len(title))
-    print_fn(instance.info_str_for_component('Scheduler', instance.scheduler))
-
-    title = "Scheduler Info:"
-    print_fn(title)
-    print_fn('=' * len(title))
-    print_fn(instance.scheduler.debug_info())
-
-    title = "Scheduler Storage Info:"
-    print_fn(title)
-    print_fn('=' * len(title))
-    schedule_info = instance.all_schedules_info()
-    for repository, schedule in schedule_info:
-        schedule_info = {
-            schedule.name: {
-                "status": schedule.status.value,
-                "cron_schedule": schedule.cron_schedule,
-                "python_path": schedule.python_path,
-                "repository_name": repository,
-                "repository_path": schedule.repository_path,
-            }
-        }
-
-        print_fn(yaml.dump(schedule_info, default_flow_style=False))
+    print_fn(instance.scheduler_debug_info())
 
 
 schedule_cli = create_schedule_cli_group()

@@ -19,6 +19,14 @@ import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
 import { RowColumn, RowContainer } from "../ListComponents";
 import { ScheduleFragment } from "./types/ScheduleFragment";
 import {
+  StartSchedule,
+  StartSchedule_startSchedule_PythonError
+} from "./types/StartSchedule";
+import {
+  StopSchedule,
+  StopSchedule_stopRunningSchedule_PythonError
+} from "./types/StopSchedule";
+import {
   ScheduleStatus,
   ScheduleTickStatus,
   ScheduleAttemptStatus
@@ -31,6 +39,7 @@ import { showCustomAlert } from "../CustomAlertProvider";
 import styled from "styled-components/macro";
 import { copyValue } from "../DomUtils";
 import { titleForRun, RunStatus } from "../runs/RunUtils";
+import PythonErrorInfo from "../PythonErrorInfo";
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -63,8 +72,45 @@ export const ScheduleRow: React.FunctionComponent<{
     environmentConfigYaml
   } = scheduleDefinition;
 
-  const [startSchedule] = useMutation(START_SCHEDULE_MUTATION);
-  const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION);
+  const displayScheduleMutationErrors = (
+    data: StartSchedule | StopSchedule
+  ) => {
+    let error:
+      | StartSchedule_startSchedule_PythonError
+      | StopSchedule_stopRunningSchedule_PythonError
+      | null = null;
+
+    if (
+      "startSchedule" in data &&
+      data.startSchedule.__typename === "PythonError"
+    ) {
+      error = data.startSchedule;
+    } else if (
+      "stopRunningSchedule" in data &&
+      data.stopRunningSchedule.__typename === "PythonError"
+    ) {
+      error = data.stopRunningSchedule;
+    }
+
+    if (error) {
+      showCustomAlert({
+        title: "Schedule Response",
+        body: (
+          <>
+            <PythonErrorInfo error={error} />
+          </>
+        )
+      });
+    }
+  };
+
+  const [startSchedule] = useMutation(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
+  const [stopSchedule] = useMutation(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors
+  });
+
   const match = useRouteMatch("/schedules/:scheduleName");
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
@@ -88,37 +134,11 @@ export const ScheduleRow: React.FunctionComponent<{
           onChange={() => {
             if (status === ScheduleStatus.RUNNING) {
               stopSchedule({
-                variables: { scheduleName: name },
-                optimisticResponse: {
-                  stopRunningSchedule: {
-                    __typename: "RunningScheduleResult",
-                    schedule: {
-                      scheduleDefinition: {
-                        __typename: "ScheduleDefinition",
-                        name: name
-                      },
-                      __typename: "RunningSchedule",
-                      status: ScheduleStatus.STOPPED
-                    }
-                  }
-                }
+                variables: { scheduleName: name }
               });
             } else {
               startSchedule({
-                variables: { scheduleName: name },
-                optimisticResponse: {
-                  startSchedule: {
-                    __typename: "RunningScheduleResult",
-                    schedule: {
-                      scheduleDefinition: {
-                        __typename: "ScheduleDefinition",
-                        name: name
-                      },
-                      __typename: "RunningSchedule",
-                      status: ScheduleStatus.RUNNING
-                    }
-                  }
-                }
+                variables: { scheduleName: name }
               });
             }
           }}
@@ -351,13 +371,20 @@ const ErrorTag = styled.div`
 const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleName: String!) {
     startSchedule(scheduleName: $scheduleName) {
-      schedule {
-        __typename
-        scheduleDefinition {
+      __typename
+      ... on RunningScheduleResult {
+        schedule {
           __typename
-          name
+          scheduleDefinition {
+            __typename
+            name
+          }
+          status
         }
-        status
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }
@@ -366,13 +393,20 @@ const START_SCHEDULE_MUTATION = gql`
 const STOP_SCHEDULE_MUTATION = gql`
   mutation StopSchedule($scheduleName: String!) {
     stopRunningSchedule(scheduleName: $scheduleName) {
-      schedule {
-        __typename
-        scheduleDefinition {
+      __typename
+      ... on RunningScheduleResult {
+        schedule {
           __typename
-          name
+          scheduleDefinition {
+            __typename
+            name
+          }
+          status
         }
-        status
+      }
+      ... on PythonError {
+        message
+        stack
       }
     }
   }

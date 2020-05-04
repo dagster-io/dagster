@@ -7,8 +7,11 @@ from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import (
     get_dagster_schedule_def,
     get_schedule_attempt_filenames,
+    start_schedule,
+    stop_schedule,
 )
 from dagster_graphql.schema.errors import (
+    DauphinPythonError,
     DauphinScheduleNotFoundError,
     DauphinSchedulerNotDefinedError,
 )
@@ -347,11 +350,17 @@ class DauphinScheduler(dauphin.ObjectType):
     runningSchedules = dauphin.non_null_list('RunningSchedule')
 
 
-class RunningScheduleResult(dauphin.ObjectType):
+class DauphinRunningScheduleResult(dauphin.ObjectType):
     class Meta(object):
         name = 'RunningScheduleResult'
 
     schedule = dauphin.NonNull('RunningSchedule')
+
+
+class DauphinScheduleMutationResult(dauphin.Union):
+    class Meta(object):
+        name = 'ScheduleMutationResult'
+        types = (DauphinPythonError, DauphinRunningScheduleResult)
 
 
 class DauphinStartScheduleMutation(dauphin.Mutation):
@@ -361,19 +370,10 @@ class DauphinStartScheduleMutation(dauphin.Mutation):
     class Arguments(object):
         schedule_name = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull('RunningScheduleResult')
+    Output = dauphin.NonNull('ScheduleMutationResult')
 
     def mutate(self, graphene_info, schedule_name):
-        repository = graphene_info.context.get_repository()
-        instance = graphene_info.context.instance
-
-        schedule = instance.start_schedule(repository, schedule_name)
-
-        return graphene_info.schema.type_named('RunningScheduleResult')(
-            schedule=graphene_info.schema.type_named('RunningSchedule')(
-                graphene_info, schedule=schedule
-            )
-        )
+        return start_schedule(graphene_info, schedule_name)
 
 
 class DauphinStopRunningScheduleMutation(dauphin.Mutation):
@@ -383,16 +383,7 @@ class DauphinStopRunningScheduleMutation(dauphin.Mutation):
     class Arguments(object):
         schedule_name = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull('RunningScheduleResult')
+    Output = dauphin.NonNull('ScheduleMutationResult')
 
     def mutate(self, graphene_info, schedule_name):
-        repository = graphene_info.context.get_repository()
-        instance = graphene_info.context.instance
-
-        schedule = instance.stop_schedule(repository, schedule_name)
-
-        return graphene_info.schema.type_named('RunningScheduleResult')(
-            schedule=graphene_info.schema.type_named('RunningSchedule')(
-                graphene_info, schedule=schedule
-            )
-        )
+        return stop_schedule(graphene_info, schedule_name)

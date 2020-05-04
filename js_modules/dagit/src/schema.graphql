@@ -568,8 +568,8 @@ type Mutation {
   startPipelineReexecution(executionParams: ExecutionParams!): StartPipelineReexecutionResult!
   launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
   executePlan(executionParams: ExecutionParams!): ExecutePlanResult!
-  startSchedule(scheduleName: String!): RunningScheduleResult!
-  stopRunningSchedule(scheduleName: String!): RunningScheduleResult!
+  startSchedule(scheduleName: String!): ScheduleMutationResult!
+  stopRunningSchedule(scheduleName: String!): ScheduleMutationResult!
   reloadDagit: Boolean!
   cancelPipelineExecution(runId: String!): CancelPipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
@@ -1076,6 +1076,8 @@ type ScheduleDefinition {
 type ScheduledExecutionBlocked {
   message: String!
 }
+
+union ScheduleMutationResult = PythonError | RunningScheduleResult
 
 type ScheduleNotFoundError implements Error {
   message: String!

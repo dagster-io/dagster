@@ -13,6 +13,30 @@ from .utils import ExecutionMetadata, ExecutionParams, UserFacingGraphQLError, c
 
 
 @capture_dauphin_error
+def start_schedule(graphene_info, schedule_name):
+    repository = graphene_info.context.get_repository()
+    instance = graphene_info.context.instance
+    schedule = instance.start_schedule(repository, schedule_name)
+    return graphene_info.schema.type_named('RunningScheduleResult')(
+        schedule=graphene_info.schema.type_named('RunningSchedule')(
+            graphene_info, schedule=schedule
+        )
+    )
+
+
+@capture_dauphin_error
+def stop_schedule(graphene_info, schedule_name):
+    repository = graphene_info.context.get_repository()
+    instance = graphene_info.context.instance
+    schedule = instance.stop_schedule(repository, schedule_name)
+    return graphene_info.schema.type_named('RunningScheduleResult')(
+        schedule=graphene_info.schema.type_named('RunningSchedule')(
+            graphene_info, schedule=schedule
+        )
+    )
+
+
+@capture_dauphin_error
 def get_scheduler_or_error(graphene_info):
     repository = graphene_info.context.get_repository()
     instance = graphene_info.context.instance
