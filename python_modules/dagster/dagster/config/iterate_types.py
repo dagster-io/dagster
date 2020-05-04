@@ -1,6 +1,7 @@
 from dagster import check
 
 from .config_type import ConfigType, ConfigTypeKind
+from .snap import ConfigSchemaSnapshot, snap_from_config_type
 
 
 def iterate_config_types(config_type):
@@ -20,3 +21,10 @@ def iterate_config_types(config_type):
             yield inner_type
 
     yield config_type
+
+
+def config_schema_snapshot_from_config_type(config_type):
+    check.inst_param(config_type, 'config_type', ConfigType)
+    return ConfigSchemaSnapshot(
+        {ct.key: snap_from_config_type(ct) for ct in iterate_config_types(config_type)}
+    )

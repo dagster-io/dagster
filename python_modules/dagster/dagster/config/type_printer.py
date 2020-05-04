@@ -5,54 +5,67 @@ from dagster.utils.indenting_printer import IndentingPrinter
 
 from .config_type import ConfigType, ConfigTypeKind
 from .field import resolve_to_config_type
+from .iterate_types import config_schema_snapshot_from_config_type
+from .snap import ConfigSchemaSnapshot
 
 
 def print_type(config_type, print_fn=print, with_lines=True):
     check.inst_param(config_type, 'config_type', ConfigType)
+    return _print_type(
+        config_schema_snapshot_from_config_type(config_type), config_type.key, print_fn, with_lines
+    )
+
+
+def _print_type(config_schema_snapshot, config_type_key, print_fn, with_lines):
+    check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
+    check.str_param(config_type_key, 'config_type_key')
     check.callable_param(print_fn, 'print_fn')
+    check.bool_param(with_lines, 'with_lines')
 
     if with_lines:
         printer = IndentingPrinter(printer=print_fn)
     else:
         printer = IndentingPrinter(printer=print_fn, indent_level=0)
-    _do_print(config_type, printer, with_lines=with_lines)
+    _do_print(config_schema_snapshot, config_type_key, printer, with_lines=with_lines)
     printer.line('')
 
 
-def _do_print(config_type, printer, with_lines=True):
+def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True):
     line_break_fn = printer.line if with_lines else lambda string: printer.append(string + ' ')
 
-    kind = config_type.kind
+    config_type_snap = config_schema_snapshot.get_config_snap(config_type_key)
+    kind = config_type_snap.kind
 
     if kind == ConfigTypeKind.ARRAY:
         printer.append('[')
-        _do_print(config_type.inner_type, printer)
+        _do_print(config_schema_snapshot, config_type_snap.inner_type_key, printer)
         printer.append(']')
     elif kind == ConfigTypeKind.NONEABLE:
-        _do_print(config_type.inner_type, printer)
+        _do_print(config_schema_snapshot, config_type_snap.inner_type_key, printer)
         printer.append('?')
     elif kind == ConfigTypeKind.SCALAR_UNION:
         printer.append('(')
-        _do_print(config_type.scalar_type, printer)
+        _do_print(config_schema_snapshot, config_type_snap.scalar_type_key, printer)
         printer.append(' | ')
-        _do_print(config_type.non_scalar_type, printer)
+        _do_print(config_schema_snapshot, config_type_snap.non_scalar_type_key, printer)
         printer.append(')')
     elif ConfigTypeKind.has_fields(kind):
         line_break_fn('{')
         with printer.with_indent():
-            for name, field in sorted(config_type.fields.items()):
-                if field.is_required:
+            for field_snap in sorted(config_type_snap.fields):
+                name = field_snap.name
+                if field_snap.is_required:
                     printer.append(name + ': ')
                 else:
                     printer.append(name + '?: ')
                 _do_print(
-                    field.config_type, printer, with_lines=with_lines,
+                    config_schema_snapshot, field_snap.type_key, printer, with_lines=with_lines,
                 )
                 line_break_fn('')
 
         printer.append('}')
-    elif config_type.given_name:
-        printer.append(config_type.given_name)
+    elif config_type_snap.given_name:
+        printer.append(config_type_snap.given_name)
     else:
         check.failed('not supported')
 

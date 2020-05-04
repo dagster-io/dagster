@@ -26,7 +26,7 @@ snapshots['test_pipeline_snap_all_props 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -1073,7 +1073,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -2098,7 +2098,7 @@ snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_pipeline_snap_all_props 2'] = 'e2b35512e2b6e444d1a15078d909a35545a01d76'
+snapshots['test_pipeline_snap_all_props 2'] = '75aa095697d017a543513f51d28f56b9bd1c025b'
 
 snapshots['test_two_invocations_deps_snap 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -2120,7 +2120,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -3161,7 +3161,7 @@ snapshots['test_two_invocations_deps_snap 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_two_invocations_deps_snap 2'] = 'e60613f7fd5380a3a373fdcca7d82413019490f7'
+snapshots['test_two_invocations_deps_snap 2'] = 'c11155cf0dbda918c338cefb3b74582a6929a9b7'
 
 snapshots['test_basic_dep_fan_out 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -3183,7 +3183,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -4289,7 +4289,7 @@ snapshots['test_basic_dep_fan_out 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_dep_fan_out 2'] = 'c11345782208943077b6c63aaf7dfc8fd93ef922'
+snapshots['test_basic_dep_fan_out 2'] = '4866ed4b25dfdf0a480c34a70ab7da4220fd98eb'
 
 snapshots['test_basic_fan_in 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -4311,7 +4311,7 @@ snapshots['test_basic_fan_in 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -5392,7 +5392,7 @@ snapshots['test_basic_fan_in 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_basic_fan_in 2'] = '5a8cceef7b38e13e3907f3eabc05b7beea04e0bc'
+snapshots['test_basic_fan_in 2'] = '74a3c520635d8204e06986c91cddacfe505fd815'
 
 snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "__class__": "PipelineSnapshot",
@@ -5414,7 +5414,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
       },
       "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
         "__class__": "ConfigTypeSnap",
-        "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+        "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -6439,7 +6439,7 @@ snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_empty_pipeline_snap_props 2'] = 'eef37de4f36ed7de5c478d5c9e9aefdf1156fa2f'
+snapshots['test_empty_pipeline_snap_props 2'] = 'e95e6f29f25ea236ce191a1e8b49ae8601a0afef'
 
 snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
   "__class__": "ConfigTypeSnap",
@@ -6476,7 +6476,7 @@ snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
 
 snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = '''{
   "__class__": "ConfigTypeSnap",
-  "description": "List of [{ bar: String foo: Int }]",
+  "description": "List of Array.Selector.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
   "fields": null,
   "given_name": null,
@@ -6492,7 +6492,7 @@ snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = '''{
 
 snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = '''{
   "__class__": "ConfigTypeSnap",
-  "description": "List of [{ bar: String foo: Int }]",
+  "description": "List of Array.Permissive.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
   "fields": null,
   "given_name": null,
@@ -6508,7 +6508,7 @@ snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = '''{
 
 snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = '''{
   "__class__": "ConfigTypeSnap",
-  "description": "List of [{ bar: String foo: Int }]",
+  "description": "List of Array.Shape.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
   "fields": null,
   "given_name": null,

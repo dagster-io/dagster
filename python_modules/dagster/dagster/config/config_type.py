@@ -163,11 +163,7 @@ class Array(ConfigType):
 
     @property
     def description(self):
-        from .type_printer import print_config_type_to_string
-
-        return 'List of {inner_type}'.format(
-            inner_type=print_config_type_to_string(self, with_lines=False)
-        )
+        return 'List of {inner_type}'.format(inner_type=self.key)
 
 
 class EnumValue(object):

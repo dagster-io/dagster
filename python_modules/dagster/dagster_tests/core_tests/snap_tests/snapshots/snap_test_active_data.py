@@ -56,7 +56,7 @@ snapshots['test_active_data 1'] = '''{
           },
           "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
             "__class__": "ConfigTypeSnap",
-            "description": "List of [{ result?: { json: { path: String } pickle: { path: String } } }]",
+            "description": "List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b",
             "enum_values": null,
             "fields": null,
             "given_name": null,
