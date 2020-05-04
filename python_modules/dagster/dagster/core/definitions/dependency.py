@@ -6,7 +6,7 @@ import six
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils import camelcase, frozentags
+from dagster.utils import frozentags
 
 from .input import InputDefinition
 from .output import OutputDefinition
@@ -161,6 +161,13 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
 
     @property
     def path(self):
+        '''Return a list representation of the handle.
+
+        Inverse of SolidHandle.from_path.
+
+        Returns:
+            List[str]:
+        '''
         path = []
         cur = self
         while cur:
@@ -170,10 +177,21 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
         return path
 
     def to_string(self):
-        # Return unique name of the solid and its lineage (omits solid definition names)
+        '''Return a unique string representation of the handle.
+        
+        Inverse of SolidHandle.from_string.
+        '''
         return self.parent.to_string() + '.' + self.name if self.parent else self.name
 
     def is_or_descends_from(self, handle):
+        '''Check if the handle is or descends from another handle.
+        
+        Args:
+            handle (SolidHandle): The handle to check against.
+        
+        Returns:
+            bool:
+        '''
         check.inst_param(handle, 'handle', SolidHandle)
 
         for idx in range(len(handle.path)):
@@ -183,20 +201,66 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
                 return False
         return True
 
+    def pop(self, ancestor):
+        '''Return a copy of the handle with some of its ancestors pruned.
+
+        Args:
+            ancestor (SolidHandle): Handle to an ancestor of the current handle.
+        
+        Returns:
+            SolidHandle: 
+
+        Example:
+            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
+            ancestor = SolidHandle('bar', SolidHandle('foo', None))
+            assert handle.pop(ancestor) == SolidHandle('baz', None)
+        '''
+
+        check.inst_param(ancestor, 'ancestor', SolidHandle)
+        check.invariant(
+            self.is_or_descends_from(ancestor),
+            'Handle {handle} does not descend from {ancestor}'.format(
+                handle=self.to_string(), ancestor=ancestor.to_string()
+            ),
+        )
+
+        return SolidHandle.from_path(self.path[len(ancestor.path) :])
+
+    def with_ancestor(self, ancestor):
+        '''Returns a copy of the handle with an ancestor grafted on.
+
+        Args:
+            ancestor (SolidHandle): Handle to the new ancestor.
+        
+        Returns:
+            SolidHandle: 
+
+        Example:
+            handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
+            ancestor = SolidHandle('quux' None)
+            assert handle.with_ancestor(ancestor) == SolidHandle(
+                'baz', SolidHandle('bar', SolidHandle('foo', SolidHandle('quux', None)))
+            )
+        '''
+        check.opt_inst_param(ancestor, 'ancestor', SolidHandle)
+
+        return SolidHandle.from_path((ancestor.path if ancestor else []) + self.path)
+
     @staticmethod
-    def from_string(handle_str):
-        stack = handle_str.split('.')
+    def from_path(path):
+        check.list_param(path, 'path', of_type=str)
+
         cur = None
-        while len(stack) > 0:
-            cur = SolidHandle(name=stack.pop(0), parent=cur)
+        while len(path) > 0:
+            cur = SolidHandle(name=path.pop(0), parent=cur)
         return cur
 
-    def camelcase(self):
-        return (
-            self.parent.camelcase() + '.' + camelcase(self.name)
-            if self.parent
-            else camelcase(self.name)
-        )
+    @staticmethod
+    def from_string(handle_str):
+        check.str_param(handle_str, 'handle_str')
+
+        path = handle_str.split('.')
+        return SolidHandle.from_path(path)
 
     @classmethod
     def from_dict(cls, dict_repr):

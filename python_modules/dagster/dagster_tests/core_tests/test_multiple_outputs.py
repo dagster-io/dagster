@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -123,9 +125,9 @@ def test_multiple_outputs_only_emit_one():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=(
-            'Tried to get result for solid not_present in multiple_outputs_only_emit_one_pipeline. '
-            'No such top level solid.'
+        match=re.escape(
+            'Tried to get result for solid \'not_present\' in '
+            '\'multiple_outputs_only_emit_one_pipeline\'. No such top level solid.'
         ),
     ):
         result.result_for_solid('not_present')
@@ -158,9 +160,9 @@ def test_multiple_outputs_only_emit_one_multiproc():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match=(
-            'Tried to get result for solid not_present in multiple_outputs_only_emit_one_pipeline. '
-            'No such top level solid.'
+        match=re.escape(
+            'Tried to get result for solid \'not_present\' in '
+            '\'multiple_outputs_only_emit_one_pipeline\'. No such top level solid.'
         ),
     ):
         result.result_for_solid('not_present')
