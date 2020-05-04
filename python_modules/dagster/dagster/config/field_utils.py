@@ -43,16 +43,6 @@ class _ConfigHasFields(ConfigType):
         self.fields = expand_fields_dict(fields)
         super(_ConfigHasFields, self).__init__(**kwargs)
 
-    @property
-    def recursive_config_types(self):
-        return list(set(self._yield_recursive_config_types()))
-
-    def _yield_recursive_config_types(self):
-        for field in self.fields.values():
-            yield field.config_type
-            for recursive_config_type in field.config_type.recursive_config_types:
-                yield recursive_config_type
-
 
 FIELD_HASH_CACHE = {}
 

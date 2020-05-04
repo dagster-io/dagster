@@ -1,12 +1,23 @@
-from dagster import Field, Int, Noneable, PipelineDefinition, String, solid
+from dagster import Field, Int, Noneable, PipelineDefinition, ScalarUnion, String, solid
 from dagster.config.field import resolve_to_config_type
+from dagster.config.iterate_types import iterate_config_types
+from dagster.config.snap import ConfigSchemaSnapshot, get_recursive_type_keys, snap_from_config_type
 from dagster.config.type_printer import print_type_to_string
 
 
 def assert_inner_types(parent_type, *dagster_types):
-    assert set(
-        list(map(lambda t: t.key, resolve_to_config_type(parent_type).recursive_config_types))
-    ) == set(map(lambda x: x.key, map(resolve_to_config_type, dagster_types)))
+    config_type = resolve_to_config_type(parent_type)
+    config_schema_snapshot = ConfigSchemaSnapshot(
+        {ct.key: snap_from_config_type(ct) for ct in iterate_config_types(config_type)}
+    )
+
+    all_type_keys = get_recursive_type_keys(
+        snap_from_config_type(config_type), config_schema_snapshot
+    )
+
+    assert set(all_type_keys) == set(
+        map(lambda x: x.key, map(resolve_to_config_type, dagster_types))
+    )
 
 
 def test_basic_type_print():
@@ -119,6 +130,15 @@ def test_nested_dict():
 }'''
 
     assert output == expected
+
+
+def test_scalar_union():
+    non_scalar_type = {'str_field': String}
+    scalar_union_type = ScalarUnion(
+        scalar_type=resolve_to_config_type(int),
+        non_scalar_type=resolve_to_config_type(non_scalar_type),
+    )
+    assert_inner_types(scalar_union_type, String, Int, non_scalar_type)
 
 
 def test_test_type_pipeline_construction():

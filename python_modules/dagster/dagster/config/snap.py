@@ -7,6 +7,19 @@ from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field
 
 
+def get_recursive_type_keys(config_type_snap, config_schema_snapshot):
+    check.inst_param(config_type_snap, 'config_type_snap', ConfigTypeSnap)
+    check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
+    result_keys = set()
+    for type_key in config_type_snap.get_child_type_keys():
+        result_keys.add(type_key)
+        for recurse_key in get_recursive_type_keys(
+            config_schema_snapshot.get_config_snap(type_key), config_schema_snapshot
+        ):
+            result_keys.add(recurse_key)
+    return result_keys
+
+
 @whitelist_for_serdes
 class ConfigSchemaSnapshot(namedtuple('_ConfigSchemaSnapshot', 'all_config_snaps_by_key')):
     def __new__(cls, all_config_snaps_by_key):

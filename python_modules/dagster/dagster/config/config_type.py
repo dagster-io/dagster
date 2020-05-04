@@ -28,7 +28,11 @@ class ConfigTypeKind(PythonEnum):
     @staticmethod
     def is_closed_generic(kind):
         check.inst_param(kind, 'kind', ConfigTypeKind)
-        return kind == ConfigTypeKind.ARRAY or kind == ConfigTypeKind.NONEABLE
+        return (
+            kind == ConfigTypeKind.ARRAY
+            or kind == ConfigTypeKind.NONEABLE
+            or kind == ConfigTypeKind.SCALAR_UNION
+        )
 
     @staticmethod
     def is_shape(kind):
@@ -63,10 +67,6 @@ class ConfigType(object):
     def from_builtin_enum(builtin_enum):
         check.invariant(BuiltinEnum.contains(builtin_enum), 'param must be member of BuiltinEnum')
         return _CONFIG_MAP[builtin_enum]
-
-    @property
-    def recursive_config_types(self):
-        return []
 
     def post_process(self, value):
         '''
@@ -149,10 +149,6 @@ class Noneable(ConfigType):
             type_params=[self.inner_type],
         )
 
-    @property
-    def recursive_config_types(self):
-        return [self.inner_type] + self.inner_type.recursive_config_types
-
 
 class Array(ConfigType):
     def __init__(self, inner_type):
@@ -172,10 +168,6 @@ class Array(ConfigType):
         return 'List of {inner_type}'.format(
             inner_type=print_config_type_to_string(self, with_lines=False)
         )
-
-    @property
-    def recursive_config_types(self):
-        return [self.inner_type] + self.inner_type.recursive_config_types
 
 
 class EnumValue(object):

@@ -2,6 +2,7 @@ from dagster_graphql import dauphin
 
 from dagster import check
 from dagster.config.config_type import ConfigTypeKind
+from dagster.config.snap import get_recursive_type_keys
 from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 
@@ -72,19 +73,6 @@ navigating the full schema client-side and not innerTypes.
     ''',
     )
     is_selector = dauphin.NonNull(dauphin.Boolean)
-
-
-def get_recursive_type_keys(config_type_snap, config_schema_snapshot):
-    check.inst_param(config_type_snap, 'config_type_snap', ConfigTypeSnap)
-    check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
-    result_keys = set()
-    for type_key in config_type_snap.get_child_type_keys():
-        result_keys.add(type_key)
-        for recurse_key in get_recursive_type_keys(
-            config_schema_snapshot.get_config_snap(type_key), config_schema_snapshot
-        ):
-            result_keys.add(recurse_key)
-    return result_keys
 
 
 class ConfigTypeMixin(object):
