@@ -20,6 +20,7 @@ from dagster_graphql.implementation.execution import (
 from dagster_graphql.implementation.execution.start_execution import (
     start_pipeline_execution_for_created_run,
 )
+from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_set,
     get_partition_sets_or_error,
@@ -145,6 +146,10 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     instance = dauphin.NonNull('Instance')
+    assetsOrError = dauphin.Field(dauphin.NonNull('AssetsOrError'))
+    assetOrError = dauphin.Field(
+        dauphin.NonNull('AssetOrError'), assetKey=dauphin.NonNull(dauphin.String)
+    )
 
     def resolve_pipelineSnapshot(self, graphene_info, **kwargs):
         return get_pipeline_snapshot(graphene_info, kwargs['snapshotId'])
@@ -243,6 +248,12 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_instance(self, graphene_info):
         return graphene_info.schema.type_named('Instance')(graphene_info.context.instance)
+
+    def resolve_assetsOrError(self, graphene_info):
+        return get_assets(graphene_info)
+
+    def resolve_assetOrError(self, graphene_info, assetKey):
+        return get_asset(graphene_info, assetKey)
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):

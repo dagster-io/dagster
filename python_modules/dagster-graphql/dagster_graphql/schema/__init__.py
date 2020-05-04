@@ -7,6 +7,7 @@ def create_schema():
     # dauphin depends on import-based side effects
     # pylint: disable=W0611
     from . import (
+        assets,
         config_types,
         errors,
         execution,

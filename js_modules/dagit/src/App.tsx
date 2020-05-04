@@ -15,6 +15,7 @@ import { RunsRoot } from "./runs/RunsRoot";
 import { SolidsRoot } from "./solids/SolidsRoot";
 import SchedulesRoot from "./schedules/SchedulesRoot";
 import { ScheduleRoot } from "./schedules/ScheduleRoot";
+import { AssetsRoot } from "./assets/AssetsRoot";
 import { LeftNav } from "./LeftNav";
 import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
@@ -55,6 +56,8 @@ const AppRoutes = () => (
 
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
     <Route path="/schedules" component={SchedulesRoot} />
+    <Route path="/assets" component={AssetsRoot} exact={true} />
+    <Route path="/assets/:assetSelector" component={AssetsRoot} />
 
     <PipelineNamesContext.Consumer>
       {names =>

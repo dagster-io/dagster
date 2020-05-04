@@ -7,6 +7,28 @@ type ArrayConfigType implements ConfigType & WrappingConfigType {
   ofType: ConfigType!
 }
 
+type Asset {
+  key: String!
+  assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
+}
+
+type AssetConnection {
+  nodes: [Asset!]!
+}
+
+type AssetMaterialization {
+  materializationEvent: StepMaterializationEvent!
+  runOrError: PipelineRunOrError!
+}
+
+union AssetOrError = Asset | AssetsNotSupportedError
+
+type AssetsNotSupportedError implements Error {
+  message: String!
+}
+
+union AssetsOrError = AssetConnection | AssetsNotSupportedError
+
 type CancelPipelineExecutionFailure {
   run: PipelineRun!
   message: String!
@@ -903,6 +925,8 @@ type Query {
   executionPlan(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): ExecutionPlanResult!
   environmentSchemaOrError(selector: ExecutionSelector!, mode: String): EnvironmentSchemaOrError!
   instance: Instance!
+  assetsOrError: AssetsOrError!
+  assetOrError(assetKey: String!): AssetOrError!
 }
 
 type RegularConfigType implements ConfigType {

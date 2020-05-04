@@ -70,6 +70,12 @@ export const LeftNav = () => {
             tab: `schedules`,
             icon: <Icon icon="calendar" iconSize={30} />,
             label: "Schedules"
+          },
+          {
+            to: `/assets`,
+            tab: `assets`,
+            icon: <Icon icon="panel-table" iconSize={30} />,
+            label: "Assets"
           }
         ];
 
