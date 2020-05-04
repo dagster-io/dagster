@@ -4,11 +4,11 @@ from enum import Enum
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
 
-from .config_type import ConfigType, ConfigTypeKind
-from .field import check_field_param
+from .config_type import ConfigTypeKind
+from .snap import ConfigFieldSnap, ConfigTypeSnap
 from .stack import EvaluationStack, get_friendly_path_info, get_friendly_path_msg
-from .traversal_context import TraversalContext
-from .type_printer import print_config_type_to_string
+from .traversal_context import ContextData
+from .type_printer import print_config_type_key_to_string
 
 
 class DagsterEvaluationErrorReason(Enum):
@@ -35,38 +35,44 @@ class FieldNotDefinedErrorData(namedtuple('_FieldNotDefinedErrorData', 'field_na
         )
 
 
-class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name field_def')):
-    def __new__(cls, field_name, field_def):
+class MissingFieldErrorData(namedtuple('_MissingFieldErrorData', 'field_name field_snap')):
+    def __new__(cls, field_name, field_snap):
         return super(MissingFieldErrorData, cls).__new__(
             cls,
             check.str_param(field_name, 'field_name'),
-            check_field_param(field_def, 'field_def'),
+            check.inst_param(field_snap, 'field_snap', ConfigFieldSnap),
         )
 
 
-class MissingFieldsErrorData(namedtuple('_MissingFieldErrorData', 'field_names field_defs')):
-    def __new__(cls, field_names, field_defs):
+class MissingFieldsErrorData(namedtuple('_MissingFieldErrorData', 'field_names field_snaps')):
+    def __new__(cls, field_names, field_snaps):
         return super(MissingFieldsErrorData, cls).__new__(
             cls,
             check.list_param(field_names, 'field_names', of_type=str),
-            [check_field_param(field_def, 'field_defs') for field_def in field_defs],
+            check.list_param(field_snaps, 'field_snaps', of_type=ConfigFieldSnap),
         )
 
 
-class RuntimeMismatchErrorData(namedtuple('_RuntimeMismatchErrorData', 'config_type value_rep')):
-    def __new__(cls, config_type, value_rep):
+class RuntimeMismatchErrorData(
+    namedtuple('_RuntimeMismatchErrorData', 'config_type_snap value_rep')
+):
+    def __new__(cls, config_type_snap, value_rep):
+        check.inst_param(config_type_snap, 'config_type', ConfigTypeSnap)
         return super(RuntimeMismatchErrorData, cls).__new__(
-            cls,
-            check.inst_param(config_type, 'config_type', ConfigType),
-            check.str_param(value_rep, 'value_rep'),
+            cls, config_type_snap, check.str_param(value_rep, 'value_rep'),
         )
 
 
-class SelectorTypeErrorData(namedtuple('_SelectorTypeErrorData', 'dagster_type incoming_fields')):
-    def __new__(cls, dagster_type, incoming_fields):
-        check.param_invariant(dagster_type.kind == ConfigTypeKind.SELECTOR, 'dagster_type')
+class SelectorTypeErrorData(
+    namedtuple('_SelectorTypeErrorData', 'config_type_snap incoming_fields')
+):
+    def __new__(cls, config_type_snap, incoming_fields):
+        check.inst_param(config_type_snap, 'config_type_snap', ConfigTypeSnap)
+        check.param_invariant(config_type_snap.kind == ConfigTypeKind.SELECTOR, 'config_type')
         return super(SelectorTypeErrorData, cls).__new__(
-            cls, dagster_type, check.list_param(incoming_fields, 'incoming_fields', of_type=str)
+            cls,
+            config_type_snap,
+            check.list_param(incoming_fields, 'incoming_fields', of_type=str),
         )
 
 
@@ -100,7 +106,7 @@ def _get_type_msg(type_in_context):
 
 
 def create_dict_type_mismatch_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     path_msg, _path = get_friendly_path_info(context.stack)
 
@@ -109,20 +115,22 @@ def create_dict_type_mismatch_error(context, config_value):
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be dict. Expected: "{type_name}".'.format(
             path_msg=path_msg,
-            type_name=print_config_type_to_string(context.config_type, with_lines=False),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
         ),
         error_data=RuntimeMismatchErrorData(
-            config_type=context.config_type, value_rep=repr(config_value)
+            config_type_snap=context.config_type_snap, value_rep=repr(config_value)
         ),
     )
 
 
 def create_fields_not_defined_error(context, undefined_fields):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
     check_config_type_in_context_has_fields(context, 'context')
     check.list_param(undefined_fields, 'undefined_fields', of_type=str)
 
-    available_fields = sorted(list(context.config_type.fields.keys()))
+    available_fields = sorted(context.config_type_snap.field_names)
     undefined_fields = sorted(undefined_fields)
 
     return EvaluationError(
@@ -141,39 +149,40 @@ def create_fields_not_defined_error(context, undefined_fields):
 
 
 def create_enum_type_mismatch_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} for enum type {type_name} must be a string'.format(
-            type_name=context.config_type.given_name, path_msg=get_friendly_path_msg(context.stack),
+            type_name=context.config_type_snap.given_name,
+            path_msg=get_friendly_path_msg(context.stack),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
 
 def create_enum_value_missing_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} not in enum type {type_name} got {config_value}'.format(
             config_value=config_value,
-            type_name=context.config_type.given_name,
+            type_name=context.config_type_snap.given_name,
             path_msg=get_friendly_path_msg(context.stack),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
 
 def check_config_type_in_context_has_fields(context, param_name):
-    check.param_invariant(ConfigTypeKind.has_fields(context.config_type.kind), param_name)
+    check.param_invariant(ConfigTypeKind.has_fields(context.config_type_snap.kind), param_name)
 
 
 def create_field_not_defined_error(context, received_field):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
     check_config_type_in_context_has_fields(context, 'context')
     check.str_param(received_field, 'received_field')
 
@@ -182,7 +191,9 @@ def create_field_not_defined_error(context, received_field):
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
         message='Undefined field "{received}" {path_msg}. Expected: "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_to_string(context.config_type, with_lines=False),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
             received=received_field,
         ),
         error_data=FieldNotDefinedErrorData(field_name=received_field),
@@ -190,22 +201,24 @@ def create_field_not_defined_error(context, received_field):
 
 
 def create_array_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
-    check.param_invariant(context.config_type.kind == ConfigTypeKind.ARRAY, 'config_type')
+    check.inst_param(context, 'context', ContextData)
+    check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.ARRAY, 'config_type')
 
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be list. Expected: {type_name}'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=print_config_type_to_string(context.config_type, with_lines=False),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
 
 def create_missing_required_field_error(context, expected_field):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
     check_config_type_in_context_has_fields(context, 'context')
 
     return EvaluationError(
@@ -217,20 +230,20 @@ def create_missing_required_field_error(context, expected_field):
         ).format(
             expected=expected_field,
             path_msg=get_friendly_path_msg(context.stack),
-            available_fields=sorted(list(context.config_type.fields.keys())),
+            available_fields=sorted(context.config_type_snap.field_names),
         ),
         error_data=MissingFieldErrorData(
-            field_name=expected_field, field_def=context.config_type.fields[expected_field]
+            field_name=expected_field, field_snap=context.config_type_snap.get_field(expected_field)
         ),
     )
 
 
 def create_missing_required_fields_error(context, missing_fields):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
     check_config_type_in_context_has_fields(context, 'context')
 
     missing_fields = sorted(missing_fields)
-    missing_field_defs = list(map(lambda mf: context.config_type.fields[mf], missing_fields))
+    missing_field_snaps = list(map(context.config_type_snap.get_field, missing_fields))
 
     return EvaluationError(
         stack=context.stack,
@@ -239,13 +252,13 @@ def create_missing_required_fields_error(context, missing_fields):
             missing_fields=missing_fields, path_msg=get_friendly_path_msg(context.stack)
         ),
         error_data=MissingFieldsErrorData(
-            field_names=missing_fields, field_defs=missing_field_defs
+            field_names=missing_fields, field_snaps=missing_field_snaps
         ),
     )
 
 
 def create_scalar_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     return EvaluationError(
         stack=context.stack,
@@ -253,18 +266,18 @@ def create_scalar_error(context, config_value):
         message='Invalid scalar {path_msg}. Value "{config_value}" of type '
         '"{type}" is not valid for expected type "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
-            type_name=context.config_type.given_name,
+            type_name=context.config_type_snap.given_name,
             config_value=config_value,
             type=type(config_value),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(config_value)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
     )
 
 
 def create_selector_multiple_fields_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
-    defined_fields = sorted(list(context.config_type.fields.keys()))
+    defined_fields = sorted(context.config_type_snap.field_names)
     incoming_fields = sorted(list(config_value.keys()))
 
     return EvaluationError(
@@ -279,15 +292,15 @@ def create_selector_multiple_fields_error(context, config_value):
             path_msg=get_friendly_path_msg(context.stack),
         ),
         error_data=SelectorTypeErrorData(
-            dagster_type=context.config_type, incoming_fields=incoming_fields
+            config_type_snap=context.config_type_snap, incoming_fields=incoming_fields
         ),
     )
 
 
 def create_selector_multiple_fields_no_field_selected_error(context):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
-    defined_fields = sorted(list(context.config_type.fields.keys()))
+    defined_fields = sorted(context.config_type_snap.field_names)
 
     return EvaluationError(
         stack=context.stack,
@@ -296,12 +309,14 @@ def create_selector_multiple_fields_no_field_selected_error(context):
             'Must specify a field {path_msg} if more than one field is defined. '
             'Defined fields: {defined_fields}'
         ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
-        error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
+        error_data=SelectorTypeErrorData(
+            config_type_snap=context.config_type_snap, incoming_fields=[]
+        ),
     )
 
 
 def create_selector_type_error(context, config_value):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     return EvaluationError(
         stack=context.stack,
@@ -310,13 +325,13 @@ def create_selector_type_error(context, config_value):
             path_msg=get_friendly_path_msg(context.stack)
         ),
         error_data=RuntimeMismatchErrorData(
-            config_type=context.config_type, value_rep=repr(config_value)
+            config_type_snap=context.config_type_snap, value_rep=repr(config_value)
         ),
     )
 
 
 def create_selector_unspecified_value_error(context):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     defined_fields = sorted(list(context.config_type.fields.keys()))
 
@@ -326,12 +341,14 @@ def create_selector_unspecified_value_error(context):
         message=(
             'Must specify the required field {path_msg}. Defined fields: {defined_fields}'
         ).format(defined_fields=defined_fields, path_msg=get_friendly_path_msg(context.stack)),
-        error_data=SelectorTypeErrorData(dagster_type=context.config_type, incoming_fields=[]),
+        error_data=SelectorTypeErrorData(
+            config_type_snap=context.config_type_snap, incoming_fields=[]
+        ),
     )
 
 
 def create_none_not_allowed_error(context):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
 
     return EvaluationError(
         stack=context.stack,
@@ -339,12 +356,12 @@ def create_none_not_allowed_error(context):
         message='Value {path_msg} must be not be None.'.format(
             path_msg=get_friendly_path_msg(context.stack),
         ),
-        error_data=RuntimeMismatchErrorData(context.config_type, repr(None)),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(None)),
     )
 
 
 def create_failed_post_processing_error(context, original_value, error_data):
-    check.inst_param(context, 'context', TraversalContext)
+    check.inst_param(context, 'context', ContextData)
     check.inst_param(error_data, 'error_data', SerializableErrorInfo)
 
     return EvaluationError(

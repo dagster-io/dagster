@@ -1,15 +1,13 @@
 from dagster import Field, Int, Noneable, PipelineDefinition, ScalarUnion, String, solid
 from dagster.config.field import resolve_to_config_type
-from dagster.config.iterate_types import iterate_config_types
-from dagster.config.snap import ConfigSchemaSnapshot, get_recursive_type_keys, snap_from_config_type
-from dagster.config.type_printer import print_type_to_string
+from dagster.config.iterate_types import config_schema_snapshot_from_config_type
+from dagster.config.snap import get_recursive_type_keys, snap_from_config_type
+from dagster.config.type_printer import print_config_type_to_string
 
 
 def assert_inner_types(parent_type, *dagster_types):
     config_type = resolve_to_config_type(parent_type)
-    config_schema_snapshot = ConfigSchemaSnapshot(
-        {ct.key: snap_from_config_type(ct) for ct in iterate_config_types(config_type)}
-    )
+    config_schema_snapshot = config_schema_snapshot_from_config_type(config_type)
 
     all_type_keys = get_recursive_type_keys(
         snap_from_config_type(config_type), config_schema_snapshot
@@ -21,37 +19,37 @@ def assert_inner_types(parent_type, *dagster_types):
 
 
 def test_basic_type_print():
-    assert print_type_to_string(Int) == 'Int'
+    assert print_config_type_to_string(Int) == 'Int'
     assert_inner_types(Int)
 
 
 def test_basic_list_type_print():
-    assert print_type_to_string([int]) == '[Int]'
+    assert print_config_type_to_string([int]) == '[Int]'
     assert_inner_types([int], Int)
 
 
 def test_double_list_type_print():
-    assert print_type_to_string([[int]]) == '[[Int]]'
+    assert print_config_type_to_string([[int]]) == '[[Int]]'
     int_list = [int]
     list_int_list = [int_list]
     assert_inner_types(list_int_list, Int, int_list)
 
 
 def test_basic_nullable_type_print():
-    assert print_type_to_string(Noneable(int)) == 'Int?'
+    assert print_config_type_to_string(Noneable(int)) == 'Int?'
     nullable_int = Noneable(int)
     assert_inner_types(nullable_int, Int)
 
 
 def test_nullable_list_combos():
-    assert print_type_to_string([int]) == '[Int]'
-    assert print_type_to_string(Noneable([int])) == '[Int]?'
-    assert print_type_to_string([Noneable(int)]) == '[Int?]'
-    assert print_type_to_string(Noneable([Noneable(int)])) == '[Int?]?'
+    assert print_config_type_to_string([int]) == '[Int]'
+    assert print_config_type_to_string(Noneable([int])) == '[Int]?'
+    assert print_config_type_to_string([Noneable(int)]) == '[Int?]'
+    assert print_config_type_to_string(Noneable([Noneable(int)])) == '[Int?]?'
 
 
 def test_basic_dict():
-    output = print_type_to_string({'int_field': int})
+    output = print_config_type_to_string({'int_field': int})
 
     expected = '''{
   int_field: Int
@@ -64,7 +62,7 @@ def test_two_field_dicts():
     two_field_dict = {'int_field': int, 'string_field': str}
     assert_inner_types(two_field_dict, Int, String)
 
-    output = print_type_to_string(two_field_dict)
+    output = print_config_type_to_string(two_field_dict)
 
     expected = '''{
   int_field: Int
@@ -78,7 +76,7 @@ def test_two_field_dicts_same_type():
     two_field_dict = {'int_field1': int, 'int_field2': int}
     assert_inner_types(two_field_dict, Int)
 
-    output = print_type_to_string(two_field_dict)
+    output = print_config_type_to_string(two_field_dict)
 
     expected = '''{
   int_field1: Int
@@ -89,7 +87,7 @@ def test_two_field_dicts_same_type():
 
 
 def test_optional_field():
-    output = print_type_to_string({'int_field': Field(int, is_required=False)})
+    output = print_config_type_to_string({'int_field': Field(int, is_required=False)})
 
     expected = '''{
   int_field?: Int
@@ -99,7 +97,7 @@ def test_optional_field():
 
 
 def test_single_level_dict_lists_and_nullable():
-    output = print_type_to_string(
+    output = print_config_type_to_string(
         {
             'nullable_int_field': Noneable(int),
             'optional_int_field': Field(int, is_required=False),
@@ -119,7 +117,7 @@ def test_single_level_dict_lists_and_nullable():
 def test_nested_dict():
     nested_type = {'int_field': int}
     outer_type = {'nested': nested_type}
-    output = print_type_to_string(outer_type)
+    output = print_config_type_to_string(outer_type)
 
     assert_inner_types(outer_type, Int, nested_type)
 

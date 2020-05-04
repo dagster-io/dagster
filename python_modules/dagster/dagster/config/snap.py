@@ -58,7 +58,7 @@ class ConfigTypeSnap(
     )
 ):
     # serdes log
-    # * Adding scalar kind
+    # * Adding scalar_kind
     def __new__(
         cls,
         kind,
@@ -107,7 +107,7 @@ class ConfigTypeSnap(
         check.invariant(self.kind == ConfigTypeKind.SCALAR_UNION)
         return self.type_param_keys[1]
 
-    def get_field(self, name):
+    def _get_field(self, name):
         check.str_param(name, 'name')
         check.invariant(ConfigTypeKind.has_fields(self.kind))
 
@@ -115,7 +115,20 @@ class ConfigTypeSnap(
             if f.name == name:
                 return f
 
-        check.failed('Field {name} not found'.format(name=name))
+        return None
+
+    def get_field(self, name):
+        field = self._get_field(name)
+        if not field:
+            check.failed('Field {name} not found'.format(name=name))
+        return field
+
+    def has_field(self, name):
+        return bool(self._get_field(name))
+
+    @property
+    def field_names(self):
+        return [fs.name for fs in self.fields]
 
     def get_child_type_keys(self):
         if ConfigTypeKind.is_closed_generic(self.kind):
@@ -124,6 +137,13 @@ class ConfigTypeSnap(
             return [field.type_key for field in self.fields]
         else:
             return []
+
+    def has_enum_value(self, value):
+        check.invariant(self.kind == ConfigTypeKind.ENUM)
+        for enum_value in self.enum_values:
+            if enum_value.value == value:
+                return True
+        return False
 
 
 @whitelist_for_serdes

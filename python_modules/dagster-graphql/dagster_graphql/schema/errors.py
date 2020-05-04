@@ -13,7 +13,7 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
-from dagster.core.snap import ConfigSchemaSnapshot, snap_from_field
+from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import DauphinConfigTypeField
@@ -256,9 +256,7 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 field=DauphinConfigTypeField(
                     config_schema_snapshot=config_schema_snapshot,
-                    field_snap=snap_from_field(
-                        error.error_data.field_name, error.error_data.field_def
-                    ),
+                    field_snap=error.error_data.field_snap,
                 ),
             )
         elif isinstance(error.error_data, MissingFieldsErrorData):
@@ -269,12 +267,9 @@ class DauphinPipelineConfigValidationError(dauphin.Interface):
                 reason=error.reason,
                 fields=[
                     DauphinConfigTypeField(
-                        config_schema_snapshot=config_schema_snapshot,
-                        field_snap=snap_from_field(field_name, field_def),
+                        config_schema_snapshot=config_schema_snapshot, field_snap=field_snap,
                     )
-                    for field_name, field_def in zip(
-                        error.error_data.field_names, error.error_data.field_defs
-                    )
+                    for field_snap in error.error_data.field_snaps
                 ],
             )
 
@@ -424,11 +419,8 @@ class DauphinEvaluationStack(dauphin.ObjectType):
 
     entries = dauphin.non_null_list('EvaluationStackEntry')
 
-    def resolve_entries(self, graphene_info):
-        return map(
-            graphene_info.schema.type_named('EvaluationStackEntry').from_native_entry,
-            self._stack.entries,
-        )
+    def resolve_entries(self, _):
+        return map(DauphinEvaluationStackEntry.from_native_entry, self._stack.entries)
 
 
 class DauphinPipelinesOrError(dauphin.Union):

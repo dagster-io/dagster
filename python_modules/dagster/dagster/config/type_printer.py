@@ -9,7 +9,7 @@ from .iterate_types import config_schema_snapshot_from_config_type
 from .snap import ConfigSchemaSnapshot
 
 
-def print_type(config_type, print_fn=print, with_lines=True):
+def _print_type_from_config_type(config_type, print_fn=print, with_lines=True):
     check.inst_param(config_type, 'config_type', ConfigType)
     return _print_type(
         config_schema_snapshot_from_config_type(config_type), config_type.key, print_fn, with_lines
@@ -70,9 +70,18 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
         check.failed('not supported')
 
 
-def print_type_to_string(dagster_type):
-    config_type = resolve_to_config_type(dagster_type)
-    return print_config_type_to_string(config_type)
+def print_config_type_key_to_string(config_schema_snapshot, config_type_key, with_lines=True):
+    prints = []
+
+    def _push(text):
+        prints.append(text)
+
+    _print_type(config_schema_snapshot, config_type_key, _push, with_lines)
+
+    if with_lines:
+        return '\n'.join(prints)
+    else:
+        return ' '.join(prints)
 
 
 def print_config_type_to_string(config_type, with_lines=True):
@@ -81,7 +90,7 @@ def print_config_type_to_string(config_type, with_lines=True):
     def _push(text):
         prints.append(text)
 
-    print_type(config_type, _push, with_lines=with_lines)
+    _print_type_from_config_type(resolve_to_config_type(config_type), _push, with_lines=with_lines)
 
     if with_lines:
         return '\n'.join(prints)

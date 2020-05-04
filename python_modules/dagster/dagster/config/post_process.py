@@ -12,7 +12,7 @@ from .traversal_context import TraversalContext, TraversalType
 
 
 def post_process_config(config_type, config_value):
-    ctx = TraversalContext(
+    ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(entries=[]),
         traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
@@ -21,7 +21,7 @@ def post_process_config(config_type, config_value):
 
 
 def resolve_defaults(config_type, config_value):
-    ctx = TraversalContext(
+    ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
         stack=EvaluationStack(entries=[]),
         traversal_type=TraversalType.RESOLVE_DEFAULTS,

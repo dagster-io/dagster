@@ -329,9 +329,5 @@ class Field(object):
         )
 
 
-def check_field_param(obj, param_name):
-    return check.inst_param(obj, param_name, Field)
-
-
 def check_opt_field_param(obj, param_name):
     return check.opt_inst_param(obj, param_name, Field)
