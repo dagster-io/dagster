@@ -40,7 +40,7 @@ class TraversalContext(namedtuple('_TraversalContext', 'config_type stack traver
         check.str_param(key, 'key')
         return TraversalContext(
             config_type=field_def.config_type,
-            stack=self.stack.for_field(key, field_def),
+            stack=self.stack.for_field(key),
             traversal_type=self.traversal_type,
         )
 
@@ -48,8 +48,4 @@ class TraversalContext(namedtuple('_TraversalContext', 'config_type stack traver
         return self._replace(config_type=self.config_type.inner_type)
 
     def for_new_config_type(self, config_type):
-        return TraversalContext(
-            config_type=config_type,
-            stack=self.stack.for_new_type(config_type),
-            traversal_type=self.traversal_type,
-        )
+        return self._replace(config_type=config_type)

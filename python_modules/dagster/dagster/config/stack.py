@@ -2,16 +2,11 @@ from collections import namedtuple
 
 from dagster import check
 
-from .config_type import ConfigType, ConfigTypeKind
-from .field import check_field_param
 
-
-class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
-    def __new__(cls, config_type, entries):
+class EvaluationStack(namedtuple('_EvaluationStack', 'entries')):
+    def __new__(cls, entries):
         return super(EvaluationStack, cls).__new__(
-            cls,
-            check.inst_param(config_type, 'config_type', ConfigType),
-            check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
+            cls, check.list_param(entries, 'entries', of_type=EvaluationStackEntry),
         )
 
     @property
@@ -22,31 +17,11 @@ class EvaluationStack(namedtuple('_EvaluationStack', 'config_type entries')):
             if isinstance(entry, EvaluationStackPathEntry)
         ]
 
-    @property
-    def type_in_context(self):
-        ttype = self.entries[-1].config_type if self.entries else self.config_type
-        # TODO: should we be unwrapping the nullable type here?
-        if ttype.kind == ConfigTypeKind.NONEABLE:
-            return ttype.inner_type
-        else:
-            return ttype
-
-    def for_new_type(self, config_type):
-        return EvaluationStack(config_type=config_type, entries=self.entries)
-
-    def for_field(self, field_name, field_def):
-        return EvaluationStack(
-            config_type=self.config_type,
-            entries=self.entries + [EvaluationStackPathEntry(field_name, field_def)],
-        )
+    def for_field(self, field_name):
+        return EvaluationStack(entries=self.entries + [EvaluationStackPathEntry(field_name)])
 
     def for_array_index(self, list_index):
-        list_type = self.type_in_context
-        check.invariant(list_type.kind == ConfigTypeKind.ARRAY)
-        return EvaluationStack(
-            config_type=self.config_type,
-            entries=self.entries + [EvaluationStackListItemEntry(list_type.inner_type, list_index)],
-        )
+        return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
 
 class EvaluationStackEntry(object):  # marker interface
@@ -54,29 +29,21 @@ class EvaluationStackEntry(object):  # marker interface
 
 
 class EvaluationStackPathEntry(
-    namedtuple('_EvaluationStackEntry', 'field_name field_def'), EvaluationStackEntry
+    namedtuple('_EvaluationStackEntry', 'field_name'), EvaluationStackEntry
 ):
-    def __new__(cls, field_name, field_def):
+    def __new__(cls, field_name):
         return super(EvaluationStackPathEntry, cls).__new__(
-            cls,
-            check.str_param(field_name, 'field_name'),
-            check_field_param(field_def, 'field_def'),
+            cls, check.str_param(field_name, 'field_name'),
         )
-
-    @property
-    def config_type(self):
-        return self.field_def.config_type
 
 
 class EvaluationStackListItemEntry(
-    namedtuple('_EvaluationStackListItemEntry', 'config_type list_index'), EvaluationStackEntry
+    namedtuple('_EvaluationStackListItemEntry', 'list_index'), EvaluationStackEntry
 ):
-    def __new__(cls, config_type, list_index):
+    def __new__(cls, list_index):
         check.int_param(list_index, 'list_index')
         check.param_invariant(list_index >= 0, 'list_index')
-        return super(EvaluationStackListItemEntry, cls).__new__(
-            cls, check.inst_param(config_type, 'config_type', ConfigType), list_index
-        )
+        return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
 def get_friendly_path_msg(stack):

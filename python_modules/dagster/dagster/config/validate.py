@@ -45,7 +45,7 @@ def is_config_scalar_valid(config_scalar_type, config_value):
 def validate_config(config_type, config_value):
     context = TraversalContext(
         config_type=check.inst_param(config_type, 'config_type', ConfigType),
-        stack=EvaluationStack(config_type=config_type, entries=[]),
+        stack=EvaluationStack(entries=[]),
         traversal_type=TraversalType.VALIDATE,
     )
 
