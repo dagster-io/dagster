@@ -1,4 +1,4 @@
-from dagster_examples.experimental.sched import daily_rollup_schedule
+from dagster_examples.experimental.repo import daily_rollup_schedule
 
 from dagster import execute_partition_set
 from dagster.core.instance import DagsterInstance

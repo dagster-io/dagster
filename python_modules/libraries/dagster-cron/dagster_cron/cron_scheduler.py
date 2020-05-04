@@ -34,6 +34,12 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     def from_config_value(inst_data, config_value):
         return SystemCronScheduler(inst_data=inst_data)
 
+    def debug_info(self):
+        cron = CronTab(user=True)
+        return "Running Cron Jobs:\n{jobs}\n".format(
+            jobs="\n".join([str(job) for job in cron if 'dagster-schedule:' in job.comment])
+        )
+
     def start_schedule(self, instance, repository, schedule_name):
         schedule = instance.get_schedule_by_name(repository, schedule_name)
         if not schedule:

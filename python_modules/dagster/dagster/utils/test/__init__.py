@@ -153,7 +153,7 @@ def execute_solids_within_pipeline(
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``. 
+            ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
@@ -216,7 +216,7 @@ def execute_solid_within_pipeline(
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
             and ``preset``.
         preset (Optional[str]): The name of the pipeline preset to use. You may not set both
-            ``mode`` and ``preset``. 
+            ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
         run_config (Optional[RunConfig]): Optionally specifies additional config options for
@@ -389,6 +389,9 @@ class FilesytemTestScheduler(Scheduler):
     def __init__(self, artifacts_dir):
         check.str_param(artifacts_dir, 'artifacts_dir')
         self._artifacts_dir = artifacts_dir
+
+    def debug_info(self):
+        return ""
 
     def start_schedule(self, instance, repository, schedule_name):
         schedule = instance.get_schedule_by_name(repository, schedule_name)

@@ -297,18 +297,24 @@ class DagsterInstance:
             DagsterInstance._PROCESS_TEMPDIR = seven.TemporaryDirectory()
         return DagsterInstance._PROCESS_TEMPDIR.name
 
+    def _info(self, component):
+        prefix = '     '
+        # ConfigurableClass may not have inst_data if it's a direct instantiation
+        # which happens for ephemeral instances
+        if isinstance(component, ConfigurableClass) and component.inst_data:
+            return component.inst_data.info_str(prefix)
+        if type(component) is dict:
+            return prefix + yaml.dump(component, default_flow_style=False).replace(
+                '\n', '\n' + prefix
+            )
+        return '{}{}\n'.format(prefix, component.__class__.__name__)
+
+    def info_str_for_component(self, component_name, component):
+        return '{component_name}:\n{component}\n'.format(
+            component_name=component_name, component=self._info(component)
+        )
+
     def info_str(self):
-        def _info(component):
-            prefix = '     '
-            # ConfigurableClass may not have inst_data if it's a direct instantiation
-            # which happens for ephemeral instances
-            if isinstance(component, ConfigurableClass) and component.inst_data:
-                return component.inst_data.info_str(prefix)
-            if type(component) is dict:
-                return prefix + yaml.dump(component, default_flow_style=False).replace(
-                    '\n', '\n' + prefix
-                )
-            return '{}{}\n'.format(prefix, component.__class__.__name__)
 
         dagit_settings = self._dagit_settings if self._dagit_settings else None
         telemetry_settings = self._telemetry_settings if self._telemetry_settings else None
@@ -325,15 +331,15 @@ class DagsterInstance:
             '  Dagit:\n{dagit}\n'
             '  Telemetry:\n{telemetry}\n'
             ''.format(
-                artifact=_info(self._local_artifact_storage),
-                run=_info(self._run_storage),
-                event=_info(self._event_storage),
-                compute=_info(self._compute_log_manager),
-                schedule_storage=_info(self._schedule_storage),
-                scheduler=_info(self._scheduler),
-                run_launcher=_info(self._run_launcher),
-                dagit=_info(dagit_settings),
-                telemetry=_info(telemetry_settings),
+                artifact=self._info(self._local_artifact_storage),
+                run=self._info(self._run_storage),
+                event=self._info(self._event_storage),
+                compute=self._info(self._compute_log_manager),
+                schedule_storage=self._info(self._schedule_storage),
+                scheduler=self._info(self._scheduler),
+                run_launcher=self._info(self._run_launcher),
+                dagit=self._info(dagit_settings),
+                telemetry=self._info(telemetry_settings),
             )
         )
 
@@ -762,7 +768,7 @@ class DagsterInstance:
         specified run. Runs should be created in the instance (e.g., by calling
         ``DagsterInstance.get_or_create_run()``) *before* this method is called, and
         should be in the ``PipelineRunStatus.NOT_STARTED`` state.
-        
+
         Args:
             run_id (str): The id of the run the launch.
         '''
@@ -794,7 +800,10 @@ class DagsterInstance:
     def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
         return self._schedule_storage.get_schedule_tick_stats_by_schedule(repository, schedule_name)
 
-    def all_schedules(self, repository):
+    def all_schedules_info(self):
+        return self._schedule_storage.all_schedules_info()
+
+    def all_schedules(self, repository=None):
         return self._schedule_storage.all_schedules(repository)
 
     def get_schedule_by_name(self, repository, schedule_name):

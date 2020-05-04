@@ -129,6 +129,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
     '''
 
     @abc.abstractmethod
+    def debug_info(self):
+        '''Returns debug information about the scheduler
+        '''
+
+    @abc.abstractmethod
     def start_schedule(self, instance, repository, schedule_name):
         '''Resume a pipeline schedule.
 

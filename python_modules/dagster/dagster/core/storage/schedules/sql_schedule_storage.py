@@ -38,6 +38,16 @@ class SqlScheduleStorage(ScheduleStorage):
     def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
+    def all_schedules_info(self):
+        '''Only for debugging purposes
+        '''
+
+        query = db.select(
+            [ScheduleTable.c.repository_name, ScheduleTable.c.schedule_body]
+        ).select_from(ScheduleTable)
+        rows = self.execute(query)
+        return list(map(lambda r: [r[0], deserialize_json_to_dagster_namedtuple(r[1])], rows))
+
     def all_schedules(self, repository=None):
         check.opt_inst_param(repository, 'repository', RepositoryDefinition)
 
@@ -45,6 +55,8 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if repository:
             query = base_query.where(ScheduleTable.c.repository_name == repository.name)
+        else:
+            query = base_query
 
         rows = self.execute(query)
         return self._deserialize_rows(rows)
