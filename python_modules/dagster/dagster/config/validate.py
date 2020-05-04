@@ -23,7 +23,7 @@ from .errors import (
 from .evaluate_value_result import EvaluateValueResult
 from .iterate_types import config_schema_snapshot_from_config_type
 from .post_process import post_process_config
-from .snap import ConfigTypeSnap
+from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from .stack import EvaluationStack
 from .traversal_context import ValidationContext
 
@@ -51,10 +51,20 @@ def is_config_scalar_valid(config_type_snap, config_value):
 def validate_config(config_type, config_value):
     config_schema_snapshot = config_schema_snapshot_from_config_type(config_type)
 
+    return validate_config_from_snap(
+        config_schema_snapshot=config_schema_snapshot,
+        config_type_key=config_type.key,
+        config_value=config_value,
+    )
+
+
+def validate_config_from_snap(config_schema_snapshot, config_type_key, config_value):
+    check.inst_param(config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot)
+    check.str_param(config_type_key, 'config_type_key')
     return _validate_config(
         ValidationContext(
             config_schema_snapshot=config_schema_snapshot,
-            config_type_snap=config_schema_snapshot.get_config_snap(config_type.key),
+            config_type_snap=config_schema_snapshot.get_config_snap(config_type_key),
             stack=EvaluationStack(entries=[]),
         ),
         config_value,

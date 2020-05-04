@@ -1,12 +1,11 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.config.validate import validate_config
-from dagster.core.definitions.environment_schema import EnvironmentSchema, create_environment_schema
+from dagster.config.validate import validate_config_from_snap
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.snap import PipelineIndex
 
-from .fetch_pipelines import get_pipeline_def_from_selector
+from .external import get_external_pipeline_subset
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
@@ -16,9 +15,9 @@ def resolve_environment_schema_or_error(graphene_info, selector, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
-
-    pipeline_index = pipeline_def.get_pipeline_index()
+    pipeline_index = get_external_pipeline_subset(
+        graphene_info, selector.name, selector.solid_subset
+    ).pipeline_index
 
     if mode is None:
         mode = pipeline_index.get_default_mode_name()
@@ -29,22 +28,26 @@ def resolve_environment_schema_or_error(graphene_info, selector, mode):
         )
 
     return graphene_info.schema.type_named('EnvironmentSchema')(
-        pipeline_index=pipeline_index,
-        environment_schema=create_environment_schema(pipeline_def, mode),
-        mode=mode,
+        pipeline_index=pipeline_index, mode=mode,
     )
 
 
 @capture_dauphin_error
-def resolve_is_environment_config_valid(
-    graphene_info, environment_schema, pipeline_index, environment_dict
-):
+def resolve_is_environment_config_valid(graphene_info, pipeline_index, mode, environment_dict):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(environment_schema, 'environment_schema', EnvironmentSchema)
     check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+    check.str_param(mode, 'mode')
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
 
-    validated_config = validate_config(environment_schema.environment_type, environment_dict)
+    mode_def_snap = pipeline_index.get_mode_def_snap(mode)
+
+    if not mode_def_snap.root_config_key:
+        # historical pipeline with unknown environment type. blindly pass validation
+        return graphene_info.schema.type_named('PipelineConfigValidationValid')(pipeline_index.name)
+
+    validated_config = validate_config_from_snap(
+        pipeline_index.config_schema_snapshot, mode_def_snap.root_config_key, environment_dict
+    )
 
     if not validated_config.success:
         raise UserFacingGraphQLError(

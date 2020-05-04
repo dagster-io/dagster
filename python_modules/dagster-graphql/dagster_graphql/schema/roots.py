@@ -50,7 +50,6 @@ from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGraphQLError
 
 from dagster import check
-from dagster.core.definitions.environment_schema import EnvironmentSchema
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -697,10 +696,7 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
 
 
 class DauphinEnvironmentSchema(dauphin.ObjectType):
-    def __init__(self, environment_schema, pipeline_index, mode):
-        self._environment_schema = check.inst_param(
-            environment_schema, 'environment_schema', EnvironmentSchema
-        )
+    def __init__(self, pipeline_index, mode):
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
         self._mode = check.str_param(mode, 'mode')
 
@@ -758,8 +754,8 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
     def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):
         return resolve_is_environment_config_valid(
             graphene_info,
-            self._environment_schema,
             self._pipeline_index,
+            self._mode,
             kwargs.get('environmentConfigData', {}),
         )
 
