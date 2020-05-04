@@ -17,6 +17,7 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     deserialize_value,
     serialize_dagster_namedtuple,
+    serialize_pp,
 )
 
 
@@ -329,3 +330,11 @@ def test_scalar_union():
         config_snaps[config_snaps[scalar_union_key].non_scalar_type_key].kind
         == ConfigTypeKind.STRICT_SHAPE
     )
+
+
+def test_historical_config_type_snap(snapshot):
+    old_snap_json = '''{"__class__": "ConfigTypeSnap", "description": "", "enum_values": [], "fields": [], "given_name": "kjdkfjdkfjdkj", "key": "ksjdkfjdkfjd", "kind": {"__enum__": "ConfigTypeKind.STRICT_SHAPE"}, "type_param_keys": []}'''
+
+    old_snap = deserialize_json_to_dagster_namedtuple(old_snap_json)
+
+    snapshot.assert_match(serialize_pp(old_snap))

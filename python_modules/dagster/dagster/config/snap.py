@@ -3,7 +3,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
 
-from .config_type import ConfigType, ConfigTypeKind
+from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field
 
 
@@ -40,11 +40,22 @@ class ConfigTypeSnap(
         'kind key given_name description '
         'type_param_keys '  # only valid for closed generics (Set, Tuple, List, Optional)
         'enum_values '  # only valid for enums
-        'fields',  # only valid for dicts and selectors
+        'fields '  # only valid for dicts and selectors
+        'scalar_kind',  # only valid for scalars
     )
 ):
+    # serdes log
+    # * Adding scalar kind
     def __new__(
-        cls, kind, key, given_name, description, type_param_keys, enum_values, fields,
+        cls,
+        kind,
+        key,
+        given_name,
+        description,
+        type_param_keys,
+        enum_values,
+        fields,
+        scalar_kind=None,  # Old version of object will not have this property
     ):
         return super(ConfigTypeSnap, cls).__new__(
             cls,
@@ -63,6 +74,7 @@ class ConfigTypeSnap(
                 check.list_param(fields, 'field', of_type=ConfigFieldSnap), key=lambda ct: ct.name
             ),
             description=check.opt_str_param(description, 'description'),
+            scalar_kind=check.opt_inst_param(scalar_kind, 'scalar_kind', ConfigScalarKind),
         )
 
     @property
@@ -169,4 +181,5 @@ def snap_from_config_type(config_type):
         fields=[snap_from_field(name, field) for name, field in config_type.fields.items()]
         if ConfigTypeKind.has_fields(config_type.kind)
         else None,
+        scalar_kind=config_type.scalar_kind if config_type.kind == ConfigTypeKind.SCALAR else None,
     )

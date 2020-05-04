@@ -51,6 +51,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.ANY"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
@@ -63,6 +64,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.ARRAY"
             },
+            "scalar_kind": null,
             "type_param_keys": [
               "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"
             ]
@@ -77,6 +79,9 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR"
             },
+            "scalar_kind": {
+              "__enum__": "ConfigScalarKind.BOOL"
+            },
             "type_param_keys": null
           },
           "Float": {
@@ -88,6 +93,9 @@ snapshots['test_active_data 1'] = '''{
             "key": "Float",
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR"
+            },
+            "scalar_kind": {
+              "__enum__": "ConfigScalarKind.FLOAT"
             },
             "type_param_keys": null
           },
@@ -101,6 +109,9 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR"
             },
+            "scalar_kind": {
+              "__enum__": "ConfigScalarKind.INT"
+            },
             "type_param_keys": null
           },
           "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59": {
@@ -113,6 +124,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR_UNION"
             },
+            "scalar_kind": null,
             "type_param_keys": [
               "Bool",
               "Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59"
@@ -128,6 +140,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR_UNION"
             },
+            "scalar_kind": null,
             "type_param_keys": [
               "Float",
               "Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3"
@@ -143,6 +156,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR_UNION"
             },
+            "scalar_kind": null,
             "type_param_keys": [
               "Int",
               "Selector.a9799b971d12ace70a2d8803c883c863417d0725"
@@ -158,6 +172,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR_UNION"
             },
+            "scalar_kind": null,
             "type_param_keys": [
               "String",
               "Selector.e04723c9d9937e3ab21206435b22247cfbe58269"
@@ -192,6 +207,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.4d63da53a40bb42f96aad27d25ec8a9656d40975": {
@@ -223,6 +239,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.a9799b971d12ace70a2d8803c883c863417d0725": {
@@ -263,6 +280,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59": {
@@ -303,6 +321,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3": {
@@ -343,6 +362,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.e04723c9d9937e3ab21206435b22247cfbe58269": {
@@ -383,6 +403,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742": {
@@ -414,6 +435,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.efc7a1aa788fafe8121049790c968cbf2ebc247b": {
@@ -445,6 +467,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4": {
@@ -485,6 +508,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.SELECTOR"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.241ac489ffa5f718db6444bae7849fb86a62e441": {
@@ -516,6 +540,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.3baab16166bacfaf4705811e64d356112fd733cb": {
@@ -538,6 +563,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.41de0e2d7b75524510155d0bdab8723c6feced3b": {
@@ -560,6 +586,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.4b53b73df342381d0d05c5f36183dc99cb9676e2": {
@@ -582,6 +609,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.5363863c1eac4948c2bc0d847c505a54ec36976b": {
@@ -640,6 +668,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.5a712cc73cd18a717376d6ed2fd442949644d5bb": {
@@ -662,6 +691,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.681fbe3d20630c62adc35f0362593dc0623c6cf2": {
@@ -684,6 +714,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.889b7348071b49700db678dab98bb0a15fd57ecd": {
@@ -706,6 +737,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.979b3d2fece4f3eb92e90f2ec9fb4c85efe9ea5c": {
@@ -737,6 +769,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.a476f98f7c4e324d4b665af722d1f2cd7f99b023": {
@@ -768,6 +801,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.ca5906d9a0377218b4ee7d940ad55957afa73d1b": {
@@ -790,6 +824,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.da39a3ee5e6b4b0d3255bfef95601890afd80709": {
@@ -802,6 +837,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.e26e0c525e2d2c66b5a06f4cfdd053de6d44e3ed": {
@@ -824,6 +860,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.ebeaf4550c200fb540f2e1f3f2110debd8c4157c": {
@@ -846,6 +883,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "Shape.fff3afcfe0467fefa4b97fb8f72911aeb0e8fe4e": {
@@ -868,6 +906,7 @@ snapshots['test_active_data 1'] = '''{
             "kind": {
               "__enum__": "ConfigTypeKind.STRICT_SHAPE"
             },
+            "scalar_kind": null,
             "type_param_keys": null
           },
           "String": {
@@ -879,6 +918,9 @@ snapshots['test_active_data 1'] = '''{
             "key": "String",
             "kind": {
               "__enum__": "ConfigTypeKind.SCALAR"
+            },
+            "scalar_kind": {
+              "__enum__": "ConfigScalarKind.STRING"
             },
             "type_param_keys": null
           }
