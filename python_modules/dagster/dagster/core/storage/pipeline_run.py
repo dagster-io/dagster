@@ -168,7 +168,7 @@ class PipelineRun(
         return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
 
     @property
-    def is_retry_resume(self):
+    def is_resume_retry(self):
         return self.tags.get(RESUME_RETRY_TAG) == 'true'
 
     @property
