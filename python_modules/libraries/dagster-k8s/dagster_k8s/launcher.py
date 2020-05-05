@@ -48,14 +48,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             the Job Pod.
         dagster_home (str): The location of DAGSTER_HOME in the Job container; this is where the
             ``dagster.yaml`` file will be mounted from the instance ConfigMap specified above.
-        load_kubeconfig (Optional[bool]): If ``True``, will load k8s config from the file specified
-            in ``kubeconfig_file`` (using ``kubernetes.config.load_kube_config``). Set this value
-            if you are running the launcher outside of a k8s cluster (e.g., in test) or you intend
-            to target another cluster than that in which the launcher is running. If ``False``, we
-            assume the launcher is running within the target cluster and load config using
-            ``kubernetes.config.load_incluster_config``. Default: ``False``.
-        kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Required if
-            ``load_kubeconfig`` is ``True``.
+        load_incluster_config (Optional[bool]):  Set this value if you are running the launcher
+            within a k8s cluster. If ``True``, we assume the launcher is running within the target
+            cluster and load config using ``kubernetes.config.load_incluster_config``. Otherwise,
+            we will use the k8s config specified in ``kubeconfig_file`` (using
+            ``kubernetes.config.load_kube_config``) or fall back to the default kubeconfig. Default:
+            ``True``.
+        kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Defaults to
+            None (using the default kubeconfig).
         image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
             which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
             ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
@@ -87,7 +87,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         dagster_home,
         image_pull_policy='Always',
         image_pull_secrets=None,
-        load_kubeconfig=False,
+        load_incluster_config=True,
         kubeconfig_file=None,
         inst_data=None,
         job_namespace='default',
@@ -96,19 +96,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     ):
         self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, 'job_namespace')
-        check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
 
-        if load_kubeconfig:
-            check.str_param(kubeconfig_file, 'kubeconfig_file')
-        else:
+        if load_incluster_config:
             check.invariant(
-                kubeconfig_file is None, '`kubeconfig_file` is set but `load_kubeconfig` is True.'
+                kubeconfig_file is None,
+                '`kubeconfig_file` is set but `load_incluster_config` is True.',
             )
-
-        if load_kubeconfig:
-            kubernetes.config.load_kube_config(kubeconfig_file)
-        else:
             kubernetes.config.load_incluster_config()
+        else:
+            check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
+            kubernetes.config.load_kube_config(kubeconfig_file)
 
         self.job_config = DagsterK8sJobConfig(
             job_image=check.str_param(job_image, 'job_image'),
@@ -133,7 +130,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         run_launcher_extra_cfg = {
             'job_namespace': str,
-            'load_kubeconfig': Field(bool, is_required=False, default_value=False),
+            'load_incluster_config': Field(bool, is_required=False, default_value=True),
             'kubeconfig_file': Field(Noneable(str), is_required=False, default_value=None),
         }
         return merge_dicts(job_cfg, run_launcher_extra_cfg)
