@@ -191,6 +191,7 @@ const Wrapper = styled.div`
   width: 100%;
   height: 100%;
   min-width: 0;
+  overflow: auto;
 `;
 const TabBarContainer = styled.div`
   height: 45px;

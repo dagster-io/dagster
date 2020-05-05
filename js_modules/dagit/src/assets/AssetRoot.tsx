@@ -16,6 +16,8 @@ import { MetadataEntries, MetadataEntry } from "../runs/MetadataEntry";
 import { RunTable } from "../runs/RunTable";
 import { RunStatus, titleForRun } from "../runs/RunUtils";
 import { PipelineRunStatus } from "../types/globalTypes";
+import { Line } from "react-chartjs-2";
+import { colorHash } from "../Util";
 
 type AssetMaterialization = AssetQuery_assetOrError_Asset_assetMaterializations;
 
@@ -48,6 +50,10 @@ export const AssetRoot = ({ assetKey }: { assetKey: string }) => {
               <Header>Recent Runs</Header>
               <RunTable runs={assetOrError.runs} onSetFilter={_ => {}} />
             </div>
+            <AssetValueGraph
+              assetKey={assetKey}
+              values={assetOrError.assetMaterializations}
+            />
           </Container>
         );
       }}
@@ -123,6 +129,58 @@ const AssetLastMaterialization = ({
   );
 };
 
+const AssetValueGraph = (props: any) => {
+  const dataByLabel = {};
+  props.values.forEach((assetMaterialization: AssetMaterialization) => {
+    const timestamp = assetMaterialization.materializationEvent.timestamp;
+    assetMaterialization.materializationEvent.materialization.metadataEntries.forEach(
+      entry => {
+        if (entry.__typename === "EventFloatMetadataEntry") {
+          dataByLabel[entry.label] = [
+            ...(dataByLabel[entry.label] || []),
+            { x: parseInt(timestamp, 10), y: entry.value }
+          ];
+        }
+      }
+    );
+  });
+
+  if (!Object.keys(dataByLabel).length) {
+    return null;
+  }
+
+  const graphData = {
+    datasets: Object.keys(dataByLabel).map(label => ({
+      label,
+      data: dataByLabel[label],
+      borderColor: colorHash(label),
+      backgroundColor: "rgba(0,0,0,0)"
+    }))
+  };
+  const options = {
+    title: { display: true, text: `${props.assetKey} values` },
+    scales: {
+      yAxes: [{ scaleLabel: { display: true, labelString: "Value" } }],
+      xAxes: [
+        {
+          type: "time",
+          scaleLabel: { display: true, labelString: "Execution time" }
+        }
+      ]
+    },
+    legend: {
+      display: false,
+      onClick: (_e: MouseEvent, _legendItem: any) => {}
+    }
+  };
+  return (
+    <div style={{ marginTop: 30 }}>
+      <Header>Recent Values</Header>
+      <Line data={graphData} height={100} options={options} />
+    </div>
+  );
+};
+
 const Section = styled.div`
   margin-bottom: 30px;
 `;
@@ -140,7 +198,7 @@ export const ASSET_QUERY = gql`
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         key
-        assetMaterializations(limit: 1) {
+        assetMaterializations {
           runOrError {
             ... on PipelineRun {
               runId
