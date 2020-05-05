@@ -25,7 +25,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -69,11 +68,10 @@ def test_running():
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
-    selector = ExecutionSelector('csv_hello_world')
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=passing_pipeline, selector=selector, environment_dict=environment_dict,
+        pipeline=passing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, instance)
@@ -93,11 +91,10 @@ def test_failing():
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
-    selector = ExecutionSelector('csv_hello_world')
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=failing_pipeline, selector=selector, environment_dict=environment_dict,
+        pipeline=failing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, instance)
@@ -111,11 +108,10 @@ def test_execution_crash():
     environment_dict = {
         'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
     }
-    selector = ExecutionSelector('csv_hello_world')
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=crashy_pipeline, selector=selector, environment_dict=environment_dict,
+        pipeline=crashy_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, instance)
@@ -223,9 +219,7 @@ def test_multiprocessing_execution_for_composite_solid():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
+        pipeline=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
@@ -243,9 +237,7 @@ def test_multiprocessing_execution_for_composite_solid():
     }
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline,
-        selector=ExecutionSelector('nonce'),
-        environment_dict=environment_dict,
+        pipeline=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)

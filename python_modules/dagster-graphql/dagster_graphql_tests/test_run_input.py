@@ -2,7 +2,6 @@ from dagster_graphql.client.util import execution_params_from_pipeline_run
 from dagster_graphql.implementation.execution.utils import pipeline_run_args_from_execution_params
 from dagster_graphql.schema.roots import execution_params_from_graphql
 
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 
 
@@ -12,7 +11,7 @@ def test_roundtrip_run():
         run_id='8675309',
         environment_dict={'good': True},
         mode='default',
-        selector=ExecutionSelector('pipey_mcpipeface'),
+        solid_subset=['solid_1'],
         step_keys_to_execute=['step_1', 'step_2', 'step_3'],
         tags={'tag_it': 'bag_it'},
         status=PipelineRunStatus.NOT_STARTED,

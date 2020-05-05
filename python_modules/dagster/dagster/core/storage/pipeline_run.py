@@ -61,7 +61,7 @@ class PipelineRun(
     namedtuple(
         '_PipelineRun',
         (
-            'pipeline_name run_id environment_dict mode selector '
+            'pipeline_name run_id environment_dict mode solid_subset '
             'step_keys_to_execute status tags root_run_id parent_run_id '
             'pipeline_snapshot_id execution_plan_snapshot_id'
         ),
@@ -81,13 +81,15 @@ class PipelineRun(
     #   deserializing an old record; the old field will then be dropped when serialized back to
     #   storage
     # * added execution_plan_snapshot_id
+    # * removed selector
+    # * added solid_subset
     def __new__(
         cls,
         pipeline_name=None,
         run_id=None,
         environment_dict=None,
         mode=None,
-        selector=None,
+        solid_subset=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -98,12 +100,11 @@ class PipelineRun(
         ## GRAVEYARD BELOW
         # see https://github.com/dagster-io/dagster/issues/2372 for explanation
         previous_run_id=None,
+        selector=None,
     ):
         from dagster.core.definitions.pipeline import ExecutionSelector
 
-        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
-        if not selector and pipeline_name:
-            selector = ExecutionSelector(pipeline_name)
+        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
         root_run_id = check.opt_str_param(root_run_id, 'root_run_id')
         parent_run_id = check.opt_str_param(parent_run_id, 'parent_run_id')
@@ -117,12 +118,41 @@ class PipelineRun(
             ),
         )
 
+        # Compatibility
+        # ----------------------------------------------------------------------------------------
         # Historical runs may have previous_run_id set, in which case
         # that previous ID becomes both the root and the parent
         if previous_run_id:
             if not (parent_run_id and root_run_id):
                 parent_run_id = previous_run_id
                 root_run_id = previous_run_id
+
+        check.opt_inst_param(selector, 'selector', ExecutionSelector)
+        if selector:
+            check.invariant(
+                pipeline_name is None or selector.name == pipeline_name,
+                (
+                    'Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: '
+                    'selector was passed with pipeline {selector_pipeline}'.format(
+                        pipeline_name=pipeline_name, selector_pipeline=selector.name
+                    )
+                ),
+            )
+            if pipeline_name is None:
+                pipeline_name = selector.name
+
+            check.invariant(
+                solid_subset is None or selector.solid_subset == solid_subset,
+                (
+                    'Conflicting solid_subset {solid_subset} in arguments to PipelineRun: '
+                    'selector was passed with subset {selector_subset}'.format(
+                        solid_subset=solid_subset, selector_subset=selector.solid_subset
+                    )
+                ),
+            )
+            if solid_subset is None:
+                solid_subset = selector.solid_subset
+        # ----------------------------------------------------------------------------------------
 
         return super(PipelineRun, cls).__new__(
             cls,
@@ -132,7 +162,7 @@ class PipelineRun(
                 environment_dict, 'environment_dict', key_type=str
             ),
             mode=check.opt_str_param(mode, 'mode'),
-            selector=selector,
+            solid_subset=solid_subset,
             step_keys_to_execute=None
             if step_keys_to_execute is None
             else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
@@ -170,6 +200,12 @@ class PipelineRun(
     @property
     def is_resume_retry(self):
         return self.tags.get(RESUME_RETRY_TAG) == 'true'
+
+    @property
+    def selector(self):
+        from dagster.core.definitions.pipeline import ExecutionSelector
+
+        return ExecutionSelector(name=self.pipeline_name, solid_subset=self.solid_subset)
 
     @property
     def previous_run_id(self):
