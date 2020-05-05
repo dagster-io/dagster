@@ -144,16 +144,16 @@ class PipelineExecutionResult(IContainSolidsExecutionResult):
     Returned by :py:func:`execute_pipeline`. Users should not instantiate this class.
     '''
 
-    def __init__(self, pipeline, run_id, event_list, reconstruct_context):
+    def __init__(self, pipeline_def, run_id, event_list, reconstruct_context):
         self.run_id = check.str_param(run_id, 'run_id')
-        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
         super(PipelineExecutionResult, self).__init__(
-            container=pipeline, event_list=event_list, reconstruct_context=reconstruct_context,
+            container=pipeline_def, event_list=event_list, reconstruct_context=reconstruct_context,
         )
 
     @property
-    def pipeline(self):
+    def pipeline_def(self):
         return self.container
 
 
@@ -381,7 +381,7 @@ class SolidExecutionResult(object):
         if self.success and self.compute_step_events:
             with self.reconstruct_context() as context:
                 execution_plan = create_execution_plan(
-                    pipeline=context.pipeline_def,
+                    pipeline_def=context.pipeline_def,
                     environment_dict=context.environment_dict,
                     mode=context.pipeline_run.mode,
                     step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
@@ -434,7 +434,7 @@ class SolidExecutionResult(object):
                 ):
                     with self.reconstruct_context() as context:
                         execution_plan = create_execution_plan(
-                            pipeline=context.pipeline_def,
+                            pipeline_def=context.pipeline_def,
                             environment_dict=context.environment_dict,
                             mode=context.pipeline_run.mode,
                             step_keys_to_execute=context.pipeline_run.step_keys_to_execute,

@@ -85,7 +85,7 @@ def test_execute_run_iterator():
         ],
     )
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, environment_dict={'loggers': {'callback': {}}}, mode='default',
+        pipeline_def=pipeline, environment_dict={'loggers': {'callback': {}}}, mode='default',
     )
 
     iterator = execute_run_iterator(pipeline, pipeline_run, instance=instance)
@@ -126,7 +126,7 @@ def test_execute_plan_iterator():
 
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline,
+        pipeline_def=pipeline,
         environment_dict={'loggers': {'callback': {}}},
         execution_plan=execution_plan,
     )

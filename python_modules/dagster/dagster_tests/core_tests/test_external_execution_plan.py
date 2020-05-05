@@ -57,7 +57,7 @@ def test_using_file_system_for_subplan():
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict,)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, execution_plan=execution_plan
+        pipeline_def=pipeline, execution_plan=execution_plan
     )
     assert execution_plan.get_step_by_key('return_one.compute')
 
@@ -100,7 +100,7 @@ def test_using_file_system_for_subplan_multiprocessing():
 
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline_def, execution_plan=execution_plan
+        pipeline_def=pipeline_def, execution_plan=execution_plan
     )
 
     assert execution_plan.get_step_by_key('return_one.compute')
@@ -140,7 +140,7 @@ def test_execute_step_wrong_step_key():
 
     execution_plan = create_execution_plan(pipeline)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, execution_plan=execution_plan
+        pipeline_def=pipeline, execution_plan=execution_plan
     )
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
@@ -171,7 +171,7 @@ def test_using_file_system_for_subplan_missing_input():
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, execution_plan=execution_plan
+        pipeline_def=pipeline, execution_plan=execution_plan
     )
 
     with pytest.raises(DagsterStepOutputNotFoundError):
@@ -191,7 +191,7 @@ def test_using_file_system_for_subplan_invalid_step():
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, environment_dict=environment_dict)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, execution_plan=execution_plan
+        pipeline_def=pipeline, execution_plan=execution_plan
     )
 
     with pytest.raises(DagsterExecutionStepNotFoundError):

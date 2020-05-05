@@ -146,7 +146,7 @@ def test_success_whole_execution_plan(snapshot):
     instance = DagsterInstance.local_temp()
     environment_dict = csv_hello_world_solids_config_fs_storage()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=environment_dict
+        pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -185,7 +185,7 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     instance = DagsterInstance.ephemeral()
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}})
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=environment_dict
+        pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -224,7 +224,7 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     instance = DagsterInstance.ephemeral()
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}})
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=environment_dict
+        pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -263,7 +263,7 @@ def test_successful_one_part_execute_plan(snapshot):
     instance = DagsterInstance.ephemeral()
     environment_dict = csv_hello_world_solids_config_fs_storage()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=environment_dict
+        pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
 
     result = execute_dagster_graphql(
@@ -321,7 +321,7 @@ def test_successful_two_part_execute_plan(snapshot):
     instance = DagsterInstance.local_temp()
     environment_dict = csv_hello_world_solids_config_fs_storage()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=environment_dict
+        pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result_one = execute_dagster_graphql(
         define_test_context(instance=instance),
@@ -511,7 +511,7 @@ def test_basic_execute_plan_with_materialization():
         ]
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline=csv_hello_world, environment_dict=environment_dict
+            pipeline_def=csv_hello_world, environment_dict=environment_dict
         )
 
         result = execute_dagster_graphql(

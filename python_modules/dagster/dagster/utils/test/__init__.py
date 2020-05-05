@@ -64,7 +64,9 @@ def create_test_pipeline_execution_context(logger_defs=None):
         pipeline_name='test_legacy_context', environment_dict=environment_dict
     )
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline=pipeline_def, environment_dict=environment_dict)
+    execution_plan = create_execution_plan(
+        pipeline_def=pipeline_def, environment_dict=environment_dict
+    )
     creation_data = create_context_creation_data(
         pipeline_def, environment_dict, pipeline_run, instance, execution_plan
     )

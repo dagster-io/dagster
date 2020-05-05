@@ -71,7 +71,7 @@ def test_running():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=passing_pipeline, environment_dict=environment_dict,
+        pipeline_def=passing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, passing_pipeline, pipeline_run, instance)
@@ -94,7 +94,7 @@ def test_failing():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=failing_pipeline, environment_dict=environment_dict,
+        pipeline_def=failing_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, failing_pipeline, pipeline_run, instance)
@@ -111,7 +111,7 @@ def test_execution_crash():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=crashy_pipeline, environment_dict=environment_dict,
+        pipeline_def=crashy_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, crashy_pipeline, pipeline_run, instance)
@@ -219,7 +219,7 @@ def test_multiprocessing_execution_for_composite_solid():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline, environment_dict=environment_dict,
+        pipeline_def=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
@@ -237,7 +237,7 @@ def test_multiprocessing_execution_for_composite_solid():
     }
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline, environment_dict=environment_dict,
+        pipeline_def=composite_pipeline, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(handle, composite_pipeline, pipeline_run, instance)
@@ -259,7 +259,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
     instance = DagsterInstance.local_temp()
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline_with_config_mapping, environment_dict=environment_dict,
+        pipeline_def=composite_pipeline_with_config_mapping, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(
@@ -279,7 +279,7 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     }
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=composite_pipeline_with_config_mapping, environment_dict=environment_dict,
+        pipeline_def=composite_pipeline_with_config_mapping, environment_dict=environment_dict,
     )
     execution_manager = SubprocessExecutionManager(instance)
     execution_manager.execute_pipeline(
@@ -311,7 +311,7 @@ def test_has_run_query_and_terminate():
 
     with safe_tempfile_path() as path:
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline=infinite_loop_pipeline,
+            pipeline_def=infinite_loop_pipeline,
             environment_dict={'solids': {'loop': {'config': {'file': path}}}},
         )
         execution_manager = SubprocessExecutionManager(instance)
@@ -340,7 +340,7 @@ def test_two_runs_running():
         execution_manager = SubprocessExecutionManager(instance)
 
         pipeline_run_one = instance.create_run_for_pipeline(
-            pipeline=infinite_loop_pipeline,
+            pipeline_def=infinite_loop_pipeline,
             environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
         )
         execution_manager.execute_pipeline(
@@ -348,7 +348,7 @@ def test_two_runs_running():
         )
 
         pipeline_run_two = instance.create_run_for_pipeline(
-            pipeline=infinite_loop_pipeline,
+            pipeline_def=infinite_loop_pipeline,
             environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
         )
 
@@ -382,7 +382,7 @@ def test_max_concurrency_zero():
         execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=0)
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline=infinite_loop_pipeline,
+            pipeline_def=infinite_loop_pipeline,
             environment_dict={'solids': {'loop': {'config': {'file': filepath}}}},
         )
         execution_manager.execute_pipeline(handle, infinite_loop_pipeline, pipeline_run, instance)
@@ -400,11 +400,11 @@ def test_max_concurrency_one():
         execution_manager = QueueingSubprocessExecutionManager(instance, max_concurrent_runs=1)
 
         run_one = instance.create_run_for_pipeline(
-            pipeline=pipeline_def,
+            pipeline_def=pipeline_def,
             environment_dict={'solids': {'loop': {'config': {'file': file_one}}}},
         )
         run_two = instance.create_run_for_pipeline(
-            pipeline=pipeline_def,
+            pipeline_def=pipeline_def,
             environment_dict={'solids': {'loop': {'config': {'file': file_two}}}},
         )
 

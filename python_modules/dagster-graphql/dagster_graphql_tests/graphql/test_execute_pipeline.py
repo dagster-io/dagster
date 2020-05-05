@@ -451,7 +451,7 @@ def test_start_pipeline_execution_for_created_run():
     instance = DagsterInstance.local_temp()
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=csv_hello_world, environment_dict=csv_hello_world_solids_config()
+        pipeline_def=csv_hello_world, environment_dict=csv_hello_world_solids_config()
     )
 
     result = execute_dagster_graphql(

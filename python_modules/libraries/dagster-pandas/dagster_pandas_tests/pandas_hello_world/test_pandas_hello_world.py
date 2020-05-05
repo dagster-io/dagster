@@ -47,7 +47,7 @@ def test_cli_execute():
         os.chdir(file_relative_path(__file__, '../..'))
 
         do_execute_command(
-            pipeline=pandas_hello_world,
+            pipeline_def=pandas_hello_world,
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
@@ -70,7 +70,7 @@ def test_cli_execute_failure():
         os.chdir(file_relative_path(__file__, '../..'))
 
         result = do_execute_command(
-            pipeline=pandas_hello_world_fails,
+            pipeline_def=pandas_hello_world_fails,
             env_file_list=[
                 file_relative_path(
                     __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'

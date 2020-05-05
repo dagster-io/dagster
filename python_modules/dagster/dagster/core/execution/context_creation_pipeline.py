@@ -424,10 +424,11 @@ def _create_context_free_log_manager(instance, pipeline_run, pipeline_def):
     )
 
 
-def get_logging_tags(pipeline_run, pipeline):
+def get_logging_tags(pipeline_run, pipeline_def):
     check.opt_inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
 
     return merge_dicts(
-        {'pipeline': pipeline.name}, pipeline_run.tags if pipeline_run and pipeline_run.tags else {}
+        {'pipeline': pipeline_def.name},
+        pipeline_run.tags if pipeline_run and pipeline_run.tags else {},
     )

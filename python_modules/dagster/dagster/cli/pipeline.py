@@ -330,14 +330,14 @@ def execute_execute_command_with_preset(preset_name, cli_args, _mode):
     )
 
 
-def do_execute_command(pipeline, env_file_list, mode=None, tags=None):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def do_execute_command(pipeline_def, env_file_list, mode=None, tags=None):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     env_file_list = check.opt_list_param(env_file_list, 'env_file_list', of_type=str)
 
     environment_dict = load_yaml_from_glob_list(env_file_list) if env_file_list else {}
 
     return execute_pipeline(
-        pipeline,
+        pipeline_def,
         environment_dict=environment_dict,
         mode=mode,
         tags=tags,
@@ -407,7 +407,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
 
     # FIXME need to check the env against environment_dict
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline,
+        pipeline_def=pipeline,
         solid_subset=preset.solid_subset if preset else None,
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
@@ -430,17 +430,17 @@ def pipeline_scaffold_command(**kwargs):
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    pipeline = create_pipeline_from_cli_args(cli_args)
+    pipeline_def = create_pipeline_from_cli_args(cli_args)
     skip_non_required = cli_args['print_only_required']
-    do_scaffold_command(pipeline, print_fn, skip_non_required)
+    do_scaffold_command(pipeline_def, print_fn, skip_non_required)
 
 
-def do_scaffold_command(pipeline, printer, skip_non_required):
-    check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+def do_scaffold_command(pipeline_def, printer, skip_non_required):
+    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
     check.callable_param(printer, 'printer')
     check.bool_param(skip_non_required, 'skip_non_required')
 
-    config_dict = scaffold_pipeline_config(pipeline, skip_non_required=skip_non_required)
+    config_dict = scaffold_pipeline_config(pipeline_def, skip_non_required=skip_non_required)
     yaml_string = yaml.dump(config_dict, default_flow_style=False)
     printer(yaml_string)
 
@@ -688,8 +688,7 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
         for partition in partitions:
             # execution_plan = create_execution_plan()
             run = instance.create_run_for_pipeline(
-                pipeline=pipeline,
-                # execution_plan=execution_plan,
+                pipeline_def=pipeline,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
                 mode=cli_args.get('mode') or 'default',
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),

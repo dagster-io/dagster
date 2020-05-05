@@ -67,7 +67,7 @@ def test_execution_plan_reexecution():
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline_def,
+        pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         environment_dict=environment_dict,
         parent_run_id=result.run_id,
@@ -100,7 +100,7 @@ def test_execution_plan_wrong_run_id():
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline_def,
+        pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         environment_dict=environment_dict,
         parent_run_id=unrun_id,
@@ -135,7 +135,7 @@ def test_execution_plan_reexecution_with_in_memory():
     execution_plan = create_execution_plan(pipeline_def, environment_dict=environment_dict)
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline_def,
+        pipeline_def=pipeline_def,
         execution_plan=execution_plan,
         environment_dict=environment_dict,
         parent_run_id=result.run_id,

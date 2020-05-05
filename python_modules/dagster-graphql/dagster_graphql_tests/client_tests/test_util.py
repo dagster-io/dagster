@@ -109,7 +109,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, mode=mode)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline=pipeline, execution_plan=execution_plan, mode=mode
+        pipeline_def=pipeline, execution_plan=execution_plan, mode=mode
     )
     step_levels = execution_plan.topological_step_levels()
 

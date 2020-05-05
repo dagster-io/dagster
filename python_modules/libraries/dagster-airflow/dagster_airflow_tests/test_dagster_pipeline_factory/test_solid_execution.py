@@ -33,9 +33,9 @@ def test_normalize_name():
     result = execute_pipeline(pipeline_def)
 
     assert result.success
-    assert result.pipeline.name == 'airflow_dag_with_dot_dash'
-    assert len(result.pipeline.solids) == 1
-    assert result.pipeline.solids[0].name == 'airflow_task_with_dot_dash'
+    assert result.pipeline_def.name == 'airflow_dag_with_dot_dash'
+    assert len(result.pipeline_def.solids) == 1
+    assert result.pipeline_def.solids[0].name == 'airflow_task_with_dot_dash'
 
 
 # Test names with 250 characters, Airflow's max allowed length
@@ -51,15 +51,15 @@ def test_long_name():
     result = execute_pipeline(pipeline_def)
 
     assert result.success
-    print(result.pipeline.name)
+    print(result.pipeline_def.name)
     assert (
-        result.pipeline.name
+        result.pipeline_def.name
         == 'airflow_dag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ongdag_with_dot_dash_lo00ong'
     )
 
-    assert len(result.pipeline.solids) == 1
+    assert len(result.pipeline_def.solids) == 1
     assert (
-        result.pipeline.solids[0].name
+        result.pipeline_def.solids[0].name
         == 'airflow_task_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loongtask_with_dot_dash2_loong'
     )
 

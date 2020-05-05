@@ -61,33 +61,33 @@ class EnvironmentConfig(
         )
 
     @staticmethod
-    def build(pipeline, environment_dict=None, mode=None):
+    def build(pipeline_def, environment_dict=None, mode=None):
         '''This method validates a given environment dict against the pipeline config schema. If
-        successful, we instiate an EnvironmentConfig object.
+        successful, we instantiate an EnvironmentConfig object.
 
         In case the environment_dict is invalid, this method raises a DagsterInvalidConfigError
         '''
         from dagster.config.validate import process_config
         from .composite_descent import composite_descent
 
-        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
         check.opt_str_param(mode, 'mode')
 
-        mode = mode or pipeline.get_default_mode_name()
-        environment_type = create_environment_type(pipeline, mode)
+        mode = mode or pipeline_def.get_default_mode_name()
+        environment_type = create_environment_type(pipeline_def, mode)
 
         config_evr = process_config(environment_type, environment_dict)
         if not config_evr.success:
             raise DagsterInvalidConfigError(
-                'Error in config for pipeline {}'.format(pipeline.name),
+                'Error in config for pipeline {}'.format(pipeline_def.name),
                 config_evr.errors,
                 environment_dict,
             )
 
         config_value = config_evr.value
 
-        solid_config_dict = composite_descent(pipeline, config_value.get('solids', {}))
+        solid_config_dict = composite_descent(pipeline_def, config_value.get('solids', {}))
 
         return EnvironmentConfig(
             solids=solid_config_dict,

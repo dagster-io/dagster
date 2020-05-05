@@ -41,7 +41,7 @@ def test_execute_execute_plan_mutation():
     pipeline = handle.build_pipeline_definition()
 
     instance = DagsterInstance.local_temp()
-    pipeline_run = instance.create_run_for_pipeline(pipeline=pipeline)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline)
 
     variables = {
         'executionParams': {
@@ -66,7 +66,7 @@ def test_execute_execute_plan_mutation_raw():
     )
     pipeline = handle.build_pipeline_definition()
     instance = DagsterInstance.local_temp()
-    pipeline_run = instance.create_run_for_pipeline(pipeline=pipeline)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline)
     variables = {
         'executionParams': {
             'environmentConfigData': {},

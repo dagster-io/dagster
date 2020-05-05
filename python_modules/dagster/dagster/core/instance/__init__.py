@@ -424,7 +424,7 @@ class DagsterInstance:
 
     def create_run_for_pipeline(
         self,
-        pipeline,
+        pipeline_def,
         execution_plan=None,
         run_id=None,
         environment_dict=None,
@@ -440,34 +440,34 @@ class DagsterInstance:
         from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.snap import snapshot_from_execution_plan
 
-        check.inst_param(pipeline, 'pipeline', PipelineDefinition)
+        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         if solid_subset:
-            pipeline = pipeline.build_sub_pipeline(solid_subset=solid_subset)
+            pipeline_def = pipeline_def.build_sub_pipeline(solid_subset=solid_subset)
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
-                pipeline,
+                pipeline_def,
                 environment_dict=environment_dict,
                 mode=mode,
                 step_keys_to_execute=step_keys_to_execute,
             )
 
         return self.get_or_create_run(
-            pipeline_name=pipeline.name,
+            pipeline_name=pipeline_def.name,
             run_id=run_id,
             environment_dict=environment_dict,
-            mode=check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name()),
+            mode=check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name()),
             solid_subset=solid_subset,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
-            pipeline_snapshot=pipeline.get_pipeline_snapshot(),
+            pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan, pipeline.get_pipeline_snapshot_id()
+                execution_plan, pipeline_def.get_pipeline_snapshot_id()
             ),
         )
 
