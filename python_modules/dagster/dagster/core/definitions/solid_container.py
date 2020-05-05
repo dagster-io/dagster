@@ -248,7 +248,8 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Invalid dependencies: circular reference detected in solid "{from_solid}" input "{from_input}"'
+                            'Invalid dependencies: circular reference detected in solid '
+                            '"{from_solid}" input "{from_input}"'
                         ).format(from_solid=from_solid, from_input=from_input)
                     )
 
@@ -256,23 +257,21 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                     aliased_solid = alias_to_name.get(from_solid)
                     if aliased_solid == from_solid:
                         raise DagsterInvalidDefinitionError(
-                            'Invalid dependencies: solid "{solid}" in dependency dictionary not found in solid list'.format(
-                                solid=from_solid
-                            )
+                            'Invalid dependencies: solid "{solid}" in dependency dictionary not '
+                            'found in solid list'.format(solid=from_solid)
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
                             (
-                                'Invalid dependencies: solid "{aliased_solid}" (aliased by "{from_solid}" in dependency '
-                                'dictionary) not found in solid list'
+                                'Invalid dependencies: solid "{aliased_solid}" (aliased by '
+                                '"{from_solid}" in dependency dictionary) not found in solid list'
                             ).format(aliased_solid=aliased_solid, from_solid=from_solid)
                         )
                 if not solid_dict[from_solid].definition.has_input(from_input):
                     input_list = solid_dict[from_solid].definition.input_dict.keys()
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: solid "{from_solid}" does not have input "{from_input}". '.format(
-                            from_solid=from_solid, from_input=from_input
-                        )
+                        'Invalid dependencies: solid "{from_solid}" does not have input '
+                        '"{from_input}". '.format(from_solid=from_solid, from_input=from_input)
                         + 'Available inputs: {input_list}'.format(input_list=input_list)
                     )
 
@@ -286,8 +285,9 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
 
                 if not solid_dict[dep.solid].definition.has_output(dep.output):
                     raise DagsterInvalidDefinitionError(
-                        'Invalid dependencies: solid "{dep.solid}" does not have output "{dep.output}". '
-                        'Listed as dependency for solid "{from_solid} input "{from_input}"'.format(
+                        'Invalid dependencies: solid "{dep.solid}" does not have output '
+                        '"{dep.output}". Listed as dependency for solid "{from_solid} input '
+                        '"{from_input}"'.format(
                             dep=dep, from_solid=from_solid, from_input=from_input
                         )
                     )
