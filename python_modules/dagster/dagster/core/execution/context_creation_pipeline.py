@@ -188,7 +188,7 @@ def pipeline_initialization_event_generator(
             raise_on_error=raise_on_error,
         )
 
-        _validate_plan_with_context(pipeline_context, execution_plan)
+        validate_reexecution_memoization(pipeline_context, execution_plan)
 
         yield pipeline_context
         for event in resources_manager.generate_teardown_events():
@@ -218,11 +218,6 @@ def pipeline_initialization_event_generator(
 
         if raise_on_error:
             raise dagster_error
-
-
-# perform any plan validation that is dependent on access to the pipeline context
-def _validate_plan_with_context(pipeline_context, execution_plan):
-    validate_reexecution_memoization(pipeline_context, execution_plan)
 
 
 def create_system_storage_data(
