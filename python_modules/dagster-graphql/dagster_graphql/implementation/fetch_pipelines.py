@@ -1,17 +1,14 @@
-import sys
-
-from dagster_graphql.implementation.context import (
-    DagsterGraphQLInProcessRepositoryContext,
-    ExternalPipeline,
+from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
+from dagster_graphql.implementation.external import (
+    get_external_pipeline,
+    get_external_pipeline_subset,
 )
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import PipelineIndex
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
@@ -25,12 +22,9 @@ def get_pipeline_snapshot(graphene_info, snapshot_id):
 @capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
-    repository_index = graphene_info.context.get_repository_index()
-    if not repository_index.has_pipeline(pipeline_name):
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
-        )
-    return DauphinPipelineSnapshot(repository_index.get_pipeline_index(pipeline_name))
+    return DauphinPipelineSnapshot(
+        get_external_pipeline(graphene_info, pipeline_name).pipeline_index
+    )
 
 
 @capture_dauphin_error
@@ -123,41 +117,9 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
             desc="DagsterGraphQLOutOfProcessRepositoryContext doesn't support pipeline sub-selection.",
         )
 
-    pipeline_name = selector.name
-
-    if not graphene_info.context.has_external_pipeline(pipeline_name):
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
-        )
-
-    external_pipeline = graphene_info.context.get_external_pipeline(pipeline_name)
-
-    if not selector.solid_subset:
-        return DauphinPipeline(external_pipeline)
-
-    _check_for_invalid_subset(external_pipeline, selector.solid_subset)
-
     return DauphinPipeline(
-        graphene_info.context.get_external_pipeline_subset(pipeline_name, selector.solid_subset)
+        get_external_pipeline_subset(graphene_info, selector.name, selector.solid_subset)
     )
-
-
-def _check_for_invalid_subset(external_pipeline, solid_subset):
-    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-    check.list_param(solid_subset, 'solid_subset', of_type=str)
-
-    for solid_name in solid_subset:
-        if not external_pipeline.has_solid_invocation(solid_name):
-            from dagster_graphql.schema.errors import DauphinInvalidSubsetError
-
-            raise UserFacingGraphQLError(
-                DauphinInvalidSubsetError(
-                    message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
-                        solid_name=solid_name, pipeline_name=external_pipeline.name
-                    ),
-                    pipeline=DauphinPipeline(external_pipeline),
-                )
-            )
 
 
 def get_pipeline_def_from_selector(graphene_info, selector):
@@ -171,28 +133,14 @@ def get_pipeline_def_from_selector(graphene_info, selector):
 
     pipeline_name = selector.name
 
-    if not graphene_info.context.has_external_pipeline(pipeline_name):
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
-        )
+    # for error check of pipeline existence
+    get_external_pipeline(graphene_info, pipeline_name)
 
-    orig_pipeline = graphene_info.context.get_pipeline(pipeline_name)
+    orig_pipeline_def = graphene_info.context.get_pipeline(pipeline_name)
 
     if not selector.solid_subset:
-        return orig_pipeline
+        return orig_pipeline_def
 
-    _check_for_invalid_subset(
-        ExternalPipeline.from_pipeline_def(orig_pipeline), selector.solid_subset
-    )
-
-    try:
-        return orig_pipeline.build_sub_pipeline(selector.solid_subset)
-    except DagsterInvalidDefinitionError:
-        raise UserFacingGraphQLError(
-            graphene_info.schema.type_named('InvalidSubsetError')(
-                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
-                pipeline=graphene_info.schema.type_named('Pipeline').from_pipeline_def(
-                    orig_pipeline
-                ),
-            )
-        )
+    # for error checking
+    get_external_pipeline_subset(graphene_info, selector.name, selector.solid_subset)
+    return orig_pipeline_def.build_sub_pipeline(selector.solid_subset)

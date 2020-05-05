@@ -1,0 +1,98 @@
+import sys
+
+from graphql.execution.base import ResolveInfo
+
+from dagster import check
+from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.snap import ActivePipelineData, PipelineIndex, active_pipeline_data_from_def
+from dagster.utils.error import serializable_error_info_from_exc_info
+
+from .utils import UserFacingGraphQLError
+
+
+# Represents a pipeline definition that is resident in an external process.
+#
+# Object composes a pipeline index (which is an index over snapshot data)
+# and the serialized ActivePipelineData
+class ExternalPipeline:
+    def __init__(self, pipeline_index, active_pipeline_data):
+        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        self._active_pipeline_data = check.inst_param(
+            active_pipeline_data, 'active_pipeline_data', ActivePipelineData
+        )
+        self._active_preset_dict = {ap.name: ap for ap in active_pipeline_data.active_presets}
+
+    @property
+    def name(self):
+        return self.pipeline_index.name
+
+    @property
+    def active_presets(self):
+        return self._active_pipeline_data.active_presets
+
+    def has_solid_invocation(self, solid_name):
+        check.str_param(solid_name, 'solid_name')
+        return self.pipeline_index.has_solid_invocation(solid_name)
+
+    def has_preset(self, preset_name):
+        check.str_param(preset_name, 'preset_name')
+        return preset_name in self._active_preset_dict
+
+    def get_preset(self, preset_name):
+        check.str_param(preset_name, 'preset_name')
+        return self._active_preset_dict[preset_name]
+
+    @staticmethod
+    def from_pipeline_def(pipeline_def):
+        return ExternalPipeline(
+            pipeline_def.get_pipeline_index(), active_pipeline_data_from_def(pipeline_def)
+        )
+
+
+def get_external_pipeline(graphene_info, pipeline_name):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+
+    if not graphene_info.context.has_external_pipeline(pipeline_name):
+        raise UserFacingGraphQLError(
+            graphene_info.schema.type_named('PipelineNotFoundError')(pipeline_name=pipeline_name)
+        )
+
+    return graphene_info.context.get_external_pipeline(pipeline_name)
+
+
+def get_external_pipeline_subset(graphene_info, pipeline_name, solid_subset):
+    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.str_param(pipeline_name, 'pipeline_name')
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+
+    from dagster_graphql.schema.errors import DauphinInvalidSubsetError
+
+    full_pipeline = get_external_pipeline(graphene_info, pipeline_name)
+
+    if solid_subset is None:
+        return full_pipeline
+
+    for solid_name in solid_subset:
+        if not full_pipeline.has_solid_invocation(solid_name):
+            raise UserFacingGraphQLError(
+                DauphinInvalidSubsetError(
+                    message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
+                        solid_name=solid_name, pipeline_name=pipeline_name
+                    ),
+                    pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
+                )
+            )
+    try:
+        return graphene_info.context.get_external_pipeline_subset(pipeline_name, solid_subset)
+    except DagsterInvalidDefinitionError:
+        # this handles the case when you construct a subset such that an unsatisfied
+        # input cannot be hydrate from config. Current this is only relevant for
+        # the in-process case. Once we add the out-of-process we will communicate
+        # this error through the communication channel and change what exception
+        # is thrown
+        raise UserFacingGraphQLError(
+            DauphinInvalidSubsetError(
+                message=serializable_error_info_from_exc_info(sys.exc_info()).message,
+                pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
+            )
+        )

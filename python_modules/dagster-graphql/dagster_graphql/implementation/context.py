@@ -5,56 +5,11 @@ import six
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import (
-    ActivePipelineData,
-    ActiveRepositoryData,
-    PipelineIndex,
-    RepositoryIndex,
-    active_pipeline_data_from_def,
-    active_repository_data_from_def,
-)
+from dagster.core.snap import ActiveRepositoryData, RepositoryIndex, active_repository_data_from_def
 
+from .external import ExternalPipeline
 from .pipeline_execution_manager import PipelineExecutionManager
 from .reloader import Reloader
-
-
-# Represents a pipeline definition that is resident in an external process.
-#
-# Object composes a pipeline index (which is an index over snapshot data)
-# and the serialized ActivePipelineData
-class ExternalPipeline:
-    def __init__(self, pipeline_index, active_pipeline_data):
-        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        self._active_pipeline_data = check.inst_param(
-            active_pipeline_data, 'active_pipeline_data', ActivePipelineData
-        )
-        self._active_preset_dict = {ap.name: ap for ap in active_pipeline_data.active_presets}
-
-    @property
-    def name(self):
-        return self.pipeline_index.name
-
-    @property
-    def active_presets(self):
-        return self._active_pipeline_data.active_presets
-
-    def has_solid_invocation(self, solid_name):
-        check.str_param(solid_name, 'solid_name')
-        return self.pipeline_index.has_solid_invocation(solid_name)
-
-    def has_preset(self, preset_name):
-        check.str_param(preset_name, 'preset_name')
-        return preset_name in self._active_preset_dict
-
-    def get_preset(self, preset_name):
-        check.str_param(preset_name, 'preset_name')
-        return self._active_preset_dict[preset_name]
-
-    @staticmethod
-    def from_pipeline_def(pipeline_def):
-        return ExternalPipeline(
-            pipeline_def.get_pipeline_index(), active_pipeline_data_from_def(pipeline_def)
-        )
 
 
 class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
