@@ -160,3 +160,20 @@ class InMemoryRunStorage(RunStorage):
 
     def wipe(self):
         self._init_storage()
+
+    def get_run_group(self, run_id):
+        check.str_param(run_id, 'run_id')
+        pipeline_run = self._runs.get(run_id)
+        if not pipeline_run:
+            return None
+        # if the run doesn't have root_run_id, itself is the root
+        root_run = (
+            self.get_run_by_id(pipeline_run.root_run_id)
+            if pipeline_run.root_run_id
+            else pipeline_run
+        )
+        run_group = [root_run]
+        for curr_run in self._runs.values():
+            if curr_run.root_run_id == root_run.run_id:
+                run_group.append(curr_run)
+        return (root_run.root_run_id, run_group)

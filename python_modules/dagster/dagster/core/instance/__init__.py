@@ -422,6 +422,9 @@ class DagsterInstance:
     def get_run_tags(self):
         return self._run_storage.get_run_tags()
 
+    def get_run_group(self, run_id):
+        return self._run_storage.get_run_group(run_id)
+
     def create_run_for_pipeline(
         self,
         pipeline_def,

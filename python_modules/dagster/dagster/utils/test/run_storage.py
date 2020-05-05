@@ -4,6 +4,7 @@ from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import serialize_pp
 
@@ -35,7 +36,13 @@ class TestRunStorage:
 
     @staticmethod
     def build_run(
-        run_id, pipeline_name, mode='default', tags=None, status=PipelineRunStatus.NOT_STARTED
+        run_id,
+        pipeline_name,
+        mode='default',
+        tags=None,
+        status=PipelineRunStatus.NOT_STARTED,
+        parent_run_id=None,
+        root_run_id=None,
     ):
         return PipelineRun(
             pipeline_name=pipeline_name,
@@ -44,13 +51,17 @@ class TestRunStorage:
             mode=mode,
             tags=tags,
             status=status,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
         )
 
     def test_basic_storage(self, storage):
         assert storage
         run_id = make_new_run_id()
         added = storage.add_run(
-            TestRunStorage.build_run(run_id=run_id, pipeline_name='some_pipeline')
+            TestRunStorage.build_run(
+                run_id=run_id, pipeline_name='some_pipeline', tags={'foo': 'bar'}
+            )
         )
         assert added
         runs = storage.get_runs()
@@ -58,6 +69,8 @@ class TestRunStorage:
         run = runs[0]
         assert run.run_id == run_id
         assert run.pipeline_name == 'some_pipeline'
+        assert run.tags
+        assert run.tags.get('foo') == 'bar'
         assert storage.has_run(run_id)
         fetched_run = storage.get_run_by_id(run_id)
         assert fetched_run.run_id == run_id
@@ -558,3 +571,64 @@ class TestRunStorage:
         count = storage.get_runs_count(PipelineRunsFilter(run_ids=[one, two]))
         assert len(some_runs) == 2
         assert count == 2
+
+    def test_fetch_run_group(self, storage):
+        assert storage
+        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name='foo_pipeline')
+        runs = [root_run]
+
+        # Create 3 childs and 3 descendants of the rightmost child:
+        #    root
+        #   /  |  \
+        # [0] [1] [2]
+        #          |
+        #         [a]
+        #          |
+        #         [b]
+        #          |
+        #         [c]
+
+        for _ in range(3):
+            runs.append(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    pipeline_name='foo_pipeline',
+                    root_run_id=root_run.run_id,
+                    parent_run_id=root_run.run_id,
+                    tags={PARENT_RUN_ID_TAG: root_run.run_id, ROOT_RUN_ID_TAG: root_run.run_id},
+                )
+            )
+        for _ in range(3):
+            # get root run id from the previous run if exists, otherwise use previous run's id
+            root_run_id = runs[-1].root_run_id if runs[-1].root_run_id else runs[-1].run_id
+            parent_run_id = runs[-1].run_id
+            runs.append(
+                TestRunStorage.build_run(
+                    run_id=make_new_run_id(),
+                    pipeline_name='foo_pipeline',
+                    root_run_id=root_run_id,
+                    parent_run_id=parent_run_id,
+                    tags={PARENT_RUN_ID_TAG: parent_run_id, ROOT_RUN_ID_TAG: root_run_id},
+                )
+            )
+        for run in runs:
+            storage.add_run(run)
+
+        run_group_one = storage.get_run_group(root_run.run_id)
+
+        assert len(run_group_one[1]) == 7
+
+        run_group_two = storage.get_run_group(runs[-1].run_id)
+
+        assert len(run_group_two[1]) == 7
+
+        assert run_group_one[0] == run_group_two[0]
+        assert run_group_one[1] == run_group_two[1]
+
+    def test_fetch_run_group_not_found(self, storage):
+        assert storage
+        run = TestRunStorage.build_run(run_id=make_new_run_id(), pipeline_name='foo_pipeline')
+        storage.add_run(run)
+
+        run_group_result = storage.get_run_group(make_new_run_id())
+        assert run_group_result is None

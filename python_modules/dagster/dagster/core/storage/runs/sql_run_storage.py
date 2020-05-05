@@ -17,6 +17,7 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
+from dagster.core.storage.tags import ROOT_RUN_ID_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 
@@ -127,8 +128,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
 
+    def _row_to_run(self, row):
+        return deserialize_json_to_dagster_namedtuple(row[0])
+
     def _rows_to_runs(self, rows):
-        return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
+        return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(self, query, cursor, limit):
         ''' Helper function to deal with cursor/limit pagination args '''
@@ -170,20 +174,27 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
-    def _runs_query(self, filters=None, cursor=None, limit=None):
+    def _runs_query(self, filters=None, cursor=None, limit=None, columns=None):
+
         filters = check.opt_inst_param(
             filters, 'filters', PipelineRunsFilter, default=PipelineRunsFilter()
         )
         check.opt_str_param(cursor, 'cursor')
         check.opt_int_param(limit, 'limit')
+        check.opt_list_param(columns, 'columns')
+
+        if columns is None:
+            columns = ['run_body']
+
+        base_query_columns = [getattr(RunsTable.c, column) for column in columns]
 
         # If we have a tags filter, then we need to select from a joined table
         if filters.tags:
-            base_query = db.select([RunsTable.c.run_body]).select_from(
+            base_query = db.select(base_query_columns).select_from(
                 RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
             )
         else:
-            base_query = db.select([RunsTable.c.run_body]).select_from(RunsTable)
+            base_query = db.select(base_query_columns).select_from(RunsTable)
 
         query = self._add_filters_to_query(base_query, filters)
         query = self._add_cursor_limit_to_query(query, cursor, limit)
@@ -230,6 +241,43 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         for r in rows:
             result[r[0]].add(r[1])
         return sorted(list([(k, v) for k, v in result.items()]), key=lambda x: x[0])
+
+    def get_run_group(self, run_id):
+        check.str_param(run_id, 'run_id')
+        pipeline_run = self.get_run_by_id(run_id)
+        if not pipeline_run:
+            return None
+
+        # find root_run
+        root_run_id = pipeline_run.root_run_id if pipeline_run.root_run_id else pipeline_run.run_id
+        root_run = self.get_run_by_id(root_run_id)
+
+        # root_run_id to run_id 1:1 mapping
+        root_to_run = (
+            db.select(
+                [RunTagsTable.c.value.label('root_run_id'), RunTagsTable.c.run_id.label('run_id')]
+            )
+            .where(
+                db.and_(RunTagsTable.c.key == ROOT_RUN_ID_TAG, RunTagsTable.c.value == root_run_id)
+            )
+            .alias('root_to_run')
+        )
+        # get run group
+        run_group_query = (
+            db.select([RunsTable.c.run_body])
+            .select_from(
+                root_to_run.join(
+                    RunsTable, root_to_run.c.run_id == RunsTable.c.run_id, isouter=True,
+                )
+            )
+            .alias('run_group')
+        )
+
+        with self.connect() as conn:
+            res = conn.execute(run_group_query)
+            run_group = self._rows_to_runs(res)
+
+        return (root_run_id, [root_run] + run_group)
 
     def has_run(self, run_id):
         check.str_param(run_id, 'run_id')

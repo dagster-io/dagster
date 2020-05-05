@@ -5,14 +5,14 @@ import six
 
 class RunStorage(six.with_metaclass(ABCMeta)):
     '''Abstract base class for storing pipeline run history.
-    
+
     Note that run storages using SQL databases as backing stores should implement
     :py:class:`~dagster.core.storage.runs.SqlRunStorage`.
 
     Users should not directly instantiate concrete subclasses of this class; they are instantiated
     by internal machinery when ``dagit`` and ``dagster-graphql`` load, based on the values in the
     ``dagster.yaml`` file in ``$DAGSTER_HOME``. Configuration of concrete subclasses of this class
-    should be done by setting values in that file.    
+    should be done by setting values in that file.
     '''
 
     @abstractmethod
@@ -40,7 +40,9 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''Return all the runs present in the storage that match the given filter
 
         Args:
-            filter (Optional[PipelineRunsFilter]) -- The PipelineRunFilter to filter runs by
+            filter (Optional[PipelineRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
@@ -53,12 +55,26 @@ class RunStorage(six.with_metaclass(ABCMeta)):
         '''Return the number of runs present in the storage that match the given filter
 
         Args:
-            filter (Optional[PipelineRunsFilter]) -- The PipelineRunFilter to filter runs by
+            filter (Optional[PipelineRunsFilter]) -- The
+                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
 
         Returns:
             List[PipelineRun]
+        '''
+
+    @abstractmethod
+    def get_run_group(self, run_id):
+        '''Return a group of runs related to the given run, i.e. the runs shared root_run_id with
+        the given run, including the root run.
+
+        Args:
+            run_id (str): The id of the run
+
+        Returns:
+            Tuple[string, List[PipelineRun]]
         '''
 
     @abstractmethod
