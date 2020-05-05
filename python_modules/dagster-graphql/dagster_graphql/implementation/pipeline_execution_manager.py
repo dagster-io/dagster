@@ -16,6 +16,7 @@ from dagster import (
     PipelineRun,
     check,
 )
+from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import execute_run_iterator
@@ -56,7 +57,9 @@ class SynchronousExecutionManager(PipelineExecutionManager):
 
         event_list = []
         self._active.add(pipeline_run.run_id)
-        for event in execute_run_iterator(pipeline_def, pipeline_run, instance):
+        for event in execute_run_iterator(
+            InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
+        ):
             event_list.append(event)
         self._active.remove(pipeline_run.run_id)
         return PipelineExecutionResult(pipeline_def, pipeline_run.run_id, event_list, lambda: None)
@@ -278,7 +281,9 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         try:
             event_list = []
             for event in execute_run_iterator(
-                pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset),
+                InMemoryExecutablePipeline(
+                    pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset)
+                ),
                 pipeline_run,
                 instance,
             ):

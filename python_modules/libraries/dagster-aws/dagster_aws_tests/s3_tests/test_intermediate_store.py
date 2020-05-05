@@ -120,11 +120,10 @@ def test_using_s3_for_subplan(s3_bucket):
 
     assert get_step_output(return_one_step_events, 'return_one.compute')
     with scoped_pipeline_context(
-        pipeline_def,
+        execution_plan.build_subset_plan(['return_one.compute']),
         environment_dict,
         pipeline_run,
         instance,
-        execution_plan.build_subset_plan(['return_one.compute']),
     ) as context:
 
         store = S3IntermediateStore(
@@ -146,11 +145,10 @@ def test_using_s3_for_subplan(s3_bucket):
 
     assert get_step_output(add_one_step_events, 'add_one.compute')
     with scoped_pipeline_context(
-        pipeline_def,
+        execution_plan.build_subset_plan(['add_one.compute']),
         environment_dict,
         pipeline_run,
         instance,
-        execution_plan.build_subset_plan(['add_one.compute']),
     ) as context:
         assert store.has_intermediate(context, 'add_one.compute')
         assert store.get_intermediate(context, 'add_one.compute', Int).obj == 2
@@ -282,7 +280,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
 
     execution_plan = create_execution_plan(pipe, environment_dict)
     with scoped_pipeline_context(
-        pipe, environment_dict, pipeline_run, instance, execution_plan
+        execution_plan, environment_dict, pipeline_run, instance,
     ) as context:
         store = S3IntermediateStore(
             run_id=result.run_id,

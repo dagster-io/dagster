@@ -39,6 +39,7 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
+from .executable import ExecutablePipeline
 from .executor import (
     ExecutorDefinition,
     default_executors,

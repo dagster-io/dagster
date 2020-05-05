@@ -114,6 +114,14 @@ mutation ($executionParams: ExecutionParams!) {
         ... on PipelineNotFoundError {
             pipelineName
         }
+        ... on PythonError {
+            message
+            stack
+            cause {
+                message
+                stack
+            }
+        }
     }
 }
 '''

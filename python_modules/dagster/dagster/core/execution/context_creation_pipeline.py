@@ -3,8 +3,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.core.definitions.handle import ExecutionTargetHandle
-from dagster.core.definitions.pipeline import PipelineDefinition
+from dagster.core.definitions import ExecutionTargetHandle, PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.engine.init import InitExecutorContext
@@ -69,16 +68,22 @@ def executor_def_from_config(mode_definition, environment_config):
 # of a pipeline init failure events. The data in this object are passed all
 # over the place during the context creation process so grouping here for
 # ease of argument passing etc.
-ContextCreationData = namedtuple(
-    'ContextCreationData',
-    'pipeline_def environment_config pipeline_run mode_def system_storage_def '
-    'execution_target_handle executor_def instance resource_keys_to_init',
-)
+class ContextCreationData(
+    namedtuple(
+        '_ContextCreationData',
+        'pipeline environment_config pipeline_run mode_def system_storage_def '
+        'execution_target_handle executor_def instance resource_keys_to_init',
+    )
+):
+    @property
+    def pipeline_def(self):
+        return self.pipeline.get_definition()
 
 
 def create_context_creation_data(
-    pipeline_def, environment_dict, pipeline_run, instance, execution_plan
+    execution_plan, environment_dict, pipeline_run, instance,
 ):
+    pipeline_def = execution_plan.pipeline.get_definition()
     environment_config = EnvironmentConfig.build(
         pipeline_def, environment_dict, mode=pipeline_run.mode
     )
@@ -90,7 +95,7 @@ def create_context_creation_data(
     execution_target_handle, _ = ExecutionTargetHandle.get_handle(pipeline_def)
 
     return ContextCreationData(
-        pipeline_def=pipeline_def,
+        pipeline=execution_plan.pipeline,
         environment_config=environment_config,
         pipeline_run=pipeline_run,
         mode_def=mode_def,
@@ -105,11 +110,10 @@ def create_context_creation_data(
 
 
 def pipeline_initialization_manager(
-    pipeline_def,
+    execution_plan,
     environment_dict,
     pipeline_run,
     instance,
-    execution_plan,
     scoped_resources_builder_cm=None,
     system_storage_data=None,
     raise_on_error=False,
@@ -120,11 +124,10 @@ def pipeline_initialization_manager(
         default=resource_initialization_manager,
     )
     generator = pipeline_initialization_event_generator(
-        pipeline_def,
+        execution_plan,
         environment_dict,
         pipeline_run,
         instance,
-        execution_plan,
         scoped_resources_builder_cm,
         system_storage_data,
         raise_on_error,
@@ -133,20 +136,21 @@ def pipeline_initialization_manager(
 
 
 def pipeline_initialization_event_generator(
-    pipeline_def,
+    execution_plan,
     environment_dict,
     pipeline_run,
     instance,
-    execution_plan,
     scoped_resources_builder_cm,
     system_storage_data=None,
     raise_on_error=False,
 ):
-    pipeline_def = check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    pipeline_def = execution_plan.pipeline.get_definition()
+
     environment_dict = check.dict_param(environment_dict, 'environment_dict', key_type=str)
     pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     instance = check.inst_param(instance, 'instance', DagsterInstance)
-    execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
     scoped_resources_builder_cm = check.callable_param(
         scoped_resources_builder_cm, 'scoped_resources_builder_cm'
     )
@@ -160,7 +164,7 @@ def pipeline_initialization_event_generator(
 
     try:
         context_creation_data = create_context_creation_data(
-            pipeline_def, environment_dict, pipeline_run, instance, execution_plan,
+            execution_plan, environment_dict, pipeline_run, instance,
         )
         executor_config = create_executor_config(context_creation_data)
         log_manager = create_log_manager(context_creation_data)
@@ -188,7 +192,7 @@ def pipeline_initialization_event_generator(
             raise_on_error=raise_on_error,
         )
 
-        validate_reexecution_memoization(pipeline_context, execution_plan)
+        _validate_plan_with_context(pipeline_context, execution_plan)
 
         yield pipeline_context
         for event in resources_manager.generate_teardown_events():
@@ -218,6 +222,11 @@ def pipeline_initialization_event_generator(
 
         if raise_on_error:
             raise dagster_error
+
+
+# perform any plan validation that is dependent on access to the pipeline context
+def _validate_plan_with_context(pipeline_context, execution_plan):
+    validate_reexecution_memoization(pipeline_context, execution_plan)
 
 
 def create_system_storage_data(
@@ -262,7 +271,7 @@ def create_executor_config(context_creation_data):
 
     return construct_executor_config(
         InitExecutorContext(
-            pipeline_def=context_creation_data.pipeline_def,
+            pipeline=context_creation_data.pipeline,
             mode_def=context_creation_data.mode_def,
             executor_def=context_creation_data.executor_def,
             pipeline_run=context_creation_data.pipeline_run,
@@ -294,7 +303,7 @@ def construct_pipeline_execution_context(
 
     return SystemPipelineExecutionContext(
         SystemPipelineExecutionContextData(
-            pipeline_def=context_creation_data.pipeline_def,
+            pipeline=context_creation_data.pipeline,
             mode_def=context_creation_data.mode_def,
             system_storage_def=context_creation_data.system_storage_def,
             pipeline_run=context_creation_data.pipeline_run,
@@ -313,11 +322,10 @@ def construct_pipeline_execution_context(
 
 @contextmanager
 def scoped_pipeline_context(
-    pipeline_def,
+    execution_plan,
     environment_dict,
     pipeline_run,
     instance,
-    execution_plan,
     scoped_resources_builder_cm=resource_initialization_manager,
     system_storage_data=None,
     raise_on_error=False,
@@ -329,20 +337,18 @@ def scoped_pipeline_context(
     Should only be used where we need to reconstruct the pipeline context, ignoring any yielded
     events (e.g. PipelineExecutionResult, dagstermill, unit tests, etc)
     '''
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.dict_param(environment_dict, 'environment_dict', key_type=str)
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
     check.callable_param(scoped_resources_builder_cm, 'scoped_resources_builder_cm')
     check.opt_inst_param(system_storage_data, 'system_storage_data', SystemStorageData)
 
     initialization_manager = pipeline_initialization_manager(
-        pipeline_def,
+        execution_plan,
         environment_dict,
         pipeline_run,
         instance,
-        execution_plan,
         scoped_resources_builder_cm=scoped_resources_builder_cm,
         system_storage_data=system_storage_data,
         raise_on_error=raise_on_error,

@@ -66,19 +66,19 @@ def test_clean_event_generator_exit():
     '''
     from dagster.core.execution.context.init import InitResourceContext
 
-    pipeline = gen_basic_resource_pipeline()
+    pipeline_def = gen_basic_resource_pipeline()
     instance = DagsterInstance.ephemeral()
-    execution_plan = create_execution_plan(pipeline)
+    execution_plan = create_execution_plan(pipeline_def)
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline, execution_plan=execution_plan
+        pipeline_def=pipeline_def, execution_plan=execution_plan
     )
     log_manager = DagsterLogManager(run_id=pipeline_run.run_id, logging_tags={}, loggers=[])
-    environment_config = EnvironmentConfig.build(pipeline)
-    execution_plan = create_execution_plan(pipeline)
+    environment_config = EnvironmentConfig.build(pipeline_def)
+    execution_plan = create_execution_plan(pipeline_def)
 
-    resource_name, resource_def = next(iter(pipeline.get_default_mode().resource_defs.items()))
+    resource_name, resource_def = next(iter(pipeline_def.get_default_mode().resource_defs.items()))
     resource_context = InitResourceContext(
-        pipeline_def=pipeline,
+        pipeline_def=pipeline_def,
         resource_def=resource_def,
         resource_config=None,
         run_id=make_new_run_id(),
@@ -94,7 +94,7 @@ def test_clean_event_generator_exit():
     generator.close()
 
     generator = pipeline_initialization_event_generator(
-        pipeline, {}, pipeline_run, instance, execution_plan, resource_initialization_manager,
+        execution_plan, {}, pipeline_run, instance, resource_initialization_manager,
     )
     next(generator)
     generator.close()

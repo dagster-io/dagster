@@ -156,11 +156,10 @@ class Manager(object):
         )
 
         with scoped_pipeline_context(
-            self.pipeline_def,
+            execution_plan,
             environment_dict,
             pipeline_run,
             instance,
-            execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
             # Set this flag even though we're not in test for clearer error reporting
             raise_on_error=True,
@@ -241,11 +240,10 @@ class Manager(object):
             self.pipeline_def, environment_dict, mode=mode_def.name
         )
         with scoped_pipeline_context(
-            self.pipeline_def,
+            execution_plan,
             environment_dict,
             pipeline_run,
             DagsterInstance.ephemeral(),
-            execution_plan,
             scoped_resources_builder_cm=self._setup_resources,
         ) as pipeline_context:
 

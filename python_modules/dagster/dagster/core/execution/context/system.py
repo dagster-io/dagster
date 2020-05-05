@@ -7,7 +7,8 @@ in the user_context module
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.handle import ExecutionTargetHandle
+from dagster.core.definitions import ExecutionTargetHandle
+from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -22,7 +23,7 @@ class SystemPipelineExecutionContextData(
     namedtuple(
         '_SystemPipelineExecutionContextData',
         (
-            'pipeline_run scoped_resources_builder environment_config pipeline_def '
+            'pipeline_run scoped_resources_builder environment_config pipeline '
             'mode_def system_storage_def instance intermediates_manager file_manager '
             'execution_target_handle executor_config raise_on_error'
         ),
@@ -38,7 +39,7 @@ class SystemPipelineExecutionContextData(
         pipeline_run,
         scoped_resources_builder,
         environment_config,
-        pipeline_def,
+        pipeline,
         mode_def,
         system_storage_def,
         instance,
@@ -48,7 +49,6 @@ class SystemPipelineExecutionContextData(
         executor_config,
         raise_on_error,
     ):
-        from dagster.core.definitions import PipelineDefinition
         from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.execution.config import ExecutorConfig
         from dagster.core.storage.intermediates_manager import IntermediatesManager
@@ -63,7 +63,7 @@ class SystemPipelineExecutionContextData(
             environment_config=check.inst_param(
                 environment_config, 'environment_config', EnvironmentConfig
             ),
-            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
+            pipeline=check.inst_param(pipeline, 'pipeline', ExecutablePipeline),
             mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
             system_storage_def=check.inst_param(
                 system_storage_def, 'system_storage_def', SystemStorageDefinition
@@ -87,6 +87,10 @@ class SystemPipelineExecutionContextData(
     @property
     def environment_dict(self):
         return self.environment_config.original_config_dict
+
+    @property
+    def pipeline_def(self):
+        return self.pipeline.get_definition()
 
 
 class SystemPipelineExecutionContext(object):
@@ -145,6 +149,10 @@ class SystemPipelineExecutionContext(object):
     def get_tag(self, key):
         check.str_param(key, 'key')
         return self.logging_tags.get(key)
+
+    @property
+    def pipeline(self):
+        return self._pipeline_context_data.pipeline
 
     @property
     def pipeline_def(self):

@@ -101,11 +101,10 @@ def step_run_ref_to_step_context(step_run_ref):
     ).build_subset_plan([step_run_ref.step_key])
 
     initialization_manager = pipeline_initialization_manager(
-        execution_plan.pipeline_def,
+        execution_plan,
         step_run_ref.environment_dict,
         step_run_ref.pipeline_run,
         DagsterInstance.ephemeral(),
-        execution_plan,
     )
     for _ in initialization_manager.generate_setup_events():
         pass

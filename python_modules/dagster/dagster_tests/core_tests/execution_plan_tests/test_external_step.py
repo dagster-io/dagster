@@ -118,11 +118,7 @@ def initialize_step_context(scratch_dir):
     plan = create_execution_plan(pipeline_def, pipeline_run.environment_dict, mode='external')
 
     initialization_manager = pipeline_initialization_manager(
-        pipeline_def,
-        pipeline_run.environment_dict,
-        pipeline_run,
-        DagsterInstance.ephemeral(),
-        plan,
+        plan, pipeline_run.environment_dict, pipeline_run, DagsterInstance.ephemeral(),
     )
     for _ in initialization_manager.generate_setup_events():
         pass

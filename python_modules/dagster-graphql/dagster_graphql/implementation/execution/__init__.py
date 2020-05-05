@@ -164,7 +164,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
 
     execution_plan = create_execution_plan(
-        pipeline_def=pipeline_def, environment_dict=execution_params.environment_dict, mode=mode,
+        pipeline=pipeline_def, environment_dict=execution_params.environment_dict, mode=mode,
     )
 
     if not pipeline_run:
@@ -180,7 +180,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
         )
 
     execution_plan = create_execution_plan(
-        pipeline_def=pipeline_def,
+        pipeline=pipeline_def,
         environment_dict=execution_params.environment_dict,
         mode=pipeline_run.mode,
     )

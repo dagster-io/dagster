@@ -41,7 +41,7 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         start_termination_thread(self.term_event)
 
         execution_plan = create_execution_plan(
-            pipeline_def=pipeline_def,
+            pipeline=pipeline_def,
             environment_dict=self.environment_dict,
             mode=self.pipeline_run.mode,
             step_keys_to_execute=self.pipeline_run.step_keys_to_execute,

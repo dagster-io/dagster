@@ -686,7 +686,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
             run_tags['dagster-celery/run_priority'] = celery_priority
 
         for partition in partitions:
-            # execution_plan = create_execution_plan()
             run = instance.create_run_for_pipeline(
                 pipeline_def=pipeline,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
