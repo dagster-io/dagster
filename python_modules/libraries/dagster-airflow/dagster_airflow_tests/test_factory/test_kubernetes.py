@@ -11,7 +11,7 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.marks import nettest, requires_k8s
 
 from dagster import ExecutionTargetHandle
 from dagster.core.utils import make_new_run_id
@@ -24,6 +24,7 @@ from dagster_k8s_tests.test_project import test_project_environments_path  # iso
 
 
 @nettest
+@requires_k8s
 def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider):
     print('--- :airflow: test_kubernetes.test_s3_storage')
     _check_aws_creds_available()
@@ -50,6 +51,7 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
 
 
 @nettest
+@requires_k8s
 def test_gcs_storage(
     dagster_airflow_k8s_operator_pipeline, dagster_docker_image, cluster_provider,
 ):
@@ -71,6 +73,7 @@ def test_gcs_storage(
     validate_pipeline_execution(results)
 
 
+@requires_k8s
 def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     print('--- :airflow: test_kubernetes.test_error_dag_k8s')
     _check_aws_creds_available()

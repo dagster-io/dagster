@@ -47,6 +47,8 @@ def _do_setup(name='dagster-airflow'):
             'dagster-graphql=={ver}'.format(ver=ver),
             'docker',
             'python-dateutil>=2.8.0',
+            'lazy_object_proxy',
+            'pendulum==1.4.4',
         ],
         extras_require={'kubernetes': kubernetes},
         entry_points={'console_scripts': ['dagster-airflow = dagster_airflow.cli:main']},

@@ -15,7 +15,7 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_python_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.marks import nettest, requires_airflow_db
 
 from dagster import ExecutionTargetHandle
 from dagster.core.utils import make_new_run_id
@@ -27,6 +27,7 @@ sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries
 from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
+@requires_airflow_db
 def test_fs_storage_no_explicit_base_dir(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -43,6 +44,7 @@ def test_fs_storage_no_explicit_base_dir(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_fs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -60,6 +62,7 @@ def test_fs_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_s3_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -77,6 +80,7 @@ def test_s3_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_gcs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -93,6 +97,7 @@ def test_gcs_storage(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_skip_operator(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -106,6 +111,7 @@ def test_skip_operator(
     validate_skip_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_rename_for_airflow():
     pairs = [
         ('foo', 'foo'),
@@ -122,6 +128,7 @@ def test_rename_for_airflow():
         assert after == _rename_for_airflow(before)
 
 
+@requires_airflow_db
 def test_error_dag_python():  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ExecutionTargetHandle.for_pipeline_module('test_pipelines.repo', pipeline_name)

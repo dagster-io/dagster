@@ -3,8 +3,10 @@
 
 from click.testing import CliRunner
 from dagster_airflow.cli import scaffold
+from dagster_airflow_tests.marks import requires_airflow_db
 
 
+@requires_airflow_db
 def test_build_dags(clean_airflow_home):
     '''This test generates Airflow DAGs for several pipelines in examples/toys and writes those DAGs
     to $AIRFLOW_HOME/dags.

@@ -10,7 +10,7 @@ def patch_airflow_example_dag(dag_bag):
     if airflow_version not in ['1.10.8', '1.10.9', '1.10.10']:
         return
 
-    dag = dag_bag.get_dag('example_complex')
+    dag = dag_bag.dags.get('example_complex')
     task = dag.get_task('search_catalog')
     task.op_args = ['dummy']
     return

@@ -4,6 +4,7 @@ import sys
 
 # pylint: disable=unused-import
 from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
+from dagster_airflow_tests.marks import requires_airflow_db
 from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_examples.dagster_airflow.custom_operator import CustomOperator
 
@@ -14,6 +15,7 @@ sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries
 from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
+@requires_airflow_db
 def test_my_custom_operator(
     dagster_airflow_custom_operator_pipeline, caplog,
 ):  # pylint: disable=redefined-outer-name
