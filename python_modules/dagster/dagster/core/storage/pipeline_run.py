@@ -105,9 +105,10 @@ class PipelineRun(
         from dagster.core.definitions.pipeline import ExecutionSelector
 
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        root_run_id = check.opt_str_param(root_run_id, 'root_run_id')
-        parent_run_id = check.opt_str_param(parent_run_id, 'parent_run_id')
+        check.opt_str_param(root_run_id, 'root_run_id')
+        check.opt_str_param(parent_run_id, 'parent_run_id')
 
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -163,9 +164,7 @@ class PipelineRun(
             ),
             mode=check.opt_str_param(mode, 'mode'),
             solid_subset=solid_subset,
-            step_keys_to_execute=None
-            if step_keys_to_execute is None
-            else check.list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str),
+            step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
                 status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
             ),

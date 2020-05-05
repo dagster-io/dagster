@@ -429,7 +429,7 @@ class DagsterInstance:
         run_id=None,
         environment_dict=None,
         mode=None,
-        selector=None,
+        solid_subset=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -442,6 +442,9 @@ class DagsterInstance:
 
         check.inst_param(pipeline, 'pipeline', PipelineDefinition)
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+
+        if solid_subset:
+            pipeline = pipeline.build_sub_pipeline(solid_subset=solid_subset)
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
@@ -456,12 +459,7 @@ class DagsterInstance:
             run_id=run_id,
             environment_dict=environment_dict,
             mode=check.opt_str_param(mode, 'mode', default=pipeline.get_default_mode_name()),
-            selector=check.opt_inst_param(
-                selector,
-                'selector',
-                ExecutionSelector,
-                default=ExecutionSelector(name=pipeline.name),
-            ),
+            solid_subset=solid_subset,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -479,7 +477,7 @@ class DagsterInstance:
         run_id=None,
         environment_dict=None,
         mode=None,
-        selector=None,
+        solid_subset=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -498,7 +496,7 @@ class DagsterInstance:
             run_id=run_id,
             environment_dict=environment_dict,
             mode=mode,
-            selector=selector,
+            solid_subset=solid_subset,
             step_keys_to_execute=step_keys_to_execute,
             status=status,
             tags=tags,
@@ -544,7 +542,7 @@ class DagsterInstance:
         run_id=None,
         environment_dict=None,
         mode=None,
-        selector=None,
+        solid_subset=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -559,18 +557,18 @@ class DagsterInstance:
         # back into this function.
         # https://github.com/dagster-io/dagster/issues/2412
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name,
-            run_id,
-            environment_dict,
-            mode,
-            selector,
-            step_keys_to_execute,
-            status,
-            tags,
-            root_run_id,
-            parent_run_id,
-            pipeline_snapshot,
-            execution_plan_snapshot,
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=mode,
+            solid_subset=solid_subset,
+            step_keys_to_execute=step_keys_to_execute,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            pipeline_snapshot=pipeline_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
         )
         return self._run_storage.add_run(pipeline_run)
 
@@ -580,7 +578,7 @@ class DagsterInstance:
         run_id=None,
         environment_dict=None,
         mode=None,
-        selector=None,
+        solid_subset=None,
         step_keys_to_execute=None,
         status=None,
         tags=None,
@@ -594,18 +592,18 @@ class DagsterInstance:
         # https://github.com/dagster-io/dagster/issues/2412
 
         pipeline_run = self._construct_run_with_snapshots(
-            pipeline_name,
-            run_id,
-            environment_dict,
-            mode,
-            selector,
-            step_keys_to_execute,
-            status,
-            tags,
-            root_run_id,
-            parent_run_id,
-            pipeline_snapshot,
-            execution_plan_snapshot,
+            pipeline_name=pipeline_name,
+            run_id=run_id,
+            environment_dict=environment_dict,
+            mode=mode,
+            solid_subset=solid_subset,
+            step_keys_to_execute=step_keys_to_execute,
+            status=status,
+            tags=tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            pipeline_snapshot=pipeline_snapshot,
+            execution_plan_snapshot=execution_plan_snapshot,
         )
 
         if self.has_run(pipeline_run.run_id):

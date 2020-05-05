@@ -37,15 +37,11 @@ class TestRunStorage:
     def build_run(
         run_id, pipeline_name, mode='default', tags=None, status=PipelineRunStatus.NOT_STARTED
     ):
-        from dagster.core.definitions.pipeline import ExecutionSelector
-
         return PipelineRun(
             pipeline_name=pipeline_name,
             run_id=run_id,
             environment_dict=None,
             mode=mode,
-            selector=ExecutionSelector(pipeline_name),
-            step_keys_to_execute=None,
             tags=tags,
             status=status,
         )

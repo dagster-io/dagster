@@ -18,7 +18,7 @@ def pipeline_run_args_from_execution_params(execution_params, step_keys_to_execu
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
-        selector=execution_params.selector,
+        solid_subset=execution_params.selector.solid_subset,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
         step_keys_to_execute=step_keys_to_execute or execution_params.step_keys,

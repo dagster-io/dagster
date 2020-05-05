@@ -15,7 +15,6 @@ from dagster.cli.load_handle import handle_for_pipeline_cli_args, handle_for_rep
 from dagster.cli.load_snapshot import get_pipeline_snapshot_from_cli_args
 from dagster.core.definitions import ExecutionTargetHandle
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -408,7 +407,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
     # FIXME need to check the env against environment_dict
     pipeline_run = instance.create_run_for_pipeline(
         pipeline=pipeline,
-        selector=ExecutionSelector(pipeline.name, preset.solid_subset if preset else None),
+        solid_subset=preset.solid_subset if preset else None,
         environment_dict=preset.environment_dict if preset else load_yaml_from_glob_list(env),
         mode=(preset.mode if preset else mode) or 'default',
         tags=run_tags,

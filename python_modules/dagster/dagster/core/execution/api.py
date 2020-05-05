@@ -3,7 +3,6 @@ import warnings
 
 from dagster import check
 from dagster.core.definitions import PartitionSetDefinition, PipelineDefinition, SystemStorageData
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -287,7 +286,7 @@ def execute_pipeline_iterator(
         run_id=run_config.run_id,
         environment_dict=environment_dict,
         mode=mode,
-        selector=pipeline.selector,
+        solid_subset=pipeline.selector.solid_subset,
         step_keys_to_execute=run_config.step_keys_to_execute,
         tags=tags,
         root_run_id=run_config.previous_run_id,
@@ -368,7 +367,7 @@ def execute_pipeline(
         run_id=run_config.run_id,
         environment_dict=environment_dict,
         mode=mode,
-        selector=pipeline.selector,
+        solid_subset=pipeline.selector.solid_subset,
         step_keys_to_execute=run_config.step_keys_to_execute,
         tags=tags,
         root_run_id=run_config.previous_run_id,
@@ -497,7 +496,6 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
         run = PipelineRun(
             pipeline_name=partition_set.pipeline_name,
             run_id=make_new_run_id(),
-            selector=ExecutionSelector(partition_set.pipeline_name),
             environment_dict=partition_set.environment_dict_for_partition(partition),
             mode='default',
             tags=merge_dicts(

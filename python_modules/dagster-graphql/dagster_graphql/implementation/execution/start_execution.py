@@ -6,7 +6,6 @@ from graphql.execution.base import ResolveInfo
 from dagster import DagsterInvalidConfigError, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import create_environment_schema
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
@@ -73,7 +72,9 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
             run_id=execution_params.execution_metadata.run_id
             if execution_params.execution_metadata.run_id
             else make_new_run_id(),
-            selector=execution_params.selector or ExecutionSelector(name=pipeline_def.name),
+            solid_subset=execution_params.selector.solid_subset
+            if execution_params.selector
+            else None,
             environment_dict=execution_params.environment_dict,
             mode=execution_params.mode,
             step_keys_to_execute=(

@@ -11,7 +11,6 @@ from dagster_graphql.client.util import construct_variables, parse_raw_log_lines
 from docker import APIClient, from_env
 
 from dagster import seven
-from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -289,7 +288,6 @@ class DagsterDockerOperator(ModifiedDockerOperator):
                     run_id=self.run_id,
                     environment_dict=self.environment_dict,
                     mode=self.mode,
-                    selector=ExecutionSelector(self.pipeline_name),
                     step_keys_to_execute=None,
                     tags=None,
                     status=PipelineRunStatus.MANAGED,

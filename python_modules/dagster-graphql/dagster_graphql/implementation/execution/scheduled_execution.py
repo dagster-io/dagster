@@ -158,7 +158,11 @@ def _execute_schedule(graphene_info, pipeline_def, execution_params, errors):
         pipeline_name=pipeline_def.name,
         environment_dict=execution_params.environment_dict,
         mode=execution_params.mode,
-        selector=execution_params.selector,
+        solid_subset=(
+            execution_params.selector.solid_subset
+            if execution_params.selector is not None
+            else None
+        ),
         tags=execution_params.execution_metadata.tags,
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
         execution_plan_snapshot=execution_plan_snapshot,
