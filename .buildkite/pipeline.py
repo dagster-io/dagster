@@ -680,6 +680,15 @@ def releasability_tests():
     return tests
 
 
+def version_equality_checks():
+    return [
+        StepBuilder("version equality checks for libraries")
+        .on_integration_image(SupportedPython.V3_7)
+        .run("pip install -r bin/requirements.txt", "python bin/version_check.py")
+        .build()
+    ]
+
+
 if __name__ == "__main__":
     steps = []
     steps += publish_test_images()
@@ -750,6 +759,8 @@ if __name__ == "__main__":
     steps += python_modules_tox_tests("dagster-graphql")
 
     steps += library_tests()
+
+    steps += version_equality_checks()
 
     steps += releasability_tests()
 
