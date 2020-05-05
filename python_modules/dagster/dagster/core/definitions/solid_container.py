@@ -15,15 +15,22 @@ from .dependency import DependencyStructure, IDependencyDefinition, Solid, Solid
 class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractproperty
     def solids(self):
-        pass
+        '''List[Solid]: Top-level solids in the container.'''
 
     @abstractproperty
     def dependency_structure(self):
-        pass
+        '''DependencyStructure: The dependencies between top-level solids in the container.'''
 
     @abstractmethod
     def solid_named(self, name):
-        pass
+        '''Return the (top-level) solid with a given name.
+
+        Args:
+            name (str): The name of the top level solid.
+        
+        Returns:
+            Solid: The solid with the given name
+        '''
 
     def _solids_in_topological_order(self):
         _forward_edges, backward_edges = _create_adjacency_lists(
