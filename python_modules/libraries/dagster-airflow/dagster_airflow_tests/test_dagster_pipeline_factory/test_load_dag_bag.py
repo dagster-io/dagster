@@ -1,7 +1,10 @@
 import os
 
 import pytest
-from dagster_airflow.dagster_pipeline_factory import make_dagster_repo_from_airflow_dags_path
+from dagster_airflow.dagster_pipeline_factory import (
+    make_dagster_repo_from_airflow_dags_path,
+    make_dagster_repo_from_airflow_example_dags,
+)
 
 from dagster import execute_pipeline, seven
 
@@ -26,6 +29,7 @@ COMPLEX_DAG_FILE_CONTENTS = '''#
 """
 Example Airflow DAG that shows the complex DAG structure.
 """
+import sys
 
 from airflow import models
 from airflow.utils.dates import days_ago
@@ -162,7 +166,7 @@ with models.DAG(
 
     # Search
     search_catalog = PythonOperator(
-        task_id="search_catalog", python_callable=lambda: 1
+        task_id="search_catalog", python_callable=lambda: sys.stdout.write("search_catalog\\n")
     )
 
     search_catalog_result = BashOperator(
@@ -326,7 +330,7 @@ if __name__ == "__main__":
 
 COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS + BASH_DAG_FILE_CONTENTS
 
-inputs = [
+test_make_repo_inputs = [
     ([('complex.py', COMPLEX_DAG_FILE_CONTENTS)], None, ['airflow_example_complex']),
     ([('bash.py', BASH_DAG_FILE_CONTENTS)], None, ['airflow_example_bash_operator']),
     (
@@ -334,8 +338,8 @@ inputs = [
         None,
         ['airflow_example_complex', 'airflow_example_bash_operator'],
     ),
-    ([('complex.py', COMPLEX_DAG_FILE_CONTENTS)], 'complex.py', ['airflow_example_complex']),
-    ([('bash.py', BASH_DAG_FILE_CONTENTS)], 'bash.py', ['airflow_example_bash_operator']),
+    ([('complex.py', COMPLEX_DAG_FILE_CONTENTS)], 'complex.py', ['airflow_example_complex'],),
+    ([('bash.py', BASH_DAG_FILE_CONTENTS)], 'bash.py', ['airflow_example_bash_operator'],),
     (
         [('combined.py', COMBINED_FILE_CONTENTS)],
         None,
@@ -344,8 +348,12 @@ inputs = [
 ]
 
 
-@pytest.mark.parametrize('path_and_content_tuples, fn_arg_path, expected_pipeline_names', inputs)
-def test_make_repo(path_and_content_tuples, fn_arg_path, expected_pipeline_names):
+@pytest.mark.parametrize(
+    'path_and_content_tuples, fn_arg_path, expected_pipeline_names', test_make_repo_inputs,
+)
+def test_make_repo(
+    path_and_content_tuples, fn_arg_path, expected_pipeline_names,
+):
     repo_name = 'my_repo_name'
     with seven.TemporaryDirectory() as tmpdir_path:
         for (path, content) in path_and_content_tuples:
@@ -353,7 +361,7 @@ def test_make_repo(path_and_content_tuples, fn_arg_path, expected_pipeline_names
                 f.write(bytes(content.encode('utf-8')))
 
         repo = (
-            make_dagster_repo_from_airflow_dags_path(tmpdir_path, repo_name)
+            make_dagster_repo_from_airflow_dags_path(tmpdir_path, repo_name,)
             if fn_arg_path is None
             else make_dagster_repo_from_airflow_dags_path(
                 os.path.join(tmpdir_path, fn_arg_path), repo_name
@@ -368,4 +376,62 @@ def test_make_repo(path_and_content_tuples, fn_arg_path, expected_pipeline_names
             result = execute_pipeline(pipeline)
             assert result.success
 
-        assert len(repo.get_all_pipelines()) == len(expected_pipeline_names)
+        assert repo.pipeline_names == set(expected_pipeline_names)
+
+
+test_airflow_example_dags_inputs = [  # Test that Airflow example dag "complex_dag" works for Airflow v1.10 stable
+    (
+        [
+            'airflow_example_bash_operator',
+            'airflow_example_branch_dop_operator_v3',
+            'airflow_example_branch_operator',
+            'airflow_example_complex',
+            'airflow_example_external_task_marker_child',
+            'airflow_example_external_task_marker_parent',
+            'airflow_example_http_operator',
+            'airflow_example_nested_branch_dag',  # only exists in airflow v1.10.10
+            'airflow_example_passing_params_via_test_command',
+            'airflow_example_pig_operator',
+            'airflow_example_python_operator',
+            'airflow_example_short_circuit_operator',
+            'airflow_example_skip_dag',
+            'airflow_example_subdag_operator',
+            'airflow_example_subdag_operator_section_1',
+            'airflow_example_subdag_operator_section_2',
+            'airflow_example_trigger_controller_dag',
+            'airflow_example_trigger_target_dag',
+            'airflow_example_xcom',
+            'airflow_latest_only',
+            'airflow_latest_only_with_trigger',
+            'airflow_test_utils',
+            'airflow_tutorial',
+        ],
+        [
+            'airflow_example_external_task_marker_child',
+            'airflow_example_pig_operator',
+            'airflow_example_skip_dag',
+            'airflow_example_trigger_target_dag',
+            'airflow_example_xcom',
+            'airflow_test_utils',
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    'expected_pipeline_names, exclude_from_execution_tests', test_airflow_example_dags_inputs,
+)
+def test_airflow_example_dags(
+    expected_pipeline_names, exclude_from_execution_tests,
+):
+    repo = make_dagster_repo_from_airflow_example_dags()
+
+    for pipeline_name in expected_pipeline_names:
+        assert repo.name == 'airflow_example_dags_repo'
+        assert repo.has_pipeline(pipeline_name)
+
+        pipeline = repo.get_pipeline(pipeline_name)
+        if pipeline_name not in exclude_from_execution_tests:
+            result = execute_pipeline(pipeline)
+            assert result.success
+    assert repo.pipeline_names == set(expected_pipeline_names)

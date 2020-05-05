@@ -115,7 +115,7 @@ def test_template_task_dag():
 
     result = execute_pipeline(
         make_dagster_pipeline_from_airflow_dag(
-            dag, {AIRFLOW_EXECUTION_DATE_STR: execution_date_iso}
+            dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: execution_date_iso}
         ),
         instance=instance,
     )

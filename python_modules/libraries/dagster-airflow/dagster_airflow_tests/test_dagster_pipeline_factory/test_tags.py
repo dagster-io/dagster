@@ -88,7 +88,7 @@ def test_pipeline_tags():
     # When mode is default and tags are set, run with tags
     result = execute_pipeline(
         pipeline=make_dagster_pipeline_from_airflow_dag(
-            dag, {AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT}
+            dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: EXECUTION_DATE_MINUS_WEEK_FMT}
         ),
         instance=instance,
     )
@@ -105,7 +105,7 @@ def test_pipeline_auto_tag():
 
     # When tags are not set, run with current time
     result = execute_pipeline(
-        pipeline=make_dagster_pipeline_from_airflow_dag(dag), instance=instance,
+        pipeline=make_dagster_pipeline_from_airflow_dag(dag=dag), instance=instance,
     )
 
     post_execute_time = get_current_datetime_in_utc()
