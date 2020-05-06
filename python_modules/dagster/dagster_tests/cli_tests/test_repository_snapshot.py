@@ -18,10 +18,10 @@ def test_snapshot_command_handle_repository():
         assert result.exit_code == 0
         # Now that we have the snapshot make sure that it can be properly deserialized
         with open(fp) as buffer:
-            repository_snap = deserialize_json_to_dagster_namedtuple(buffer.read())
-        assert isinstance(repository_snap, ActiveRepositoryData)
-        assert repository_snap.name == 'bar'
-        assert len(repository_snap.pipeline_snapshots) == 2
+            active_repository_data = deserialize_json_to_dagster_namedtuple(buffer.read())
+        assert isinstance(active_repository_data, ActiveRepositoryData)
+        assert active_repository_data.name == 'bar'
+        assert len(active_repository_data.active_pipeline_datas) == 2
 
 
 def test_snapshot_command_error_on_pipeline_definition():
