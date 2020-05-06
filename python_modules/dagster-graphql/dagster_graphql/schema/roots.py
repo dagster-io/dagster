@@ -20,7 +20,7 @@ from dagster_graphql.implementation.execution import (
 from dagster_graphql.implementation.execution.start_execution import (
     start_pipeline_execution_for_created_run,
 )
-from dagster_graphql.implementation.external import get_external_pipeline
+from dagster_graphql.implementation.external import get_external_pipeline_or_raise
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_set,
@@ -498,7 +498,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
             'Invalid ExecutionParams. Cannot define selector.solid_subset when using preset',
         )
 
-        external_pipeline = get_external_pipeline(graphene_info, selector.name)
+        external_pipeline = get_external_pipeline_or_raise(graphene_info, selector.name)
 
         if not external_pipeline.has_preset(preset_name):
             raise UserFacingGraphQLError(

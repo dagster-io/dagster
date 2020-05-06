@@ -1,7 +1,7 @@
 from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.implementation.external import (
-    get_external_pipeline,
-    get_external_pipeline_subset,
+    get_external_pipeline_or_raise,
+    get_external_pipeline_subset_or_raise,
 )
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
@@ -23,7 +23,7 @@ def get_pipeline_snapshot(graphene_info, snapshot_id):
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
     return DauphinPipelineSnapshot(
-        get_external_pipeline(graphene_info, pipeline_name).pipeline_index
+        get_external_pipeline_or_raise(graphene_info, pipeline_name).pipeline_index
     )
 
 
@@ -118,7 +118,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
         )
 
     return DauphinPipeline(
-        get_external_pipeline_subset(graphene_info, selector.name, selector.solid_subset)
+        get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
     )
 
 
@@ -134,7 +134,7 @@ def get_pipeline_def_from_selector(graphene_info, selector):
     pipeline_name = selector.name
 
     # for error check of pipeline existence
-    get_external_pipeline(graphene_info, pipeline_name)
+    get_external_pipeline_or_raise(graphene_info, pipeline_name)
 
     orig_pipeline_def = graphene_info.context.get_pipeline(pipeline_name)
 
@@ -142,5 +142,5 @@ def get_pipeline_def_from_selector(graphene_info, selector):
         return orig_pipeline_def
 
     # for error checking
-    get_external_pipeline_subset(graphene_info, selector.name, selector.solid_subset)
+    get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
     return orig_pipeline_def.build_sub_pipeline(selector.solid_subset)

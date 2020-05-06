@@ -6,7 +6,7 @@ from dagster.core.definitions import create_environment_schema
 from dagster.core.definitions.pipeline import ExecutionSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
-from .external import ensure_valid_config, get_external_pipeline_subset
+from .external import ensure_valid_config, get_external_pipeline_subset_or_raise
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
@@ -82,7 +82,7 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    external_pipeline = get_external_pipeline_subset(
+    external_pipeline = get_external_pipeline_subset_or_raise(
         graphene_info, selector.name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)
@@ -97,7 +97,7 @@ def get_execution_plan(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    external_pipeline = get_external_pipeline_subset(
+    external_pipeline = get_external_pipeline_subset_or_raise(
         graphene_info, selector.name, selector.solid_subset
     )
     ensure_valid_config(external_pipeline, mode, environment_dict)

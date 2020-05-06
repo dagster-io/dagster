@@ -58,7 +58,7 @@ class ExternalPipeline:
         return self.pipeline_index.pipeline_snapshot_id
 
 
-def get_external_pipeline(graphene_info, pipeline_name):
+def get_external_pipeline_or_raise(graphene_info, pipeline_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
 
     if not graphene_info.context.has_external_pipeline(pipeline_name):
@@ -69,14 +69,14 @@ def get_external_pipeline(graphene_info, pipeline_name):
     return graphene_info.context.get_external_pipeline(pipeline_name)
 
 
-def get_external_pipeline_subset(graphene_info, pipeline_name, solid_subset):
+def get_external_pipeline_subset_or_raise(graphene_info, pipeline_name, solid_subset):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.str_param(pipeline_name, 'pipeline_name')
     check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 
-    full_pipeline = get_external_pipeline(graphene_info, pipeline_name)
+    full_pipeline = get_external_pipeline_or_raise(graphene_info, pipeline_name)
 
     if solid_subset is None:
         return full_pipeline
