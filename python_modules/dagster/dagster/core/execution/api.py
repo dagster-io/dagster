@@ -154,7 +154,7 @@ def _check_execute_pipeline_args(
                 'passed in the `environment_dict` argument.'.format(preset=preset),
             )
 
-        environment_dict = pipeline_preset.environment_dict
+            environment_dict = pipeline_preset.environment_dict
 
         if pipeline_preset.solid_subset is not None:
             pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)

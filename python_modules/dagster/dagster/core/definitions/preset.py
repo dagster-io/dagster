@@ -192,10 +192,12 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         return PresetDefinition.from_yaml_strings(name, yaml_strings, solid_subset, mode)
 
     def __new__(cls, name, environment_dict=None, solid_subset=None, mode=None):
+        check.opt_dict_param(environment_dict, 'environment_dict')
+
         return super(PresetDefinition, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
+            environment_dict=environment_dict,
             solid_subset=check.opt_nullable_list_param(solid_subset, 'solid_subset', of_type=str),
             mode=check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME),
         )
@@ -206,7 +208,7 @@ class PresetDefinition(namedtuple('_PresetDefinition', 'name environment_dict so
         Returns:
             str: The environment dict as YAML.
         '''
-        return yaml.dump(self.environment_dict, default_flow_style=False)
+        return yaml.dump(self.environment_dict or {}, default_flow_style=False)
 
     def with_additional_config(self, environment_dict):
         '''return a new PresetDefinition with additional config merged in to the existing config'''

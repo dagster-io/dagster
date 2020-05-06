@@ -84,7 +84,7 @@ class ActivePresetData(namedtuple('_ActivePresetData', 'name environment_dict so
         return super(ActivePresetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            environment_dict=check.dict_param(environment_dict, 'environment_dict'),
+            environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
             solid_subset=check.list_param(solid_subset, 'solid_subset', of_type=str)
             if solid_subset is not None
             else None,

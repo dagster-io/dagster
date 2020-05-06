@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import (
@@ -7,6 +9,7 @@ from dagster import (
     ModeDefinition,
     PipelineDefinition,
     PresetDefinition,
+    check,
     execute_pipeline,
     lambda_solid,
     solid,
@@ -52,6 +55,7 @@ def test_presets():
             PresetDefinition.from_files(
                 'failing_2', environment_files=[file_relative_path(__file__, 'pass_env.yaml')]
             ),
+            PresetDefinition('subset', solid_subset=['can_fail'],),
         ],
     )
 
@@ -80,6 +84,31 @@ def test_presets():
         execute_pipeline(pipeline, preset='passing_overide_to_fail', raise_on_error=False).success
         == False
     )
+
+    assert execute_pipeline(
+        pipeline,
+        preset='passing',
+        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+    ).success
+
+    with pytest.raises(
+        check.CheckError,
+        match=re.escape(
+            'The environment set in preset \'passing\' does not agree with the environment passed '
+            'in the `environment_dict` argument.'
+        ),
+    ):
+        execute_pipeline(
+            pipeline,
+            preset='passing',
+            environment_dict={'solids': {'can_fail': {'config': {'error': True}}}},
+        )
+
+    assert execute_pipeline(
+        pipeline,
+        preset='subset',
+        environment_dict={'solids': {'can_fail': {'config': {'error': False}}}},
+    ).success
 
 
 def test_invalid_preset():
