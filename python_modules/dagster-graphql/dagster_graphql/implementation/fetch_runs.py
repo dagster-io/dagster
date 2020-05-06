@@ -8,6 +8,7 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.snap import ExecutionPlanIndex
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
+from .external import ensure_valid_config, get_external_pipeline_subset
 from .fetch_pipelines import get_pipeline_def_from_selector
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
@@ -34,7 +35,7 @@ def get_validated_config(pipeline_def, environment_dict, mode):
     if not validated_config.success:
         raise UserFacingGraphQLError(
             DauphinPipelineConfigValidationInvalid.for_validation_errors(
-                pipeline_def, validated_config.errors
+                pipeline_def.get_pipeline_index(), validated_config.errors
             )
         )
 
@@ -84,10 +85,12 @@ def validate_pipeline_config(graphene_info, selector, environment_dict, mode):
     check.inst_param(selector, 'selector', ExecutionSelector)
     check.opt_str_param(mode, 'mode')
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, selector)
-    get_validated_config(pipeline_def, environment_dict, mode)
+    external_pipeline = get_external_pipeline_subset(
+        graphene_info, selector.name, selector.solid_subset
+    )
+    ensure_valid_config(external_pipeline, mode, environment_dict)
     return graphene_info.schema.type_named('PipelineConfigValidationValid')(
-        pipeline_name=pipeline_def.name
+        pipeline_name=external_pipeline.name
     )
 
 

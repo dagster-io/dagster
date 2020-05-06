@@ -3,6 +3,7 @@ import sys
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.snap import ActivePipelineData, PipelineIndex, active_pipeline_data_from_def
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -47,6 +48,10 @@ class ExternalPipeline:
         return ExternalPipeline(
             pipeline_def.get_pipeline_index(), active_pipeline_data_from_def(pipeline_def)
         )
+
+    @property
+    def config_schema_snapshot(self):
+        return self.pipeline_index.pipeline_snapshot.config_schema_snapshot
 
 
 def get_external_pipeline(graphene_info, pipeline_name):
@@ -96,3 +101,26 @@ def get_external_pipeline_subset(graphene_info, pipeline_name, solid_subset):
                 pipeline=graphene_info.schema.type_named('Pipeline')(full_pipeline),
             )
         )
+
+
+def ensure_valid_config(external_pipeline, mode, environment_dict):
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+    check.str_param(mode, 'mode')
+    # do not type check environment_dict so that validate_config_from_snap throws
+
+    validated_config = validate_config_from_snap(
+        config_schema_snapshot=external_pipeline.config_schema_snapshot,
+        config_type_key=external_pipeline.pipeline_index.get_mode_def_snap(mode).root_config_key,
+        config_value=environment_dict,
+    )
+
+    if not validated_config.success:
+        from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
+
+        raise UserFacingGraphQLError(
+            DauphinPipelineConfigValidationInvalid.for_validation_errors(
+                external_pipeline.pipeline_index, validated_config.errors
+            )
+        )
+
+    return validated_config

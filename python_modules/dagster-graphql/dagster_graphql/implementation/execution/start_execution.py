@@ -158,7 +158,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         instance.report_run_failed(pipeline_run)
 
         return DauphinPipelineConfigValidationInvalid.for_validation_errors(
-            pipeline_def, validated_config.errors
+            pipeline_def.get_pipeline_index(), validated_config.errors
         )
 
     create_execution_plan(

@@ -13,7 +13,7 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
-from dagster.core.snap import ConfigSchemaSnapshot
+from dagster.core.snap import ConfigSchemaSnapshot, PipelineIndex
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import DauphinConfigTypeField
@@ -202,12 +202,14 @@ class DauphinPipelineConfigValidationInvalid(dauphin.ObjectType):
     errors = dauphin.non_null_list('PipelineConfigValidationError')
 
     @staticmethod
-    def for_validation_errors(pipeline, errors):
+    def for_validation_errors(pipeline_index, errors):
+        check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        check.list_param(errors, 'errors', of_type=EvaluationError)
         return DauphinPipelineConfigValidationInvalid(
-            pipeline_name=pipeline.name,
+            pipeline_name=pipeline_index.name,
             errors=[
                 DauphinPipelineConfigValidationError.from_dagster_error(
-                    pipeline.get_config_schema_snapshot(), err
+                    pipeline_index.config_schema_snapshot, err
                 )
                 for err in errors
             ],
