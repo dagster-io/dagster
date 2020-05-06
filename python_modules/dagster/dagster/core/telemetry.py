@@ -24,6 +24,7 @@ import sys
 import time
 import uuid
 import zlib
+from functools import wraps
 from logging.handlers import RotatingFileHandler
 
 import click
@@ -223,6 +224,7 @@ def telemetry_wrapper(f):
             )
         )
 
+    @wraps(f)
     def wrap(*args, **kwargs):
         start_time = datetime.datetime.now()
         log_action(action=f.__name__ + '_started', client_time=start_time)
