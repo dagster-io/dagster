@@ -3,7 +3,6 @@ import pytest
 from dagster import (
     DagsterInvariantViolationError,
     ModeDefinition,
-    RunConfig,
     execute_pipeline,
     pipeline,
     resource,
@@ -117,9 +116,7 @@ def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
 
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_run_config_tags():
     pipeline_result = execute_pipeline(
-        pipeline_with_multi_mode_and_tags,
-        mode='tags_1',
-        run_config=RunConfig(tags={'run_tag_key': 'run_tag_value'}),
+        pipeline_with_multi_mode_and_tags, mode='tags_1', tags={'run_tag_key': 'run_tag_value'},
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('solid_that_gets_tags').output_value() == {

@@ -102,9 +102,7 @@ def test_pipeline_tags():
     pipeline_def_with_override_tags = PipelineDefinition(
         name='injected_run_id', solid_defs=[check_tags], tags={'foo': 'notbar'}
     )
-    result = execute_pipeline(
-        pipeline_def_with_override_tags, run_config=RunConfig(tags={'foo': 'bar'})
-    )
+    result = execute_pipeline(pipeline_def_with_override_tags, tags={'foo': 'bar'})
     assert result.success
     assert called['yup']
 

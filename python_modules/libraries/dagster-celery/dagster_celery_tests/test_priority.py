@@ -15,7 +15,6 @@ from dagster_celery.cli import main
 from dagster import (
     ExecutionTargetHandle,
     ModeDefinition,
-    RunConfig,
     default_executors,
     execute_pipeline,
     pipeline,
@@ -58,7 +57,7 @@ def execute_pipeline_on_celery(tempdir, pipeline_name, tags=None):
             'execution': {'celery': {}},
         },
         instance=instance,
-        run_config=RunConfig(tags=tags),
+        tags=tags,
     )
 
 
@@ -72,7 +71,7 @@ def execute_eagerly_on_celery(tempdir, pipeline_name, tags=None):
             'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
         },
         instance=DagsterInstance.local_temp(tempdir=tempdir),
-        run_config=RunConfig(tags=tags),
+        tags=tags,
     )
 
 

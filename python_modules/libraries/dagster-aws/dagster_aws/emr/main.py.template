@@ -16,6 +16,6 @@ if __name__ == '__main__':
     execute_solid_within_pipeline(
         {pipeline_fn_name},
         '{solid_name}',
+        mode='{mode_name}',
         environment_dict={environment_dict},
-        run_config=RunConfig(mode='{mode_name}'),
     )

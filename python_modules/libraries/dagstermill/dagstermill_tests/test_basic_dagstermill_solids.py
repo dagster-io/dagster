@@ -9,7 +9,7 @@ from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
 from papermill import PapermillExecutionError
 
-from dagster import RunConfig, execute_pipeline
+from dagster import execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.instance import DagsterInstance
@@ -289,9 +289,7 @@ def test_hello_world_reexecution():
 def test_resources_notebook():
     with safe_tempfile_path() as path:
         with exec_for_test(
-            'define_resource_pipeline',
-            {'resources': {'list': {'config': path}}},
-            run_config=RunConfig(mode='prod'),
+            'define_resource_pipeline', {'resources': {'list': {'config': path}}}, mode='prod',
         ) as result:
             assert result.success
 
