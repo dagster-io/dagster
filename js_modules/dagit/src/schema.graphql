@@ -926,6 +926,7 @@ type Query {
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
   pipelineRunOrError(runId: ID!): PipelineRunOrError!
   pipelineRunTags: [PipelineTagAndValues!]!
+  runGroupOrError(runId: ID!): RunGroupOrError!
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   isPipelineConfigValid(pipeline: ExecutionSelector!, environmentConfigData: EnvironmentConfigData, mode: String!): PipelineConfigValidationResult!
@@ -968,6 +969,18 @@ type Resource {
 type ResourceRequirement {
   resourceKey: String!
 }
+
+type RunGroup {
+  rootRunId: String!
+  runs: [PipelineRun]
+}
+
+type RunGroupNotFoundError implements Error {
+  message: String!
+  runId: String!
+}
+
+union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
 
 type RunLauncher {
   name: String!

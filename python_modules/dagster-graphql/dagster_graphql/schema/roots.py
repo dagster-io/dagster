@@ -38,6 +38,7 @@ from dagster_graphql.implementation.fetch_pipelines import (
 from dagster_graphql.implementation.fetch_runs import (
     get_execution_plan,
     get_run_by_id,
+    get_run_group,
     get_run_tags,
     get_runs,
     validate_pipeline_config,
@@ -115,6 +116,10 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     pipelineRunTags = dauphin.non_null_list('PipelineTagAndValues')
+
+    runGroupOrError = dauphin.Field(
+        dauphin.NonNull('RunGroupOrError'), runId=dauphin.NonNull(dauphin.ID)
+    )
 
     usedSolids = dauphin.Field(dauphin.non_null_list('UsedSolid'))
     usedSolid = dauphin.Field('UsedSolid', name=dauphin.NonNull(dauphin.String))
@@ -220,6 +225,9 @@ class DauphinQuery(dauphin.ObjectType):
 
     def resolve_pipelineRunTags(self, graphene_info):
         return get_run_tags(graphene_info)
+
+    def resolve_runGroupOrError(self, graphene_info, runId):
+        return get_run_group(graphene_info, runId)
 
     def resolve_usedSolid(self, graphene_info, name):
         return get_solid(graphene_info, name)

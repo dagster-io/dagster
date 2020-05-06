@@ -56,6 +56,21 @@ def get_run_tags(graphene_info):
     ]
 
 
+@capture_dauphin_error
+def get_run_group(graphene_info, run_id):
+    instance = graphene_info.context.instance
+    result = instance.get_run_group(run_id)
+
+    if result is None:
+        return graphene_info.schema.type_named('RunGroupNotFoundError')(run_id)
+    else:
+        root_run_id, run_group = result
+        return graphene_info.schema.type_named('RunGroup')(
+            root_run_id=root_run_id,
+            runs=[graphene_info.schema.type_named('PipelineRun')(run) for run in run_group],
+        )
+
+
 def get_runs(graphene_info, filters, cursor=None, limit=None):
     check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
     check.opt_str_param(cursor, 'cursor')

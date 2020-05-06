@@ -123,6 +123,19 @@ class DauphinInvalidPipelineRunsFilterError(dauphin.ObjectType):
         self.message = check.str_param(message, 'message')
 
 
+class DauphinRunGroupNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RunGroupNotFoundError'
+        interfaces = (DauphinError,)
+
+    run_id = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, run_id):
+        super(DauphinRunGroupNotFoundError, self).__init__()
+        self.run_id = check.str_param(run_id, 'run_id')
+        self.message = 'Run group of run {run_id} could not be found.'.format(run_id=run_id)
+
+
 class DauphinInvalidSubsetError(dauphin.ObjectType):
     class Meta(object):
         name = 'InvalidSubsetError'
@@ -641,6 +654,12 @@ class DauphinPipelineRunsOrError(dauphin.Union):
     class Meta(object):
         name = 'PipelineRunsOrError'
         types = (DauphinPipelineRuns, DauphinInvalidPipelineRunsFilterError, DauphinPythonError)
+
+
+class DauphinRunGroupOrError(dauphin.Union):
+    class Meta(object):
+        name = 'RunGroupOrError'
+        types = ('RunGroup', DauphinRunGroupNotFoundError, DauphinPythonError)
 
 
 class DauphinPartitionSetNotFoundError(dauphin.ObjectType):

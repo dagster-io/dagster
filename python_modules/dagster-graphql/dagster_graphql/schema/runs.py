@@ -198,6 +198,20 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return graphene_info.schema.type_named('ExecutionSelection')(self._pipeline_run.selector)
 
 
+class DauphinRunGroup(dauphin.ObjectType):
+    class Meta(object):
+        name = 'RunGroup'
+
+    rootRunId = dauphin.NonNull(dauphin.String)
+    runs = dauphin.List(DauphinPipelineRun)
+
+    def __init__(self, root_run_id, runs):
+        check.str_param(root_run_id, 'root_run_id')
+        check.list_param(runs, 'runs', DauphinPipelineRun)
+
+        super(DauphinRunGroup, self).__init__(rootRunId=root_run_id, runs=runs)
+
+
 # output version of input type DauphinExecutionSelector
 class DauphinExecutionSelection(dauphin.ObjectType):
     class Meta(object):
