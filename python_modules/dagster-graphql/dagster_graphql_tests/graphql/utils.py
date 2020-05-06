@@ -31,6 +31,8 @@ def sync_get_all_logs_for_run(context, run_id):
     subscription.subscribe(subscribe_results.append)
     assert len(subscribe_results) == 1
     subscribe_result = subscribe_results[0]
+    if subscribe_result.errors:
+        raise Exception(subscribe_result.errors)
     assert not subscribe_result.errors
     assert subscribe_result.data
     return subscribe_result.data

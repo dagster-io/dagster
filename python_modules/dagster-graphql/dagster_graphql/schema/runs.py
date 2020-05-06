@@ -26,6 +26,9 @@ from dagster.core.snap import ExecutionPlanIndex, PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
+from .execution import DauphinExecutionStep
+from .pipelines import DauphinPipeline, DauphinUnknownPipeline
+
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
 
@@ -667,102 +670,84 @@ class DauphinPipelineTag(dauphin.ObjectType):
         super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
-def from_dagster_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan_index):
+def from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_index):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
     check.opt_inst_param(
-        dauphin_pipeline,
-        'dauphin_pipeline',
-        (
-            graphene_info.schema.type_named('Pipeline'),
-            graphene_info.schema.type_named('UnknownPipeline'),
-        ),
+        dauphin_pipeline, 'dauphin_pipeline', (DauphinPipeline, DauphinUnknownPipeline),
     )
     check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
+    # circular ref at module scope
+    from .errors import DauphinPythonError
+
     dagster_event = event_record.dagster_event
-    basic_params = construct_basic_params(graphene_info, event_record, execution_plan_index)
+    basic_params = construct_basic_params(event_record, execution_plan_index)
     if dagster_event.event_type == DagsterEventType.STEP_START:
-        return graphene_info.schema.type_named('ExecutionStepStartEvent')(**basic_params)
+        return DauphinExecutionStepStartEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
-        return graphene_info.schema.type_named('ExecutionStepSkippedEvent')(**basic_params)
+        return DauphinExecutionStepSkippedEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_UP_FOR_RETRY:
-        return graphene_info.schema.type_named('ExecutionStepUpForRetryEvent')(
+        return DauphinExecutionStepUpForRetryEvent(
             error=dagster_event.step_retry_data.error,
             secondsToWait=dagster_event.step_retry_data.seconds_to_wait,
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
-        return graphene_info.schema.type_named('ExecutionStepRestartEvent')(**basic_params)
+        return DauphinExecutionStepRestartEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
-        return graphene_info.schema.type_named('ExecutionStepSuccessEvent')(**basic_params)
+        return DauphinExecutionStepSuccessEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_INPUT:
         input_data = dagster_event.event_specific_data
-        return graphene_info.schema.type_named('ExecutionStepInputEvent')(
+        return DauphinExecutionStepInputEvent(
             input_name=input_data.input_name, type_check=input_data.type_check_data, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_OUTPUT:
         output_data = dagster_event.step_output_data
-        return graphene_info.schema.type_named('ExecutionStepOutputEvent')(
+        return DauphinExecutionStepOutputEvent(
             output_name=output_data.output_name,
             type_check=output_data.type_check_data,
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
-        return graphene_info.schema.type_named('StepMaterializationEvent')(
-            materialization=materialization, **basic_params
-        )
+        return DauphinStepMaterializationEvent(materialization=materialization, **basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result
-        return graphene_info.schema.type_named('StepExpectationResultEvent')(
+        return DauphinStepExpectationResultEvent(
             expectation_result=expectation_result, **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         check.inst(dagster_event.step_failure_data, StepFailureData)
-        return graphene_info.schema.type_named('ExecutionStepFailureEvent')(
-            error=graphene_info.schema.type_named('PythonError')(
-                dagster_event.step_failure_data.error
-            ),
+        return DauphinExecutionStepFailureEvent(
+            error=DauphinPythonError(dagster_event.step_failure_data.error),
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
-        return graphene_info.schema.type_named('PipelineStartEvent')(
-            pipeline=dauphin_pipeline, **basic_params
-        )
+        return DauphinPipelineStartEvent(pipeline=dauphin_pipeline, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-        return graphene_info.schema.type_named('PipelineSuccessEvent')(
-            pipeline=dauphin_pipeline, **basic_params
-        )
+        return DauphinPipelineSuccessEvent(pipeline=dauphin_pipeline, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-        return graphene_info.schema.type_named('PipelineFailureEvent')(
-            pipeline=dauphin_pipeline, **basic_params
-        )
+        return DauphinPipelineFailureEvent(pipeline=dauphin_pipeline, **basic_params)
 
     elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
-        return graphene_info.schema.type_named('PipelineInitFailureEvent')(
+        return DauphinPipelineInitFailureEvent(
             pipeline=dauphin_pipeline,
-            error=graphene_info.schema.type_named('PythonError')(
-                dagster_event.pipeline_init_failure_data.error
-            ),
+            error=DauphinPythonError(dagster_event.pipeline_init_failure_data.error),
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
         operation_result = dagster_event.event_specific_data
-        return graphene_info.schema.type_named('ObjectStoreOperationEvent')(
-            operation_result=operation_result, **basic_params
-        )
+        return DauphinObjectStoreOperationEvent(operation_result=operation_result, **basic_params)
     elif dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
-        return graphene_info.schema.type_named('EngineEvent')(
+        return DauphinEngineEvent(
             metadataEntries=_to_dauphin_metadata_entries(
                 dagster_event.engine_event_data.metadata_entries
             ),
-            error=graphene_info.schema.type_named('PythonError')(
-                dagster_event.engine_event_data.error
-            )
+            error=DauphinPythonError(dagster_event.engine_event_data.error)
             if dagster_event.engine_event_data.error
             else None,
             marker_start=dagster_event.engine_event_data.marker_start,
@@ -790,33 +775,25 @@ def from_compute_log_file(graphene_info, file):
     )
 
 
-def from_event_record(graphene_info, event_record, dauphin_pipeline, execution_plan_index):
+def from_event_record(event_record, dauphin_pipeline, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.opt_inst_param(
-        dauphin_pipeline,
-        'dauphin_pipeline',
-        (
-            graphene_info.schema.type_named('Pipeline'),
-            graphene_info.schema.type_named('UnknownPipeline'),
-        ),
+        dauphin_pipeline, 'dauphin_pipeline', (DauphinPipeline, DauphinUnknownPipeline),
     )
     check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
     if event_record.is_dagster_event:
-        return from_dagster_event_record(
-            graphene_info, event_record, dauphin_pipeline, execution_plan_index
-        )
+        return from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_index)
     else:
-        return graphene_info.schema.type_named('LogMessageEvent')(
-            **construct_basic_params(graphene_info, event_record, execution_plan_index)
-        )
+        return DauphinLogMessageEvent(**construct_basic_params(event_record, execution_plan_index))
 
 
-def create_dauphin_step(graphene_info, event_record, execution_plan_index):
+def create_dauphin_step(event_record, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
+
     return (
-        graphene_info.schema.type_named('ExecutionStep')(
+        DauphinExecutionStep(
             execution_plan_index, execution_plan_index.get_step_by_key(event_record.step_key),
         )
         if event_record.step_key
@@ -824,7 +801,7 @@ def create_dauphin_step(graphene_info, event_record, execution_plan_index):
     )
 
 
-def construct_basic_params(graphene_info, event_record, execution_plan_index):
+def construct_basic_params(event_record, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
     return {
@@ -834,7 +811,7 @@ def construct_basic_params(graphene_info, event_record, execution_plan_index):
         else event_record.user_message,
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
-        'step': create_dauphin_step(graphene_info, event_record, execution_plan_index)
+        'step': create_dauphin_step(event_record, execution_plan_index)
         if execution_plan_index
         else None,
     }

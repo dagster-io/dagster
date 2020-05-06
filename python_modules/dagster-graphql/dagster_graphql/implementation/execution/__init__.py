@@ -125,8 +125,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             run=graphene_info.schema.type_named('PipelineRun')(run),
             messages=[
-                from_event_record(graphene_info, event, pipeline_ref, execution_plan_index)
-                for event in events
+                from_event_record(event, pipeline_ref, execution_plan_index) for event in events
             ],
         )
     )
@@ -217,9 +216,7 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
     )
 
     def to_graphql_event(event_record):
-        return from_dagster_event_record(
-            graphene_info, event_record, dauphin_pipeline, execution_plan_index
-        )
+        return from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_index)
 
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=dauphin_pipeline,
