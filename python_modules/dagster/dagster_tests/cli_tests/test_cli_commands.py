@@ -71,7 +71,7 @@ def do_input(x):
 
 @pipeline(name='foo')
 def foo_pipeline():
-    do_something()
+    do_input(do_something())
 
 
 def define_foo_pipeline():
@@ -143,6 +143,7 @@ def test_list_command():
         'Pipeline: foo\n'
         'Solids: (Execution Order)\n'
         '    do_something\n'
+        '    do_input\n'
     )
 
     execute_list_command(
