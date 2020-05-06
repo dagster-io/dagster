@@ -37,7 +37,7 @@ class EmrRunJobFlowSolidDefinition(SolidDefinition):
         def _compute_fn(context, _):
 
             job_runner = EmrJobRunner(region=context.solid_config.get('aws_region'))
-            cluster_id = job_runner.run_job_flow(context, context.solid_config['job_config'])
+            cluster_id = job_runner.run_job_flow(context.log, context.solid_config['job_config'])
             context.log.info('waiting for EMR cluster job flow completion...')
 
             max_iter = int(math.ceil(max_wait_time_sec / float(poll_interval_sec)))

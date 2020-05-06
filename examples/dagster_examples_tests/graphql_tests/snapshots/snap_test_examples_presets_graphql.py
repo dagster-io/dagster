@@ -241,12 +241,12 @@ solids:
     config:
       bucket: dagster-scratch-80542c2
       key: airline-demo
-  pyspark:
+  pyspark_step_launcher:
     config:
       cluster_id:
         env: EMR_CLUSTER_ID
-      pipeline_file: dagster_examples/airline_demo/pipelines.py
-      pipeline_fn_name: airline_demo_ingest_pipeline
+      deploy_local_pipeline_package: true
+      local_pipeline_package_path: .
       region_name: us-west-1
       spark_config:
         spark:
@@ -943,6 +943,35 @@ storage:
 ''',
                 'mode': 'local',
                 'name': 'local',
+                'solidSubset': None
+            },
+            {
+                '__typename': 'PipelinePreset',
+                'environmentConfigYaml': '''resources:
+  pyspark_step_launcher:
+    config:
+      cluster_id:
+        env: EMR_CLUSTER_ID
+      deploy_local_pipeline_package: true
+      local_pipeline_package_path: .
+      region_name: us-west-1
+      spark_config:
+        spark:
+          jars:
+            packages: com.databricks:spark-csv_2.11:1.5.0,org.apache.hadoop:hadoop-aws:2.6.5,com.amazonaws:aws-java-sdk:1.7.4
+      staging_bucket: dagster-scratch-80542c2
+solids:
+  make_weather_samples:
+    inputs:
+      file_path: s3://dagster-airline-demo-source-data/sfo_q2_weather_fixed_header.txt
+storage:
+  s3:
+    config:
+      s3_bucket: dagster-scratch-80542c2
+      s3_prefix: simple-pyspark
+''',
+                'mode': 'prod',
+                'name': 'prod',
                 'solidSubset': None
             }
         ]

@@ -158,7 +158,7 @@ class LoaderEntrypoint(
             sys.path.append(file_directory)
 
         module_name = os.path.splitext(os.path.basename(python_file))[0]
-        module = import_module_from_path(module_name, python_file)
+        module = import_module_from_path(module_name, os.path.abspath(python_file))
 
         return LoaderEntrypoint(module, module_name, fn_name, from_handle, backcompat_loaders)
 
@@ -395,9 +395,7 @@ class ExecutionTargetHandle(object):
             ),
         )
         data = self.data._replace(pipeline_name=pipeline_name)
-        return ExecutionTargetHandle(
-            data, mode=_ExecutionTargetMode.PIPELINE, is_resolved_to_pipeline=True
-        )
+        return ExecutionTargetHandle(data, mode=self.mode, is_resolved_to_pipeline=True)
 
     def build_repository_definition(self):
         '''Rehydrates a RepositoryDefinition from an ExecutionTargetHandle object.
@@ -407,40 +405,28 @@ class ExecutionTargetHandle(object):
         '''
         obj = self.entrypoint.perform_load()
 
-        if self.mode == _ExecutionTargetMode.REPOSITORY:
+        if isinstance(obj, PipelineDefinition):
             # User passed in a function that returns a pipeline definition, not a repository. See:
             # https://github.com/dagster-io/dagster/issues/1439
-            if isinstance(obj, PipelineDefinition):
-                return ExecutionTargetHandle.cache_handle(
-                    RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
-                    *ExecutionTargetHandle.get_handle(obj)
-                )
-            return ExecutionTargetHandle.cache_handle(check.inst(obj, RepositoryDefinition), self)
-        elif self.mode == _ExecutionTargetMode.PIPELINE:
-            # This handle may have originally targeted a repository and then been qualified with
-            # with_pipeline_name()
-            if isinstance(obj, RepositoryDefinition):
-                return ExecutionTargetHandle.cache_handle(
-                    obj, *ExecutionTargetHandle.get_handle(obj)
-                )
-
             return ExecutionTargetHandle.cache_handle(
                 RepositoryDefinition(name=EPHEMERAL_NAME, pipeline_defs=[obj]),
                 *ExecutionTargetHandle.get_handle(obj)
             )
+        elif isinstance(obj, RepositoryDefinition):
+            return ExecutionTargetHandle.cache_handle(obj, *ExecutionTargetHandle.get_handle(obj))
         else:
-            check.failed('Unhandled mode {mode}'.format(mode=self.mode))
+            check.failed('Loaded object is neither a PipelineDefinition nor a RepositoryDefinition')
 
     def build_pipeline_definition(self):
         '''Rehydrates a PipelineDefinition from an ExecutionTargetHandle object.
         '''
-        if self.mode == _ExecutionTargetMode.REPOSITORY:
+        if not self.is_resolved_to_pipeline:
             raise DagsterInvariantViolationError(
                 'Cannot construct a pipeline from a repository-based ExecutionTargetHandle without'
                 ' a pipeline name. Use with_pipeline_name() to construct a pipeline'
                 ' ExecutionTargetHandle.'
             )
-        elif self.mode == _ExecutionTargetMode.PIPELINE:
+        else:
             obj = self.entrypoint.perform_load()
             if isinstance(obj, PipelineDefinition):
                 return ExecutionTargetHandle.cache_handle(obj, self)
@@ -448,8 +434,6 @@ class ExecutionTargetHandle(object):
                 return ExecutionTargetHandle.cache_handle(
                     obj.get_pipeline(self.data.pipeline_name), self
                 )
-        else:
-            check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
     @property
     def entrypoint(self):
@@ -457,6 +441,38 @@ class ExecutionTargetHandle(object):
             return self.data.get_repository_entrypoint(from_handle=self)
         elif self.mode == _ExecutionTargetMode.PIPELINE:
             return self.data.get_pipeline_entrypoint(from_handle=self)
+        else:
+            check.failed('Unhandled mode {mode}'.format(mode=self.mode))
+
+    def to_module_name_based_handle(self, package_dir):
+        def _module_name(path):
+            abs_path = os.path.abspath(path)
+            abs_package_dir = os.path.abspath(package_dir)
+            check.invariant(
+                os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
+                'File {abs_path} is not underneath package dir {abs_package_dir}'.format(
+                    abs_path=abs_path, abs_package_dir=abs_package_dir,
+                ),
+            )
+
+            relative_path = os.path.relpath(abs_path, abs_package_dir)
+            without_extension, _ = os.path.splitext(relative_path)
+            return '.'.join(without_extension.split(os.sep))
+
+        if self.mode == _ExecutionTargetMode.PIPELINE:
+            entrypoint = self.data.get_pipeline_entrypoint()
+            return ExecutionTargetHandle.for_pipeline_module(
+                _module_name(entrypoint.module.__file__), entrypoint.fn_name,
+            )
+        elif self.mode == _ExecutionTargetMode.REPOSITORY:
+            entrypoint = self.data.get_repository_entrypoint()
+            handle = ExecutionTargetHandle.for_repo_module(
+                _module_name(entrypoint.module.__file__), entrypoint.fn_name,
+            )
+            if self.is_resolved_to_pipeline:
+                return handle.with_pipeline_name(self.data.pipeline_name)
+            else:
+                return handle
         else:
             check.failed('Unhandled mode {mode}'.format(mode=self.mode))
 
@@ -496,8 +512,8 @@ def _get_python_file_from_previous_stack_frame():
 
 
 class _ExecutionTargetMode(Enum):
-    PIPELINE = 1
-    REPOSITORY = 2
+    PIPELINE = 1  # The entrypoint is a pipeline
+    REPOSITORY = 2  # The entrypoint is a repository
 
 
 class _ExecutionTargetHandleData(

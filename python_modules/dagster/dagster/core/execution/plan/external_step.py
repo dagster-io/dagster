@@ -61,20 +61,38 @@ class LocalExternalStepLauncher(StepLauncher):
             yield event
 
 
-def step_context_to_step_run_ref(step_context, prior_attempts_count):
+def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir=None):
+    '''
+    Args:
+        step_context (SystemStepExecutionContext): The step context.
+        prior_attempts_count (int): The number of times this time has been tried before in the same
+            pipeline run.
+        package_dir (Optional[str]): If set, the execution target will be converted to be relative
+            to the package root.  This enables executing steps in remote setups where the package
+            containing the pipeline resides at a different location on the filesystem in the remote
+            environment than in the environment executing the plan process.
+
+    Returns (StepRunRef):
+        A reference to the step.
+    '''
+    execution_target_handle = step_context.execution_target_handle
+    if package_dir:
+        execution_target_handle = execution_target_handle.to_module_name_based_handle(package_dir)
+
     return StepRunRef(
         environment_dict=step_context.environment_dict,
         pipeline_run=step_context.pipeline_run,
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
         executor_config=step_context.executor_config,
-        execution_target_handle=step_context.execution_target_handle,
+        execution_target_handle=execution_target_handle,
         prior_attempts_count=prior_attempts_count,
     )
 
 
 def step_run_ref_to_step_context(step_run_ref):
-    pipeline_def = step_run_ref.execution_target_handle.build_pipeline_definition().build_sub_pipeline(
+    execution_target_handle = step_run_ref.execution_target_handle
+    pipeline_def = execution_target_handle.build_pipeline_definition().build_sub_pipeline(
         step_run_ref.pipeline_run.selector.solid_subset
     )
 

@@ -1,5 +1,4 @@
 from .emr import EmrError, EmrJobRunner
-from .resources import emr_pyspark_resource
 from .solids import EmrRunJobFlowSolidDefinition
 from .types import (
     EMR_CLUSTER_DONE_STATES,

@@ -30,7 +30,7 @@ class ResourceDefinition(object):
 
             This value can be:
 
-            1. A Python primitive type that resolves to a Dagster config type 
+            1. A Python primitive type that resolves to a Dagster config type
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 
@@ -120,7 +120,7 @@ def resource(config=None, description=None):
         config (Optional[Any]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
 
-            1. A Python primitive type that resolves to a Dagster config type 
+            1. A Python primitive type that resolves to a Dagster config type
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 

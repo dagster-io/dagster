@@ -16,12 +16,12 @@ resources:
     config:
       bucket: "dagster-scratch-80542c2"
       key: "airline-demo"
-  pyspark:
+  pyspark_step_launcher:
     config:
       cluster_id:
         env: EMR_CLUSTER_ID
-      pipeline_file: "dagster_examples/airline_demo/pipelines.py"
-      pipeline_fn_name: "airline_demo_ingest_pipeline"
+      local_pipeline_package_path: "."
+      deploy_local_pipeline_package: true
       region_name: "us-west-1"
       staging_bucket: "dagster-scratch-80542c2"
       spark_config:

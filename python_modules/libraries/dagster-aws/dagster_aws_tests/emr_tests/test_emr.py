@@ -20,7 +20,7 @@ REGION = 'us-west-1'
 def test_emr_create_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
-    cluster_id = cluster.run_job_flow(context, emr_cluster_config)
+    cluster_id = cluster.run_job_flow(context.log, emr_cluster_config)
     assert cluster_id.startswith('j-')
 
 
@@ -29,9 +29,9 @@ def test_emr_add_tags_and_describe_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
 
-    cluster_id = emr.run_job_flow(context, emr_cluster_config)
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
 
-    emr.add_tags(context, {'foobar': 'v1', 'baz': '123'}, cluster_id)
+    emr.add_tags(context.log, {'foobar': 'v1', 'baz': '123'}, cluster_id)
 
     tags = emr.describe_cluster(cluster_id)['Cluster']['Tags']
 
@@ -43,7 +43,7 @@ def test_emr_add_tags_and_describe_cluster(emr_cluster_config):
 def test_emr_describe_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
-    cluster_id = cluster.run_job_flow(context, emr_cluster_config)
+    cluster_id = cluster.run_job_flow(context.log, emr_cluster_config)
     cluster_info = cluster.describe_cluster(cluster_id)['Cluster']
     assert cluster_info['Name'] == 'test-emr'
     assert EmrClusterState(cluster_info['Status']['State']) == EmrClusterState.Waiting
@@ -53,7 +53,7 @@ def test_emr_describe_cluster(emr_cluster_config):
 def test_emr_id_from_name(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
-    cluster_id = cluster.run_job_flow(context, emr_cluster_config)
+    cluster_id = cluster.run_job_flow(context.log, emr_cluster_config)
     assert cluster.cluster_id_from_name('test-emr') == cluster_id
 
     with pytest.raises(EmrError) as exc_info:
@@ -84,13 +84,13 @@ def test_emr_construct_step_dict():
 def test_emr_log_location_for_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
-    cluster_id = emr.run_job_flow(context, emr_cluster_config)
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
     assert emr.log_location_for_cluster(cluster_id) == ('emr-cluster-logs', 'elasticmapreduce/')
 
     # Should raise when the log URI is missing
     emr_cluster_config = copy.deepcopy(emr_cluster_config)
     del emr_cluster_config['LogUri']
-    cluster_id = emr.run_job_flow(context, emr_cluster_config)
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
     with pytest.raises(EmrError) as exc_info:
         emr.log_location_for_cluster(cluster_id)
 
@@ -102,7 +102,7 @@ def test_emr_log_location_for_cluster(emr_cluster_config):
 def test_emr_retrieve_logs(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
-    cluster_id = emr.run_job_flow(context, emr_cluster_config)
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
     assert emr.log_location_for_cluster(cluster_id) == ('emr-cluster-logs', 'elasticmapreduce/')
 
     s3 = boto3.resource('s3', region_name=REGION)
@@ -127,7 +127,9 @@ def test_emr_retrieve_logs(emr_cluster_config):
     thread.daemon = True
     thread.start()
 
-    stdout_log, stderr_log = emr.retrieve_logs_for_step_id(context, cluster_id, 's-123456123456')
+    stdout_log, stderr_log = emr.retrieve_logs_for_step_id(
+        context.log, cluster_id, 's-123456123456'
+    )
     assert stdout_log == 'some log'
     assert stderr_log == 'some log'
 
@@ -154,7 +156,7 @@ def test_wait_for_log():
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
     res = emr.wait_for_log(
-        context,
+        context.log,
         log_bucket='log_bucket',
         log_key='some_log_file',
         waiter_delay=1,
@@ -164,7 +166,7 @@ def test_wait_for_log():
 
     with pytest.raises(EmrError) as exc_info:
         emr.wait_for_log(
-            context,
+            context.log,
             log_bucket='log_bucket',
             log_key='does_not_exist',
             waiter_delay=1,
@@ -178,12 +180,12 @@ def test_emr_wait_for_step(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION, check_cluster_every=1)
 
-    cluster_id = emr.run_job_flow(context, emr_cluster_config)
+    cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
 
     step_name = 'test_step'
     step_cmd = ['ls', '/']
     step_ids = emr.add_job_flow_steps(
-        context, cluster_id, [emr.construct_step_dict_for_command(step_name, step_cmd)]
+        context.log, cluster_id, [emr.construct_step_dict_for_command(step_name, step_cmd)]
     )
 
     def get_step_dict(step_id, step_state):
@@ -216,11 +218,11 @@ def test_emr_wait_for_step(emr_cluster_config):
         return emr.describe_step(cluster_id, step_id)
 
     with mock.patch.object(EmrJobRunner, 'describe_step', new=new_describe_step):
-        emr.wait_for_steps_to_complete(context, cluster_id, step_ids)
+        emr.wait_for_emr_steps_to_complete(context.log, cluster_id, step_ids)
 
     calls['num_calls'] = 0
     calls['final_state'] = 'FAILED'
     with pytest.raises(EmrError) as exc_info:
         with mock.patch.object(EmrJobRunner, 'describe_step', new=new_describe_step):
-            emr.wait_for_steps_to_complete(context, cluster_id, step_ids)
+            emr.wait_for_emr_steps_to_complete(context.log, cluster_id, step_ids)
     assert 'step failed' in str(exc_info.value)

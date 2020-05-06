@@ -1,11 +1,8 @@
-import abc
-
-import six
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
 from pyspark.sql import SparkSession
 
-from dagster import Field, check, resource
+from dagster import check, resource
 
 
 def spark_session_from_config(spark_conf=None):
@@ -18,7 +15,7 @@ def spark_session_from_config(spark_conf=None):
     return builder.getOrCreate()
 
 
-class PySparkResourceDefinition(six.with_metaclass(abc.ABCMeta)):
+class PySparkResource(object):
     def __init__(self, spark_conf):
         self._spark_session = spark_session_from_config(spark_conf)
 
@@ -30,48 +27,7 @@ class PySparkResourceDefinition(six.with_metaclass(abc.ABCMeta)):
     def spark_context(self):
         return self.spark_session.sparkContext
 
-    def stop(self):
-        self._spark_session.stop()
 
-    @abc.abstractmethod
-    def get_compute_fn(self, fn):
-        pass
-
-
-class SystemPySparkResource(PySparkResourceDefinition):
-    def get_compute_fn(self, fn):
-        return fn
-
-
-@resource(
-    {
-        'spark_conf': spark_config(),
-        'stop_session': Field(
-            bool,
-            is_required=False,
-            default_value=True,
-            description='Whether to stop the Spark session on pipeline completion. '
-            'Defaults to True.',
-        ),
-    }
-)
+@resource({'spark_conf': spark_config()})
 def pyspark_resource(init_context):
-    pyspark = SystemPySparkResource(init_context.resource_config['spark_conf'])
-    try:
-        yield pyspark
-    finally:
-        if init_context.resource_config['stop_session']:
-            pyspark.stop()
-
-
-class FakePySparkResource(PySparkResourceDefinition):
-    def __init__(self):  # pylint: disable=super-init-not-called
-        pass
-
-    def get_compute_fn(self, fn):
-        return fn
-
-
-@resource
-def fake_pyspark_resource(_init_context):
-    yield FakePySparkResource()
+    return PySparkResource(init_context.resource_config['spark_conf'])

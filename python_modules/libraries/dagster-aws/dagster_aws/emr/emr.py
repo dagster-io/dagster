@@ -141,11 +141,11 @@ class EmrJobRunner:
             'HadoopJarStep': {'Jar': 'command-runner.jar', 'Args': command},
         }
 
-    def add_tags(self, context, tags, cluster_id):
+    def add_tags(self, log, tags, cluster_id):
         '''Add tags in the dict tags to cluster cluster_id.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
+            log (DagsterLogManager): Log manager, for logging
             tags (dict): Dictionary of {'key': 'value'} tags
             cluster_id (str): The ID of the cluster to tag
         '''
@@ -158,16 +158,16 @@ class EmrJobRunner:
             ResourceId=cluster_id, Tags=[dict(Key=k, Value=v) for k, v in tags_items]
         )
 
-        context.log.info(
+        log.info(
             'Added EMR tags to cluster %s: %s'
             % (cluster_id, ', '.join('%s=%s' % (tag, value) for tag, value in tags_items))
         )
 
-    def run_job_flow(self, context, cluster_config):
+    def run_job_flow(self, log, cluster_config):
         '''Create an empty cluster on EMR, and return the ID of that job flow.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
+            log (DagsterLogManager): Log manager, for logging
             cluster_config (dict): Configuration for this EMR job flow. See:
                 https://docs.aws.amazon.com/emr/latest/APIReference/API_RunJobFlow.html
 
@@ -176,21 +176,21 @@ class EmrJobRunner:
         '''
         check.dict_param(cluster_config, 'cluster_config')
 
-        context.log.debug('Creating Elastic MapReduce cluster')
+        log.debug('Creating Elastic MapReduce cluster')
         emr_client = self.make_emr_client()
 
-        context.log.debug(
+        log.debug(
             'Calling run_job_flow(%s)'
             % (', '.join('%s=%r' % (k, v) for k, v in sorted(cluster_config.items())))
         )
         cluster_id = emr_client.run_job_flow(**cluster_config)['JobFlowId']
 
-        context.log.info('Created new cluster %s' % cluster_id)
+        log.info('Created new cluster %s' % cluster_id)
 
         # set EMR tags for the cluster
         tags = cluster_config.get('Tags', {})
         tags['__dagster_version'] = dagster.__version__
-        self.add_tags(context, tags, cluster_id)
+        self.add_tags(log, tags, cluster_id)
         return cluster_id
 
     def describe_cluster(self, cluster_id):
@@ -225,11 +225,11 @@ class EmrJobRunner:
         emr_client = self.make_emr_client()
         return emr_client.describe_step(ClusterId=cluster_id, StepId=step_id)
 
-    def add_job_flow_steps(self, context, cluster_id, step_defs):
+    def add_job_flow_steps(self, log, cluster_id, step_defs):
         '''Submit the constructed job flow steps to EMR for execution.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
+            log (DagsterLogManager): Log manager, for logging
             cluster_id (str): The ID of the cluster
             step_defs (List[dict]): List of steps; see also `construct_step_dict_for_command`
 
@@ -242,48 +242,47 @@ class EmrJobRunner:
         emr_client = self.make_emr_client()
 
         steps_kwargs = dict(JobFlowId=cluster_id, Steps=step_defs)
-        context.log.debug(
+        log.debug(
             'Calling add_job_flow_steps(%s)'
             % ','.join(('%s=%r' % (k, v)) for k, v in steps_kwargs.items())
         )
         return emr_client.add_job_flow_steps(**steps_kwargs)['StepIds']
 
-    def wait_for_steps_to_complete(self, context, cluster_id, step_ids):
+    def wait_for_emr_steps_to_complete(self, log, cluster_id, emr_step_ids):
         '''Wait for every step of the job to complete, one by one.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
+            log (DagsterLogManager): Log manager, for logging
             cluster_id (str): The ID of the cluster
-            step_ids (List[str]): List of step IDs to wait for
+            step_ids (List[str]): List of EMR step IDs to wait for
         '''
         check.str_param(cluster_id, 'cluster_id')
-        check.list_param(step_ids, 'step_ids', of_type=str)
+        check.list_param(emr_step_ids, 'step_ids', of_type=str)
 
-        for step_id in step_ids:
-            context.log.info('Waiting for step ID %s to complete...' % step_id)
-            self._wait_for_step_to_complete(context, cluster_id, step_id)
+        for emr_step_id in emr_step_ids:
+            log.info('Waiting for EMR step %s to complete...' % emr_step_id)
+            self._wait_for_emr_step_to_complete(log, cluster_id, emr_step_id)
 
-    def _wait_for_step_to_complete(self, context, cluster_id, step_id):
+    def _wait_for_emr_step_to_complete(self, log, cluster_id, emr_step_id):
         '''Helper for wait_for_steps_to_complete(). Wait for step with the given ID to complete.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
             cluster_id (str): The ID of the cluster
-            step_id (str): Step ID to wait for
+            emr_step_id (str): EMR Step ID to wait for
 
         Raises:
             EmrError: Raised when the step is marked by EMR as failed instead of completing
                 successfully.
         '''
         check.str_param(cluster_id, 'cluster_id')
-        check.str_param(step_id, 'step_id')
+        check.str_param(emr_step_id, 'emr_step_id')
 
         while True:
             # don't antagonize EMR's throttling
-            context.log.debug('Waiting %.1f seconds...' % self.check_cluster_every)
+            log.debug('Waiting %.1f seconds...' % self.check_cluster_every)
             time.sleep(self.check_cluster_every)
 
-            step = self.describe_step(cluster_id, step_id)['Step']
+            step = self.describe_step(cluster_id, emr_step_id)['Step']
             step_state = EmrStepState(step['Status']['State'])
 
             if step_state == EmrStepState.Pending:
@@ -292,9 +291,7 @@ class EmrJobRunner:
                 reason = _get_reason(cluster)
                 reason_desc = (': %s' % reason) if reason else ''
 
-                context.log.info(
-                    'PENDING (cluster is %s%s)' % (cluster['Status']['State'], reason_desc)
-                )
+                log.info('PENDING (cluster is %s%s)' % (cluster['Status']['State'], reason_desc))
                 continue
 
             elif step_state == EmrStepState.Running:
@@ -304,12 +301,12 @@ class EmrJobRunner:
                 if start:
                     time_running_desc = ' for %s' % strip_microseconds(_boto3_now() - start)
 
-                context.log.info('RUNNING%s' % time_running_desc)
+                log.info('RUNNING%s' % time_running_desc)
                 continue
 
             # we're done, will return at the end of this
             elif step_state == EmrStepState.Completed:
-                context.log.info('COMPLETED')
+                log.info('COMPLETED')
                 return
             else:
                 # step has failed somehow. *reason* seems to only be set
@@ -317,14 +314,14 @@ class EmrJobRunner:
                 reason = _get_reason(step)
                 reason_desc = (' (%s)' % reason) if reason else ''
 
-                context.log.info('%s%s' % (step_state.value, reason_desc))
+                log.info('%s%s' % (step_state.value, reason_desc))
 
                 # print cluster status; this might give more context
                 # why step didn't succeed
                 cluster = self.describe_cluster(cluster_id)['Cluster']
                 reason = _get_reason(cluster)
                 reason_desc = (': %s' % reason) if reason else ''
-                context.log.info(
+                log.info(
                     'Cluster %s %s %s%s'
                     % (
                         cluster['Id'],
@@ -336,17 +333,17 @@ class EmrJobRunner:
 
                 if EmrClusterState(cluster['Status']['State']) in EMR_CLUSTER_TERMINATED_STATES:
                     # was it caused by IAM roles?
-                    self._check_for_missing_default_iam_roles(context, cluster)
+                    self._check_for_missing_default_iam_roles(log, cluster)
 
                     # TODO: extract logs here to surface failure reason
                     # See: https://github.com/dagster-io/dagster/issues/1954
 
             if step_state == EmrStepState.Failed:
-                context.log.info('Step %s failed' % step_id)
+                log.info('EMR step %s failed' % emr_step_id)
 
-            raise EmrError('step failed')
+            raise EmrError('EMR step failed')
 
-    def _check_for_missing_default_iam_roles(self, context, cluster):
+    def _check_for_missing_default_iam_roles(self, log, cluster):
         '''If cluster couldn't start due to missing IAM roles, tell user what to do.'''
 
         check.dict_param(cluster, 'cluster')
@@ -356,7 +353,7 @@ class EmrJobRunner:
             reason.endswith('/%s is invalid' % role)
             for role in (_FALLBACK_INSTANCE_PROFILE, _FALLBACK_SERVICE_ROLE)
         ):
-            context.log.warning(
+            log.warning(
                 'IAM roles are missing. See documentation for IAM roles on EMR here: '
                 'https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-iam-roles.html'
             )
@@ -390,11 +387,11 @@ class EmrJobRunner:
         log_key_prefix = log_uri_parsed.path.lstrip('/')
         return log_bucket, log_key_prefix
 
-    def retrieve_logs_for_step_id(self, context, cluster_id, step_id):
+    def retrieve_logs_for_step_id(self, log, cluster_id, step_id):
         '''Retrieves stdout and stderr logs for the given step ID.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
+            log (DagsterLogManager): Log manager, for logging
             cluster_id (str): EMR cluster ID
             step_id (str): EMR step ID for the job that was submitted.
 
@@ -409,20 +406,15 @@ class EmrJobRunner:
         prefix = '{log_key_prefix}{cluster_id}/steps/{step_id}'.format(
             log_key_prefix=log_key_prefix, cluster_id=cluster_id, step_id=step_id
         )
-        stdout_log = self.wait_for_log(
-            context, log_bucket, '{prefix}/stdout.gz'.format(prefix=prefix)
-        )
-        stderr_log = self.wait_for_log(
-            context, log_bucket, '{prefix}/stderr.gz'.format(prefix=prefix)
-        )
+        stdout_log = self.wait_for_log(log, log_bucket, '{prefix}/stdout.gz'.format(prefix=prefix))
+        stderr_log = self.wait_for_log(log, log_bucket, '{prefix}/stderr.gz'.format(prefix=prefix))
         return stdout_log, stderr_log
 
-    def wait_for_log(self, context, log_bucket, log_key, waiter_delay=30, waiter_max_attempts=20):
+    def wait_for_log(self, log, log_bucket, log_key, waiter_delay=30, waiter_max_attempts=20):
         '''Wait for gzipped EMR logs to appear on S3. Note that EMR syncs logs to S3 every 5
         minutes, so this may take a long time.
 
         Args:
-            context (SystemPipelineExecutionContext): context, for logging
             log_bucket (str): S3 bucket where log is expected to appear
             log_key (str): S3 key for the log file
             waiter_delay (int): How long to wait between attempts to check S3 for the log file
@@ -439,7 +431,7 @@ class EmrJobRunner:
         check.int_param(waiter_delay, 'waiter_delay')
         check.int_param(waiter_max_attempts, 'waiter_max_attempts')
 
-        context.log.info(
+        log.info(
             'Attempting to get log: s3://{log_bucket}/{log_key}'.format(
                 log_bucket=log_bucket, log_key=log_key
             )

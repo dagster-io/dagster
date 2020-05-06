@@ -5,7 +5,6 @@ import re
 
 import dagster_pyspark
 from dagster_aws.s3 import S3Coordinate
-from dagster_pyspark import pyspark_solid
 from dagstermill import define_dagstermill_solid
 from pyspark.sql import DataFrame
 from sqlalchemy import text
@@ -149,7 +148,8 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     return _sql_solid
 
 
-@pyspark_solid(
+@solid(
+    required_resource_keys={'pyspark_step_launcher', 'pyspark'},
     description='''Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
 
@@ -198,7 +198,7 @@ def do_prefix_column_names(df, prefix):
     return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
 
 
-@pyspark_solid
+@solid(required_resource_keys={'pyspark_step_launcher'})
 def canonicalize_column_names(_context, data_frame: DataFrame) -> DataFrame:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
@@ -207,16 +207,16 @@ def replace_values_spark(data_frame, old, new):
     return data_frame.na.replace(old, new)
 
 
-@pyspark_solid
+@solid(required_resource_keys={'pyspark_step_launcher'})
 def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame:
     normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
-@pyspark_solid(
+@solid(
     output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
     config={'table_name': String},
-    required_resource_keys={'db_info'},
+    required_resource_keys={'db_info', 'pyspark_step_launcher'},
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
     context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
@@ -235,7 +235,8 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
     yield Output(value=table_name, output_name='table_name')
 
 
-@pyspark_solid(
+@solid(
+    required_resource_keys={'pyspark_step_launcher'},
     description='Subsample a spark dataset via the configuration option.',
     config={
         'subsample_pct': Field(
@@ -509,7 +510,8 @@ sfo_delays_by_destination = notebook_solid(
 )
 
 
-@pyspark_solid(
+@solid(
+    required_resource_keys={'pyspark_step_launcher', 'pyspark'},
     config={'subsample_pct': Int},
     description='''
     This solid takes April, May, and June data and coalesces it into a q2 data set.

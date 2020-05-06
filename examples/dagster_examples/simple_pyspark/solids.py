@@ -1,11 +1,10 @@
 '''Solid definitions for the simple_pyspark example.'''
 
 import dagster_pyspark
-from dagster_pyspark import pyspark_solid
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as f
 
-from dagster import make_python_type_usable_as_dagster_type
+from dagster import make_python_type_usable_as_dagster_type, solid
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(
@@ -13,7 +12,7 @@ make_python_type_usable_as_dagster_type(
 )
 
 
-@pyspark_solid
+@solid(required_resource_keys={'pyspark_step_launcher'})
 def make_weather_samples(context, file_path: str) -> DataFrame:
     '''Loads the weather data from a CSV'''
     return (
@@ -23,14 +22,14 @@ def make_weather_samples(context, file_path: str) -> DataFrame:
     )
 
 
-@pyspark_solid
+@solid(required_resource_keys={'pyspark_step_launcher'})
 def make_daily_temperature_highs(_, weather_samples: DataFrame) -> DataFrame:
     '''Computes the temperature high for each day'''
     valid_date = f.to_date(weather_samples['valid']).alias('valid_date')
     return weather_samples.groupBy(valid_date).agg(f.max('tmpf').alias('max_tmpf'))
 
 
-@pyspark_solid
+@solid(required_resource_keys={'pyspark_step_launcher'})
 def make_daily_temperature_high_diffs(_, daily_temperature_highs: DataFrame) -> DataFrame:
     '''Computes the difference between each day's high and the previous day's high'''
     window = Window.orderBy('valid_date')

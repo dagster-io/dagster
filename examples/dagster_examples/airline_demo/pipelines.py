@@ -1,6 +1,6 @@
 '''Pipeline definitions for the airline_demo.
 '''
-from dagster_aws.emr import emr_pyspark_resource
+from dagster_aws.emr.emr_pyspark_step_launcher import emr_pyspark_step_launcher
 from dagster_aws.s3 import (
     S3FileHandle,
     file_handle_to_s3,
@@ -11,6 +11,7 @@ from dagster_aws.s3 import (
 from dagster_pyspark import pyspark_resource
 
 from dagster import ModeDefinition, PresetDefinition, composite_solid, pipeline
+from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.storage.file_cache import fs_file_cache
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
@@ -37,6 +38,7 @@ from .solids import (
 test_mode = ModeDefinition(
     name='test',
     resource_defs={
+        'pyspark_step_launcher': no_step_launcher,
         'pyspark': pyspark_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,
@@ -50,6 +52,7 @@ test_mode = ModeDefinition(
 local_mode = ModeDefinition(
     name='local',
     resource_defs={
+        'pyspark_step_launcher': no_step_launcher,
         'pyspark': pyspark_resource,
         's3': s3_resource,
         'db_info': postgres_db_info_resource,
@@ -63,7 +66,8 @@ local_mode = ModeDefinition(
 prod_mode = ModeDefinition(
     name='prod',
     resource_defs={
-        'pyspark': emr_pyspark_resource,
+        'pyspark_step_launcher': emr_pyspark_step_launcher,
+        'pyspark': pyspark_resource,
         's3': s3_resource,
         'db_info': redshift_db_info_resource,
         'tempfile': tempfile_resource,

@@ -3,28 +3,13 @@ import os
 from pyspark.rdd import RDD
 from pyspark.sql import DataFrame as NativeSparkDataFrame
 
-from dagster import (
-    Bool,
-    Field,
-    Materialization,
-    Path,
-    PythonObjectDagsterType,
-    String,
-    check,
-    resource,
-)
+from dagster import Bool, Field, Materialization, PythonObjectDagsterType, String, check
 from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
 
-from .decorators import pyspark_solid
-from .resources import (
-    PySparkResourceDefinition,
-    fake_pyspark_resource,
-    pyspark_resource,
-    spark_session_from_config,
-)
+from .resources import pyspark_resource, spark_session_from_config
 from .version import __version__
 
 
@@ -114,20 +99,32 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
             return False
 
     @classmethod
-    def set_object(cls, intermediate_store, obj, _context, _dagster_type, paths):
+    def set_object(cls, intermediate_store, obj, context, _dagster_type, paths):
         target_path = intermediate_store.object_store.key_for_paths(paths)
-        obj.write.parquet(intermediate_store.uri_for_paths(paths, protocol='s3a://'))
+        obj.write.parquet(intermediate_store.uri_for_paths(paths, protocol=cls.protocol(context)))
         return target_path
 
     @classmethod
     def get_object(cls, intermediate_store, context, _dagster_type, paths):
         return context.resources.pyspark.spark_session.read.parquet(
-            intermediate_store.uri_for_paths(paths, protocol='s3a://')
+            intermediate_store.uri_for_paths(paths, protocol=cls.protocol(context))
         )
 
     @classmethod
     def required_resource_keys(cls):
         return frozenset({'pyspark'})
+
+    @staticmethod
+    def protocol(context):
+        # pylint: disable=protected-access
+        hadoopConf = context.resources.pyspark.spark_session.sparkContext._jsc.hadoopConfiguration()
+        # If we're on EMR, s3 is preferred:
+        # https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-file-systems.html
+        # Otherwise, s3a is preferred
+        if hadoopConf.get('fs.s3.impl') == 'com.amazon.ws.emr.hadoop.fs.EmrFileSystem':
+            return 's3://'
+        else:
+            return 's3a://'
 
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init

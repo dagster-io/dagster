@@ -2,10 +2,7 @@ import copy
 import os
 import zipfile
 
-import six
-
 from dagster import check
-from dagster.utils import file_relative_path
 
 
 def subset_environment_dict(environment_dict, solid_name):
@@ -22,26 +19,6 @@ def subset_environment_dict(environment_dict, solid_name):
             if key != solid_name:
                 del subset['solids'][key]
     return subset
-
-
-def build_main_file(
-    main_file, mode_name, pipeline_file, solid_name, environment_dict, pipeline_fn_name
-):
-    with open(file_relative_path(__file__, 'main.py.template'), 'rb') as f:
-        main_template_str = six.ensure_str(f.read())
-
-    with open(main_file, 'wb') as f:
-        f.write(
-            six.ensure_binary(
-                main_template_str.format(
-                    mode_name=mode_name,
-                    pipeline_file=os.path.splitext(os.path.basename(pipeline_file))[0],
-                    solid_name=solid_name,
-                    environment_dict=subset_environment_dict(environment_dict, solid_name),
-                    pipeline_fn_name=pipeline_fn_name,
-                )
-            )
-        )
 
 
 def build_pyspark_zip(zip_file, path):
