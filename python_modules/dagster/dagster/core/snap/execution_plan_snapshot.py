@@ -27,6 +27,10 @@ class ExecutionPlanIndex:
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
         )
 
+    def has_step(self, key):
+        check.str_param(key, 'key')
+        return key in self._step_index
+
     def get_step_by_key(self, key):
         check.str_param(key, 'key')
         return self._step_index[key]

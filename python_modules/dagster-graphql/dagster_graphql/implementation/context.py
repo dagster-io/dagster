@@ -4,7 +4,7 @@ import six
 
 from dagster import ExecutionTargetHandle, check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import (
     ActiveRepositoryData,
@@ -13,6 +13,7 @@ from dagster.core.snap import (
     active_repository_data_from_def,
     snapshot_from_execution_plan,
 )
+from dagster.core.storage.pipeline_run import PipelineRun
 
 from .external import ExternalPipeline
 from .pipeline_execution_manager import PipelineExecutionManager
@@ -69,6 +70,10 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
     ):
         pass
 
+    @abc.abstractmethod
+    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+        pass
+
 
 class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, active_repository_data, execution_manager, instance, version=None):
@@ -90,6 +95,9 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def create_execution_plan_index(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
+        raise NotImplementedError('Not yet supported out of process')
+
+    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
         raise NotImplementedError('Not yet supported out of process')
 
 
@@ -182,4 +190,24 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
                 external_pipeline.pipeline_snapshot_id,
             ),
             pipeline_index=external_pipeline.pipeline_index,
+        )
+
+    def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.dict_param(environment_dict, 'environment_dict')
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+        execution_plan = create_execution_plan(
+            pipeline=self.get_pipeline(external_pipeline.name),
+            environment_dict=environment_dict,
+            mode=pipeline_run.mode,
+            step_keys_to_execute=step_keys_to_execute,
+        )
+
+        execute_plan(
+            execution_plan=execution_plan,
+            instance=self.instance,
+            pipeline_run=pipeline_run,
+            environment_dict=environment_dict,
         )

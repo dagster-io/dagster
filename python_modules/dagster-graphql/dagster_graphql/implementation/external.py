@@ -31,6 +31,10 @@ class ExternalPipeline:
     def active_presets(self):
         return self._active_pipeline_data.active_presets
 
+    @property
+    def pipeline_snapshot(self):
+        return self.pipeline_index.pipeline_snapshot
+
     def has_solid_invocation(self, solid_name):
         check.str_param(solid_name, 'solid_name')
         return self.pipeline_index.has_solid_invocation(solid_name)
@@ -56,6 +60,9 @@ class ExternalPipeline:
     @property
     def pipeline_snapshot_id(self):
         return self.pipeline_index.pipeline_snapshot_id
+
+    def get_default_mode_name(self):
+        return self.pipeline_index.get_default_mode_name()
 
 
 def get_external_pipeline_or_raise(graphene_info, pipeline_name):

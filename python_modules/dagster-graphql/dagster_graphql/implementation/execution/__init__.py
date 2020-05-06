@@ -21,7 +21,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
@@ -31,11 +30,7 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from ..fetch_pipelines import (
-    get_dauphin_pipeline_reference_from_selector,
-    get_pipeline_def_from_selector,
-)
-from ..fetch_runs import get_validated_config
+from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_subset_or_raise
 from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
@@ -145,51 +140,60 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, execution_params.selector)
-    get_validated_config(pipeline_def, execution_params.environment_dict, execution_params.mode)
-    return _do_execute_plan(graphene_info, execution_params, pipeline_def)
+    external_pipeline = get_external_pipeline_subset_or_raise(
+        graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
+    )
+    ensure_valid_config(
+        external_pipeline=external_pipeline,
+        mode=execution_params.mode,
+        environment_dict=execution_params.environment_dict,
+    )
+    return _do_execute_plan(graphene_info, execution_params, external_pipeline)
 
 
-def _do_execute_plan(graphene_info, execution_params, pipeline_def):
+def _do_execute_plan(graphene_info, execution_params, external_pipeline):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
     run_id = execution_params.execution_metadata.run_id
 
-    mode = execution_params.mode or pipeline_def.get_default_mode_name()
+    mode = execution_params.mode or external_pipeline.get_default_mode_name()
 
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
 
-    execution_plan = create_execution_plan(
-        pipeline=pipeline_def, environment_dict=execution_params.environment_dict, mode=mode,
+    execution_plan_index = graphene_info.context.create_execution_plan_index(
+        external_pipeline=external_pipeline,
+        environment_dict=execution_params.environment_dict,
+        mode=mode,
     )
 
     if not pipeline_run:
         # TODO switch to raising a UserFacingError if the run_id cannot be found
         # https://github.com/dagster-io/dagster/issues/1876
-        pipeline_run = graphene_info.context.instance.create_run_for_pipeline(
-            pipeline_def=pipeline_def,
-            execution_plan=execution_plan,
+        pipeline_run = graphene_info.context.instance.create_run(
+            pipeline_name=external_pipeline.name,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=mode,
             tags=execution_params.execution_metadata.tags or {},
         )
 
-    execution_plan = create_execution_plan(
-        pipeline=pipeline_def,
-        environment_dict=execution_params.environment_dict,
-        mode=pipeline_run.mode,
-    )
-
     if execution_params.step_keys:
         for step_key in execution_params.step_keys:
-            if not execution_plan.has_step(step_key):
+            if not execution_plan_index.has_step(step_key):
                 raise UserFacingGraphQLError(
                     graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
                 )
 
-        execution_plan = execution_plan.build_subset_plan(execution_params.step_keys)
+        execution_plan_index = graphene_info.context.create_execution_plan_index(
+            external_pipeline=external_pipeline,
+            environment_dict=execution_params.environment_dict,
+            mode=mode,
+            step_keys_to_execute=execution_params.step_keys,
+        )
 
     event_logs = []
 
@@ -199,26 +203,18 @@ def _do_execute_plan(graphene_info, execution_params, pipeline_def):
 
     graphene_info.context.instance.add_event_listener(run_id, _on_event_record)
 
-    execute_plan(
-        execution_plan=execution_plan,
+    graphene_info.context.execute_plan(
+        external_pipeline=external_pipeline,
         environment_dict=execution_params.environment_dict,
         pipeline_run=pipeline_run,
-        instance=graphene_info.context.instance,
-    )
-
-    dauphin_pipeline = DauphinPipeline.from_pipeline_def(pipeline_def)
-
-    execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
-        execution_plan, pipeline_def.get_pipeline_index()
+        step_keys_to_execute=execution_params.step_keys,
     )
 
     def to_graphql_event(event_record):
-        return from_dagster_event_record(
-            event_record, pipeline_run.pipeline_name, execution_plan_index
-        )
+        return from_dagster_event_record(event_record, external_pipeline.name, execution_plan_index)
 
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
-        pipeline=dauphin_pipeline,
+        pipeline=DauphinPipeline(external_pipeline),
         has_failures=any(
             er
             for er in event_logs
