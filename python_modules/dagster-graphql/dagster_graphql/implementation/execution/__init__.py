@@ -25,7 +25,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
-from dagster.core.snap import ExecutionPlanIndex
+from dagster.core.snap import ExecutionPlanIndex, PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
@@ -103,20 +103,16 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    pipeline_ref = get_dauphin_pipeline_reference_from_selector(graphene_info, run.selector)
-
-    execution_plan = None
-    execution_plan_index = None
-    if isinstance(pipeline_ref, DauphinPipeline):
-        pipeline_def = get_pipeline_def_from_selector(graphene_info, run.selector)
-        if is_config_valid(pipeline_def, run.environment_dict, run.mode):
-            execution_plan = create_execution_plan(
-                pipeline_def, run.environment_dict, mode=run.mode
-            )
-
-            execution_plan_index = ExecutionPlanIndex.from_plan_and_index(
-                execution_plan, pipeline_def.get_pipeline_index()
-            )
+    execution_plan_index = (
+        ExecutionPlanIndex(
+            execution_plan_snapshot=instance.get_execution_plan_snapshot(
+                run.execution_plan_snapshot_id
+            ),
+            pipeline_index=PipelineIndex(instance.get_pipeline_snapshot(run.pipeline_snapshot_id)),
+        )
+        if run.pipeline_snapshot_id and run.execution_plan_snapshot_id
+        else None
+    )
 
     # pylint: disable=E1101
     return Observable.create(
