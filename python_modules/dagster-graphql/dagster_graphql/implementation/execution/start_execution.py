@@ -161,13 +161,6 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
             pipeline_def.get_pipeline_index(), validated_config.errors
         )
 
-    create_execution_plan(
-        pipeline_def,
-        pipeline_run.environment_dict,
-        mode=pipeline_run.mode,
-        step_keys_to_execute=pipeline_run.step_keys_to_execute,
-    )
-
     graphene_info.context.execution_manager.execute_pipeline(
         graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
     )
