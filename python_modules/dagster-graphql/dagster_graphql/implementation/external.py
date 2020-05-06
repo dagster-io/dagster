@@ -53,6 +53,10 @@ class ExternalPipeline:
     def config_schema_snapshot(self):
         return self.pipeline_index.pipeline_snapshot.config_schema_snapshot
 
+    @property
+    def pipeline_snapshot_id(self):
+        return self.pipeline_index.pipeline_snapshot_id
+
 
 def get_external_pipeline(graphene_info, pipeline_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
