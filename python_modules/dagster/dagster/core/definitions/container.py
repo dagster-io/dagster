@@ -17,9 +17,13 @@ def run_serialized_container_command(image, command, volumes):
         from docker.client import from_env
 
         client = from_env()
-        client.containers.run(
-            image, command=command, detach=False, volumes=volumes, auto_remove=True,
+        byte_stream = client.containers.run(
+            image, command=command, volumes=volumes, auto_remove=False,
         )
+
+        # Decode to string, split by newlines, and filter for any empty strings
+        lines = list(filter(None, byte_stream.decode('utf-8').split("\n")))
+        return lines
     except ImportError:
         warnings.warn(
             "Cannot load docker environment without the python package docker. Ensure that dagster[docker] or the python package docker is installed."
@@ -27,25 +31,32 @@ def run_serialized_container_command(image, command, volumes):
         raise
 
 
-def _get_active_repo_data(path):
-    with open(path, 'r') as fp:
-        return deserialize_json_to_dagster_namedtuple(fp.read())
-
-
 def get_active_repository_data_from_image(image):
     check.str_param(image, 'image')
 
     with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:
         output_file_name = "{}.json".format(uuid4())
-        run_serialized_container_command(
+        command = 'dagster api snapshot repository'.format(
+            output_file=os.path.join(DEFAULT_INTERNAL_VOLUME, output_file_name)
+        )
+        output = run_serialized_container_command(
             image=image,
-            command='dagster repository snapshot {output_file}'.format(
-                output_file=os.path.join(DEFAULT_INTERNAL_VOLUME, output_file_name)
-            ),
+            command=command,
             volumes={tmp_dir: {'bind': DEFAULT_INTERNAL_VOLUME, 'mode': DEFAULT_MODE}},
         )
 
-        active_repo_data = _get_active_repo_data(os.path.join(tmp_dir, output_file_name))
+        if len(output) != 1:
+            print(output)
+            raise DagsterInvariantViolationError(
+                "Running command {command} in container {image} resulted in output of length "
+                "{actual} lines, expected {expected} lines".format(
+                    command=command, image=image, actual=len(output), expected=1
+                )
+            )
+
+        serialized_active_repo_data = output[0]
+        active_repo_data = deserialize_json_to_dagster_namedtuple(serialized_active_repo_data)
+
         if not isinstance(active_repo_data, ActiveRepositoryData):
             raise DagsterInvariantViolationError(
                 "Deserialized snapshot is of type {received} must be a ActiveRepositoryData".format(
