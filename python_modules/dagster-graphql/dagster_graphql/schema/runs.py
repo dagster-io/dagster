@@ -28,7 +28,6 @@ from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFi
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
 from .execution import DauphinExecutionStep
-from .pipelines import DauphinPipeline, DauphinUnknownPipeline
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)
@@ -344,7 +343,7 @@ class DauphinPipelineEvent(dauphin.Interface):
     class Meta(object):
         name = 'PipelineEvent'
 
-    pipeline = dauphin.NonNull('Pipeline')
+    pipelineName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPipelineStartEvent(dauphin.ObjectType):
@@ -685,14 +684,12 @@ class DauphinPipelineTag(dauphin.ObjectType):
         super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
-def from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_index):
+def from_dagster_event_record(event_record, pipeline_name, execution_plan_index):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
-    check.opt_inst_param(
-        dauphin_pipeline, 'dauphin_pipeline', (DauphinPipeline, DauphinUnknownPipeline),
-    )
+    check.str_param(pipeline_name, 'pipeline_name')
     check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
     # circular ref at module scope
@@ -742,15 +739,15 @@ def from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_ind
             **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
-        return DauphinPipelineStartEvent(pipeline=dauphin_pipeline, **basic_params)
+        return DauphinPipelineStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
-        return DauphinPipelineSuccessEvent(pipeline=dauphin_pipeline, **basic_params)
+        return DauphinPipelineSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-        return DauphinPipelineFailureEvent(pipeline=dauphin_pipeline, **basic_params)
+        return DauphinPipelineFailureEvent(pipelineName=pipeline_name, **basic_params)
 
     elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
         return DauphinPipelineInitFailureEvent(
-            pipeline=dauphin_pipeline,
+            pipelineName=pipeline_name,
             error=DauphinPythonError(dagster_event.pipeline_init_failure_data.error),
             **basic_params
         )
@@ -790,15 +787,13 @@ def from_compute_log_file(graphene_info, file):
     )
 
 
-def from_event_record(event_record, dauphin_pipeline, execution_plan_index):
+def from_event_record(event_record, pipeline_name, execution_plan_index):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.opt_inst_param(
-        dauphin_pipeline, 'dauphin_pipeline', (DauphinPipeline, DauphinUnknownPipeline),
-    )
+    check.str_param(pipeline_name, 'pipeline_name')
     check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
 
     if event_record.is_dagster_event:
-        return from_dagster_event_record(event_record, dauphin_pipeline, execution_plan_index)
+        return from_dagster_event_record(event_record, pipeline_name, execution_plan_index)
     else:
         return DauphinLogMessageEvent(**construct_basic_params(event_record, execution_plan_index))
 

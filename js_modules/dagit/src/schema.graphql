@@ -720,7 +720,7 @@ type PipelineConnection {
 }
 
 interface PipelineEvent {
-  pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineFailureEvent implements MessageEvent & PipelineEvent {
@@ -729,7 +729,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
@@ -738,7 +738,7 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  pipeline: Pipeline!
+  pipelineName: String!
   error: PythonError!
 }
 
@@ -875,7 +875,7 @@ type PipelineStartEvent implements MessageEvent & PipelineEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
@@ -884,7 +884,7 @@ type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
   timestamp: String!
   level: LogLevel!
   step: ExecutionStep
-  pipeline: Pipeline!
+  pipelineName: String!
 }
 
 type PipelineTag {
