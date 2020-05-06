@@ -83,6 +83,9 @@ export class MetadataEntry extends React.Component<{
           module
           name
         }
+        ... on EventFloatMetadataEntry {
+          value
+        }
       }
     `
   };
@@ -155,6 +158,8 @@ export class MetadataEntry extends React.Component<{
             description={entry.description || ""}
           />
         );
+      case "EventFloatMetadataEntry":
+        return entry.value;
       default:
         return assertUnreachable(entry);
     }

@@ -118,6 +118,11 @@ class EventMetadataEntry(namedtuple('_EventMetadataEntry', 'label description en
             PythonArtifactMetadataEntryData(python_artifact.__module__, python_artifact.__name__),
         )
 
+    @staticmethod
+    def float(value, label, description=None):
+        check.float_param(value, 'value')
+        return EventMetadataEntry(label, description, FloatMetadataEntryData(value),)
+
 
 @whitelist_for_serdes
 class TextMetadataEntryData(namedtuple('_TextMetadataEntryData', 'text')):
@@ -191,6 +196,13 @@ class PythonArtifactMetadataEntryData(
         )
 
 
+@whitelist_for_serdes
+class FloatMetadataEntryData(namedtuple('_FloatMetadataEntryData', 'value')):
+    def __new__(cls, value):
+        check.float_param(value, 'value')
+        return super(FloatMetadataEntryData, cls).__new__(cls, check.float_param(value, 'value'))
+
+
 EntryDataUnion = (
     TextMetadataEntryData,
     UrlMetadataEntryData,
@@ -198,6 +210,7 @@ EntryDataUnion = (
     JsonMetadataEntryData,
     MarkdownMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    FloatMetadataEntryData,
 )
 
 

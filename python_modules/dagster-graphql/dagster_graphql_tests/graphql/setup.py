@@ -583,6 +583,7 @@ def materialization_pipeline():
                 EventMetadataEntry.json({'is_dope': True}, 'json'),
                 EventMetadataEntry.python_artifact(EventMetadataEntry, 'python class'),
                 EventMetadataEntry.python_artifact(file_relative_path, 'python function'),
+                EventMetadataEntry.float(1.2, 'float'),
             ],
         )
         yield Output(None)

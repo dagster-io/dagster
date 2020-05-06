@@ -65,4 +65,8 @@ def test_materializations(snapshot):
     assert text_entry['module']
     assert text_entry['name']
 
+    text_entry = mat['metadataEntries'][6]
+    assert text_entry['__typename'] == 'EventFloatMetadataEntry'
+    assert text_entry['value']
+
     snapshot.assert_match(logs)

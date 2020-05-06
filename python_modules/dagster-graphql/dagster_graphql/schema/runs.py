@@ -10,6 +10,7 @@ from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
+    FloatMetadataEntryData,
     JsonMetadataEntryData,
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
@@ -455,6 +456,14 @@ class DauphinEventPythonArtifactMetadataEntry(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
 
 
+class DauphinEventFloatMetadataEntry(dauphin.ObjectType):
+    class Meta(object):
+        name = 'EventFloatMetadataEntry'
+        interfaces = (DauphinEventMetadataEntry,)
+
+    value = dauphin.NonNull(dauphin.Float)
+
+
 def iterate_metadata_entries(metadata_entries):
     check.list_param(metadata_entries, 'metadata_entries', of_type=EventMetadataEntry)
     for metadata_entry in metadata_entries:
@@ -494,6 +503,12 @@ def iterate_metadata_entries(metadata_entries):
                 description=metadata_entry.description,
                 module=metadata_entry.entry_data.module,
                 name=metadata_entry.entry_data.name,
+            )
+        elif isinstance(metadata_entry.entry_data, FloatMetadataEntryData):
+            yield DauphinEventFloatMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                value=metadata_entry.entry_data.value,
             )
         else:
             # skip rest for now

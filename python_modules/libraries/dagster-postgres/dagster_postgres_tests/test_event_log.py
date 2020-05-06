@@ -511,6 +511,7 @@ def test_asset_materialization(conn_string):
             metadata_entries=[
                 EventMetadataEntry.text('hello', 'text'),
                 EventMetadataEntry.json({'hello': 'world'}, 'json'),
+                EventMetadataEntry.float(1.0, 'one'),
             ],
         )
         yield Output(1)

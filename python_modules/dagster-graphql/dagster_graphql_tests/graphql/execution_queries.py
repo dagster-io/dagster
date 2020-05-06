@@ -18,6 +18,9 @@ fragment metadataEntryFragment on EventMetadataEntry {
         module
         name
     }
+    ... on EventFloatMetadataEntry {
+        value
+    }
 }
 
 fragment stepEventFragment on StepEvent {
