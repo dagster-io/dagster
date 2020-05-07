@@ -12,7 +12,7 @@ make_python_type_usable_as_dagster_type(
 )
 
 
-@solid(required_resource_keys={'pyspark_step_launcher'})
+@solid(required_resource_keys={'pyspark_step_launcher', 'pyspark'})
 def make_weather_samples(context, file_path: str) -> DataFrame:
     '''Loads the weather data from a CSV'''
     return (
