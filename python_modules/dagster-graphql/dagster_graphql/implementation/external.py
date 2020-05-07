@@ -52,6 +52,10 @@ class ExternalPipeline:
         check.str_param(preset_name, 'preset_name')
         return self._active_preset_dict[preset_name]
 
+    def get_mode(self, mode_name):
+        check.str_param(mode_name, 'mode_name')
+        return self.pipeline_index.get_mode_def_snap(mode_name)
+
     @staticmethod
     def from_pipeline_def(pipeline_def):
         return ExternalPipeline(

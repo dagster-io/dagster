@@ -3,11 +3,11 @@ from __future__ import absolute_import
 import sys
 import time
 
-from dagster_graphql.implementation.fetch_runs import is_config_valid
 from dagster_graphql.implementation.utils import ExecutionMetadata, ExecutionParams
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
+from dagster.config.validate import validate_config_from_snap
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterUserCodeExecutionError,
@@ -15,15 +15,13 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import create_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
-from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.tags import check_tags
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.merger import merge_dicts
 
-from ..fetch_pipelines import get_pipeline_def_from_selector
+from ..external import ExternalPipeline, get_external_pipeline_subset_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
 from ..utils import capture_dauphin_error
 from .launch_execution import _launch_pipeline_execution_for_created_run
@@ -104,8 +102,10 @@ def start_scheduled_execution(graphene_info, schedule_name):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             errors.append(error_data)
 
-        pipeline_def = get_pipeline_def_from_selector(graphene_info, schedule_def.selector)
-        pipeline_tags = pipeline_def.tags or {}
+        external_pipeline = get_external_pipeline_subset_or_raise(
+            graphene_info, schedule_def.selector.name, schedule_def.selector.solid_subset
+        )
+        pipeline_tags = external_pipeline.tags or {}
         check_tags(pipeline_tags, 'pipeline_tags')
         tags = merge_dicts(pipeline_tags, schedule_tags)
 
@@ -120,7 +120,7 @@ def start_scheduled_execution(graphene_info, schedule_name):
             step_keys=None,
         )
 
-        run, result = _execute_schedule(graphene_info, pipeline_def, execution_params, errors)
+        run, result = _execute_schedule(graphene_info, external_pipeline, execution_params, errors)
         graphene_info.context.instance.update_schedule_tick(
             repository, tick.with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id),
         )
@@ -138,34 +138,35 @@ def start_scheduled_execution(graphene_info, schedule_name):
         raise exc
 
 
-def _execute_schedule(graphene_info, pipeline_def, execution_params, errors):
+def _execute_schedule(graphene_info, external_pipeline, execution_params, errors):
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
 
     instance = graphene_info.context.instance
 
-    execution_plan = None
-    if is_config_valid(pipeline_def, execution_params.environment_dict, execution_params.mode):
-        execution_plan = create_execution_plan(
-            pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
-        )
+    mode, environment_dict = execution_params.mode, execution_params.environment_dict
 
-    execution_plan_snapshot = None
-    if execution_plan:
-        execution_plan_snapshot = snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
+    validation_result = validate_config_from_snap(
+        external_pipeline.config_schema_snapshot,
+        external_pipeline.get_mode(mode).root_config_key,
+        environment_dict,
+    )
+    if validation_result.success:
+        execution_plan_index = graphene_info.context.create_execution_plan_index(
+            external_pipeline, environment_dict, mode,
         )
 
     pipeline_run = instance.create_run(
-        pipeline_name=pipeline_def.name,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
+        pipeline_name=external_pipeline.name,
+        environment_dict=environment_dict,
+        mode=mode,
         solid_subset=(
             execution_params.selector.solid_subset
             if execution_params.selector is not None
             else None
         ),
         tags=execution_params.execution_metadata.tags,
-        pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-        execution_plan_snapshot=execution_plan_snapshot,
+        pipeline_snapshot=external_pipeline.pipeline_snapshot,
+        execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
     )
 
     # Inject errors into event log at this point
