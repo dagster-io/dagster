@@ -38,8 +38,8 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
                     order to use any Asset-based features. You can configure
                     this on your instance through <code>dagster.yaml</code>. See
                     the{" "}
-                    <a href="https://docs.dagster.io/docs/tutorial/advanced#scheduling-pipeline-runs">
-                      scheduler documentation
+                    <a href="https://docs.dagster.io/docs/deploying/instance#event-log-storage">
+                      instance documentation
                     </a>{" "}
                     for more information.
                   </p>
@@ -59,8 +59,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
                 description={
                   <p>
                     There are no known materialized assets with a specified {""}
-                    <code>asset_key</code>. Any asset keys that have been
-                    specified with a <code>yield</code>-ed{" "}
+                    asset key. Any asset keys that have been specified with a
                     <code>Materialization</code> during a pipeline run will
                     appear here. See the{" "}
                     <a href="https://docs.dagster.io/docs/apidocs/solids#dagster.Materialization">
