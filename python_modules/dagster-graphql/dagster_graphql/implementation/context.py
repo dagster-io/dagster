@@ -74,6 +74,10 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
     def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
         pass
 
+    @abc.abstractmethod
+    def execute_pipeline(self, external_pipeline, pipeline_run):
+        pass
+
 
 class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, active_repository_data, execution_manager, instance, version=None):
@@ -98,6 +102,9 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
         raise NotImplementedError('Not yet supported out of process')
 
     def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):
+        raise NotImplementedError('Not yet supported out of process')
+
+    def execute_pipeline(self, external_pipeline, pipeline_run):
         raise NotImplementedError('Not yet supported out of process')
 
 
@@ -210,4 +217,16 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
             instance=self.instance,
             pipeline_run=pipeline_run,
             environment_dict=environment_dict,
+        )
+
+    def execute_pipeline(self, external_pipeline, pipeline_run):
+        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        self.execution_manager.execute_pipeline(
+            self.get_handle(),
+            self.get_pipeline(external_pipeline.name).build_sub_pipeline(pipeline_run.solid_subset)
+            if pipeline_run.solid_subset
+            else self.get_pipeline(external_pipeline.name),
+            pipeline_run,
+            instance=self.instance,
         )

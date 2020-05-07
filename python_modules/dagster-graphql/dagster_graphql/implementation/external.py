@@ -69,6 +69,10 @@ class ExternalPipeline:
     def get_default_mode_name(self):
         return self.pipeline_index.get_default_mode_name()
 
+    @property
+    def tags(self):
+        return self.pipeline_index.pipeline_snapshot.tags
+
 
 def get_external_pipeline_or_raise(graphene_info, pipeline_name):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
