@@ -44,19 +44,13 @@ function App({ Component, pageProps }: AppProps) {
     }
   }, []);
   return (
-    <>
-      <Head>
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-      </Head>
-
-      <MDXProvider components={components}>
-        <AnchorHeadingsProvider>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-        </AnchorHeadingsProvider>
-      </MDXProvider>
-    </>
+    <MDXProvider components={components}>
+      <AnchorHeadingsProvider>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </AnchorHeadingsProvider>
+    </MDXProvider>
   );
 }
 
