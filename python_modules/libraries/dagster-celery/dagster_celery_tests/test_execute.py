@@ -40,6 +40,8 @@ skip_ci = pytest.mark.skipif(
     reason='Tests hang forever on buildkite for reasons we don\'t currently understand',
 )
 
+COMPOSITE_DEPTH = 3
+
 
 @solid
 def simple(_):
@@ -93,7 +95,7 @@ def test_more_parallel_pipeline():
 
 
 def composite_pipeline():
-    return nesting_composite_pipeline(6, 2, mode_defs=celery_mode_defs)
+    return nesting_composite_pipeline(COMPOSITE_DEPTH, 2, mode_defs=celery_mode_defs)
 
 
 @solid(
@@ -257,7 +259,7 @@ def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
         for r in composite_solid_result.solid_result_list:
             assert isinstance(r, CompositeSolidExecutionResult)
         composite_solid_results = composite_solid_result.solid_result_list
-        for i in range(6):
+        for i in range(COMPOSITE_DEPTH):
             next_level = []
             assert len(composite_solid_results) == pow(2, i + 1)
             for res in composite_solid_results:
@@ -265,7 +267,7 @@ def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
                 for r in res.solid_result_list:
                     next_level.append(r)
             composite_solid_results = next_level
-        assert len(composite_solid_results) == 128
+        assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
         assert all(
             (isinstance(r, SolidExecutionResult) and r.success for r in composite_solid_results)
         )
@@ -369,7 +371,7 @@ def test_execute_eagerly_composite_pipeline_on_celery():
         for r in composite_solid_result.solid_result_list:
             assert isinstance(r, CompositeSolidExecutionResult)
         composite_solid_results = composite_solid_result.solid_result_list
-        for i in range(6):
+        for i in range(COMPOSITE_DEPTH):
             next_level = []
             assert len(composite_solid_results) == pow(2, i + 1)
             for res in composite_solid_results:
@@ -377,7 +379,7 @@ def test_execute_eagerly_composite_pipeline_on_celery():
                 for r in res.solid_result_list:
                     next_level.append(r)
             composite_solid_results = next_level
-        assert len(composite_solid_results) == 128
+        assert len(composite_solid_results) == pow(2, COMPOSITE_DEPTH + 1)
         assert all(
             (isinstance(r, SolidExecutionResult) and r.success for r in composite_solid_results)
         )
