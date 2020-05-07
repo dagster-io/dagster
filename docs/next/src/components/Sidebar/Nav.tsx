@@ -25,10 +25,8 @@ const MainItem: React.FC<MainItemProps> = ({ name, path }) => {
       <a
         className={cx(
           'group flex justify-between items-center px-2 py-2 text-sm font-medium leading-5 text-gray-900 rounded-md',
-          { 'font-bold bg-gray-200': selected },
+          { 'font-bold underline': selected },
           { 'hover:font-bold': !selected },
-          { 'focus:outline-none': !selected },
-          { 'focus:bg-gray-200': !selected },
           'transition ease-in-out duration-150',
         )}
       >
@@ -85,18 +83,31 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
               const subSelected =
                 router.asPath.startsWith(c.path) &&
                 router.asPath.length - c.path.length < 2;
+
               return (
                 <VersionedLink key={`${c.path}-${c.name}`} href={c.path}>
                   <a
                     className={cx(
-                      `group flex items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
+                      `group flex justify-between items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
                       {
-                        'text-blue-800 bg-blue-200': subSelected,
-                        'hover:bg-gray-200': !subSelected,
+                        'font-semibold text-blue-700 bg-blue-100': subSelected,
+                        'hover:font-semibold': !subSelected,
                       },
                     )}
                   >
-                    <span className="truncate">{c.name}</span>
+                    <div className="truncatej">{c.name}</div>
+                    <div>
+                      {c.isExternal && (
+                        <svg
+                          className="w-4 h-4 bg-gray-50"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"></path>
+                          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"></path>
+                        </svg>
+                      )}
+                    </div>
                   </a>
                 </VersionedLink>
               );
