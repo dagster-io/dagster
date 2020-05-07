@@ -19,6 +19,7 @@ from dagster_k8s_tests.test_project import test_project_environments_path  # iso
 
 
 @pytest.mark.integration
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
