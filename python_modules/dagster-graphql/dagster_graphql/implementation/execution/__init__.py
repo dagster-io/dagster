@@ -30,7 +30,12 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_subset_or_raise
+from ..external import (
+    ExternalPipeline,
+    ensure_valid_config,
+    ensure_valid_step_keys,
+    get_external_pipeline_subset_or_raise,
+)
 from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
@@ -181,13 +186,9 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
             tags=execution_params.execution_metadata.tags or {},
         )
 
-    if execution_params.step_keys:
-        for step_key in execution_params.step_keys:
-            if not execution_plan_index.has_step(step_key):
-                raise UserFacingGraphQLError(
-                    graphene_info.schema.type_named('InvalidStepError')(invalid_step_key=step_key)
-                )
+    ensure_valid_step_keys(execution_plan_index, execution_params.step_keys)
 
+    if execution_params.step_keys:
         execution_plan_index = graphene_info.context.create_execution_plan_index(
             external_pipeline=external_pipeline,
             environment_dict=execution_params.environment_dict,

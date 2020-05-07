@@ -9,16 +9,17 @@ from dagster.core.definitions.environment_schema import create_environment_schem
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap import snapshot_from_execution_plan
+from dagster.core.snap import ExecutionPlanIndex, snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
+from ..external import ensure_valid_step_keys
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import _check_start_pipeline_execution_errors, get_step_keys_to_execute
+from .utils import get_step_keys_to_execute
 
 
 @capture_dauphin_error
@@ -64,7 +65,10 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
         pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
     )
 
-    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
+    ensure_valid_step_keys(
+        ExecutionPlanIndex.from_plan_and_index(execution_plan, pipeline_def.get_pipeline_index()),
+        execution_params.step_keys,
+    )
 
     try:
         pipeline_run = instance.create_run(

@@ -5,7 +5,12 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.snap import ActivePipelineData, PipelineIndex, active_pipeline_data_from_def
+from dagster.core.snap import (
+    ActivePipelineData,
+    ExecutionPlanIndex,
+    PipelineIndex,
+    active_pipeline_data_from_def,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError
@@ -135,3 +140,17 @@ def ensure_valid_config(external_pipeline, mode, environment_dict):
         )
 
     return validated_config
+
+
+def ensure_valid_step_keys(full_execution_plan_index, step_keys):
+    check.inst_param(full_execution_plan_index, 'full_execution_plan_index', ExecutionPlanIndex)
+    check.opt_list_param(step_keys, 'step_keys', of_type=str)
+
+    if not step_keys:
+        return
+
+    for step_key in step_keys:
+        if not full_execution_plan_index.has_step(step_key):
+            from dagster_graphql.schema.errors import DauphinInvalidStepError
+
+            raise UserFacingGraphQLError(DauphinInvalidStepError(invalid_step_key=step_key))

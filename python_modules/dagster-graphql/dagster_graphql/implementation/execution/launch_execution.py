@@ -11,17 +11,17 @@ from dagster.core.definitions.environment_schema import create_environment_schem
 from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import snapshot_from_execution_plan
+from dagster.core.snap.execution_plan_snapshot import (
+    ExecutionPlanIndex,
+    snapshot_from_execution_plan,
+)
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+from ..external import ensure_valid_step_keys
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import (
-    _check_start_pipeline_execution_errors,
-    get_step_keys_to_execute,
-    pipeline_run_args_from_execution_params,
-)
+from .utils import get_step_keys_to_execute, pipeline_run_args_from_execution_params
 
 
 @capture_dauphin_error
@@ -64,7 +64,10 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
     )
 
-    _check_start_pipeline_execution_errors(graphene_info, execution_params, execution_plan)
+    ensure_valid_step_keys(
+        ExecutionPlanIndex.from_plan_and_index(execution_plan, pipeline_def.get_pipeline_index()),
+        execution_plan.step_keys_to_execute,
+    )
 
     pipeline_run = instance.create_run(
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
