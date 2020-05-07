@@ -7,8 +7,15 @@ import gql from "graphql-tag";
 import { useQuery } from "react-apollo";
 import { AssetsRootQuery_assetsOrError_AssetConnection_nodes } from "./types/AssetsRootQuery";
 import Loading from "../Loading";
-import { RouteComponentProps } from "react-router-dom";
+import { Link, RouteComponentProps } from "react-router-dom";
 import { AssetRoot } from "./AssetRoot";
+import {
+  Header,
+  Legend,
+  LegendColumn,
+  RowContainer,
+  RowColumn
+} from "../ListComponents";
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 
@@ -49,7 +56,9 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
           );
         }
 
+        const assets = assetsOrError.nodes;
         const assetKeys = assetsOrError.nodes.map((x: Asset) => x.key);
+
         if (!assetKeys.length) {
           return (
             <Wrapper>
@@ -96,7 +105,11 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
         );
 
         if (!assetName) {
-          return <Wrapper>{topNav}</Wrapper>;
+          return (
+            <Wrapper>
+              <AssetsTable assets={assets} />
+            </Wrapper>
+          );
         }
 
         if (!assetIsKnown) {
@@ -139,6 +152,38 @@ const BasicStringRenderer = (
   />
 );
 
+const AssetsTable = ({ assets }: { assets: Asset[] }) => {
+  return (
+    <div style={{ margin: 30 }}>
+      <Header>Assets</Header>
+      <div style={{ marginTop: 30 }}>
+        <Legend>
+          <LegendColumn>Asset Key</LegendColumn>
+          <LegendColumn>Last materialized</LegendColumn>
+        </Legend>
+        {assets.map((asset: Asset, idx: number) => {
+          const timestamp = asset.assetMaterializations.length
+            ? new Date(
+                parseInt(
+                  asset.assetMaterializations[0].materializationEvent.timestamp,
+                  10
+                )
+              ).toLocaleString()
+            : "-";
+          return (
+            <RowContainer key={idx}>
+              <RowColumn>
+                <Link to={`/assets/${asset.key}`}>{asset.key}</Link>
+              </RowColumn>
+              <RowColumn>{timestamp}</RowColumn>
+            </RowContainer>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const Wrapper = styled.div`
   flex: 1 1;
   display: flex;
@@ -168,6 +213,11 @@ export const ASSETS_ROOT_QUERY = gql`
       ... on AssetConnection {
         nodes {
           key
+          assetMaterializations(limit: 1) {
+            materializationEvent {
+              timestamp
+            }
+          }
         }
       }
     }

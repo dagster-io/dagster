@@ -12,9 +12,20 @@ export interface AssetsRootQuery_assetsOrError_AssetsNotSupportedError {
   message: string;
 }
 
+export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations_materializationEvent {
+  __typename: "StepMaterializationEvent";
+  timestamp: string;
+}
+
+export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations {
+  __typename: "AssetMaterialization";
+  materializationEvent: AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations_materializationEvent;
+}
+
 export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
   key: string;
+  assetMaterializations: AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations[];
 }
 
 export interface AssetsRootQuery_assetsOrError_AssetConnection {
