@@ -141,7 +141,7 @@ def python_modules_tox_tests(directory, supported_pythons=None):
                 "buildkite-agent artifact upload {file}".format(file=coverage),
             )
             .on_integration_image(
-                version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN']
+                version, ['AWS_DEFAULT_REGION', 'TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN',],
             )
             .build()
         )

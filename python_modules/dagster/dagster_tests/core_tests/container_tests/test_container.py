@@ -23,7 +23,6 @@ def mock_external_repository_data():
 
 
 def test_container_snapshot_provider(mocker):
-
     execute_container_mock = mocker.patch(
         'dagster.core.definitions.container.run_serialized_container_command',
         return_value=[mock_external_repository_data()],
