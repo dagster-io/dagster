@@ -146,8 +146,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _add_filters_to_query(self, query, filters):
         check.inst_param(filters, 'filters', PipelineRunsFilter)
 
-        if filters.run_id:
-            query = query.where(RunsTable.c.run_id == filters.run_id)
+        if filters.run_ids:
+            query = query.where(RunsTable.c.run_id.in_(filters.run_ids))
 
         if filters.pipeline_name:
             query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)

@@ -67,7 +67,7 @@ class InMemoryRunStorage(RunStorage):
             return self._slice(list(self._runs.values())[::-1], cursor, limit)
 
         def run_filter(run):
-            if filters.run_id and filters.run_id != run.run_id:
+            if filters.run_ids and run.run_id not in filters.run_ids:
                 return False
 
             if filters.status and filters.status != run.status:

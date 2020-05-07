@@ -64,8 +64,8 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     instance = graphene_info.context.instance
     runs = []
 
-    if filters and filters.run_id:
-        run = instance.get_run_by_id(filters.run_id)
+    if filters and filters.run_ids and len(filters.run_ids) == 1:
+        run = instance.get_run_by_id(filters.run_ids[0])
         if run:
             runs = [run]
     elif filters and (filters.pipeline_name or filters.tags or filters.status):

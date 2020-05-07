@@ -681,7 +681,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
             tags = None
 
         return PipelineRunsFilter(
-            run_id=self.run_id, pipeline_name=self.pipeline_name, tags=tags, status=status,
+            run_ids=[self.run_id], pipeline_name=self.pipeline_name, tags=tags, status=status,
         )
 
 

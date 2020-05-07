@@ -113,8 +113,8 @@ class TestRunStorage:
 
         assert len(storage.get_runs()) == 3
 
-        some_runs = storage.get_runs(PipelineRunsFilter(run_id=one))
-        count = storage.get_runs_count(PipelineRunsFilter(run_id=one))
+        some_runs = storage.get_runs(PipelineRunsFilter(run_ids=[one]))
+        count = storage.get_runs_count(PipelineRunsFilter(run_ids=[one]))
         assert len(some_runs) == 1
         assert count == 1
         assert some_runs[0].run_id == one
@@ -178,7 +178,7 @@ class TestRunStorage:
         # All filters
         some_runs = storage.get_runs(
             PipelineRunsFilter(
-                run_id=one,
+                run_ids=[one],
                 pipeline_name="some_pipeline",
                 tags={'tag': 'hello'},
                 status=PipelineRunStatus.SUCCESS,
@@ -186,7 +186,7 @@ class TestRunStorage:
         )
         count = storage.get_runs_count(
             PipelineRunsFilter(
-                run_id=one,
+                run_ids=[one],
                 pipeline_name="some_pipeline",
                 tags={'tag': 'hello'},
                 status=PipelineRunStatus.SUCCESS,
@@ -535,3 +535,26 @@ class TestRunStorage:
         storage.wipe()
 
         assert not storage.has_execution_plan_snapshot(snapshot_id)
+
+    def test_fetch_run_filter(self, storage):
+        assert storage
+        one = make_new_run_id()
+        two = make_new_run_id()
+
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, pipeline_name='some_pipeline', status=PipelineRunStatus.SUCCESS,
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, pipeline_name='some_pipeline', status=PipelineRunStatus.SUCCESS,
+            ),
+        )
+
+        assert len(storage.get_runs()) == 2
+
+        some_runs = storage.get_runs(PipelineRunsFilter(run_ids=[one, two]))
+        count = storage.get_runs_count(PipelineRunsFilter(run_ids=[one, two]))
+        assert len(some_runs) == 2
+        assert count == 2
