@@ -174,7 +174,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         return ExecutionPlanIndex(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 create_execution_plan(
-                    pipeline_def=self.get_pipeline(external_pipeline.name),
+                    pipeline=self.get_pipeline(external_pipeline.name),
                     environment_dict=environment_dict,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
