@@ -2,7 +2,7 @@ import copy
 
 from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
 
-from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline
+from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
 from dagster.core.instance import DagsterInstance
 
 RUNS_QUERY = '''
@@ -67,6 +67,18 @@ ALL_RUNS_QUERY = '''
           name
           solidSubset
         }
+      }
+    }
+  }
+}
+'''
+
+FILTERED_RUN_QUERY = '''
+query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
+  pipelineRunsOrError(filter: $filter) {
+    ... on PipelineRuns {
+      results {
+        runId
       }
     }
   }
@@ -287,3 +299,33 @@ def test_runs_over_time():
         'name': 'evolving_pipeline',
         'solidSubset': ['solid_B'],
     }
+
+
+def test_filtered_runs():
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        repo = get_repo_at_time_1()
+        run_id_1 = execute_pipeline(
+            repo.get_pipeline('foo_pipeline'), instance=instance, tags={'run': 'one'}
+        ).run_id
+        _run_id_2 = execute_pipeline(
+            repo.get_pipeline('foo_pipeline'), instance=instance, tags={'run': 'two'}
+        ).run_id
+        context = define_context_for_file(__file__, 'get_repo_at_time_1', instance)
+        result = execute_dagster_graphql(
+            context, FILTERED_RUN_QUERY, variables={'filter': {'runId': run_id_1}}
+        )
+        assert result.data
+        run_ids = [run['runId'] for run in result.data['pipelineRunsOrError']['results']]
+        assert len(run_ids) == 1
+        assert run_ids[0] == run_id_1
+
+        result = execute_dagster_graphql(
+            context,
+            FILTERED_RUN_QUERY,
+            variables={'filter': {'tags': [{'key': 'run', 'value': 'one'}]}},
+        )
+        assert result.data
+        run_ids = [run['runId'] for run in result.data['pipelineRunsOrError']['results']]
+        assert len(run_ids) == 1
+        assert run_ids[0] == run_id_1
