@@ -1,0 +1,11 @@
+repository:
+  file: test_loader.py
+  fn: define_repository
+
+scheduler:
+  file: test_loader.py
+  fn: define_schedules
+
+partitions:
+  file: test_loader.py
+  fn: define_partitions
