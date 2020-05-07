@@ -158,6 +158,8 @@ def define_long_running_pipeline_celery():
 
 
 def define_demo_execution_repo():
+    from .schedules import define_schedules
+
     return RepositoryDefinition(
         name='demo_execution_repo',
         pipeline_dict={
@@ -165,4 +167,5 @@ def define_demo_execution_repo():
             'long_running_pipeline_celery': define_long_running_pipeline_celery,
         },
         pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],
+        schedule_defs=define_schedules(),
     )
