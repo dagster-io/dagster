@@ -1,19 +1,52 @@
 # Changelog
 
-## 0.7.10 (Upcoming)
+## 0.7.10
 
 **New**
 
-- `RepositoryDefinition` now takes `schedule_defs` and `partition_set_defs` directly. The loading scheme
-  for these definitions via `repository.yaml` under the `scheduler:` and `partitions:` keys is deprecated
-  and expected to be removed in 0.8.0.
-- Mark published modules as python 3.8 compatible
+- `RepositoryDefinition` now takes `schedule_defs` and `partition_set_defs` directly. The loading
+  scheme for these definitions via `repository.yaml` under the `scheduler:` and `partitions:` keys
+  is deprecated and expected to be removed in 0.8.0.
+- Mark published modules as python 3.8 compatible.
+- The dagster-airflow package supports loading all Airflow DAGs within a directory path, file path,
+  or Airflow DagBag.
+- The dagster-airflow package supports loading all 23 DAGs in Airflow example_dags folder and execution
+  of 17 of them (see: `make_dagster_repo_from_airflow_example_dags`).
+- The dagster-celery CLI tools now allow you to pass additional arguments through to the underlying
+  celery CLI, e.g., running `dagster-celery worker start -n my-worker -- --uid=42` will pass the
+  `--uid` flag to celery.
+- It is now possible to create a `PresetDefinition` that has no environment defined.
+- Added `dagster schedule debug` command to help debug scheduler state.
+- The `SystemCronScheduler` now verifies that a cron job has been successfully been added to the
+  crontab when turning a schedule on, and shows an error message if unsuccessful.
 
 **Breaking Changes**
 
 - Runs created prior to 0.7.8 will no longer render their execution plans as DAGs. We are only rendering
   execution plans that have been persisted. Logs are still available.
 - `Path` is no longer valid in config schemas. Use `str` or `dagster.String` instead.
+- Removed the `@pyspark_solid` decorator - its functionality, which was experimental, is subsumed by
+  requiring a StepLauncher resource (e.g. emr_pyspark_step_launcher) on the solid.
+
+**Dagit**
+
+- Merged "re-execute", "single-step re-execute", "resume/retry" buttons into one "re-execute" button
+  with three dropdown selections on the Run page.
+
+**Experimental**
+
+- Added new `asset_key` string parameter to Materializations and created a new “Assets” tab in Dagit
+  to view pipelines and runs associated with these keys. The API and UI of these asset-based are
+  likely to change, but feedback is welcome and will be used to inform these changes.
+- Added an `emr_pyspark_step_launcher` that enables launching PySpark solids in EMR. The
+  "simple_pyspark" example demonstrates how it’s used.
+
+**Bugfix**
+
+- Fixed an issue when running Jupyter notebooks in a Python 2 kernel through dagstermill with dagster
+  running in Python 3.
+- Improved error messages produced when dagstermill spins up an in-notebook context.
+- Fixed an issue with retrieving step events from `CompositeSolidResult` objects.
 
 ## 0.7.9
 
