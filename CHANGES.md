@@ -7,6 +7,7 @@
 - `RepositoryDefinition` now takes `schedule_defs` and `partition_set_defs` directly. The loading scheme
   for these definitions via `repository.yaml` under the `scheduler:` and `partitions:` keys is deprecated
   and expected to be removed in 0.8.0.
+- Mark published modules as python 3.8 compatible
 
 **Breaking Changes**
 
