@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.11
+
+**Bugfix**
+
+- Fixed an issue with strict snapshot ID matching when loading historical snapshots, which caused
+  errors on the Runs page when viewing historical runs.
+- Fixed an issue where `dagster_celery` had introduced a spurious dependency on `dagster_k8s`
+  (#2435)
+- Fixed an issue where our Airflow, Celery, and Dask integrations required S3 or GCS storage and
+  prevented use of filesystem storage. Filesystem storage is now also permitted, to enable use of
+  these integrations with distributed filesystems like NFS (#2436).
+
 ## 0.7.10
 
 **New**
@@ -10,8 +22,8 @@
 - Mark published modules as python 3.8 compatible.
 - The dagster-airflow package supports loading all Airflow DAGs within a directory path, file path,
   or Airflow DagBag.
-- The dagster-airflow package supports loading all 23 DAGs in Airflow example_dags folder and execution
-  of 17 of them (see: `make_dagster_repo_from_airflow_example_dags`).
+- The dagster-airflow package supports loading all 23 DAGs in Airflow example_dags folder and
+  execution of 17 of them (see: `make_dagster_repo_from_airflow_example_dags`).
 - The dagster-celery CLI tools now allow you to pass additional arguments through to the underlying
   celery CLI, e.g., running `dagster-celery worker start -n my-worker -- --uid=42` will pass the
   `--uid` flag to celery.
@@ -22,8 +34,10 @@
 
 **Breaking Changes**
 
-- Runs created prior to 0.7.8 will no longer render their execution plans as DAGs. We are only rendering
-  execution plans that have been persisted. Logs are still available.
+- A `dagster instance migrate` is required for this release to support the new experimental assets
+  view.
+- Runs created prior to 0.7.8 will no longer render their execution plans as DAGs. We are only
+  rendering execution plans that have been persisted. Logs are still available.
 - `Path` is no longer valid in config schemas. Use `str` or `dagster.String` instead.
 - Removed the `@pyspark_solid` decorator - its functionality, which was experimental, is subsumed by
   requiring a StepLauncher resource (e.g. emr_pyspark_step_launcher) on the solid.
