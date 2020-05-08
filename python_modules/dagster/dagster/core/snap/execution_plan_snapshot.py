@@ -23,9 +23,10 @@ class ExecutionPlanIndex:
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
 
-        check.invariant(
-            execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
-        )
+        # https://github.com/dagster-io/dagster/issues/2442
+        # check.invariant(
+        #     execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
+        # )
 
     def has_step(self, key):
         check.str_param(key, 'key')
