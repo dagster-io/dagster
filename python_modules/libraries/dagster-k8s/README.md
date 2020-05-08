@@ -113,7 +113,7 @@ First, ensure you have a Docker image appropriate for your Python version. Run, 
 the repo:
 
 ```shell
-./.buildkite/images/docker/test_project/build.sh 3.7.6 \
+./python_modules/dagster-test/test_project/build.sh 3.7.6 \
     dagster.io.priv/dagster-docker-buildkite:py37-latest
 ```
 
@@ -152,7 +152,7 @@ If you already have a development K8s cluster available, you can run tests on th
 For this to work, first build and deploy the test image to a registry available to your cluster. For example, with ECR:
 
 ```
-./.buildkite/images/docker/test_project/build.sh 3.7.6
+./python_modules/dagster-test/test_project/build.sh 3.7.6
 docker tag dagster-docker-buildkite:latest $AWS_ACCOUNT_ID.dkr.ecr.us-west-1.amazonaws.com/dagster-k8s-tests:2020-04-21T21-04-06
 
 aws ecr get-login --no-include-email --region us-west-1 | sh
