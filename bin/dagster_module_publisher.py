@@ -128,7 +128,7 @@ class DagsterModulePublisher:
             Exception: Raised if there's some difference between the expected modules and the git
                 repo.
         '''
-        expected_python_modules_subdirectories = ['automation', 'libraries'] + [
+        expected_python_modules_subdirectories = ['automation', 'libraries', 'dagster-test'] + [
             module.name for module in self.core_modules
         ]
 

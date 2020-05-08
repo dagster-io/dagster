@@ -7,6 +7,7 @@ import six
 from celery.contrib.testing import worker
 from celery.contrib.testing.app import setup_default_app
 from dagster_celery.tasks import make_app
+from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
 from dagster.utils import git_repository_root
 
@@ -15,10 +16,6 @@ try:
         os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s')
     )
     from dagster_k8s_tests.cluster import define_cluster_provider_fixture
-    from dagster_k8s_tests.test_project import (
-        build_and_tag_test_image,
-        test_project_docker_image,
-    )
     from dagster_k8s_tests.helm import helm_namespace  # pylint: disable=unused-import
 except ImportError as import_exc:
     six.raise_from(

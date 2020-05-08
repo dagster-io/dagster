@@ -1,17 +1,14 @@
 import logging
 import os
-import sys
 
 # pylint: disable=unused-import
 from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
 from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_examples.dagster_airflow.custom_operator import CustomOperator
+from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.utils import git_repository_root
-
-sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
-from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 def test_my_custom_operator(

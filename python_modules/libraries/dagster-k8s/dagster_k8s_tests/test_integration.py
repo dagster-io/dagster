@@ -2,11 +2,11 @@ import os
 
 import pytest
 from dagster_k8s import get_celery_engine_config
+from dagster_test.test_project import test_project_environments_path
 
 from dagster.utils import load_yaml_from_path, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 
-from .test_project import test_project_environments_path
 from .utils import wait_for_job_and_get_logs
 
 

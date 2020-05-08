@@ -6,6 +6,7 @@ import sys
 
 import pytest
 from dagster_k8s_tests.utils import wait_for_job_and_get_logs
+from dagster_test.test_project import test_project_environments_path
 
 from dagster.utils import git_repository_root, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
@@ -15,7 +16,6 @@ from dagster_k8s_tests.cluster import (  # isort:skip, pylint:disable=unused-imp
     dagster_instance,
     run_launcher,
 )
-from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 @pytest.mark.integration

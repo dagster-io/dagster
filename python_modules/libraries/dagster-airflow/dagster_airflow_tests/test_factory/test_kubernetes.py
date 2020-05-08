@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name, unused-argument
 
 import os
-import sys
 
 import pytest
 from airflow.exceptions import AirflowException
@@ -12,15 +11,13 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     execute_tasks_in_dag,
 )
 from dagster_airflow_tests.marks import nettest
+from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
-from dagster.utils import git_repository_root, load_yaml_from_glob_list
+from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution
-
-sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
-from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 @nettest

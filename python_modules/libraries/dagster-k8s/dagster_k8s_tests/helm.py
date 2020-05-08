@@ -10,6 +10,7 @@ import pytest
 import six
 import yaml
 from dagster_k8s.utils import wait_for_pod
+from dagster_test.test_project import test_project_docker_image
 
 from dagster import check
 from dagster.utils import git_repository_root
@@ -28,7 +29,6 @@ def helm_namespace(
 
     Yields the Helm chart namespace.
     '''
-    from .test_project import test_project_docker_image
 
     existing_helm_namespace = request.config.getoption('--existing-helm-namespace')
 

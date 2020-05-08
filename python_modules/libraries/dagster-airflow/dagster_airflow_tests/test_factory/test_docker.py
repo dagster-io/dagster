@@ -13,15 +13,13 @@ from dagster_airflow.test_fixtures import (
 )
 from dagster_airflow_tests.conftest import dagster_docker_image
 from dagster_airflow_tests.marks import nettest
+from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
 from dagster.utils import git_repository_root, load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
-
-sys.path.append(os.path.join(git_repository_root(), 'python_modules', 'libraries', 'dagster-k8s'))
-from dagster_k8s_tests.test_project import test_project_environments_path  # isort:skip
 
 
 def test_fs_storage_no_explicit_base_dir(

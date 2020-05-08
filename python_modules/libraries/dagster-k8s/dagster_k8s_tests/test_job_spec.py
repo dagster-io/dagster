@@ -2,13 +2,13 @@ import os
 
 import yaml
 from dagster_k8s.job import construct_dagster_graphql_k8s_job
+from dagster_test.test_project import test_project_docker_image, test_project_environments_path
 
 from dagster import __version__ as dagster_version
 from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import load_yaml_from_path
 
-from .test_project import test_project_docker_image, test_project_environments_path
 from .utils import image_pull_policy, remove_none_recursively, wait_for_job_and_get_logs
 
 EXPECTED_JOB_SPEC = '''
