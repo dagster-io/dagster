@@ -215,7 +215,7 @@ def _check_execute_pipeline_args(
                 )
             )
     else:
-        if not pipeline_def.is_single_mode:
+        if pipeline_def.is_multi_mode:
             raise DagsterInvariantViolationError(
                 (
                     'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '

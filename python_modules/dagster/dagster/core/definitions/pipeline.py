@@ -46,7 +46,7 @@ def _check_solids_arg(pipeline_name, solid_defs):
     return solid_defs
 
 
-class PipelineDefinition(IContainSolids, object):
+class PipelineDefinition(IContainSolids):
     '''Defines a Dagster pipeline.
 
     A pipeline is made up of
@@ -277,10 +277,10 @@ class PipelineDefinition(IContainSolids, object):
 
         mode_def = self._get_mode_definition(mode)
 
-        if mode_def is None:
-            check.failed(
-                'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self._name)
-            )
+        check.invariant(
+            mode_def is not None,
+            'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self._name),
+        )
 
         return mode_def
 
@@ -329,12 +329,13 @@ class PipelineDefinition(IContainSolids, object):
             Solid:
         '''
         check.str_param(name, 'name')
-        if name not in self._solid_dict:
-            raise DagsterInvariantViolationError(
-                'Pipeline {pipeline_name} has no solid named {name}.'.format(
-                    pipeline_name=self._name, name=name
-                )
-            )
+        check.invariant(
+            name in self._solid_dict,
+            'Pipeline {pipeline_name} has no solid named {name}.'.format(
+                pipeline_name=self._name, name=name
+            ),
+        )
+
         return self._solid_dict[name]
 
     def get_solid(self, handle):
@@ -446,16 +447,6 @@ class PipelineDefinition(IContainSolids, object):
             )
 
         return self._preset_dict[name]
-
-    def new_with(self, name=None, mode_defs=None, preset_defs=None):
-        return PipelineDefinition(
-            solid_defs=self._current_level_solid_defs,
-            name=name if name is not None else self._name,
-            description=self._description,
-            dependencies=self._dependencies,
-            mode_defs=mode_defs if mode_defs is not None else self._mode_definitions,
-            preset_defs=preset_defs if preset_defs is not None else self._preset_defs,
-        )
 
     def get_pipeline_snapshot(self):
         return self.get_pipeline_index().pipeline_snapshot

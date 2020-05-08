@@ -307,3 +307,10 @@ def test_bad_positional_input_use():
             # so the two remaining have no positions and this is
             # ambiguous
             add_kw(return_two(), return_two(), return_two())
+
+
+def test_nameless():
+    noname = PipelineDefinition([return_one])
+
+    assert noname.name == '<<unnamed>>'
+    assert noname.display_name == '<<unnamed>>'

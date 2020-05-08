@@ -11,12 +11,7 @@ import pytest
 from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 
-from dagster import (
-    DagsterInvariantViolationError,
-    Materialization,
-    ModeDefinition,
-    ResourceDefinition,
-)
+from dagster import Materialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -126,8 +121,7 @@ def test_yield_unserializable_result():
 
 def test_in_pipeline_manager_bad_solid():
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match=('Pipeline hello_world_pipeline has no solid named foobar'),
+        check.CheckError, match=('Pipeline hello_world_pipeline has no solid named foobar'),
     ):
         with in_pipeline_manager(solid_handle=SolidHandle('foobar', None)) as _manager:
             pass

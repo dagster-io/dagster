@@ -125,6 +125,25 @@ def test_invalid_preset():
         )
 
 
+def test_conflicting_preset():
+    @lambda_solid
+    def lil_solid():
+        return ';)'
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Two PresetDefinitions seen with the name'
+    ):
+        PipelineDefinition(
+            name="preset_modes",
+            solid_defs=[lil_solid],
+            mode_defs=[ModeDefinition(name="mode_a")],
+            preset_defs=[
+                PresetDefinition(name="preset_a", mode="mode_a"),
+                PresetDefinition(name="preset_a", mode="mode_a"),
+            ],
+        )
+
+
 def test_from_yaml_strings():
     a = '''
 foo:
