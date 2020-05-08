@@ -4,8 +4,7 @@ from dagster_graphql.schema.errors import DauphinPipelineConfigValidationInvalid
 from graphql.execution.base import ResolveInfo
 
 from dagster import DagsterInvalidConfigError, check
-from dagster.config.validate import validate_config
-from dagster.core.definitions.environment_schema import create_environment_schema
+from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterRunConflict
 from dagster.core.events import EngineEventData
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -129,11 +128,14 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
-    pipeline_def = get_pipeline_def_from_selector(graphene_info, pipeline_run.selector)
+    external_pipeline = get_external_pipeline_subset_or_raise(
+        graphene_info, pipeline_run.selector.name, pipeline_run.selector.solid_subset
+    )
 
-    environment_schema = create_environment_schema(pipeline_def, pipeline_run.mode)
-    validated_config = validate_config(
-        environment_schema.environment_type, pipeline_run.environment_dict
+    validated_config = validate_config_from_snap(
+        external_pipeline.config_schema_snapshot,
+        external_pipeline.root_config_key_for_mode(pipeline_run.mode),
+        pipeline_run.environment_dict,
     )
     if not validated_config.success:
         # If the config is invalid, we construct a DagsterInvalidConfigError exception and
@@ -143,7 +145,7 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         # We currently re-use the engine events machinery to add the error to the event log, but
         # may need to create a new event type and instance method to handle these erros.
         invalid_config_exception = DagsterInvalidConfigError(
-            'Error in config for pipeline {}'.format(pipeline_def.name),
+            'Error in config for pipeline {}'.format(external_pipeline.name),
             validated_config.errors,
             pipeline_run.environment_dict,
         )
@@ -164,12 +166,10 @@ def _start_pipeline_execution_for_created_run(graphene_info, run_id):
         instance.report_run_failed(pipeline_run)
 
         return DauphinPipelineConfigValidationInvalid.for_validation_errors(
-            pipeline_def.get_pipeline_index(), validated_config.errors
+            external_pipeline.pipeline_index, validated_config.errors
         )
 
-    graphene_info.context.execution_manager.execute_pipeline(
-        graphene_info.context.get_handle(), pipeline_def, pipeline_run, instance=instance,
-    )
+    graphene_info.context.execute_pipeline(external_pipeline, pipeline_run)
 
     return graphene_info.schema.type_named('StartPipelineRunSuccess')(
         run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)

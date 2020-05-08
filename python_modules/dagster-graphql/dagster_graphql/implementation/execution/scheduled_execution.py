@@ -147,7 +147,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
 
     validation_result = validate_config_from_snap(
         external_pipeline.config_schema_snapshot,
-        external_pipeline.get_mode(mode).root_config_key,
+        external_pipeline.root_config_key_for_mode(mode),
         environment_dict,
     )
     if validation_result.success:

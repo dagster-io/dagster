@@ -217,6 +217,10 @@ class PipelineSnapshot(
                 )
         return None
 
+    @property
+    def solid_names(self):
+        return [ss.solid_name for ss in self.dep_structure_snapshot.solid_invocation_snaps]
+
 
 def _construct_enum_from_snap(config_type_snap):
     check.list_param(config_type_snap.enum_values, 'enum_values', ConfigEnumValueSnap)

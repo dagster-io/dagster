@@ -61,6 +61,10 @@ class ExternalPipeline:
         return self._active_pipeline_data.active_presets
 
     @property
+    def solid_names(self):
+        return self.pipeline_index.pipeline_snapshot.solid_names
+
+    @property
     def pipeline_snapshot(self):
         return self.pipeline_index.pipeline_snapshot
 
@@ -79,6 +83,12 @@ class ExternalPipeline:
     def get_mode(self, mode_name):
         check.str_param(mode_name, 'mode_name')
         return self.pipeline_index.get_mode_def_snap(mode_name)
+
+    def root_config_key_for_mode(self, mode_name):
+        check.opt_str_param(mode_name, 'mode_name')
+        return self.get_mode(
+            mode_name if mode_name else self.get_default_mode_name()
+        ).root_config_key
 
     @staticmethod
     def from_pipeline_def(pipeline_def, solid_subset=None):
@@ -163,7 +173,7 @@ def ensure_valid_config(external_pipeline, mode, environment_dict):
 
     validated_config = validate_config_from_snap(
         config_schema_snapshot=external_pipeline.config_schema_snapshot,
-        config_type_key=external_pipeline.pipeline_index.get_mode_def_snap(mode).root_config_key,
+        config_type_key=external_pipeline.root_config_key_for_mode(mode),
         config_value=environment_dict,
     )
 
