@@ -657,7 +657,7 @@ class _CompositeSolid(object):
 
         config_mapping = _get_validated_config_mapping(self.name, self.config, self.config_fn)
 
-        return CompositeSolidDefinition(
+        composite_def = CompositeSolidDefinition(
             name=self.name,
             input_mappings=input_mappings,
             output_mappings=output_mappings,
@@ -667,6 +667,8 @@ class _CompositeSolid(object):
             config_mapping=config_mapping,
             positional_inputs=positional_inputs,
         )
+        update_wrapper(composite_def, fn)
+        return composite_def
 
 
 def _get_validated_config_mapping(name, config, config_fn):
@@ -810,7 +812,7 @@ class _Pipeline(object):
         finally:
             context = exit_composition()
 
-        return PipelineDefinition(
+        pipeline_def = PipelineDefinition(
             name=self.name,
             dependencies=context.dependencies,
             solid_defs=context.solid_defs,
@@ -819,6 +821,8 @@ class _Pipeline(object):
             description=self.description,
             tags=self.tags,
         )
+        update_wrapper(pipeline_def, fn)
+        return pipeline_def
 
 
 def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags=None):

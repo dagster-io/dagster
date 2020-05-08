@@ -18,6 +18,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ScheduleDefinition,
+    composite_solid,
     execute_pipeline,
     execute_solid,
     lambda_solid,
@@ -452,10 +453,28 @@ def test_solid_docstring():
         '''QUUX_DOCSTRING'''
         return
 
+    @composite_solid
+    def comp_solid():
+        '''COMP_DOCSTRING'''
+        foo_solid()
+
+    @pipeline
+    def the_pipeline():
+        '''THE_DOCSTRING'''
+        quux_solid()
+
     assert foo_solid.__doc__ == 'FOO_DOCSTRING'
+    assert foo_solid.__name__ == 'foo_solid'
     assert bar_solid.__doc__ == 'BAR_DOCSTRING'
+    assert bar_solid.__name__ == 'bar_solid'
     assert baz_solid.__doc__ == 'BAZ_DOCSTRING'
+    assert baz_solid.__name__ == 'baz_solid'
     assert quux_solid.__doc__ == 'QUUX_DOCSTRING'
+    assert quux_solid.__name__ == 'quux_solid'
+    assert comp_solid.__doc__ == 'COMP_DOCSTRING'
+    assert comp_solid.__name__ == 'comp_solid'
+    assert the_pipeline.__doc__ == 'THE_DOCSTRING'
+    assert the_pipeline.__name__ == 'the_pipeline'
 
 
 def test_solid_yields_single_bare_value():
