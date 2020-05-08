@@ -30,18 +30,40 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             bucket: "mycorp-dagster-compute-logs"
             local_dir: "/tmp/cool"
             prefix: "dagster-test-"
+            use_ssl: true
+            verify: true
+            verify_cert_path: "/path/to/cert/bundle.pem"
+            endpoint_url: "http://alternate-s3-host.io"
 
     Args:
         bucket (str): The name of the s3 bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
+        use_ssl (Optional[bool]): Whether or not to use SSL. Default True.
+        verify (Optional[bool]): Whether or not to verify SSL certificates. Default True.
+        verify_cert_path (Optional[str]): A filename of the CA cert bundle to use. Only used if
+            `verify` set to False.
+        endpoint_url (Optional[str]): Override for the S3 endpoint url.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     '''
 
-    def __init__(self, bucket, local_dir=None, inst_data=None, prefix='dagster'):
-        self._s3_session = create_s3_session()
+    def __init__(
+        self,
+        bucket,
+        local_dir=None,
+        inst_data=None,
+        prefix='dagster',
+        use_ssl=True,
+        verify=True,
+        verify_cert_path=None,
+        endpoint_url=None,
+    ):
+        _verify = False if not verify else verify_cert_path
+        self._s3_session = create_s3_session(
+            use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
+        )
         self._s3_bucket = check.str_param(bucket, 'bucket')
         self._s3_prefix = check.str_param(prefix, 'prefix')
         self._download_urls = {}
@@ -71,6 +93,10 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             'bucket': str,
             'local_dir': Field(str, is_required=False),
             'prefix': Field(str, is_required=False, default_value='dagster'),
+            'use_ssl': Field(bool, is_required=False, default_value=True),
+            'verify': Field(bool, is_required=False, default_value=True),
+            'verify_cert_path': Field(str, is_required=False),
+            'endpoint_url': Field(str, is_required=False),
         }
 
     @staticmethod
