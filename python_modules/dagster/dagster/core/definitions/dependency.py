@@ -178,17 +178,17 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
 
     def to_string(self):
         '''Return a unique string representation of the handle.
-        
+
         Inverse of SolidHandle.from_string.
         '''
         return self.parent.to_string() + '.' + self.name if self.parent else self.name
 
     def is_or_descends_from(self, handle):
         '''Check if the handle is or descends from another handle.
-        
+
         Args:
             handle (SolidHandle): The handle to check against.
-        
+
         Returns:
             bool:
         '''
@@ -206,9 +206,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
 
         Args:
             ancestor (SolidHandle): Handle to an ancestor of the current handle.
-        
+
         Returns:
-            SolidHandle: 
+            SolidHandle:
 
         Example:
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
@@ -231,9 +231,9 @@ class SolidHandle(namedtuple('_SolidHandle', 'name parent')):
 
         Args:
             ancestor (SolidHandle): Handle to the new ancestor.
-        
+
         Returns:
-            SolidHandle: 
+            SolidHandle:
 
         Example:
             handle = SolidHandle('baz', SolidHandle('bar', SolidHandle('foo', None)))
@@ -580,9 +580,11 @@ class MultiDependencyDefinition(
 
         dependency_structure = {
             'solid_c': {
-                'input': MultiDependencyDefiniition(
-                    DependencyDefinition('solid_a', 'result'),
-                    DependencyDefinition('solid_b', 'result')
+                'input': MultiDependencyDefinition(
+                    [
+                        DependencyDefinition('solid_a', 'result'),
+                        DependencyDefinition('solid_b', 'result')
+                    ]
                 )
             }
         }
