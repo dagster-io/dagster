@@ -5,6 +5,9 @@
 **Breaking Changes**
 
 - `Path` is no longer as built-in dagster type.
+- The CLI option `--celery-base-priority` is no longer available for the command:
+  `dagster pipeline backfill`. Use the tags option to specify the celery priority, (e.g.
+  `dagster pipeline backfill my_pipeline --tags '{ "dagster-celery/run_priority": 3 }'`
 
 ## 0.7.13
 

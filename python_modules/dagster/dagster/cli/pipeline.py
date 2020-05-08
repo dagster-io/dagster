@@ -474,12 +474,6 @@ def gen_partitions_from_args(partition_set, kwargs):
     return partitions[start:end]
 
 
-def get_backfill_priority_from_args(kwargs):
-    if kwargs.get('celery_base_priority') is None:
-        return None
-    return int(kwargs.get('celery_base_priority'))
-
-
 def get_tags_from_args(kwargs):
     if kwargs.get('tags') is None:
         return {}
@@ -578,17 +572,6 @@ def get_partition_sets_for_handle(handle):
         'dagster pipeline backfill log_daily_stats --to 20191201'
     ),
 )
-@click.option(
-    '--celery-base-priority',
-    type=click.STRING,
-    help=(
-        'Specify a base run priority for all runs kicked off by this backfill job. Only meaningful '
-        'if you are launching runs against a Celery executor on a messaging queue that supports '
-        'priority.'
-        '\n\nExample: '
-        'dagster pipeline backfill log_daily_stats --celery-base-priority -3'
-    ),
-)
 @click.option('--tags', type=click.STRING, help='JSON string of tags to use for this pipeline run')
 @click.option('--noprompt', is_flag=True)
 def pipeline_backfill_command(**kwargs):
@@ -654,9 +637,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
     # Resolve partitions to backfill
     partitions = gen_partitions_from_args(partition_set, cli_args)
 
-    # Resolve priority
-    celery_priority = get_backfill_priority_from_args(cli_args)
-
     # Print backfill info
     print_fn('\n     Pipeline: {}'.format(pipeline.name))
     print_fn('Partition set: {}'.format(partition_set.name))
@@ -673,10 +653,6 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
         run_tags = merge_dicts(
             PipelineRun.tags_for_backfill_id(backfill_id), get_tags_from_args(cli_args),
         )
-
-        # for backwards compatibility - remove once prezi switched over to using tags argument
-        if celery_priority is not None:
-            run_tags['dagster-celery/run_priority'] = celery_priority
 
         for partition in partitions:
             run = instance.create_run_for_pipeline(
