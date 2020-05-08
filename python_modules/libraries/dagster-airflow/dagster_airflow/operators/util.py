@@ -73,7 +73,7 @@ def get_aws_environment():
 def check_storage_specified(environment_dict, error_message_base_dir_ex='\'/tmp/special_place\''):
     if 'storage' not in environment_dict:
         raise AirflowException(
-            'No storage config found -- must configure either filesystem or s3 storage for operator'
+            'No storage config found -- must configure storage accessible from all nodes (e.g. s3) '
             'Ex.: \n'
             'storage:\n'
             '  filesystem:\n'
@@ -92,7 +92,8 @@ def check_storage_specified(environment_dict, error_message_base_dir_ex='\'/tmp/
 
     check.invariant(
         'in_memory' not in environment_dict.get('storage', {}),
-        'Cannot use in-memory storage with Airflow, must use filesystem or S3',
+        'Cannot use in-memory storage with Airflow. Must use storage '
+        'available from all nodes (e.g. s3)',
     )
     return
 

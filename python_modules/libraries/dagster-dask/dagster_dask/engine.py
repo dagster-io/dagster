@@ -8,7 +8,6 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.utils import frozentags
-from dagster.utils.net import is_local_uri
 
 from .config import DaskConfig
 
@@ -59,20 +58,11 @@ class DaskEngine(Engine):  # pylint: disable=no-init
             'Dask execution requires a persistent DagsterInstance',
         )
 
-        # Remote
-        if dask_config.address and not is_local_uri(dask_config.address):
-            check.invariant(
-                storage.get('s3') or storage.get('gcs'),
-                'Must use S3 or GCS storage with non-local Dask address {dask_address}'.format(
-                    dask_address=dask_config.address
-                ),
-            )
-        # Local
-        else:
-            check.invariant(
-                not storage.get('in_memory'),
-                'Cannot use in-memory storage with Dask, use filesystem, S3, or GCS',
-            )
+        # https://github.com/dagster-io/dagster/issues/2440
+        check.invariant(
+            pipeline_context.system_storage_def.is_persistent,
+            'Cannot use in-memory storage with Dask, use filesystem, S3, or GCS',
+        )
 
         step_levels = execution_plan.execution_step_levels()
 

@@ -19,10 +19,8 @@ from dagster import (
     PipelineExecutionResult,
     RetryRequested,
     SolidExecutionResult,
-    check,
     default_executors,
     execute_pipeline,
-    execute_pipeline_iterator,
     lambda_solid,
     pipeline,
     seven,
@@ -410,20 +408,22 @@ def test_execute_eagerly_retries_pipeline_on_celery():
         assert len(events_of_type(result, 'STEP_FAILURE')) == 1
 
 
+@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/2439')
 def test_bad_broker():
-    with pytest.raises(check.CheckError) as exc_info:
-        event_stream = execute_pipeline_iterator(
-            ExecutionTargetHandle.for_pipeline_python_file(
-                __file__, 'test_diamond_pipeline'
-            ).build_pipeline_definition(),
-            environment_dict={
-                'storage': {'filesystem': {}},
-                'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
-            },
-            instance=DagsterInstance.local_temp(),
-        )
-        list(event_stream)
-    assert 'Must use S3 or GCS storage with non-local Celery' in str(exc_info.value)
+    pass
+    # with pytest.raises(check.CheckError) as exc_info:
+    #     event_stream = execute_pipeline_iterator(
+    #         ExecutionTargetHandle.for_pipeline_python_file(
+    #             __file__, 'test_diamond_pipeline'
+    #         ).build_pipeline_definition(),
+    #         environment_dict={
+    #             'storage': {'filesystem': {}},
+    #             'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
+    #         },
+    #         instance=DagsterInstance.local_temp(),
+    #     )
+    #     list(event_stream)
+    # assert 'Must use S3 or GCS storage with non-local Celery' in str(exc_info.value)
 
 
 def test_engine_error():
