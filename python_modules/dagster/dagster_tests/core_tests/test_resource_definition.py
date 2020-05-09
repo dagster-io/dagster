@@ -16,8 +16,7 @@ from dagster import (
     solid,
 )
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
-from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.config import RunConfig
+from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
 
 
@@ -759,12 +758,16 @@ def test_single_step_resource_event_logs():
         ],
     )
 
-    result = execute_pipeline(
+    instance = DagsterInstance.local_temp()
+
+    pipeline_run = instance.create_run_for_pipeline(
         pipeline,
-        environment_dict={'loggers': {'callback': {}},},
-        instance=DagsterInstance.local_temp(),
-        run_config=RunConfig(step_keys_to_execute=['resource_solid.compute']),
+        environment_dict={'loggers': {'callback': {}}},
+        step_keys_to_execute=['resource_solid.compute'],
     )
+
+    result = execute_run(pipeline, pipeline_run, instance)
+
     assert result.success
     log_messages = [event for event in events if isinstance(event, LogMessageRecord)]
     assert len(log_messages) == 2

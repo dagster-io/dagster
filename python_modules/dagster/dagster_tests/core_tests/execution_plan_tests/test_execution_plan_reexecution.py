@@ -16,7 +16,7 @@ from dagster.core.errors import (
     DagsterRunNotFoundError,
 )
 from dagster.core.events import get_step_output_event
-from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.utils import merge_dicts
@@ -155,7 +155,7 @@ def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
     environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
-    result = execute_pipeline(pipeline_def, environment_dict=environment_dict, instance=instance,)
+    result = execute_pipeline(pipeline_def, environment_dict=environment_dict, instance=instance)
 
     assert result.success
 
@@ -165,14 +165,15 @@ def test_pipeline_step_key_subset_execution():
 
     ## re-execute add_two
 
-    pipeline_reexecution_result = execute_pipeline(
+    pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
         environment_dict=environment_dict,
-        run_config=RunConfig(
-            previous_run_id=result.run_id, step_keys_to_execute=['add_two.compute'],
-        ),
-        instance=instance,
+        step_keys_to_execute=['add_two.compute'],
+        parent_run_id=result.run_id,
+        root_run_id=result.run_id,
     )
+
+    pipeline_reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
 
     assert pipeline_reexecution_result.success
 

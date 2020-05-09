@@ -2,6 +2,7 @@ import pytest
 
 from dagster import (
     CompositeSolidDefinition,
+    DagsterInstance,
     DagsterType,
     DagsterUnknownResourceError,
     InputDefinition,
@@ -9,7 +10,6 @@ from dagster import (
     ModeDefinition,
     OutputDefinition,
     ResourceDefinition,
-    RunConfig,
     String,
     composite_solid,
     execute_pipeline,
@@ -20,6 +20,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.execution.api import execute_run
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
 
@@ -110,7 +111,7 @@ def test_selective_init_resources_only_a():
     def consumes_resource_a(context):
         assert context.resources.a == 'A'
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b,})],)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})])
     def selective_init_test_pipeline():
         consumes_resource_a()
 
@@ -122,10 +123,15 @@ def test_selective_init_resources_only_a():
 def test_execution_plan_subset_strict_resources():
     resources_initted = {}
 
-    result = execute_pipeline(
-        get_resource_init_pipeline(resources_initted),
-        run_config=RunConfig(step_keys_to_execute=['consumes_resource_b.compute']),
+    instance = DagsterInstance.ephemeral()
+
+    pipeline_def = get_resource_init_pipeline(resources_initted)
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def, step_keys_to_execute=['consumes_resource_b.compute'],
     )
+
+    result = execute_run(pipeline_def, pipeline_run, instance)
 
     assert result.success
 
@@ -236,10 +242,16 @@ def test_solid_subset_strict_resources_within_composite():
 def test_execution_plan_subset_strict_resources_within_composite():
     resources_initted = {}
 
-    result = execute_pipeline(
-        create_composite_solid_pipeline(resources_initted),
-        run_config=RunConfig(step_keys_to_execute=['wraps_b.consumes_resource_b.compute']),
+    pipeline_def = create_composite_solid_pipeline(resources_initted)
+
+    instance = DagsterInstance.ephemeral()
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def, step_keys_to_execute=['wraps_b.consumes_resource_b.compute'],
     )
+
+    result = execute_run(pipeline_def, pipeline_run, instance)
+
     assert result.success
 
     assert set(resources_initted.keys()) == {'b'}
@@ -280,10 +292,15 @@ def test_execution_plan_subset_with_aliases():
         consumes_resource_a()
         consumes_resource_b.alias('b_alias')()
 
-    assert execute_pipeline(
-        selective_init_test_pipeline_with_alias,
-        run_config=RunConfig(step_keys_to_execute=['b_alias.compute']),
-    ).success
+    instance = DagsterInstance.ephemeral()
+
+    pipeline_run = instance.create_run_for_pipeline(
+        selective_init_test_pipeline_with_alias, step_keys_to_execute=['b_alias.compute'],
+    )
+
+    result = execute_run(selective_init_test_pipeline_with_alias, pipeline_run, instance)
+
+    assert result.success
 
     assert set(resources_initted.keys()) == {'b'}
 

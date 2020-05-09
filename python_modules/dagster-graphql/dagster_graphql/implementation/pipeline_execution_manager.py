@@ -8,18 +8,10 @@ from queue import Empty
 import gevent
 import six
 
-from dagster import (
-    DagsterInstance,
-    ExecutionTargetHandle,
-    PipelineDefinition,
-    PipelineExecutionResult,
-    PipelineRun,
-    check,
-)
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster import DagsterInstance, ExecutionTargetHandle, PipelineDefinition, PipelineRun, check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import execute_run_iterator
+from dagster.core.execution.api import execute_run
 from dagster.utils import get_multiprocessing_context, start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -55,14 +47,10 @@ class SynchronousExecutionManager(PipelineExecutionManager):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         check.inst_param(instance, 'instance', DagsterInstance)
 
-        event_list = []
         self._active.add(pipeline_run.run_id)
-        for event in execute_run_iterator(
-            InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance
-        ):
-            event_list.append(event)
+        result = execute_run(pipeline_def, pipeline_run, instance)
         self._active.remove(pipeline_run.run_id)
-        return PipelineExecutionResult(pipeline_def, pipeline_run.run_id, event_list, lambda: None)
+        return result
 
     def can_terminate(self, run_id):
         return False
@@ -252,7 +240,6 @@ class SubprocessExecutionManager(PipelineExecutionManager):
         """
         Execute pipeline using message queue as a transport
         """
-        run_id = pipeline_run.run_id
         pipeline_name = pipeline_run.pipeline_name
 
         instance = DagsterInstance.from_ref(instance_ref)
@@ -279,16 +266,11 @@ class SubprocessExecutionManager(PipelineExecutionManager):
             return
 
         try:
-            event_list = []
-            for event in execute_run_iterator(
-                InMemoryExecutablePipeline(
-                    pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset)
-                ),
+            return execute_run(
+                pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset),
                 pipeline_run,
                 instance,
-            ):
-                event_list.append(event)
-            return PipelineExecutionResult(pipeline_def, run_id, event_list, lambda: None)
+            )
 
         # Add a DagsterEvent for unexpected exceptions
         # Explicitly ignore KeyboardInterrupts since they are used for termination

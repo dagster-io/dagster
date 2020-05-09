@@ -119,6 +119,67 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     )
 
 
+def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
+    '''Executes an existing pipeline run synchronously.
+
+    Synchronous version of execute_run_iterator.
+
+    Args:
+        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline_run (PipelineRun): The run to execute
+        instance (DagsterInstance): The instance in which the run has been created.
+        raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
+            Defaults to ``False``.
+    
+    Returns:
+        PipelineExecutionResult: The result of the execution.
+    '''
+    if isinstance(pipeline, PipelineDefinition):
+        pipeline = InMemoryExecutablePipeline(pipeline)
+
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    pipeline_def = pipeline.get_definition()
+
+    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+    check.inst_param(instance, 'instance', DagsterInstance)
+    check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
+
+    execution_plan = create_execution_plan(
+        pipeline,
+        environment_dict=pipeline_run.environment_dict,
+        mode=pipeline_run.mode,
+        step_keys_to_execute=pipeline_run.step_keys_to_execute,
+    )
+
+    _execute_run_iterable = _ExecuteRunWithPlanIterable(
+        execution_plan=execution_plan,
+        pipeline_run=pipeline_run,
+        instance=instance,
+        iterator=_pipeline_execution_iterator,
+        environment_dict=pipeline_run.environment_dict,
+        retries=None,
+        raise_on_error=raise_on_error,
+    )
+    event_list = list(_execute_run_iterable)
+    pipeline_context = _execute_run_iterable.pipeline_context
+
+    return PipelineExecutionResult(
+        pipeline_def,
+        pipeline_run.run_id,
+        event_list,
+        lambda: scoped_pipeline_context(
+            execution_plan,
+            pipeline_run.environment_dict,
+            pipeline_run,
+            instance,
+            system_storage_data=SystemStorageData(
+                intermediates_manager=pipeline_context.intermediates_manager,
+                file_manager=pipeline_context.file_manager,
+            ),
+        ),
+    )
+
+
 class _ExecuteRunWithPlanIterable(object):
     '''Utility class to consolidate execution logic.
     
@@ -283,11 +344,7 @@ def _check_execute_pipeline_args(
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
-    execution_plan = create_execution_plan(
-        pipeline, environment_dict, mode=mode, step_keys_to_execute=run_config.step_keys_to_execute,
-    )
-
-    return pipeline, environment_dict, instance, mode, tags, run_config, execution_plan
+    return pipeline, environment_dict, instance, mode, tags, run_config
 
 
 def execute_pipeline_iterator(
@@ -332,15 +389,7 @@ def execute_pipeline_iterator(
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
-    (
-        pipeline,
-        environment_dict,
-        instance,
-        mode,
-        tags,
-        run_config,
-        execution_plan,
-    ) = _check_execute_pipeline_args(
+    (pipeline, environment_dict, instance, mode, tags, run_config,) = _check_execute_pipeline_args(
         'execute_pipeline_iterator',
         pipeline=pipeline,
         environment_dict=environment_dict,
@@ -363,17 +412,7 @@ def execute_pipeline_iterator(
         parent_run_id=run_config.previous_run_id,
     )
 
-    return iter(
-        _ExecuteRunWithPlanIterable(
-            execution_plan=execution_plan,
-            pipeline_run=pipeline_run,
-            instance=instance,
-            iterator=_pipeline_execution_iterator,
-            environment_dict=pipeline_run.environment_dict,
-            retries=None,
-            raise_on_error=False,
-        )
-    )
+    return execute_run_iterator(pipeline, pipeline_run, instance)
 
 
 @telemetry_wrapper
@@ -423,15 +462,7 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
-    (
-        pipeline,
-        environment_dict,
-        instance,
-        mode,
-        tags,
-        run_config,
-        execution_plan,
-    ) = _check_execute_pipeline_args(
+    (pipeline, environment_dict, instance, mode, tags, run_config,) = _check_execute_pipeline_args(
         'execute_pipeline',
         pipeline=pipeline,
         environment_dict=environment_dict,
@@ -456,33 +487,7 @@ def execute_pipeline(
         parent_run_id=run_config.previous_run_id,
     )
 
-    _execute_run_iterable = _ExecuteRunWithPlanIterable(
-        execution_plan=execution_plan,
-        pipeline_run=pipeline_run,
-        instance=instance,
-        iterator=_pipeline_execution_iterator,
-        environment_dict=pipeline_run.environment_dict,
-        retries=None,
-        raise_on_error=raise_on_error,
-    )
-    event_list = list(_execute_run_iterable)
-    pipeline_context = _execute_run_iterable.pipeline_context
-
-    return PipelineExecutionResult(
-        pipeline_def,
-        pipeline_run.run_id,
-        event_list,
-        lambda: scoped_pipeline_context(
-            execution_plan,
-            environment_dict,
-            pipeline_run,
-            instance,
-            system_storage_data=SystemStorageData(
-                intermediates_manager=pipeline_context.intermediates_manager,
-                file_manager=pipeline_context.file_manager,
-            ),
-        ),
-    )
+    return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error)
 
 
 def execute_plan_iterator(
