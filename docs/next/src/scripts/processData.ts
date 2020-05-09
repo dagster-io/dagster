@@ -75,14 +75,22 @@ async function createModuleIndex() {
 async function createAlgoliaIndex() {
   const { NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY } = process.env;
 
-  if (!NEXT_ALGOLIA_APP_ID) {
-    console.error('Environment variable NEXT_ALGOLIA_APP_ID not set');
-    return;
-  } else if (!NEXT_ALGOLIA_ADMIN_KEY) {
-    console.error('Environment variable NEXT_ALGOLIA_ADMIN_KEY not set');
-    return;
+  if (!NEXT_ALGOLIA_APP_ID || !NEXT_ALGOLIA_ADMIN_KEY) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        '\x1b[31m%s\x1b[0m', // cyan
+        'ERROR: environment variable NEXT_ALGOLIA_APP_ID or NEXT_ALGOLIA_ADMIN_KEY not set.\n' +
+          'Please use NODE_ENV=development if you are not deploying the next doc.',
+      );
+      return;
+    } else {
+      console.warn(
+        '\x1b[33m%s\x1b[0m', // yellow
+        'WARNING: environment variable NEXT_ALGOLIA_APP_ID or NEXT_ALGOLIA_ADMIN_KEY not set.',
+      );
+      return;
+    }
   }
-
   /* Setup index */
   const client = algoliasearch(NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY);
   const index = client.initIndex('docs');

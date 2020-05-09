@@ -146,12 +146,12 @@ buildnext:
 	cp _build/json/searchindex.json next/src/data/searchindex.json
 	cp -r _build/json/sections/api/apidocs/. next/src/data
 	cp -r _build/json/_modules next/src/data
-	yarn --cwd next
-	yarn --cwd next process
+	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next
+	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next process
 
 root_build:
-	make build_next_default version=0.7.9
-	make build_next_version version=0.7.9
+	make build_next_default version=0.7.10
+	make build_next_version version=0.7.10
 
 build_next_master:
 	yarn --cwd next
