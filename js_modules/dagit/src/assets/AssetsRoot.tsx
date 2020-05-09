@@ -22,11 +22,11 @@ type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
   assetSelector: string;
 }>> = ({ match, history }) => {
-  const assetName = match.params.assetSelector;
+  const assetName = decodeURIComponent(match.params.assetSelector);
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
   const onSelect = (assetName: string) => {
-    history.push(`/assets/${assetName}`);
+    history.push(`/assets/${encodeURIComponent(assetName)}`);
   };
 
   return (
@@ -173,7 +173,9 @@ const AssetsTable = ({ assets }: { assets: Asset[] }) => {
           return (
             <RowContainer key={idx}>
               <RowColumn>
-                <Link to={`/assets/${asset.key}`}>{asset.key}</Link>
+                <Link to={`/assets/${encodeURIComponent(asset.key)}`}>
+                  {asset.key}
+                </Link>
               </RowColumn>
               <RowColumn>{timestamp}</RowColumn>
             </RowContainer>
