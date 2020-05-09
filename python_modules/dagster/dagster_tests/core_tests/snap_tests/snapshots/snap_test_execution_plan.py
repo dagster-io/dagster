@@ -10,6 +10,9 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
   "pipeline_snapshot_id": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
+  "step_keys_to_execute": [
+    "noop_solid.compute"
+  ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -35,6 +38,10 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
   "pipeline_snapshot_id": "1f30f3ee72df05cdda75a455f47f525dc9f9b7d7",
+  "step_keys_to_execute": [
+    "solid_one.compute",
+    "solid_two.compute"
+  ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -90,6 +97,13 @@ snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
   "pipeline_snapshot_id": "c702d45a160714c38fcbde6427dabfc38aca1ab3",
+  "step_keys_to_execute": [
+    "comp_1.return_one.compute",
+    "comp_1.add_one.compute",
+    "comp_2.return_one.compute",
+    "comp_2.add_one.compute",
+    "add.compute"
+  ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",
@@ -234,6 +248,9 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
   "pipeline_snapshot_id": "be0ce8dd36ee2102a34795cc907ec48d10951f02",
+  "step_keys_to_execute": [
+    "noop_solid.compute"
+  ],
   "steps": [
     {
       "__class__": "ExecutionStepSnap",

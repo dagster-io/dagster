@@ -152,7 +152,7 @@ def _execute_schedule(graphene_info, external_pipeline, execution_params, errors
     )
     if validation_result.success:
         execution_plan_index = graphene_info.context.create_execution_plan_index(
-            external_pipeline, environment_dict, mode,
+            external_pipeline, environment_dict, mode, execution_params.step_keys
         )
 
     pipeline_run = instance.create_run(

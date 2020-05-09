@@ -526,6 +526,17 @@ class DagsterInstance:
 
             check.invariant(execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id)
 
+            check.invariant(
+                set(step_keys_to_execute) == set(execution_plan_snapshot.step_keys_to_execute)
+                if step_keys_to_execute
+                else set(execution_plan_snapshot.step_keys_to_execute)
+                == set([step.key for step in execution_plan_snapshot.steps]),
+                'We encode step_keys_to_execute twice in our stack, unfortunately. This check '
+                'ensures that they are consistent. We check that step_keys_to_execute in the plan '
+                'matches the step_keys_to_execute params if it is set. If it is not, this indicates '
+                'a full execution plan, and so we verify that.',
+            )
+
             execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
             if not self._run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id):

@@ -31,7 +31,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
             DauphinExecutionStep(
                 self._execution_plan_index, self._execution_plan_index.get_step_by_key(step.key),
             )
-            for step in self._execution_plan_index.execution_plan_snapshot.steps
+            for step in self._execution_plan_index.get_steps_in_plan()
         ]
 
     def resolve_artifactsPersisted(self, _graphene_info):
@@ -96,7 +96,11 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
             graphene_info.schema.type_named('ExecutionStep')(
                 self._execution_plan_index, self._execution_plan_index.get_step_by_key(key),
             )
-            for key in self._step_input_snap.upstream_step_keys
+            # We filter at this layer to ensure that we do not return outputs that
+            # do not exist in the execution plan
+            for key in filter(
+                self._execution_plan_index.key_in_plan, self._step_input_snap.upstream_step_keys,
+            )
         ]
 
 

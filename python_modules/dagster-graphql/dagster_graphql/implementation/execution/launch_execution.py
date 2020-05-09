@@ -10,14 +10,9 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions.environment_schema import create_environment_schema
 from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedError
 from dagster.core.events import EngineEventData
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.snap.execution_plan_snapshot import (
-    ExecutionPlanIndex,
-    snapshot_from_execution_plan,
-)
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
-from ..external import ensure_valid_step_keys
+from ..external import get_execution_plan_index_or_raise
 from ..fetch_pipelines import get_pipeline_def_from_selector
 from ..fetch_runs import get_validated_config
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
@@ -60,23 +55,20 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
         mode=execution_params.mode,
     )
 
-    execution_plan = create_execution_plan(
-        pipeline_def, execution_params.environment_dict, mode=execution_params.mode,
-    )
+    step_keys_to_execute = get_step_keys_to_execute(instance, pipeline_def, execution_params)
 
-    ensure_valid_step_keys(
-        ExecutionPlanIndex.from_plan_and_index(execution_plan, pipeline_def.get_pipeline_index()),
-        execution_plan.step_keys_to_execute,
+    execution_plan_index = get_execution_plan_index_or_raise(
+        graphene_info=graphene_info,
+        external_pipeline=graphene_info.context.get_external_pipeline(pipeline_def.name),
+        mode=execution_params.mode,
+        environment_dict=execution_params.environment_dict,
+        step_keys_to_execute=step_keys_to_execute,
     )
 
     pipeline_run = instance.create_run(
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
-        execution_plan_snapshot=snapshot_from_execution_plan(
-            execution_plan, pipeline_def.get_pipeline_snapshot_id()
-        ),
-        **pipeline_run_args_from_execution_params(
-            execution_params, get_step_keys_to_execute(instance, pipeline_def, execution_params),
-        )
+        execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
+        **pipeline_run_args_from_execution_params(execution_params, step_keys_to_execute)
     )
 
     run = instance.launch_run(pipeline_run.run_id)

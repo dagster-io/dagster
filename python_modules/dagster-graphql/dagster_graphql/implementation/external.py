@@ -162,3 +162,23 @@ def ensure_valid_step_keys(full_execution_plan_index, step_keys):
             from dagster_graphql.schema.errors import DauphinInvalidStepError
 
             raise UserFacingGraphQLError(DauphinInvalidStepError(invalid_step_key=step_key))
+
+
+def get_execution_plan_index_or_raise(
+    graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
+):
+    full_execution_plan_index = graphene_info.context.create_execution_plan_index(
+        external_pipeline=external_pipeline, environment_dict=environment_dict, mode=mode,
+    )
+
+    if not step_keys_to_execute:
+        return full_execution_plan_index
+
+    ensure_valid_step_keys(full_execution_plan_index, step_keys_to_execute)
+
+    return graphene_info.context.create_execution_plan_index(
+        external_pipeline=external_pipeline,
+        environment_dict=environment_dict,
+        mode=mode,
+        step_keys_to_execute=step_keys_to_execute,
+    )

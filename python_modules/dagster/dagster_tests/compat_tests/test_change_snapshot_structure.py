@@ -11,7 +11,7 @@ from dagster.utils.test import restore_directory
 
 # a change of schema in the snapshot hierarchy caused hashes to be different
 # when snapshots reloaded
-def test_0_7_10_snapshot_id_change():
+def test_run_created_in_0_7_9_snapshot_id_change():
     test_dir = file_relative_path(__file__, 'snapshot_0_7_9_shapshot_id_creation_change/sqlite')
     with restore_directory(test_dir):
 
@@ -25,10 +25,11 @@ def test_0_7_10_snapshot_id_change():
         ep_snapshot = instance.get_execution_plan_snapshot(old_execution_plan_snapshot_id)
 
         # It is the pipeline snapshot that changed
-        # Verify that snapshot ids are not equal
+        # Verify that snapshot ids are not equal. This changed in 0.7.10
         assert create_pipeline_snapshot_id(pipeline_snapshot) != old_pipeline_snapshot_id
 
-        assert create_execution_plan_snapshot_id(ep_snapshot) == old_execution_plan_snapshot_id
+        # We also changed execution plan schema in 0.7.11.post1
+        assert create_execution_plan_snapshot_id(ep_snapshot) != old_execution_plan_snapshot_id
 
         # This previously failed with a check error
         assert ExecutionPlanIndex(ep_snapshot, PipelineIndex(pipeline_snapshot))

@@ -513,10 +513,9 @@ def test_basic_execute_plan_with_materialization():
 
         steps_data = result.data['executionPlan']['steps']
 
-        assert [step_data['key'] for step_data in steps_data] == [
-            'sum_solid.compute',
-            'sum_sq_solid.compute',
-        ]
+        assert set([step_data['key'] for step_data in steps_data]) == set(
+            ['sum_solid.compute', 'sum_sq_solid.compute',]
+        )
 
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=csv_hello_world, environment_dict=environment_dict

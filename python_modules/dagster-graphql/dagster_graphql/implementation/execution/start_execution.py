@@ -15,7 +15,7 @@ from dagster.utils.error import SerializableErrorInfo
 
 from ..external import (
     ensure_valid_config,
-    ensure_valid_step_keys,
+    get_execution_plan_index_or_raise,
     get_external_pipeline_subset_or_raise,
 )
 from ..fetch_pipelines import get_pipeline_def_from_selector
@@ -64,13 +64,19 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
-    full_execution_plan_index = graphene_info.context.create_execution_plan_index(
-        external_pipeline=external_pipeline,
-        environment_dict=execution_params.environment_dict,
-        mode=execution_params.mode,
+    # TODO rename function and it always returns something so "or" is superfluous
+    step_keys_to_execute = (
+        get_step_keys_to_execute(instance, pipeline_def_delete_me, execution_params)
+        or execution_params.step_keys
     )
 
-    ensure_valid_step_keys(full_execution_plan_index, execution_params.step_keys)
+    execution_plan_index = get_execution_plan_index_or_raise(
+        graphene_info,
+        external_pipeline,
+        mode=execution_params.mode,
+        environment_dict=execution_params.environment_dict,
+        step_keys_to_execute=step_keys_to_execute,
+    )
 
     try:
         pipeline_run = instance.create_run(
@@ -83,18 +89,15 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
             else None,
             environment_dict=execution_params.environment_dict,
             mode=execution_params.mode,
-            step_keys_to_execute=(
-                # TODO rename function and it always returns something so "or" is superfluous
-                get_step_keys_to_execute(instance, pipeline_def_delete_me, execution_params)
-                or execution_params.step_keys
-            ),
+            step_keys_to_execute=step_keys_to_execute,
             tags=merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags),
             status=PipelineRunStatus.NOT_STARTED,
             root_run_id=execution_params.execution_metadata.root_run_id,
             parent_run_id=execution_params.execution_metadata.parent_run_id,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=full_execution_plan_index.execution_plan_snapshot,
+            execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
         )
+
     except DagsterRunConflict as exc:
         return graphene_info.schema.type_named('PipelineRunConflict')(exc)
 

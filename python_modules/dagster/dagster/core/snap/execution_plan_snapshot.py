@@ -28,6 +28,12 @@ class ExecutionPlanIndex:
         #     execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
         # )
 
+        self._step_keys_in_plan = (
+            set(execution_plan_snapshot.step_keys_to_execute)
+            if execution_plan_snapshot.step_keys_to_execute
+            else set(self._step_index.keys())
+        )
+
     def has_step(self, key):
         check.str_param(key, 'key')
         return key in self._step_index
@@ -48,17 +54,31 @@ class ExecutionPlanIndex:
             pipeline_index,
         )
 
+    def get_steps_in_plan(self):
+        return [self._step_index[sk] for sk in self._step_keys_in_plan]
+
+    def key_in_plan(self, key):
+        return key in self._step_keys_in_plan
+
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshot(
-    namedtuple('_ExecutionPlanSnapshot', 'steps artifacts_persisted pipeline_snapshot_id')
+    namedtuple(
+        '_ExecutionPlanSnapshot',
+        'steps artifacts_persisted pipeline_snapshot_id step_keys_to_execute',
+    )
 ):
-    def __new__(cls, steps, artifacts_persisted, pipeline_snapshot_id):
+    # serdes log
+    # added step_keys_to_execute
+    def __new__(cls, steps, artifacts_persisted, pipeline_snapshot_id, step_keys_to_execute=None):
         return super(ExecutionPlanSnapshot, cls).__new__(
             cls,
             steps=check.list_param(steps, 'steps', of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, 'artifacts_persisted'),
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+            step_keys_to_execute=check.opt_list_param(
+                step_keys_to_execute, 'step_keys_to_execute', of_type=str
+            ),
         )
 
 
@@ -168,4 +188,5 @@ def snapshot_from_execution_plan(execution_plan, pipeline_snapshot_id):
         ),
         artifacts_persisted=execution_plan.artifacts_persisted,
         pipeline_snapshot_id=pipeline_snapshot_id,
+        step_keys_to_execute=execution_plan.step_keys_to_execute,
     )
