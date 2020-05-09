@@ -476,18 +476,18 @@ class DagsterInstance:
 
     def _construct_run_with_snapshots(
         self,
-        pipeline_name=None,
-        run_id=None,
-        environment_dict=None,
-        mode=None,
-        solid_subset=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot=None,
-        execution_plan_snapshot=None,
+        pipeline_name,
+        run_id,
+        environment_dict,
+        mode,
+        solid_subset,
+        step_keys_to_execute,
+        status,
+        tags,
+        root_run_id,
+        parent_run_id,
+        pipeline_snapshot,
+        execution_plan_snapshot,
     ):
 
         if tags and IS_AIRFLOW_INGEST_PIPELINE_STR in tags:
