@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router';
-import Link from 'next/link';
-import { flatten } from 'utils/treeOfContents/flatten';
+import { flatten, TreeLink } from 'utils/treeOfContents/flatten';
 import { useTreeOfContents } from 'hooks/useTreeOfContents';
 import { VersionedLink } from './VersionedComponents';
 
@@ -8,23 +7,33 @@ export const PrevNext = () => {
   const treeOfContents = useTreeOfContents();
   const router = useRouter();
 
-  const allLinks = flatten(Object.values(treeOfContents), true)
-    .filter(({ isExternal }) => !isExternal)
-    .filter(({ ignore }) => !ignore);
+  const allLinks = Object.values(treeOfContents)
+    // Flatten links within each section
+    .map((val) =>
+      flatten([val], true)
+        .filter(({ isExternal }) => !isExternal)
+        .filter(({ ignore }) => !ignore),
+    )
+    // Only keep top-level section which contains the current path
+    .find((section) => section.some((t) => router.asPath.includes(t.path)));
+
+  if (!allLinks || allLinks.length === 0) {
+    return <nav></nav>;
+  }
 
   const selectedItems = allLinks.filter((l) => router.asPath.includes(l.path));
   const selectedItem = selectedItems[selectedItems.length - 1];
   const currentIndex = allLinks.indexOf(selectedItem);
 
-  let prev = 0;
-  let next = 0;
+  let prev: number | null;
+  let next: number | null;
 
   if (currentIndex === 0) {
-    prev = allLinks.length - 1;
+    prev = null;
     next = currentIndex + 1;
   } else if (currentIndex === allLinks.length - 1) {
     prev = currentIndex - 1;
-    next = 0;
+    next = null;
   } else {
     prev = currentIndex - 1;
     next = currentIndex + 1;
@@ -32,7 +41,7 @@ export const PrevNext = () => {
 
   return (
     <nav className="mt-8 mb-4 border-t border-gray-200 px-4 flex items-center justify-between sm:px-0">
-      {allLinks[prev] && (
+      {prev !== null && allLinks[prev] && (
         <div className="w-0 flex-1 flex">
           <VersionedLink href={allLinks[prev].path}>
             <a className="-mt-px border-t-2 border-transparent pt-4 pr-1 inline-flex items-center text-sm leading-5 font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-400 transition ease-in-out duration-150">
@@ -53,7 +62,7 @@ export const PrevNext = () => {
         </div>
       )}
 
-      {allLinks[next] && (
+      {next !== null && allLinks[next] && (
         <div className="w-0 flex-1 flex justify-end">
           <VersionedLink href={allLinks[next].path}>
             <a className="-mt-px border-t-2 border-transparent pt-4 pl-1 inline-flex items-center text-sm leading-5 font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-400 transition ease-in-out duration-150">
