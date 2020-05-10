@@ -2,7 +2,7 @@ from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
 
-from dagster import InputDefinition, List, Nothing, OutputDefinition, Path, check, solid
+from dagster import InputDefinition, List, Nothing, OutputDefinition, check, solid
 
 from .configs import (
     define_bigquery_create_dataset_config,
@@ -72,7 +72,7 @@ BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
 
 
 @solid(
-    input_defs=[InputDefinition('paths', List[Path])],
+    input_defs=[InputDefinition('paths', List[str])],
     output_defs=[OutputDefinition(Nothing)],
     config=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},
@@ -92,7 +92,7 @@ def import_df_to_bq(context, df):
 
 
 @solid(
-    input_defs=[InputDefinition('path', Path)],
+    input_defs=[InputDefinition('path', str)],
     output_defs=[OutputDefinition(Nothing)],
     config=BIGQUERY_LOAD_CONFIG,
     required_resource_keys={'bigquery'},

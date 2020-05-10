@@ -1,11 +1,11 @@
 import pandas as pd
 from dagster_pandas import DataFrame
 
-from dagster import Path, PresetDefinition, pipeline, solid
+from dagster import PresetDefinition, pipeline, solid
 
 
 @solid
-def read_csv(_, path: Path) -> DataFrame:
+def read_csv(_, path: str) -> DataFrame:
     return pd.read_csv(path)
 
 

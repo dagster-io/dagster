@@ -18,7 +18,6 @@ from dagster import (
     ModeDefinition,
     Nothing,
     OutputDefinition,
-    Path,
     PresetDefinition,
     String,
     composite_solid,
@@ -119,7 +118,7 @@ def bq_load_events_fn(cfg):
     config={'table': str, 'date': str},
     output_defs=[OutputDefinition(Nothing)],
 )
-def bq_load_events(source_uris: List[Path]):
+def bq_load_events(source_uris: List[String]):
     return import_gcs_paths_to_bq(source_uris)
 
 

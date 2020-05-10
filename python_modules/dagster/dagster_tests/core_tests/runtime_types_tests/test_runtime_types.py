@@ -12,7 +12,6 @@ from dagster import (
     Nothing,
     Optional,
     OutputDefinition,
-    Path,
     PipelineDefinition,
     Set,
     String,
@@ -132,7 +131,6 @@ def test_comparison():
     assert resolve_dagster_type(Bool) == resolve_dagster_type(Bool)
     assert resolve_dagster_type(Float) == resolve_dagster_type(Float)
     assert resolve_dagster_type(Int) == resolve_dagster_type(Int)
-    assert resolve_dagster_type(Path) == resolve_dagster_type(Path)
     assert resolve_dagster_type(String) == resolve_dagster_type(String)
     assert resolve_dagster_type(Nothing) == resolve_dagster_type(Nothing)
     assert resolve_dagster_type(Optional[String]) == resolve_dagster_type(Optional[String])

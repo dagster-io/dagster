@@ -24,7 +24,6 @@ from dagster import (
     ModeDefinition,
     Nothing,
     OutputDefinition,
-    Path,
     execute_pipeline,
     pipeline,
     solid,
@@ -262,7 +261,7 @@ def test_gcs_load():
     delete_solid = bq_delete_dataset.alias('delete_solid')
 
     @solid(
-        input_defs=[InputDefinition('success', Nothing)], output_defs=[OutputDefinition(List[Path])]
+        input_defs=[InputDefinition('success', Nothing)], output_defs=[OutputDefinition(List[str])]
     )
     def return_gcs_uri(_context):  # pylint: disable=unused-argument
         return ["gs://cloud-samples-data/bigquery/us-states/us-states.csv"]

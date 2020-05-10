@@ -306,19 +306,6 @@ class _String(BuiltinScalarDagsterType):
         return _fail_if_not_of_type(value, six.string_types, 'string')
 
 
-class _Path(BuiltinScalarDagsterType):
-    def __init__(self):
-        super(_Path, self).__init__(
-            name='Path',
-            input_hydration_config=BuiltinSchemas.STRING_INPUT,
-            output_materialization_config=BuiltinSchemas.STRING_OUTPUT,
-            type_check_fn=self.type_check_fn,
-        )
-
-    def type_check_scalar_value(self, value):
-        return _fail_if_not_of_type(value, six.string_types, 'string')
-
-
 class _Float(BuiltinScalarDagsterType):
     def __init__(self):
         super(_Float, self).__init__(
@@ -657,7 +644,6 @@ Any = _Any()
 Bool = _Bool()
 Float = _Float()
 Int = _Int()
-Path = _Path()
 String = _String()
 Nothing = _Nothing()
 

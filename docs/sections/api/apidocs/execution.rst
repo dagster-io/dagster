@@ -128,7 +128,7 @@ Environment Dict Schema
                 # if an output_materialization_config is specified, that schema must be satisfied
                 # here; pickleable types will generally allow output as follows:
                 pickle: {
-                  path: Path
+                  path: String 
                 }
               }
             }

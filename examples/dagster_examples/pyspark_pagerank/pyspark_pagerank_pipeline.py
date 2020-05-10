@@ -2,22 +2,13 @@ from operator import add
 
 from dagster_pyspark import SparkRDD, pyspark_resource
 
-from dagster import (
-    Field,
-    InputDefinition,
-    Int,
-    ModeDefinition,
-    OutputDefinition,
-    Path,
-    pipeline,
-    solid,
-)
+from dagster import Field, InputDefinition, Int, ModeDefinition, OutputDefinition, pipeline, solid
 
 from .original import computeContribs, parseNeighbors
 
 
 @solid(
-    input_defs=[InputDefinition('pagerank_data', Path)],
+    input_defs=[InputDefinition('pagerank_data', str)],
     output_defs=[OutputDefinition(SparkRDD)],
     required_resource_keys={'spark'},
 )

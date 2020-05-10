@@ -10,7 +10,6 @@ from dagster import (
     List,
     Optional,
     OutputDefinition,
-    Path,
     PipelineDefinition,
     String,
     execute_pipeline,
@@ -41,14 +40,6 @@ def define_test_all_scalars_pipeline():
     @lambda_solid(output_def=OutputDefinition(String))
     def produce_string():
         return 'foo'
-
-    @lambda_solid(input_defs=[InputDefinition('path', Path)])
-    def take_path(path):
-        return path
-
-    @lambda_solid(output_def=OutputDefinition(Path))
-    def produce_path():
-        return '/path/to/foo'
 
     @lambda_solid(input_defs=[InputDefinition('float_number', Float)])
     def take_float(float_number):
@@ -89,14 +80,12 @@ def define_test_all_scalars_pipeline():
             produce_bool,
             produce_float,
             produce_int,
-            produce_path,
             produce_string,
             take_any,
             take_bool,
             take_float,
             take_int,
             take_nullable_string,
-            take_path,
             take_string,
             take_string_list,
         ],
@@ -367,28 +356,6 @@ def test_string_pickle_schema_roundtrip():
         )
 
         assert source_result.result_for_solid('take_string').output_value() == 'foo'
-
-
-def test_path_input_schema_value():
-    result = _execute_pipeline_with_subset(
-        define_test_all_scalars_pipeline(),
-        environment_dict=single_input_env('take_path', 'path', '/a/path'),
-        solid_subset=['take_path'],
-    )
-
-    assert result.success
-    assert result.result_for_solid('take_path').output_value() == '/a/path'
-
-
-def test_path_input_schema_failure():
-    with pytest.raises(DagsterInvalidConfigError) as exc_info:
-        _execute_pipeline_with_subset(
-            define_test_all_scalars_pipeline(),
-            environment_dict=single_input_env('take_path', 'path', {'value': 3343}),
-            solid_subset=['take_path'],
-        )
-
-    assert 'Invalid scalar at path root:solids:take_path:inputs:path' in str(exc_info.value)
 
 
 def test_string_list_input():

@@ -1,5 +1,3 @@
-import os
-
 from dagster import (
     Any,
     Bool,
@@ -10,7 +8,6 @@ from dagster import (
     List,
     Optional,
     OutputDefinition,
-    Path,
     Set,
     String,
     Tuple,
@@ -65,14 +62,6 @@ def div_2_py_2(_, x):
 )
 def concat_py_2(_, x, y):
     return x + y
-
-
-@solid(
-    input_defs=[InputDefinition('path', dagster_type=Path)],
-    output_defs=[OutputDefinition(dagster_type=Bool)],
-)
-def exists_py2(_, path):
-    return os.path.exists(path)
 
 
 @solid(
@@ -151,11 +140,6 @@ def test_div_2_py2():
 def test_concat_py2():
     res = execute_solid(concat_py_2, input_values={'x': 'foo', 'y': 'bar'})
     assert res.output_value() == 'foobar'
-
-
-def test_exists_py2():
-    res = execute_solid(exists_py2, input_values={'path': 'garkjgh.dkjhfk'})
-    assert res.output_value() is False
 
 
 def test_nullable_concat_py2():

@@ -1,11 +1,17 @@
 # Changelog
 
+## 0.8.0
+
+**Breaking Changes**
+
+- `Path` is no longer as built-in dagster type.
+
 ## 0.7.12
 
 **Bugfix**
 
 - We now only render the subset of an execution plan that has actually executed, and persist that subset information along with the snapshot.
-- @pipeline and @composite_solid now correctly capture __doc__ from the function they decorate.
+- @pipeline and @composite_solid now correctly capture `__doc__` from the function they decorate.
 - Fixed a bug with using solid subsets in the Dagit playground
 
 ## 0.7.11

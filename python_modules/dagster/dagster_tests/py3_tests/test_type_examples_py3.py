@@ -16,7 +16,6 @@ from dagster import (
     List,
     Nothing,
     Optional,
-    Path,
     Permissive,
     Selector,
     Set,
@@ -64,11 +63,6 @@ def div_2(_, x: Float) -> float:
 @solid
 def concat(_, x: String, y: str) -> str:
     return x + y
-
-
-@solid
-def exists(_, path: Path) -> Bool:
-    return os.path.exists(path)
 
 
 @solid
@@ -192,11 +186,6 @@ def test_div_2():
 def test_concat():
     res = execute_solid(concat, input_values={'x': 'foo', 'y': 'bar'})
     assert res.output_value() == 'foobar'
-
-
-def test_exists():
-    res = execute_solid(exists, input_values={'path': 'garkjgh.dkjhfk'})
-    assert res.output_value() is False
 
 
 def test_nothing_pipeline():

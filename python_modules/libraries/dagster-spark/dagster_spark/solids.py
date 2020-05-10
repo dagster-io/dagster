@@ -7,7 +7,6 @@ from dagster import (
     Nothing,
     Output,
     OutputDefinition,
-    Path,
     SolidDefinition,
     check,
     solid,
@@ -103,8 +102,8 @@ class SparkSolidDefinition(SolidDefinition):
         super(SparkSolidDefinition, self).__init__(
             name=name,
             description=description,
-            input_defs=[InputDefinition('spark_inputs', List[Path])],
-            output_defs=[OutputDefinition(dagster_type=List[Path], name='paths')],
+            input_defs=[InputDefinition('spark_inputs', List[str])],
+            output_defs=[OutputDefinition(dagster_type=List[str], name='paths')],
             compute_fn=_spark_compute_fn,
             config=define_spark_config(),
             tags={'kind': 'spark', 'main_class': main_class},

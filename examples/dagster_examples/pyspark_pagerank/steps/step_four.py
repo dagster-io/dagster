@@ -3,7 +3,7 @@ from operator import add
 
 from dagster_pyspark import SparkRDD, pyspark_resource
 
-from dagster import InputDefinition, ModeDefinition, OutputDefinition, Path, pipeline, solid
+from dagster import InputDefinition, ModeDefinition, OutputDefinition, pipeline, solid
 
 
 def computeContribs(urls, rank):
@@ -20,7 +20,7 @@ def parseNeighbors(urls):
 
 
 @solid(
-    input_defs=[InputDefinition('pagerank_data', Path)],
+    input_defs=[InputDefinition('pagerank_data', str)],
     output_defs=[OutputDefinition(SparkRDD)],
     required_resource_keys={'spark'},
 )

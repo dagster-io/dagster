@@ -3,7 +3,7 @@ from operator import add
 
 from pyspark.sql import SparkSession
 
-from dagster import InputDefinition, Path, pipeline, solid
+from dagster import InputDefinition, pipeline, solid
 
 
 def computeContribs(urls, rank):
@@ -19,7 +19,7 @@ def parseNeighbors(urls):
     return parts[0], parts[1]
 
 
-@solid(input_defs=[InputDefinition('pagerank_data', Path)])
+@solid(input_defs=[InputDefinition('pagerank_data', str)])
 def whole_pipeline_solid(context, pagerank_data):
     # Initialize the spark context.
     spark = SparkSession.builder.appName("PythonPageRank").getOrCreate()

@@ -2,7 +2,7 @@ import os
 
 from six.moves.urllib.request import urlretrieve
 
-from dagster import Field, OutputDefinition, Path, String, solid
+from dagster import Field, OutputDefinition, String, solid
 
 
 @solid(
@@ -12,7 +12,9 @@ from dagster import Field, OutputDefinition, Path, String, solid
         'path': Field(String, description='The path to which to download the file'),
     },
     output_defs=[
-        OutputDefinition(Path, name='path', description='The path to which the file was downloaded')
+        OutputDefinition(
+            String, name='path', description='The path to which the file was downloaded'
+        )
     ],
     description=(
         'A simple utility solid that downloads a file from a URL to a path using '
