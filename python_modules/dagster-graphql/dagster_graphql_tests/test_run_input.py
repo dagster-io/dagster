@@ -1,5 +1,4 @@
 from dagster_graphql.client.util import execution_params_from_pipeline_run
-from dagster_graphql.implementation.execution.utils import pipeline_run_args_from_execution_params
 from dagster_graphql.schema.roots import execution_params_from_graphql
 
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
@@ -34,20 +33,12 @@ def test_roundtrip_run():
     run = run_with_snapshot._replace(pipeline_snapshot_id=None, execution_plan_snapshot_id=None)
 
     exec_params = execution_params_from_pipeline_run(run)
-    for key, value in pipeline_run_args_from_execution_params(exec_params).items():
-        assert getattr(run, key) == value
 
     exec_params_gql = execution_params_from_graphql(exec_params.to_graphql_input())
     assert exec_params_gql == exec_params
-    for key, value in pipeline_run_args_from_execution_params(exec_params_gql).items():
-        assert getattr(run, key) == value
 
     empty_run = PipelineRun(pipeline_name='foo', run_id='bar', mode='default')
     exec_params = execution_params_from_pipeline_run(empty_run)
-    for key, value in pipeline_run_args_from_execution_params(exec_params).items():
-        assert getattr(empty_run, key) == value
 
     exec_params_gql = execution_params_from_graphql(exec_params.to_graphql_input())
     assert exec_params_gql == exec_params
-    for key, value in pipeline_run_args_from_execution_params(exec_params_gql).items():
-        assert getattr(empty_run, key) == value

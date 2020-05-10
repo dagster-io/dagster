@@ -8,6 +8,8 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigError, DagsterLaunchFailedError
 from dagster.core.events import EngineEventData
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.utils import make_new_run_id
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..external import (
@@ -15,9 +17,8 @@ from ..external import (
     get_execution_plan_index_or_raise,
     get_external_pipeline_subset_or_raise,
 )
-from ..fetch_pipelines import get_pipeline_def_from_selector
+from ..resume_retry import compute_step_keys_to_execute
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import get_step_keys_to_execute, pipeline_run_args_from_execution_params
 
 
 @capture_dauphin_error
@@ -48,19 +49,13 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     if run_launcher is None:
         return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
 
-    pipeline_def_delete_me = get_pipeline_def_from_selector(
-        graphene_info, execution_params.selector
-    )
-
     external_pipeline = get_external_pipeline_subset_or_raise(
         graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
     )
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
-    step_keys_to_execute = get_step_keys_to_execute(
-        instance, pipeline_def_delete_me, execution_params
-    )
+    step_keys_to_execute = compute_step_keys_to_execute(graphene_info, execution_params)
 
     execution_plan_index = get_execution_plan_index_or_raise(
         graphene_info=graphene_info,
@@ -73,7 +68,18 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     pipeline_run = instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
-        **pipeline_run_args_from_execution_params(execution_params, step_keys_to_execute)
+        pipeline_name=execution_params.selector.name,
+        run_id=execution_params.execution_metadata.run_id
+        if execution_params.execution_metadata.run_id
+        else make_new_run_id(),
+        solid_subset=execution_params.selector.solid_subset,
+        environment_dict=execution_params.environment_dict,
+        mode=execution_params.mode,
+        step_keys_to_execute=step_keys_to_execute,
+        tags=execution_params.execution_metadata.tags,
+        root_run_id=execution_params.execution_metadata.root_run_id,
+        parent_run_id=execution_params.execution_metadata.parent_run_id,
+        status=PipelineRunStatus.NOT_STARTED,
     )
 
     run = instance.launch_run(pipeline_run.run_id)

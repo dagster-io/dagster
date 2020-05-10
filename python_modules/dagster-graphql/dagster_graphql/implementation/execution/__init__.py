@@ -21,7 +21,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.memoization import get_retry_steps_from_execution_plan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.snap import ExecutionPlanIndex, PipelineIndex
@@ -38,6 +37,7 @@ from ..external import (
 )
 from ..fetch_schedules import execution_params_for_schedule, get_dagster_schedule_def
 from ..pipeline_run_storage import PipelineRunObservableSubscribe
+from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
 from .scheduled_execution import start_scheduled_execution

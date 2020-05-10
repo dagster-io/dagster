@@ -60,6 +60,10 @@ class EventRecord(
     def from_json(json_str):
         return deserialize_json_to_dagster_namedtuple(json_str)
 
+    @property
+    def dagster_event_type(self):
+        return self.dagster_event.event_type if self.dagster_event else None
+
 
 @whitelist_for_serdes
 class DagsterEventRecord(EventRecord):

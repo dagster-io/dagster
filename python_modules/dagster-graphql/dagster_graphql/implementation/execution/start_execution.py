@@ -17,9 +17,8 @@ from ..external import (
     get_execution_plan_index_or_raise,
     get_external_pipeline_subset_or_raise,
 )
-from ..fetch_pipelines import get_pipeline_def_from_selector
+from ..resume_retry import compute_step_keys_to_execute
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
-from .utils import get_step_keys_to_execute
 
 
 @capture_dauphin_error
@@ -53,21 +52,13 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
     if execution_manager_settings and execution_manager_settings.get('disabled'):
         return graphene_info.schema.type_named('StartPipelineRunDisabledError')()
 
-    pipeline_def_delete_me = get_pipeline_def_from_selector(
-        graphene_info, execution_params.selector
-    )
-
     external_pipeline = get_external_pipeline_subset_or_raise(
         graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
     )
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
-    # TODO rename function and it always returns something so "or" is superfluous
-    step_keys_to_execute = (
-        get_step_keys_to_execute(instance, pipeline_def_delete_me, execution_params)
-        or execution_params.step_keys
-    )
+    step_keys_to_execute = compute_step_keys_to_execute(graphene_info, execution_params)
 
     execution_plan_index = get_execution_plan_index_or_raise(
         graphene_info,
