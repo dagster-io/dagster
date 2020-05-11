@@ -38,11 +38,15 @@
     "build": "next build",
     "start": "next start",
     "export": "next export",
-    "process": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/processData.ts"
+    "process": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/processData.ts",
+    "test": "jest"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^2.1.0",
+    "@mdx-js/mdx": "^1.6.1",
     "@types/classnames": "^2.2.10",
+    "@types/glob": "^7.1.1",
+    "@types/jest": "^25.2.1",
     "@types/parse5": "^5.0.2",
     "@types/react": "^16.9.25",
     "@types/react-syntax-highlighter": "^11.0.4",
@@ -55,6 +59,8 @@
     "eslint-plugin-react": "^7.19.0",
     "eslint-plugin-react-hooks": "^3.0.0",
     "extra-watch-webpack-plugin": "^1.0.3",
+    "glob": "^7.1.6",
+    "jest": "^26.0.1",
     "tailwindcss": "^1.4.0",
     "tsconfig-paths-webpack-plugin": "^3.2.0",
     "typescript": "^3.8.3"
