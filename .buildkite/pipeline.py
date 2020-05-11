@@ -668,9 +668,7 @@ def next_docs_build_tests():
                 "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
                 "cd docs",
                 "make buildnext",
-                "cd next",
-                "yarn build",
-                "yarn next export",
+                "make root_build",
             )
             .on_integration_image(version)
             .build()

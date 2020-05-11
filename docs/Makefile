@@ -146,16 +146,16 @@ buildnext:
 	cp _build/json/searchindex.json next/src/data/searchindex.json
 	cp -r _build/json/sections/api/apidocs/. next/src/data
 	cp -r _build/json/_modules next/src/data
-	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next
+	yarn --cwd next --production=false
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next process
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
 root_build:
-	make build_next_default version=0.7.12
-	make build_next_version version=0.7.12
+	NODE_ENV=production make build_next_default version=0.7.12
+	NODE_ENV=production make build_next_version version=0.7.12
 
 build_next_master:
-	yarn --cwd next
+	yarn --cwd next --production=false
 	rm -rf next/out
 	BASE_PATH=/master yarn --cwd next build
 	BASE_PATH=/master yarn --cwd next export
@@ -163,7 +163,7 @@ build_next_master:
 	cp -a next/out/. out/master
 
 build_next_version:
-	yarn --cwd next
+	yarn --cwd next --production=false
 	rm -rf next/out
 	BASE_PATH=/$(version) yarn --cwd next build
 	BASE_PATH=/$(version) yarn --cwd next export
@@ -171,7 +171,7 @@ build_next_version:
 	cp -a next/out/. out/$(version)
 
 build_next_default:
-	yarn --cwd next
+	yarn --cwd next --production=false
 	VERSION=$(version) rm -rf next/out
 	VERSION=$(version) yarn --cwd next build
 	yarn --cwd next export

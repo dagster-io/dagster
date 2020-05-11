@@ -1,4 +1,3 @@
-const ExtraWatchPlugin = require('extra-watch-webpack-plugin');
 const path = require('path');
 const visit = require('unist-util-visit');
 const fs = require('fs');
@@ -39,7 +38,13 @@ const transform = () => (tree) => {
         const content = fs.readFileSync(filePath).toString();
         node.value = limitSnippetLines(content, map.lines);
       } catch (error) {
-        node.value = `Unable to read file at: ${filePath}`;
+        const errorMessage = `Unable to read file at: ${filePath}`;
+
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error(errorMessage);
+        } else {
+          node.value = errorMessage;
+        }
       }
     }
   };
@@ -63,13 +68,5 @@ module.exports = withMDX({
       process.env.VERSION ||
       (process.env.BASE_PATH && process.env.BASE_PATH.substr(1)) ||
       '',
-  },
-  webpack: (config) => {
-    config.plugins.push(
-      new ExtraWatchPlugin({
-        dirs: [path.join(config.context, 'pages')],
-      }),
-    );
-    return config;
   },
 });
