@@ -29,10 +29,13 @@ test('no dead links', async () => {
   const allMdxFileSet = new Set(allMdxFilePaths);
   const deadLinks: Array<{ sourceFile: string; deadLink: string }> = [];
 
+  let linkCount = 0;
+
   for (const source in allInternalLinksStore) {
     const linkList = allInternalLinksStore[source];
 
     for (const link of linkList) {
+      linkCount++;
       if (!isLinkLegit(link, allMdxFileSet)) {
         deadLinks.push({
           sourceFile: source,
@@ -41,6 +44,9 @@ test('no dead links', async () => {
       }
     }
   }
+
+  // sanity check to make sure the parser is working
+  expect(linkCount).toBeGreaterThan(0);
 
   expect(deadLinks).toEqual([]);
 });
