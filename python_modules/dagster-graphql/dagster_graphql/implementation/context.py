@@ -48,6 +48,7 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         return ExternalPipeline(
             self._repository_index.get_pipeline_index(name),
             self.active_repository_data.get_active_pipeline_data(name),
+            solid_subset=None,
         )
 
     def get_all_external_pipelines(self):
@@ -146,11 +147,16 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
     def get_repository(self):
         return self.repository_definition
 
-    def get_pipeline(self, pipeline_name):
+    def get_pipeline(self, pipeline_name, solid_subset=None):
         if not pipeline_name in self._cached_pipelines:
             self._cached_pipelines[pipeline_name] = self._build_pipeline(pipeline_name)
 
-        return self._cached_pipelines[pipeline_name]
+        cached_full_pipeline = self._cached_pipelines[pipeline_name]
+
+        if solid_subset:
+            return cached_full_pipeline.build_sub_pipeline(solid_subset)
+        else:
+            return cached_full_pipeline
 
     def _build_pipeline(self, pipeline_name):
         orig_handle = self.get_handle()
@@ -175,7 +181,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.list_param(solid_subset, 'solid_subset', of_type=str)
 
         return ExternalPipeline.from_pipeline_def(
-            self.get_pipeline(name).build_sub_pipeline(solid_subset)
+            self.get_pipeline(name), solid_subset=solid_subset
         )
 
     def create_execution_plan_index(
@@ -189,7 +195,9 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         return ExecutionPlanIndex(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 create_execution_plan(
-                    pipeline=self.get_pipeline(external_pipeline.name),
+                    pipeline=self.get_pipeline(
+                        external_pipeline.name, external_pipeline.solid_subset
+                    ),
                     environment_dict=environment_dict,
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,

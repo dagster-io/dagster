@@ -4,7 +4,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.snap import (
     ActivePipelineData,
     ExecutionPlanIndex,
@@ -16,21 +16,45 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 from .utils import UserFacingGraphQLError
 
 
+class __SolidSubsetNotProvidedSentinel(object):
+    pass
+
+
+SOLID_SUBSET_NOT_PROVIDED = __SolidSubsetNotProvidedSentinel
+
+
 # Represents a pipeline definition that is resident in an external process.
 #
 # Object composes a pipeline index (which is an index over snapshot data)
 # and the serialized ActivePipelineData
 class ExternalPipeline:
-    def __init__(self, pipeline_index, active_pipeline_data):
+    def __init__(
+        self, pipeline_index, active_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
+    ):
         self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
         self._active_pipeline_data = check.inst_param(
             active_pipeline_data, 'active_pipeline_data', ActivePipelineData
         )
         self._active_preset_dict = {ap.name: ap for ap in active_pipeline_data.active_presets}
 
+        if solid_subset != SOLID_SUBSET_NOT_PROVIDED:
+            check.opt_list_param(solid_subset, 'solid_subset', str)
+
+        self._solid_subset = solid_subset
+
     @property
     def name(self):
         return self.pipeline_index.name
+
+    @property
+    def solid_subset(self):
+        if self._solid_subset == SOLID_SUBSET_NOT_PROVIDED:
+            raise DagsterInvariantViolationError(
+                "Cannot access property solid_subset on external pipeline constructed without a "
+                "solid subset"
+            )
+
+        return self._solid_subset
 
     @property
     def active_presets(self):
@@ -57,9 +81,14 @@ class ExternalPipeline:
         return self.pipeline_index.get_mode_def_snap(mode_name)
 
     @staticmethod
-    def from_pipeline_def(pipeline_def):
+    def from_pipeline_def(pipeline_def, solid_subset=None):
+        if solid_subset:
+            pipeline_def = pipeline_def.build_sub_pipeline(solid_subset)
+
         return ExternalPipeline(
-            pipeline_def.get_pipeline_index(), active_pipeline_data_from_def(pipeline_def)
+            pipeline_def.get_pipeline_index(),
+            active_pipeline_data_from_def(pipeline_def),
+            solid_subset=solid_subset,
         )
 
     @property
