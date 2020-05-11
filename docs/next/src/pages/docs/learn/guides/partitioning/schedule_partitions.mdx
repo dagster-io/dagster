@@ -1,4 +1,10 @@
 import PyObject from 'components/PyObject';
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Scheduling Date Partitions | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
 
 # Scheduling Date Partitions
 
@@ -10,10 +16,26 @@ most recently elapsed date partition.
 To support this use case, we've added helpful decorators to define a
 schedule definition and a corresponding date partition set:
 
-- <PyObject module="dagster" object="hourly_schedule" displayText="@hourly_schedule" />
-- <PyObject module="dagster" object="daily_schedule" displayText="@daily_schedule" />
-- <PyObject module="dagster" object="weekly_schedule" displayText="@weekly_schedule" />
-- <PyObject module="dagster" object="monthly_schedule" displayText="@monthly_schedule" />
+- <PyObject
+    module="dagster"
+    object="hourly_schedule"
+    displayText="@hourly_schedule"
+  />
+- <PyObject
+    module="dagster"
+    object="daily_schedule"
+    displayText="@daily_schedule"
+  />
+- <PyObject
+    module="dagster"
+    object="weekly_schedule"
+    displayText="@weekly_schedule"
+  />
+- <PyObject
+    module="dagster"
+    object="monthly_schedule"
+    displayText="@monthly_schedule"
+  />
 
 We can use the monthly decorator to create a partition set and schedule
 definition for our pipeline:

@@ -5,6 +5,7 @@ import Layout from 'components/Layout';
 import Code from 'components/Code';
 import { AnchorHeadingsProvider } from 'hooks/AnchorHeadings';
 import { VersionedImage } from 'components/VersionedComponents';
+import { DynamicMetaTags } from 'components/MetaTags';
 
 import 'styles/index.css';
 import AnchorHeading from 'components/AnchorHeading';
@@ -44,13 +45,32 @@ function App({ Component, pageProps }: AppProps) {
     }
   }, []);
   return (
-    <MDXProvider components={components}>
-      <AnchorHeadingsProvider>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </AnchorHeadingsProvider>
-    </MDXProvider>
+    <>
+      <Head>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:image"
+          content="/assets/shared/dagster-preview.png"
+        />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+          property="twitter:image"
+          content="/assets/shared/dagster-preview.png"
+        />
+      </Head>
+
+      <DynamicMetaTags />
+
+      <MDXProvider components={components}>
+        <AnchorHeadingsProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </AnchorHeadingsProvider>
+      </MDXProvider>
+    </>
   );
 }
 

@@ -1,3 +1,10 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Testing Guide | Dagster"
+  description="Dagster is a system for building modern data applications."
+/>
+
 # Testing Guide
 
 Testing computations and pipelines in data applications is notoriously challenging. Because of this, they often go relatively untested before hitting production. If there is testing in place, these tests are often slow, not run during common developer workflows, and have limited value because of the inability to simulate conditions in the production environment.
