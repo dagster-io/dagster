@@ -23,9 +23,9 @@ from dagster import (
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.solid_container import _create_adjacency_lists
-from dagster.core.execution.api import step_output_event_filter
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import step_output_event_filter
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,

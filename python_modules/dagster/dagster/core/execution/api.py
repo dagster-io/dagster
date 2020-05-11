@@ -26,71 +26,22 @@ from .config import RunConfig
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
 from .results import PipelineExecutionResult
 
-
-def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
-    # backcompat
-    if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryExecutablePipeline(pipeline)
-
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    pipeline_def = pipeline.get_definition()
-
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
-    mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
-
-    environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, mode=mode)
-
-    return ExecutionPlan.build(
-        pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute
-    )
-
-
-def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None):
-    '''A complete execution of a pipeline. Yields pipeline start, success,
-    and failure events.
-
-    Args:
-        pipeline_context (SystemPipelineExecutionContext):
-        execution_plan (ExecutionPlan):
-        retries (None): Must be None. This is to align the signature of
-            `_pipeline_execution_iterator` with that of
-            `dagster.core.execution.plan.execute_plan.inner_plan_execution_iterator` so the same
-            machinery in _ExecuteRunWithPlanIterable can call them without unpleasant workarounds.
-            (Default: None)
-    '''
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.invariant(
-        retries is None, 'Programming error: Retries not supported in _pipeline_execution_iterator'
-    )
-    yield DagsterEvent.pipeline_start(pipeline_context)
-
-    pipeline_success = True
-    generator_closed = False
-    try:
-        for event in pipeline_context.executor_config.get_engine().execute(
-            pipeline_context, execution_plan
-        ):
-            if event.is_step_failure:
-                pipeline_success = False
-            yield event
-    except GeneratorExit:
-        # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
-        # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
-        generator_closed = True
-        pipeline_success = False
-        raise
-    except (Exception, KeyboardInterrupt):
-        pipeline_success = False
-        raise  # finally block will run before this is re-raised
-    finally:
-        if pipeline_success:
-            event = DagsterEvent.pipeline_success(pipeline_context)
-        else:
-            event = DagsterEvent.pipeline_failure(pipeline_context)
-        if not generator_closed:
-            yield event
+## Brief guide to the execution APIs
+# | function name             | operates over      | sync  | supports    | creates new PipelineRun |
+# |                           |                    |       | reexecution | in instance             |
+# | ------------------------- | ------------------ | ----- | ----------- | ----------------------- |
+# | execute_pipeline_iterator | ExecutablePipeline | async | no          | yes                     |
+# | execute_pipeline          | ExecutablePipeline | sync  | no          | yes                     |
+# | execute_run_iterator      | PipelineRun        | async | (1)         | no                      |
+# | execute_run               | PipelineRun        | sync  | (1)         | no                      |
+# | execute_plan_iterator     | ExecutionPlan      | async | (2)         | no                      |
+# | execute_plan              | ExecutionPlan      | sync  | (2)         | no                      |
+#
+# Notes on rexecution support:
+# (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
+#     parent_run_id and root_run_id must be set and consistent, and if a solid_subset or
+#     step_keys_to_execute are set they must be consistent with the parent and root runs.
+# (2) As for (1), but the ExecutionPlan passed must also agree in all relevant bits.
 
 
 def execute_run_iterator(pipeline, pipeline_run, instance):
@@ -178,173 +129,6 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
             ),
         ),
     )
-
-
-class _ExecuteRunWithPlanIterable(object):
-    '''Utility class to consolidate execution logic.
-    
-    This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
-    for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
-    yielding events. This broadly follows a pattern we make use of in other places,
-    cf. `dagster.utils.EventGenerationManager`.
-    '''
-
-    def __init__(
-        self,
-        execution_plan,
-        pipeline_run,
-        instance,
-        iterator,
-        environment_dict,
-        retries,
-        raise_on_error,
-    ):
-        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        self.pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        self.instance = check.inst_param(instance, 'instance', DagsterInstance)
-        self.iterator = check.callable_param(iterator, 'iterator')
-        self.environment_dict = (
-            check.opt_dict_param(environment_dict, 'environment_dict')
-            or self.pipeline_run.environment_dict
-        )
-        self.retries = check.opt_inst_param(retries, 'retries', Retries)
-        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
-        self.pipeline_context = None
-
-    def __iter__(self):
-        initialization_manager = pipeline_initialization_manager(
-            self.execution_plan,
-            self.environment_dict,
-            self.pipeline_run,
-            self.instance,
-            raise_on_error=self.raise_on_error,
-        )
-        for event in initialization_manager.generate_setup_events():
-            yield event
-        self.pipeline_context = initialization_manager.get_object()
-        generator_closed = False
-        try:
-            if self.pipeline_context:  # False if we had a pipeline init failure
-                for event in self.iterator(
-                    execution_plan=self.execution_plan,
-                    pipeline_context=self.pipeline_context,
-                    retries=self.retries,
-                ):
-                    yield event
-        except GeneratorExit:
-            # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
-            # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
-            generator_closed = True
-            raise
-        finally:
-            for event in initialization_manager.generate_teardown_events():
-                if not generator_closed:
-                    yield event
-
-
-def _check_execute_pipeline_args(
-    fn_name, pipeline, environment_dict, mode, preset, tags, run_config, instance
-):
-    # backcompat
-    if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryExecutablePipeline(pipeline)
-
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    pipeline_def = pipeline.get_definition()
-
-    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-
-    check.opt_str_param(mode, 'mode')
-    check.opt_str_param(preset, 'preset')
-    check.invariant(
-        not (mode is not None and preset is not None),
-        'You may set only one of `mode` (got {mode}) or `preset` (got {preset}).'.format(
-            mode=mode, preset=preset
-        ),
-    )
-
-    tags = check.opt_dict_param(tags, 'tags', key_type=str)
-
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
-
-    if preset is not None:
-        pipeline_preset = pipeline_def.get_preset(preset)
-
-        check.invariant(
-            run_config.mode is None or pipeline_preset.mode == run_config.mode,
-            'The mode set in preset \'{preset}\' (\'{preset_mode}\') does not agree with the mode '
-            'set in the `run_config` (\'{run_config_mode}\')'.format(
-                preset=preset, preset_mode=pipeline_preset.mode, run_config_mode=run_config.mode
-            ),
-        )
-
-        if pipeline_preset.environment_dict is not None:
-            check.invariant(
-                (not environment_dict) or (pipeline_preset.environment_dict == environment_dict),
-                'The environment set in preset \'{preset}\' does not agree with the environment '
-                'passed in the `environment_dict` argument.'.format(preset=preset),
-            )
-
-            environment_dict = pipeline_preset.environment_dict
-
-        if pipeline_preset.solid_subset is not None:
-            pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)
-
-        check.invariant(
-            mode is None or mode == pipeline_preset.mode,
-            'Mode {mode} does not agree with the mode set in preset \'{preset}\': '
-            '(\'{preset_mode}\')'.format(
-                preset=preset, preset_mode=pipeline_preset.mode, mode=mode
-            ),
-        )
-
-        mode = pipeline_preset.mode
-
-    if run_config.mode is not None or run_config.tags:
-        warnings.warn(
-            (
-                'In 0.8.0, the use of `run_config` to set pipeline mode and tags will be '
-                'deprecated. Please use the `mode` and `tags` arguments to `{fn_name}` '
-                'instead.'
-            ).format(fn_name=fn_name)
-        )
-
-    if run_config.mode is not None:
-        if mode is not None:
-            check.invariant(
-                run_config.mode == mode,
-                'Mode \'{mode}\' does not agree with the mode set in the `run_config`: '
-                '\'{run_config_mode}\''.format(mode=mode, run_config_mode=run_config.mode),
-            )
-        mode = run_config.mode
-
-    if mode is not None:
-        if not pipeline_def.has_mode_definition(mode):
-            raise DagsterInvariantViolationError(
-                (
-                    'You have attempted to execute pipeline {name} with mode {mode}. '
-                    'Available modes: {modes}'
-                ).format(
-                    name=pipeline_def.name, mode=mode, modes=pipeline_def.available_modes,
-                )
-            )
-    else:
-        if pipeline_def.is_multi_mode:
-            raise DagsterInvariantViolationError(
-                (
-                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
-                    'attempted to execute it without specifying a mode. Set '
-                    'mode property on the PipelineRun object.'
-                ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
-            )
-        mode = pipeline_def.get_default_mode_name()
-
-    tags = merge_dicts(merge_dicts(pipeline_def.tags, run_config.tags or {}), tags)
-
-    check.opt_inst_param(instance, 'instance', DagsterInstance)
-    instance = instance or DagsterInstance.ephemeral()
-
-    return pipeline, environment_dict, instance, mode, tags, run_config
 
 
 def execute_pipeline_iterator(
@@ -535,12 +319,6 @@ def execute_plan(
     )
 
 
-def step_output_event_filter(pipe_iterator):
-    for step_event in pipe_iterator:
-        if step_event.is_successful_output:
-            yield step_event
-
-
 def execute_partition_set(partition_set, partition_filter, instance=None):
     '''Programatically perform a backfill over a partition set
 
@@ -577,3 +355,236 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
         time.sleep(0.1)
 
         instance.launch_run(run.run_id)
+
+
+def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
+    # backcompat
+    if isinstance(pipeline, PipelineDefinition):
+        pipeline = InMemoryExecutablePipeline(pipeline)
+
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    pipeline_def = pipeline.get_definition()
+
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
+    mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
+    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+
+    environment_config = EnvironmentConfig.build(pipeline_def, environment_dict, mode=mode)
+
+    return ExecutionPlan.build(
+        pipeline, environment_config, mode=mode, step_keys_to_execute=step_keys_to_execute
+    )
+
+
+def _pipeline_execution_iterator(pipeline_context, execution_plan, retries=None):
+    '''A complete execution of a pipeline. Yields pipeline start, success,
+    and failure events.
+
+    Args:
+        pipeline_context (SystemPipelineExecutionContext):
+        execution_plan (ExecutionPlan):
+        retries (None): Must be None. This is to align the signature of
+            `_pipeline_execution_iterator` with that of
+            `dagster.core.execution.plan.execute_plan.inner_plan_execution_iterator` so the same
+            machinery in _ExecuteRunWithPlanIterable can call them without unpleasant workarounds.
+            (Default: None)
+    '''
+    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
+    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.invariant(
+        retries is None, 'Programming error: Retries not supported in _pipeline_execution_iterator'
+    )
+    yield DagsterEvent.pipeline_start(pipeline_context)
+
+    pipeline_success = True
+    generator_closed = False
+    try:
+        for event in pipeline_context.executor_config.get_engine().execute(
+            pipeline_context, execution_plan
+        ):
+            if event.is_step_failure:
+                pipeline_success = False
+            yield event
+    except GeneratorExit:
+        # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
+        # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
+        generator_closed = True
+        pipeline_success = False
+        raise
+    except (Exception, KeyboardInterrupt):
+        pipeline_success = False
+        raise  # finally block will run before this is re-raised
+    finally:
+        if pipeline_success:
+            event = DagsterEvent.pipeline_success(pipeline_context)
+        else:
+            event = DagsterEvent.pipeline_failure(pipeline_context)
+        if not generator_closed:
+            yield event
+
+
+class _ExecuteRunWithPlanIterable(object):
+    '''Utility class to consolidate execution logic.
+    
+    This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
+    for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
+    yielding events. This broadly follows a pattern we make use of in other places,
+    cf. `dagster.utils.EventGenerationManager`.
+    '''
+
+    def __init__(
+        self,
+        execution_plan,
+        pipeline_run,
+        instance,
+        iterator,
+        environment_dict,
+        retries,
+        raise_on_error,
+    ):
+        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        self.pipeline_run = check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        self.instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self.iterator = check.callable_param(iterator, 'iterator')
+        self.environment_dict = (
+            check.opt_dict_param(environment_dict, 'environment_dict')
+            or self.pipeline_run.environment_dict
+        )
+        self.retries = check.opt_inst_param(retries, 'retries', Retries)
+        self.raise_on_error = check.bool_param(raise_on_error, 'raise_on_error')
+        self.pipeline_context = None
+
+    def __iter__(self):
+        initialization_manager = pipeline_initialization_manager(
+            self.execution_plan,
+            self.environment_dict,
+            self.pipeline_run,
+            self.instance,
+            raise_on_error=self.raise_on_error,
+        )
+        for event in initialization_manager.generate_setup_events():
+            yield event
+        self.pipeline_context = initialization_manager.get_object()
+        generator_closed = False
+        try:
+            if self.pipeline_context:  # False if we had a pipeline init failure
+                for event in self.iterator(
+                    execution_plan=self.execution_plan,
+                    pipeline_context=self.pipeline_context,
+                    retries=self.retries,
+                ):
+                    yield event
+        except GeneratorExit:
+            # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
+            # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
+            generator_closed = True
+            raise
+        finally:
+            for event in initialization_manager.generate_teardown_events():
+                if not generator_closed:
+                    yield event
+
+
+def _check_execute_pipeline_args(
+    fn_name, pipeline, environment_dict, mode, preset, tags, run_config, instance
+):
+    # backcompat
+    if isinstance(pipeline, PipelineDefinition):
+        pipeline = InMemoryExecutablePipeline(pipeline)
+
+    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    pipeline_def = pipeline.get_definition()
+
+    environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
+
+    check.opt_str_param(mode, 'mode')
+    check.opt_str_param(preset, 'preset')
+    check.invariant(
+        not (mode is not None and preset is not None),
+        'You may set only one of `mode` (got {mode}) or `preset` (got {preset}).'.format(
+            mode=mode, preset=preset
+        ),
+    )
+
+    tags = check.opt_dict_param(tags, 'tags', key_type=str)
+
+    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
+
+    if preset is not None:
+        pipeline_preset = pipeline_def.get_preset(preset)
+
+        check.invariant(
+            run_config.mode is None or pipeline_preset.mode == run_config.mode,
+            'The mode set in preset \'{preset}\' (\'{preset_mode}\') does not agree with the mode '
+            'set in the `run_config` (\'{run_config_mode}\')'.format(
+                preset=preset, preset_mode=pipeline_preset.mode, run_config_mode=run_config.mode
+            ),
+        )
+
+        if pipeline_preset.environment_dict is not None:
+            check.invariant(
+                (not environment_dict) or (pipeline_preset.environment_dict == environment_dict),
+                'The environment set in preset \'{preset}\' does not agree with the environment '
+                'passed in the `environment_dict` argument.'.format(preset=preset),
+            )
+
+            environment_dict = pipeline_preset.environment_dict
+
+        if pipeline_preset.solid_subset is not None:
+            pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)
+
+        check.invariant(
+            mode is None or mode == pipeline_preset.mode,
+            'Mode {mode} does not agree with the mode set in preset \'{preset}\': '
+            '(\'{preset_mode}\')'.format(
+                preset=preset, preset_mode=pipeline_preset.mode, mode=mode
+            ),
+        )
+
+        mode = pipeline_preset.mode
+
+    if run_config.mode is not None or run_config.tags:
+        warnings.warn(
+            (
+                'In 0.8.0, the use of `run_config` to set pipeline mode and tags will be '
+                'deprecated. Please use the `mode` and `tags` arguments to `{fn_name}` '
+                'instead.'
+            ).format(fn_name=fn_name)
+        )
+
+    if run_config.mode is not None:
+        if mode is not None:
+            check.invariant(
+                run_config.mode == mode,
+                'Mode \'{mode}\' does not agree with the mode set in the `run_config`: '
+                '\'{run_config_mode}\''.format(mode=mode, run_config_mode=run_config.mode),
+            )
+        mode = run_config.mode
+
+    if mode is not None:
+        if not pipeline_def.has_mode_definition(mode):
+            raise DagsterInvariantViolationError(
+                (
+                    'You have attempted to execute pipeline {name} with mode {mode}. '
+                    'Available modes: {modes}'
+                ).format(
+                    name=pipeline_def.name, mode=mode, modes=pipeline_def.available_modes,
+                )
+            )
+    else:
+        if pipeline_def.is_multi_mode:
+            raise DagsterInvariantViolationError(
+                (
+                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
+                    'attempted to execute it without specifying a mode. Set '
+                    'mode property on the PipelineRun object.'
+                ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
+            )
+        mode = pipeline_def.get_default_mode_name()
+
+    tags = merge_dicts(merge_dicts(pipeline_def.tags, run_config.tags or {}), tags)
+
+    check.opt_inst_param(instance, 'instance', DagsterInstance)
+    instance = instance or DagsterInstance.ephemeral()
+
+    return pipeline, environment_dict, instance, mode, tags, run_config

@@ -11,6 +11,12 @@ from dagster import (
 )
 
 
+def step_output_event_filter(pipe_iterator):
+    for step_event in pipe_iterator:
+        if step_event.is_successful_output:
+            yield step_event
+
+
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
     '''It is commmon to want a Solid that has only inputs, a single output (with the default
     name), and no config. So this is a helper function to do that. This compute function
