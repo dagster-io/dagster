@@ -1,3 +1,5 @@
+import uuid
+
 import dagster.check as check
 from dagster import (
     DependencyDefinition,
@@ -12,7 +14,6 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     ResourceDefinition,
-    RunConfig,
     String,
     execute_pipeline,
     execute_pipeline_iterator,
@@ -23,6 +24,7 @@ from dagster import (
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.solid_container import _create_adjacency_lists
+from dagster.core.execution.api import execute_run
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
@@ -571,13 +573,14 @@ def test_reexecution_fs_storage():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    reexecution_run_config = RunConfig(previous_run_id=pipeline_result.run_id)
-    reexecution_result = execute_pipeline(
+    pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
         environment_dict={'storage': {'filesystem': {}}},
-        run_config=reexecution_run_config,
-        instance=instance,
+        parent_run_id=pipeline_result.run_id,
+        root_run_id=pipeline_result.run_id,
     )
+
+    reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
 
     assert reexecution_result.success
     assert len(reexecution_result.solid_result_list) == 2
@@ -603,10 +606,14 @@ def test_reexecution_inmemory_storage():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    reexecution_run_config = RunConfig(previous_run_id=pipeline_result.run_id)
-    reexecution_result = execute_pipeline(
-        pipeline_def, run_config=reexecution_run_config, instance=instance,
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def,
+        environment_dict={'storage': {'filesystem': {}}},
+        parent_run_id=pipeline_result.run_id,
+        root_run_id=pipeline_result.run_id,
     )
+
+    reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
 
     assert reexecution_result.success
     assert len(reexecution_result.solid_result_list) == 2
@@ -627,21 +634,22 @@ def test_single_step_reexecution():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
+    environment_dict = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(
-        pipeline_def, environment_dict={'storage': {'filesystem': {}}}, instance=instance
-    )
+    pipeline_result = execute_pipeline(pipeline_def, environment_dict, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    reexecution_result = execute_pipeline(
+    # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
+    reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(
-            previous_run_id=pipeline_result.run_id, step_keys_to_execute=['add_one.compute']
-        ),
-        instance=instance,
+        environment_dict=environment_dict,
+        step_keys_to_execute=['add_one.compute'],
+        parent_run_id=pipeline_result.run_id,
+        root_run_id=pipeline_result.run_id,
     )
+
+    reexecution_result = execute_run(pipeline_def, reexecution_pipeline_run, instance)
 
     assert reexecution_result.success
     assert reexecution_result.result_for_solid('return_one').output_value() == None
@@ -662,21 +670,22 @@ def test_two_step_reexecution():
         add_one(add_one(return_one()))
 
     instance = DagsterInstance.ephemeral()
+    environment_dict = {'storage': {'filesystem': {}}}
     pipeline_result = execute_pipeline(
-        two_step_reexec, environment_dict={'storage': {'filesystem': {}}}, instance=instance
+        two_step_reexec, environment_dict=environment_dict, instance=instance
     )
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one_2').output_value() == 3
 
-    reexecution_result = execute_pipeline(
+    reexecution_pipeline_run = instance.create_run_for_pipeline(
         two_step_reexec,
-        environment_dict={'storage': {'filesystem': {}}},
-        run_config=RunConfig(
-            previous_run_id=pipeline_result.run_id,
-            step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
-        ),
-        instance=instance,
+        environment_dict=environment_dict,
+        step_keys_to_execute=['add_one.compute', 'add_one_2.compute'],
+        parent_run_id=pipeline_result.run_id,
+        root_run_id=pipeline_result.run_id,
     )
+
+    reexecution_result = execute_run(two_step_reexec, reexecution_pipeline_run, instance=instance)
 
     assert reexecution_result.success
     assert reexecution_result.result_for_solid('return_one').output_value() == None
@@ -759,3 +768,43 @@ def test_selector_with_build_sub_pipeline():
         def_two()
 
     assert set(pipe.build_sub_pipeline(['def_two']).selector.solid_subset) == {'def_two'}
+
+
+def test_default_run_id():
+    called = {}
+
+    @solid
+    def check_run_id(context):
+        called['yes'] = True
+        assert uuid.UUID(context.run_id)
+        called['run_id'] = context.run_id
+
+    pipeline_def = PipelineDefinition(solid_defs=[check_run_id])
+
+    result = execute_pipeline(pipeline_def)
+    assert result.run_id == called['run_id']
+    assert called['yes']
+
+
+def test_pipeline_tags():
+    called = {}
+
+    @solid
+    def check_tags(context):
+        assert context.get_tag('foo') == 'bar'
+        called['yup'] = True
+
+    pipeline_def_with_tags = PipelineDefinition(
+        name='injected_run_id', solid_defs=[check_tags], tags={'foo': 'bar'}
+    )
+    result = execute_pipeline(pipeline_def_with_tags)
+    assert result.success
+    assert called['yup']
+
+    called = {}
+    pipeline_def_with_override_tags = PipelineDefinition(
+        name='injected_run_id', solid_defs=[check_tags], tags={'foo': 'notbar'}
+    )
+    result = execute_pipeline(pipeline_def_with_override_tags, tags={'foo': 'bar'})
+    assert result.success
+    assert called['yup']

@@ -114,7 +114,7 @@ def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
     }
 
 
-def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_run_config_tags():
+def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags_and_execute_tags():
     pipeline_result = execute_pipeline(
         pipeline_with_multi_mode_and_tags, mode='tags_1', tags={'run_tag_key': 'run_tag_value'},
     )

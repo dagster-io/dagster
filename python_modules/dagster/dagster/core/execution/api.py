@@ -1,5 +1,4 @@
 import time
-import warnings
 
 from dagster import check
 from dagster.core.definitions import (
@@ -22,7 +21,6 @@ from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id, make_new_run_id
 from dagster.utils import merge_dicts
 
-from .config import RunConfig
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
 from .results import PipelineExecutionResult
 
@@ -85,11 +83,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Returns:
         PipelineExecutionResult: The result of the execution.
     '''
-    if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryExecutablePipeline(pipeline)
-
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    pipeline_def = pipeline.get_definition()
+    pipeline, pipeline_def = _check_pipeline(pipeline)
 
     check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
     check.inst_param(instance, 'instance', DagsterInstance)
@@ -132,13 +126,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 
 def execute_pipeline_iterator(
-    pipeline,
-    environment_dict=None,
-    mode=None,
-    preset=None,
-    tags=None,
-    run_config=None,
-    instance=None,
+    pipeline, environment_dict=None, mode=None, preset=None, tags=None, instance=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -150,7 +138,7 @@ def execute_pipeline_iterator(
     way is appropriate.
 
     Parameters:
-        pipeline (PipelineDefinition): The pipeline to execute.
+        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
         environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
@@ -159,41 +147,27 @@ def execute_pipeline_iterator(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        run_config (Optional[RunConfig]): Optionally specifies additional config options for
-            pipeline execution.
-
-            Deprecation notice:  In 0.8.0, the use of `run_config` to set mode, tags, and step keys
-            will be deprecated. In the interim, if you set a mode using `run_config`, this must
-            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
-            tags set using `tags` will take precedence. If you set step keys, these must be
-            compatible with any solid subset specified using `preset`.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
-    (pipeline, environment_dict, instance, mode, tags, run_config,) = _check_execute_pipeline_args(
-        'execute_pipeline_iterator',
+    pipeline, pipeline_def, environment_dict, instance, mode, tags = _check_execute_pipeline_args(
         pipeline=pipeline,
         environment_dict=environment_dict,
         mode=mode,
         preset=preset,
         tags=tags,
-        run_config=run_config,
         instance=instance,
     )
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
-        run_id=run_config.run_id,
+        pipeline_def=pipeline_def,
         environment_dict=environment_dict,
         mode=mode,
-        solid_subset=pipeline.get_definition().selector.solid_subset,
-        step_keys_to_execute=run_config.step_keys_to_execute,
+        solid_subset=pipeline_def.selector.solid_subset,
         tags=tags,
-        root_run_id=run_config.previous_run_id,
-        parent_run_id=run_config.previous_run_id,
     )
 
     return execute_run_iterator(pipeline, pipeline_run, instance)
@@ -206,7 +180,6 @@ def execute_pipeline(
     mode=None,
     preset=None,
     tags=None,
-    run_config=None,
     instance=None,
     raise_on_error=True,
 ):
@@ -216,7 +189,7 @@ def execute_pipeline(
     scripts.
 
     Parameters:
-        pipeline (PipelineDefinition): The pipeline to execute.
+        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
         environment_dict (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
@@ -225,14 +198,6 @@ def execute_pipeline(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        run_config (Optional[RunConfig]): Optionally specifies additional config options for
-            pipeline execution.
-
-            Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
-            will be deprecated. In the interim, if you set a mode using `run_config`, this must
-            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
-            tags set using `tags` will take precedence. If you set step keys, these must be
-            compatible with any solid subset specified using `preset`.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -246,29 +211,21 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
-    (pipeline, environment_dict, instance, mode, tags, run_config,) = _check_execute_pipeline_args(
-        'execute_pipeline',
+    pipeline, pipeline_def, environment_dict, instance, mode, tags = _check_execute_pipeline_args(
         pipeline=pipeline,
         environment_dict=environment_dict,
         mode=mode,
         preset=preset,
         tags=tags,
-        run_config=run_config,
         instance=instance,
     )
 
-    pipeline_def = pipeline.get_definition()
-
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,
-        run_id=run_config.run_id,
         environment_dict=environment_dict,
         mode=mode,
         solid_subset=pipeline_def.selector.solid_subset,
-        step_keys_to_execute=run_config.step_keys_to_execute,
         tags=tags,
-        root_run_id=run_config.previous_run_id,
-        parent_run_id=run_config.previous_run_id,
     )
 
     return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error)
@@ -357,14 +314,18 @@ def execute_partition_set(partition_set, partition_filter, instance=None):
         instance.launch_run(run.run_id)
 
 
-def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
+def _check_pipeline(pipeline):
     # backcompat
     if isinstance(pipeline, PipelineDefinition):
         pipeline = InMemoryExecutablePipeline(pipeline)
 
     check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
     pipeline_def = pipeline.get_definition()
+    return pipeline, pipeline_def
 
+
+def create_execution_plan(pipeline, environment_dict=None, mode=None, step_keys_to_execute=None):
+    pipeline, pipeline_def = _check_pipeline(pipeline)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict', key_type=str)
     mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
     check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
@@ -485,18 +446,9 @@ class _ExecuteRunWithPlanIterable(object):
                     yield event
 
 
-def _check_execute_pipeline_args(
-    fn_name, pipeline, environment_dict, mode, preset, tags, run_config, instance
-):
-    # backcompat
-    if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryExecutablePipeline(pipeline)
-
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    pipeline_def = pipeline.get_definition()
-
+def _check_execute_pipeline_args(pipeline, environment_dict, mode, preset, tags, instance):
+    pipeline, pipeline_def = _check_pipeline(pipeline)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
-
     check.opt_str_param(mode, 'mode')
     check.opt_str_param(preset, 'preset')
     check.invariant(
@@ -508,18 +460,8 @@ def _check_execute_pipeline_args(
 
     tags = check.opt_dict_param(tags, 'tags', key_type=str)
 
-    run_config = check.opt_inst_param(run_config, 'run_config', RunConfig, default=RunConfig())
-
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
-
-        check.invariant(
-            run_config.mode is None or pipeline_preset.mode == run_config.mode,
-            'The mode set in preset \'{preset}\' (\'{preset_mode}\') does not agree with the mode '
-            'set in the `run_config` (\'{run_config_mode}\')'.format(
-                preset=preset, preset_mode=pipeline_preset.mode, run_config_mode=run_config.mode
-            ),
-        )
 
         if pipeline_preset.environment_dict is not None:
             check.invariant(
@@ -532,6 +474,7 @@ def _check_execute_pipeline_args(
 
         if pipeline_preset.solid_subset is not None:
             pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)
+            pipeline_def = pipeline.get_definition()
 
         check.invariant(
             mode is None or mode == pipeline_preset.mode,
@@ -542,24 +485,6 @@ def _check_execute_pipeline_args(
         )
 
         mode = pipeline_preset.mode
-
-    if run_config.mode is not None or run_config.tags:
-        warnings.warn(
-            (
-                'In 0.8.0, the use of `run_config` to set pipeline mode and tags will be '
-                'deprecated. Please use the `mode` and `tags` arguments to `{fn_name}` '
-                'instead.'
-            ).format(fn_name=fn_name)
-        )
-
-    if run_config.mode is not None:
-        if mode is not None:
-            check.invariant(
-                run_config.mode == mode,
-                'Mode \'{mode}\' does not agree with the mode set in the `run_config`: '
-                '\'{run_config_mode}\''.format(mode=mode, run_config_mode=run_config.mode),
-            )
-        mode = run_config.mode
 
     if mode is not None:
         if not pipeline_def.has_mode_definition(mode):
@@ -582,9 +507,9 @@ def _check_execute_pipeline_args(
             )
         mode = pipeline_def.get_default_mode_name()
 
-    tags = merge_dicts(merge_dicts(pipeline_def.tags, run_config.tags or {}), tags)
+    tags = merge_dicts(pipeline_def.tags, tags)
 
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
-    return pipeline, environment_dict, instance, mode, tags, run_config
+    return pipeline, pipeline_def, environment_dict, instance, mode, tags

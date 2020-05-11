@@ -1,10 +1,10 @@
 import time
 from collections import defaultdict
 
-from dagster import RunConfig, execute_pipeline
 from dagster.cli.load_handle import handle_for_pipeline_cli_args
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
 
 
@@ -22,12 +22,14 @@ def test_event_callback_logging():
             'fn_name': 'define_hello_logging_pipeline',
         }
     )
-    run_config = RunConfig()
     instance = DagsterInstance.local_temp()
 
-    instance.watch_event_logs(run_config.run_id, -1, _event_callback)
+    pipeline = handle.build_pipeline_definition()
+    pipeline_run = instance.create_run_for_pipeline(pipeline)
 
-    execute_pipeline(handle.build_pipeline_definition(), run_config=run_config, instance=instance)
+    instance.watch_event_logs(pipeline_run.run_id, -1, _event_callback)
+
+    execute_run(pipeline, pipeline_run, instance)
 
     passed_before_timeout = False
     retries = 5

@@ -2,7 +2,8 @@ import copy
 
 from dagster_graphql.test.utils import define_context_for_file, execute_dagster_graphql
 
-from dagster import RepositoryDefinition, RunConfig, execute_pipeline, lambda_solid, pipeline, seven
+from dagster import RepositoryDefinition, execute_pipeline, lambda_solid, pipeline, seven
+from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 
@@ -370,14 +371,14 @@ def test_run_group():
         root_run_id = runs[-1].run_id
         for _ in range(3):
             # https://github.com/dagster-io/dagster/issues/2433
-            runs.append(
-                execute_pipeline(
-                    foo_pipeline,
-                    run_config=RunConfig(previous_run_id=root_run_id),
-                    tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
-                    instance=instance,
-                )
+            run = instance.create_run_for_pipeline(
+                foo_pipeline,
+                parent_run_id=root_run_id,
+                root_run_id=root_run_id,
+                tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
+            execute_run(foo_pipeline, run, instance)
+            runs.append(run)
 
         context_at_time_1 = define_context_for_file(__file__, 'get_repo_at_time_1', instance)
 

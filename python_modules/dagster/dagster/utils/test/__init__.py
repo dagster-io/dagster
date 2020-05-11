@@ -24,7 +24,7 @@ from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import ISolidDefinition
-from dagster.core.execution.api import RunConfig, create_execution_plan, scoped_pipeline_context
+from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     construct_pipeline_execution_context,
     create_context_creation_data,
@@ -136,7 +136,6 @@ def execute_solids_within_pipeline(
     mode=None,
     preset=None,
     tags=None,
-    run_config=None,
     instance=None,
 ):
     '''Execute a set of solids within an existing pipeline.
@@ -157,14 +156,6 @@ def execute_solids_within_pipeline(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        run_config (Optional[RunConfig]): Optionally specifies additional config options for
-            pipeline execution.
-
-            Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
-            will be deprecated. In the interim, if you set a mode using `run_config`, this must
-            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
-            tags set using `tags` will take precedence. If you set step keys, these must be
-            compatible with any solid subset specified using `preset`.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -184,7 +175,6 @@ def execute_solids_within_pipeline(
         mode=mode,
         preset=preset,
         tags=tags,
-        run_config=run_config,
         instance=instance,
     )
 
@@ -199,7 +189,6 @@ def execute_solid_within_pipeline(
     mode=None,
     preset=None,
     tags=None,
-    run_config=None,
     instance=None,
 ):
     '''Execute a single solid within an existing pipeline.
@@ -220,14 +209,6 @@ def execute_solid_within_pipeline(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
-        run_config (Optional[RunConfig]): Optionally specifies additional config options for
-            pipeline execution.
-
-            Deprecation notice: In 0.8.0, the use of `run_config` to set mode, tags, and step keys
-            will be deprecated. In the interim, if you set a mode using `run_config`, this must
-            match any mode set using `mode` or `preset`. If you set tags using `run_config`, any
-            tags set using `tags` will take precedence. If you set step keys, these must be
-            compatible with any solid subset specified using `preset`.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
@@ -243,7 +224,6 @@ def execute_solid_within_pipeline(
         mode=mode,
         preset=preset,
         tags=tags,
-        run_config=run_config,
         instance=instance,
     )[solid_name]
 

@@ -11,7 +11,6 @@ from dagster import (
     OutputDefinition,
     PipelineRun,
     RetryRequested,
-    RunConfig,
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
@@ -80,14 +79,12 @@ def test_retries(environment):
         pipe, environment_dict=fails, instance=instance, raise_on_error=False,
     )
 
+    assert not result.success
+
     passes = dict(environment)
     passes['solids'] = {'can_fail': {'config': {'fail': False}}}
-    second_result = execute_pipeline(
-        pipe,
-        environment_dict=passes,
-        run_config=RunConfig(previous_run_id=result.run_id),
-        instance=instance,
-    )
+
+    second_result = execute_pipeline(pipe, environment_dict=passes, instance=instance)
 
     assert second_result.success
     downstream_of_failed = second_result.result_for_solid('downstream_of_failed').output_value()

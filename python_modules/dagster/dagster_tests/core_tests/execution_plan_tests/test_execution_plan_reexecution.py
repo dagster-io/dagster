@@ -6,7 +6,6 @@ from dagster import (
     Int,
     OutputDefinition,
     PipelineDefinition,
-    RunConfig,
     execute_pipeline,
     lambda_solid,
 )
@@ -189,16 +188,13 @@ def test_pipeline_step_key_subset_execution():
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')
 
-
-def test_pipeline_step_key_subset_execution_wrong_step_key_in_subset():
-    pipeline_def = define_addy_pipeline()
-    environment_dict = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
-    result = execute_pipeline(pipeline_def, environment_dict=environment_dict)
-    assert result.success
-
-    with pytest.raises(DagsterExecutionStepNotFoundError):
-        execute_pipeline(
+    with pytest.raises(
+        DagsterExecutionStepNotFoundError, match='Execution plan does not contain step'
+    ):
+        pipeline_run = instance.create_run_for_pipeline(
             pipeline_def,
             environment_dict=environment_dict,
-            run_config=RunConfig(previous_run_id=result.run_id, step_keys_to_execute=['nope']),
+            step_keys_to_execute=['nope.compute'],
+            parent_run_id=result.run_id,
+            root_run_id=result.run_id,
         )

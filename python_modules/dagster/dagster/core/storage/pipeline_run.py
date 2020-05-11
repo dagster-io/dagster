@@ -2,7 +2,6 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.execution.config import IRunConfig
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import whitelist_for_serdes
 
@@ -66,7 +65,6 @@ class PipelineRun(
             'pipeline_snapshot_id execution_plan_snapshot_id'
         ),
     ),
-    IRunConfig,
 ):
     '''Serializable internal representation of a pipeline run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.

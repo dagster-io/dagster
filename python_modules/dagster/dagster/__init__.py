@@ -85,7 +85,7 @@ from dagster.core.execution.api import (
     execute_pipeline,
     execute_pipeline_iterator,
 )
-from dagster.core.execution.config import ExecutorConfig, RunConfig
+from dagster.core.execution.config import ExecutorConfig
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
@@ -189,7 +189,6 @@ __all__ = [
     'InitSystemStorageContext',
     'PipelineExecutionResult',
     'RetryRequested',
-    'RunConfig',
     'SolidExecutionResult',
     'SystemComputeExecutionContext',
     'SolidExecutionContext',

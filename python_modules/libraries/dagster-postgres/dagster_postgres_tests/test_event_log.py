@@ -12,14 +12,13 @@ from dagster import (
     Materialization,
     ModeDefinition,
     Output,
-    RunConfig,
-    execute_pipeline,
     pipeline,
     seven,
     solid,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
+from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
@@ -37,8 +36,8 @@ def mode_def(event_callback):
     )
 
 
-# This just exists to gather synthetic events to test the store
-def gather_events(solids_fn, run_config=None):
+# This just exists to create synthetic events to test the store
+def synthesize_events(solids_fn, run_id=None):
     events = []
 
     def _append_event(event):
@@ -48,9 +47,13 @@ def gather_events(solids_fn, run_config=None):
     def a_pipe():
         solids_fn()
 
-    result = execute_pipeline(
-        a_pipe, {'loggers': {'callback': {}, 'console': {}}}, run_config=run_config
+    instance = DagsterInstance.local_temp()
+
+    pipeline_run = instance.create_run_for_pipeline(
+        a_pipe, run_id=run_id, environment_dict={'loggers': {'callback': {}, 'console': {}}}
     )
+
+    result = execute_run(a_pipe, pipeline_run, instance)
 
     assert result.success
 
@@ -72,7 +75,7 @@ def test_basic_event_store(conn_string):
     def _solids():
         return_one()
 
-    events, _result = gather_events(_solids)
+    events, _result = synthesize_events(_solids)
 
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -122,7 +125,7 @@ def test_basic_get_logs_for_run(conn_string):
     def _solids():
         return_one()
 
-    events, result = gather_events(_solids)
+    events, result = synthesize_events(_solids)
 
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -150,7 +153,7 @@ def test_wipe_postgres_event_log(conn_string):
     def _solids():
         return_one()
 
-    events, result = gather_events(_solids)
+    events, result = synthesize_events(_solids)
 
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -182,7 +185,7 @@ def test_delete_postgres_event_log(conn_string):
     def _solids():
         return_one()
 
-    events, result = gather_events(_solids)
+    events, result = synthesize_events(_solids)
 
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
@@ -216,7 +219,7 @@ def test_basic_get_logs_for_run_cursor(conn_string):
     def _solids():
         return_one()
 
-    events, result = gather_events(_solids)
+    events, result = synthesize_events(_solids)
 
     for event in events:
         event_log_storage.store_event(event)
@@ -252,11 +255,11 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     def _solids():
         return_one()
 
-    events_one, result_one = gather_events(_solids)
+    events_one, result_one = synthesize_events(_solids)
     for event in events_one:
         event_log_storage.store_event(event)
 
-    events_two, result_two = gather_events(_solids)
+    events_two, result_two = synthesize_events(_solids)
     for event in events_two:
         event_log_storage.store_event(event)
 
@@ -311,11 +314,11 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     def _solids():
         return_one()
 
-    events_one, result_one = gather_events(_solids)
+    events_one, result_one = synthesize_events(_solids)
     for event in events_one:
         event_log_storage.store_event(event)
 
-    events_two, result_two = gather_events(_solids)
+    events_two, result_two = synthesize_events(_solids)
     for event in events_two:
         event_log_storage.store_event(event)
 
@@ -370,7 +373,7 @@ def test_listen_notify_single_run_event(conn_string):
     event_log_storage.event_watcher.watch_run(run_id, 0, event_list.append)
 
     try:
-        events, _ = gather_events(_solids, run_config=RunConfig(run_id=run_id))
+        events, _ = synthesize_events(_solids, run_id=run_id)
         for event in events:
             event_log_storage.store_event(event)
 
@@ -404,11 +407,11 @@ def test_listen_notify_filter_two_runs_event(conn_string):
     event_log_storage.event_watcher.watch_run(run_id_two, 0, event_list_two.append)
 
     try:
-        events_one, _result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
+        events_one, _result_one = synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
             event_log_storage.store_event(event)
 
-        events_two, _result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        events_two, _result_two = synthesize_events(_solids, run_id=run_id_two)
         for event in events_two:
             event_log_storage.store_event(event)
 
@@ -445,11 +448,11 @@ def test_listen_notify_filter_run_event(conn_string):
     event_log_storage.event_watcher.watch_run(run_id_two, 0, event_list.append)
 
     try:
-        events_one, _result_one = gather_events(_solids, run_config=RunConfig(run_id=run_id_one))
+        events_one, _result_one = synthesize_events(_solids, run_id=run_id_one)
         for event in events_one:
             event_log_storage.store_event(event)
 
-        events_two, _result_two = gather_events(_solids, run_config=RunConfig(run_id=run_id_two))
+        events_two, _result_two = synthesize_events(_solids, run_id=run_id_two)
         for event in events_two:
             event_log_storage.store_event(event)
 
@@ -519,7 +522,7 @@ def test_asset_materialization(conn_string):
     def _solids():
         materialize_one()
 
-    events_one, _ = gather_events(_solids)
+    events_one, _ = synthesize_events(_solids)
     for event in events_one:
         event_log_storage.store_event(event)
 
@@ -550,7 +553,7 @@ def test_asset_events_error_parsing(conn_string):
     def _solids():
         materialize_one()
 
-    events_one, _ = gather_events(_solids)
+    events_one, _ = synthesize_events(_solids)
     for event in events_one:
         event_log_storage.store_event(event)
 
