@@ -99,7 +99,7 @@ function findAllMdxFileRelativePaths(): Promise<Array<string>> {
 
 // traverse the mdx ast to find all internal links
 function collectInternalLinks(rootAstNode: any): Array<string> {
-  const internalLinkPrefixRegex = /^\/docs\//;
+  const externalLinkRegex = /^http/;
 
   const queue = [rootAstNode];
   const result = [];
@@ -112,8 +112,20 @@ function collectInternalLinks(rootAstNode: any): Array<string> {
     }
 
     if (node.type === 'link' && node.url) {
-      if (node.url.match(internalLinkPrefixRegex)) {
-        result.push(node.url.replace(internalLinkPrefixRegex, ''));
+      const { url } = node;
+      if (!url.match(externalLinkRegex)) {
+        if (url.startsWith('#')) {
+          // TODO: handle self # heading links
+        } else if (url.startsWith('/assets/')) {
+          // TODO: handle assets
+        } else if (url.startsWith('/docs/')) {
+          result.push(url.replace('/docs/', ''));
+        } else {
+          // disallow relative references
+          result.push(
+            `Do not use relative references ('${url}'). All links should start with '/'`,
+          );
+        }
       }
     }
 
