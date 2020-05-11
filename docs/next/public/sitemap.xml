@@ -1,0 +1,282 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+  <url>
+        <loc>https://docs.dagster.io/docs/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/versions/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/code_of_conduct</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/contributing</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/open_source</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/airflow</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/aws</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/celery</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/dask</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/gcp</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/instance</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/k8s</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/deploying/local</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/install/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/install/packages</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/install/python</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/install/telemetry</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/principles</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/advanced</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/basics</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/overview</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/tutorial/setup</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/concepts/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/demos/airline_demo</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/demos/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/how-tos/conditional_execution</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/how-tos/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/how-tos/solids</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/dagster_types</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/dagster_pandas/dagster_pandas</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/logging/logging</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/data_science/data_science</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/solid/solid</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/backfill</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/date_partition_set</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/index</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/intro</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/partition_pipeline</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/partition_set</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/schedule_partitions</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/testing/expectations</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/testing/testing</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/cli</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/config</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/errors</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/execution</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/internals</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_airflow</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_aws</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_bash</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_celery</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_cron</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_dask</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_gcp</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_k8s</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagster_postgres</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/libraries/dagstermill</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/partitions</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/pipeline</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/schedules</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/solids</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/types</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/apidocs/utilities</loc>
+  </url>
+
+</urlset>
+      

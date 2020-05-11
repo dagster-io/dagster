@@ -1,6 +1,6 @@
 import { NextPage } from 'next';
 import { GetStaticProps } from 'next';
-import data from 'data/searchindex.json';
+import { getApiDocsPaths } from 'lib/apiDocsPaths';
 
 const API: NextPage<{ body: string }> = (props) => {
   const markup = { __html: props.body };
@@ -27,27 +27,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 };
 
 export async function getStaticPaths() {
-  const names = [];
-  const docnames = data.docnames;
-  for (const doc of docnames) {
-    if (
-      doc.includes('sections/api/') &&
-      doc !== 'sections/api/index' &&
-      doc !== 'sections/api/libraries'
-    ) {
-      names.push(doc.replace('sections/api/apidocs/', '').split('/'));
-    }
-  }
-  return {
-    paths: names.map((i) => {
-      return {
-        params: {
-          page: i,
-        },
-      };
-    }),
-    fallback: false,
-  };
+  return getApiDocsPaths();
 }
 
 export default API;

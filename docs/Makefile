@@ -148,6 +148,7 @@ buildnext:
 	cp -r _build/json/_modules next/src/data
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next process
+	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
 root_build:
 	make build_next_default version=0.7.10

@@ -17,7 +17,9 @@
     "axios-hooks": "^1.9.0",
     "classnames": "^2.2.6",
     "fast-glob": "^3.2.2",
-    "next": "^9.3.1",
+    "fast-xml-parser": "^3.16.0",
+    "globby": "^11.0.0",
+    "next": "^9.4.0",
     "node-sass": "^4.13.1",
     "parse5": "^5.1.1",
     "postcss-preset-env": "^6.7.0",
@@ -39,6 +41,7 @@
     "start": "next start",
     "export": "next export",
     "process": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/processData.ts",
+    "sitemap": "ts-node -O '{\"module\": \"commonjs\"}' src/scripts/generateSitemap.ts",
     "test": "jest"
   },
   "devDependencies": {

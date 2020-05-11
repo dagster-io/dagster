@@ -3,15 +3,6 @@ const path = require('path');
 const visit = require('unist-util-visit');
 const fs = require('fs');
 const limitSnippetLines = require('./src/scripts/limitSnippetLines');
-const TSConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-
-const setUpAbsoluteImports = (config) => {
-  if (config.resolve.plugins) {
-    config.resolve.plugins.push(new TSConfigPathsPlugin());
-  } else {
-    config.resolve.plugins = [new TSConfigPathsPlugin()];
-  }
-};
 
 const DIRECTIVE_PATTERN = 'literalinclude';
 
@@ -80,7 +71,6 @@ module.exports = withMDX({
         dirs: [path.join(config.context, 'pages')],
       }),
     );
-    setUpAbsoluteImports(config);
     return config;
   },
 });
