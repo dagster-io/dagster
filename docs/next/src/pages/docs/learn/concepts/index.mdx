@@ -113,7 +113,7 @@ local) and for running in production (where resources will require
 different credentials and expose configuration options). When a pipeline
 is compiled with a config corresponding to one of these modes, it yields
 an execution plan suitable for the given environment. The
-[tutorial](/docs/tutorial/modes) showcases how you can combine
+[tutorial](/docs/tutorial/advanced#pipeline-modes) showcases how you can combine
 resources and modes in pipeline execution.
 
 ## Dependencies
@@ -132,7 +132,7 @@ is correct, dependencies in Dagster provide a variety of compile- and
 run-time checks.
 
 Dependencies are expressed using Dagster's simple function invocation
-DSL; you can check out the [tutorial](/docs/tutorial/hello_dag) for
+DSL; you can check out the [tutorial](/docs/tutorial/basics#basics-of-pipelines) for
 an example of composing solids with dependencies.
 
 ## Resources
@@ -174,7 +174,7 @@ experience to refactoring code with functions.
 Defining a composite solid is similar to defining a pipeline, but can
 also provide mapping information to control how data and configuration
 flows in and out of its inner graph of solids. You can see an example of
-composition in action in the [tutorial](/docs/tutorial/composite_solids).
+composition in action in the [tutorial](/docs/tutorial/advanced#composite-solids).
 
 ## Dagster Types
 
