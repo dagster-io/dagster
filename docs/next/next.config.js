@@ -2,7 +2,7 @@ const ExtraWatchPlugin = require('extra-watch-webpack-plugin');
 const path = require('path');
 const visit = require('unist-util-visit');
 const fs = require('fs');
-const limitSnippetLines = require('./snippet-engine/functions/limitSnippetLines');
+const limitSnippetLines = require('./src/scripts/limitSnippetLines');
 const TSConfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 const setUpAbsoluteImports = (config) => {

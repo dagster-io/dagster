@@ -245,7 +245,7 @@ dl.function > dd > dl.field-list.simple > dd.field-odd p {
 
 .highlighted-line {
   display: block;
-  background-color: #169f84;
+  @apply bg-gray-700;
 }
 
 .left-bar {
