@@ -22,7 +22,9 @@ type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 export const AssetsRoot: React.FunctionComponent<RouteComponentProps<{
   assetSelector: string;
 }>> = ({ match, history }) => {
-  const assetName = decodeURIComponent(match.params.assetSelector);
+  const assetName =
+    match.params.assetSelector &&
+    decodeURIComponent(match.params.assetSelector);
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
   const onSelect = (assetName: string) => {
