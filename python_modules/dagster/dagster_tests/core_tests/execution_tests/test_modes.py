@@ -107,7 +107,7 @@ def pipeline_with_multi_mode_and_tags():
 
 
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():
-    pipeline_result = execute_pipeline(pipeline_with_multi_mode_and_tags, mode='tags_1',)
+    pipeline_result = execute_pipeline(pipeline_with_multi_mode_and_tags, mode='tags_1')
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('solid_that_gets_tags').output_value() == {
         'pipeline_tag_key': 'pipeline_tag_value'

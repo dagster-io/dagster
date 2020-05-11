@@ -425,6 +425,25 @@ class PipelineDefinition(IContainSolids):
 
     def build_sub_pipeline(self, solid_subset):
         check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        if self.is_subset_pipeline:
+            check.invariant(
+                set(solid_subset) == set(self.selector.solid_subset),
+                'Cannot build a subset pipeline of a subset pipeline. '
+                'Solid subset [{solid_subset}] is not equal to subset pipeline solids: '
+                '[{pipeline_solids}]'.format(
+                    solid_subset=', '.join(
+                        ['\'{solid}\''.format(solid=solid) for solid in solid_subset]
+                    ),
+                    pipeline_solids=', '.join(
+                        [
+                            '\'{pipeline_solid}\''.format(pipeline_solid=pipeline_solid)
+                            for pipeline_solid in self._solid_dict
+                        ]
+                    ),
+                ),
+            )
+            return self
+
         return self if solid_subset is None else _build_sub_pipeline(self, solid_subset)
 
     def get_presets(self):
@@ -464,6 +483,14 @@ class PipelineDefinition(IContainSolids):
 
     def get_config_schema_snapshot(self):
         return self.get_pipeline_snapshot().config_schema_snapshot
+
+    @property
+    def is_subset_pipeline(self):
+        return self._parent_pipeline_def is not None
+
+    @property
+    def parent_pipeline_def(self):
+        return self._parent_pipeline_def
 
 
 def _dep_key_of(solid):

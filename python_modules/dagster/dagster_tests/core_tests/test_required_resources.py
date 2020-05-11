@@ -486,10 +486,12 @@ def test_custom_type_with_resource_dependent_materialization():
     sufficiently_required_pipeline = define_materialization_pipeline(
         should_require_resources=True, resources_initted=resources_initted
     )
-    assert execute_pipeline(
+    res = execute_pipeline(
         sufficiently_required_pipeline,
         {'solids': {'output_solid': {'outputs': [{'result': 'hello'}]}}},
-    ).success
+    )
+    assert res.success
+    assert res.result_for_solid('output_solid').output_value() == 'hello'
     assert set(resources_initted.keys()) == set('a')
 
     resources_initted = {}

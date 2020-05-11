@@ -48,6 +48,9 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
+    if pipeline_run.solid_subset:
+        pipeline = pipeline.build_sub_pipeline(pipeline_run.solid_subset)
+
     execution_plan = create_execution_plan(
         pipeline,
         environment_dict=pipeline_run.environment_dict,
@@ -89,6 +92,10 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     check.inst_param(instance, 'instance', DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
+    if pipeline_run.solid_subset:
+        pipeline = pipeline.build_sub_pipeline(pipeline_run.solid_subset)
+        pipeline_def = pipeline.get_definition()
+
     execution_plan = create_execution_plan(
         pipeline,
         environment_dict=pipeline_run.environment_dict,
@@ -126,7 +133,13 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
 
 def execute_pipeline_iterator(
-    pipeline, environment_dict=None, mode=None, preset=None, tags=None, instance=None,
+    pipeline,
+    environment_dict=None,
+    mode=None,
+    preset=None,
+    tags=None,
+    solid_subset=None,
+    instance=None,
 ):
     '''Execute a pipeline iteratively.
 
@@ -147,18 +160,29 @@ def execute_pipeline_iterator(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
+        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
+            (names of unaliased solids or aliases of aliased solids) to execute.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
 
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     '''
-    pipeline, pipeline_def, environment_dict, instance, mode, tags = _check_execute_pipeline_args(
+    (
+        pipeline,
+        pipeline_def,
+        environment_dict,
+        instance,
+        mode,
+        tags,
+        solid_subset,
+    ) = _check_execute_pipeline_args(
         pipeline=pipeline,
         environment_dict=environment_dict,
         mode=mode,
         preset=preset,
         tags=tags,
+        solid_subset=solid_subset,
         instance=instance,
     )
 
@@ -166,7 +190,7 @@ def execute_pipeline_iterator(
         pipeline_def=pipeline_def,
         environment_dict=environment_dict,
         mode=mode,
-        solid_subset=pipeline_def.selector.solid_subset,
+        solid_subset=solid_subset,
         tags=tags,
     )
 
@@ -180,6 +204,7 @@ def execute_pipeline(
     mode=None,
     preset=None,
     tags=None,
+    solid_subset=None,
     instance=None,
     raise_on_error=True,
 ):
@@ -198,6 +223,8 @@ def execute_pipeline(
             ``mode`` and ``preset``.
         tags (Optional[Dict[str, Any]]): Arbitrary key-value pairs that will be added to pipeline
             logs.
+        solid_subset (Optional[List[str]]): Optionally, a list of the names of solid invocations
+            (names of unaliased solids or aliases of aliased solids) to execute.
         instance (Optional[DagsterInstance]): The instance to execute against. If this is ``None``,
             an ephemeral instance will be used, and no artifacts will be persisted from the run.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -211,12 +238,21 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     '''
-    pipeline, pipeline_def, environment_dict, instance, mode, tags = _check_execute_pipeline_args(
+    (
+        pipeline,
+        pipeline_def,
+        environment_dict,
+        instance,
+        mode,
+        tags,
+        solid_subset,
+    ) = _check_execute_pipeline_args(
         pipeline=pipeline,
         environment_dict=environment_dict,
         mode=mode,
         preset=preset,
         tags=tags,
+        solid_subset=solid_subset,
         instance=instance,
     )
 
@@ -224,7 +260,7 @@ def execute_pipeline(
         pipeline_def=pipeline_def,
         environment_dict=environment_dict,
         mode=mode,
-        solid_subset=pipeline_def.selector.solid_subset,
+        solid_subset=solid_subset,
         tags=tags,
     )
 
@@ -446,7 +482,9 @@ class _ExecuteRunWithPlanIterable(object):
                     yield event
 
 
-def _check_execute_pipeline_args(pipeline, environment_dict, mode, preset, tags, instance):
+def _check_execute_pipeline_args(
+    pipeline, environment_dict, mode, preset, tags, solid_subset, instance
+):
     pipeline, pipeline_def = _check_pipeline(pipeline)
     environment_dict = check.opt_dict_param(environment_dict, 'environment_dict')
     check.opt_str_param(mode, 'mode')
@@ -459,6 +497,7 @@ def _check_execute_pipeline_args(pipeline, environment_dict, mode, preset, tags,
     )
 
     tags = check.opt_dict_param(tags, 'tags', key_type=str)
+    check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
 
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
@@ -473,8 +512,16 @@ def _check_execute_pipeline_args(pipeline, environment_dict, mode, preset, tags,
             environment_dict = pipeline_preset.environment_dict
 
         if pipeline_preset.solid_subset is not None:
-            pipeline = pipeline.build_sub_pipeline(pipeline_preset.solid_subset)
-            pipeline_def = pipeline.get_definition()
+            check.invariant(
+                solid_subset is None or solid_subset == pipeline_preset.solid_subset,
+                'The solid_subset set in preset \'{preset}\', {preset_subset}, does not agree with '
+                'the `solid_subset` argument: {solid_subset}'.format(
+                    preset=preset,
+                    preset_subset=pipeline_preset.solid_subset,
+                    solid_subset=solid_subset,
+                ),
+            )
+            solid_subset = pipeline_preset.solid_subset
 
         check.invariant(
             mode is None or mode == pipeline_preset.mode,
@@ -512,4 +559,30 @@ def _check_execute_pipeline_args(pipeline, environment_dict, mode, preset, tags,
     check.opt_inst_param(instance, 'instance', DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
-    return pipeline, pipeline_def, environment_dict, instance, mode, tags
+    if solid_subset:
+        pipeline = pipeline.build_sub_pipeline(solid_subset)
+        pipeline_def = pipeline.get_definition()
+    else:
+        solid_subset = pipeline_def.selector.solid_subset
+
+    return (pipeline, pipeline_def, environment_dict, instance, mode, tags, solid_subset)
+
+
+def _check_parent_run(instance, run_id):
+    parent_pipeline_run = instance.get_run_by_id(run_id)
+    check.invariant(
+        parent_pipeline_run,
+        'No parent run with id {run_id} found in instance.'.format(run_id=run_id),
+    )
+
+    if parent_pipeline_run.root_run_id is not None:  # re-execution
+        root_run = instance.get_run_by_id(parent_pipeline_run.root_run_id)
+        check.invariant(
+            isinstance(root_run, PipelineRun),
+            'No root run found for id: {root_run_id} (from parent run {parent_run_id})'.format(
+                root_run_id=parent_pipeline_run.root_run_id,
+                parent_run_id=parent_pipeline_run.previous_run_id,
+            ),
+        )
+
+    return parent_pipeline_run

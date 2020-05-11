@@ -1,7 +1,11 @@
+import re
 import uuid
 
-import dagster.check as check
+import pytest
+
 from dagster import (
+    DagsterExecutionStepNotFoundError,
+    DagsterInvariantViolationError,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -15,6 +19,7 @@ from dagster import (
     PipelineDefinition,
     ResourceDefinition,
     String,
+    check,
     execute_pipeline,
     execute_pipeline_iterator,
     lambda_solid,
@@ -332,6 +337,72 @@ def test_pipeline_subset():
     assert subset_result.result_for_solid('add_one').output_value() == 4
 
 
+def test_pipeline_explicit_subset():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    pipeline_def = PipelineDefinition(
+        solid_defs=[return_one, add_one],
+        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+    )
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('add_one').output_value() == 2
+
+    env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+
+    subset_result = execute_pipeline(
+        pipeline_def, environment_dict=env_config, solid_subset=['add_one']
+    )
+
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 1
+    assert subset_result.result_for_solid('add_one').output_value() == 4
+
+
+def test_pipeline_subset_of_subset():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add_one(num):
+        return num + 1
+
+    @pipeline
+    def pipeline_def():
+        add_one.alias('add_one_a')(return_one.alias('return_one_a')())
+        add_one.alias('add_one_b')(return_one.alias('return_one_b')())
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert len(pipeline_result.solid_result_list) == 4
+    assert pipeline_result.result_for_solid('add_one_a').output_value() == 2
+
+    subset_pipeline = pipeline_def.build_sub_pipeline(['add_one_a', 'return_one_a'])
+    subset_result = execute_pipeline(subset_pipeline)
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 2
+    assert subset_result.result_for_solid('add_one_a').output_value() == 2
+
+    with pytest.raises(check.CheckError, match='Cannot build a subset pipeline of a subset'):
+        subset_pipeline.build_sub_pipeline(['add_one_a'])
+
+    subset_of_subset_pipeline = subset_pipeline.build_sub_pipeline(['add_one_a', 'return_one_a'])
+
+    subset_of_subset_result = execute_pipeline(subset_of_subset_pipeline)
+
+    assert subset_of_subset_result.success
+    assert len(subset_result.solid_result_list) == 2
+    assert subset_result.result_for_solid('add_one_a').output_value() == 2
+
+
 def test_pipeline_subset_with_multi_dependency():
     @lambda_solid
     def return_one():
@@ -368,6 +439,49 @@ def test_pipeline_subset_with_multi_dependency():
 
     subset_result = execute_pipeline(
         pipeline_def.build_sub_pipeline(['return_one', 'return_two', 'noop'])
+    )
+
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 3
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
+
+
+def test_pipeline_explicit_subset_with_multi_dependency():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def return_two():
+        return 2
+
+    @lambda_solid(input_defs=[InputDefinition('dep', Nothing)])
+    def noop():
+        return 3
+
+    pipeline_def = PipelineDefinition(
+        solid_defs=[return_one, return_two, noop],
+        dependencies={
+            'noop': {
+                'dep': MultiDependencyDefinition(
+                    [DependencyDefinition('return_one'), DependencyDefinition('return_two')]
+                )
+            }
+        },
+    )
+
+    pipeline_result = execute_pipeline(pipeline_def)
+    assert pipeline_result.success
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
+
+    subset_result = execute_pipeline(pipeline_def, solid_subset=['noop'])
+
+    assert subset_result.success
+    assert len(subset_result.solid_result_list) == 1
+    assert pipeline_result.result_for_solid('noop').output_value() == 3
+
+    subset_result = execute_pipeline(
+        pipeline_def, solid_subset=['return_one', 'return_two', 'noop']
     )
 
     assert subset_result.success
@@ -413,6 +527,27 @@ def test_pipeline_execution_disjoint_subset():
 
     result = execute_pipeline(
         pipeline_def.build_sub_pipeline(['add_one', 'add_three']), environment_dict=env_config
+    )
+
+    assert result.success
+    assert len(result.solid_result_list) == 2
+    assert result.result_for_solid('add_one').output_value() == 3
+    assert result.result_for_solid('add_three').output_value() == 8
+
+
+def test_pipeline_execution_explicit_disjoint_subset():
+    env_config = {
+        'solids': {
+            'add_one': {'inputs': {'num': {'value': 2}}},
+            'add_three': {'inputs': {'num': {'value': 5}}},
+        },
+        'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
+    }
+
+    pipeline_def = define_created_disjoint_three_part_pipeline()
+
+    result = execute_pipeline(
+        pipeline_def, solid_subset=['add_one', 'add_three'], environment_dict=env_config
     )
 
     assert result.success
@@ -566,6 +701,7 @@ def test_reexecution_fs_storage():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
+    environment_dict = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
     pipeline_result = execute_pipeline(
         pipeline_def, environment_dict={'storage': {'filesystem': {}}}, instance=instance
@@ -575,7 +711,7 @@ def test_reexecution_fs_storage():
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        environment_dict={'storage': {'filesystem': {}}},
+        environment_dict=environment_dict,
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
     )
@@ -586,9 +722,29 @@ def test_reexecution_fs_storage():
     assert len(reexecution_result.solid_result_list) == 2
     assert reexecution_result.result_for_solid('return_one').output_value() == 1
     assert reexecution_result.result_for_solid('add_one').output_value() == 2
+    reexecution_run = instance.get_run_by_id(reexecution_result.run_id)
+    assert reexecution_run.parent_run_id == pipeline_result.run_id
+    assert reexecution_run.root_run_id == pipeline_result.run_id
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        parent_run_id=reexecution_result.run_id,
+        root_run_id=pipeline_result.run_id,
+    )
+
+    grandchild_result = execute_run(pipeline_def, pipeline_run, instance)
+
+    assert grandchild_result.success
+    assert len(grandchild_result.solid_result_list) == 2
+    assert grandchild_result.result_for_solid('return_one').output_value() == 1
+    assert grandchild_result.result_for_solid('add_one').output_value() == 2
+    grandchild_run = instance.get_run_by_id(grandchild_result.run_id)
+    assert grandchild_run.parent_run_id == reexecution_result.run_id
+    assert grandchild_run.root_run_id == pipeline_result.run_id
 
 
-def test_reexecution_inmemory_storage():
+def test_reexecution_fs_storage_with_subset():
     @lambda_solid
     def return_one():
         return 1
@@ -601,24 +757,95 @@ def test_reexecution_inmemory_storage():
         solid_defs=[return_one, add_one],
         dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
     )
+    environment_dict = {'storage': {'filesystem': {}}}
     instance = DagsterInstance.ephemeral()
-    pipeline_result = execute_pipeline(pipeline_def, instance=instance)
+    pipeline_result = execute_pipeline(pipeline_def, environment_dict, instance=instance)
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('add_one').output_value() == 2
 
-    pipeline_run = instance.create_run_for_pipeline(
+    # This is how this is actually done in dagster_graphql.implementation.pipeline_execution_manager
+    reexecution_pipeline_run = instance.create_run_for_pipeline(
         pipeline_def,
-        environment_dict={'storage': {'filesystem': {}}},
+        environment_dict=environment_dict,
+        step_keys_to_execute=['return_one.compute'],
         parent_run_id=pipeline_result.run_id,
         root_run_id=pipeline_result.run_id,
     )
+    reexecution_result_no_subset = execute_run(pipeline_def, reexecution_pipeline_run, instance)
+    assert reexecution_result_no_subset.success
+    assert len(reexecution_result_no_subset.solid_result_list) == 2
+    assert reexecution_result_no_subset.result_for_solid('add_one').skipped
+    assert reexecution_result_no_subset.result_for_solid('return_one').output_value() == 1
 
-    reexecution_result = execute_run(pipeline_def, pipeline_run, instance)
+    pipeline_result_subset = execute_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        instance=instance,
+        solid_subset=['return_one'],
+    )
+    assert pipeline_result_subset.success
+    assert len(pipeline_result_subset.solid_result_list) == 1
+    with pytest.raises(DagsterInvariantViolationError):
+        pipeline_result_subset.result_for_solid('add_one')
+    assert pipeline_result_subset.result_for_solid('return_one').output_value() == 1
+
+    reexecution_pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        parent_run_id=pipeline_result_subset.run_id,
+        root_run_id=pipeline_result_subset.run_id,
+        solid_subset=['return_one'],
+        step_keys_to_execute=['return_one.compute'],
+    )
+
+    reexecution_result = execute_run(pipeline_def, reexecution_pipeline_run, instance)
 
     assert reexecution_result.success
-    assert len(reexecution_result.solid_result_list) == 2
+    assert len(reexecution_result.solid_result_list) == 1
+    with pytest.raises(DagsterInvariantViolationError):
+        pipeline_result_subset.result_for_solid('add_one')
     assert reexecution_result.result_for_solid('return_one').output_value() == 1
-    assert reexecution_result.result_for_solid('add_one').output_value() == 2
+
+    with pytest.raises(
+        DagsterExecutionStepNotFoundError,
+        match=re.escape('Execution plan does not contain step: add_one.compute'),
+    ):
+        instance.create_run_for_pipeline(
+            pipeline_def,
+            environment_dict=environment_dict,
+            parent_run_id=pipeline_result_subset.run_id,
+            root_run_id=pipeline_result_subset.run_id,
+            solid_subset=['return_one'],
+            step_keys_to_execute=['add_one.compute'],
+        )
+
+    re_reexecution_pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def,
+        environment_dict=environment_dict,
+        parent_run_id=reexecution_result.run_id,
+        root_run_id=reexecution_result.run_id,
+        solid_subset=['return_one'],
+        step_keys_to_execute=['return_one.compute'],
+    )
+
+    re_reexecution_result = execute_run(pipeline_def, re_reexecution_pipeline_run, instance)
+
+    assert re_reexecution_result.success
+    assert len(re_reexecution_result.solid_result_list) == 1
+    assert re_reexecution_result.result_for_solid('return_one').output_value() == 1
+
+    with pytest.raises(
+        DagsterExecutionStepNotFoundError,
+        match=re.escape('Execution plan does not contain step: add_one'),
+    ):
+        instance.create_run_for_pipeline(
+            pipeline_def,
+            environment_dict=environment_dict,
+            parent_run_id=reexecution_result.run_id,
+            root_run_id=reexecution_result.run_id,
+            solid_subset=['return_one'],
+            step_keys_to_execute=['add_one.compute'],
+        )
 
 
 def test_single_step_reexecution():
