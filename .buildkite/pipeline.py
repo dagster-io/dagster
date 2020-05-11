@@ -664,6 +664,22 @@ def next_docs_build_tests():
             .build()
         )
 
+        tests.append(
+            StepBuilder("next docs tests")
+            .run(
+                "pip install -r bin/requirements.txt -qqq",
+                "pip install -r bin/dev-requirements.txt -qqq",
+                "pip install -r .read-the-docs-requirements.txt -qqq",
+                "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+                "cd docs",
+                "make buildnext",
+                "cd next",
+                "yarn test",
+            )
+            .on_integration_image(version)
+            .build()
+        )
+
     return tests
 
 
