@@ -37,7 +37,6 @@ It's also prudent to release from a fresh virtualenv.
 
 - You must have PyPI credentials available to twine (see below), and you must be permissioned as a
   maintainer on the projects.
-- You must be permissioned as a maintainer on ReadTheDocs.
 - You must export `SLACK_RELEASE_BOT_TOKEN` with an appropriate value.
 - You should also export `PYTHONDONTWRITEBYTECODE=1` to avoid writing any extraneous .pyc files.
 
@@ -61,39 +60,23 @@ It's also prudent to release from a fresh virtualenv.
 
         python bin/publish.py version
 
-6.  Push the new version to the remote. The new version tag will trigger a ReadTheDocs build.
-    If something goes wrong at this stage, don't panic! See "recovering from drift against remote"
-    below.
+6.  Push the new version to the remote. If something goes wrong at this stage, don't panic! See
+    "recovering from drift against remote" below.
 
         git push && git push origin 0.4.3.pre0
 
-7. Check that the ReadTheDocs build was successful at
-   [https://readthedocs.org/projects/dagster/builds/](https://readthedocs.org/projects/dagster/builds/).
-
-8.  Publish the new version to PyPI. If something goes wrong during this stage, you will probably
+7.  Publish the new version to PyPI. If something goes wrong during this stage, you will probably
     have to roll forwards to a new release, since there is no way to delete files from PyPI.
 
         python bin/publish.py publish
 
-9.  Manually switch the default ReadTheDocs version to the newly built docs:
-    [https://readthedocs.org/projects/dagster/versions/](https://readthedocs.org/projects/dagster/versions/)
-
-    If the new version is a prerelease, it will be below in the "Inactive Versions" section. In
-    this case, click on "Edit" and you will be brought to a page with a header like, for version
-    0.5.0.pre0, "Editing 0.5.0.pre0"
-    [https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/](https://readthedocs.org/dashboard/dagster/version/0.5.0.pre0/).
-    Check the checkbox marked "Active" on this page and then click the "Save" button.
-
-    If the build has not yet completed, you will have to wait for it.
-
-    Then, go to
-    [https://readthedocs.org/dashboard/dagster/advanced/](https://readthedocs.org/dashboard/dagster/advanced/).
-    Select the newly built version from the "Default version" dropdown and then click the "Save"
-    button.
-
-10. Check that the ReadTheDocs and PyPI versions are as you expect.
+8.  Check that the PyPI versions are as you expect. Note that PYPI automatically changes pre0 to
+    rc0.
 
         python bin/publish.py audit 0.4.3rc0
+
+9.  Post release notes in Dagster Slack in #general, and copy the same release notes to the
+    [Github releases page](https://github.com/dagster-io/dagster/releases).
 
 ### PyPI credentials
 
