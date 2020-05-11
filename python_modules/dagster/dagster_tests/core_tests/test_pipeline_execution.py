@@ -329,7 +329,7 @@ def test_pipeline_subset():
     env_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
 
     subset_result = execute_pipeline(
-        pipeline_def.build_sub_pipeline(['add_one']), environment_dict=env_config
+        pipeline_def.subset_for_execution(['add_one']), environment_dict=env_config
     )
 
     assert subset_result.success
@@ -385,22 +385,21 @@ def test_pipeline_subset_of_subset():
     assert len(pipeline_result.solid_result_list) == 4
     assert pipeline_result.result_for_solid('add_one_a').output_value() == 2
 
-    subset_pipeline = pipeline_def.build_sub_pipeline(['add_one_a', 'return_one_a'])
+    subset_pipeline = pipeline_def.subset_for_execution(['add_one_a', 'return_one_a'])
     subset_result = execute_pipeline(subset_pipeline)
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 2
     assert subset_result.result_for_solid('add_one_a').output_value() == 2
 
-    with pytest.raises(check.CheckError, match='Cannot build a subset pipeline of a subset'):
-        subset_pipeline.build_sub_pipeline(['add_one_a'])
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Pipeline subsets may not be subset again.'
+    ):
+        subset_pipeline.subset_for_execution(['add_one_a'])
 
-    subset_of_subset_pipeline = subset_pipeline.build_sub_pipeline(['add_one_a', 'return_one_a'])
-
-    subset_of_subset_result = execute_pipeline(subset_of_subset_pipeline)
-
-    assert subset_of_subset_result.success
-    assert len(subset_result.solid_result_list) == 2
-    assert subset_result.result_for_solid('add_one_a').output_value() == 2
+    with pytest.raises(
+        DagsterInvariantViolationError, match='Pipeline subsets may not be subset again.'
+    ):
+        subset_pipeline.subset_for_execution(['add_one_a', 'return_one_a'])
 
 
 def test_pipeline_subset_with_multi_dependency():
@@ -431,14 +430,14 @@ def test_pipeline_subset_with_multi_dependency():
     assert pipeline_result.success
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
-    subset_result = execute_pipeline(pipeline_def.build_sub_pipeline(['noop']))
+    subset_result = execute_pipeline(pipeline_def.subset_for_execution(['noop']))
 
     assert subset_result.success
     assert len(subset_result.solid_result_list) == 1
     assert pipeline_result.result_for_solid('noop').output_value() == 3
 
     subset_result = execute_pipeline(
-        pipeline_def.build_sub_pipeline(['return_one', 'return_two', 'noop'])
+        pipeline_def.subset_for_execution(['return_one', 'return_two', 'noop'])
     )
 
     assert subset_result.success
@@ -506,33 +505,12 @@ def define_three_part_pipeline():
 
 
 def define_created_disjoint_three_part_pipeline():
-    return define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
+    return define_three_part_pipeline().subset_for_execution(['add_one', 'add_three'])
 
 
 def test_pipeline_disjoint_subset():
-    disjoint_pipeline = define_three_part_pipeline().build_sub_pipeline(['add_one', 'add_three'])
+    disjoint_pipeline = define_three_part_pipeline().subset_for_execution(['add_one', 'add_three'])
     assert len(disjoint_pipeline.solids) == 2
-
-
-def test_pipeline_execution_disjoint_subset():
-    env_config = {
-        'solids': {
-            'add_one': {'inputs': {'num': {'value': 2}}},
-            'add_three': {'inputs': {'num': {'value': 5}}},
-        },
-        'loggers': {'console': {'config': {'log_level': 'ERROR'}}},
-    }
-
-    pipeline_def = define_created_disjoint_three_part_pipeline()
-
-    result = execute_pipeline(
-        pipeline_def.build_sub_pipeline(['add_one', 'add_three']), environment_dict=env_config
-    )
-
-    assert result.success
-    assert len(result.solid_result_list) == 2
-    assert result.result_for_solid('add_one').output_value() == 3
-    assert result.result_for_solid('add_three').output_value() == 8
 
 
 def test_pipeline_execution_explicit_disjoint_subset():
@@ -979,7 +957,7 @@ def test_selector_with_partial_dependency_dict():
     assert set(executed.keys()) == {'one', 'two'}
 
 
-def test_selector_with_build_sub_pipeline():
+def test_selector_with_subset_for_execution():
     @solid
     def def_one(_):
         pass
@@ -994,7 +972,7 @@ def test_selector_with_build_sub_pipeline():
         def_one()
         def_two()
 
-    assert set(pipe.build_sub_pipeline(['def_two']).selector.solid_subset) == {'def_two'}
+    assert set(pipe.subset_for_execution(['def_two']).selector.solid_subset) == {'def_two'}
 
 
 def test_default_run_id():

@@ -27,7 +27,7 @@ def pipeline_snapshot_command(solid_subset, **kwargs):
     definition = handle.build_pipeline_definition()
 
     if solid_subset:
-        definition = definition.build_sub_pipeline(solid_subset.split(","))
+        definition = definition.subset_for_execution(solid_subset.split(","))
 
     active_data = active_pipeline_data_from_def(definition)
     click.echo(serialize_dagster_namedtuple(active_data))

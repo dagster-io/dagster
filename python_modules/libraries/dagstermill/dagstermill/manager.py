@@ -136,7 +136,7 @@ class Manager(object):
             handle.build_pipeline_definition(),
             'pipeline_def (from handle {handle_dict})'.format(handle_dict=handle.data._asdict()),
             PipelineDefinition,
-        ).build_sub_pipeline(solid_subset)
+        ).subset_for_execution(solid_subset)
 
         solid_handle = SolidHandle.from_dict(solid_handle_kwargs)
         solid_def = pipeline_def.get_solid(solid_handle).definition

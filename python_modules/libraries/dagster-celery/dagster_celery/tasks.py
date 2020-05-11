@@ -36,7 +36,7 @@ def create_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(run_id)
         check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
 
-        pipeline_def = handle.build_pipeline_definition().build_sub_pipeline(
+        pipeline_def = handle.build_pipeline_definition().subset_for_execution(
             pipeline_run.selector.solid_subset
         )
 

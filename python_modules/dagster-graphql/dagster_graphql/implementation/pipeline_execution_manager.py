@@ -267,7 +267,7 @@ class SubprocessExecutionManager(PipelineExecutionManager):
 
         try:
             return execute_run(
-                pipeline_def.build_sub_pipeline(pipeline_run.selector.solid_subset),
+                pipeline_def.subset_for_execution(pipeline_run.selector.solid_subset),
                 pipeline_run,
                 instance,
             )

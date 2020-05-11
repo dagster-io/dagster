@@ -12,7 +12,11 @@ from rx import Observable
 
 from dagster import check, seven
 from dagster.config import Field, Permissive
-from dagster.core.definitions.pipeline import ExecutionSelector, PipelineDefinition
+from dagster.core.definitions.pipeline import (
+    ExecutionSelector,
+    PipelineDefinition,
+    PipelineSubsetForExecution,
+)
 from dagster.core.errors import (
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
@@ -20,6 +24,7 @@ from dagster.core.errors import (
     DagsterRunConflict,
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.merger import merge_dicts
@@ -447,7 +452,18 @@ class DagsterInstance:
         check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
 
         if solid_subset:
-            pipeline_def = pipeline_def.build_sub_pipeline(solid_subset=solid_subset)
+            if isinstance(pipeline_def, PipelineSubsetForExecution):
+                check.invariant(
+                    len(solid_subset) == len(pipeline_def.solid_subset)
+                    and set(solid_subset) == set(pipeline_def.solid_subset),
+                    'Cannot create a PipelineRun from pipeline subset {pipeline_solid_subset} that '
+                    'conflicts with solid_subset arg {solid_subset}'.format(
+                        pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
+                        solid_subset=str_format_list(solid_subset),
+                    ),
+                )
+            else:
+                pipeline_def = pipeline_def.subset_for_execution(solid_subset=solid_subset)
 
         if execution_plan is None:
             execution_plan = create_execution_plan(

@@ -143,4 +143,4 @@ def get_pipeline_def_from_selector(graphene_info, selector):
 
     # for error checking
     get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
-    return orig_pipeline_def.build_sub_pipeline(selector.solid_subset)
+    return orig_pipeline_def.subset_for_execution(selector.solid_subset)

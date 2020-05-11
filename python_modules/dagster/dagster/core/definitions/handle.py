@@ -279,7 +279,7 @@ class ExecutionTargetHandle(object):
             handle (ExecutionTargetHandle): The handle to cache.
             solid_names (Optional[List[str]]): The solid names constituting the constructed
                 sub-pipeline, if any; arg should be as for
-                dagster.core.definitions.pipeline.build_sub_pipeline.
+                dagster.core.definitions.pipeline.subset_for_execution.
         '''
         check.inst_param(
             repo_or_pipeline_def, 'repo_or_pipeline_def', (RepositoryDefinition, PipelineDefinition)

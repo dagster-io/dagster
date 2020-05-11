@@ -11,7 +11,7 @@ class ExecutablePipeline(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def build_sub_pipeline(self, solid_subset):
+    def subset_for_execution(self, solid_subset):
         pass
 
 
@@ -22,12 +22,12 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
     def get_definition(self):
         return self._pipeline_def
 
-    def build_sub_pipeline(self, solid_subset):
+    def subset_for_execution(self, solid_subset):
         check.list_param(solid_subset, 'solid_subset', of_type=str)
 
         if self._pipeline_def.is_subset_pipeline:
             return InMemoryExecutablePipeline(
-                self._pipeline_def.parent_pipeline_def.build_sub_pipeline(solid_subset)
+                self._pipeline_def.parent_pipeline_def.subset_for_execution(solid_subset)
             )
 
-        return InMemoryExecutablePipeline(self._pipeline_def.build_sub_pipeline(solid_subset))
+        return InMemoryExecutablePipeline(self._pipeline_def.subset_for_execution(solid_subset))

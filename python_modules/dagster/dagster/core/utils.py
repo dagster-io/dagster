@@ -21,3 +21,7 @@ def make_new_run_id():
 
 def make_new_backfill_id():
     return ''.join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
+
+
+def str_format_list(items):
+    return '[{items}]'.format(items=', '.join(['\'{item}\''.format(item=item) for item in items]))

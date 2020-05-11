@@ -41,7 +41,7 @@ class MultiprocessExecutorConfig(ExecutorConfig):
 
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
 
-        return self._handle.build_pipeline_definition().build_sub_pipeline(
+        return self._handle.build_pipeline_definition().subset_for_execution(
             pipeline_run.selector.solid_subset
         )
 

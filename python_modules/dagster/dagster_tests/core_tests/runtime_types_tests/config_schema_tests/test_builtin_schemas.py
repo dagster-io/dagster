@@ -21,7 +21,7 @@ from dagster.utils.test import get_temp_file_name
 
 def _execute_pipeline_with_subset(pipeline, environment_dict, solid_subset):
     return execute_pipeline(
-        pipeline.build_sub_pipeline(solid_subset), environment_dict=environment_dict
+        pipeline.subset_for_execution(solid_subset), environment_dict=environment_dict
     )
 
 

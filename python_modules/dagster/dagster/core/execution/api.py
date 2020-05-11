@@ -8,6 +8,7 @@ from dagster.core.definitions import (
     SystemStorageData,
 )
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.definitions.pipeline import PipelineSubsetForExecution
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -18,7 +19,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import telemetry_wrapper
-from dagster.core.utils import make_new_backfill_id, make_new_run_id
+from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
 from dagster.utils import merge_dicts
 
 from .context_creation_pipeline import pipeline_initialization_manager, scoped_pipeline_context
@@ -49,7 +50,19 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     if pipeline_run.solid_subset:
-        pipeline = pipeline.build_sub_pipeline(pipeline_run.solid_subset)
+        pipeline_def = pipeline.get_definition()
+        if isinstance(pipeline_def, PipelineSubsetForExecution):
+            check.invariant(
+                len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
+                and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
+                'Cannot execute PipelineRun with solid_subset {solid_subset} that conflicts with '
+                'pipeline subset {pipeline_solid_subset}.'.format(
+                    pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
+                    solid_subset=str_format_list(pipeline_run.solid_subset),
+                ),
+            )
+        else:
+            pipeline = pipeline.subset_for_execution(pipeline_run.solid_subset)
 
     execution_plan = create_execution_plan(
         pipeline,
@@ -93,8 +106,20 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     if pipeline_run.solid_subset:
-        pipeline = pipeline.build_sub_pipeline(pipeline_run.solid_subset)
         pipeline_def = pipeline.get_definition()
+        if isinstance(pipeline_def, PipelineSubsetForExecution):
+            check.invariant(
+                len(pipeline_run.solid_subset) == len(pipeline_def.solid_subset)
+                and set(pipeline_run.solid_subset) == set(pipeline_def.solid_subset),
+                'Cannot execute PipelineRun with solid_subset {solid_subset} that conflicts with '
+                'pipeline subset {pipeline_solid_subset}.'.format(
+                    pipeline_solid_subset=str_format_list(pipeline_def.solid_subset),
+                    solid_subset=str_format_list(pipeline_run.solid_subset),
+                ),
+            )
+        else:
+            pipeline = pipeline.subset_for_execution(pipeline_run.solid_subset)
+            pipeline_def = pipeline.get_definition()
 
     execution_plan = create_execution_plan(
         pipeline,
@@ -560,10 +585,10 @@ def _check_execute_pipeline_args(
     instance = instance or DagsterInstance.ephemeral()
 
     if solid_subset:
-        pipeline = pipeline.build_sub_pipeline(solid_subset)
+        pipeline = pipeline.subset_for_execution(solid_subset)
         pipeline_def = pipeline.get_definition()
     else:
-        solid_subset = pipeline_def.selector.solid_subset
+        solid_subset = pipeline_def.solid_subset
 
     return (pipeline, pipeline_def, environment_dict, instance, mode, tags, solid_subset)
 

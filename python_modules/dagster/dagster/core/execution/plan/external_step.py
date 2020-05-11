@@ -92,7 +92,7 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
 def step_run_ref_to_step_context(step_run_ref):
     execution_target_handle = step_run_ref.execution_target_handle
-    pipeline_def = execution_target_handle.build_pipeline_definition().build_sub_pipeline(
+    pipeline_def = execution_target_handle.build_pipeline_definition().subset_for_execution(
         step_run_ref.pipeline_run.selector.solid_subset
     )
 

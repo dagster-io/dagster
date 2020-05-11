@@ -240,11 +240,11 @@ def test_runs_over_time():
         ).run_id
         foo_run_id = execute_pipeline(repo_1.get_pipeline('foo_pipeline'), instance=instance).run_id
         evolve_a_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').build_sub_pipeline(['solid_A']),
+            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_A']),
             instance=instance,
         ).run_id
         evolve_b_run_id = execute_pipeline(
-            repo_1.get_pipeline('evolving_pipeline').build_sub_pipeline(['solid_B']),
+            repo_1.get_pipeline('evolving_pipeline').subset_for_execution(['solid_B']),
             instance=instance,
         ).run_id
 

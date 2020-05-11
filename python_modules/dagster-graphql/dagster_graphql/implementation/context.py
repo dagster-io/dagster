@@ -154,7 +154,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         cached_full_pipeline = self._cached_pipelines[pipeline_name]
 
         if solid_subset:
-            return cached_full_pipeline.build_sub_pipeline(solid_subset)
+            return cached_full_pipeline.subset_for_execution(solid_subset)
         else:
             return cached_full_pipeline
 
@@ -232,7 +232,9 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
         self.execution_manager.execute_pipeline(
             self.get_handle(),
-            self.get_pipeline(external_pipeline.name).build_sub_pipeline(pipeline_run.solid_subset)
+            self.get_pipeline(external_pipeline.name).subset_for_execution(
+                pipeline_run.solid_subset
+            )
             if pipeline_run.solid_subset
             else self.get_pipeline(external_pipeline.name),
             pipeline_run,

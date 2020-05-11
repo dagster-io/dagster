@@ -93,7 +93,7 @@ class ExternalPipeline:
     @staticmethod
     def from_pipeline_def(pipeline_def, solid_subset=None):
         if solid_subset:
-            pipeline_def = pipeline_def.build_sub_pipeline(solid_subset)
+            pipeline_def = pipeline_def.subset_for_execution(solid_subset)
 
         return ExternalPipeline(
             pipeline_def.get_pipeline_index(),
