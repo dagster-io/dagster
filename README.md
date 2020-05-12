@@ -39,10 +39,8 @@ Dagster is a system for building modern data applications.
 
 This installs two modules:
 
-- **dagster** | The core programming model and abstraction stack; stateless, single-node,
-  single-process and multi-process execution engines; and a CLI tool for driving those engines.
-- **dagit** | A UI and rich development environment for Dagster, including a DAG browser, a type-aware config editor, and a streaming execution interface.
-  <br/>
+- **Dagster**: the core programming model and abstraction stack; stateless, single-node, single-process and multi-process execution engines; and a CLI tool for driving those engines.
+- **Dagit**: a UI and rich development environment for Dagster, including a DAG browser, a type-aware config editor, and a streaming execution interface.
 
 ### Hello dagster 👋
 
@@ -67,26 +65,26 @@ def hello_pipeline():
     hello(get_name())
 ```
 
-Let's execute our first pipeline via any of three different mechanisms:
+Save the code above in a file named `hello_dagster.py`. You can execute the pipeline using any one of the following methods:
 
-- From arbitrary Python scripts, use dagster’s Python API
+(1) Dagster Python API
 
-  ```python
-  if __name__ == "__main__":
-      execute_pipeline(hello_pipeline)  # Hello, dagster!
-  ```
+```python
+if __name__ == "__main__":
+    execute_pipeline(hello_pipeline)   # Hello, dagster!
+```
 
-- From the command line, use the dagster CLI
+(2) Dagster CLI
 
-  ```bash
-  $ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
-  ```
+```bash
+$ dagster pipeline execute -f hello_dagster.py -n hello_pipeline
+```
 
-- From the Dagit GUI
-  ```bash
-  $ dagit -f hello_dagster.py -n hello_pipeline
-  ```
-  And then navigate to http://localhost:3000 to start using Dagit
+(3) Dagit web UI
+
+```bash
+$ dagit -f hello_dagster.py -n hello_pipeline
+```
 
 ## Learn
 
@@ -99,8 +97,7 @@ Next, jump right into our [tutorial](https://docs.dagster.io/docs/tutorial/), or
 
 ## Contributing
 
-For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/docs/community/contributing/).
-<br />
+For details on contributing or running the project for development, check out our [contributing guide](https://docs.dagster.io/docs/community/contributing/). <br />
 
 ## Integrations
 

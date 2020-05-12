@@ -542,3 +542,8 @@ details[open] > summary ~ * {
     opacity: 1;
   }
 }
+
+/* Code */
+.react-syntax-highlighter-line-number {
+  user-select: none;
+}

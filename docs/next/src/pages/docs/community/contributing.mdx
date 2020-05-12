@@ -20,7 +20,7 @@ up a local development environment.
     E.g., on macOS you may use install and use `pyenv` as follows with
     Homebrew:
 
-```console
+```bash
 $ brew install pyenv pyenv-virtualenv
 $ pyenv install 3.7.4
 $ pyenv virtualenv 3.7.4 dagster37
@@ -31,13 +31,13 @@ $ pyenv activate dagster37
     [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS,
     you can install yarn with Homebrew:
 
-```console
+```bash
 $ brew install yarn
 ```
 
 4.  Clone the dagster repository to the destination of your choice:
 
-```console
+```bash
 $ git clone git@github.com:dagster-io/dagster.git
 ```
 
@@ -46,13 +46,13 @@ $ git clone git@github.com:dagster-io/dagster.git
     that do not require heavy external dependencies such as docker. This
     will take a few minutes.
 
-```console
+```bash
 $ make dev_install
 ```
 
 6.  Run some tests manually to make sure things are working:
 
-```console
+```bash
 $ python -m pytest python_modules/dagster/dagster_tests
 ```
 
@@ -65,7 +65,7 @@ Some notes on developing in Dagster:
   compatibility. You can use _tox_ for this, from within
   any of the Python packages:
 
-```console
+```bash
 $ PYENV=py27 tox
 ```
 
@@ -87,7 +87,7 @@ For development, run the dagit GraphQL server on a different port than
 the webapp, from any directory that contains a repository.yaml file. For
 example:
 
-```console
+```bash
 $ cd dagster/examples/dagster_examples/intro_tutorial
 $ dagit -p 3333
 ```
@@ -95,14 +95,14 @@ $ dagit -p 3333
 Keep this running. Then, in another terminal, run the local development
 (autoreloading, etc.) version of the webapp:
 
-```console
+```bash
 $ cd dagster/js_modules/dagit
 $ make dev_webapp
 ```
 
 To run JavaScript tests for the dagit frontend, you can run:
 
-```console
+```bash
 $ cd dagster/js_modules/dagit
 $ yarn test
 ```
@@ -123,7 +123,7 @@ interactively when you are in `--watch` mode.
 Running a live html version of the docs can expedite documentation
 development:
 
-```console
+```bash
 $ cd docs
 $ make livehtml
 ```
