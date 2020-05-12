@@ -28,14 +28,10 @@ def dask_engine_pipeline():
     return simple()
 
 
-def get_dask_engine_pipeline():
-    return dask_engine_pipeline
-
-
 def test_execute_on_dask():
     with seven.TemporaryDirectory() as tempdir:
         result = execute_pipeline(
-            reconstructable(get_dask_engine_pipeline),
+            reconstructable(dask_engine_pipeline),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'dask': {'config': {'timeout': 30}}},

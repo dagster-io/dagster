@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import json
 import tempfile
+from functools import update_wrapper
 
 import pytest
 
@@ -51,3 +52,45 @@ def test_get_args():
     assert 'one' in seven.get_args(foo)
     assert 'two' in seven.get_args(foo)
     assert 'three' in seven.get_args(foo)
+
+
+def test_is_lambda():
+    foo = lambda: None
+
+    def bar():
+        pass
+
+    baz = 3
+
+    class Oof:
+        test = lambda x: x
+
+    assert seven.is_lambda(foo) == True
+    assert seven.is_lambda(Oof.test) == True
+    assert seven.is_lambda(bar) == False
+    assert seven.is_lambda(baz) == False
+
+
+def test_is_fn_or_decor_inst():
+    class Quux:
+        pass
+
+    def foo():
+        return Quux()
+
+    bar = lambda _: Quux()
+
+    baz = Quux()
+
+    def quux_decor(fn):
+        q = Quux()
+        return update_wrapper(q, fn)
+
+    @quux_decor
+    def yoodles():
+        pass
+
+    assert seven.is_function_or_decorator_instance_of(foo, Quux) == True
+    assert seven.is_function_or_decorator_instance_of(bar, Quux) == True
+    assert seven.is_function_or_decorator_instance_of(baz, Quux) == False
+    assert seven.is_function_or_decorator_instance_of(yoodles, Quux) == True

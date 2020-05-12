@@ -2,7 +2,9 @@ import os
 import warnings
 from collections import namedtuple
 
-from dagster import check
+import six
+
+from dagster import check, seven
 from dagster.core.definitions.partition import RepositoryPartitionsHandle
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import SchedulerHandle
@@ -177,15 +179,41 @@ class ReconstructablePipeline(
         return cls(ModuleCodePointer(module, fn_name))
 
 
-def reconstructable(fn):
-    ''' Create a ReconstructablePipeline from a function that returns a PipelineDefinition '''
-    check.callable_param(fn, 'fn')
+def reconstructable(target):
+    '''
+    Create a ReconstructablePipeline from a function that returns a PipelineDefinition
+    or a @pipeline decorated function.
+    '''
+    from dagster.core.definitions import PipelineDefinition
 
-    return ReconstructablePipeline(
+    if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
+        raise DagsterInvariantViolationError(
+            'Reconstructable target should be a function or definition produced '
+            'by a decorated function, got {type}.'.format(type=type(target)),
+        )
+
+    if seven.is_lambda(target):
+        raise DagsterInvariantViolationError(
+            'Reconstructable target can not be a lambda. Use a function or '
+            'decorated function defined at module scope instead.'
+        )
+
+    if seven.qualname_differs(target):
+        raise DagsterInvariantViolationError(
+            'Reconstructable target "{target.__name__}" has a different '
+            '__qualname__ "{target.__qualname__}" indicating it is not '
+            'defined at module scope. Use a function or decorated function '
+            'defined at module scope instead.'.format(target=target)
+        )
+
+    recon = ReconstructablePipeline(
         FileCodePointer(
-            python_file=get_python_file_from_previous_stack_frame(), fn_name=fn.__name__,
+            python_file=get_python_file_from_previous_stack_frame(), fn_name=target.__name__,
         )
     )
+    # will raise DagsterInvariantViolationError if there is an issue with target
+    recon.get_definition()
+    return recon
 
 
 def _load_pipeline(pointer):
@@ -196,7 +224,18 @@ def _load_pipeline(pointer):
     # if its a function invoke it - otherwise we are pointing to a
     # artifact in module scope, likely decorator output
     if callable(target):
-        target = target()
+        try:
+            target = target()
+        except TypeError as t_e:
+            six.raise_from(
+                DagsterInvariantViolationError(
+                    'Error invoking function at {target} with no arguments. '
+                    'Reconstructable target must be callable with no arguments'.format(
+                        target=pointer.describe()
+                    )
+                ),
+                t_e,
+            )
 
     if isinstance(target, PipelineDefinition):
         return target

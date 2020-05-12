@@ -191,3 +191,15 @@ def get_current_datetime_in_utc():
         tz = pytz.utc
 
     return datetime.datetime.now(tz=tz)
+
+
+def is_lambda(target):
+    return callable(target) and (hasattr(target, '__name__') and target.__name__ == '<lambda>')
+
+
+def is_function_or_decorator_instance_of(target, kls):
+    return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, '__name__'))
+
+
+def qualname_differs(target):
+    return hasattr(target, '__qualname__') and (target.__qualname__ != target.__name__)

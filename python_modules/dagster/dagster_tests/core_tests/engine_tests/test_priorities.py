@@ -35,12 +35,8 @@ def test_priorities():
     ] == ['high', 'high_2', 'none', 'none_2', 'low', 'low_2']
 
 
-def get_priority_test():
-    return priority_test
-
-
 def test_priorities_mp():
-    pipe = reconstructable(get_priority_test)
+    pipe = reconstructable(priority_test)
     result = execute_pipeline(
         pipe,
         {

@@ -35,7 +35,9 @@ class FileCodePointer(namedtuple('_FileCodePointer', 'python_file fn_name'), Cod
         module = import_module_from_path(module_name, self.python_file)
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
-                '{name} not found in file {file}.'.format(name=self.fn_name, file=self.python_file)
+                '{name} not found at module scope in file {file}.'.format(
+                    name=self.fn_name, file=self.python_file
+                )
             )
 
         return getattr(module, self.fn_name)

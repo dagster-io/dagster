@@ -496,7 +496,9 @@ def test_stderr_execute_command():
 
 
 def test_fn_not_found_execute():
-    with pytest.raises(DagsterInvariantViolationError, match='nope not found in file'):
+    with pytest.raises(
+        DagsterInvariantViolationError, match='nope not found at module scope in file'
+    ):
         execute_execute_command(
             env=None,
             cli_args={
