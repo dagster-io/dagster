@@ -11,6 +11,8 @@
 
 - The dagster-airflow package now supports loading Airflow dags without depending on initialized
   Airflow db
+- Improvements to the longitudinal partitioned schedule view, including live updates, run filtering,
+  and better default states.
 
 ## 0.7.12
 
