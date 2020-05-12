@@ -8,9 +8,12 @@ from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.config_schema import input_selector_schema, output_selector_schema
+from dagster.core.utils import check_dagster_package_version
 
 from .resources import pyspark_resource, spark_session_from_config
 from .version import __version__
+
+check_dagster_package_version('dagster-pyspark', __version__)
 
 
 @input_selector_schema(

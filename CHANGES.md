@@ -17,6 +17,8 @@
   Airflow db
 - Improvements to the longitudinal partitioned schedule view, including live updates, run filtering,
   and better default states.
+- Added user warning for dagster library packages that are out of sync with the core `dagster`
+  package.
 
 ## 0.7.12
 

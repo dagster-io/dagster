@@ -1,8 +1,11 @@
 import random
 import string
 import uuid
+import warnings
 
 import toposort as toposort_
+
+from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8
 
@@ -21,3 +24,11 @@ def make_new_run_id():
 
 def make_new_backfill_id():
     return ''.join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
+
+
+def check_dagster_package_version(library_name, library_version):
+    if __version__ != library_version:
+        message = 'Found version mismatch between `dagster` ({}) and `{}` ({})'.format(
+            __version__, library_name, library_version
+        )
+        warnings.warn(message)

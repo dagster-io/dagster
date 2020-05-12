@@ -1,3 +1,5 @@
+from dagster.core.utils import check_dagster_package_version
+
 from .bigquery.resources import bigquery_resource
 from .bigquery.solids import (
     bq_create_dataset,
@@ -12,6 +14,8 @@ from .dataproc.resources import dataproc_resource
 from .dataproc.solids import dataproc_solid
 from .gcs import gcs_resource, gcs_system_storage
 from .version import __version__
+
+check_dagster_package_version('dagster-gcp', __version__)
 
 __all__ = [
     'BigQueryError',

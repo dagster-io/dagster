@@ -19,8 +19,11 @@ from dagster import (
     check,
     solid,
 )
+from dagster.core.utils import check_dagster_package_version
 
 from .version import __version__
+
+check_dagster_package_version('dagster-dbt', __version__)
 
 CREATE_VIEW_REGEX = re.compile(r'OK created view model (\w+)\.(\w+)\.* \[CREATE VIEW')
 CREATE_TABLE_REGEX = re.compile(r'OK created table model (\w+)\.(\w+)\.* \[SELECT (\d+)')
