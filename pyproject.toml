@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 100
-skip-string-normalization = 1
+skip-string-normalization = true
 exclude = '''
 /(
     build
