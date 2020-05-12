@@ -36,7 +36,6 @@ const transform = () => (tree) => {
 
       const filePath = path.join(root, map.file);
       try {
-        // TODO: Fix all other literal includes because now they need to include /dagster_examples/ in their paths
         const content = fs.readFileSync(filePath).toString();
         node.value = limitSnippetLines(content, map.lines);
       } catch (error) {
