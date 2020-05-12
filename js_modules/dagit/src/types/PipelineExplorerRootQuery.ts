@@ -719,7 +719,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -757,7 +757,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -786,7 +786,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -797,7 +797,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -834,7 +834,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -845,7 +845,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -941,7 +941,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_inputs_dependsOn_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -979,7 +979,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_outputs_dependedBy_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -1008,7 +1008,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -1019,7 +1019,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -1056,7 +1056,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -1067,7 +1067,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 

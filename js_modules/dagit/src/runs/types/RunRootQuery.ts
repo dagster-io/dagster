@@ -38,7 +38,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_tags {
 }
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
 }
 

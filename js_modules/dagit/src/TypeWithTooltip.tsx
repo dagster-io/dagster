@@ -15,8 +15,8 @@ export default class TypeWithTooltip extends React.Component<
   ITypeWithTooltipProps
 > {
   static fragments = {
-    RuntimeTypeWithTooltipFragment: gql`
-      fragment RuntimeTypeWithTooltipFragment on RuntimeType {
+    DagsterTypeWithTooltipFragment: gql`
+      fragment DagsterTypeWithTooltipFragment on DagsterType {
         name
         displayName
         description

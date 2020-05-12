@@ -3,19 +3,19 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from .setup import define_test_context, define_test_snapshot_context
 
 RUNTIME_TYPE_QUERY = '''
-query RuntimeTypeQuery($pipelineName: String! $dagsterTypeName: String!)
+query DagsterTypeQuery($pipelineName: String! $dagsterTypeName: String!)
 {
     pipelineOrError(params:{ name: $pipelineName}) {
         __typename
         ... on Pipeline {
             dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
                 __typename
-                ... on RegularRuntimeType {
+                ... on RegularDagsterType {
                     name
                     displayName
                     isBuiltin
                 }
-                ... on RuntimeTypeNotFoundError {
+                ... on DagsterTypeNotFoundError {
                     dagsterTypeName
                 }
             }
@@ -42,7 +42,7 @@ fragment schemaTypeFragment on ConfigType {
     }
   }
 }
-fragment dagsterTypeFragment on RuntimeType {
+fragment dagsterTypeFragment on DagsterType {
     key
     name
     displayName
@@ -58,7 +58,7 @@ fragment dagsterTypeFragment on RuntimeType {
     innerTypes {
         key
     }
-    ... on WrappingRuntimeType {
+    ... on WrappingDagsterType {
         ofType {
             key
         }
@@ -88,7 +88,7 @@ def test_dagster_type_query_works():
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularDagsterType'
     )
     assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'PoorMansDataFrame'
 
@@ -102,7 +102,7 @@ def test_dagster_type_query_with_container_context_ok():
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularDagsterType'
     )
     assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'PoorMansDataFrame'
 
@@ -117,7 +117,7 @@ def test_dagster_type_builtin_query():
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularDagsterType'
     )
     assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'Int'
     assert result.data['pipelineOrError']['dagsterTypeOrError']['isBuiltin']
@@ -147,7 +147,7 @@ def test_dagster_type_or_error_type_not_found():
     assert result.data
     assert (
         result.data['pipelineOrError']['dagsterTypeOrError']['__typename']
-        == 'RuntimeTypeNotFoundError'
+        == 'DagsterTypeNotFoundError'
     )
     assert result.data['pipelineOrError']['dagsterTypeOrError']['dagsterTypeName'] == 'nope'
 
@@ -163,7 +163,7 @@ def test_dagster_type_or_error_query_with_container_context_not_found():
     assert result.data
     assert (
         result.data['pipelineOrError']['dagsterTypeOrError']['__typename']
-        == 'RuntimeTypeNotFoundError'
+        == 'DagsterTypeNotFoundError'
     )
     assert result.data['pipelineOrError']['dagsterTypeOrError']['dagsterTypeName'] == 'nope'
 

@@ -19,7 +19,7 @@ interface ITypeExplorerProps {
 export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
   static fragments = {
     TypeExplorerFragment: gql`
-      fragment TypeExplorerFragment on RuntimeType {
+      fragment TypeExplorerFragment on DagsterType {
         name
         description
         inputSchemaType {

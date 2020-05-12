@@ -59,14 +59,14 @@ export class SidebarSolidDefinition extends React.Component<
           name
           description
           type {
-            ...RuntimeTypeWithTooltipFragment
+            ...DagsterTypeWithTooltipFragment
           }
         }
         inputDefinitions {
           name
           description
           type {
-            ...RuntimeTypeWithTooltipFragment
+            ...DagsterTypeWithTooltipFragment
           }
         }
         ... on SolidDefinition {
@@ -109,7 +109,7 @@ export class SidebarSolidDefinition extends React.Component<
         }
       }
 
-      ${TypeWithTooltip.fragments.RuntimeTypeWithTooltipFragment}
+      ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
       ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
       ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
     `

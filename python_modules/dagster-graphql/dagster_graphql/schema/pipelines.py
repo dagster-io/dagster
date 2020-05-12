@@ -57,9 +57,9 @@ class DauphinIPipelineSnapshotMixin(object):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    dagster_types = dauphin.non_null_list('RuntimeType')
+    dagster_types = dauphin.non_null_list('DagsterType')
     dagster_type_or_error = dauphin.Field(
-        dauphin.NonNull('RuntimeTypeOrError'),
+        dauphin.NonNull('DagsterTypeOrError'),
         dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     solids = dauphin.non_null_list('Solid')
@@ -100,10 +100,10 @@ class DauphinIPipelineSnapshotMixin(object):
         pipeline_index = self.get_pipeline_index()
 
         if not pipeline_index.has_dagster_type_name(type_name):
-            from .errors import DauphinRuntimeTypeNotFoundError
+            from .errors import DauphinDagsterTypeNotFoundError
 
             raise UserFacingGraphQLError(
-                DauphinRuntimeTypeNotFoundError(dagster_type_name=type_name)
+                DauphinDagsterTypeNotFoundError(dagster_type_name=type_name)
             )
 
         return to_dauphin_dagster_type(
@@ -156,9 +156,9 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    dagster_types = dauphin.non_null_list('RuntimeType')
+    dagster_types = dauphin.non_null_list('DagsterType')
     dagster_type_or_error = dauphin.Field(
-        dauphin.NonNull('RuntimeTypeOrError'),
+        dauphin.NonNull('DagsterTypeOrError'),
         dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     solids = dauphin.non_null_list('Solid')

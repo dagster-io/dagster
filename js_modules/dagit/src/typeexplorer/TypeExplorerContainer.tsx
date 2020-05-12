@@ -34,7 +34,7 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
         if (
           data.pipeline &&
           data.pipeline.dagsterTypeOrError &&
-          data.pipeline.dagsterTypeOrError.__typename === "RegularRuntimeType"
+          data.pipeline.dagsterTypeOrError.__typename === "RegularDagsterType"
         ) {
           return <TypeExplorer type={data.pipeline.dagsterTypeOrError} />;
         } else {
@@ -53,7 +53,7 @@ export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
     pipeline(params: { name: $pipelineName }) {
       dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
         __typename
-        ... on RegularRuntimeType {
+        ... on RegularDagsterType {
           ...TypeExplorerFragment
         }
       }

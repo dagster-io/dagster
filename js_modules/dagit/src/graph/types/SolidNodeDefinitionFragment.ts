@@ -14,7 +14,7 @@ export interface SolidNodeDefinitionFragment_SolidDefinition_metadata {
 }
 
 export interface SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -25,7 +25,7 @@ export interface SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions {
 }
 
 export interface SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -62,7 +62,7 @@ export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_metadata {
 }
 
 export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -73,7 +73,7 @@ export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_inputDefin
 }
 
 export interface SolidNodeDefinitionFragment_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 

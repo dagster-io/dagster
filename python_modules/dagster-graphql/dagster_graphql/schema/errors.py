@@ -605,9 +605,9 @@ class DauphinConfigTypeNotFoundError(dauphin.ObjectType):
     config_type_name = dauphin.NonNull(dauphin.String)
 
 
-class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
+class DauphinDagsterTypeNotFoundError(dauphin.ObjectType):
     class Meta(object):
-        name = 'RuntimeTypeNotFoundError'
+        name = 'DagsterTypeNotFoundError'
         interfaces = (DauphinError,)
 
     dagster_type_name = dauphin.NonNull(dauphin.String)
@@ -626,13 +626,13 @@ class DauphinConfigTypeOrError(dauphin.Union):
         )
 
 
-class DauphinRuntimeTypeOrError(dauphin.Union):
+class DauphinDagsterTypeOrError(dauphin.Union):
     class Meta(object):
-        name = 'RuntimeTypeOrError'
+        name = 'DagsterTypeOrError'
         types = (
-            'RegularRuntimeType',
+            'RegularDagsterType',
             DauphinPipelineNotFoundError,
-            DauphinRuntimeTypeNotFoundError,
+            DauphinDagsterTypeNotFoundError,
             DauphinPythonError,
         )
 

@@ -79,7 +79,7 @@ fragment SolidFragment on Solid {
       name
       description
       type {
-        ... RuntimeTypeWithTooltipFragment
+        ... DagsterTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -111,7 +111,7 @@ fragment SolidFragment on Solid {
   __typename
 }
 
-fragment RuntimeTypeWithTooltipFragment on RuntimeType {
+fragment DagsterTypeWithTooltipFragment on DagsterType {
   name
   description
   __typename
@@ -122,7 +122,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ... RuntimeTypeWithTooltipFragment
+        ... DagsterTypeWithTooltipFragment
         __typename
       }
       __typename
@@ -133,7 +133,7 @@ fragment SolidTypeSignatureFragment on Solid {
     definition {
       name
       type {
-        ... RuntimeTypeWithTooltipFragment
+        ... DagsterTypeWithTooltipFragment
         __typename
       }
       __typename

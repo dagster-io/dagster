@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarSolidInvocationFragment_inputs_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -44,7 +44,7 @@ export interface SidebarSolidInvocationFragment_inputs {
 }
 
 export interface SidebarSolidInvocationFragment_outputs_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

@@ -14,7 +14,7 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_meta
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -28,7 +28,7 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_inpu
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -404,7 +404,7 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefini
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;
@@ -418,7 +418,7 @@ export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefini
 }
 
 export interface UsedSolidDetailsQuery_usedSolid_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
   name: string | null;
   description: string | null;

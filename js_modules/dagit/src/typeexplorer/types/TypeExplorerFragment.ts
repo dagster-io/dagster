@@ -678,7 +678,7 @@ export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType {
 export type TypeExplorerFragment_outputSchemaType = TypeExplorerFragment_outputSchemaType_ArrayConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType;
 
 export interface TypeExplorerFragment {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   description: string | null;
   inputSchemaType: TypeExplorerFragment_inputSchemaType | null;

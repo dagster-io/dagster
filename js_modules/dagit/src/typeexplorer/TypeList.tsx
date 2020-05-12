@@ -33,13 +33,13 @@ function groupTypes(types: Array<TypeListFragment>) {
 export default class TypeList extends React.Component<ITypeListProps, {}> {
   static fragments = {
     TypeListFragment: gql`
-      fragment TypeListFragment on RuntimeType {
+      fragment TypeListFragment on DagsterType {
         name
         isBuiltin
-        ...RuntimeTypeWithTooltipFragment
+        ...DagsterTypeWithTooltipFragment
       }
 
-      ${TypeWithTooltip.fragments.RuntimeTypeWithTooltipFragment}
+      ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
     `
   };
 

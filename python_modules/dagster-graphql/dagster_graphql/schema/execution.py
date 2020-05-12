@@ -44,7 +44,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
         name = 'ExecutionStepOutput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
+    type = dauphin.Field(dauphin.NonNull('DagsterType'))
 
     def __init__(self, pipeline_snapshot, step_output_snap):
         super(DauphinExecutionStepOutput, self).__init__()
@@ -69,7 +69,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         name = 'ExecutionStepInput'
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('RuntimeType'))
+    type = dauphin.Field(dauphin.NonNull('DagsterType'))
     dependsOn = dauphin.non_null_list('ExecutionStep')
 
     def __init__(self, pipeline_snapshot, step_input_snap, execution_plan_index):

@@ -4,11 +4,11 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: RuntimeTypeWithTooltipFragment
+// GraphQL fragment: DagsterTypeWithTooltipFragment
 // ====================================================
 
-export interface RuntimeTypeWithTooltipFragment {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+export interface DagsterTypeWithTooltipFragment {
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

@@ -13,7 +13,7 @@ export interface SolidSelectorQuery_pipeline_solids_inputs_definition {
 }
 
 export interface SolidSelectorQuery_pipeline_solids_inputs_dependsOn_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -51,7 +51,7 @@ export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_solid {
 }
 
 export interface SolidSelectorQuery_pipeline_solids_outputs_dependedBy_definition_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -80,7 +80,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_m
 }
 
 export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -91,7 +91,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_i
 }
 
 export interface SolidSelectorQuery_pipeline_solids_definition_SolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -128,7 +128,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDef
 }
 
 export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 
@@ -139,7 +139,7 @@ export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDef
 }
 
 export interface SolidSelectorQuery_pipeline_solids_definition_CompositeSolidDefinition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
 }
 

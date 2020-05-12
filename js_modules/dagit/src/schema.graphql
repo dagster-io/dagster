@@ -106,6 +106,27 @@ type ConfigTypeNotFoundError implements Error {
 
 scalar Cursor
 
+interface DagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+}
+
+type DagsterTypeNotFoundError implements Error {
+  message: String!
+  dagsterTypeName: String!
+}
+
+union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
+
 union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
 
 type DeletePipelineRunSuccess {
@@ -295,7 +316,7 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
 
 type ExecutionStepInput {
   name: String!
-  type: RuntimeType!
+  type: DagsterType!
   dependsOn: [ExecutionStep!]!
 }
 
@@ -311,7 +332,7 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
 
 type ExecutionStepOutput {
   name: String!
-  type: RuntimeType!
+  type: DagsterType!
 }
 
 type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
@@ -410,7 +431,7 @@ type InputDefinition {
   solidDefinition: SolidDefinition!
   name: String!
   description: String
-  type: RuntimeType!
+  type: DagsterType!
 }
 
 type InputMapping {
@@ -446,8 +467,8 @@ interface IPipelineSnapshot {
   name: String!
   description: String
   pipelineSnapshotId: String!
-  dagsterTypes: [RuntimeType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -472,7 +493,7 @@ type LaunchPipelineRunSuccess {
   run: PipelineRun!
 }
 
-type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
+type ListDagsterType implements DagsterType & WrappingDagsterType {
   key: String!
   name: String
   displayName: String!
@@ -483,8 +504,8 @@ type ListRuntimeType implements RuntimeType & WrappingRuntimeType {
   isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
-  innerTypes: [RuntimeType!]!
-  ofType: RuntimeType!
+  innerTypes: [DagsterType!]!
+  ofType: DagsterType!
 }
 
 type Logger {
@@ -584,7 +605,7 @@ type NullableConfigType implements ConfigType & WrappingConfigType {
   ofType: ConfigType!
 }
 
-type NullableRuntimeType implements RuntimeType & WrappingRuntimeType {
+type NullableDagsterType implements DagsterType & WrappingDagsterType {
   key: String!
   name: String
   displayName: String!
@@ -595,8 +616,8 @@ type NullableRuntimeType implements RuntimeType & WrappingRuntimeType {
   isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
-  innerTypes: [RuntimeType!]!
-  ofType: RuntimeType!
+  innerTypes: [DagsterType!]!
+  ofType: DagsterType!
 }
 
 type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
@@ -632,7 +653,7 @@ type OutputDefinition {
   solidDefinition: SolidDefinition!
   name: String!
   description: String
-  type: RuntimeType!
+  type: DagsterType!
 }
 
 type OutputMapping {
@@ -688,8 +709,8 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   name: String!
   description: String
   pipelineSnapshotId: String!
-  dagsterTypes: [RuntimeType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
@@ -852,8 +873,8 @@ type PipelineSnapshot implements IPipelineSnapshot {
   name: String!
   description: String
   pipelineSnapshotId: String!
-  dagsterTypes: [RuntimeType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -946,7 +967,7 @@ type RegularConfigType implements ConfigType {
   givenName: String!
 }
 
-type RegularRuntimeType implements RuntimeType {
+type RegularDagsterType implements DagsterType {
   key: String!
   name: String
   displayName: String!
@@ -957,7 +978,7 @@ type RegularRuntimeType implements RuntimeType {
   isNothing: Boolean!
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
-  innerTypes: [RuntimeType!]!
+  innerTypes: [DagsterType!]!
 }
 
 type Resource {
@@ -1016,27 +1037,6 @@ type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   reason: EvaluationErrorReason!
   valueRep: String
 }
-
-interface RuntimeType {
-  key: String!
-  name: String
-  displayName: String!
-  description: String
-  isNullable: Boolean!
-  isList: Boolean!
-  isBuiltin: Boolean!
-  isNothing: Boolean!
-  inputSchemaType: ConfigType
-  outputSchemaType: ConfigType
-  innerTypes: [RuntimeType!]!
-}
-
-type RuntimeTypeNotFoundError implements Error {
-  message: String!
-  dagsterTypeName: String!
-}
-
-union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError
 
 type ScalarUnionConfigType implements ConfigType {
   key: String!
@@ -1246,6 +1246,6 @@ interface WrappingConfigType {
   ofType: ConfigType!
 }
 
-interface WrappingRuntimeType {
-  ofType: RuntimeType!
+interface WrappingDagsterType {
+  ofType: DagsterType!
 }

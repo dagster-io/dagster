@@ -34,7 +34,7 @@ export interface RunFragment_tags {
 }
 
 export interface RunFragment_executionPlan_steps_inputs_dependsOn_outputs_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
 }
 

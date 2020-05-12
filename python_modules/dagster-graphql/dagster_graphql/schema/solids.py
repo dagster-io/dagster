@@ -231,7 +231,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('RuntimeType')
+    type = dauphin.NonNull('DagsterType')
 
     def __init__(self, pipeline_index, solid_def_name, input_def_name):
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
@@ -259,7 +259,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
     solid_definition = dauphin.NonNull('SolidDefinition')
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('RuntimeType')
+    type = dauphin.NonNull('DagsterType')
 
     def __init__(self, pipeline_index, solid_def_name, output_def_name):
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)

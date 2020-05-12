@@ -29,7 +29,7 @@ export class SidebarSolidInvocation extends React.Component<
             name
             description
             type {
-              ...RuntimeTypeWithTooltipFragment
+              ...DagsterTypeWithTooltipFragment
             }
           }
           dependsOn {
@@ -46,7 +46,7 @@ export class SidebarSolidInvocation extends React.Component<
             name
             description
             type {
-              ...RuntimeTypeWithTooltipFragment
+              ...DagsterTypeWithTooltipFragment
             }
           }
           dependedBy {
@@ -60,7 +60,7 @@ export class SidebarSolidInvocation extends React.Component<
         }
       }
 
-      ${TypeWithTooltip.fragments.RuntimeTypeWithTooltipFragment}
+      ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
     `
   };
 

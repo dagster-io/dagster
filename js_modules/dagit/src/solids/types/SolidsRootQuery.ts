@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SolidsRootQuery_usedSolids_definition_outputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;
@@ -21,7 +21,7 @@ export interface SolidsRootQuery_usedSolids_definition_outputDefinitions {
 }
 
 export interface SolidsRootQuery_usedSolids_definition_inputDefinitions_type {
-  __typename: "RegularRuntimeType" | "ListRuntimeType" | "NullableRuntimeType";
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   name: string | null;
   displayName: string;
   description: string | null;

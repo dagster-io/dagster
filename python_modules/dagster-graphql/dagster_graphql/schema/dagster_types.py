@@ -50,19 +50,19 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
         base_args['of_type'] = to_dauphin_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
-        return DauphinListRuntimeType(**base_args)
+        return DauphinListDagsterType(**base_args)
     elif dagster_type_meta.kind == DagsterTypeKind.NULLABLE:
         base_args['of_type'] = to_dauphin_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
-        return DauphinNullableRuntimeType(**base_args)
+        return DauphinNullableDagsterType(**base_args)
     else:
-        return DauphinRegularRuntimeType(**base_args)
+        return DauphinRegularDagsterType(**base_args)
 
 
-class DauphinRuntimeType(dauphin.Interface):
+class DauphinDagsterType(dauphin.Interface):
     class Meta(object):
-        name = 'RuntimeType'
+        name = 'DagsterType'
 
     key = dauphin.NonNull(dauphin.String)
     name = dauphin.String()
@@ -77,29 +77,29 @@ class DauphinRuntimeType(dauphin.Interface):
     input_schema_type = dauphin.Field(DauphinConfigType)
     output_schema_type = dauphin.Field(DauphinConfigType)
 
-    inner_types = dauphin.non_null_list('RuntimeType')
+    inner_types = dauphin.non_null_list('DagsterType')
 
 
-class DauphinRegularRuntimeType(dauphin.ObjectType):
+class DauphinRegularDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'RegularRuntimeType'
-        interfaces = [DauphinRuntimeType]
+        name = 'RegularDagsterType'
+        interfaces = [DauphinDagsterType]
 
 
-class DauphinWrappingRuntimeType(dauphin.Interface):
+class DauphinWrappingDagsterType(dauphin.Interface):
     class Meta(object):
-        name = 'WrappingRuntimeType'
+        name = 'WrappingDagsterType'
 
-    of_type = dauphin.Field(dauphin.NonNull(DauphinRuntimeType))
+    of_type = dauphin.Field(dauphin.NonNull(DauphinDagsterType))
 
 
-class DauphinListRuntimeType(dauphin.ObjectType):
+class DauphinListDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'ListRuntimeType'
-        interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]
+        name = 'ListDagsterType'
+        interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
 
 
-class DauphinNullableRuntimeType(dauphin.ObjectType):
+class DauphinNullableDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'NullableRuntimeType'
-        interfaces = [DauphinRuntimeType, DauphinWrappingRuntimeType]
+        name = 'NullableDagsterType'
+        interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
