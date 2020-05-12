@@ -90,7 +90,7 @@ def build_composite_solid_def_snap(comp_solid_def):
         output_def_snaps=list(map(build_output_def_snap, comp_solid_def.output_defs)),
         description=comp_solid_def.description,
         tags=comp_solid_def.tags,
-        required_resource_keys=list(comp_solid_def.required_resource_keys),
+        required_resource_keys=sorted(list(comp_solid_def.required_resource_keys)),
         config_field_snap=snap_from_field('config', comp_solid_def.config_mapping.config_field)
         if comp_solid_def.config_mapping
         else None,
@@ -108,7 +108,7 @@ def build_core_solid_def_snap(solid_def):
         output_def_snaps=list(map(build_output_def_snap, solid_def.output_defs)),
         description=solid_def.description,
         tags=solid_def.tags,
-        required_resource_keys=list(solid_def.required_resource_keys),
+        required_resource_keys=sorted(list(solid_def.required_resource_keys)),
         config_field_snap=snap_from_field('config', solid_def.config_field)
         if solid_def.config_field
         else None,

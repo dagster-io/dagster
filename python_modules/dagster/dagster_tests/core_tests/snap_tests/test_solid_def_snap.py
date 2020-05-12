@@ -32,7 +32,7 @@ def test_solid_definition_kitchen_sink():
         config={'foo': int},
         description='a description',
         tags={'a_tag': 'yup'},
-        required_resource_keys={'a_resource'},
+        required_resource_keys={'b_resource', 'a_resource'},
     )
     def kitchen_sink_solid(_, arg_two, arg_one):  # out of order to test positional_inputs
         assert arg_one
@@ -70,7 +70,7 @@ def test_solid_definition_kitchen_sink():
         == kitchen_sink_solid.config_field.config_type.key
     )
 
-    assert kitchen_sink_solid_snap.required_resource_keys == ['a_resource']
+    assert kitchen_sink_solid_snap.required_resource_keys == ['a_resource', 'b_resource']
     assert kitchen_sink_solid_snap.tags == {'a_tag': 'yup'}
     assert kitchen_sink_solid.positional_inputs == ['arg_two', 'arg_one']
 
