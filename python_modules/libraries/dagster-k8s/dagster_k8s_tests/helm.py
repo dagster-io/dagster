@@ -17,6 +17,9 @@ from dagster.utils import git_repository_root
 
 from .utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
+TEST_CONFIGMAP_NAME = 'test-env-configmap'
+TEST_SECRET_NAME = 'test-env-secret'
+
 
 @pytest.fixture(scope='session')
 def helm_namespace(
@@ -83,14 +86,17 @@ def helm_test_resources(namespace, should_cleanup=True):
     check.bool_param(should_cleanup, 'should_cleanup')
 
     try:
-        print('Creating k8s test objects ConfigMap test-env-configmap and Secret test-env-secret')
+        print(
+            'Creating k8s test objects ConfigMap %s and Secret %s'
+            % (TEST_CONFIGMAP_NAME, TEST_SECRET_NAME)
+        )
         kube_api = kubernetes.client.CoreV1Api()
 
         configmap = kubernetes.client.V1ConfigMap(
             api_version='v1',
             kind='ConfigMap',
             data={'TEST_ENV_VAR': 'foobar'},
-            metadata=kubernetes.client.V1ObjectMeta(name='test-env-configmap'),
+            metadata=kubernetes.client.V1ObjectMeta(name=TEST_CONFIGMAP_NAME),
         )
         kube_api.create_namespaced_config_map(namespace=namespace, body=configmap)
 
@@ -100,7 +106,7 @@ def helm_test_resources(namespace, should_cleanup=True):
             api_version='v1',
             kind='Secret',
             data={'TEST_SECRET_ENV_VAR': secret_val},
-            metadata=kubernetes.client.V1ObjectMeta(name='test-env-secret'),
+            metadata=kubernetes.client.V1ObjectMeta(name=TEST_SECRET_NAME),
         )
         kube_api.create_namespaced_secret(namespace=namespace, body=secret)
 
@@ -110,8 +116,8 @@ def helm_test_resources(namespace, should_cleanup=True):
         # Can skip this step as a time saver when we're going to destroy the cluster anyway, e.g.
         # w/ a kind cluster
         if should_cleanup:
-            kube_api.delete_namespaced_config_map(name='test-env-configmap', namespace=namespace)
-            kube_api.delete_namespaced_secret(name='test-env-secret', namespace=namespace)
+            kube_api.delete_namespaced_config_map(name=TEST_CONFIGMAP_NAME, namespace=namespace)
+            kube_api.delete_namespaced_secret(name=TEST_SECRET_NAME, namespace=namespace)
 
 
 @contextmanager
@@ -132,8 +138,8 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             'dagit': {
                 'image': {'repository': repository, 'tag': tag},
                 'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
-                'env_config_maps': ['test-env-configmap'],
-                'env_secrets': ['test-env-secret'],
+                'env_config_maps': [TEST_CONFIGMAP_NAME],
+                'env_secrets': [TEST_SECRET_NAME],
             },
             'celery': {
                 'image': {'repository': repository, 'tag': tag},
@@ -145,8 +151,8 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             'pipeline_run': {
                 'image': {'repository': repository, 'tag': tag},
                 'env': {'TEST_SET_ENV_VAR': 'test_pipeline_run_env_var'},
-                'env_config_maps': ['test-env-configmap'],
-                'env_secrets': ['test-env-secret'],
+                'env_config_maps': [TEST_CONFIGMAP_NAME],
+                'env_secrets': [TEST_SECRET_NAME],
             },
             'serviceAccount': {'name': 'dagit-admin'},
             'postgresqlPassword': 'test',
