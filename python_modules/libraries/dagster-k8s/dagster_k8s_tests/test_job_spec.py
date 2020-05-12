@@ -52,7 +52,7 @@ spec:
               name: dagster-postgresql-secret
         env_from:
         - config_map_ref:
-            name: dagster-job-runner-env
+            name: dagster-pipeline-env
         - config_map_ref:
             name: test-env-configmap
         - secret_ref:

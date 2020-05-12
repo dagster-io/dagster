@@ -37,7 +37,7 @@ spec:
           securityContext:
             {{- toYaml .Values.celery.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
-          image: "{{ template "dagster.job_image" . }}"
+          image: "{{ template "dagster.celery_image" . }}"
           command: ["dagster-celery"]
           args: ["worker", "start", "-y", "{{ .Values.dagster_home }}/celery-config.yaml", "-q", "dagster"]
           env:
@@ -48,17 +48,17 @@ spec:
                   key: postgresql-password
           envFrom:
             - configMapRef:
-                name: {{ template "dagster.fullname" . }}-job-runner-env
-            {{- if .Values.job_runner.env_config_maps -}}
-            {{- range $name := .Values.job_runner.env_config_maps }}
+                name: {{ template "dagster.fullname" . }}-celery-worker-env
+            {{- if .Values.celery.env_config_maps -}}
+            {{- range $name := .Values.celery.env_config_maps }}
             {{- if $name }}
             - configMapRef:
                 name: {{ $name }}
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- if .Values.job_runner.env_secrets -}}
-            {{- range $name := .Values.job_runner.env_secrets }}
+            {{- if .Values.celery.env_secrets -}}
+            {{- range $name := .Values.celery.env_secrets }}
             {{- if $name }}
             - secretRef:
                 name: {{ $name }}

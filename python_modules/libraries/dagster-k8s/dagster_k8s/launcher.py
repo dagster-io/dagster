@@ -25,7 +25,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             module: dagster_k8s.launcher
             class: K8sRunLauncher
             config:
-                service_account_name: job_runner_service_account
+                service_account_name: pipeline_run_service_account
                 job_image: my_project/dagster_image:latest
                 instance_config_map: dagster-instance
                 postgres_password_secret: dagster-postgresql-secret

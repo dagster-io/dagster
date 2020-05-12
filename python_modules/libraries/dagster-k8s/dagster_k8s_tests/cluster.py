@@ -98,7 +98,7 @@ def run_launcher(
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy(),
         job_namespace=helm_namespace,
-        env_config_maps=['dagster-job-runner-env', 'test-env-configmap'],
+        env_config_maps=['dagster-pipeline-env', 'test-env-configmap'],
         env_secrets=['test-env-secret'],
     )
 

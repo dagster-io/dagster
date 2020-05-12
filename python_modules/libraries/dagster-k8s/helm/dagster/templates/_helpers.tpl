@@ -31,11 +31,18 @@ If release name contains chart name it will be used as a full name.
 {{- required "Dagit image tag .Values.dagit.image.tag is required" .Values.dagit.image.tag }}
 {{- end -}}
 
-# Dagster job image e.g. repo/foo:bar
-{{- define "dagster.job_image" -}}
-{{ required "Job runner image repository .Values.job_runner.image.repository is required" .Values.job_runner.image.repository -}}
+# Dagster Celery worker image e.g. repo/foo:bar
+{{- define "dagster.celery_image" -}}
+{{ required "Celery worker image repository .Values.celery.image.repository is required" .Values.celery.image.repository -}}
 :
-{{- required "Job runner image tag .Values.job_runner.image.tag is required" .Values.job_runner.image.tag }}
+{{- required "Celery worker image tag .Values.celery.image.tag is required" .Values.celery.image.tag }}
+{{- end -}}
+
+# Dagster job image e.g. repo/foo:bar
+{{- define "dagster.pipeline_run_image" -}}
+{{ required "Pipeline run image repository .Values.pipeline_run.image.repository is required" .Values.pipeline_run.image.repository -}}
+:
+{{- required "Pipeline run image tag .Values.pipeline_run.image.tag is required" .Values.pipeline_run.image.tag }}
 {{- end -}}
 
 
@@ -52,9 +59,17 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
-{{- define "dagster.job_runner.dagster_home" -}}
-{{- if .Values.job_runner.dagster_home -}}
-{{ .Values.job_runner.dagster_home }}
+{{- define "dagster.celery.dagster_home" -}}
+{{- if .Values.celery.dagster_home -}}
+{{ .Values.celery.dagster_home }}
+{{- else -}}
+{{ .Values.dagster_home }}
+{{- end -}}
+{{- end -}}
+
+{{- define "dagster.pipeline_run.dagster_home" -}}
+{{- if .Values.pipeline_run.dagster_home -}}
+{{ .Values.pipeline_run.dagster_home }}
 {{- else -}}
 {{ .Values.dagster_home }}
 {{- end -}}

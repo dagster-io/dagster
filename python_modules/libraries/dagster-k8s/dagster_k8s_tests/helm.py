@@ -135,9 +135,16 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 'env_config_maps': ['test-env-configmap'],
                 'env_secrets': ['test-env-secret'],
             },
-            'job_runner': {
+            'celery': {
                 'image': {'repository': repository, 'tag': tag},
-                'env': {'TEST_SET_ENV_VAR': 'test_job_runner_env_var'},
+                'extraWorkerQueues': [
+                    {'name': 'extra-queue-1', 'replicaCount': 1},
+                    {'name': 'extra-queue-2', 'replicaCount': 2},
+                ],
+            },
+            'pipeline_run': {
+                'image': {'repository': repository, 'tag': tag},
+                'env': {'TEST_SET_ENV_VAR': 'test_pipeline_run_env_var'},
                 'env_config_maps': ['test-env-configmap'],
                 'env_secrets': ['test-env-secret'],
             },
@@ -145,12 +152,6 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             'postgresqlPassword': 'test',
             'postgresqlDatabase': 'test',
             'postgresqlUser': 'test',
-            'celery': {
-                'extraWorkerQueues': [
-                    {'name': 'extra-queue-1', 'replicaCount': 1},
-                    {'name': 'extra-queue-2', 'replicaCount': 2},
-                ]
-            },
         }
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
 

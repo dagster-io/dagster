@@ -41,7 +41,7 @@ def test_execute_on_celery(  # pylint: disable=redefined-outer-name
                         'instance_config_map': 'dagster-instance',
                         'postgres_password_secret': 'dagster-postgresql-secret',
                         'image_pull_policy': 'Always',
-                        'env_config_maps': ['dagster-job-runner-env'],
+                        'env_config_maps': ['dagster-pipeline-env'],
                     }
                 }
             },
