@@ -151,8 +151,8 @@ buildnext:
 	NODE_ENV=$(or $(NODE_ENV), development) yarn --cwd next sitemap
 
 root_build:
-	make build_next_default version=0.7.11
-	make build_next_version version=0.7.11
+	make build_next_default version=0.7.12
+	make build_next_version version=0.7.12
 
 build_next_master:
 	yarn --cwd next

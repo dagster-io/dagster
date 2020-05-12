@@ -1,13 +1,12 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     
   <url>
-        <loc>https://docs.dagster.io/docs/index</loc>
+        <loc>https://docs.dagster.io/versions/index</loc>
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/versions/index</loc>
+        <loc>https://docs.dagster.io/docs/index</loc>
   </url>
 
   <url>
@@ -123,6 +122,14 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/dagster_types</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/index</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/learn/how-tos/conditional_execution</loc>
   </url>
 
@@ -135,19 +142,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/dagster_types</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/index</loc>
-  </url>
-
-  <url>
         <loc>https://docs.dagster.io/docs/learn/guides/dagster_pandas/dagster_pandas</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/logging/logging</loc>
   </url>
 
   <url>
@@ -155,7 +150,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/solid/solid</loc>
+        <loc>https://docs.dagster.io/docs/learn/guides/logging/logging</loc>
   </url>
 
   <url>
@@ -184,6 +179,10 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/learn/guides/partitioning/schedule_partitions</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/solid/solid</loc>
   </url>
 
   <url>
