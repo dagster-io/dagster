@@ -1,7 +1,12 @@
+from dagster.core.utils import check_dagster_package_version
+
 from .context import DagstermillExecutionContext
 from .errors import DagstermillError, DagstermillExecutionError
 from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE as _MANAGER_FOR_NOTEBOOK_INSTANCE
 from .solids import define_dagstermill_solid
+from .version import __version__
+
+check_dagster_package_version('dagstermill', __version__)
 
 get_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.get_context
 
