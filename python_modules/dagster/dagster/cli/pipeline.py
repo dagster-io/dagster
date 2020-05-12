@@ -547,9 +547,6 @@ def get_partition_sets_for_handle(handle):
 )
 @pipeline_target_command
 @click.option(
-    '-d', '--mode', type=click.STRING, help='The name of the mode in which to execute the pipeline.'
-)
-@click.option(
     '-p',
     '--partitions',
     type=click.STRING,
@@ -684,8 +681,9 @@ def execute_backfill_command(cli_args, print_fn, instance=None):
         for partition in partitions:
             run = instance.create_run_for_pipeline(
                 pipeline_def=pipeline,
+                mode=partition_set.mode,
+                solid_subset=partition_set.solid_subset,
                 environment_dict=partition_set.environment_dict_for_partition(partition),
-                mode=cli_args.get('mode') or 'default',
                 tags=merge_dicts(partition_set.tags_for_partition(partition), run_tags),
             )
             instance.launch_run(run.run_id)

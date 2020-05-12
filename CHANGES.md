@@ -1,12 +1,18 @@
 # Changelog
 
-## 0.8.0
+## 0.8.0 (Upcoming)
 
 **Breaking Changes**
 
 - `Path` is no longer as built-in dagster type.
 
-## 0.7.12
+## 0.7.13 (Upcoming)
+
+**Breaking Changes**
+
+- `dagster pipeline backfill` command no longer takes a `mode` flag. Instead, it uses the mode specified on the `PartitionSetDefinition`. Similarly, the runs created from the backfill also use the `solid_subset` specified on the `PartitionSetDefinition`
+
+## 0.7.12 (Latest)
 
 **Bugfix**
 
