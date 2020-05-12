@@ -33,7 +33,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   setCursor
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
-  const [pageSize, setPageSize] = React.useState<number>(7);
+  const [pageSize, setPageSize] = React.useState<number | undefined>(7);
   const popCursor = () => {
     const nextStack = [...cursorStack];
     setCursor(nextStack.pop());
@@ -50,7 +50,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
       variables={{
         partitionSetName,
         partitionsCursor: cursor,
-        partitionsLimit: pageSize + 1
+        partitionsLimit: pageSize,
+        reverse: true
       }}
       fetchPolicy="cache-and-network"
       partialRefetch={true}
@@ -81,9 +82,10 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                 <Divider />
                 <PartitionPagerControls
                   displayed={partitions.slice(0, pageSize)}
+                  pageSize={pageSize}
                   setPageSize={setPageSize}
-                  hasNextPage={partitions.length === pageSize + 1}
-                  hasPrevPage={!!cursor}
+                  hasNextPage={!!cursor}
+                  hasPrevPage={partitions.length === pageSize}
                   pushCursor={pushCursor}
                   popCursor={popCursor}
                   setCursor={setCursor}
@@ -408,8 +410,9 @@ const getStepExpectationRateForRun = (run: Run) => {
 };
 
 interface PartitionPagerProps {
-  displayed: Partition[] | undefined;
-  setPageSize: React.Dispatch<React.SetStateAction<number>>;
+  displayed: Partition[];
+  pageSize: number | undefined;
+  setPageSize: React.Dispatch<React.SetStateAction<number | undefined>>;
   hasPrevPage: boolean;
   hasNextPage: boolean;
   pushCursor: (nextCursor: string) => void;
@@ -419,6 +422,7 @@ interface PartitionPagerProps {
 
 const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
   displayed,
+  pageSize,
   setPageSize,
   hasNextPage,
   hasPrevPage,
@@ -430,31 +434,31 @@ const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
     <PartitionPagerContainer>
       <ButtonGroup>
         <Button
+          disabled={!hasNextPage && pageSize === 7}
           onClick={() => {
+            setCursor(undefined);
             setPageSize(7);
           }}
         >
-          Week
+          Last 7
         </Button>
         <Button
+          disabled={!hasNextPage && pageSize === 30}
           onClick={() => {
-            if (displayed && displayed.length < 31) {
-              setCursor(undefined);
-            }
-            setPageSize(31);
+            setCursor(undefined);
+            setPageSize(30);
           }}
         >
-          Month
+          Last 30
         </Button>
         <Button
+          disabled={pageSize === undefined}
           onClick={() => {
-            if (displayed && displayed.length < 365) {
-              setCursor(undefined);
-            }
-            setPageSize(365);
+            setCursor(undefined);
+            setPageSize(undefined);
           }}
         >
-          Year
+          All
         </Button>
       </ButtonGroup>
 
@@ -462,16 +466,14 @@ const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
         <Button
           disabled={!hasPrevPage}
           icon={IconNames.ARROW_LEFT}
-          onClick={() => popCursor()}
+          onClick={() => displayed && pushCursor(displayed[0].name)}
         >
           Back
         </Button>
         <Button
           disabled={!hasNextPage}
           rightIcon={IconNames.ARROW_RIGHT}
-          onClick={() =>
-            displayed && pushCursor(displayed[displayed.length - 1].name)
-          }
+          onClick={() => popCursor()}
         >
           Next
         </Button>
@@ -491,11 +493,16 @@ const PARTITION_SET_QUERY = gql`
     $partitionSetName: String!
     $partitionsLimit: Int
     $partitionsCursor: String
+    $reverse: Boolean
   ) {
     partitionSetOrError(partitionSetName: $partitionSetName) {
       ... on PartitionSet {
         name
-        partitions(cursor: $partitionsCursor, limit: $partitionsLimit) {
+        partitions(
+          cursor: $partitionsCursor
+          limit: $partitionsLimit
+          reverse: $reverse
+        ) {
           results {
             name
             runs {

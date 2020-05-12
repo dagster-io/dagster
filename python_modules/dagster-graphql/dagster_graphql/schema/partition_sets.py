@@ -73,7 +73,10 @@ class DauphinPartitionSet(dauphin.ObjectType):
     solid_subset = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
     partitions = dauphin.Field(
-        dauphin.NonNull('Partitions'), cursor=dauphin.String(), limit=dauphin.Int(),
+        dauphin.NonNull('Partitions'),
+        cursor=dauphin.String(),
+        limit=dauphin.Int(),
+        reverse=dauphin.Boolean(),
     )
 
     def __init__(self, partition_set):
@@ -93,14 +96,30 @@ class DauphinPartitionSet(dauphin.ObjectType):
 
         cursor = kwargs.get("cursor")
         limit = kwargs.get("limit")
-        if cursor and limit:
+        reverse = kwargs.get('reverse')
+
+        start = 0
+        end = len(partitions)
+        index = 0
+
+        if cursor:
             index = next(
                 (idx for (idx, partition) in enumerate(partitions) if partition.name == cursor),
                 None,
             )
-            partitions = partitions[index : min(len(partitions), index + limit)]
-        elif limit:
-            partitions = partitions[: min(len(partitions), limit)]
+
+            if reverse:
+                end = index
+            else:
+                start = index + 1
+
+        if limit:
+            if reverse:
+                start = end - limit
+            else:
+                end = start + limit
+
+        partitions = partitions[start:end]
 
         return graphene_info.schema.type_named('Partitions')(
             results=[

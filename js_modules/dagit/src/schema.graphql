@@ -688,7 +688,7 @@ type PartitionSet {
   pipelineName: String!
   solidSubset: [String!]
   mode: String!
-  partitions(cursor: String, limit: Int): Partitions!
+  partitions(cursor: String, limit: Int, reverse: Boolean): Partitions!
 }
 
 type PartitionSetNotFoundError implements Error {

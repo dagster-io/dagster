@@ -86,4 +86,5 @@ export interface PartitionLongitudinalQueryVariables {
   partitionSetName: string;
   partitionsLimit?: number | null;
   partitionsCursor?: string | null;
+  reverse?: boolean | null;
 }
