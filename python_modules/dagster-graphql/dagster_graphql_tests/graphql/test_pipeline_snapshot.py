@@ -20,7 +20,7 @@ query PipelineSnapshotQuery($snapshotId: String!) {
         name
         pipelineSnapshotId
         description
-        runtimeTypes { key }
+        dagsterTypes { key }
         solids { name }
         modes { name }
         solidHandles { handleID }
@@ -37,7 +37,7 @@ query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
             name
             pipelineSnapshotId
             description
-            runtimeTypes { key }
+            dagsterTypes { key }
             solids { name }
             modes { name }
             solidHandles { handleID }
@@ -58,7 +58,7 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineName: String!) {
             name
             pipelineSnapshotId
             description
-            runtimeTypes { key }
+            dagsterTypes { key }
             solids { name }
             modes { name }
             solidHandles { handleID }

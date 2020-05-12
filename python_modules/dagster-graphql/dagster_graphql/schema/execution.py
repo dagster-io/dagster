@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from dagster_graphql import dauphin
-from dagster_graphql.schema.runtime_types import to_dauphin_dagster_type
 
 from dagster import check
 from dagster.core.snap import (
@@ -11,6 +10,8 @@ from dagster.core.snap import (
     ExecutionStepSnap,
     PipelineSnapshot,
 )
+
+from .dagster_types import to_dauphin_dagster_type
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):

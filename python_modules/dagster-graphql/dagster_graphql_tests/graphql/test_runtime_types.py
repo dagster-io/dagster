@@ -3,12 +3,12 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 from .setup import define_test_context, define_test_snapshot_context
 
 RUNTIME_TYPE_QUERY = '''
-query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
+query RuntimeTypeQuery($pipelineName: String! $dagsterTypeName: String!)
 {
     pipelineOrError(params:{ name: $pipelineName}) {
         __typename
         ... on Pipeline {
-            runtimeTypeOrError(runtimeTypeName: $runtimeTypeName) {
+            dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
                 __typename
                 ... on RegularRuntimeType {
                     name
@@ -16,7 +16,7 @@ query RuntimeTypeQuery($pipelineName: String! $runtimeTypeName: String!)
                     isBuiltin
                 }
                 ... on RuntimeTypeNotFoundError {
-                    runtimeTypeName
+                    dagsterTypeName
                 }
             }
         }
@@ -42,7 +42,7 @@ fragment schemaTypeFragment on ConfigType {
     }
   }
 }
-fragment runtimeTypeFragment on RuntimeType {
+fragment dagsterTypeFragment on RuntimeType {
     key
     name
     displayName
@@ -69,8 +69,8 @@ fragment runtimeTypeFragment on RuntimeType {
  	pipelines {
     nodes {
       name
-      runtimeTypes {
-        ...runtimeTypeFragment
+      dagsterTypes {
+        ...dagsterTypeFragment
       }
     }
   }
@@ -82,52 +82,52 @@ def test_dagster_type_query_works():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'PoorMansDataFrame'},
+        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'PoorMansDataFrame'},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
     )
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
 def test_dagster_type_query_with_container_context_ok():
     result = execute_dagster_graphql(
         define_test_snapshot_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'PoorMansDataFrame'},
+        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'PoorMansDataFrame'},
     )
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
     )
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'PoorMansDataFrame'
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'PoorMansDataFrame'
 
 
 def test_dagster_type_builtin_query():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'Int'},
+        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'Int'},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['runtimeTypeOrError']['__typename'] == 'RegularRuntimeType'
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularRuntimeType'
     )
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['name'] == 'Int'
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['isBuiltin']
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'Int'
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['isBuiltin']
 
 
 def test_dagster_type_or_error_pipeline_not_found():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'nope', 'runtimeTypeName': 'nope'},
+        {'pipelineName': 'nope', 'dagsterTypeName': 'nope'},
     )
 
     assert not result.errors
@@ -140,32 +140,32 @@ def test_dagster_type_or_error_type_not_found():
     result = execute_dagster_graphql(
         define_test_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'nope'},
+        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'nope'},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['runtimeTypeOrError']['__typename']
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename']
         == 'RuntimeTypeNotFoundError'
     )
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['dagsterTypeName'] == 'nope'
 
 
 def test_dagster_type_or_error_query_with_container_context_not_found():
     result = execute_dagster_graphql(
         define_test_snapshot_context(),
         RUNTIME_TYPE_QUERY,
-        {'pipelineName': 'csv_hello_world', 'runtimeTypeName': 'nope'},
+        {'pipelineName': 'csv_hello_world', 'dagsterTypeName': 'nope'},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['runtimeTypeOrError']['__typename']
+        result.data['pipelineOrError']['dagsterTypeOrError']['__typename']
         == 'RuntimeTypeNotFoundError'
     )
-    assert result.data['pipelineOrError']['runtimeTypeOrError']['runtimeTypeName'] == 'nope'
+    assert result.data['pipelineOrError']['dagsterTypeOrError']['dagsterTypeName'] == 'nope'
 
 
 def test_smoke_test_dagster_type_system():

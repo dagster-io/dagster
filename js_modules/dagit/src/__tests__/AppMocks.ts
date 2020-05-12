@@ -42,7 +42,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     query: TYPE_EXPLORER_CONTAINER_QUERY,
     variables: {
       pipelineName: "airline_demo_ingest_pipeline",
-      runtimeTypeName: "PySparkDataFrame"
+      dagsterTypeName: "PySparkDataFrame"
     } as TypeExplorerContainerQueryVariables,
     filepath: path.join(
       __dirname,

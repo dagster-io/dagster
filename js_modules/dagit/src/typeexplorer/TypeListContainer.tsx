@@ -27,7 +27,7 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
     <Loading queryResult={queryResult}>
       {data => {
         if (data.pipelineOrError.__typename === "Pipeline") {
-          return <TypeList types={data.pipelineOrError.runtimeTypes} />;
+          return <TypeList types={data.pipelineOrError.dagsterTypes} />;
         } else {
           return null;
         }
@@ -42,7 +42,7 @@ export const TYPE_LIST_CONTAINER_QUERY = gql`
       __typename
       ... on Pipeline {
         name
-        runtimeTypes {
+        dagsterTypes {
           ...TypeListFragment
         }
       }

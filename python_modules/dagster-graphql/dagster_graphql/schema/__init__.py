@@ -9,15 +9,15 @@ def create_schema():
     from . import (
         assets,
         config_types,
+        dagster_types,
         errors,
         execution,
         paging,
+        partition_sets,
         pipelines,
         roots,
         runs,
         schedules,
-        partition_sets,
-        runtime_types,
     )
 
     return dauphin.create_schema()

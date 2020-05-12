@@ -446,8 +446,8 @@ interface IPipelineSnapshot {
   name: String!
   description: String
   pipelineSnapshotId: String!
-  runtimeTypes: [RuntimeType!]!
-  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [RuntimeType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -688,8 +688,8 @@ type Pipeline implements SolidContainer & PipelineReference & IPipelineSnapshot 
   name: String!
   description: String
   pipelineSnapshotId: String!
-  runtimeTypes: [RuntimeType!]!
-  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [RuntimeType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
@@ -852,8 +852,8 @@ type PipelineSnapshot implements IPipelineSnapshot {
   name: String!
   description: String
   pipelineSnapshotId: String!
-  runtimeTypes: [RuntimeType!]!
-  runtimeTypeOrError(runtimeTypeName: String!): RuntimeTypeOrError!
+  dagsterTypes: [RuntimeType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): RuntimeTypeOrError!
   solids: [Solid!]!
   modes: [Mode!]!
   solidHandles(parentHandleID: String): [SolidHandle!]!
@@ -1033,7 +1033,7 @@ interface RuntimeType {
 
 type RuntimeTypeNotFoundError implements Error {
   message: String!
-  runtimeTypeName: String!
+  dagsterTypeName: String!
 }
 
 union RuntimeTypeOrError = RegularRuntimeType | PipelineNotFoundError | RuntimeTypeNotFoundError | PythonError

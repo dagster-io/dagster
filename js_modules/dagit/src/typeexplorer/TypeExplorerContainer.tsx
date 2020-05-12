@@ -25,7 +25,7 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
     fetchPolicy: "cache-and-network",
     variables: {
       pipelineName: selector.pipelineName,
-      runtimeTypeName: typeName
+      dagsterTypeName: typeName
     }
   });
   return (
@@ -33,10 +33,10 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
       {data => {
         if (
           data.pipeline &&
-          data.pipeline.runtimeTypeOrError &&
-          data.pipeline.runtimeTypeOrError.__typename === "RegularRuntimeType"
+          data.pipeline.dagsterTypeOrError &&
+          data.pipeline.dagsterTypeOrError.__typename === "RegularRuntimeType"
         ) {
-          return <TypeExplorer type={data.pipeline.runtimeTypeOrError} />;
+          return <TypeExplorer type={data.pipeline.dagsterTypeOrError} />;
         } else {
           return <div>Type Not Found</div>;
         }
@@ -48,10 +48,10 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
 export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
   query TypeExplorerContainerQuery(
     $pipelineName: String!
-    $runtimeTypeName: String!
+    $dagsterTypeName: String!
   ) {
     pipeline(params: { name: $pipelineName }) {
-      runtimeTypeOrError(runtimeTypeName: $runtimeTypeName) {
+      dagsterTypeOrError(dagsterTypeName: $dagsterTypeName) {
         __typename
         ... on RegularRuntimeType {
           ...TypeExplorerFragment

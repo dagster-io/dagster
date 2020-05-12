@@ -9,15 +9,7 @@ snapshots = Snapshot()
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_ephemeral_instance] 1'] = '''{
   "pipelineSnapshot": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -37,6 +29,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_epheme
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
     "solidHandles": [
       {
         "handleID": "noop_solid"
@@ -54,15 +54,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_epheme
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_temp_instance] 1'] = '''{
   "pipelineSnapshot": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -82,6 +74,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
     "solidHandles": [
       {
         "handleID": "noop_solid"
@@ -99,15 +99,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_success[create_local_
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_success[create_ephemeral_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -127,6 +119,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
     "solidHandles": [
       {
         "handleID": "noop_solid"
@@ -144,15 +144,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_id_success[create_local_temp_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -172,6 +164,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "pipelineSnapshotId": "e95e6f29f25ea236ce191a1e8b49ae8601a0afef",
     "solidHandles": [
       {
         "handleID": "noop_solid"
@@ -203,15 +203,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_snapshot_
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_success[create_ephemeral_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "csv_hello_world",
-    "pipelineSnapshotId": "d21414f48707616b77d78a4151b4dc90b0f5406e",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -234,6 +226,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "csv_hello_world",
+    "pipelineSnapshotId": "d21414f48707616b77d78a4151b4dc90b0f5406e",
     "solidHandles": [
       {
         "handleID": "sum_solid"
@@ -257,15 +257,7 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
 snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pipeline_name_success[create_local_temp_instance] 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineSnapshot",
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "csv_hello_world",
-    "pipelineSnapshotId": "d21414f48707616b77d78a4151b4dc90b0f5406e",
-    "runtimeTypes": [
+    "dagsterTypes": [
       {
         "key": "Any"
       },
@@ -288,6 +280,14 @@ snapshots['TestPipelineSnapshotGraphQL.test_fetch_snapshot_or_error_by_active_pi
         "key": "String"
       }
     ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "csv_hello_world",
+    "pipelineSnapshotId": "d21414f48707616b77d78a4151b4dc90b0f5406e",
     "solidHandles": [
       {
         "handleID": "sum_solid"

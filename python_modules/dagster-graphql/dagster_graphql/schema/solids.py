@@ -10,7 +10,7 @@ from dagster.core.snap import (
 )
 
 from .config_types import DauphinConfigTypeField
-from .runtime_types import to_dauphin_dagster_type
+from .dagster_types import to_dauphin_dagster_type
 
 
 class DauphinSolidContainer(dauphin.Interface):

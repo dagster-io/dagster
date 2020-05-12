@@ -19,7 +19,7 @@ from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
 
 from .config_types import DauphinConfigTypeField
-from .runtime_types import to_dauphin_dagster_type
+from .dagster_types import to_dauphin_dagster_type
 from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_dauphin_solids
 
 
@@ -57,10 +57,10 @@ class DauphinIPipelineSnapshotMixin(object):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    runtime_types = dauphin.non_null_list('RuntimeType')
-    runtime_type_or_error = dauphin.Field(
+    dagster_types = dauphin.non_null_list('RuntimeType')
+    dagster_type_or_error = dauphin.Field(
         dauphin.NonNull('RuntimeTypeOrError'),
-        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')
@@ -81,8 +81,7 @@ class DauphinIPipelineSnapshotMixin(object):
     def resolve_description(self, _):
         return self.get_pipeline_index().description
 
-    def resolve_runtime_types(self, _graphene_info):
-        # TODO yuhan rename runtime_type in schema
+    def resolve_dagster_types(self, _graphene_info):
         pipeline_index = self.get_pipeline_index()
         return sorted(
             list(
@@ -95,8 +94,8 @@ class DauphinIPipelineSnapshotMixin(object):
         )
 
     @capture_dauphin_error
-    def resolve_runtime_type_or_error(self, _, **kwargs):
-        type_name = kwargs['runtimeTypeName']
+    def resolve_dagster_type_or_error(self, _, **kwargs):
+        type_name = kwargs['dagsterTypeName']
 
         pipeline_index = self.get_pipeline_index()
 
@@ -104,7 +103,7 @@ class DauphinIPipelineSnapshotMixin(object):
             from .errors import DauphinRuntimeTypeNotFoundError
 
             raise UserFacingGraphQLError(
-                DauphinRuntimeTypeNotFoundError(runtime_type_name=type_name)
+                DauphinRuntimeTypeNotFoundError(dagster_type_name=type_name)
             )
 
         return to_dauphin_dagster_type(
@@ -157,10 +156,10 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    runtime_types = dauphin.non_null_list('RuntimeType')
-    runtime_type_or_error = dauphin.Field(
+    dagster_types = dauphin.non_null_list('RuntimeType')
+    dagster_type_or_error = dauphin.Field(
         dauphin.NonNull('RuntimeTypeOrError'),
-        runtimeTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
     solids = dauphin.non_null_list('Solid')
     modes = dauphin.non_null_list('Mode')

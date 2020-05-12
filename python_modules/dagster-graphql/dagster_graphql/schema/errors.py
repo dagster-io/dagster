@@ -610,7 +610,7 @@ class DauphinRuntimeTypeNotFoundError(dauphin.ObjectType):
         name = 'RuntimeTypeNotFoundError'
         interfaces = (DauphinError,)
 
-    runtime_type_name = dauphin.NonNull(dauphin.String)
+    dagster_type_name = dauphin.NonNull(dauphin.String)
 
 
 class DauphinConfigTypeOrError(dauphin.Union):
