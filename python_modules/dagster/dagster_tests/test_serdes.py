@@ -4,7 +4,7 @@ from enum import Enum
 
 import pytest
 
-from dagster.check import CheckError, ParameterCheckError
+from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
 from dagster.serdes import (
     SerdesClassUsageError,
     _deserialize_json_to_dagster_namedtuple,
@@ -152,7 +152,7 @@ def test_wrong_first_arg():
         @serdes_test_class
         class NotCls(namedtuple('NotCls', 'field_one field_two')):
             def __new__(not_cls, field_two, field_one):
-                super(NotCls, not_cls).__new__(field_one, field_two)
+                return super(NotCls, not_cls).__new__(field_one, field_two)
 
     assert (
         str(exc_info.value)
@@ -169,7 +169,7 @@ def test_incorrect_order():
         @serdes_test_class
         class WrongOrder(namedtuple('WrongOrder', 'field_one field_two')):
             def __new__(cls, field_two, field_one):
-                super(WrongOrder, cls).__new__(field_one, field_two)
+                return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert str(exc_info.value) == (
         'For namedtuple WrongOrder: '
@@ -188,7 +188,7 @@ def test_missing_one_parameter():
         @serdes_test_class
         class MissingFieldInNew(namedtuple('MissingFieldInNew', 'field_one field_two field_three')):
             def __new__(cls, field_one, field_two):
-                super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
+                return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert str(exc_info.value) == (
         "For namedtuple MissingFieldInNew: "
@@ -210,7 +210,7 @@ def test_missing_many_parameters():
             namedtuple('MissingFieldsInNew', 'field_one field_two field_three, field_four')
         ):
             def __new__(cls, field_one, field_two):
-                super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
+                return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert str(exc_info.value) == (
         "For namedtuple MissingFieldsInNew: "
@@ -240,7 +240,7 @@ def test_extra_parameters_must_have_defaults():
                 field_one,
                 field_two,
             ):
-                super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
+                return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert str(exc_info.value) == (
         'For namedtuple OldFieldsWithoutDefaults: '
@@ -272,4 +272,26 @@ def test_extra_parameters_have_working_defaults():
             another_falsey_field='',
             value_field='klsjkfjd',
         ):
-            super(OldFieldsWithDefaults, cls).__new__(field_three, field_four)
+            return super(OldFieldsWithDefaults, cls).__new__(field_three, field_four)
+
+
+def test_set():
+    _TEST_TUPLE_MAP = {}
+    _TEST_ENUM_MAP = {}
+
+    @_whitelist_for_serdes(tuple_map=_TEST_TUPLE_MAP, enum_map=_TEST_ENUM_MAP)
+    class HasSets(namedtuple('_HasSets', 'reg_set frozen_set')):
+        def __new__(cls, reg_set, frozen_set):
+            set_param(reg_set, 'reg_set')
+            inst_param(frozen_set, 'frozen_set', frozenset)
+            return super(HasSets, cls).__new__(cls, reg_set, frozen_set)
+
+    foo = HasSets({1, 2, 3, '3'}, frozenset([4, 5, 6, '6']))
+
+    serialized = _serialize_dagster_namedtuple(
+        foo, tuple_map=_TEST_TUPLE_MAP, enum_map=_TEST_ENUM_MAP
+    )
+    foo_2 = _deserialize_json_to_dagster_namedtuple(
+        serialized, tuple_map=_TEST_TUPLE_MAP, enum_map=_TEST_ENUM_MAP
+    )
+    assert foo == foo_2

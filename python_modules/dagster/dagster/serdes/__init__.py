@@ -165,6 +165,10 @@ def _pack_value(val, enum_map, tuple_map):
             'Can only serialize whitelisted Enums, recieved {}'.format(klass_name),
         )
         return {'__enum__': str(val)}
+    if isinstance(val, set):
+        return {'__set__': [_pack_value(item, enum_map, tuple_map) for item in val]}
+    if isinstance(val, frozenset):
+        return {'__frozenset__': [_pack_value(item, enum_map, tuple_map) for item in val]}
     if isinstance(val, dict):
         return {key: _pack_value(value, enum_map, tuple_map) for key, value in val.items()}
 
@@ -233,6 +237,12 @@ def _unpack_value(val, enum_map, tuple_map):
     if isinstance(val, dict) and val.get('__enum__'):
         name, member = val['__enum__'].split('.')
         return getattr(enum_map[name], member)
+    if isinstance(val, dict) and val.get('__set__'):
+        return set([_unpack_value(item, enum_map, tuple_map) for item in val['__set__']])
+    if isinstance(val, dict) and val.get('__frozenset__'):
+        return frozenset(
+            [_unpack_value(item, enum_map, tuple_map) for item in val['__frozenset__']]
+        )
     if isinstance(val, dict):
         return {key: _unpack_value(value, enum_map, tuple_map) for key, value in val.items()}
 

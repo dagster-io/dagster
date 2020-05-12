@@ -180,11 +180,13 @@ def execute_pipeline_on_celery(pipeline_name,):
 
 
 @contextmanager
-def execute_eagerly_on_celery(pipeline_name, instance=None):
+def execute_eagerly_on_celery(pipeline_name, instance=None, subset=None):
     with seven.TemporaryDirectory() as tempdir:
         instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         result = execute_pipeline(
-            ReconstructablePipeline(FileCodePointer(__file__, pipeline_name)),
+            ReconstructablePipeline(FileCodePointer(__file__, pipeline_name)).subset_for_execution(
+                subset
+            ),
             environment_dict={
                 'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
                 'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
@@ -343,6 +345,15 @@ def test_execute_eagerly_diamond_pipeline_on_celery():
         assert result.result_for_solid('add_one').output_value() == 2
         assert result.result_for_solid('renamed').output_value() == 3
         assert result.result_for_solid('subtract').output_value() == -1
+
+
+def test_execute_eagerly_diamond_pipeline_subset_on_celery():
+    with execute_eagerly_on_celery('test_diamond_pipeline', subset=['emit_values']) as result:
+        assert result.result_for_solid('emit_values').output_values == {
+            'value_one': 1,
+            'value_two': 2,
+        }
+        assert len(result.solid_result_list) == 1
 
 
 def test_execute_eagerly_parallel_pipeline_on_celery():
