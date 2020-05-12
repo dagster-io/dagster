@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    
+
   <url>
         <loc>https://docs.dagster.io/versions/index</loc>
   </url>
@@ -146,10 +146,6 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/data_science/data_science</loc>
-  </url>
-
-  <url>
         <loc>https://docs.dagster.io/docs/learn/guides/logging/logging</loc>
   </url>
 
@@ -179,6 +175,10 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/learn/guides/partitioning/schedule_partitions</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/data_science/data_science</loc>
   </url>
 
   <url>
@@ -278,4 +278,3 @@
   </url>
 
 </urlset>
-      
