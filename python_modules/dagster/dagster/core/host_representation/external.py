@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
 from .external_data import (
@@ -41,20 +40,13 @@ class ExternalRepository:
         return ExternalRepository(external_repository_data_from_def(repository_definition))
 
 
-class __SolidSubsetNotProvidedSentinel(object):
-    pass
-
-
-SOLID_SUBSET_NOT_PROVIDED = __SolidSubsetNotProvidedSentinel
-
-
 # Represents a pipeline definition that is resident in an external process.
 #
 # Object composes a pipeline index (which is an index over snapshot data)
 # and the serialized ExternalPipelineData
 class ExternalPipeline(RepresentedPipeline):
     def __init__(
-        self, pipeline_index, external_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
+        self, pipeline_index, external_pipeline_data, solid_subset,
     ):
         super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
 
@@ -64,21 +56,12 @@ class ExternalPipeline(RepresentedPipeline):
         )
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
 
-        if solid_subset != SOLID_SUBSET_NOT_PROVIDED:
-            check.opt_list_param(solid_subset, 'solid_subset', str)
-
-        self._solid_subset = solid_subset
-
-    # Remaining things: Audit
+        self._solid_subset = (
+            None if solid_subset is None else check.list_param(solid_subset, 'solid_subset', str)
+        )
 
     @property
     def solid_subset(self):
-        if self._solid_subset == SOLID_SUBSET_NOT_PROVIDED:
-            raise DagsterInvariantViolationError(
-                "Cannot access property solid_subset on external pipeline constructed without a "
-                "solid subset"
-            )
-
         return self._solid_subset
 
     @property

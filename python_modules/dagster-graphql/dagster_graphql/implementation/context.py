@@ -53,7 +53,9 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         return list(
             map(
                 lambda pi: ExternalPipeline(
-                    pi, self.external_repository_data.get_external_pipeline_data(pi.name)
+                    pi,
+                    self.external_repository_data.get_external_pipeline_data(pi.name),
+                    solid_subset=None,
                 ),
                 self._external_repository.get_pipeline_indices(),
             )
