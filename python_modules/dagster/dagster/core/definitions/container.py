@@ -3,7 +3,7 @@ import warnings
 from uuid import uuid4
 
 from dagster import DagsterInvariantViolationError, check
-from dagster.core.snap import ActiveRepositoryData
+from dagster.core.host_representation import ActiveRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.seven import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir

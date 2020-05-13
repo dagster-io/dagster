@@ -48,8 +48,8 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.core.definitions.partition import last_empty_partition
+from dagster.core.host_representation import active_repository_data_from_def
 from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.snap import active_repository_data_from_def
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
 

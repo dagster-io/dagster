@@ -2,10 +2,11 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.snap import (
+from dagster.core.snap import PipelineIndex
+
+from .external_data import (
     ActivePipelineData,
     ActiveRepositoryData,
-    PipelineIndex,
     active_pipeline_data_from_def,
     active_repository_data_from_def,
 )

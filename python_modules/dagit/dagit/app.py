@@ -30,9 +30,9 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.host_representation import ActiveRepositoryData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import reconcile_scheduler_state
-from dagster.core.snap import ActiveRepositoryData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace

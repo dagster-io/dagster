@@ -2,8 +2,7 @@ from click.testing import CliRunner
 
 from dagster import file_relative_path
 from dagster.cli.api import pipeline_snapshot_command, repository_snapshot_command
-from dagster.core.snap import ActiveRepositoryData
-from dagster.core.snap.active_data import ActivePipelineData
+from dagster.core.host_representation import ActivePipelineData, ActiveRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 

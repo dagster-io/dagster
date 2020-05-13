@@ -4,8 +4,8 @@ from dagit.cli import host_dagit_ui_with_reconstructable_repo
 
 from dagster import seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import active_repository_data_from_def
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import active_repository_data_from_def
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 

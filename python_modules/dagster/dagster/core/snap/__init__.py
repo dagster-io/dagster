@@ -38,14 +38,6 @@ from dagster.config.snap import (
     snap_from_field,
 )
 
-from .active_data import (
-    ActivePipelineData,
-    ActivePresetData,
-    ActiveRepositoryData,
-    active_pipeline_data_from_def,
-    active_preset_data_from_def,
-    active_repository_data_from_def,
-)
 from .config_types import build_config_schema_snapshot
 from .dagster_types import build_dagster_type_namespace_snapshot
 from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap

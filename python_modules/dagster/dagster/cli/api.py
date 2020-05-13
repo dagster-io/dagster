@@ -4,8 +4,10 @@ import click
 
 from dagster.cli.load_handle import recon_pipeline_for_cli_args, recon_repo_for_cli_args
 from dagster.cli.pipeline import pipeline_target_command, repository_target_argument
-from dagster.core.snap import active_repository_data_from_def
-from dagster.core.snap.active_data import active_pipeline_data_from_def
+from dagster.core.host_representation import (
+    active_pipeline_data_from_def,
+    active_repository_data_from_def,
+)
 from dagster.serdes import serialize_dagster_namedtuple
 
 

@@ -1,10 +1,16 @@
+'''
+This module contains data objects meant to be serialized between
+host processes and user processes. They should contain no
+business logic or clever indexing. Use the classes in external.py
+for that.
+'''
+
 from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, PresetDefinition, RepositoryDefinition
+from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
-
-from .pipeline_snapshot import PipelineSnapshot
 
 
 @whitelist_for_serdes

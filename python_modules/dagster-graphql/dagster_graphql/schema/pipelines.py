@@ -6,14 +6,13 @@ from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
+from dagster.core.host_representation import ActivePresetData, active_pipeline_data_from_def
 from dagster.core.snap import (
-    ActivePresetData,
     ConfigSchemaSnapshot,
     LoggerDefSnap,
     ModeDefSnap,
     PipelineIndex,
     ResourceDefSnap,
-    active_pipeline_data_from_def,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache

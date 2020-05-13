@@ -1,6 +1,6 @@
 from dagster import RepositoryDefinition, pipeline, solid
-from dagster.core.snap import PipelineSnapshot, active_repository_data_from_def
-from dagster.core.snap.active_data import ActivePipelineData
+from dagster.core.host_representation import ActivePipelineData, active_repository_data_from_def
+from dagster.core.snap import PipelineSnapshot
 
 
 def test_repository_snap_all_props():

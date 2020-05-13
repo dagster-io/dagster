@@ -1,6 +1,6 @@
 from dagster import RepositoryDefinition, pipeline, solid
 from dagster.core.definitions.container import get_active_repository_data_from_image
-from dagster.core.snap import active_repository_data_from_def
+from dagster.core.host_representation import active_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
 
