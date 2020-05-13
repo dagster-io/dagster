@@ -8,23 +8,23 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.host_representation import PipelineIndex
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 
 
 def get_pipeline_snapshot(graphene_info, snapshot_id):
     check.str_param(snapshot_id, 'snapshot_id')
-    pipeline_snapshot = graphene_info.context.instance.get_pipeline_snapshot(snapshot_id)
-    return DauphinPipelineSnapshot(PipelineIndex(pipeline_snapshot))
+    historical_pipeline = graphene_info.context.instance.get_historical_pipeline(snapshot_id)
+    # Check is ok because this is only used for pipelineSnapshot which is for adhoc
+    # In fact we should probably delete all the non OrError fields
+    check.invariant(historical_pipeline, 'Pipeline fetch failed')
+    return DauphinPipelineSnapshot(historical_pipeline)
 
 
 @capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
-    return DauphinPipelineSnapshot(
-        get_external_pipeline_or_raise(graphene_info, pipeline_name).pipeline_index
-    )
+    return DauphinPipelineSnapshot(get_external_pipeline_or_raise(graphene_info, pipeline_name))
 
 
 @capture_dauphin_error
@@ -40,13 +40,13 @@ def _get_dauphin_pipeline_snapshot_from_instance(instance, snapshot_id):
     if not instance.has_pipeline_snapshot(snapshot_id):
         raise UserFacingGraphQLError(DauphinPipelineSnapshotNotFoundError(snapshot_id))
 
-    pipeline_snapshot = instance.get_pipeline_snapshot(snapshot_id)
+    historical_pipeline = instance.get_historical_pipeline(snapshot_id)
 
-    if not pipeline_snapshot:
+    if not historical_pipeline:
         # Either a temporary error or it has been deleted in the interim
         raise UserFacingGraphQLError(DauphinPipelineSnapshotNotFoundError(snapshot_id))
 
-    return DauphinPipelineSnapshot(PipelineIndex(pipeline_snapshot))
+    return DauphinPipelineSnapshot(historical_pipeline)
 
 
 @capture_dauphin_error

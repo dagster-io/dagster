@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.snap import ExecutionPlanSnapshot, snapshot_from_execution_plan
+from dagster.core.snap import ExecutionPlanSnapshot
 
 from .external_data import (
     ExternalPipelineData,
@@ -10,8 +10,8 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from .historical import RepresentedPipeline
 from .pipeline_index import PipelineIndex
+from .represented import RepresentedPipeline
 
 
 class ExternalRepository:
@@ -56,6 +56,8 @@ class ExternalPipeline(RepresentedPipeline):
     def __init__(
         self, pipeline_index, external_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
     ):
+        super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
+
         self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
         self._external_pipeline_data = check.inst_param(
             external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
@@ -67,9 +69,7 @@ class ExternalPipeline(RepresentedPipeline):
 
         self._solid_subset = solid_subset
 
-    @property
-    def name(self):
-        return self.pipeline_index.name
+    # Remaining things: Audit
 
     @property
     def solid_subset(self):
@@ -89,10 +89,6 @@ class ExternalPipeline(RepresentedPipeline):
     def solid_names(self):
         return self.pipeline_index.pipeline_snapshot.solid_names
 
-    @property
-    def pipeline_snapshot(self):
-        return self.pipeline_index.pipeline_snapshot
-
     def has_solid_invocation(self, solid_name):
         check.str_param(solid_name, 'solid_name')
         return self.pipeline_index.has_solid_invocation(solid_name)
@@ -104,10 +100,6 @@ class ExternalPipeline(RepresentedPipeline):
     def get_preset(self, preset_name):
         check.str_param(preset_name, 'preset_name')
         return self._active_preset_dict[preset_name]
-
-    def get_mode_def_snap(self, mode_name):
-        check.str_param(mode_name, 'mode_name')
-        return self.pipeline_index.get_mode_def_snap(mode_name)
 
     def has_mode(self, mode_name):
         check.str_param(mode_name, 'mode_name')
@@ -130,14 +122,6 @@ class ExternalPipeline(RepresentedPipeline):
             solid_subset=solid_subset,
         )
 
-    @property
-    def config_schema_snapshot(self):
-        return self.pipeline_index.pipeline_snapshot.config_schema_snapshot
-
-    @property
-    def pipeline_snapshot_id(self):
-        return self.pipeline_index.pipeline_snapshot_id
-
     def get_default_mode_name(self):
         return self.pipeline_index.get_default_mode_name()
 
@@ -148,7 +132,6 @@ class ExternalPipeline(RepresentedPipeline):
 
 class ExternalExecutionPlan:
     def __init__(self, execution_plan_snapshot, pipeline_index):
-
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
         )
@@ -178,6 +161,7 @@ class ExternalExecutionPlan:
     @staticmethod
     def from_plan_and_index(execution_plan, pipeline_index):
         from dagster.core.execution.plan.plan import ExecutionPlan
+        from dagster.core.snap import snapshot_from_execution_plan
 
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)

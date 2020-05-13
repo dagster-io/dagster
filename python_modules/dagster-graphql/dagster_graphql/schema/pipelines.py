@@ -6,11 +6,7 @@ from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
-from dagster.core.host_representation import (
-    ExternalPresetData,
-    PipelineIndex,
-    external_pipeline_data_from_def,
-)
+from dagster.core.host_representation import ExternalPresetData, RepresentedPipeline
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap, ModeDefSnap, ResourceDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.seven import lru_cache
@@ -46,9 +42,10 @@ class DauphinIPipelineSnapshotMixin(object):
     # Graphene has some strange properties that make it so that you cannot
     # implement ABCs nor use properties in an overridable way. So the way
     # the mixin works is that the target classes have to have a method
-    # get_pipeline_index()
+    # get_represented_pipeline()
     #
-    def get_pipeline_index(self):
+
+    def get_represented_pipeline(self):
         raise NotImplementedError()
 
     name = dauphin.NonNull(dauphin.String)
@@ -70,21 +67,23 @@ class DauphinIPipelineSnapshotMixin(object):
     tags = dauphin.non_null_list('PipelineTag')
 
     def resolve_pipeline_snapshot_id(self, _):
-        return self.get_pipeline_index().pipeline_snapshot_id
+        return self.get_represented_pipeline().pipeline_snapshot_id
 
     def resolve_name(self, _):
-        return self.get_pipeline_index().name
+        return self.get_represented_pipeline().name
 
     def resolve_description(self, _):
-        return self.get_pipeline_index().description
+        return self.get_represented_pipeline().description
 
     def resolve_dagster_types(self, _graphene_info):
-        pipeline_index = self.get_pipeline_index()
+        represented_pipeline = self.get_represented_pipeline()
         return sorted(
             list(
                 map(
-                    lambda dt: to_dauphin_dagster_type(pipeline_index.pipeline_snapshot, dt.key),
-                    [t for t in pipeline_index.get_dagster_type_snaps() if t.name],
+                    lambda dt: to_dauphin_dagster_type(
+                        represented_pipeline.pipeline_snapshot, dt.key
+                    ),
+                    [t for t in represented_pipeline.dagster_type_snaps if t.name],
                 )
             ),
             key=lambda dagster_type: dagster_type.name,
@@ -94,9 +93,9 @@ class DauphinIPipelineSnapshotMixin(object):
     def resolve_dagster_type_or_error(self, _, **kwargs):
         type_name = kwargs['dagsterTypeName']
 
-        pipeline_index = self.get_pipeline_index()
+        represented_pipeline = self.get_represented_pipeline()
 
-        if not pipeline_index.has_dagster_type_name(type_name):
+        if not represented_pipeline.has_dagster_type_named(type_name):
             from .errors import DauphinDagsterTypeNotFoundError
 
             raise UserFacingGraphQLError(
@@ -104,28 +103,35 @@ class DauphinIPipelineSnapshotMixin(object):
             )
 
         return to_dauphin_dagster_type(
-            pipeline_index.pipeline_snapshot,
-            pipeline_index.get_dagster_type_from_name(type_name).key,
+            represented_pipeline.pipeline_snapshot,
+            represented_pipeline.get_dagster_type_by_name(type_name).key,
         )
 
     def resolve_solids(self, _graphene_info):
-        pipeline_index = self.get_pipeline_index()
-        return build_dauphin_solids(pipeline_index, pipeline_index.dep_structure_index)
+        represented_pipeline = self.get_represented_pipeline()
+        return build_dauphin_solids(
+            represented_pipeline.get_pipeline_index_for_compat(),
+            represented_pipeline.dep_structure_index,
+        )
 
     def resolve_modes(self, _):
-        pipeline_snapshot = self.get_pipeline_index().pipeline_snapshot
+        represented_pipeline = self.get_represented_pipeline()
         return [
-            DauphinMode(pipeline_snapshot.config_schema_snapshot, mode_def_snap)
+            DauphinMode(represented_pipeline.config_schema_snapshot, mode_def_snap)
             for mode_def_snap in sorted(
-                pipeline_snapshot.mode_def_snaps, key=lambda item: item.name
+                represented_pipeline.mode_def_snaps, key=lambda item: item.name
             )
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(self.get_pipeline_index()).get(handleID)
+        return _get_solid_handles(
+            self.get_represented_pipeline().get_pipeline_index_for_compat()
+        ).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(self.get_pipeline_index())
+        handles = _get_solid_handles(
+            self.get_represented_pipeline().get_pipeline_index_for_compat()
+        )
         parentHandleID = kwargs.get('parentHandleID')
 
         if parentHandleID == "":
@@ -140,9 +146,10 @@ class DauphinIPipelineSnapshotMixin(object):
         return [handles[key] for key in sorted(handles)]
 
     def resolve_tags(self, graphene_info):
+        represented_pipeline = self.get_represented_pipeline()
         return [
             graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
-            for key, value in self.get_pipeline_index().pipeline_snapshot.tags.items()
+            for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
 
@@ -181,14 +188,13 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         self._external_pipeline = check.inst_param(
             external_pipeline, 'external_pipeline', ExternalPipeline
         )
-        self._pipeline_index = external_pipeline.pipeline_index
 
-    def get_pipeline_index(self):
-        return self._pipeline_index
+    def get_represented_pipeline(self):
+        return self._external_pipeline
 
     def resolve_presets(self, _graphene_info):
         return [
-            DauphinPipelinePreset(preset, self._pipeline_index.name)
+            DauphinPipelinePreset(preset, self._external_pipeline.name)
             for preset in sorted(self._external_pipeline.active_presets, key=lambda item: item.name)
         ]
 
@@ -196,18 +202,9 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         return [
             graphene_info.schema.type_named('PipelineRun')(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter(pipeline_name=self.get_pipeline_index().name)
+                filters=PipelineRunsFilter(pipeline_name=self._external_pipeline.name)
             )
         ]
-
-    @staticmethod
-    def from_pipeline_def(pipeline_definition):
-        return DauphinPipeline(
-            ExternalPipeline(
-                pipeline_index=pipeline_definition.get_pipeline_index(),
-                external_pipeline_data=external_pipeline_data_from_def(pipeline_definition),
-            )
-        )
 
 
 @lru_cache(maxsize=32)
@@ -353,15 +350,17 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 
 
 class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
-    def __init__(self, pipeline_index):
-        self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+    def __init__(self, represented_pipeline):
+        self._represented_pipeline = check.inst_param(
+            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+        )
 
     class Meta(object):
         name = 'PipelineSnapshot'
         interfaces = (DauphinIPipelineSnapshot,)
 
-    def get_pipeline_index(self):
-        return self._pipeline_index
+    def get_represented_pipeline(self):
+        return self._represented_pipeline
 
 
 class DauphinPipelineSnapshotOrError(dauphin.Union):

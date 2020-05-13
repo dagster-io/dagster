@@ -173,8 +173,8 @@ class TestPipelineSnapshotGraphQL:
 def test_temporary_error_or_deletion_after_instance_check():
     instance = mock.MagicMock()
 
-    instance.has_pipeline_snapshot.return_value = True
-    instance.get_pipeline_snapshot.return_value = None
+    instance.has_historical_pipeline.return_value = True
+    instance.get_historical_pipeline.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
         _get_dauphin_pipeline_snapshot_from_instance(instance, 'kjdkfjd')
