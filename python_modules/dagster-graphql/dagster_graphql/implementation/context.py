@@ -7,13 +7,14 @@ from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
+    ExecutionPlanIndex,
     ExternalPipeline,
     ExternalRepository,
     ExternalRepositoryData,
     external_repository_data_from_def,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.snap import ExecutionPlanIndex, snapshot_from_execution_plan
+from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.pipeline_run import PipelineRun
 
 from .pipeline_execution_manager import PipelineExecutionManager

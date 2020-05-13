@@ -3,8 +3,8 @@ from __future__ import absolute_import
 from dagster_graphql import dauphin
 
 from dagster import check
+from dagster.core.host_representation import ExecutionPlanIndex
 from dagster.core.snap import (
-    ExecutionPlanIndex,
     ExecutionStepInputSnap,
     ExecutionStepOutputSnap,
     ExecutionStepSnap,

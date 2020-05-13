@@ -1,10 +1,6 @@
-from dagster.core.host_representation import PipelineIndex
+from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
 from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.snap import (
-    ExecutionPlanIndex,
-    create_execution_plan_snapshot_id,
-    create_pipeline_snapshot_id,
-)
+from dagster.core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
 from dagster.utils.test import restore_directory
 

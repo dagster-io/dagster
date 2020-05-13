@@ -42,7 +42,6 @@ from .config_types import build_config_schema_snapshot
 from .dagster_types import build_dagster_type_namespace_snapshot
 from .dep_snapshot import DependencyStructureIndex, SolidInvocationSnap
 from .execution_plan_snapshot import (
-    ExecutionPlanIndex,
     ExecutionPlanSnapshot,
     ExecutionStepInputSnap,
     ExecutionStepOutputSnap,

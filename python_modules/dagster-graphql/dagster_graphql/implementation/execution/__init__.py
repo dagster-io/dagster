@@ -22,10 +22,9 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.host_representation import PipelineIndex
+from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
-from dagster.core.snap import ExecutionPlanIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import serialize_dagster_namedtuple

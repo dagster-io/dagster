@@ -23,8 +23,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster.core.host_representation import PipelineIndex
-from dagster.core.snap import ExecutionPlanIndex
+from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 

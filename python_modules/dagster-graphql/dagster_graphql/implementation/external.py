@@ -5,8 +5,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.snap import ExecutionPlanIndex
+from dagster.core.host_representation import ExecutionPlanIndex, ExternalPipeline
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError

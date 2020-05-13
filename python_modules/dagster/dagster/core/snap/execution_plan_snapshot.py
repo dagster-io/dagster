@@ -13,57 +13,6 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot):
     return create_snapshot_id(execution_plan_snapshot)
 
 
-class ExecutionPlanIndex:
-    def __init__(self, execution_plan_snapshot, pipeline_index):
-        from dagster.core.host_representation import PipelineIndex
-
-        self.execution_plan_snapshot = check.inst_param(
-            execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
-        )
-        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-
-        self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
-
-        # https://github.com/dagster-io/dagster/issues/2442
-        # check.invariant(
-        #     execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
-        # )
-
-        self._step_keys_in_plan = (
-            set(execution_plan_snapshot.step_keys_to_execute)
-            if execution_plan_snapshot.step_keys_to_execute
-            else set(self._step_index.keys())
-        )
-
-    def has_step(self, key):
-        check.str_param(key, 'key')
-        return key in self._step_index
-
-    def get_step_by_key(self, key):
-        check.str_param(key, 'key')
-        return self._step_index[key]
-
-    @staticmethod
-    def from_plan_and_index(execution_plan, pipeline_index):
-        from dagster.core.host_representation import PipelineIndex
-
-        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        return ExecutionPlanIndex(
-            snapshot_from_execution_plan(
-                execution_plan=execution_plan,
-                pipeline_snapshot_id=pipeline_index.pipeline_snapshot_id,
-            ),
-            pipeline_index,
-        )
-
-    def get_steps_in_plan(self):
-        return [self._step_index[sk] for sk in self._step_keys_in_plan]
-
-    def key_in_plan(self, key):
-        return key in self._step_keys_in_plan
-
-
 @whitelist_for_serdes
 class ExecutionPlanSnapshot(
     namedtuple(

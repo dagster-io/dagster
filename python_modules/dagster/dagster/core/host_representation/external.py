@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.snap import ExecutionPlanSnapshot, snapshot_from_execution_plan
 
 from .external_data import (
     ExternalPipelineData,
@@ -138,3 +139,53 @@ class ExternalPipeline:
     @property
     def tags(self):
         return self.pipeline_index.pipeline_snapshot.tags
+
+
+class ExecutionPlanIndex:
+    def __init__(self, execution_plan_snapshot, pipeline_index):
+
+        self.execution_plan_snapshot = check.inst_param(
+            execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
+        )
+        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+
+        self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
+
+        # https://github.com/dagster-io/dagster/issues/2442
+        # check.invariant(
+        #     execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
+        # )
+
+        self._step_keys_in_plan = (
+            set(execution_plan_snapshot.step_keys_to_execute)
+            if execution_plan_snapshot.step_keys_to_execute
+            else set(self._step_index.keys())
+        )
+
+    def has_step(self, key):
+        check.str_param(key, 'key')
+        return key in self._step_index
+
+    def get_step_by_key(self, key):
+        check.str_param(key, 'key')
+        return self._step_index[key]
+
+    @staticmethod
+    def from_plan_and_index(execution_plan, pipeline_index):
+        from dagster.core.execution.plan.plan import ExecutionPlan
+
+        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        return ExecutionPlanIndex(
+            snapshot_from_execution_plan(
+                execution_plan=execution_plan,
+                pipeline_snapshot_id=pipeline_index.pipeline_snapshot_id,
+            ),
+            pipeline_index,
+        )
+
+    def get_steps_in_plan(self):
+        return [self._step_index[sk] for sk in self._step_keys_in_plan]
+
+    def key_in_plan(self, key):
+        return key in self._step_keys_in_plan
