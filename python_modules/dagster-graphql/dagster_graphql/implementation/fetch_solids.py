@@ -20,17 +20,16 @@ def get_used_solid_map(graphene_info):
     inv_by_def_name = defaultdict(list)
     definitions = []
 
-    for active_pipeline in graphene_info.context.get_all_external_pipelines():
-        pipeline_index = active_pipeline.pipeline_index
+    for external_pipeline in graphene_info.context.get_all_external_pipelines():
         for handle in build_dauphin_solid_handles(
-            pipeline_index, pipeline_index.dep_structure_index
+            external_pipeline, external_pipeline.dep_structure_index
         ):
             definition = handle.solid.get_dauphin_solid_definition()
             if definition.name not in inv_by_def_name:
                 definitions.append(definition)
             inv_by_def_name[definition.name].append(
                 DauphinSolidInvocationSite(
-                    pipeline=DauphinPipeline(active_pipeline), solidHandle=handle,
+                    pipeline=DauphinPipeline(external_pipeline), solidHandle=handle,
                 )
             )
     return OrderedDict(

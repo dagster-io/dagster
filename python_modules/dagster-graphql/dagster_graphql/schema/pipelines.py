@@ -109,10 +109,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
     def resolve_solids(self, _graphene_info):
         represented_pipeline = self.get_represented_pipeline()
-        return build_dauphin_solids(
-            represented_pipeline.get_pipeline_index_for_compat(),
-            represented_pipeline.dep_structure_index,
-        )
+        return build_dauphin_solids(represented_pipeline, represented_pipeline.dep_structure_index,)
 
     def resolve_modes(self, _):
         represented_pipeline = self.get_represented_pipeline()
@@ -124,14 +121,10 @@ class DauphinIPipelineSnapshotMixin(object):
         ]
 
     def resolve_solid_handle(self, _graphene_info, handleID):
-        return _get_solid_handles(
-            self.get_represented_pipeline().get_pipeline_index_for_compat()
-        ).get(handleID)
+        return _get_solid_handles(self.get_represented_pipeline()).get(handleID)
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
-        handles = _get_solid_handles(
-            self.get_represented_pipeline().get_pipeline_index_for_compat()
-        )
+        handles = _get_solid_handles(self.get_represented_pipeline())
         parentHandleID = kwargs.get('parentHandleID')
 
         if parentHandleID == "":
@@ -208,10 +201,13 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
 
 
 @lru_cache(maxsize=32)
-def _get_solid_handles(pipeline_index):
+def _get_solid_handles(represented_pipeline):
+    check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
     return {
         str(item.handleID): item
-        for item in build_dauphin_solid_handles(pipeline_index, pipeline_index.dep_structure_index)
+        for item in build_dauphin_solid_handles(
+            represented_pipeline, represented_pipeline.dep_structure_index
+        )
     }
 
 

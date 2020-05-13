@@ -67,3 +67,12 @@ class RepresentedPipeline(six.with_metaclass(ABCMeta)):
     @property
     def dep_structure_index(self):
         return self._pipeline_index.dep_structure_index
+
+    # Solids
+    def get_solid_def_snap(self, solid_def_name):
+        check.str_param(solid_def_name, 'solid_def_name')
+        return self._pipeline_index.get_solid_def_snap(solid_def_name)
+
+    def get_dep_structure_index(self, solid_def_name):
+        check.str_param(solid_def_name, 'solid_def_name')
+        return self._pipeline_index.get_dep_structure_index(solid_def_name)
