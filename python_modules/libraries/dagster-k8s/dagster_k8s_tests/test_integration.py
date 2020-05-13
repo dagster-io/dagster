@@ -64,11 +64,9 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
     assert not result.get('errors')
     assert result['data']
     # This is  not an ideal test but proves that we got celery configured properly.
-    # We detect that by seeing an error that we know happens after config.
-    assert result['data']['startPipelineExecutionForCreatedRun']['__typename'] == 'PythonError'
     assert (
-        'When executing count_letters.compute discovered required outputs missing from previous step'
-        in result['data']['startPipelineExecutionForCreatedRun']['message']
+        result['data']['startPipelineExecutionForCreatedRun']['__typename']
+        == 'StartPipelineRunSuccess'
     )
 
 

@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from contextlib import contextmanager
 
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
@@ -18,6 +19,12 @@ from dagster import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils import file_relative_path
+
+
+@contextmanager
+def dagster_cli_runner():
+    with seven.TemporaryDirectory() as dagster_home_temp:
+        yield CliRunner(env={'DAGSTER_HOME': dagster_home_temp})
 
 
 @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
@@ -55,13 +62,13 @@ def test_basic_introspection():
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(ui, ['-y', repo_path, '-t', query])
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
-    assert result.exit_code == 0
+        assert result.exit_code == 0
 
-    result_data = json.loads(result.output)
-    assert result_data['data']
+        result_data = json.loads(result.output)
+        assert result_data['data']
 
 
 def test_basic_pipelines():
@@ -69,13 +76,13 @@ def test_basic_pipelines():
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(ui, ['-y', repo_path, '-t', query])
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(ui, ['-y', repo_path, '-t', query])
 
-    assert result.exit_code == 0
+        assert result.exit_code == 0
 
-    result_data = json.loads(result.output)
-    assert result_data['data']
+        result_data = json.loads(result.output)
+        assert result_data['data']
 
 
 def test_basic_variables():
@@ -83,13 +90,13 @@ def test_basic_variables():
     variables = '{"pipelineName": "math"}'
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-t', query])
 
-    assert result.exit_code == 0
+        assert result.exit_code == 0
 
-    result_data = json.loads(result.output)
-    assert result_data['data']['pipeline']['name'] == 'math'
+        result_data = json.loads(result.output)
+        assert result_data['data']['pipeline']['name'] == 'math'
 
 
 START_PIPELINE_EXECUTION_QUERY = '''
@@ -133,20 +140,21 @@ def test_start_execution_text():
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(
-        ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
-    )
-
-    assert result.exit_code == 0
-
-    try:
-        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-        assert (
-            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(
+            ui, ['-y', repo_path, '-v', variables, '-t', START_PIPELINE_EXECUTION_QUERY]
         )
-    except Exception as e:
-        raise Exception('Failed with {} Exception: {}'.format(result.output, e))
+
+        assert result.exit_code == 0
+
+        try:
+            result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+            assert (
+                result_data['data']['startPipelineExecution']['__typename']
+                == 'StartPipelineRunSuccess'
+            )
+        except Exception as e:
+            raise Exception('Failed with {} Exception: {}'.format(result.output, e))
 
 
 def test_start_execution_file():
@@ -163,22 +171,24 @@ def test_start_execution_file():
     )
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(
-        ui,
-        [
-            '-y',
-            repo_path,
-            '-v',
-            variables,
-            '--file',
-            file_relative_path(__file__, './execute.graphql'),
-        ],
-    )
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(
+            ui,
+            [
+                '-y',
+                repo_path,
+                '-v',
+                variables,
+                '--file',
+                file_relative_path(__file__, './execute.graphql'),
+            ],
+        )
 
-    assert result.exit_code == 0
-    result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-    assert result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        assert result.exit_code == 0
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+        assert (
+            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        )
 
 
 def test_start_execution_save_output():
@@ -199,35 +209,35 @@ def test_start_execution_save_output():
     )
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
-    runner = CliRunner(env={'DAGSTER_HOME': None})
 
-    with seven.TemporaryDirectory() as temp_dir:
-        file_name = os.path.join(temp_dir, 'output_file')
+    with dagster_cli_runner() as runner:
+        with seven.TemporaryDirectory() as temp_dir:
+            file_name = os.path.join(temp_dir, 'output_file')
 
-        result = runner.invoke(
-            ui,
-            [
-                '-y',
-                repo_path,
-                '-v',
-                variables,
-                '--file',
-                file_relative_path(__file__, './execute.graphql'),
-                '--output',
-                file_name,
-            ],
-        )
-
-        assert result.exit_code == 0
-
-        assert os.path.isfile(file_name)
-        with open(file_name, 'r') as f:
-            lines = f.readlines()
-            result_data = json.loads(lines[-1])
-            assert (
-                result_data['data']['startPipelineExecution']['__typename']
-                == 'StartPipelineRunSuccess'
+            result = runner.invoke(
+                ui,
+                [
+                    '-y',
+                    repo_path,
+                    '-v',
+                    variables,
+                    '--file',
+                    file_relative_path(__file__, './execute.graphql'),
+                    '--output',
+                    file_name,
+                ],
             )
+
+            assert result.exit_code == 0
+
+            assert os.path.isfile(file_name)
+            with open(file_name, 'r') as f:
+                lines = f.readlines()
+                result_data = json.loads(lines[-1])
+                assert (
+                    result_data['data']['startPipelineExecution']['__typename']
+                    == 'StartPipelineRunSuccess'
+                )
 
 
 def test_start_execution_predefined():
@@ -245,16 +255,21 @@ def test_start_execution_predefined():
 
     repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
-    runner = CliRunner(env={'DAGSTER_HOME': None})
-    result = runner.invoke(ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution'])
-    assert result.exit_code == 0
-    result_data = json.loads(result.output.strip('\n').split('\n')[-1])
-    assert result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(
+            ui, ['-y', repo_path, '-v', variables, '-p', 'startPipelineExecution']
+        )
+        assert result.exit_code == 0
+        result_data = json.loads(result.output.strip('\n').split('\n')[-1])
+        if not result_data.get('data'):
+            raise Exception(result_data)
+        assert (
+            result_data['data']['startPipelineExecution']['__typename'] == 'StartPipelineRunSuccess'
+        )
 
 
 def test_start_scheduled_execution_predefined():
-    with seven.TemporaryDirectory() as temp_dir:
-        runner = CliRunner(env={'DAGSTER_HOME': temp_dir})
+    with dagster_cli_runner() as runner:
 
         repo_path = file_relative_path(__file__, './cli_test_repository.yaml')
 
@@ -273,7 +288,7 @@ def test_start_scheduled_execution_predefined():
         )
 
 
-def test_start_execution_predefined_with_logs():
+def test_logs_in_start_execution_predefined():
     variables = seven.json.dumps(
         {
             'executionParams': {

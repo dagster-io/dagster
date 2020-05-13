@@ -25,7 +25,7 @@ from .client.query import (
     START_SCHEDULED_EXECUTION_MUTATION,
 )
 from .implementation.context import DagsterGraphQLInProcessRepositoryContext
-from .implementation.pipeline_execution_manager import SynchronousExecutionManager
+from .implementation.pipeline_execution_manager import SubprocessExecutionManager
 from .schema import create_schema
 from .version import __version__
 
@@ -43,12 +43,16 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
     check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
     check.str_param(query, 'query')
     check.opt_dict_param(variables, 'variables')
-    instance = check.opt_inst_param(instance, 'instance', DagsterInstance, DagsterInstance.get())
+    instance = (
+        check.inst_param(instance, 'instance', DagsterInstance)
+        if instance
+        else DagsterInstance.get()
+    )
     check.bool_param(use_sync_executor, 'use_sync_executor')
 
     query = query.strip('\'" \n\t')
 
-    execution_manager = SynchronousExecutionManager()
+    execution_manager = SubprocessExecutionManager(instance)
 
     context = DagsterGraphQLInProcessRepositoryContext(
         recon_repo=recon_repo,
@@ -68,6 +72,8 @@ def execute_query(recon_repo, query, variables=None, use_sync_executor=False, in
     )
 
     result_dict = result.to_dict()
+
+    execution_manager.join()
 
     # Here we detect if this is in fact an error response
     # If so, we iterate over the result_dict and the original result
