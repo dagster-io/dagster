@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.host_representation import ExternalPipeline, RepositoryIndex
+from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import (
     ActiveRepositoryData,
@@ -25,11 +25,8 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         self.active_repository_data = check.inst_param(
             active_repository_data, 'active_repository_data', ActiveRepositoryData
         )
-        self._repository_index = RepositoryIndex(active_repository_data)
+        self._external_repository = ExternalRepository(active_repository_data)
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
-
-    def get_repository_index(self):
-        return self._repository_index
 
     @property
     def instance(self):
@@ -41,12 +38,12 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
 
     def has_external_pipeline(self, name):
         check.str_param(name, 'name')
-        return self._repository_index.has_pipeline(name)
+        return self._external_repository.has_pipeline(name)
 
     def get_external_pipeline(self, name):
         check.str_param(name, 'name')
         return ExternalPipeline(
-            self._repository_index.get_pipeline_index(name),
+            self._external_repository.get_pipeline_index(name),
             self.active_repository_data.get_active_pipeline_data(name),
             solid_subset=None,
         )
@@ -57,7 +54,7 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
                 lambda pi: ExternalPipeline(
                     pi, self.active_repository_data.get_active_pipeline_data(pi.name)
                 ),
-                self._repository_index.get_pipeline_indices(),
+                self._external_repository.get_pipeline_indices(),
             )
         )
 

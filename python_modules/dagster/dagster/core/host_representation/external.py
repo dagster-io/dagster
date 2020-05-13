@@ -11,7 +11,7 @@ from dagster.core.snap import (
 )
 
 
-class RepositoryIndex:
+class ExternalRepository:
     def __init__(self, active_repository_data):
         self.active_repository_data = check.inst_param(
             active_repository_data, 'active_repository_data', ActiveRepositoryData
@@ -35,7 +35,7 @@ class RepositoryIndex:
 
     @staticmethod
     def from_repository_def(repository_definition):
-        return RepositoryIndex(active_repository_data_from_def(repository_definition))
+        return ExternalRepository(active_repository_data_from_def(repository_definition))
 
 
 class __SolidSubsetNotProvidedSentinel(object):
