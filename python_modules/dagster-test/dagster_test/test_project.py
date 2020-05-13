@@ -9,7 +9,9 @@ IS_BUILDKITE = os.getenv('BUILDKITE') is not None
 
 
 def test_repo_path():
-    return os.path.join(git_repository_root(), 'python_modules', 'dagster-test', 'test_project')
+    return os.path.join(
+        git_repository_root(), 'python_modules', 'dagster-test', 'dagster_test', 'test_project'
+    )
 
 
 def test_project_environments_path():
