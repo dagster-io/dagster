@@ -1,13 +1,13 @@
 import * as React from "react";
 
-import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results } from "./types/PartitionLongitudinalQuery";
+import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs } from "./types/PartitionLongitudinalQuery";
 import { RowContainer } from "../ListComponents";
 
 import { createGlobalStyle } from "styled-components/macro";
 import { Line } from "react-chartjs-2";
 import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunUtils";
 
-type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
+type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
 interface Point {
   x: string;
   y: number;
@@ -17,22 +17,23 @@ interface Point {
 
 export const PartitionTable: React.FunctionComponent<{
   title: string;
-  partitions: Partition[];
-}> = ({ title, partitions }) => {
+  runsByPartitionName: { [name: string]: Run[] };
+}> = ({ title, runsByPartitionName }) => {
   React.useEffect(() => {
     return destroyCustomTooltip;
   });
   const chart = React.useRef<any>(undefined);
   let max = 1;
   const runs: { [status: string]: Point[] } = {};
-  partitions.forEach(partition => {
-    max = Math.max(max, partition.runs.length);
-    partition.runs
+  Object.keys(runsByPartitionName).forEach(partitionName => {
+    const partitionRuns = runsByPartitionName[partitionName];
+    max = Math.max(max, partitionRuns.length);
+    partitionRuns
       .slice()
       .reverse()
       .forEach((run, i) => {
         const point: Point = {
-          x: partition.name,
+          x: partitionName,
           y: i,
           runId: run.runId,
           status: run.status
@@ -54,7 +55,7 @@ export const PartitionTable: React.FunctionComponent<{
     pointHoverRadius: 8
   }));
   const graphData = {
-    labels: partitions.map(partition => partition.name),
+    labels: Object.keys(runsByPartitionName),
     datasets
   };
 
