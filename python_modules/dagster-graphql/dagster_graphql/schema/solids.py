@@ -315,8 +315,11 @@ class DauphinInput(dauphin.ObjectType):
         )
         self._input_def_snap = self._solid_def_snap.get_input_snap(input_name)
 
-        super(DauphinInput, self).__init__(
-            solid=DauphinSolid(represented_pipeline, solid_name, current_dep_structure)
+        super(DauphinInput, self).__init__()
+
+    def resolve_solid(self, _):
+        return DauphinSolid(
+            self._represented_pipeline, self._solid_name, self._current_dep_structure
         )
 
     def resolve_definition(self, _):
@@ -360,8 +363,11 @@ class DauphinOutput(dauphin.ObjectType):
             self._solid_invocation_snap.solid_def_name
         )
         self._output_def_snap = self._solid_def_snap.get_output_snap(output_name)
-        super(DauphinOutput, self).__init__(
-            solid=DauphinSolid(represented_pipeline, solid_name, current_dep_structure)
+        super(DauphinOutput, self).__init__()
+
+    def resolve_solid(self, _):
+        return DauphinSolid(
+            self._represented_pipeline, self._solid_name, self._current_dep_structure
         )
 
     def resolve_definition(self, _):
