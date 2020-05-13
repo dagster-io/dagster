@@ -1,37 +1,10 @@
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import PipelineDefinition, PresetDefinition, RepositoryDefinition
 from dagster.serdes import whitelist_for_serdes
 
-from .pipeline_snapshot import PipelineIndex, PipelineSnapshot
-
-
-class RepositoryIndex:
-    def __init__(self, active_repository_data):
-        self.active_repository_data = check.inst_param(
-            active_repository_data, 'active_repository_data', ActiveRepositoryData
-        )
-        self._pipeline_index_map = OrderedDict(
-            (
-                active_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(active_pipeline_data.pipeline_snapshot),
-            )
-            for active_pipeline_data in active_repository_data.active_pipeline_datas
-        )
-
-    def get_pipeline_index(self, pipeline_name):
-        return self._pipeline_index_map[pipeline_name]
-
-    def has_pipeline(self, pipeline_name):
-        return pipeline_name in self._pipeline_index_map
-
-    def get_pipeline_indices(self):
-        return self._pipeline_index_map.values()
-
-    @staticmethod
-    def from_repository_def(repository_definition):
-        return RepositoryIndex(active_repository_data_from_def(repository_definition))
+from .pipeline_snapshot import PipelineSnapshot
 
 
 @whitelist_for_serdes

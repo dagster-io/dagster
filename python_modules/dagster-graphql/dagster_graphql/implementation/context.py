@@ -6,12 +6,11 @@ from dagster import check
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.host_representation import ExternalPipeline
+from dagster.core.host_representation import ExternalPipeline, RepositoryIndex
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import (
     ActiveRepositoryData,
     ExecutionPlanIndex,
-    RepositoryIndex,
     active_repository_data_from_def,
     snapshot_from_execution_plan,
 )

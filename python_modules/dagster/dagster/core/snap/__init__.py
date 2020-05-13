@@ -42,7 +42,6 @@ from .active_data import (
     ActivePipelineData,
     ActivePresetData,
     ActiveRepositoryData,
-    RepositoryIndex,
     active_pipeline_data_from_def,
     active_preset_data_from_def,
     active_repository_data_from_def,
