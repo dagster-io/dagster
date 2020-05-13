@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from dagster_graphql import dauphin
 
 from dagster import check
-from dagster.core.host_representation import ExecutionPlanIndex
+from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.snap import (
     ExecutionStepInputSnap,
     ExecutionStepOutputSnap,
@@ -21,22 +21,23 @@ class DauphinExecutionPlan(dauphin.ObjectType):
     steps = dauphin.non_null_list('ExecutionStep')
     artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
-    def __init__(self, execution_plan_index):
+    def __init__(self, external_execution_plan):
         super(DauphinExecutionPlan, self).__init__()
-        self._execution_plan_index = check.inst_param(
-            execution_plan_index, execution_plan_index, ExecutionPlanIndex
+        self._external_execution_plan = check.inst_param(
+            external_execution_plan, external_execution_plan, ExternalExecutionPlan
         )
 
     def resolve_steps(self, _graphene_info):
         return [
             DauphinExecutionStep(
-                self._execution_plan_index, self._execution_plan_index.get_step_by_key(step.key),
+                self._external_execution_plan,
+                self._external_execution_plan.get_step_by_key(step.key),
             )
-            for step in self._execution_plan_index.get_steps_in_plan()
+            for step in self._external_execution_plan.get_steps_in_plan()
         ]
 
     def resolve_artifactsPersisted(self, _graphene_info):
-        return self._execution_plan_index.execution_plan_snapshot.artifacts_persisted
+        return self._external_execution_plan.execution_plan_snapshot.artifacts_persisted
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
@@ -72,7 +73,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     type = dauphin.Field(dauphin.NonNull('DagsterType'))
     dependsOn = dauphin.non_null_list('ExecutionStep')
 
-    def __init__(self, pipeline_snapshot, step_input_snap, execution_plan_index):
+    def __init__(self, pipeline_snapshot, step_input_snap, external_execution_plan):
         super(DauphinExecutionStepInput, self).__init__()
         self._step_input_snap = check.inst_param(
             step_input_snap, 'step_input_snap', ExecutionStepInputSnap
@@ -80,8 +81,8 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
         self._pipeline_snapshot = check.inst_param(
             pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
         )
-        self._execution_plan_index = check.inst_param(
-            execution_plan_index, 'execution_plan_index', ExecutionPlanIndex
+        self._external_execution_plan = check.inst_param(
+            external_execution_plan, 'external_execution_plan', ExternalExecutionPlan
         )
 
     def resolve_name(self, _graphene_info):
@@ -95,12 +96,12 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
     def resolve_dependsOn(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStep')(
-                self._execution_plan_index, self._execution_plan_index.get_step_by_key(key),
+                self._external_execution_plan, self._external_execution_plan.get_step_by_key(key),
             )
             # We filter at this layer to ensure that we do not return outputs that
             # do not exist in the execution plan
             for key in filter(
-                self._execution_plan_index.key_in_plan, self._step_input_snap.upstream_step_keys,
+                self._external_execution_plan.key_in_plan, self._step_input_snap.upstream_step_keys,
             )
         ]
 
@@ -132,12 +133,12 @@ class DauphinExecutionStep(dauphin.ObjectType):
     kind = dauphin.NonNull('StepKind')
     metadata = dauphin.non_null_list('MetadataItemDefinition')
 
-    def __init__(self, execution_plan_index, execution_step_snap):
+    def __init__(self, external_execution_plan, execution_step_snap):
         super(DauphinExecutionStep, self).__init__()
-        self._execution_plan_index = check.inst_param(
-            execution_plan_index, 'execution_plan_index', ExecutionPlanIndex
+        self._external_execution_plan = check.inst_param(
+            external_execution_plan, 'external_execution_plan', ExternalExecutionPlan
         )
-        self._plan_snapshot = execution_plan_index.execution_plan_snapshot
+        self._plan_snapshot = external_execution_plan.execution_plan_snapshot
         self._step_snap = check.inst_param(
             execution_step_snap, 'execution_step_snap', ExecutionStepSnap
         )
@@ -151,9 +152,9 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_inputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepInput')(
-                self._execution_plan_index.pipeline_index.pipeline_snapshot,
+                self._external_execution_plan.pipeline_index.pipeline_snapshot,
                 inp,
-                self._execution_plan_index,
+                self._external_execution_plan,
             )
             for inp in self._step_snap.inputs
         ]
@@ -161,7 +162,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_outputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepOutput')(
-                self._execution_plan_index.pipeline_index.pipeline_snapshot, out,
+                self._external_execution_plan.pipeline_index.pipeline_snapshot, out,
             )
             for out in self._step_snap.outputs
         ]

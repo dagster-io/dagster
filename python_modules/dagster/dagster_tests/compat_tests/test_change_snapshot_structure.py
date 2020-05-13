@@ -1,4 +1,4 @@
-from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
+from dagster.core.host_representation import ExternalExecutionPlan, PipelineIndex
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
@@ -28,7 +28,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
         assert create_execution_plan_snapshot_id(ep_snapshot) != old_execution_plan_snapshot_id
 
         # This previously failed with a check error
-        assert ExecutionPlanIndex(ep_snapshot, PipelineIndex(pipeline_snapshot))
+        assert ExternalExecutionPlan(ep_snapshot, PipelineIndex(pipeline_snapshot))
 
 
 # Scripts to create this (run against 0.7.9)

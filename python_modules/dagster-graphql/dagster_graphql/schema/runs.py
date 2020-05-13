@@ -23,7 +23,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
+from dagster.core.host_representation import ExternalExecutionPlan, PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
@@ -160,7 +160,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         )
         return (
             DauphinExecutionPlan(
-                ExecutionPlanIndex(
+                ExternalExecutionPlan(
                     execution_plan_snapshot=execution_plan_snapshot,
                     pipeline_index=PipelineIndex(pipeline_snapshot),
                 )
@@ -698,19 +698,19 @@ class DauphinPipelineTag(dauphin.ObjectType):
         super(DauphinPipelineTag, self).__init__(key=key, value=value)
 
 
-def from_dagster_event_record(event_record, pipeline_name, execution_plan_index):
+def from_dagster_event_record(event_record, pipeline_name, external_execution_plan):
     # Lots of event types. Pylint thinks there are too many branches
     # pylint: disable=too-many-branches
     check.inst_param(event_record, 'event_record', EventRecord)
     check.param_invariant(event_record.is_dagster_event, 'event_record')
     check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
+    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
 
     # circular ref at module scope
     from .errors import DauphinPythonError
 
     dagster_event = event_record.dagster_event
-    basic_params = construct_basic_params(event_record, execution_plan_index)
+    basic_params = construct_basic_params(event_record, external_execution_plan)
     if dagster_event.event_type == DagsterEventType.STEP_START:
         return DauphinExecutionStepStartEvent(**basic_params)
     elif dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
@@ -801,33 +801,35 @@ def from_compute_log_file(graphene_info, file):
     )
 
 
-def from_event_record(event_record, pipeline_name, execution_plan_index):
+def from_event_record(event_record, pipeline_name, external_execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
     check.str_param(pipeline_name, 'pipeline_name')
-    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
+    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
 
     if event_record.is_dagster_event:
-        return from_dagster_event_record(event_record, pipeline_name, execution_plan_index)
+        return from_dagster_event_record(event_record, pipeline_name, external_execution_plan)
     else:
-        return DauphinLogMessageEvent(**construct_basic_params(event_record, execution_plan_index))
+        return DauphinLogMessageEvent(
+            **construct_basic_params(event_record, external_execution_plan)
+        )
 
 
-def create_dauphin_step(event_record, execution_plan_index):
+def create_dauphin_step(event_record, external_execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
+    check.inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
 
     return (
         DauphinExecutionStep(
-            execution_plan_index, execution_plan_index.get_step_by_key(event_record.step_key),
+            external_execution_plan, external_execution_plan.get_step_by_key(event_record.step_key),
         )
         if event_record.step_key
         else None
     )
 
 
-def construct_basic_params(event_record, execution_plan_index):
+def construct_basic_params(event_record, external_execution_plan):
     check.inst_param(event_record, 'event_record', EventRecord)
-    check.opt_inst_param(execution_plan_index, 'execution_plan_index', ExecutionPlanIndex)
+    check.opt_inst_param(external_execution_plan, 'external_execution_plan', ExternalExecutionPlan)
     return {
         'runId': event_record.run_id,
         'message': event_record.dagster_event.message
@@ -835,7 +837,7 @@ def construct_basic_params(event_record, execution_plan_index):
         else event_record.user_message,
         'timestamp': int(event_record.timestamp * 1000),
         'level': DauphinLogLevel.from_level(event_record.level),
-        'step': create_dauphin_step(event_record, execution_plan_index)
-        if execution_plan_index
+        'step': create_dauphin_step(event_record, external_execution_plan)
+        if external_execution_plan
         else None,
     }

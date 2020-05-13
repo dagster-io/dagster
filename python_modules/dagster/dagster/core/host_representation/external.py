@@ -141,7 +141,7 @@ class ExternalPipeline:
         return self.pipeline_index.pipeline_snapshot.tags
 
 
-class ExecutionPlanIndex:
+class ExternalExecutionPlan:
     def __init__(self, execution_plan_snapshot, pipeline_index):
 
         self.execution_plan_snapshot = check.inst_param(
@@ -176,7 +176,7 @@ class ExecutionPlanIndex:
 
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        return ExecutionPlanIndex(
+        return ExternalExecutionPlan(
             snapshot_from_execution_plan(
                 execution_plan=execution_plan,
                 pipeline_snapshot_id=pipeline_index.pipeline_snapshot_id,

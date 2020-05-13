@@ -7,7 +7,7 @@ from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.host_representation import (
-    ExecutionPlanIndex,
+    ExternalExecutionPlan,
     ExternalPipeline,
     ExternalRepository,
     ExternalRepositoryData,
@@ -64,7 +64,7 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         pass
 
     @abc.abstractmethod
-    def create_execution_plan_index(
+    def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
         pass
@@ -95,7 +95,7 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def get_external_pipeline_subset(self, name, solid_subset):
         raise NotImplementedError('Not yet supported out of process')
 
-    def create_execution_plan_index(
+    def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute
     ):
         raise NotImplementedError('Not yet supported out of process')
@@ -159,7 +159,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
             self.get_reconstructable_pipeline(name).get_definition(), solid_subset=solid_subset,
         )
 
-    def create_execution_plan_index(
+    def get_external_execution_plan(
         self, external_pipeline, environment_dict, mode, step_keys_to_execute=None
     ):
         check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
@@ -167,7 +167,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
         check.str_param(mode, 'mode')
         check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
 
-        return ExecutionPlanIndex(
+        return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
                 create_execution_plan(
                     pipeline=self.get_reconstructable_pipeline(

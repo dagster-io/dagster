@@ -14,7 +14,7 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 from ..external import (
     ensure_valid_config,
-    get_execution_plan_index_or_raise,
+    get_external_execution_plan_or_raise,
     get_external_pipeline_subset_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
@@ -57,7 +57,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     step_keys_to_execute = compute_step_keys_to_execute(graphene_info, execution_params)
 
-    execution_plan_index = get_execution_plan_index_or_raise(
+    external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info=graphene_info,
         external_pipeline=external_pipeline,
         mode=execution_params.mode,
@@ -67,7 +67,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     pipeline_run = instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
-        execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
+        execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         pipeline_name=execution_params.selector.name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id

@@ -14,7 +14,7 @@ from dagster.utils.error import SerializableErrorInfo
 
 from ..external import (
     ensure_valid_config,
-    get_execution_plan_index_or_raise,
+    get_external_execution_plan_or_raise,
     get_external_pipeline_subset_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
@@ -60,7 +60,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
 
     step_keys_to_execute = compute_step_keys_to_execute(graphene_info, execution_params)
 
-    execution_plan_index = get_execution_plan_index_or_raise(
+    external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info,
         external_pipeline,
         mode=execution_params.mode,
@@ -85,7 +85,7 @@ def _start_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fal
             root_run_id=execution_params.execution_metadata.root_run_id,
             parent_run_id=execution_params.execution_metadata.parent_run_id,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         )
 
     except DagsterRunConflict as exc:

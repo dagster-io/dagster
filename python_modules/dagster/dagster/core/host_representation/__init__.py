@@ -6,7 +6,7 @@ in user processes and containers.  e.g. ExternalPipeline
 It also contains classes that represent historical representations
 that have been persisted. e.g. HistoricalPipeline
 '''
-from .external import ExecutionPlanIndex, ExternalPipeline, ExternalRepository
+from .external import ExternalExecutionPlan, ExternalPipeline, ExternalRepository
 from .external_data import (
     ExternalPipelineData,
     ExternalPresetData,

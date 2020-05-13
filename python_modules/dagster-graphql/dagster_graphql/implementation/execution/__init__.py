@@ -22,7 +22,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.host_representation import ExecutionPlanIndex, PipelineIndex
+from dagster.core.host_representation import ExternalExecutionPlan, PipelineIndex
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -108,8 +108,8 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
-    execution_plan_index = (
-        ExecutionPlanIndex(
+    external_execution_plan = (
+        ExternalExecutionPlan(
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
             ),
@@ -126,7 +126,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
         lambda events: graphene_info.schema.type_named('PipelineRunLogsSubscriptionSuccess')(
             run=graphene_info.schema.type_named('PipelineRun')(run),
             messages=[
-                from_event_record(event, run.pipeline_name, execution_plan_index)
+                from_event_record(event, run.pipeline_name, external_execution_plan)
                 for event in events
             ],
         )
@@ -172,7 +172,7 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
 
     pipeline_run = graphene_info.context.instance.get_run_by_id(run_id)
 
-    execution_plan_index = graphene_info.context.create_execution_plan_index(
+    external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=execution_params.environment_dict,
         mode=mode,
@@ -184,17 +184,17 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
         pipeline_run = graphene_info.context.instance.create_run(
             pipeline_name=external_pipeline.name,
             pipeline_snapshot=external_pipeline.pipeline_snapshot,
-            execution_plan_snapshot=execution_plan_index.execution_plan_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
             run_id=run_id,
             environment_dict=execution_params.environment_dict,
             mode=mode,
             tags=execution_params.execution_metadata.tags or {},
         )
 
-    ensure_valid_step_keys(execution_plan_index, execution_params.step_keys)
+    ensure_valid_step_keys(external_execution_plan, execution_params.step_keys)
 
     if execution_params.step_keys:
-        execution_plan_index = graphene_info.context.create_execution_plan_index(
+        external_execution_plan = graphene_info.context.get_external_execution_plan(
             external_pipeline=external_pipeline,
             environment_dict=execution_params.environment_dict,
             mode=mode,
@@ -217,7 +217,9 @@ def _do_execute_plan(graphene_info, execution_params, external_pipeline):
     )
 
     def to_graphql_event(event_record):
-        return from_dagster_event_record(event_record, external_pipeline.name, execution_plan_index)
+        return from_dagster_event_record(
+            event_record, external_pipeline.name, external_execution_plan
+        )
 
     return graphene_info.schema.type_named('ExecutePlanSuccess')(
         pipeline=DauphinPipeline(external_pipeline),

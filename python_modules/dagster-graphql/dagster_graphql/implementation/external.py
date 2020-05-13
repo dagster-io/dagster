@@ -5,7 +5,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.host_representation import ExecutionPlanIndex, ExternalPipeline
+from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .utils import UserFacingGraphQLError
@@ -83,33 +83,35 @@ def ensure_valid_config(external_pipeline, mode, environment_dict):
     return validated_config
 
 
-def ensure_valid_step_keys(full_execution_plan_index, step_keys):
-    check.inst_param(full_execution_plan_index, 'full_execution_plan_index', ExecutionPlanIndex)
+def ensure_valid_step_keys(full_external_execution_plan, step_keys):
+    check.inst_param(
+        full_external_execution_plan, 'full_external_execution_plan', ExternalExecutionPlan
+    )
     check.opt_list_param(step_keys, 'step_keys', of_type=str)
 
     if not step_keys:
         return
 
     for step_key in step_keys:
-        if not full_execution_plan_index.has_step(step_key):
+        if not full_external_execution_plan.has_step(step_key):
             from dagster_graphql.schema.errors import DauphinInvalidStepError
 
             raise UserFacingGraphQLError(DauphinInvalidStepError(invalid_step_key=step_key))
 
 
-def get_execution_plan_index_or_raise(
+def get_external_execution_plan_or_raise(
     graphene_info, external_pipeline, mode, environment_dict, step_keys_to_execute
 ):
-    full_execution_plan_index = graphene_info.context.create_execution_plan_index(
+    full_external_execution_plan = graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline, environment_dict=environment_dict, mode=mode,
     )
 
     if not step_keys_to_execute:
-        return full_execution_plan_index
+        return full_external_execution_plan
 
-    ensure_valid_step_keys(full_execution_plan_index, step_keys_to_execute)
+    ensure_valid_step_keys(full_external_execution_plan, step_keys_to_execute)
 
-    return graphene_info.context.create_execution_plan_index(
+    return graphene_info.context.get_external_execution_plan(
         external_pipeline=external_pipeline,
         environment_dict=environment_dict,
         mode=mode,
