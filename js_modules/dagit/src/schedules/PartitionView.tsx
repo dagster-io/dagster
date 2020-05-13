@@ -17,6 +17,8 @@ import { PartitionTable } from "./PartitionTable";
 import { PartitionGraph, PIPELINE_LABEL } from "./PartitionGraph";
 import { colorHash } from "../Util";
 import { Colors } from "@blueprintjs/core";
+import { RunsFilter } from "../runs/RunsFilter";
+import { TokenizingFieldValue } from "../TokenizingField";
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitions_results_runs;
@@ -118,6 +120,7 @@ const PartitionContent = ({
   const initial: { [stepKey: string]: boolean } = { [PIPELINE_LABEL]: true };
   allStepKeys.forEach(stepKey => (initial[stepKey] = true));
   const [selectedStepKeys, setSelectedStepKeys] = React.useState(initial);
+  const [tokens, setTokens] = React.useState<TokenizingFieldValue[]>([]);
   const durationGraph = React.useRef<any>(undefined);
   const materializationGraph = React.useRef<any>(undefined);
   const successGraph = React.useRef<any>(undefined);
@@ -144,14 +147,24 @@ const PartitionContent = ({
     });
   };
 
+  const runsByPartitionName = {};
+  partitions.forEach(partition => {
+    runsByPartitionName[partition.name] = partition.runs.filter(
+      run => !tokens.length || tokens.every(token => applyFilter(token, run))
+    );
+  });
+
   return (
     <PartitionContentContainer>
       <div style={{ flex: 1 }}>
-        <PartitionTable title="Runs by Partition" partitions={partitions} />
+        <PartitionTable
+          title="Runs by Partition"
+          runsByPartitionName={runsByPartitionName}
+        />
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
-          partitions={partitions}
+          runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineDurationForRun}
           getStepDataForRun={getStepDurationsForRun}
           ref={durationGraph}
@@ -159,7 +172,7 @@ const PartitionContent = ({
         <PartitionGraph
           title="Materialization Count by Partition"
           yLabel="Number of materializations"
-          partitions={partitions}
+          runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineMaterializationCountForRun}
           getStepDataForRun={getStepMaterializationCountForRun}
           ref={materializationGraph}
@@ -167,7 +180,7 @@ const PartitionContent = ({
         <PartitionGraph
           title="Expectation Successes by Partition"
           yLabel="Number of successes"
-          partitions={partitions}
+          runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationSuccessForRun}
           getStepDataForRun={getStepExpectationSuccessForRun}
           ref={successGraph}
@@ -175,7 +188,7 @@ const PartitionContent = ({
         <PartitionGraph
           title="Expectation Failures by Partition"
           yLabel="Number of failures"
-          partitions={partitions}
+          runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationFailureForRun}
           getStepDataForRun={getStepExpectationFailureForRun}
           ref={failureGraph}
@@ -183,7 +196,7 @@ const PartitionContent = ({
         <PartitionGraph
           title="Expectation Rate by Partition"
           yLabel="Rate of success"
-          partitions={partitions}
+          runsByPartitionName={runsByPartitionName}
           getPipelineDataForRun={getPipelineExpectationiRateForRun}
           getStepDataForRun={getStepExpectationRateForRun}
           ref={rateGraph}
@@ -194,8 +207,18 @@ const PartitionContent = ({
           <Spinner size={48} />
         </Overlay>
       ) : null}
-      <div style={{ width: 400 }}>
-        <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
+      <div style={{ width: 450 }}>
+        <NavContainer>
+          <NavSectionHeader>Run filters</NavSectionHeader>
+          <NavSection>
+            <RunsFilter
+              tokens={tokens}
+              onChange={setTokens}
+              enabledFilters={["status", "tag"]}
+            />
+          </NavSection>
+          <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
+        </NavContainer>
       </div>
     </PartitionContentContainer>
   );
@@ -231,36 +254,50 @@ const StepSelector = ({
   };
 
   return (
-    <NavContainer>
-      {Object.keys(selected).map(stepKey => (
-        <Item
-          key={stepKey}
-          shown={selected[stepKey]}
-          onClick={onStepClick(stepKey)}
-          color={stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)}
-        >
-          <div
-            style={{
-              display: "inline-block",
-              marginRight: 5,
-              borderRadius: 5,
-              height: 10,
-              width: 10,
-              backgroundColor: selected[stepKey]
-                ? stepKey === PIPELINE_LABEL
-                  ? Colors.GRAY2
-                  : colorHash(stepKey)
-                : "#aaaaaa"
-            }}
-          />
-          {stepKey}
-        </Item>
-      ))}
-    </NavContainer>
+    <>
+      <NavSectionHeader>Run steps</NavSectionHeader>
+      <NavSection>
+        {Object.keys(selected).map(stepKey => (
+          <Item
+            key={stepKey}
+            shown={selected[stepKey]}
+            onClick={onStepClick(stepKey)}
+            color={
+              stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)
+            }
+          >
+            <div
+              style={{
+                display: "inline-block",
+                marginRight: 5,
+                borderRadius: 5,
+                height: 10,
+                width: 10,
+                backgroundColor: selected[stepKey]
+                  ? stepKey === PIPELINE_LABEL
+                    ? Colors.GRAY2
+                    : colorHash(stepKey)
+                  : "#aaaaaa"
+              }}
+            />
+            {stepKey}
+          </Item>
+        ))}
+      </NavSection>
+    </>
   );
 };
 
-const NavContainer = styled.ul`
+const NavSectionHeader = styled.div`
+  border-bottom: 1px solid #ececec;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+`;
+const NavSection = styled.div`
+  margin-bottom: 30px;
+`;
+const NavContainer = styled.div`
+  width: 450px;
   margin: 20px 10px;
   padding: 10px;
   background-color: #fff;
@@ -268,7 +305,7 @@ const NavContainer = styled.ul`
   overflow: auto;
 `;
 
-const Item = styled.li`
+const Item = styled.div`
   list-style-type: none;
   padding: 5px 2px;
   cursor: pointer;
@@ -409,6 +446,19 @@ const getStepExpectationRateForRun = (run: Run) => {
       : 0;
   });
   return perStepCounts;
+};
+
+const applyFilter = (filter: TokenizingFieldValue, run: Run) => {
+  if (filter.token === "id") {
+    return run.runId === filter.value;
+  }
+  if (filter.token === "status") {
+    return run.status === filter.value;
+  }
+  if (filter.token === "tag") {
+    return run.tags.some(tag => filter.value === `${tag.key}=${tag.value}`);
+  }
+  return true;
 };
 
 interface PartitionPagerProps {
