@@ -8,6 +8,14 @@ from .pipeline_index import PipelineIndex
 
 
 class RepresentedPipeline(six.with_metaclass(ABCMeta)):
+    '''
+    RepresentedPipeline is a base class for ExternalPipeline or HistoricalPipeline.
+
+    The name is "represented" because this is an in-memory representation of a pipeline.
+    The representation of a pipeline could be referring to a pipeline resident in
+    another process *or* could be referring to a historical view of the pipeline.
+    '''
+
     def __init__(self, pipeline_index):
         self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
 

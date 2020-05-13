@@ -14,6 +14,12 @@ from .represented import RepresentedPipeline
 
 
 class ExternalRepository:
+    '''
+    ExternalRepository is a object that represents a loaded repository definition that
+    is resident in another process or container. Host processes such as dagit use
+    objects such as these to interact with user-defined artifacts.
+    '''
+
     def __init__(self, external_repository_data):
         self.external_repository_data = check.inst_param(
             external_repository_data, 'external_repository_data', ExternalRepositoryData
@@ -51,11 +57,13 @@ class ExternalRepository:
         return ExternalRepository(external_repository_data_from_def(repository_definition))
 
 
-# Represents a pipeline definition that is resident in an external process.
-#
-# Object composes a pipeline index (which is an index over snapshot data)
-# and the serialized ExternalPipelineData
 class ExternalPipeline(RepresentedPipeline):
+    '''
+    ExternalPipeline is a object that represents a loaded pipeline definition that
+    is resident in another process or container. Host processes such as dagit use
+    objects such as these to interact with user-defined artifacts.
+    '''
+
     def __init__(
         self, pipeline_index, external_pipeline_data, solid_subset,
     ):
@@ -125,6 +133,11 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
+    '''
+    ExternalExecution is a object that represents an execution plan that
+    was compiled in another process or persisted in an instance.
+    '''
+
     def __init__(self, execution_plan_snapshot, represented_pipeline):
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
