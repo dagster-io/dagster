@@ -5,7 +5,7 @@ import six
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .intermediate_store import IntermediateStore
@@ -110,10 +110,12 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
     def get_intermediate(
         self, context, dagster_type=None, step_output_handle=None, runtime_type=None
     ):
-        canonicalize_dagster_type = canonicalize_backcompat_args(
-            dagster_type, 'dagster_type', runtime_type, 'runtime_type',
+        canonicalize_dagster_type = resolve_dagster_type(
+            canonicalize_backcompat_args(
+                dagster_type, 'dagster_type', runtime_type, 'runtime_type',
+            )
         )  # TODO to deprecate in 0.8.0
-        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
         check.invariant(self.has_intermediate(context, step_output_handle))
@@ -130,7 +132,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         canonicalize_dagster_type = canonicalize_backcompat_args(
             dagster_type, 'dagster_type', runtime_type, 'runtime_type',
         )  # TODO to deprecate in 0.8.0
-        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(canonicalize_dagster_type, 'dagster_type', DagsterType)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
@@ -148,7 +150,7 @@ class IntermediateStoreIntermediatesManager(IntermediatesManager):
         )
 
     def has_intermediate(self, context, step_output_handle):
-        check.inst_param(context, 'context', SystemPipelineExecutionContext)
+        check.opt_inst_param(context, 'context', SystemPipelineExecutionContext)
         check.inst_param(step_output_handle, 'step_output_handle', StepOutputHandle)
 
         return self._intermediate_store.has_object(context, self._get_paths(step_output_handle))

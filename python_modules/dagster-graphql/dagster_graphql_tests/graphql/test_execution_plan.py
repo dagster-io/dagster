@@ -3,8 +3,10 @@ import re
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
+from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.utils.test import get_temp_file_name
 
@@ -185,8 +187,9 @@ def test_success_whole_execution_plan(snapshot):
 
     snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert store.has_intermediate(None, 'sum_solid.compute')
-    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
 def test_success_whole_execution_plan_with_filesystem_config(snapshot):
@@ -224,8 +227,9 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
 
     snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert store.has_intermediate(None, 'sum_solid.compute')
-    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
 def test_success_whole_execution_plan_with_in_memory_config(snapshot):
@@ -263,8 +267,11 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
 
     snapshot.assert_match(clean_log_messages(result.data))
     store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert not store.has_intermediate(None, 'sum_solid.compute')
-    assert not store.has_intermediate(None, 'sum_sq_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert not intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert not intermediates_manager.has_intermediate(
+        None, StepOutputHandle('sum_sq_solid.compute')
+    )
 
 
 def test_successful_one_part_execute_plan(snapshot):
@@ -318,9 +325,14 @@ def test_successful_one_part_execute_plan(snapshot):
     snapshot.assert_match(clean_log_messages(result.data))
 
     store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert store.has_intermediate(None, 'sum_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
     assert (
-        str(store.get_intermediate(None, 'sum_solid.compute', PoorMansDataFrame).obj)
+        str(
+            intermediates_manager.get_intermediate(
+                None, PoorMansDataFrame, StepOutputHandle('sum_solid.compute')
+            ).obj
+        )
         == expected_value_repr
     )
 
@@ -391,9 +403,15 @@ def test_successful_two_part_execute_plan(snapshot):
     )
 
     store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
+        str(
+            intermediates_manager.get_intermediate(
+                None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
+            ).obj
+        )
         == expected_value_repr
     )
 

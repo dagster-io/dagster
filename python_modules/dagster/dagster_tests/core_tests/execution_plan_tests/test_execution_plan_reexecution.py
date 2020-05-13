@@ -16,8 +16,10 @@ from dagster.core.errors import (
 )
 from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
+from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.utils import merge_dicts
 
 
@@ -57,9 +59,17 @@ def test_execution_plan_reexecution():
 
     assert result.success
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
+    intermediates_manager = IntermediateStoreIntermediatesManager(
+        build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        == 4
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        == 6
+    )
 
     ## re-execute add_two
 
@@ -80,9 +90,17 @@ def test_execution_plan_reexecution():
         instance=instance,
     )
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
+    intermediates_manager = IntermediateStoreIntermediatesManager(
+        build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        == 4
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        == 6
+    )
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')
@@ -158,9 +176,17 @@ def test_pipeline_step_key_subset_execution():
 
     assert result.success
 
-    store = build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
-    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
+    intermediates_manager = IntermediateStoreIntermediatesManager(
+        build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        == 4
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        == 6
+    )
 
     ## re-execute add_two
 
@@ -179,11 +205,17 @@ def test_pipeline_step_key_subset_execution():
     step_events = pipeline_reexecution_result.step_event_list
     assert step_events
 
-    store = build_fs_intermediate_store(
-        instance.intermediates_directory, pipeline_reexecution_result.run_id
+    intermediates_manager = IntermediateStoreIntermediatesManager(
+        build_fs_intermediate_store(instance.intermediates_directory, result.run_id)
     )
-    assert store.get_intermediate(None, 'add_one.compute', Int).obj == 4
-    assert store.get_intermediate(None, 'add_two.compute', Int).obj == 6
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        == 4
+    )
+    assert (
+        intermediates_manager.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        == 6
+    )
 
     assert not get_step_output_event(step_events, 'add_one.compute')
     assert get_step_output_event(step_events, 'add_two.compute')

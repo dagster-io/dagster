@@ -3,8 +3,10 @@ from time import sleep
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import DagsterEventType
+from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
+from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 
@@ -460,10 +462,15 @@ def test_successful_pipeline_reexecution():
     )
 
     store = build_fs_intermediate_store(instance.intermediates_directory, run_id)
-    assert store.has_intermediate(None, 'sum_solid.compute')
-    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
+        str(
+            intermediates_manager.get_intermediate(
+                None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
+            ).obj
+        )
         == expected_value_repr
     )
 
@@ -504,11 +511,18 @@ def test_successful_pipeline_reexecution():
     assert get_step_output_event(logs, 'sum_sq_solid.compute')
 
     store = build_fs_intermediate_store(instance.intermediates_directory, new_run_id)
-    assert not store.has_intermediate(None, 'sum_solid.inputs.num.read', 'input_thunk_output')
-    assert store.has_intermediate(None, 'sum_solid.compute')
-    assert store.has_intermediate(None, 'sum_sq_solid.compute')
+    intermediates_manager = IntermediateStoreIntermediatesManager(store)
+    assert not intermediates_manager.has_intermediate(
+        None, StepOutputHandle('sum_solid.inputs.num.read', 'input_thunk_output')
+    )
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
+    assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
     assert (
-        str(store.get_intermediate(None, 'sum_sq_solid.compute', PoorMansDataFrame).obj)
+        str(
+            intermediates_manager.get_intermediate(
+                None, PoorMansDataFrame, StepOutputHandle('sum_sq_solid.compute')
+            ).obj
+        )
         == expected_value_repr
     )
 

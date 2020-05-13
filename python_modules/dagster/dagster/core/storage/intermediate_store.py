@@ -4,7 +4,7 @@ import six
 
 from dagster import check
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
-from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster.core.types.dagster_type import DagsterType
 
 from .object_store import FilesystemObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry
@@ -98,27 +98,6 @@ class IntermediateStore(six.with_metaclass(ABCMeta)):
                 dagster_type
             )
         return self.get_object(context, dagster_type, paths)
-
-    @staticmethod
-    def paths_for_intermediate(step_key, output_name):
-        return ['intermediates', step_key, output_name]
-
-    def get_intermediate(self, context, step_key, dagster_type, output_name='result'):
-        return self.get_object(
-            context=context,
-            dagster_type=resolve_dagster_type(dagster_type),
-            paths=self.paths_for_intermediate(step_key, output_name),
-        )
-
-    def has_intermediate(self, context, step_key, output_name='result'):
-        return self.has_object(
-            context=context, paths=self.paths_for_intermediate(step_key, output_name)
-        )
-
-    def rm_intermediate(self, context, step_key, output_name='result'):
-        return self.rm_object(
-            context=context, paths=self.paths_for_intermediate(step_key, output_name)
-        )
 
 
 def build_fs_intermediate_store(root_for_run_id, run_id, type_storage_plugin_registry=None):
