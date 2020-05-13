@@ -9,5 +9,5 @@ def test_all_snapshot_ids(snapshot):
     # schema of PipelineSnapshots you are free to rerecord
     repo = define_repository()
     for pipeline in sorted(repo.get_all_pipelines(), key=lambda p: p.name):
-        snapshot.assert_match(serialize_pp(pipeline.get_pipeline_index().pipeline_snapshot))
-        snapshot.assert_match(pipeline.get_pipeline_index().pipeline_snapshot_id)
+        snapshot.assert_match(serialize_pp(pipeline.get_external_pipeline().pipeline_snapshot))
+        snapshot.assert_match(pipeline.get_external_pipeline().pipeline_snapshot_id)

@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.snap import ExecutionPlanSnapshot
+from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 
 from .external_data import (
     ExternalPipelineData,
@@ -117,7 +117,7 @@ class ExternalPipeline(RepresentedPipeline):
             pipeline_def = pipeline_def.subset_for_execution(solid_subset)
 
         return ExternalPipeline(
-            pipeline_def.get_pipeline_index(),
+            PipelineIndex(PipelineSnapshot.from_pipeline_def(pipeline_def)),
             external_pipeline_data_from_def(pipeline_def),
             solid_subset=solid_subset,
         )

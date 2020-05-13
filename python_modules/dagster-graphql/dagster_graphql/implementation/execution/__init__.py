@@ -22,7 +22,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.host_representation import ExternalExecutionPlan, PipelineIndex
+from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.storage.compute_log_manager import ComputeIOType

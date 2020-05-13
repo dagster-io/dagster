@@ -210,7 +210,7 @@ class PipelineDefinition(IContainSolids):
             _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
         )
         self._cached_enviroment_schemas = {}
-        self._cached_pipeline_index = None
+        self._cached_external_pipeline = None
 
     def get_environment_schema(self, mode=None):
         check.str_param(mode, 'mode')
@@ -451,13 +451,14 @@ class PipelineDefinition(IContainSolids):
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self):
-        if self._cached_pipeline_index is None:
-            from dagster.core.snap import PipelineSnapshot
-            from dagster.core.host_representation import PipelineIndex
+        return self.get_external_pipeline().get_pipeline_index_for_compat()
 
-            self._cached_pipeline_index = PipelineIndex(PipelineSnapshot.from_pipeline_def(self))
+    def get_external_pipeline(self):
+        if self._cached_external_pipeline is None:
+            from dagster.core.host_representation import ExternalPipeline
 
-        return self._cached_pipeline_index
+            self._cached_external_pipeline = ExternalPipeline.from_pipeline_def(self)
+        return self._cached_external_pipeline
 
     def get_config_schema_snapshot(self):
         return self.get_pipeline_snapshot().config_schema_snapshot

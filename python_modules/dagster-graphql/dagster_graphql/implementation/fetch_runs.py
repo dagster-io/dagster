@@ -32,7 +32,7 @@ def get_validated_config(pipeline_def, environment_dict, mode):
     if not validated_config.success:
         raise UserFacingGraphQLError(
             DauphinPipelineConfigValidationInvalid.for_validation_errors(
-                pipeline_def.get_pipeline_index(), validated_config.errors
+                pipeline_def.get_external_pipeline(), validated_config.errors
             )
         )
 

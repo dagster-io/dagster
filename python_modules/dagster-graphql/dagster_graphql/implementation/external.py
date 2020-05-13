@@ -76,7 +76,7 @@ def ensure_valid_config(external_pipeline, mode, environment_dict):
 
         raise UserFacingGraphQLError(
             DauphinPipelineConfigValidationInvalid.for_validation_errors(
-                external_pipeline.pipeline_index, validated_config.errors
+                external_pipeline, validated_config.errors
             )
         )
 
