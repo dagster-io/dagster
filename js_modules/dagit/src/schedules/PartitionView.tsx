@@ -54,6 +54,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         reverse: true
       }}
       fetchPolicy="cache-and-network"
+      pollInterval={15 * 1000}
       partialRefetch={true}
     >
       {(queryResult: QueryResult<PartitionLongitudinalQuery, any>) => (
@@ -75,7 +76,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                 });
               });
             });
-
+            const showLoading =
+              queryResult.loading && queryResult.networkStatus !== 6;
             return (
               <div style={{ marginTop: 30 }}>
                 <Header>{`Partition Set: ${partitionSetName}`}</Header>
@@ -92,7 +94,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                 />
                 <PartitionContent
                   partitions={partitions}
-                  loading={queryResult.loading}
+                  showLoading={showLoading}
                   allStepKeys={Object.keys(allStepKeys)}
                 />
               </div>
@@ -107,11 +109,11 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 const PartitionContent = ({
   partitions,
   allStepKeys,
-  loading
+  showLoading
 }: {
   partitions: Partition[];
   allStepKeys: string[];
-  loading: boolean;
+  showLoading: boolean;
 }) => {
   const initial: { [stepKey: string]: boolean } = { [PIPELINE_LABEL]: true };
   allStepKeys.forEach(stepKey => (initial[stepKey] = true));
@@ -187,7 +189,7 @@ const PartitionContent = ({
           ref={rateGraph}
         />
       </div>
-      {loading ? (
+      {showLoading ? (
         <Overlay>
           <Spinner size={48} />
         </Overlay>
