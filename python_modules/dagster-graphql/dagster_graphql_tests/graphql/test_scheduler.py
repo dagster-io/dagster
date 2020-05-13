@@ -45,6 +45,49 @@ GET_SCHEDULES_QUERY = '''
 }
 '''
 
+START_SCHEDULES_QUERY = '''
+mutation(
+  $scheduleName: String!
+) {
+  startSchedule(
+    scheduleName: $scheduleName,
+  ) {
+    ... on PythonError {
+      message
+      className
+      stack
+    }
+    ... on RunningScheduleResult {
+      schedule {
+        status
+      }
+    }
+  }
+}
+'''
+
+
+STOP_SCHEDULES_QUERY = '''
+mutation(
+  $scheduleName: String!
+) {
+  stopRunningSchedule(
+    scheduleName: $scheduleName,
+  ) {
+    ... on PythonError {
+      message
+      className
+      stack
+    }
+    ... on RunningScheduleResult {
+      schedule {
+        status
+      }
+    }
+  }
+}
+'''
+
 
 def default_execution_params():
     return {
@@ -52,6 +95,50 @@ def default_execution_params():
         "selector": {"name": "no_config_pipeline", "solidSubset": None},
         "mode": "default",
     }
+
+
+@mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
+def test_start_stop_schedule():
+
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            schedule_storage=SqliteScheduleStorage.from_local(temp_dir),
+            scheduler=FilesytemTestScheduler(temp_dir),
+        )
+
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
+
+        # Initialize scheduler
+        repository = context.get_repository_definition()
+        reconcile_scheduler_state(
+            python_path=sys.executable,
+            repository_path="",
+            repository=repository,
+            instance=instance,
+        )
+
+        # Start schedule
+        start_result = execute_dagster_graphql(
+            context,
+            START_SCHEDULES_QUERY,
+            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
+        )
+        assert start_result.data['startSchedule']['schedule']['status'] == 'RUNNING'
+
+        # Stop schedule
+        stop_result = execute_dagster_graphql(
+            context,
+            STOP_SCHEDULES_QUERY,
+            variables={'scheduleName': 'no_config_pipeline_hourly_schedule'},
+        )
+        assert stop_result.data['stopRunningSchedule']['schedule']['status'] == 'STOPPED'
 
 
 @mock.patch.dict(os.environ, {"DAGSTER_HOME": "~/dagster"})
@@ -95,6 +182,9 @@ def test_get_all_schedules():
         assert len(scheduler_result.data['scheduler']['runningSchedules']) == 17
 
         for schedule in scheduler_result.data['scheduler']['runningSchedules']:
+            if schedule['scheduleDefinition']['name'] == 'no_config_pipeline_hourly_schedule':
+                assert schedule['status'] == 'RUNNING'
+
             if schedule['scheduleDefinition']['name'] == 'environment_dict_error_schedule':
                 assert schedule['scheduleDefinition']['environmentConfigYaml'] is None
             else:

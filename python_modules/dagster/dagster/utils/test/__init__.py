@@ -392,7 +392,7 @@ class FilesytemTestScheduler(Scheduler):
 
         started_schedule = schedule.with_status(ScheduleStatus.RUNNING)
         instance.update_schedule(repository, started_schedule)
-        return schedule
+        return started_schedule
 
     def stop_schedule(self, instance, repository, schedule_name):
         schedule = instance.get_schedule_by_name(repository, schedule_name)
