@@ -131,11 +131,13 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
-    def __init__(self, execution_plan_snapshot, pipeline_index):
+    def __init__(self, execution_plan_snapshot, represented_pipeline):
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
         )
-        self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+        self.represented_pipeline = check.inst_param(
+            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+        )
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
 
@@ -157,21 +159,6 @@ class ExternalExecutionPlan:
     def get_step_by_key(self, key):
         check.str_param(key, 'key')
         return self._step_index[key]
-
-    @staticmethod
-    def from_plan_and_index(execution_plan, pipeline_index):
-        from dagster.core.execution.plan.plan import ExecutionPlan
-        from dagster.core.snap import snapshot_from_execution_plan
-
-        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        return ExternalExecutionPlan(
-            snapshot_from_execution_plan(
-                execution_plan=execution_plan,
-                pipeline_snapshot_id=pipeline_index.pipeline_snapshot_id,
-            ),
-            pipeline_index,
-        )
 
     def get_steps_in_plan(self):
         return [self._step_index[sk] for sk in self._step_keys_in_plan]

@@ -179,7 +179,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
                 ),
                 external_pipeline.pipeline_snapshot_id,
             ),
-            pipeline_index=external_pipeline.pipeline_index,
+            represented_pipeline=external_pipeline,
         )
 
     def execute_plan(self, external_pipeline, environment_dict, pipeline_run, step_keys_to_execute):

@@ -113,7 +113,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
             execution_plan_snapshot=instance.get_execution_plan_snapshot(
                 run.execution_plan_snapshot_id
             ),
-            pipeline_index=PipelineIndex(instance.get_pipeline_snapshot(run.pipeline_snapshot_id)),
+            represented_pipeline=instance.get_historical_pipeline(run.pipeline_snapshot_id),
         )
         if run.pipeline_snapshot_id and run.execution_plan_snapshot_id
         else None

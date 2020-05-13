@@ -152,7 +152,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_inputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepInput')(
-                self._external_execution_plan.pipeline_index.pipeline_snapshot,
+                self._external_execution_plan.represented_pipeline.pipeline_snapshot,
                 inp,
                 self._external_execution_plan,
             )
@@ -162,7 +162,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
     def resolve_outputs(self, graphene_info):
         return [
             graphene_info.schema.type_named('ExecutionStepOutput')(
-                self._external_execution_plan.pipeline_index.pipeline_snapshot, out,
+                self._external_execution_plan.represented_pipeline.pipeline_snapshot, out,
             )
             for out in self._step_snap.outputs
         ]

@@ -23,7 +23,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
-from dagster.core.host_representation import ExternalExecutionPlan, PipelineIndex
+from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 
@@ -154,7 +154,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
         from .execution import DauphinExecutionPlan
 
         instance = graphene_info.context.instance
-        pipeline_snapshot = instance.get_pipeline_snapshot(self._pipeline_run.pipeline_snapshot_id)
+        historical_pipeline = instance.get_historical_pipeline(
+            self._pipeline_run.pipeline_snapshot_id
+        )
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             self._pipeline_run.execution_plan_snapshot_id
         )
@@ -162,10 +164,10 @@ class DauphinPipelineRun(dauphin.ObjectType):
             DauphinExecutionPlan(
                 ExternalExecutionPlan(
                     execution_plan_snapshot=execution_plan_snapshot,
-                    pipeline_index=PipelineIndex(pipeline_snapshot),
+                    represented_pipeline=historical_pipeline,
                 )
             )
-            if execution_plan_snapshot and pipeline_snapshot
+            if execution_plan_snapshot and historical_pipeline
             else None
         )
 
