@@ -52,7 +52,7 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGr
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.host_representation import PipelineIndex
+from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -705,8 +705,10 @@ class DauphinPipelineTagAndValues(dauphin.ObjectType):
 
 
 class DauphinEnvironmentSchema(dauphin.ObjectType):
-    def __init__(self, pipeline_index, mode):
-        self._pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
+    def __init__(self, represented_pipeline, mode):
+        self._represented_pipeline = check.inst_param(
+            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+        )
         self._mode = check.str_param(mode, 'mode')
 
     class Meta(object):
@@ -746,9 +748,9 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
             list(
                 map(
                     lambda key: to_dauphin_config_type(
-                        self._pipeline_index.config_schema_snapshot, key
+                        self._represented_pipeline.config_schema_snapshot, key
                     ),
-                    self._pipeline_index.config_schema_snapshot.all_config_keys,
+                    self._represented_pipeline.config_schema_snapshot.all_config_keys,
                 )
             ),
             key=lambda ct: ct.key,
@@ -756,14 +758,14 @@ class DauphinEnvironmentSchema(dauphin.ObjectType):
 
     def resolve_rootEnvironmentType(self, _graphene_info):
         return to_dauphin_config_type(
-            self._pipeline_index.config_schema_snapshot,
-            self._pipeline_index.get_mode_def_snap(self._mode).root_config_key,
+            self._represented_pipeline.config_schema_snapshot,
+            self._represented_pipeline.get_mode_def_snap(self._mode).root_config_key,
         )
 
     def resolve_isEnvironmentConfigValid(self, graphene_info, **kwargs):
         return resolve_is_environment_config_valid(
             graphene_info,
-            self._pipeline_index,
+            self._represented_pipeline,
             self._mode,
             kwargs.get('environmentConfigData', {}),
         )

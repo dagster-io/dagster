@@ -15,3 +15,4 @@ from .external_data import (
     external_repository_data_from_def,
 )
 from .pipeline_index import PipelineIndex
+from .represented import RepresentedPipeline

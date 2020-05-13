@@ -10,6 +10,7 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
+from .historical import RepresentedPipeline
 from .pipeline_index import PipelineIndex
 
 
@@ -51,7 +52,7 @@ SOLID_SUBSET_NOT_PROVIDED = __SolidSubsetNotProvidedSentinel
 #
 # Object composes a pipeline index (which is an index over snapshot data)
 # and the serialized ExternalPipelineData
-class ExternalPipeline:
+class ExternalPipeline(RepresentedPipeline):
     def __init__(
         self, pipeline_index, external_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
     ):
@@ -104,13 +105,17 @@ class ExternalPipeline:
         check.str_param(preset_name, 'preset_name')
         return self._active_preset_dict[preset_name]
 
-    def get_mode(self, mode_name):
+    def get_mode_def_snap(self, mode_name):
         check.str_param(mode_name, 'mode_name')
         return self.pipeline_index.get_mode_def_snap(mode_name)
 
+    def has_mode(self, mode_name):
+        check.str_param(mode_name, 'mode_name')
+        return self.pipeline_index.has_mode_def(mode_name)
+
     def root_config_key_for_mode(self, mode_name):
         check.opt_str_param(mode_name, 'mode_name')
-        return self.get_mode(
+        return self.get_mode_def_snap(
             mode_name if mode_name else self.get_default_mode_name()
         ).root_config_key
 
