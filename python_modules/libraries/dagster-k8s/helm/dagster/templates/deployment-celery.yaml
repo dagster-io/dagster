@@ -36,7 +36,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.celery.securityContext | nindent 12 }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.celery.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" . }}"
           command: ["dagster-celery"]
           args: ["worker", "start", "-y", "{{ .Values.dagster_home }}/celery-config.yaml", "-q", "dagster"]

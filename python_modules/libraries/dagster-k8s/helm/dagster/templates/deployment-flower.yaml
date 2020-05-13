@@ -39,7 +39,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
           {{- toYaml .Values.flower.securityContext | nindent 12 }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.celery.image.pullPolicy }}
           image: "{{ template "dagster.celery_image" . }}"
           args: ["flower", "-A", "dagster_celery.tasks"]
           env:

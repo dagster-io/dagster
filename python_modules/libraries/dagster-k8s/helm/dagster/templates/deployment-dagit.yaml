@@ -38,7 +38,7 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.dagit.securityContext | nindent 12 }}
-          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          imagePullPolicy: {{ .Values.dagit.image.pullPolicy }}
           image: "{{ template "dagster.dagit_image" . }}"
           command: [
             "/bin/bash",

@@ -132,24 +132,24 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
 
     try:
         repository, tag = docker_image.split(':')
+        pull_policy = image_pull_policy()
 
         helm_config = {
-            'imagePullPolicy': image_pull_policy(),
             'dagit': {
-                'image': {'repository': repository, 'tag': tag},
+                'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
                 'env': {'TEST_SET_ENV_VAR': 'test_dagit_env_var'},
                 'env_config_maps': [TEST_CONFIGMAP_NAME],
                 'env_secrets': [TEST_SECRET_NAME],
             },
             'celery': {
-                'image': {'repository': repository, 'tag': tag},
+                'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
                 'extraWorkerQueues': [
                     {'name': 'extra-queue-1', 'replicaCount': 1},
                     {'name': 'extra-queue-2', 'replicaCount': 2},
                 ],
             },
             'pipeline_run': {
-                'image': {'repository': repository, 'tag': tag},
+                'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
                 'env': {'TEST_SET_ENV_VAR': 'test_pipeline_run_env_var'},
                 'env_config_maps': [TEST_CONFIGMAP_NAME],
                 'env_secrets': [TEST_SECRET_NAME],
