@@ -3,8 +3,13 @@
 ## 0.7.14
 
 **New**
+
 - Dagit now allows re-executing arbitrary step subset via step selector syntax, regardless of whether
   the previous pipeline failed or not.
+
+**Bugfix**
+
+- Fixes an issue with config schema validation on Arrays
 
 ## 0.7.13
 

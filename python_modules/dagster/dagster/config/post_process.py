@@ -177,7 +177,11 @@ def _recurse_in_to_array(context, config_value):
         for idx, item in enumerate(config_value)
     ]
 
-    errors = [result.error for result in results if not result.success]
+    errors = []
+    for result in results:
+        if not result.success:
+            errors += result.errors
+
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
