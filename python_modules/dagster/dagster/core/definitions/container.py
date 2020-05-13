@@ -3,7 +3,7 @@ import warnings
 from uuid import uuid4
 
 from dagster import DagsterInvariantViolationError, check
-from dagster.core.host_representation import ExternalRepositoryData
+from dagster.core.host_representation import ExternalRepository, ExternalRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.seven import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
@@ -31,7 +31,7 @@ def run_serialized_container_command(image, command, volumes):
         raise
 
 
-def get_external_repository_data_from_image(image):
+def get_external_repository_from_image(image):
     check.str_param(image, 'image')
 
     with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:
@@ -63,4 +63,4 @@ def get_external_repository_data_from_image(image):
                     received=type(external_repo_data)
                 )
             )
-        return external_repo_data
+        return ExternalRepository(external_repo_data)

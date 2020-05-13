@@ -10,8 +10,6 @@ from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
     ExternalRepository,
-    ExternalRepositoryData,
-    external_repository_data_from_def,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import snapshot_from_execution_plan
@@ -22,11 +20,10 @@ from .reloader import Reloader
 
 
 class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
-    def __init__(self, external_repository_data, instance):
-        self.external_repository_data = check.inst_param(
-            external_repository_data, 'external_repository_data', ExternalRepositoryData
+    def __init__(self, external_repository, instance):
+        self._external_repository = check.inst_param(
+            external_repository, 'external_repository', ExternalRepository
         )
-        self._external_repository = ExternalRepository(external_repository_data)
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
 
     @property
@@ -43,23 +40,10 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
 
     def get_external_pipeline(self, name):
         check.str_param(name, 'name')
-        return ExternalPipeline(
-            self._external_repository.get_pipeline_index(name),
-            self.external_repository_data.get_external_pipeline_data(name),
-            solid_subset=None,
-        )
+        return self._external_repository.get_external_pipeline(name)
 
     def get_all_external_pipelines(self):
-        return list(
-            map(
-                lambda pi: ExternalPipeline(
-                    pi,
-                    self.external_repository_data.get_external_pipeline_data(pi.name),
-                    solid_subset=None,
-                ),
-                self._external_repository.get_pipeline_indices(),
-            )
-        )
+        return self._external_repository.get_all_external_pipelines()
 
     @abc.abstractmethod
     def get_external_pipeline_subset(self, name, solid_subset):
@@ -81,9 +65,9 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
 
 
 class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
-    def __init__(self, external_repository_data, execution_manager, instance, version=None):
+    def __init__(self, external_repository, execution_manager, instance, version=None):
         super(DagsterGraphQLOutOfProcessRepositoryContext, self).__init__(
-            external_repository_data=external_repository_data, instance=instance
+            external_repository=external_repository, instance=instance
         )
         self.execution_manager = check.inst_param(
             execution_manager, 'pipeline_execution_manager', PipelineExecutionManager
@@ -112,7 +96,7 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
 class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
     def __init__(self, recon_repo, execution_manager, instance, reloader=None, version=None):
         super(DagsterGraphQLInProcessRepositoryContext, self).__init__(
-            external_repository_data=external_repository_data_from_def(recon_repo.get_definition()),
+            external_repository=ExternalRepository.from_repository_def(recon_repo.get_definition()),
             instance=instance,
         )
         self._recon_repo = check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)

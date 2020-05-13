@@ -35,6 +35,17 @@ class ExternalRepository:
     def get_pipeline_indices(self):
         return self._pipeline_index_map.values()
 
+    def get_external_pipeline(self, pipeline_name):
+        check.str_param(pipeline_name, 'pipeline_name')
+        return ExternalPipeline(
+            self.get_pipeline_index(pipeline_name),
+            self.external_repository_data.get_external_pipeline_data(pipeline_name),
+            solid_subset=None,
+        )
+
+    def get_all_external_pipelines(self):
+        return [self.get_external_pipeline(pn) for pn in self._pipeline_index_map]
+
     @staticmethod
     def from_repository_def(repository_definition):
         return ExternalRepository(external_repository_data_from_def(repository_definition))

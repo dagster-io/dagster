@@ -48,7 +48,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.core.definitions.partition import last_empty_partition
-from dagster.core.host_representation import external_repository_data_from_def
+from dagster.core.host_representation import ExternalRepository
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path
@@ -90,7 +90,7 @@ def define_test_snapshot_context():
     return DagsterGraphQLOutOfProcessRepositoryContext(
         instance=DagsterInstance.ephemeral(),
         execution_manager=SynchronousExecutionManager(),
-        external_repository_data=external_repository_data_from_def(define_repository()),
+        external_repository=ExternalRepository.from_repository_def(define_repository()),
     )
 
 
