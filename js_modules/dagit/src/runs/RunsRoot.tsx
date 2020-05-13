@@ -5,18 +5,16 @@ import * as querystring from "query-string";
 import { RouteComponentProps } from "react-router";
 import { RunTable } from "./RunTable";
 import { RunsRootQuery, RunsRootQueryVariables } from "./types/RunsRootQuery";
-import { RunsSearchSpaceQuery } from "./types/RunsSearchSpaceQuery";
+import { RunsFilter, RUN_PROVIDERS_EMPTY } from "./RunsFilter";
 
 import gql from "graphql-tag";
 import { __RouterContext as RouterContext } from "react-router";
-import { useQuery, QueryResult } from "react-apollo";
+import { useQuery } from "react-apollo";
 import { IconNames } from "@blueprintjs/icons";
 import { NonIdealState, Button } from "@blueprintjs/core";
 import { ScrollContainer, Header } from "../ListComponents";
 import {
-  TokenizingField,
   TokenizingFieldValue,
-  SuggestionProvider,
   tokenizedValuesFromString,
   stringFromValue
 } from "../TokenizingField";
@@ -28,41 +26,6 @@ const PAGE_SIZE = 25;
 export const RunsQueryVariablesContext = React.createContext<
   RunsRootQueryVariables
 >({ filter: {} });
-
-function searchSuggestionsForRuns(
-  result?: QueryResult<RunsSearchSpaceQuery>
-): SuggestionProvider[] {
-  const tags = (result && result.data && result.data.pipelineRunTags) || [];
-  const pipelineNames =
-    (result?.data?.pipelinesOrError?.__typename === "PipelineConnection" &&
-      result.data.pipelinesOrError.nodes.map(n => n.name)) ||
-    [];
-
-  return [
-    {
-      token: "id",
-      values: () => []
-    },
-    {
-      token: "status",
-      values: () => ["NOT_STARTED", "STARTED", "SUCCESS", "FAILURE", "MANAGED"]
-    },
-    {
-      token: "pipeline",
-      values: () => pipelineNames
-    },
-    {
-      token: "tag",
-      values: () => {
-        const all: string[] = [];
-        tags
-          .sort((a, b) => a.key.localeCompare(b.key))
-          .forEach(t => t.values.forEach(v => all.push(`${t.key}=${v}`)));
-        return all;
-      }
-    }
-  ];
-}
 
 function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
   if (!search[0]) return {};
@@ -95,12 +58,6 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
   const { history } = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
 
-  const suggestions = searchSuggestionsForRuns(
-    useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
-      fetchPolicy: "cache-and-network"
-    })
-  );
-
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
   const cursor = (qs.cursor as string) || undefined;
 
@@ -117,18 +74,22 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
     setCursor(nextCursor);
   };
 
-  const search = tokenizedValuesFromString((qs.q as string) || "", suggestions);
-  const setSearch = (search: TokenizingFieldValue[]) => {
+  const filterTokens = tokenizedValuesFromString(
+    (qs.q as string) || "",
+    RUN_PROVIDERS_EMPTY
+  );
+
+  const setFilterTokens = (tokens: TokenizingFieldValue[]) => {
     // Note: changing search also clears the cursor so you're back on page 1
     setCursorStack([]);
-    const params = { ...qs, q: stringFromValue(search), cursor: undefined };
+    const params = { ...qs, q: stringFromValue(tokens), cursor: undefined };
     history.push({ search: `?${querystring.stringify(params)}` });
   };
 
   const queryVars: RunsRootQueryVariables = {
     cursor: cursor,
     limit: PAGE_SIZE + 1,
-    filter: runsFilterForSearchTokens(search)
+    filter: runsFilterForSearchTokens(filterTokens)
   };
   const queryResult = useQuery<RunsRootQuery, RunsRootQueryVariables>(
     RUNS_ROOT_QUERY,
@@ -139,33 +100,6 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
       variables: queryVars
     }
   );
-
-  const suggestionProvidersFilter = (
-    suggestionProviders: SuggestionProvider[],
-    values: TokenizingFieldValue[]
-  ) => {
-    const tokens: string[] = [];
-    for (const { token } of values) {
-      if (token) {
-        tokens.push(token);
-      }
-    }
-
-    // If id is set, then no other filters can be set
-    if (tokens.includes("id")) {
-      return [];
-    }
-
-    // Can only have one filter value for pipeline, status, or id
-    const limitedTokens = new Set<string>(["id", "pipeline", "status"]);
-    const presentLimitedTokens = tokens.filter(token =>
-      limitedTokens.has(token)
-    );
-
-    return suggestionProviders.filter(
-      provider => !presentLimitedTokens.includes(provider.token)
-    );
-  };
 
   return (
     <RunsQueryVariablesContext.Provider value={queryVars}>
@@ -179,11 +113,9 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
         >
           <Header>{`Runs`}</Header>
           <Filters>
-            <TokenizingField
-              values={search}
-              onChange={search => setSearch(search)}
-              suggestionProviders={suggestions}
-              suggestionProvidersFilter={suggestionProvidersFilter}
+            <RunsFilter
+              tokens={filterTokens}
+              onChange={setFilterTokens}
               loading={queryResult.loading}
             />
           </Filters>
@@ -206,7 +138,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
             const hasNextPage = runs.length === PAGE_SIZE + 1;
             return (
               <>
-                <RunTable runs={displayed} onSetFilter={setSearch} />
+                <RunTable runs={displayed} onSetFilter={setFilterTokens} />
                 <div style={{ textAlign: "center" }}>
                   <Button
                     style={{
@@ -239,23 +171,6 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = ({
     </RunsQueryVariablesContext.Provider>
   );
 };
-
-export const RUNS_SEARCH_SPACE_QUERY = gql`
-  query RunsSearchSpaceQuery {
-    pipelinesOrError {
-      __typename
-      ... on PipelineConnection {
-        nodes {
-          name
-        }
-      }
-    }
-    pipelineRunTags {
-      key
-      values
-    }
-  }
-`;
 
 export const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery(
