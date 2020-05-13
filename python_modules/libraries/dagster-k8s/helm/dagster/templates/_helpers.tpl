@@ -158,16 +158,33 @@ Celery options
 */}}
 {{- define "dagster.celery.broker_url" -}}
 {{- if .Values.rabbitmq.enabled -}}
-"pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//"
+pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//
 {{- else if .Values.redis.enabled -}}
-"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.brokerDbNumber | default 0}}"
+redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.brokerDbNumber | default 0}}
 {{- end -}}
 {{- end -}}
 
 {{- define "dagster.celery.backend_url" -}}
 {{- if .Values.rabbitmq.enabled -}}
-"amqp"
+amqp
 {{- else if .Values.redis.enabled -}}
-"redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}"
+redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+This environment shared across all containers.
+
+This includes Dagit, Celery Workers, Run Master, and Step Execution containers.
+*/}}
+{{- define "dagster.shared_env" -}}
+DAGSTER_HOME: "{{ .Values.dagster_home }}"
+DAGSTER_K8S_CELERY_BROKER: "{{ template "dagster.celery.broker_url" . }}"
+DAGSTER_K8S_CELERY_BACKEND: "{{ template "dagster.celery.backend_url" . }}"
+DAGSTER_K8S_PG_PASSWORD_SECRET: "{{ template "dagster.fullname" .}}-postgresql-secret"
+DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
+DAGSTER_K8S_PIPELINE_RUN_IMAGE: "{{ template "dagster.pipeline_run_image" . }}"
+DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.imagePullPolicy }}"
+DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
+DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
 {{- end -}}

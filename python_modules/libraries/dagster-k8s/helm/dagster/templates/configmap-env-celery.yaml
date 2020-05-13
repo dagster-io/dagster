@@ -8,9 +8,7 @@ metadata:
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 data:
-  DAGSTER_HOME: "{{ template "dagster.celery.dagster_home" .}}"
-  DAGSTER_K8S_CELERY_BROKER: {{ template "dagster.celery.broker_url" . }}
-  DAGSTER_K8S_CELERY_BACKEND: {{ template "dagster.celery.backend_url" . }}
+  {{ include "dagster.shared_env" . | nindent 2 }}
   {{- if .Values.celery.env -}}
   {{- range $name, $value := .Values.celery.env }}
   {{- if not (empty $value) }}

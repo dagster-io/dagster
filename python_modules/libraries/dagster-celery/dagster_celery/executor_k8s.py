@@ -1,4 +1,4 @@
-from dagster import Field, Noneable
+from dagster import Field, Noneable, StringSource
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.execution.retries import Retries
 from dagster.utils import merge_dicts
@@ -30,7 +30,7 @@ def celery_k8s_config():
             description='Path to a kubeconfig file to use, if not using default kubeconfig.',
         ),
         'job_namespace': Field(
-            str,
+            StringSource,
             is_required=False,
             default_value='default',
             description='The namespace into which to launch new jobs. Note that any '

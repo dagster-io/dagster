@@ -2,7 +2,7 @@ from collections import namedtuple
 
 import kubernetes
 
-from dagster import Array, Field, Noneable
+from dagster import Array, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
@@ -105,13 +105,13 @@ class DagsterK8sJobConfig(
     def config_type(cls):
         return {
             'job_image': Field(
-                str,
+                StringSource,
                 is_required=True,
                 description='Docker image to use for launched task Jobs '
                 '(e.g. "mycompany.com/dagster-k8s-image:latest").',
             ),
             'dagster_home': Field(
-                str,
+                StringSource,
                 is_required=False,
                 default_value=DAGSTER_HOME_DEFAULT,
                 description='The location of DAGSTER_HOME in the Job container; this is where the '
@@ -119,33 +119,33 @@ class DagsterK8sJobConfig(
                 'Defaults to /opt/dagster/dagster_home.',
             ),
             'image_pull_policy': Field(
-                str,
+                StringSource,
                 is_required=False,
                 default_value='IfNotPresent',
                 description='Image pull policy to set on the launched task Job Pods. Defaults to '
                 '"IfNotPresent".',
             ),
             'image_pull_secrets': Field(
-                Array(str),
+                Array(StringSource),
                 is_required=False,
                 description='(Advanced) Specifies that Kubernetes should get the credentials from '
                 'the Secrets named in this list.',
             ),
             'service_account_name': Field(
-                Noneable(str),
+                Noneable(StringSource),
                 is_required=False,
                 description='(Advanced) Override the name of the Kubernetes service account under '
                 'which to run the Job.',
             ),
             'instance_config_map': Field(
-                str,
+                StringSource,
                 is_required=True,
                 description='The ``name`` of an existing Volume to mount into the pod in order to '
                 'provide a ConfigMap for the Dagster instance. This Volume should contain a '
                 '``dagster.yaml`` with appropriate values for run storage, event log storage, etc.',
             ),
             'postgres_password_secret': Field(
-                str,
+                StringSource,
                 is_required=True,
                 description='The name of the Kubernetes Secret where the postgres password can be '
                 'retrieved. Will be mounted and supplied as an environment variable to the Job Pod.'
@@ -153,14 +153,14 @@ class DagsterK8sJobConfig(
                 'the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.',
             ),
             'env_config_maps': Field(
-                Noneable(list),
+                Noneable(Array(StringSource)),
                 is_required=False,
                 description='A list of custom ConfigMapEnvSource names from which to draw '
                 'environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:'
                 'https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container',
             ),
             'env_secrets': Field(
-                Noneable(list),
+                Noneable(Array(StringSource)),
                 is_required=False,
                 description='A list of custom Secret names from which to draw environment '
                 'variables (using ``envFrom``) for the Job. Default: ``[]``. See:'

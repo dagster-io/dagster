@@ -50,5 +50,6 @@ find . \( -name '*.egg-info' -o -name '*.tox' -o -name 'dist' \) | xargs rm -rf
 
 echo -e "--- \033[32m:docker: Building Docker image\033[0m"
 docker build . \
+    --no-cache \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     -t "${IMAGE_TAG}"

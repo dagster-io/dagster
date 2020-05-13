@@ -44,9 +44,9 @@ spec:
           args: ["flower", "-A", "dagster_celery.tasks"]
           env:
             - name: CELERY_BROKER_URL
-              value: {{ include "dagster.celery.broker_url" . }}
+              value: "{{ include "dagster.celery.broker_url" . }}"
             - name: CELERY_RESULT_BACKEND
-              value: {{ include "dagster.celery.backend_url" . }}
+              value: "{{ include "dagster.celery.backend_url" . }}"
           volumeMounts: []
           ports:
             - name: flower
