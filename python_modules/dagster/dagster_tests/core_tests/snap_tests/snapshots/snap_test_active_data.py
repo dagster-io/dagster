@@ -6,14 +6,16 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_active_repository_data 1'] = '''{
-  "__class__": "ActiveRepositoryData",
-  "active_pipeline_datas": [
+snapshots[
+    'test_external_repository_data 1'
+] = '''{
+  "__class__": "ExternalRepositoryData",
+  "external_pipeline_datas": [
     {
-      "__class__": "ActivePipelineData",
+      "__class__": "ExternalPipelineData",
       "active_presets": [
         {
-          "__class__": "ActivePresetData",
+          "__class__": "ExternalPresetData",
           "environment_dict": {
             "foo": "bar"
           },
@@ -24,7 +26,7 @@ snapshots['test_active_repository_data 1'] = '''{
           ]
         },
         {
-          "__class__": "ActivePresetData",
+          "__class__": "ExternalPresetData",
           "environment_dict": {},
           "mode": "default",
           "name": "plain_preset",
@@ -1104,11 +1106,13 @@ snapshots['test_active_repository_data 1'] = '''{
   "name": "repo"
 }'''
 
-snapshots['test_active_pipeline_data 1'] = '''{
-  "__class__": "ActivePipelineData",
+snapshots[
+    'test_external_pipeline_data 1'
+] = '''{
+  "__class__": "ExternalPipelineData",
   "active_presets": [
     {
-      "__class__": "ActivePresetData",
+      "__class__": "ExternalPresetData",
       "environment_dict": {
         "foo": "bar"
       },
@@ -1119,7 +1123,7 @@ snapshots['test_active_pipeline_data 1'] = '''{
       ]
     },
     {
-      "__class__": "ActivePresetData",
+      "__class__": "ExternalPresetData",
       "environment_dict": {},
       "mode": "default",
       "name": "plain_preset",

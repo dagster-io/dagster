@@ -6,7 +6,7 @@ from dagster_graphql.implementation.context import ExternalPipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from dagster import check
-from dagster.core.host_representation import ActivePresetData, active_pipeline_data_from_def
+from dagster.core.host_representation import ExternalPresetData, external_pipeline_data_from_def
 from dagster.core.snap import (
     ConfigSchemaSnapshot,
     LoggerDefSnap,
@@ -207,7 +207,7 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         return DauphinPipeline(
             ExternalPipeline(
                 pipeline_index=pipeline_definition.get_pipeline_index(),
-                active_pipeline_data=active_pipeline_data_from_def(pipeline_definition),
+                external_pipeline_data=external_pipeline_data_from_def(pipeline_definition),
             )
         )
 
@@ -336,7 +336,7 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 
     def __init__(self, active_preset_data, pipeline_name):
         self._active_preset_data = check.inst_param(
-            active_preset_data, 'active_preset_data', ActivePresetData
+            active_preset_data, 'active_preset_data', ExternalPresetData
         )
         self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
 

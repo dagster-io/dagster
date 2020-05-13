@@ -1,7 +1,7 @@
 from dagster import ModeDefinition, PresetDefinition, RepositoryDefinition, pipeline, solid
 from dagster.core.host_representation import (
-    active_pipeline_data_from_def,
-    active_repository_data_from_def,
+    external_pipeline_data_from_def,
+    external_repository_data_from_def,
 )
 from dagster.serdes import serialize_pp
 
@@ -27,10 +27,10 @@ def a_pipeline():
     a_solid()
 
 
-def test_active_repository_data(snapshot):
+def test_external_repository_data(snapshot):
     rep_def = RepositoryDefinition(name='repo', pipeline_defs=[a_pipeline])
-    snapshot.assert_match(serialize_pp(active_repository_data_from_def(rep_def)))
+    snapshot.assert_match(serialize_pp(external_repository_data_from_def(rep_def)))
 
 
-def test_active_pipeline_data(snapshot):
-    snapshot.assert_match(serialize_pp(active_pipeline_data_from_def(a_pipeline)))
+def test_external_pipeline_data(snapshot):
+    snapshot.assert_match(serialize_pp(external_pipeline_data_from_def(a_pipeline)))

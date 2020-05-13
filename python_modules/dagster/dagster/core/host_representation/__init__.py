@@ -8,9 +8,9 @@ that have been persisted. e.g. HistoricalPipeline
 '''
 from .external import ExternalPipeline, ExternalRepository
 from .external_data import (
-    ActivePipelineData,
-    ActivePresetData,
-    ActiveRepositoryData,
-    active_pipeline_data_from_def,
-    active_repository_data_from_def,
+    ExternalPipelineData,
+    ExternalPresetData,
+    ExternalRepositoryData,
+    external_pipeline_data_from_def,
+    external_repository_data_from_def,
 )

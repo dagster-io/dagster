@@ -14,56 +14,58 @@ from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class ActiveRepositoryData(namedtuple('_ActiveRepositoryData', 'name active_pipeline_datas')):
-    def __new__(cls, name, active_pipeline_datas):
-        return super(ActiveRepositoryData, cls).__new__(
+class ExternalRepositoryData(namedtuple('_ExternalRepositoryData', 'name external_pipeline_datas')):
+    def __new__(cls, name, external_pipeline_datas):
+        return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
-            active_pipeline_datas=check.list_param(
-                active_pipeline_datas, 'active_pipeline_datas', of_type=ActivePipelineData
+            external_pipeline_datas=check.list_param(
+                external_pipeline_datas, 'external_pipeline_datas', of_type=ExternalPipelineData
             ),
         )
 
     def get_pipeline_snapshot(self, name):
         check.str_param(name, 'name')
 
-        for active_pipeline_data in self.active_pipeline_datas:
-            if active_pipeline_data.name == name:
-                return active_pipeline_data.pipeline_snapshot
+        for external_pipeline_data in self.external_pipeline_datas:
+            if external_pipeline_data.name == name:
+                return external_pipeline_data.pipeline_snapshot
 
         check.failed('Could not find pipeline snapshot named ' + name)
 
-    def get_active_pipeline_data(self, name):
+    def get_external_pipeline_data(self, name):
         check.str_param(name, 'name')
 
-        for active_pipeline in self.active_pipeline_datas:
-            if active_pipeline.name == name:
-                return active_pipeline
+        for external_pipeline_data in self.external_pipeline_datas:
+            if external_pipeline_data.name == name:
+                return external_pipeline_data
 
         check.failed('Could not find active pipeline data named ' + name)
 
 
 @whitelist_for_serdes
-class ActivePipelineData(
-    namedtuple('_ActivePipelineData', 'name pipeline_snapshot active_presets')
+class ExternalPipelineData(
+    namedtuple('_ExternalPipelineData', 'name pipeline_snapshot active_presets')
 ):
     def __new__(cls, name, pipeline_snapshot, active_presets):
-        return super(ActivePipelineData, cls).__new__(
+        return super(ExternalPipelineData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
             ),
             active_presets=check.list_param(
-                active_presets, 'active_presets', of_type=ActivePresetData
+                active_presets, 'active_presets', of_type=ExternalPresetData
             ),
         )
 
 
 @whitelist_for_serdes
-class ActivePresetData(namedtuple('_ActivePresetData', 'name environment_dict solid_subset mode')):
+class ExternalPresetData(
+    namedtuple('_ExternalPresetData', 'name environment_dict solid_subset mode')
+):
     def __new__(cls, name, environment_dict, solid_subset, mode):
-        return super(ActivePresetData, cls).__new__(
+        return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, 'name'),
             environment_dict=check.opt_dict_param(environment_dict, 'environment_dict'),
@@ -74,32 +76,33 @@ class ActivePresetData(namedtuple('_ActivePresetData', 'name environment_dict so
         )
 
 
-def active_repository_data_from_def(repository_def):
+def external_repository_data_from_def(repository_def):
     check.inst_param(repository_def, 'repository_def', RepositoryDefinition)
 
-    return ActiveRepositoryData(
+    return ExternalRepositoryData(
         name=repository_def.name,
-        active_pipeline_datas=sorted(
-            list(map(active_pipeline_data_from_def, repository_def.get_all_pipelines())),
+        external_pipeline_datas=sorted(
+            list(map(external_pipeline_data_from_def, repository_def.get_all_pipelines())),
             key=lambda pd: pd.name,
         ),
     )
 
 
-def active_pipeline_data_from_def(pipeline_def):
+def external_pipeline_data_from_def(pipeline_def):
     check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    return ActivePipelineData(
+    return ExternalPipelineData(
         name=pipeline_def.name,
         pipeline_snapshot=PipelineSnapshot.from_pipeline_def(pipeline_def),
         active_presets=sorted(
-            list(map(active_preset_data_from_def, pipeline_def.preset_defs)), key=lambda pd: pd.name
+            list(map(external_preset_data_from_def, pipeline_def.preset_defs)),
+            key=lambda pd: pd.name,
         ),
     )
 
 
-def active_preset_data_from_def(preset_def):
+def external_preset_data_from_def(preset_def):
     check.inst_param(preset_def, 'preset_def', PresetDefinition)
-    return ActivePresetData(
+    return ExternalPresetData(
         name=preset_def.name,
         environment_dict=preset_def.environment_dict,
         solid_subset=preset_def.solid_subset,

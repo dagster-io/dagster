@@ -5,24 +5,24 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.snap import PipelineIndex
 
 from .external_data import (
-    ActivePipelineData,
-    ActiveRepositoryData,
-    active_pipeline_data_from_def,
-    active_repository_data_from_def,
+    ExternalPipelineData,
+    ExternalRepositoryData,
+    external_pipeline_data_from_def,
+    external_repository_data_from_def,
 )
 
 
 class ExternalRepository:
-    def __init__(self, active_repository_data):
-        self.active_repository_data = check.inst_param(
-            active_repository_data, 'active_repository_data', ActiveRepositoryData
+    def __init__(self, external_repository_data):
+        self.external_repository_data = check.inst_param(
+            external_repository_data, 'external_repository_data', ExternalRepositoryData
         )
         self._pipeline_index_map = OrderedDict(
             (
-                active_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(active_pipeline_data.pipeline_snapshot),
+                external_pipeline_data.pipeline_snapshot.name,
+                PipelineIndex(external_pipeline_data.pipeline_snapshot),
             )
-            for active_pipeline_data in active_repository_data.active_pipeline_datas
+            for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
 
     def get_pipeline_index(self, pipeline_name):
@@ -36,7 +36,7 @@ class ExternalRepository:
 
     @staticmethod
     def from_repository_def(repository_definition):
-        return ExternalRepository(active_repository_data_from_def(repository_definition))
+        return ExternalRepository(external_repository_data_from_def(repository_definition))
 
 
 class __SolidSubsetNotProvidedSentinel(object):
@@ -49,16 +49,16 @@ SOLID_SUBSET_NOT_PROVIDED = __SolidSubsetNotProvidedSentinel
 # Represents a pipeline definition that is resident in an external process.
 #
 # Object composes a pipeline index (which is an index over snapshot data)
-# and the serialized ActivePipelineData
+# and the serialized ExternalPipelineData
 class ExternalPipeline:
     def __init__(
-        self, pipeline_index, active_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
+        self, pipeline_index, external_pipeline_data, solid_subset=SOLID_SUBSET_NOT_PROVIDED,
     ):
         self.pipeline_index = check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
-        self._active_pipeline_data = check.inst_param(
-            active_pipeline_data, 'active_pipeline_data', ActivePipelineData
+        self._external_pipeline_data = check.inst_param(
+            external_pipeline_data, 'external_pipeline_data', ExternalPipelineData
         )
-        self._active_preset_dict = {ap.name: ap for ap in active_pipeline_data.active_presets}
+        self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
 
         if solid_subset != SOLID_SUBSET_NOT_PROVIDED:
             check.opt_list_param(solid_subset, 'solid_subset', str)
@@ -81,7 +81,7 @@ class ExternalPipeline:
 
     @property
     def active_presets(self):
-        return self._active_pipeline_data.active_presets
+        return self._external_pipeline_data.active_presets
 
     @property
     def solid_names(self):
@@ -120,7 +120,7 @@ class ExternalPipeline:
 
         return ExternalPipeline(
             pipeline_def.get_pipeline_index(),
-            active_pipeline_data_from_def(pipeline_def),
+            external_pipeline_data_from_def(pipeline_def),
             solid_subset=solid_subset,
         )
 

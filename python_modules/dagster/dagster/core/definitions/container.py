@@ -3,7 +3,7 @@ import warnings
 from uuid import uuid4
 
 from dagster import DagsterInvariantViolationError, check
-from dagster.core.host_representation import ActiveRepositoryData
+from dagster.core.host_representation import ExternalRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.seven import get_system_temp_directory
 from dagster.utils.temp_file import get_temp_dir
@@ -31,7 +31,7 @@ def run_serialized_container_command(image, command, volumes):
         raise
 
 
-def get_active_repository_data_from_image(image):
+def get_external_repository_data_from_image(image):
     check.str_param(image, 'image')
 
     with get_temp_dir(in_directory=get_system_temp_directory()) as tmp_dir:
@@ -54,13 +54,13 @@ def get_active_repository_data_from_image(image):
                 )
             )
 
-        serialized_active_repo_data = output[0]
-        active_repo_data = deserialize_json_to_dagster_namedtuple(serialized_active_repo_data)
+        serialized_external_repo_data = output[0]
+        external_repo_data = deserialize_json_to_dagster_namedtuple(serialized_external_repo_data)
 
-        if not isinstance(active_repo_data, ActiveRepositoryData):
+        if not isinstance(external_repo_data, ExternalRepositoryData):
             raise DagsterInvariantViolationError(
-                "Deserialized snapshot is of type {received} must be a ActiveRepositoryData".format(
-                    received=type(active_repo_data)
+                "Deserialized snapshot is of type {received} must be a ExternalRepositoryData".format(
+                    received=type(external_repo_data)
                 )
             )
-        return active_repo_data
+        return external_repo_data

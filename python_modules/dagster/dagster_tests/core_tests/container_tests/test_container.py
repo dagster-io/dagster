@@ -1,6 +1,6 @@
 from dagster import RepositoryDefinition, pipeline, solid
-from dagster.core.definitions.container import get_active_repository_data_from_image
-from dagster.core.host_representation import active_repository_data_from_def
+from dagster.core.definitions.container import get_external_repository_data_from_image
+from dagster.core.host_representation import external_repository_data_from_def
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -17,19 +17,19 @@ def noop_repo():
 
 
 # pylint: disable=unused-argument
-def mock_active_repository_data():
-    active_repo_data = active_repository_data_from_def(noop_repo())
-    return serialize_dagster_namedtuple(active_repo_data)
+def mock_external_repository_data():
+    external_repo_data = external_repository_data_from_def(noop_repo())
+    return serialize_dagster_namedtuple(external_repo_data)
 
 
 def test_container_snapshot_provider(mocker):
 
     execute_container_mock = mocker.patch(
         'dagster.core.definitions.container.run_serialized_container_command',
-        return_value=[mock_active_repository_data()],
+        return_value=[mock_external_repository_data()],
     )
-    active_repository_data = get_active_repository_data_from_image("foo:latest")
+    external_repository_data = get_external_repository_data_from_image("foo:latest")
     execute_container_mock.assert_called_with(
         image="foo:latest", command='dagster api snapshot repository', volumes=mocker.ANY,
     )
-    assert active_repository_data == active_repository_data_from_def(noop_repo())
+    assert external_repository_data == external_repository_data_from_def(noop_repo())

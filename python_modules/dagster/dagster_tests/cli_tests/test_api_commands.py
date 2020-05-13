@@ -2,7 +2,7 @@ from click.testing import CliRunner
 
 from dagster import file_relative_path
 from dagster.cli.api import pipeline_snapshot_command, repository_snapshot_command
-from dagster.core.host_representation import ActivePipelineData, ActiveRepositoryData
+from dagster.core.host_representation import ExternalPipelineData, ExternalRepositoryData
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
@@ -13,10 +13,10 @@ def test_snapshot_command_repository():
     )
     assert result.exit_code == 0
     # Now that we have the snapshot make sure that it can be properly deserialized
-    active_repository_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(active_repository_data, ActiveRepositoryData)
-    assert active_repository_data.name == 'bar'
-    assert len(active_repository_data.active_pipeline_datas) == 2
+    external_repository_data = deserialize_json_to_dagster_namedtuple(result.output)
+    assert isinstance(external_repository_data, ExternalRepositoryData)
+    assert external_repository_data.name == 'bar'
+    assert len(external_repository_data.external_pipeline_datas) == 2
 
 
 def test_snapshot_command_pipeline():
@@ -27,11 +27,12 @@ def test_snapshot_command_pipeline():
     )
     assert result.exit_code == 0
     # Now that we have the snapshot make sure that it can be properly deserialized
-    active_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(active_pipeline_data, ActivePipelineData)
-    assert active_pipeline_data.name == 'foo'
+    external_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
+    assert isinstance(external_pipeline_data, ExternalPipelineData)
+    assert external_pipeline_data.name == 'foo'
     assert (
-        len(active_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps) == 2
+        len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
+        == 2
     )
 
 
@@ -49,9 +50,10 @@ def test_snapshot_command_pipeline_solid_subset():
     )
     assert result.exit_code == 0
     # Now that we have the snapshot make sure that it can be properly deserialized
-    active_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
-    assert isinstance(active_pipeline_data, ActivePipelineData)
-    assert active_pipeline_data.name == 'foo'
+    external_pipeline_data = deserialize_json_to_dagster_namedtuple(result.output)
+    assert isinstance(external_pipeline_data, ExternalPipelineData)
+    assert external_pipeline_data.name == 'foo'
     assert (
-        len(active_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps) == 1
+        len(external_pipeline_data.pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps)
+        == 1
     )

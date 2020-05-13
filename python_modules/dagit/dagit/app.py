@@ -30,7 +30,7 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.host_representation import ActiveRepositoryData
+from dagster.core.host_representation import ExternalRepositoryData
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import reconcile_scheduler_state
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -194,8 +194,8 @@ def get_execution_manager(instance):
     return SubprocessExecutionManager(instance)
 
 
-def create_app_with_active_repository_data(active_repository_data, instance):
-    check.inst_param(active_repository_data, 'active_repository_data', ActiveRepositoryData)
+def create_app_with_external_repository_data(external_repository_data, instance):
+    check.inst_param(external_repository_data, 'external_repository_data', ExternalRepositoryData)
     check.inst_param(instance, 'instance', DagsterInstance)
 
     execution_manager = get_execution_manager(instance)
@@ -203,7 +203,7 @@ def create_app_with_active_repository_data(active_repository_data, instance):
 
     print('Loading repository...')
     context = DagsterGraphQLOutOfProcessRepositoryContext(
-        active_repository_data=active_repository_data,
+        external_repository_data=external_repository_data,
         instance=instance,
         execution_manager=execution_manager,
         version=__version__,
