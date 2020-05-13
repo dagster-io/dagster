@@ -5,6 +5,7 @@ from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
 )
+from dagster_airflow_tests.marks import requires_airflow_db
 
 from dagster import execute_pipeline, seven
 
@@ -379,7 +380,7 @@ def test_make_repo(
         assert repo.pipeline_names == set(expected_pipeline_names)
 
 
-test_airflow_example_dags_inputs = [  # Test that Airflow example dag "complex_dag" works for Airflow v1.10 stable
+test_airflow_example_dags_inputs = [
     (
         [
             'airflow_example_bash_operator',
@@ -421,6 +422,7 @@ test_airflow_example_dags_inputs = [  # Test that Airflow example dag "complex_d
 @pytest.mark.parametrize(
     'expected_pipeline_names, exclude_from_execution_tests', test_airflow_example_dags_inputs,
 )
+@requires_airflow_db
 def test_airflow_example_dags(
     expected_pipeline_names, exclude_from_execution_tests,
 ):

@@ -14,7 +14,7 @@ from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_python_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.marks import nettest, requires_airflow_db
 from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -24,6 +24,7 @@ from dagster.utils import load_yaml_from_glob_list
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
 
+@requires_airflow_db
 def test_fs_storage_no_explicit_base_dir(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -40,6 +41,7 @@ def test_fs_storage_no_explicit_base_dir(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_fs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -57,6 +59,7 @@ def test_fs_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_s3_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -74,6 +77,7 @@ def test_s3_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_gcs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -90,6 +94,7 @@ def test_gcs_storage(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_skip_operator(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
@@ -103,6 +108,7 @@ def test_skip_operator(
     validate_skip_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_rename_for_airflow():
     pairs = [
         ('foo', 'foo'),
@@ -119,6 +125,7 @@ def test_rename_for_airflow():
         assert after == _rename_for_airflow(before)
 
 
+@requires_airflow_db
 def test_error_dag_python():  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)

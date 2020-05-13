@@ -12,7 +12,7 @@ from dagster_airflow.test_fixtures import (
     execute_tasks_in_dag,
 )
 from dagster_airflow_tests.conftest import dagster_docker_image
-from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.marks import nettest, requires_airflow_db
 from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -22,6 +22,7 @@ from dagster.utils import git_repository_root, load_yaml_from_glob_list
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
 
+@requires_airflow_db
 def test_fs_storage_no_explicit_base_dir(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
@@ -39,6 +40,7 @@ def test_fs_storage_no_explicit_base_dir(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_fs_storage(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
@@ -57,6 +59,7 @@ def test_fs_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_s3_storage(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
@@ -75,6 +78,7 @@ def test_s3_storage(
 
 
 @nettest
+@requires_airflow_db
 def test_gcs_storage(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image,
 ):  # pylint: disable=redefined-outer-name
@@ -92,6 +96,7 @@ def test_gcs_storage(
     validate_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_skip_operator(
     dagster_airflow_docker_operator_pipeline, dagster_docker_image
 ):  # pylint: disable=redefined-outer-name
@@ -107,6 +112,7 @@ def test_skip_operator(
     validate_skip_pipeline_execution(results)
 
 
+@requires_airflow_db
 def test_error_dag_containerized(dagster_docker_image):  # pylint: disable=redefined-outer-name
     pipeline_name = 'demo_error_pipeline'
     handle = ReconstructableRepository.for_module('test_pipelines.repo', pipeline_name)

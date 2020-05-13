@@ -200,13 +200,15 @@ def events_demo_tests():
     return tests
 
 
-def airflow_tests():
+def _airflow_tests(name='', tox_args=''):
     tests = []
     # See: https://github.com/dagster-io/dagster/issues/1960
     for version in SupportedPythons:
-        coverage = ".coverage.dagster-airflow.{version}.$BUILDKITE_BUILD_ID".format(version=version)
+        coverage = ".coverage.dagster-airflow{name}.{version}.$BUILDKITE_BUILD_ID".format(
+            name=name, version=version
+        )
         tests.append(
-            StepBuilder("dagster-airflow ({ver})".format(ver=TOX_MAP[version]))
+            StepBuilder("dagster-airflow{name} ({ver})".format(name=name, ver=TOX_MAP[version]))
             .run(
                 "export AIRFLOW_HOME=\"/airflow\"",
                 "mkdir -p $${AIRFLOW_HOME}",
@@ -217,7 +219,7 @@ def airflow_tests():
                 + GCP_CREDS_LOCAL_FILE,
                 "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
                 "pushd python_modules/libraries/dagster-airflow/",
-                "tox -vv -e {ver}".format(ver=TOX_MAP[version]),
+                "tox -vv -e {ver}{tox_args},".format(tox_args=tox_args, ver=TOX_MAP[version]),
                 "mv .coverage {file}".format(file=coverage),
                 "buildkite-agent artifact upload {file}".format(file=coverage),
                 "popd",
@@ -237,6 +239,14 @@ def airflow_tests():
             .build()
         )
     return tests
+
+
+def airflow_tests():
+    return (
+        _airflow_tests()
+        + _airflow_tests(name='-with-k8s', tox_args='-requiresk8s')
+        + _airflow_tests(name='-with-db', tox_args='-requiresairflowdb')
+    )
 
 
 def k8s_tests():

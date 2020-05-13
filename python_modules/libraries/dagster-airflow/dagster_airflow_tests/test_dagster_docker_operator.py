@@ -4,6 +4,7 @@ import pytest
 from airflow.exceptions import AirflowException
 from dagster_airflow.factory import DagsterOperatorParameters
 from dagster_airflow.operators.docker_operator import DagsterDockerOperator
+from dagster_airflow_tests.marks import requires_airflow_db
 from dagster_graphql.client.mutations import DagsterGraphQLClientError
 
 from dagster import pipeline, solid
@@ -41,6 +42,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
     DagsterDockerOperator(dagster_operator_parameters)
 
 
+@requires_airflow_db
 def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
     dagster_operator_parameters = DagsterOperatorParameters(
         task_id='nonce',
