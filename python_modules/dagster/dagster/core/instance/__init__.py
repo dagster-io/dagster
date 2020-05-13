@@ -418,7 +418,7 @@ class DagsterInstance:
     def get_historical_pipeline(self, snapshot_id):
         from dagster.core.host_representation import HistoricalPipeline
 
-        return HistoricalPipeline(self._run_storage.get_pipeline_snapshot(snapshot_id))
+        return HistoricalPipeline(self._run_storage.get_pipeline_snapshot(snapshot_id), snapshot_id)
 
     def has_historical_pipeline(self, snapshot_id):
         return self._run_storage.has_pipeline_snapshot(snapshot_id)

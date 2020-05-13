@@ -67,7 +67,7 @@ class DauphinIPipelineSnapshotMixin(object):
     tags = dauphin.non_null_list('PipelineTag')
 
     def resolve_pipeline_snapshot_id(self, _):
-        return self.get_represented_pipeline().pipeline_snapshot_id
+        return self.get_represented_pipeline().identifying_pipeline_snapshot_id
 
     def resolve_name(self, _):
         return self.get_represented_pipeline().name

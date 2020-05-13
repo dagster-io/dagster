@@ -131,6 +131,14 @@ class ExternalPipeline(RepresentedPipeline):
     def tags(self):
         return self.pipeline_index.pipeline_snapshot.tags
 
+    @property
+    def computed_pipeline_snapshot_id(self):
+        return self._pipeline_index.pipeline_snapshot_id
+
+    @property
+    def identifying_pipeline_snapshot_id(self):
+        return self._pipeline_index.pipeline_snapshot_id
+
 
 class ExternalExecutionPlan:
     '''
@@ -148,10 +156,10 @@ class ExternalExecutionPlan:
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
 
-        # https://github.com/dagster-io/dagster/issues/2442
-        # check.invariant(
-        #     execution_plan_snapshot.pipeline_snapshot_id == pipeline_index.pipeline_snapshot_id
-        # )
+        check.invariant(
+            execution_plan_snapshot.pipeline_snapshot_id
+            == represented_pipeline.identifying_pipeline_snapshot_id
+        )
 
         self._step_keys_in_plan = (
             set(execution_plan_snapshot.step_keys_to_execute)

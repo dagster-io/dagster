@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractproperty
 
 import six
 
@@ -35,9 +35,13 @@ class RepresentedPipeline(six.with_metaclass(ABCMeta)):
 
     # Snapshot things
 
-    @property
-    def pipeline_snapshot_id(self):
-        return self._pipeline_index.pipeline_snapshot_id
+    @abstractproperty
+    def computed_pipeline_snapshot_id(self):
+        pass
+
+    @abstractproperty
+    def identifying_pipeline_snapshot_id(self):
+        pass
 
     @property
     def pipeline_snapshot(self):

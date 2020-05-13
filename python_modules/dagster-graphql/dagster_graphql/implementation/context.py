@@ -163,7 +163,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
                     mode=mode,
                     step_keys_to_execute=step_keys_to_execute,
                 ),
-                external_pipeline.pipeline_snapshot_id,
+                external_pipeline.identifying_pipeline_snapshot_id,
             ),
             represented_pipeline=external_pipeline,
         )
