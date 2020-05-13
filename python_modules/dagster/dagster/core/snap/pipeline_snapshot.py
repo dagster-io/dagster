@@ -23,7 +23,6 @@ from dagster.serdes import deserialize_value, whitelist_for_serdes
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
 from .dep_snapshot import (
-    DependencyStructureIndex,
     DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_icontains_solids,
 )
@@ -35,91 +34,6 @@ from .solid import (
     build_solid_definitions_snapshot,
 )
 from .utils import create_snapshot_id
-
-
-class PipelineIndex:
-    def __init__(self, pipeline_snapshot):
-        self.pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
-        )
-
-        self._solid_defs_snaps_index = {
-            sd.name: sd
-            for sd in pipeline_snapshot.solid_definitions_snapshot.solid_def_snaps
-            + pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
-        }
-
-        self._dagster_type_snaps_by_name_index = {
-            dagster_type_snap.name: dagster_type_snap
-            for dagster_type_snap in pipeline_snapshot.dagster_type_namespace_snapshot.all_dagster_type_snaps_by_key.values()
-            if dagster_type_snap.name
-        }
-
-        self.dep_structure_index = DependencyStructureIndex(
-            pipeline_snapshot.dep_structure_snapshot
-        )
-
-        self._comp_dep_structures = {
-            comp_snap.name: DependencyStructureIndex(comp_snap.dep_structure_snapshot)
-            for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
-        }
-
-        self.pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
-
-    @property
-    def name(self):
-        return self.pipeline_snapshot.name
-
-    @property
-    def description(self):
-        return self.pipeline_snapshot.description
-
-    @property
-    def tags(self):
-        return self.pipeline_snapshot.tags
-
-    def has_dagster_type_name(self, type_name):
-        return type_name in self._dagster_type_snaps_by_name_index
-
-    def get_dagster_type_from_name(self, type_name):
-        return self._dagster_type_snaps_by_name_index[type_name]
-
-    def get_solid_def_snap(self, solid_def_name):
-        check.str_param(solid_def_name, 'solid_def_name')
-        return self._solid_defs_snaps_index[solid_def_name]
-
-    def get_dep_structure_index(self, comp_solid_def_name):
-        return self._comp_dep_structures[comp_solid_def_name]
-
-    def get_dagster_type_snaps(self):
-        dt_namespace = self.pipeline_snapshot.dagster_type_namespace_snapshot
-        return list(dt_namespace.all_dagster_type_snaps_by_key.values())
-
-    def has_solid_invocation(self, solid_name):
-        return self.dep_structure_index.has_invocation(solid_name)
-
-    def get_default_mode_name(self):
-        return self.pipeline_snapshot.mode_def_snaps[0].name
-
-    def has_mode_def(self, name):
-        check.str_param(name, 'name')
-        for mode_def_snap in self.pipeline_snapshot.mode_def_snaps:
-            if mode_def_snap.name == name:
-                return True
-
-        return False
-
-    def get_mode_def_snap(self, name):
-        check.str_param(name, 'name')
-        for mode_def_snap in self.pipeline_snapshot.mode_def_snaps:
-            if mode_def_snap.name == name:
-                return mode_def_snap
-
-        check.failed('Mode {mode} not found'.format(mode=name))
-
-    @property
-    def config_schema_snapshot(self):
-        return self.pipeline_snapshot.config_schema_snapshot
 
 
 def create_pipeline_snapshot_id(snapshot):

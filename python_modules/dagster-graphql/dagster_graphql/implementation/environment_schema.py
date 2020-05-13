@@ -3,7 +3,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.snap import PipelineIndex
+from dagster.core.host_representation import PipelineIndex
 
 from .external import get_external_pipeline_subset_or_raise
 from .utils import UserFacingGraphQLError, capture_dauphin_error

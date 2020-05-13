@@ -13,7 +13,8 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
-from dagster.core.snap import ConfigSchemaSnapshot, PipelineIndex
+from dagster.core.host_representation import PipelineIndex
+from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
 
 from .config_types import DauphinConfigTypeField

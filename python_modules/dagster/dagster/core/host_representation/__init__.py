@@ -14,3 +14,4 @@ from .external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
+from .pipeline_index import PipelineIndex

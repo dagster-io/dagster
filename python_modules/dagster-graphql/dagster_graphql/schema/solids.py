@@ -2,12 +2,8 @@ from dagster_graphql import dauphin
 
 from dagster import check
 from dagster.core.definitions import SolidHandle
-from dagster.core.snap import (
-    CompositeSolidDefSnap,
-    DependencyStructureIndex,
-    PipelineIndex,
-    SolidDefSnap,
-)
+from dagster.core.host_representation import PipelineIndex
+from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 
 from .config_types import DauphinConfigTypeField
 from .dagster_types import to_dauphin_dagster_type

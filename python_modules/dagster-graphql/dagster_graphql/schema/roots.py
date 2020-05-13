@@ -52,9 +52,9 @@ from dagster_graphql.implementation.utils import ExecutionMetadata, UserFacingGr
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
+from dagster.core.host_representation import PipelineIndex
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.snap import PipelineIndex
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 

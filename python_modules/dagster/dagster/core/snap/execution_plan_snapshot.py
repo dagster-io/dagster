@@ -5,7 +5,6 @@ from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput,
 from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
 from dagster.serdes import whitelist_for_serdes
 
-from .pipeline_snapshot import PipelineIndex
 from .utils import create_snapshot_id
 
 
@@ -16,6 +15,8 @@ def create_execution_plan_snapshot_id(execution_plan_snapshot):
 
 class ExecutionPlanIndex:
     def __init__(self, execution_plan_snapshot, pipeline_index):
+        from dagster.core.host_representation import PipelineIndex
+
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
         )
@@ -44,6 +45,8 @@ class ExecutionPlanIndex:
 
     @staticmethod
     def from_plan_and_index(execution_plan, pipeline_index):
+        from dagster.core.host_representation import PipelineIndex
+
         check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
         check.inst_param(pipeline_index, 'pipeline_index', PipelineIndex)
         return ExecutionPlanIndex(

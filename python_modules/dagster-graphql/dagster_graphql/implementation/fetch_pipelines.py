@@ -8,7 +8,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.pipeline import ExecutionSelector
-from dagster.core.snap import PipelineIndex
+from dagster.core.host_representation import PipelineIndex
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 

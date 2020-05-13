@@ -1,7 +1,7 @@
+from dagster.core.host_representation import PipelineIndex
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.snap import (
     ExecutionPlanIndex,
-    PipelineIndex,
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
