@@ -15,13 +15,14 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
+from dagster.core.host_representation import ExternalPipeline
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.storage.tags import check_tags
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.merger import merge_dicts
 
-from ..external import ExternalPipeline, get_external_pipeline_subset_or_raise
+from ..external import get_external_pipeline_subset_or_raise
 from ..fetch_schedules import get_dagster_schedule_def
 from ..utils import capture_dauphin_error
 from .launch_execution import _launch_pipeline_execution_for_created_run
