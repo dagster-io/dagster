@@ -1,32 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
+    
   <url>
-        <loc>https://docs.dagster.io/versions/index</loc>
+        <loc>https://docs.dagster.io/versions</loc>
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/index</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/apidocs/index</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/community/code_of_conduct</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/community/contributing</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/community/index</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/community/open_source</loc>
+        <loc>https://docs.dagster.io/docs/apidocs</loc>
   </url>
 
   <url>
@@ -50,7 +30,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/deploying/index</loc>
+        <loc>https://docs.dagster.io/docs/deploying</loc>
   </url>
 
   <url>
@@ -66,7 +46,31 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/install/index</loc>
+        <loc>https://docs.dagster.io/docs/community/code_of_conduct</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/contributing</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/community/open_source</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/principles</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/install</loc>
   </url>
 
   <url>
@@ -82,14 +86,6 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/index</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/principles</loc>
-  </url>
-
-  <url>
         <loc>https://docs.dagster.io/docs/tutorial/advanced</loc>
   </url>
 
@@ -98,7 +94,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/tutorial/index</loc>
+        <loc>https://docs.dagster.io/docs/tutorial</loc>
   </url>
 
   <url>
@@ -110,7 +106,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/concepts/index</loc>
+        <loc>https://docs.dagster.io/docs/learn/concepts</loc>
   </url>
 
   <url>
@@ -118,7 +114,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/demos/index</loc>
+        <loc>https://docs.dagster.io/docs/learn/demos</loc>
   </url>
 
   <url>
@@ -126,7 +122,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/index</loc>
+        <loc>https://docs.dagster.io/docs/learn/guides</loc>
   </url>
 
   <url>
@@ -134,7 +130,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/how-tos/index</loc>
+        <loc>https://docs.dagster.io/docs/learn/how-tos</loc>
   </url>
 
   <url>
@@ -146,7 +142,23 @@
   </url>
 
   <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/data_science/data_science</loc>
+  </url>
+
+  <url>
         <loc>https://docs.dagster.io/docs/learn/guides/logging/logging</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/solid/solid</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/testing/expectations</loc>
+  </url>
+
+  <url>
+        <loc>https://docs.dagster.io/docs/learn/guides/testing/testing</loc>
   </url>
 
   <url>
@@ -158,7 +170,7 @@
   </url>
 
   <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/partitioning/index</loc>
+        <loc>https://docs.dagster.io/docs/learn/guides/partitioning</loc>
   </url>
 
   <url>
@@ -175,22 +187,6 @@
 
   <url>
         <loc>https://docs.dagster.io/docs/learn/guides/partitioning/schedule_partitions</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/data_science/data_science</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/solid/solid</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/testing/expectations</loc>
-  </url>
-
-  <url>
-        <loc>https://docs.dagster.io/docs/learn/guides/testing/testing</loc>
   </url>
 
   <url>
@@ -278,3 +274,4 @@
   </url>
 
 </urlset>
+      

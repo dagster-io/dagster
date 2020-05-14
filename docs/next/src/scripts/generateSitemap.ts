@@ -20,14 +20,14 @@ import parser from 'fast-xml-parser';
     });
 
   // Combine them into the pages you care about
-  const allPages = [...pages, ...apiDocsPages];
+  let allPages = [...pages, ...apiDocsPages];
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     ${allPages
       .map((page) => {
         const path = page.replace('src/pages', '').replace('.mdx', '');
-        const route = path === '/index' ? '' : path;
+        const route = path === '/index' ? '' : path.replace(/\/index$/, '');
 
         return `
   <url>
