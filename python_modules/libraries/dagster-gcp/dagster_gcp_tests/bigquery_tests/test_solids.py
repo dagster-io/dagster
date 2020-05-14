@@ -295,3 +295,10 @@ def test_gcs_load():
     assert values[0].to_dict() == {'string_field_0': {0: 'Alabama'}, 'string_field_1': {0: 'AL'}}
 
     assert not dataset_exists(dataset)
+
+
+def test_multi_bq_solid_for_queries():
+    @pipeline(mode_defs=bq_modes())
+    def _test():
+        bq_solid_for_queries(['SELECT 1'])()
+        bq_solid_for_queries(['SELECT *'])()
