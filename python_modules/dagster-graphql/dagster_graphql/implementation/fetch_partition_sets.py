@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 
-from .external import get_external_pipeline_or_raise
+from .external import get_full_external_pipeline_or_raise
 from .utils import capture_dauphin_error
 
 
@@ -18,7 +18,7 @@ def _get_partition_sets(graphene_info, pipeline_name):
 
     if pipeline_name:
 
-        external_pipeline = get_external_pipeline_or_raise(graphene_info, pipeline_name)
+        external_pipeline = get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
 
         matching_partition_sets = filter(
             lambda partition_set: partition_set.pipeline_name == external_pipeline.name,

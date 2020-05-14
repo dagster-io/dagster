@@ -15,7 +15,7 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 from ..external import (
     ensure_valid_config,
     get_external_execution_plan_or_raise,
-    get_external_pipeline_subset_or_raise,
+    get_external_pipeline_or_raise,
 )
 from ..resume_retry import compute_step_keys_to_execute
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
@@ -49,7 +49,7 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     if run_launcher is None:
         return graphene_info.schema.type_named('RunLauncherNotDefinedError')()
 
-    external_pipeline = get_external_pipeline_subset_or_raise(
+    external_pipeline = get_external_pipeline_or_raise(
         graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
     )
 
@@ -99,7 +99,7 @@ def _launch_pipeline_execution_for_created_run(graphene_info, run_id):
     if not pipeline_run:
         return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
 
-    external_pipeline = get_external_pipeline_subset_or_raise(
+    external_pipeline = get_external_pipeline_or_raise(
         graphene_info, pipeline_run.selector.name, pipeline_run.selector.solid_subset
     )
 

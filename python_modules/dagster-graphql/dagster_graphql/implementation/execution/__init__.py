@@ -34,7 +34,7 @@ from ..external import (
     ExternalPipeline,
     ensure_valid_config,
     ensure_valid_step_keys,
-    get_external_pipeline_subset_or_raise,
+    get_external_pipeline_or_raise,
 )
 from ..fetch_pipelines import (
     get_dauphin_pipeline_reference_from_selector,
@@ -150,7 +150,7 @@ def do_execute_plan(graphene_info, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
 
-    external_pipeline = get_external_pipeline_subset_or_raise(
+    external_pipeline = get_external_pipeline_or_raise(
         graphene_info, execution_params.selector.name, execution_params.selector.solid_subset
     )
     ensure_valid_config(

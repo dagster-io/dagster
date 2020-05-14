@@ -1,7 +1,7 @@
 from dagster_graphql.implementation.context import DagsterGraphQLInProcessRepositoryContext
 from dagster_graphql.implementation.external import (
     get_external_pipeline_or_raise,
-    get_external_pipeline_subset_or_raise,
+    get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
@@ -24,7 +24,9 @@ def get_pipeline_snapshot(graphene_info, snapshot_id):
 @capture_dauphin_error
 def get_pipeline_snapshot_or_error_from_pipeline_name(graphene_info, pipeline_name):
     check.str_param(pipeline_name, 'pipeline_name')
-    return DauphinPipelineSnapshot(get_external_pipeline_or_raise(graphene_info, pipeline_name))
+    return DauphinPipelineSnapshot(
+        get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
+    )
 
 
 @capture_dauphin_error
@@ -118,7 +120,7 @@ def get_dauphin_pipeline_from_selector(graphene_info, selector):
         )
 
     return DauphinPipeline(
-        get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
+        get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
     )
 
 
@@ -134,7 +136,7 @@ def get_reconstructable_pipeline_from_selector(graphene_info, selector):
     pipeline_name = selector.name
 
     # for error check of pipeline existence
-    get_external_pipeline_or_raise(graphene_info, pipeline_name)
+    get_full_external_pipeline_or_raise(graphene_info, pipeline_name)
 
     recon_pipeline = graphene_info.context.get_reconstructable_pipeline(pipeline_name)
 
@@ -142,5 +144,5 @@ def get_reconstructable_pipeline_from_selector(graphene_info, selector):
         return recon_pipeline
 
     # for error checking
-    get_external_pipeline_subset_or_raise(graphene_info, selector.name, selector.solid_subset)
+    get_external_pipeline_or_raise(graphene_info, selector.name, selector.solid_subset)
     return recon_pipeline.subset_for_execution(selector.solid_subset)

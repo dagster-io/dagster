@@ -38,7 +38,7 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         check.str_param(name, 'name')
         return self._external_repository.has_pipeline(name)
 
-    def get_external_pipeline(self, name):
+    def get_full_external_pipeline(self, name):
         check.str_param(name, 'name')
         return self._external_repository.get_external_pipeline(name)
 
@@ -46,7 +46,7 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
         return self._external_repository.get_all_external_pipelines()
 
     @abc.abstractmethod
-    def get_external_pipeline_subset(self, name, solid_subset):
+    def get_external_pipeline(self, name, solid_subset):
         pass
 
     @abc.abstractmethod
@@ -78,7 +78,7 @@ class DagsterGraphQLOutOfProcessRepositoryContext(DagsterGraphQLContext):
     def is_reload_supported(self):
         return False
 
-    def get_external_pipeline_subset(self, name, solid_subset):
+    def get_external_pipeline(self, name, solid_subset):
         raise NotImplementedError('Not yet supported out of process')
 
     def get_external_execution_plan(
@@ -137,7 +137,7 @@ class DagsterGraphQLInProcessRepositoryContext(DagsterGraphQLContext):
     def is_reload_supported(self):
         return self.reloader and self.reloader.is_reload_supported
 
-    def get_external_pipeline_subset(self, name, solid_subset):
+    def get_external_pipeline(self, name, solid_subset):
         check.str_param(name, 'name')
         check.list_param(solid_subset, 'solid_subset', of_type=str)
 
