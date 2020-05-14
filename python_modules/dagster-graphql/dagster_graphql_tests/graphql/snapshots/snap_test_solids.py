@@ -424,6 +424,14 @@ snapshots['test_query_all_solids_with_snapshot_context 1'] = {
             'invocations': [
                 {
                     'pipeline': {
+                        'name': 'more_complicated_config'
+                    },
+                    'solidHandle': {
+                        'handleID': 'noop_solid'
+                    }
+                },
+                {
+                    'pipeline': {
                         'name': 'noop_pipeline'
                     },
                     'solidHandle': {
@@ -1291,6 +1299,14 @@ snapshots['test_query_all_solids 1'] = {
                 'name': 'noop_solid'
             },
             'invocations': [
+                {
+                    'pipeline': {
+                        'name': 'more_complicated_config'
+                    },
+                    'solidHandle': {
+                        'handleID': 'noop_solid'
+                    }
+                },
                 {
                     'pipeline': {
                         'name': 'noop_pipeline'

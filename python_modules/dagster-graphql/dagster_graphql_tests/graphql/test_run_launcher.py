@@ -16,10 +16,15 @@ query RunQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
     ... on PipelineRun {
-        status
+      status
+      stats {
+        ... on PipelineRunStatsSnapshot {
+          stepsSucceeded
+        }
       }
     }
   }
+}
 '''
 
 
@@ -74,3 +79,44 @@ def test_run_launcher():
     result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
     assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
     assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
+
+
+def test_run_launcher_subset():
+    test_queue = InMemoryRunLauncher()
+
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance(
+            instance_type=InstanceType.EPHEMERAL,
+            local_artifact_storage=LocalArtifactStorage(temp_dir),
+            run_storage=InMemoryRunStorage(),
+            event_storage=InMemoryEventLogStorage(),
+            compute_log_manager=NoOpComputeLogManager(temp_dir),
+            run_launcher=test_queue,
+        )
+
+    context = define_context_for_repository_yaml(
+        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+    )
+
+    result = execute_dagster_graphql(
+        context=context,
+        query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+        variables={
+            'executionParams': {
+                'selector': {'name': 'more_complicated_config', 'solidSubset': ['noop_solid']},
+                'mode': 'default',
+            }
+        },
+    )
+
+    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+    assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
+
+    run_id = result.data['launchPipelineExecution']['run']['runId']
+
+    test_queue.run_one(instance)
+
+    result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
+    assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
+    assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
+    assert result.data['pipelineRunOrError']['stats']['stepsSucceeded'] == 1
