@@ -250,7 +250,8 @@ def more_complicated_config():
     def a_solid_with_three_field_config(_context):
         return None
 
-    return a_solid_with_three_field_config()
+    noop_solid()
+    a_solid_with_three_field_config()
 
 
 @pipeline

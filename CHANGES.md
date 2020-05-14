@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.7.13
+
+**BugFix**
+
+- Fixes a bug where using solid subsets when launching pipeline runs would fail config validation.
+
+## 0.7.12
+
+**Bugfix**
+
+- We now only render the subset of an execution plan that has actually executed, and persist that subset information along with the snapshot.
+- @pipeline and @composite_solid now correctly capture `__doc__` from the function they decorate.
+- Fixed a bug with using solid subsets in the Dagit playground
+
 ## 0.7.11
 
 **Bugfix**
