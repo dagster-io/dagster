@@ -21,7 +21,7 @@ class RepresentedPipeline(six.with_metaclass(ABCMeta)):
 
     # Temporary method to allow for incrementally
     # replacing pipeline index with the representation hierarchy
-    # Chosen for greppability
+    # Chosen for grepability
     def get_pipeline_index_for_compat(self):
         return self._pipeline_index
 

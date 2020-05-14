@@ -173,7 +173,7 @@ def user_code_error_boundary(error_cls, msg_fn, control_flow_exceptions=None, **
     try:
         yield
     except control_flow_exceptions as cf:
-        # A control flow exception has occurred and should be propogated
+        # A control flow exception has occurred and should be propagated
         raise cf
     except DagsterError as de:
         # The system has thrown an error that is part of the user-framework contract
@@ -226,7 +226,7 @@ class DagsterTypeCheckError(DagsterUserCodeExecutionError):
 
 
 class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
-    '''Indicates an error occured while executing the body of an execution step.'''
+    '''Indicates an error occurred while executing the body of an execution step.'''
 
     def __init__(self, *args, **kwargs):
         self.step_key = check.str_param(kwargs.pop('step_key'), 'step_key')
@@ -237,14 +237,14 @@ class DagsterExecutionStepExecutionError(DagsterUserCodeExecutionError):
 
 class DagsterResourceFunctionError(DagsterUserCodeExecutionError):
     '''
-    Indicates an error occured while executing the body of the ``resource_fn`` in a
+    Indicates an error occurred while executing the body of the ``resource_fn`` in a
     :py:class:`~dagster.ResourceDefinition` during resource initialization.
     '''
 
 
 class DagsterConfigMappingFunctionError(DagsterUserCodeExecutionError):
     '''
-    Indicates that an unexpected error occured while executing the body of a config mapping
+    Indicates that an unexpected error occurred while executing the body of a config mapping
     function defined in a :py:class:`~dagster.CompositeSolidDefinition` during config parsing.
     '''
 

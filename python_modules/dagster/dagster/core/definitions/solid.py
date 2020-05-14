@@ -163,7 +163,7 @@ class ISolidDefinition(six.with_metaclass(ABCMeta)):
 
 class SolidDefinition(ISolidDefinition):
     '''
-    The definition of a Solid that peforms a user defined computation.
+    The definition of a Solid that performs a user-defined computation.
 
     For more details on what a solid is, refer to the
     `Solid Guide <../../learn/guides/solid/solid>`_ .

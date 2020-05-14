@@ -209,7 +209,7 @@ class PipelineDefinition(IContainSolids):
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
         )
-        self._cached_enviroment_schemas = {}
+        self._cached_environment_schemas = {}
         self._cached_external_pipeline = None
 
     def get_environment_schema(self, mode=None):
@@ -217,11 +217,11 @@ class PipelineDefinition(IContainSolids):
 
         mode_def = self.get_mode_definition(mode)
 
-        if mode_def.name in self._cached_enviroment_schemas:
-            return self._cached_enviroment_schemas[mode_def.name]
+        if mode_def.name in self._cached_environment_schemas:
+            return self._cached_environment_schemas[mode_def.name]
 
-        self._cached_enviroment_schemas[mode_def.name] = _create_environment_schema(self, mode_def)
-        return self._cached_enviroment_schemas[mode_def.name]
+        self._cached_environment_schemas[mode_def.name] = _create_environment_schema(self, mode_def)
+        return self._cached_environment_schemas[mode_def.name]
 
     @property
     def name(self):
@@ -308,7 +308,7 @@ class PipelineDefinition(IContainSolids):
         return list(set(self._solid_dict.values()))
 
     def has_solid_named(self, name):
-        '''Return whether or not there is a top level solid with this name in the piepline
+        '''Return whether or not there is a top level solid with this name in the pipeline 
 
         Args:
             name (str): Name of solid
@@ -545,7 +545,7 @@ def _validate_resource_dependencies(mode_definitions, solid_defs):
     '''This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     '''
-    check.list_param(mode_definitions, 'mode_definintions', of_type=ModeDefinition)
+    check.list_param(mode_definitions, 'mode_definitions', of_type=ModeDefinition)
     check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
 
     for mode_def in mode_definitions:

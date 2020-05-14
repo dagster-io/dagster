@@ -36,7 +36,7 @@ from .results import PipelineExecutionResult
 # | execute_plan_iterator     | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan              | ExecutionPlan      | sync  | (2)         | no                      |
 #
-# Notes on rexecution support:
+# Notes on reexecution support:
 # (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
 #     parent_run_id and root_run_id must be set and consistent, and if a solid_subset or
 #     step_keys_to_execute are set they must be consistent with the parent and root runs.

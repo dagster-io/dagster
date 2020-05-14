@@ -24,7 +24,7 @@ class FileHandle(six.with_metaclass(ABCMeta)):
     where a file can be stored.
 
     This exists to handle the very common case where you wish to write a computation that reads,
-    transforms, and writes files, but where the same code can work in local developement as well
+    transforms, and writes files, but where the same code can work in local development as well
     as in a cluster where the files would be stored in globally available object store such as s3.
     '''
 

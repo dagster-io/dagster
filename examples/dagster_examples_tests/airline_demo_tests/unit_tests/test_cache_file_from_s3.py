@@ -48,7 +48,7 @@ def test_cache_file_from_s3_basic():
             },
         )
 
-        # assert the download occured
+        # assert the download occurred
         assert s3_session.download_file.call_count == 1
 
         assert solid_result.success
@@ -88,7 +88,7 @@ def test_cache_file_from_s3_specify_target_key():
             },
         )
 
-        # assert the download occured
+        # assert the download occurred
         assert s3_session.download_file.call_count == 1
         assert solid_result.success
         assert isinstance(solid_result.output_value(), LocalFileHandle)
@@ -116,7 +116,7 @@ def test_cache_file_from_s3_skip_download():
             },
         )
 
-        # assert the download occured
+        # assert the download occurred
         assert s3_session_one.download_file.call_count == 1
 
         s3_session_two = mock.MagicMock()
@@ -165,7 +165,7 @@ def test_cache_file_from_s3_overwrite():
             },
         )
 
-        # assert the download occured
+        # assert the download occurred
         assert s3_session_one.download_file.call_count == 1
 
         s3_session_two = mock.MagicMock()

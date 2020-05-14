@@ -195,7 +195,7 @@ def create_execution_structure(solid_defs, dependencies_dict, container_definiti
     alias_to_name = {}
 
     for solid_key, input_dep_dict in dependencies_dict.items():
-        # We allow deps of the form dependencies={'foo': DependencyDefition('bar')}
+        # We allow deps of the form dependencies={'foo': DependencyDefinition('bar')}
         # Here, we replace 'foo' with SolidInvocation('foo')
         if not isinstance(solid_key, SolidInvocation):
             solid_key = SolidInvocation(solid_key)

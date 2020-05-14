@@ -217,7 +217,7 @@ class DagsterLogManager(namedtuple('_DagsterLogManager', 'run_id logging_tags lo
 
         Args:
             level (Union[str, int]): An integer represeting a Python logging level or one of the
-                standard Python string representations of a loggging level.
+                standard Python string representations of a logging level.
             orig_message (str): The log message generated in user code.
             message_props (dict): Additional properties for the structured log message.
         '''

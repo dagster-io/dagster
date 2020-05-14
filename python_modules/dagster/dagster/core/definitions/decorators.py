@@ -218,7 +218,7 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
             output_def=OutputDefinition(str)
         )
         def hello_world(foo):
-            # explictly type and name inputs and outputs
+            # explicitly type and name inputs and outputs
             return foo
 
         @lambda_solid
@@ -261,7 +261,7 @@ def solid(
 
     1. Return a value. This value will be wrapped in an :py:class:`Output` and yielded by the compute function.
     2. Return an :py:class:`Output`. This output will be yielded by the compute function.
-    3. Yield :py:class:`Output` or other :ref:`event objects <events>`. Same as default compute behaviour.
+    3. Yield :py:class:`Output` or other :ref:`event objects <events>`. Same as default compute behavior.
 
     Note that options 1) and 2) are incompatible with yielding other events -- if you would like
     to decorate a function that yields events, it must also wrap its eventual output in an
@@ -334,7 +334,7 @@ def solid(
                 output_defs=[OutputDefinition(str)]
             )
             def hello_world(_context, foo):
-                # explictly type and name inputs and outputs
+                # explicitly type and name inputs and outputs
                 return foo
 
             @solid
