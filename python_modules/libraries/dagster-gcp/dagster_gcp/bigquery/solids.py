@@ -1,3 +1,5 @@
+import hashlib
+
 from dagster_pandas import DataFrame
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
 from google.cloud.bigquery.table import EncryptionConfiguration, TimePartitioning
@@ -39,14 +41,20 @@ def bq_solid_for_queries(sql_queries):
 
     sql_queries = check.list_param(sql_queries, 'sql queries', of_type=str)
 
+    m = hashlib.sha1()
+    for query in sql_queries:
+        m.update(query.encode())
+    name = 'bq_solid_{hash}'.format(hash=m.hexdigest()[:10])
+
     @solid(
+        name=name,
         input_defs=[InputDefinition(_START, Nothing)],
         output_defs=[OutputDefinition(List[DataFrame])],
         config=define_bigquery_query_config(),
         required_resource_keys={'bigquery'},
         tags={'kind': 'sql', 'sql': '\n'.join(sql_queries)},
     )
-    def bq_solid(context):  # pylint: disable=unused-argument
+    def _solid(context):  # pylint: disable=unused-argument
         query_job_config = _preprocess_config(context.solid_config.get('query_job_config', {}))
 
         # Retrieve results as pandas DataFrames
@@ -65,7 +73,7 @@ def bq_solid_for_queries(sql_queries):
 
         return results
 
-    return bq_solid
+    return _solid
 
 
 BIGQUERY_LOAD_CONFIG = define_bigquery_load_config()
