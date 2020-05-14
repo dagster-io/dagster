@@ -19,8 +19,16 @@ interface PartitionGraphProps {
   title?: string;
   yLabel?: string;
 }
+interface PartitionGraphState {
+  hiddenPartitions: { [name: string]: boolean };
+}
 
-export class PartitionGraph extends React.Component<PartitionGraphProps> {
+export class PartitionGraph extends React.Component<PartitionGraphProps, PartitionGraphState> {
+  constructor(props: PartitionGraphProps) {
+    super(props);
+    this.state = { hiddenPartitions: {} };
+  }
+
   chart = React.createRef<any>();
 
   getDefaultOptions = () => {
@@ -28,8 +36,16 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
     const titleOptions = title ? { display: true, text: title } : undefined;
     const scales = yLabel
       ? {
-          yAxes: [{ scaleLabel: { display: true, labelString: yLabel } }],
-          xAxes: [{ scaleLabel: { display: true, labelString: "Partition" } }]
+          yAxes: [
+            {
+              scaleLabel: { display: true, labelString: yLabel }
+            }
+          ],
+          xAxes: [
+            {
+              scaleLabel: { display: true, labelString: "Partition" }
+            }
+          ]
         }
       : undefined;
     return {
@@ -38,8 +54,43 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
       legend: {
         display: false,
         onClick: (_e: MouseEvent, _legendItem: any) => {}
-      }
+      },
+      onClick: this.onGraphClick
     };
+  };
+
+  onGraphClick = (event: MouseEvent) => {
+    const instance = this.chart?.current?.chartInstance;
+    if (!instance) {
+      return;
+    }
+    const xAxis = instance.scales["x-axis-0"];
+    if (!xAxis) {
+      return;
+    }
+    const { offsetX, offsetY } = event;
+
+    const isChartClick =
+      event.type === "click" &&
+      offsetX <= instance.chartArea.right &&
+      offsetX >= instance.chartArea.left &&
+      offsetY <= instance.chartArea.bottom &&
+      offsetY >= instance.chartArea.top;
+
+    if (!isChartClick || !event.shiftKey) {
+      return;
+    }
+
+    // category scale returns index here for some reason
+    const labelIndex = xAxis.getValueForPixel(offsetX);
+    const partitionName = instance.data.labels[labelIndex];
+    const { hiddenPartitions } = this.state;
+    this.setState({
+      hiddenPartitions: {
+        ...hiddenPartitions,
+        [partitionName]: !hiddenPartitions[partitionName]
+      }
+    });
   };
 
   selectRun(runs?: Run[]) {
@@ -62,10 +113,10 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
     const partitionNames = Object.keys(runsByPartitionName);
     partitionNames.forEach(partitionName => {
       const run = this.selectRun(runsByPartitionName[partitionName]);
-
+      const hidden = !!this.state.hiddenPartitions[partitionName];
       pipelineData.push({
         x: partitionName,
-        y: run ? getPipelineDataForRun(run) : undefined
+        y: run && !hidden ? getPipelineDataForRun(run) : undefined
       });
 
       if (!run) {
@@ -76,7 +127,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps> {
       Object.keys(stepDataforRun).forEach(stepKey => {
         stepData[stepKey] = [
           ...(stepData[stepKey] || []),
-          { x: partitionName, y: stepDataforRun[stepKey] }
+          { x: partitionName, y: !hidden ? stepDataforRun[stepKey] : undefined }
         ];
       });
     });
