@@ -251,7 +251,84 @@ def test_start_schedule_manual_delete_debug(
         )
 
         # Check debug command
-        snapshot.assert_match(instance.scheduler_debug_info())
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 1
+
+        # Reconcile should fix error
+        reconcile_scheduler_state(
+            python_path="fake path", repository_path="", repository=repository, instance=instance,
+        )
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 0
+
+
+def test_start_schedule_manual_add_debug(
+    restore_cron_tab, snapshot  # pylint:disable=unused-argument,redefined-outer-name
+):
+    with TemporaryDirectory() as tempdir:
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
+        instance = define_scheduler_instance(tempdir)
+
+        # Initialize scheduler
+        reconcile_scheduler_state(
+            python_path="fake path", repository_path="", repository=repository, instance=instance,
+        )
+
+        # Manually add the schedule from to the crontab
+        instance.scheduler._start_cron_job(  # pylint: disable=protected-access
+            instance,
+            repository,
+            instance.get_schedule_by_name(repository, "no_config_pipeline_every_min_schedule"),
+        )
+
+        # Check debug command
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 1
+
+        # Reconcile should fix error
+        reconcile_scheduler_state(
+            python_path="fake path", repository_path="", repository=repository, instance=instance,
+        )
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 0
+
+
+def test_start_schedule_manual_duplicate_schedules_add_debug(
+    restore_cron_tab, snapshot  # pylint:disable=unused-argument,redefined-outer-name
+):
+    with TemporaryDirectory() as tempdir:
+        repository = RepositoryDefinition(name="test_repository", schedule_defs=define_schedules())
+        instance = define_scheduler_instance(tempdir)
+
+        # Initialize scheduler
+        reconcile_scheduler_state(
+            python_path="fake path", repository_path="", repository=repository, instance=instance,
+        )
+
+        instance.start_schedule(repository, "no_config_pipeline_every_min_schedule")
+
+        # Manually add  extra cron tabs
+        instance.scheduler._start_cron_job(  # pylint: disable=protected-access
+            instance,
+            repository,
+            instance.get_schedule_by_name(repository, "no_config_pipeline_every_min_schedule"),
+        )
+        instance.scheduler._start_cron_job(  # pylint: disable=protected-access
+            instance,
+            repository,
+            instance.get_schedule_by_name(repository, "no_config_pipeline_every_min_schedule"),
+        )
+
+        # Check debug command
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 1
+
+        # Reconcile should fix error
+        reconcile_scheduler_state(
+            python_path="fake path", repository_path="", repository=repository, instance=instance,
+        )
+        debug_info = instance.scheduler_debug_info()
+        assert len(debug_info.errors) == 0
 
 
 def test_stop_schedule_fails(

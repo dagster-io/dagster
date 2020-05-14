@@ -402,16 +402,13 @@ class FilesytemTestScheduler(Scheduler):
                 'Use `schedule up` to initialize schedules'.format(name=schedule_name)
             )
 
-        if schedule.status == ScheduleStatus.STOPPED:
-            raise DagsterInvariantViolationError(
-                'You have attempted to stop schedule {name}, but it is already stopped'.format(
-                    name=schedule_name
-                )
-            )
-
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
         instance.update_schedule(repository, stopped_schedule)
         return stopped_schedule
+
+    def is_scheduler_job_running(self, repository_name, schedule_name):
+        # Not currently tested in dagster core
+        return None
 
     def end_schedule(self, instance, repository, schedule_name):
         schedule = instance.get_schedule_by_name(repository, schedule_name)

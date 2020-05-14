@@ -64,10 +64,10 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         self._start_cron_job(instance, repository, started_schedule)
 
         # Check that the schedule made it to the cron tab
-        if not self._verify_cron_job_exists(repository, schedule):
+        if not self.is_scheduler_job_running(repository.name, schedule.name):
             raise DagsterInvariantViolationError(
                 "Attempted to write cron job for schedule {schedule_name}, but failed".format(
-                    schedule_name=schedule_name
+                    schedule_name=schedule.name
                 )
             )
 
@@ -83,20 +83,13 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
                 'Use `schedule up` to initialize schedules'.format(name=schedule_name)
             )
 
-        if schedule.status == ScheduleStatus.STOPPED:
-            raise DagsterInvariantViolationError(
-                'You have attempted to stop schedule {name}, but it is already stopped'.format(
-                    name=schedule_name
-                )
-            )
-
         stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
         self._end_cron_job(instance, repository, stopped_schedule)
 
-        if self._verify_cron_job_exists(repository, schedule):
+        if self.is_scheduler_job_running(repository.name, schedule.name):
             raise DagsterInvariantViolationError(
                 "Attempted to remove cron job for schedule {schedule_name}, but failed. The cron "
-                "job for the schedule is still running".format(schedule_name=schedule_name)
+                "job for the schedule is still running".format(schedule_name=schedule.name)
             )
 
         instance.update_schedule(repository, stopped_schedule)
@@ -147,9 +140,9 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         script_file_name = "{}.{}.sh".format(repository.name, schedule.name)
         return os.path.join(script_directory, script_file_name)
 
-    def _cron_tag_for_schedule(self, repository, schedule):
+    def _cron_tag_for_schedule(self, repository_name, schedule_name):
         return 'dagster-schedule: {repository_name}.{schedule_name}'.format(
-            repository_name=repository.name, schedule_name=schedule.name
+            repository_name=repository_name, schedule_name=schedule_name
         )
 
     def _start_cron_job(self, instance, repository, schedule):
@@ -165,18 +158,21 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         self._cron_tab.write()
 
     def _end_cron_job(self, instance, repository, schedule):
-        self._cron_tab.remove_all(comment=self._cron_tag_for_schedule(repository, schedule))
+        self._cron_tab.remove_all(
+            comment=self._cron_tag_for_schedule(repository.name, schedule.name)
+        )
         self._cron_tab.write()
 
         script_file = self._get_bash_script_file_path(instance, repository, schedule)
         if os.path.isfile(script_file):
             os.remove(script_file)
 
-    def _verify_cron_job_exists(self, repository, schedule):
+    def is_scheduler_job_running(self, repository_name, schedule_name):
         matching_jobs = self._cron_tab.find_comment(
-            self._cron_tag_for_schedule(repository, schedule)
+            self._cron_tag_for_schedule(repository_name, schedule_name)
         )
-        return len(list(matching_jobs)) == 1
+
+        return len(list(matching_jobs))
 
     def get_log_path(self, instance, repository, schedule_name):
         check.inst_param(instance, 'instance', DagsterInstance)

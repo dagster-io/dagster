@@ -381,7 +381,34 @@ def schedule_debug_command():
 
 def execute_debug_command(print_fn):
     instance = DagsterInstance.get()
-    print_fn(instance.scheduler_debug_info())
+
+    debug_info = instance.scheduler_debug_info()
+
+    output = ""
+
+    errors = debug_info.errors
+    if len(errors):
+        title = "Errors"
+        output += "\n{title}\n{sep}\n{info}\n\n".format(
+            title=title, sep="=" * len(title), info="\n".join(debug_info.errors),
+        )
+
+    title = "Scheduler Configuration"
+    output += "{title}\n{sep}\n{info}\n".format(
+        title=title, sep="=" * len(title), info=debug_info.scheduler_config_info,
+    )
+
+    title = "Scheduler Info"
+    output += "{title}\n{sep}\n{info}\n".format(
+        title=title, sep="=" * len(title), info=debug_info.scheduler_info
+    )
+
+    title = "Scheduler Storage Info"
+    output += "\n{title}\n{sep}\n{info}\n".format(
+        title=title, sep="=" * len(title), info="\n".join(debug_info.schedule_storage),
+    )
+
+    print_fn(output)
 
 
 schedule_cli = create_schedule_cli_group()
