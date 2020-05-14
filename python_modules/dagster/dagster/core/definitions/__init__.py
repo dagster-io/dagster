@@ -7,7 +7,6 @@ from .decorators import (
     monthly_schedule,
     pipeline,
     schedule,
-    schedules,
     solid,
     weekly_schedule,
 )
@@ -51,7 +50,7 @@ from .input import InputDefinition, InputMapping
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
-from .partition import Partition, PartitionSetDefinition, repository_partitions
+from .partition import Partition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
 from .reconstructable import reconstructable

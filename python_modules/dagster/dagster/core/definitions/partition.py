@@ -264,37 +264,3 @@ class PartitionScheduleDefinition(ScheduleDefinition):
 
     def get_partition_set(self):
         return self._partition_set
-
-
-class RepositoryPartitionsHandle(namedtuple('_RepositoryPartitionsHandle', ('partition_set_defs'))):
-    def __new__(cls, partition_set_defs):
-        return super(RepositoryPartitionsHandle, cls).__new__(
-            cls,
-            partition_set_defs=check.list_param(
-                partition_set_defs, 'partition_set_defs', PartitionSetDefinition
-            ),
-        )
-
-    def get_partition_sets(self):
-        return self.partition_set_defs
-
-    def get_partition_set(self, name):
-        return next(
-            iter(
-                _partition_set
-                for _partition_set in self.partition_set_defs
-                if _partition_set.name == name
-            ),
-            None,
-        )
-
-
-def repository_partitions(arg=None):
-    ''' Decorator to define the set of partition sets for a repository '''
-    if callable(arg):
-        return RepositoryPartitionsHandle(partition_set_defs=arg())
-
-    def _wrap(fn):
-        return RepositoryPartitionsHandle(partition_set_defs=fn())
-
-    return _wrap

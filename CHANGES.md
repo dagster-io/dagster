@@ -8,7 +8,8 @@
 - The CLI option `--celery-base-priority` is no longer available for the command:
   `dagster pipeline backfill`. Use the tags option to specify the celery priority, (e.g.
   `dagster pipeline backfill my_pipeline --tags '{ "dagster-celery/run_priority": 3 }'`
-- The `ScheduleExecutionContext` no longer has a repository definition available as a property on the context. If you were previously using it in a schedule definition, inline the repository name instead of retrieving it from the schedule execution context. 
+- The `ScheduleExecutionContext` no longer has a repository definition available as a property on the context. If you were previously using it in a schedule definition, inline the repository name instead of retrieving it from the schedule execution context.
+- `@scheduler` and `@repository_partitions` have been removed. Load `ScheduleDefinition`s and `PartitionSetDefinition`s via `RepositoryDefinition` instead.
 
 ## 0.7.13
 

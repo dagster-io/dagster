@@ -6,7 +6,6 @@ from .scheduler import (
     ScheduleTickStatus,
     Scheduler,
     SchedulerDebugInfo,
-    SchedulerHandle,
     get_schedule_change_set,
     reconcile_scheduler_state,
 )
