@@ -1,7 +1,5 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_test_context
-
 LOGGER_QUERY = '''
 {
   pipeline(params: { name: "multi_mode_with_loggers" }) {
@@ -34,8 +32,8 @@ LOGGER_QUERY = '''
 
 # Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
 # as the existing snapshot and then run update snapshot
-def test_mode_fetch_loggers(snapshot):
-    result = execute_dagster_graphql(define_test_context(), LOGGER_QUERY)
+def test_mode_fetch_loggers(graphql_context, snapshot):
+    result = execute_dagster_graphql(graphql_context, LOGGER_QUERY)
 
     assert not result.errors
     assert result.data

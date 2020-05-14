@@ -5,11 +5,7 @@ import pytest
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinPipelineNotFoundError
 from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_graphql_tests.graphql.setup import (
-    define_repository,
-    define_test_context,
-    define_test_snapshot_context,
-)
+from dagster_graphql_tests.graphql.setup import define_repository
 
 from dagster import (
     DependencyDefinition,
@@ -23,6 +19,8 @@ from dagster import (
     input_hydration_config,
     output_materialization_config,
 )
+
+from .production_query import PRODUCTION_QUERY
 
 
 @input_hydration_config(str)
@@ -49,7 +47,7 @@ PoorMansDataFrame = PythonObjectDagsterType(
 )
 
 
-def test_enum_query():
+def test_enum_query(graphql_context):
     ENUM_QUERY = '''{
     environmentSchemaOrError(selector: {name: "pipeline_with_enum_config" } ) {
       ... on EnvironmentSchema {
@@ -69,7 +67,7 @@ def test_enum_query():
   }
   '''
 
-    result = execute_dagster_graphql(define_test_context(), ENUM_QUERY)
+    result = execute_dagster_graphql(graphql_context, ENUM_QUERY)
 
     assert not result.errors
     assert result.data
@@ -133,8 +131,8 @@ fragment innerInfo on ConfigType {
 '''
 
 
-def test_type_rendering():
-    result = execute_dagster_graphql(define_test_context(), TYPE_RENDER_QUERY)
+def test_type_rendering(graphql_context):
+    result = execute_dagster_graphql(graphql_context, TYPE_RENDER_QUERY)
     assert not result.errors
     assert result.data
 
@@ -154,8 +152,8 @@ def define_circular_dependency_pipeline():
     )
 
 
-def test_pipelines():
-    result = execute_dagster_graphql(define_test_context(), '{ pipelines { nodes { name } } }')
+def test_pipelines(graphql_context):
+    result = execute_dagster_graphql(graphql_context, '{ pipelines { nodes { name } } }')
     assert not result.errors
     assert result.data
 
@@ -164,23 +162,9 @@ def test_pipelines():
     }
 
 
-def test_pipelines_or_error():
+def test_pipelines_or_error(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
-        '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
-    )
-    assert not result.errors
-    assert result.data
-
-    assert {p['name'] for p in result.data['pipelinesOrError']['nodes']} == {
-        p.name for p in define_repository().get_all_pipelines()
-    }
-
-
-def test_pipelines_or_error_with_container_context():
-    result = execute_dagster_graphql(
-        define_test_snapshot_context(),
-        '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
+        graphql_context, '{ pipelinesOrError { ... on PipelineConnection { nodes { name } } } } ',
     )
     assert not result.errors
     assert result.data
@@ -196,9 +180,9 @@ def define_test_repository():
     )
 
 
-def test_pipeline_by_name():
+def test_pipeline_by_name(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         '''
     {
         pipeline(params: {name: "csv_hello_world_two"}) {
@@ -212,10 +196,10 @@ def test_pipeline_by_name():
     assert result.data['pipeline']['name'] == 'csv_hello_world_two'
 
 
-def test_pipeline_by_name_not_found():
+def test_pipeline_by_name_not_found(graphql_context):
     with pytest.raises(UserFacingGraphQLError) as exc:
         execute_dagster_graphql(
-            define_test_context(),
+            graphql_context,
             '''
         {
             pipeline(params: {name: "gkjhds"}) {
@@ -227,9 +211,9 @@ def test_pipeline_by_name_not_found():
     assert isinstance(exc.value.dauphin_error, DauphinPipelineNotFoundError)
 
 
-def test_pipeline_or_error_by_name():
+def test_pipeline_or_error_by_name(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         '''
     {
         pipelineOrError(params: { name: "csv_hello_world_two" }) {
@@ -245,9 +229,9 @@ def test_pipeline_or_error_by_name():
     assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
 
 
-def test_pipeline_or_error_by_name_not_found():
+def test_pipeline_or_error_by_name_not_found(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         '''
     {
         pipelineOrError(params: { name: "foobar" }) {
@@ -264,49 +248,8 @@ def test_pipeline_or_error_by_name_not_found():
     assert result.data['pipelineOrError']['__typename'] == 'PipelineNotFoundError'
 
 
-def test_pipeline_or_error_with_container_context():
-    result = execute_dagster_graphql(
-        define_test_snapshot_context(),
-        '''
-        { 
-            pipelineOrError(params: {name: "csv_hello_world_two" }) { 
-                __typename
-                ... on Pipeline {
-                    name
-                }
-            } 
-        }
-        ''',
-    )
-    assert not result.errors
-    assert result.data
-    assert result.data['pipelineOrError']['name'] == 'csv_hello_world_two'
-
-
-def test_pipeline_or_error_with_container_context_preset_empty_ok():
-    result = execute_dagster_graphql(
-        define_test_snapshot_context(),
-        '''
-        { 
-            pipelineOrError(params: {name: "csv_hello_world" }) { 
-                __typename
-                ... on Pipeline {
-                    name
-                    presets {
-                        name
-                    }
-                }
-            } 
-        }
-        ''',
-    )
-    assert not result.errors
-    assert result.data
-    assert result.data['pipelineOrError']['name'] == 'csv_hello_world'
-
-
-def test_production_query(production_query):
-    result = execute_dagster_graphql(define_test_context(), production_query)
+def test_production_query(graphql_context):
+    result = execute_dagster_graphql(graphql_context, PRODUCTION_QUERY)
 
     assert not result.errors
     assert result.data

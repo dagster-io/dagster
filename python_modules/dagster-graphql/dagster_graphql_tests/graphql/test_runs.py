@@ -123,36 +123,37 @@ def _get_runs_data(result, run_id):
     return None
 
 
-def test_get_runs_over_graphql():
-    from .utils import (
-        define_test_context,
-        sync_execute_get_run_log_data,
-    )
+def test_get_runs_over_graphql(graphql_context):
+    # This include needs to be here because its inclusion screws up
+    # other code in this file which reads itself to load a repo
+    from .utils import sync_execute_get_run_log_data
 
     payload_one = sync_execute_get_run_log_data(
-        {
+        context=graphql_context,
+        variables={
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'add_mode',
                 'environmentConfigData': {'resources': {'op': {'config': 2}}},
             }
-        }
+        },
     )
     run_id_one = payload_one['run']['runId']
 
     payload_two = sync_execute_get_run_log_data(
-        {
+        context=graphql_context,
+        variables={
             'executionParams': {
                 'selector': {'name': 'multi_mode_with_resources'},
                 'mode': 'add_mode',
                 'environmentConfigData': {'resources': {'op': {'config': 3}}},
             }
-        }
+        },
     )
 
     run_id_two = payload_two['run']['runId']
 
-    read_context = define_test_context(instance=DagsterInstance.local_temp())
+    read_context = graphql_context
 
     result = execute_dagster_graphql(
         read_context, RUNS_QUERY, variables={'name': 'multi_mode_with_resources'}

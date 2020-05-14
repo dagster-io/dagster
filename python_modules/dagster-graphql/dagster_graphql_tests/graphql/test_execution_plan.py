@@ -4,7 +4,6 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import check
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_store import build_fs_intermediate_store
 from dagster.core.storage.intermediates_manager import IntermediateStoreIntermediatesManager
 from dagster.utils import file_relative_path, merge_dicts
@@ -15,7 +14,6 @@ from .setup import (
     csv_hello_world,
     csv_hello_world_solids_config,
     csv_hello_world_solids_config_fs_storage,
-    define_test_context,
 )
 
 EXECUTION_PLAN_QUERY = '''
@@ -152,14 +150,13 @@ def clean_log_messages(result_data):
     return result_data
 
 
-def test_success_whole_execution_plan(snapshot):
-    instance = DagsterInstance.local_temp()
+def test_success_whole_execution_plan(graphql_context, snapshot):
     environment_dict = csv_hello_world_solids_config_fs_storage()
-    pipeline_run = instance.create_run_for_pipeline(
+    pipeline_run = graphql_context.instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -186,20 +183,22 @@ def test_success_whole_execution_plan(snapshot):
     assert 'sum_sq_solid.compute' in step_events
 
     snapshot.assert_match(clean_log_messages(result.data))
-    store = build_fs_intermediate_store(instance.intermediates_directory, pipeline_run.run_id)
+    store = build_fs_intermediate_store(
+        graphql_context.instance.intermediates_directory, pipeline_run.run_id
+    )
     intermediates_manager = IntermediateStoreIntermediatesManager(store)
     assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_solid.compute'))
     assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
-def test_success_whole_execution_plan_with_filesystem_config(snapshot):
-    instance = DagsterInstance.ephemeral()
+def test_success_whole_execution_plan_with_filesystem_config(graphql_context, snapshot):
+    instance = graphql_context.instance
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'filesystem': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -232,14 +231,14 @@ def test_success_whole_execution_plan_with_filesystem_config(snapshot):
     assert intermediates_manager.has_intermediate(None, StepOutputHandle('sum_sq_solid.compute'))
 
 
-def test_success_whole_execution_plan_with_in_memory_config(snapshot):
-    instance = DagsterInstance.ephemeral()
+def test_success_whole_execution_plan_with_in_memory_config(graphql_context, snapshot):
+    instance = graphql_context.instance
     environment_dict = merge_dicts(csv_hello_world_solids_config(), {'storage': {'in_memory': {}}})
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -274,15 +273,15 @@ def test_success_whole_execution_plan_with_in_memory_config(snapshot):
     )
 
 
-def test_successful_one_part_execute_plan(snapshot):
-    instance = DagsterInstance.ephemeral()
+def test_successful_one_part_execute_plan(graphql_context, snapshot):
+    instance = graphql_context.instance
     environment_dict = csv_hello_world_solids_config_fs_storage()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
 
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -337,14 +336,14 @@ def test_successful_one_part_execute_plan(snapshot):
     )
 
 
-def test_successful_two_part_execute_plan(snapshot):
-    instance = DagsterInstance.local_temp()
+def test_successful_two_part_execute_plan(graphql_context, snapshot):
+    instance = graphql_context.instance
     environment_dict = csv_hello_world_solids_config_fs_storage()
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=environment_dict
     )
     result_one = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -362,7 +361,7 @@ def test_successful_two_part_execute_plan(snapshot):
     snapshot.assert_match(clean_log_messages(result_one.data))
 
     result_two = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -416,9 +415,9 @@ def test_successful_two_part_execute_plan(snapshot):
     )
 
 
-def test_invalid_config_fetch_execute_plan(snapshot):
+def test_invalid_config_fetch_execute_plan(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         EXECUTION_PLAN_QUERY,
         variables={
             'pipeline': {'name': 'csv_hello_world'},
@@ -443,9 +442,9 @@ def test_invalid_config_fetch_execute_plan(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_invalid_config_execute_plan(snapshot):
+def test_invalid_config_execute_plan(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -478,10 +477,10 @@ def test_invalid_config_execute_plan(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_pipeline_not_found_error_execute_plan(snapshot):
+def test_pipeline_not_found_error_execute_plan(graphql_context, snapshot):
 
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         EXECUTE_PLAN_QUERY,
         variables={
             'executionParams': {
@@ -505,7 +504,7 @@ def test_pipeline_not_found_error_execute_plan(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_basic_execute_plan_with_materialization():
+def test_basic_execute_plan_with_materialization(graphql_context):
     with get_temp_file_name() as out_csv_path:
 
         environment_dict = {
@@ -517,10 +516,8 @@ def test_basic_execute_plan_with_materialization():
             }
         }
 
-        instance = DagsterInstance.ephemeral()
-
         result = execute_dagster_graphql(
-            define_test_context(instance=instance),
+            graphql_context,
             EXECUTION_PLAN_QUERY,
             variables={
                 'pipeline': {'name': 'csv_hello_world'},
@@ -535,12 +532,14 @@ def test_basic_execute_plan_with_materialization():
             ['sum_solid.compute', 'sum_sq_solid.compute',]
         )
 
+        instance = graphql_context.instance
+
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=csv_hello_world, environment_dict=environment_dict
         )
 
         result = execute_dagster_graphql(
-            define_test_context(instance=instance),
+            graphql_context,
             EXECUTE_PLAN_QUERY,
             variables={
                 'executionParams': {

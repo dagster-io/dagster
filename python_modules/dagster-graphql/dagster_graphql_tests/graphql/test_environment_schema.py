@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import csv_hello_world_solids_config, define_test_context
+from .setup import csv_hello_world_solids_config
 
 ENVIRONMENT_SCHEMA_QUERY = '''
 query($selector: ExecutionSelector! $mode: String!)
@@ -20,27 +20,27 @@ query($selector: ExecutionSelector! $mode: String!)
 '''
 
 
-def test_successful_environment_schema():
+def test_successful_environment_schema(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'add_mode'},
     )
     assert result.data['environmentSchemaOrError']['__typename'] == 'EnvironmentSchema'
 
 
-def test_environment_schema_pipeline_not_found():
+def test_environment_schema_pipeline_not_found(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'jkdjfkdjfd'}, 'mode': 'add_mode'},
     )
     assert result.data['environmentSchemaOrError']['__typename'] == 'PipelineNotFoundError'
 
 
-def test_environment_schema_solid_not_found():
+def test_environment_schema_solid_not_found(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_QUERY,
         variables={
             'selector': {'name': 'multi_mode_with_resources', 'solidSubset': ['kdjfkdj']},
@@ -50,9 +50,9 @@ def test_environment_schema_solid_not_found():
     assert result.data['environmentSchemaOrError']['__typename'] == 'InvalidSubsetError'
 
 
-def test_environment_schema_mode_not_found():
+def test_environment_schema_mode_not_found(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_QUERY,
         variables={'selector': {'name': 'multi_mode_with_resources'}, 'mode': 'kdjfdk'},
     )
@@ -143,9 +143,9 @@ query PipelineQuery(
 '''
 
 
-def test_basic_valid_config_on_environment_schema(snapshot):
+def test_basic_valid_config_on_environment_schema(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY,
         variables={
             'selector': {'name': 'csv_hello_world'},
@@ -163,9 +163,9 @@ def test_basic_valid_config_on_environment_schema(snapshot):
     snapshot.assert_match(result.data)
 
 
-def test_basic_invalid_config_on_environment_schema(snapshot):
+def test_basic_invalid_config_on_environment_schema(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ENVIRONMENT_SCHEMA_CONFIG_VALIDATION_QUERY,
         variables={
             'selector': {'name': 'csv_hello_world'},

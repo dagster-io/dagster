@@ -28,13 +28,9 @@ query RunQuery($runId: ID!) {
 '''
 
 
-def test_missing():
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml')
-    )
-
+def test_missing(graphql_context):
     result = execute_dagster_graphql(
-        context=context,
+        context=graphql_context,
         query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
         variables={
             'executionParams': {'selector': {'name': 'no_config_pipeline'}, 'mode': 'default'}

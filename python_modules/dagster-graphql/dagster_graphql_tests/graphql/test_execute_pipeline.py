@@ -5,7 +5,7 @@ from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import execute_dagster_graphql
 from graphql import parse
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.utils import make_new_run_id
@@ -21,9 +21,9 @@ from .setup import csv_hello_world, csv_hello_world_solids_config, define_test_c
 from .utils import sync_execute_get_run_log_data
 
 
-def test_basic_start_pipeline_execution():
+def test_basic_start_pipeline_execution(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -43,9 +43,9 @@ def test_basic_start_pipeline_execution():
     assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
 
-def test_basic_start_pipeline_execution_with_preset():
+def test_basic_start_pipeline_execution_with_preset(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {'selector': {'name': 'csv_hello_world'}, 'preset': 'test_inline'}
@@ -61,9 +61,9 @@ def test_basic_start_pipeline_execution_with_preset():
     assert result.data['startPipelineExecution']['run']['pipeline']['name'] == 'csv_hello_world'
 
 
-def test_basic_start_pipeline_execution_with_pipeline_def_tags():
+def test_basic_start_pipeline_execution_with_pipeline_def_tags(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {'selector': {'name': 'hello_world_with_tags'}, 'mode': 'default',},
@@ -83,10 +83,10 @@ def test_basic_start_pipeline_execution_with_pipeline_def_tags():
     )
 
 
-def test_basic_start_pipeline_execution_with_non_existent_preset():
+def test_basic_start_pipeline_execution_with_non_existent_preset(graphql_context):
     with pytest.raises(UserFacingGraphQLError) as exc_info:
         execute_dagster_graphql(
-            define_test_context(),
+            graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -102,11 +102,11 @@ def test_basic_start_pipeline_execution_with_non_existent_preset():
     )
 
 
-def test_basic_start_pipeline_execution_with_preset_failure():
+def test_basic_start_pipeline_execution_with_preset_failure(graphql_context):
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_test_context(),
+            graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -118,7 +118,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_test_context(),
+            graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -131,7 +131,7 @@ def test_basic_start_pipeline_execution_with_preset_failure():
 
     with pytest.raises(check.CheckError):
         execute_dagster_graphql(
-            define_test_context(),
+            graphql_context,
             START_PIPELINE_EXECUTION_QUERY,
             variables={
                 'executionParams': {
@@ -143,9 +143,9 @@ def test_basic_start_pipeline_execution_with_preset_failure():
         )
 
 
-def test_basic_start_pipeline_execution_config_failure():
+def test_basic_start_pipeline_execution_config_failure(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -161,9 +161,9 @@ def test_basic_start_pipeline_execution_config_failure():
     assert result.data['startPipelineExecution']['__typename'] == 'PipelineConfigValidationInvalid'
 
 
-def test_basis_start_pipeline_not_found_error():
+def test_basis_start_pipeline_not_found_error(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -182,8 +182,9 @@ def test_basis_start_pipeline_not_found_error():
     assert result.data['startPipelineExecution']['pipelineName'] == 'sjkdfkdjkf'
 
 
-def test_basic_start_pipeline_execution_and_subscribe():
+def test_basic_start_pipeline_execution_and_subscribe(graphql_context):
     run_logs = sync_execute_get_run_log_data(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
@@ -196,7 +197,7 @@ def test_basic_start_pipeline_execution_and_subscribe():
                 },
                 'mode': 'default',
             }
-        }
+        },
     )
 
     assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
@@ -209,19 +210,20 @@ def test_basic_start_pipeline_execution_and_subscribe():
             # and should be at INFO level
             assert message['level'] == 'DEBUG'
 
-    # skip the first one was we know it is not associatied with a step
+    # skip the first one was we know it is not associated with a step
     for log_message in log_messages[1:]:
         assert log_message['step']['key']
 
 
-def test_subscription_query_error():
+def test_subscription_query_error(graphql_context):
     run_logs = sync_execute_get_run_log_data(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'naughty_programmer_pipeline'},
                 'mode': 'default',
             }
-        }
+        },
     )
 
     assert run_logs['__typename'] == 'PipelineRunLogsSubscriptionSuccess'
@@ -241,11 +243,10 @@ def test_subscription_query_error():
     assert 'bad programmer' in step_run_log_entry['error']['stack'][-1]
 
 
-def test_subscribe_bad_run_id():
-    context = define_test_context()
+def test_subscribe_bad_run_id(graphql_context):
     run_id = 'nope'
     subscription = execute_dagster_graphql(
-        context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
+        graphql_context, parse(SUBSCRIPTION_QUERY), variables={'runId': run_id}
     )
 
     subscribe_results = []
@@ -268,8 +269,9 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
                 return message_data
 
 
-def test_basic_sync_execution_no_config():
+def test_basic_sync_execution_no_config(graphql_context):
     result = sync_execute_get_run_log_data(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'no_config_pipeline'},
@@ -285,8 +287,9 @@ def test_basic_sync_execution_no_config():
     assert not has_event_of_type(logs, 'PipelineFailureEvent')
 
 
-def test_basic_inmemory_sync_execution():
+def test_basic_inmemory_sync_execution(graphql_context):
     result = sync_execute_get_run_log_data(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
@@ -308,8 +311,9 @@ def test_basic_inmemory_sync_execution():
     assert sum_solid_output['step']['key'] == 'sum_solid.compute'
 
 
-def test_basic_filesystem_sync_execution():
+def test_basic_filesystem_sync_execution(graphql_context):
     result = sync_execute_get_run_log_data(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world'},
@@ -357,10 +361,9 @@ def get_step_output_event(logs, step_key, output_name='result'):
     return None
 
 
-def test_basic_start_pipeline_execution_with_tags():
-    instance = DagsterInstance.ephemeral()
+def test_basic_start_pipeline_execution_with_tags(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_EXECUTION_QUERY,
         variables={
             'executionParams': {
@@ -382,14 +385,14 @@ def test_basic_start_pipeline_execution_with_tags():
     assert any([x['key'] == 'dagster/test_key' and x['value'] == 'test_value' for x in run['tags']])
 
     # Check run storage
-    runs_with_tag = instance.get_runs(
+    runs_with_tag = graphql_context.instance.get_runs(
         filters=PipelineRunsFilter(tags={'dagster/test_key': 'test_value'})
     )
     assert len(runs_with_tag) == 1
     assert runs_with_tag[0].run_id == run_id
 
 
-def test_basic_start_pipeline_execution_with_materialization():
+def test_basic_start_pipeline_execution_with_materialization(graphql_context):
 
     with get_temp_file_name() as out_csv_path:
 
@@ -403,13 +406,14 @@ def test_basic_start_pipeline_execution_with_materialization():
         }
 
         run_logs = sync_execute_get_run_log_data(
+            context=graphql_context,
             variables={
                 'executionParams': {
                     'selector': {'name': 'csv_hello_world'},
                     'environmentConfigData': environment_dict,
                     'mode': 'default',
                 }
-            }
+            },
         )
 
         step_mat_event = None
@@ -427,35 +431,42 @@ def test_basic_start_pipeline_execution_with_materialization():
 
 
 def test_start_pipeline_execution_with_start_disabled():
-    instance = DagsterInstance.local_temp(
-        overrides={'dagit': {'execution_manager': {'disabled': True}}}
-    )
-    result = execute_dagster_graphql(
-        define_test_context(instance=instance),
-        START_PIPELINE_EXECUTION_QUERY,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'csv_hello_world'},
-                'environmentConfigData': csv_hello_world_solids_config(),
-                'executionMetadata': {'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]},
-                'mode': 'default',
-            }
-        },
-    )
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(
+            tempdir=temp_dir, overrides={'dagit': {'execution_manager': {'disabled': True}}}
+        )
+        context = define_test_context(instance)
+        result = execute_dagster_graphql(
+            context,
+            START_PIPELINE_EXECUTION_QUERY,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'csv_hello_world'},
+                    'environmentConfigData': csv_hello_world_solids_config(),
+                    'executionMetadata': {
+                        'tags': [{'key': 'dagster/test_key', 'value': 'test_value'}]
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
 
-    assert result.data
-    assert result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunDisabledError'
+        assert result.data
+        assert (
+            result.data['startPipelineExecution']['__typename'] == 'StartPipelineRunDisabledError'
+        )
 
 
-def test_start_pipeline_execution_for_created_run():
-    instance = DagsterInstance.local_temp()
+def test_start_pipeline_execution_for_created_run(graphql_context):
+
+    instance = graphql_context.instance
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=csv_hello_world, environment_dict=csv_hello_world_solids_config()
     )
 
     result = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
         variables={'runId': pipeline_run.run_id},
     )
@@ -466,10 +477,10 @@ def test_start_pipeline_execution_for_created_run():
     )
 
 
-def test_start_pipeline_execution_for_created_run_not_found():
+def test_start_pipeline_execution_for_created_run_not_found(graphql_context):
     run_id = make_new_run_id()
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         START_PIPELINE_EXECUTION_FOR_CREATED_RUN_QUERY,
         variables={'runId': run_id},
     )

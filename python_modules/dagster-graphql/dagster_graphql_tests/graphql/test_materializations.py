@@ -15,16 +15,17 @@ def sanitize(logs):
     return res
 
 
-def test_materializations(snapshot):
+def test_materializations(graphql_context, snapshot):
     logs = sanitize_gql(
         sanitize(
             sync_execute_get_events(
+                context=graphql_context,
                 variables={
                     'executionParams': {
                         'selector': {'name': 'materialization_pipeline'},
                         'mode': 'default',
                     }
-                }
+                },
             )
         )
     )

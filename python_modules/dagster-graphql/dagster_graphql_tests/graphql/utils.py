@@ -1,13 +1,14 @@
 from dagster_graphql.client.query import SUBSCRIPTION_QUERY
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.utils import execute_dagster_graphql
 
+from dagster import check
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.execution.api import execute_run_iterator
-from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 
 from .execution_queries import START_PIPELINE_EXECUTION_QUERY, SUBSCRIPTION_QUERY
-from .setup import define_repository, define_test_context
+from .setup import define_repository
 
 
 class InMemoryRunLauncher(RunLauncher):
@@ -29,6 +30,7 @@ class InMemoryRunLauncher(RunLauncher):
 
 
 def sync_get_all_logs_for_run(context, run_id):
+    check.inst_param(context, 'context', DagsterGraphQLContext)
     subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
     subscribe_results = []
 
@@ -42,12 +44,8 @@ def sync_get_all_logs_for_run(context, run_id):
     return subscribe_result.data
 
 
-def sync_execute_get_payload(variables, context=None):
-    context = (
-        context
-        if context is not None
-        else define_test_context(instance=DagsterInstance.local_temp())
-    )
+def sync_execute_get_payload(variables, context):
+    check.inst_param(context, 'context', DagsterGraphQLContext)
 
     result = execute_dagster_graphql(context, START_PIPELINE_EXECUTION_QUERY, variables=variables)
 
@@ -59,11 +57,13 @@ def sync_execute_get_payload(variables, context=None):
     return sync_get_all_logs_for_run(context, run_id)
 
 
-def sync_execute_get_run_log_data(variables):
-    payload_data = sync_execute_get_payload(variables)
+def sync_execute_get_run_log_data(variables, context):
+    check.inst_param(context, 'context', DagsterGraphQLContext)
+    payload_data = sync_execute_get_payload(variables, context)
     assert payload_data['pipelineRunLogs']
     return payload_data['pipelineRunLogs']
 
 
-def sync_execute_get_events(variables):
-    return sync_execute_get_run_log_data(variables)['messages']
+def sync_execute_get_events(variables, context):
+    check.inst_param(context, 'context', DagsterGraphQLContext)
+    return sync_execute_get_run_log_data(variables, context)['messages']

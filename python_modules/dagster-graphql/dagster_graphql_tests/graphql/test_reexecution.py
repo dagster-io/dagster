@@ -17,11 +17,7 @@ from .execution_queries import (
     START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
     START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
 )
-from .setup import (
-    csv_hello_world_solids_config,
-    csv_hello_world_solids_config_fs_storage,
-    define_test_context,
-)
+from .setup import csv_hello_world_solids_config, csv_hello_world_solids_config_fs_storage
 from .utils import InMemoryRunLauncher
 
 RUN_QUERY = '''
@@ -49,11 +45,10 @@ def sanitize_result_data(result_data):
     return result_data
 
 
-def test_full_pipeline_reexecution_fs_storage(snapshot):
+def test_full_pipeline_reexecution_fs_storage(graphql_context, snapshot):
     run_id = make_new_run_id()
-    instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -73,7 +68,7 @@ def test_full_pipeline_reexecution_fs_storage(snapshot):
     new_run_id = make_new_run_id()
 
     result_two = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -95,11 +90,10 @@ def test_full_pipeline_reexecution_fs_storage(snapshot):
     assert query_result['run']['parentRunId'] == run_id
 
 
-def test_full_pipeline_reexecution_in_memory_storage(snapshot):
+def test_full_pipeline_reexecution_in_memory_storage(graphql_context, snapshot):
     run_id = make_new_run_id()
-    instance = DagsterInstance.ephemeral()
     result_one = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_EXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -119,7 +113,7 @@ def test_full_pipeline_reexecution_in_memory_storage(snapshot):
     new_run_id = make_new_run_id()
 
     result_two = execute_dagster_graphql(
-        define_test_context(instance=instance),
+        graphql_context,
         START_PIPELINE_REEXECUTION_SNAPSHOT_QUERY,
         variables={
             'executionParams': {
@@ -154,82 +148,88 @@ def test_pipeline_reexecution_successful_launch():
             run_launcher=test_queue,
         )
 
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml'), instance=instance
-    )
+        context = define_context_for_repository_yaml(
+            path=file_relative_path(__file__, '../repository.yaml'), instance=instance
+        )
 
-    run_id = make_new_run_id()
-    result = execute_dagster_graphql(
-        context=context,
-        query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'no_config_pipeline'},
-                'environmentConfigData': {'storage': {'filesystem': {}}},
-                'executionMetadata': {'runId': run_id},
-                'mode': 'default',
-            }
-        },
-    )
+        run_id = make_new_run_id()
+        result = execute_dagster_graphql(
+            context=context,
+            query=LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'no_config_pipeline'},
+                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'executionMetadata': {'runId': run_id},
+                    'mode': 'default',
+                }
+            },
+        )
 
-    assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
-    assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
-    test_queue.run_one(instance)
-    result = execute_dagster_graphql(context=context, query=RUN_QUERY, variables={'runId': run_id})
-    assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
-    assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
+        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert result.data['launchPipelineExecution']['run']['status'] == 'NOT_STARTED'
+        test_queue.run_one(instance)
+        result = execute_dagster_graphql(
+            context=context, query=RUN_QUERY, variables={'runId': run_id}
+        )
+        assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
+        assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
 
-    # reexecution
-    new_run_id = make_new_run_id()
-    result = execute_dagster_graphql(
-        context=context,
-        query=LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'no_config_pipeline'},
-                'environmentConfigData': {'storage': {'filesystem': {}}},
-                'executionMetadata': {
-                    'runId': new_run_id,
-                    'rootRunId': run_id,
-                    'parentRunId': run_id,
-                },
-                'mode': 'default',
-            }
-        },
-    )
-    assert result.data['launchPipelineReexecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        # reexecution
+        new_run_id = make_new_run_id()
+        result = execute_dagster_graphql(
+            context=context,
+            query=LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'no_config_pipeline'},
+                    'environmentConfigData': {'storage': {'filesystem': {}}},
+                    'executionMetadata': {
+                        'runId': new_run_id,
+                        'rootRunId': run_id,
+                        'parentRunId': run_id,
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
+        assert result.data['launchPipelineReexecution']['__typename'] == 'LaunchPipelineRunSuccess'
 
-    test_queue.run_one(instance)
+        test_queue.run_one(instance)
 
-    result = execute_dagster_graphql(
-        context=context, query=RUN_QUERY, variables={'runId': new_run_id}
-    )
-    assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
-    assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
+        result = execute_dagster_graphql(
+            context=context, query=RUN_QUERY, variables={'runId': new_run_id}
+        )
+        assert result.data['pipelineRunOrError']['__typename'] == 'PipelineRun'
+        assert result.data['pipelineRunOrError']['status'] == 'SUCCESS'
 
 
 def test_pipeline_reexecution_launcher_missing():
-    context = define_context_for_repository_yaml(
-        path=file_relative_path(__file__, '../repository.yaml')
-    )
+    with seven.TemporaryDirectory() as temp_dir:
+        instance = DagsterInstance.local_temp(temp_dir)
+        context = define_context_for_repository_yaml(
+            instance=instance, path=file_relative_path(__file__, '../repository.yaml')
+        )
 
-    run_id = make_new_run_id()
-    new_run_id = make_new_run_id()
+        run_id = make_new_run_id()
+        new_run_id = make_new_run_id()
 
-    result = execute_dagster_graphql(
-        context=context,
-        query=LAUNCH_PIPELINE_REEXECUTION_MUTATION,
-        variables={
-            'executionParams': {
-                'selector': {'name': 'no_config_pipeline'},
-                'executionMetadata': {
-                    'runId': new_run_id,
-                    'rootRunId': run_id,
-                    'parentRunId': run_id,
-                },
-                'mode': 'default',
-            }
-        },
-    )
+        result = execute_dagster_graphql(
+            context=context,
+            query=LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+            variables={
+                'executionParams': {
+                    'selector': {'name': 'no_config_pipeline'},
+                    'executionMetadata': {
+                        'runId': new_run_id,
+                        'rootRunId': run_id,
+                        'parentRunId': run_id,
+                    },
+                    'mode': 'default',
+                }
+            },
+        )
 
-    assert result.data['launchPipelineReexecution']['__typename'] == 'RunLauncherNotDefinedError'
+        assert (
+            result.data['launchPipelineReexecution']['__typename'] == 'RunLauncherNotDefinedError'
+        )

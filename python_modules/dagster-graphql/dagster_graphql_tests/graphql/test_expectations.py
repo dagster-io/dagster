@@ -41,14 +41,15 @@ def sanitize(res):
     return res
 
 
-def test_basic_expectations_within_compute_step_events(snapshot):
+def test_basic_expectations_within_compute_step_events(graphql_context, snapshot):
     logs = sync_execute_get_events(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'pipeline_with_expectations'},
                 'mode': 'default',
             }
-        }
+        },
     )
 
     emit_failed_expectation_event = get_expectation_result(logs, 'emit_failed_expectation')
@@ -82,8 +83,9 @@ def test_basic_expectations_within_compute_step_events(snapshot):
     )
 
 
-def test_basic_input_output_expectations(snapshot):
+def test_basic_input_output_expectations(graphql_context, snapshot):
     logs = sync_execute_get_events(
+        context=graphql_context,
         variables={
             'executionParams': {
                 'selector': {'name': 'csv_hello_world_with_expectations'},
@@ -96,7 +98,7 @@ def test_basic_input_output_expectations(snapshot):
                 },
                 'mode': 'default',
             }
-        }
+        },
     )
 
     expectation_results = get_expectation_results(logs, 'df_expectations_solid')

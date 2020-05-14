@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
 
-from .setup import csv_hello_world_solids_config, define_test_context
+from .setup import csv_hello_world_solids_config
 
 CONFIG_VALIDATION_QUERY = '''
 query PipelineQuery(
@@ -96,9 +96,9 @@ def find_errors(result, field_stack_to_find, reason):
             yield error_data
 
 
-def execute_config_graphql(pipeline_name, environment_dict, mode):
+def execute_config_graphql(context, pipeline_name, environment_dict, mode):
     return execute_dagster_graphql(
-        define_test_context(),
+        context,
         CONFIG_VALIDATION_QUERY,
         {
             'environmentConfigData': environment_dict,
@@ -108,8 +108,10 @@ def execute_config_graphql(pipeline_name, environment_dict, mode):
     )
 
 
-def test_pipeline_not_found():
-    result = execute_config_graphql(pipeline_name='nope', environment_dict={}, mode='default')
+def test_pipeline_not_found(graphql_context):
+    result = execute_config_graphql(
+        graphql_context, pipeline_name='nope', environment_dict={}, mode='default'
+    )
 
     assert not result.errors
     assert result.data
@@ -117,8 +119,9 @@ def test_pipeline_not_found():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'nope'
 
 
-def test_basic_valid_config():
+def test_basic_valid_config(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict=csv_hello_world_solids_config(),
         mode='default',
@@ -130,8 +133,9 @@ def test_basic_valid_config():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'csv_hello_world'
 
 
-def test_root_field_not_defined():
+def test_root_field_not_defined(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict={
             'solids': {
@@ -154,8 +158,9 @@ def test_root_field_not_defined():
     assert not error['stack']['entries']
 
 
-def test_basic_invalid_not_defined_field():
+def test_basic_invalid_not_defined_field(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict={'solids': {'sum_solid': {'inputs': {'num': 'foo.txt', 'extra': 'nope'}}}},
         mode='default',
@@ -172,8 +177,9 @@ def test_basic_invalid_not_defined_field():
     assert error_data['fieldName'] == 'extra'
 
 
-def test_multiple_not_defined_fields():
+def test_multiple_not_defined_fields(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict={
             'solids': {
@@ -196,9 +202,9 @@ def test_multiple_not_defined_fields():
     assert error_data['fieldNames'] == ['extra_one', 'extra_two']
 
 
-def test_root_wrong_type():
+def test_root_wrong_type(graphql_context):
     result = execute_config_graphql(
-        pipeline_name='csv_hello_world', environment_dict=123, mode='default'
+        graphql_context, pipeline_name='csv_hello_world', environment_dict=123, mode='default'
     )
 
     assert not result.errors
@@ -210,8 +216,9 @@ def test_root_wrong_type():
     assert error_data['reason'] == 'RUNTIME_TYPE_MISMATCH'
 
 
-def test_basic_invalid_config_type_mismatch():
+def test_basic_invalid_config_type_mismatch(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict={'solids': {'sum_solid': {'inputs': {'num': 123}}}},
         mode='default',
@@ -232,8 +239,9 @@ def test_basic_invalid_config_type_mismatch():
     assert ['solids', 'sum_solid', 'inputs', 'num'] == field_stack(error_data)
 
 
-def test_basic_invalid_config_missing_field():
+def test_basic_invalid_config_missing_field(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='csv_hello_world',
         environment_dict={'solids': {'sum_solid': {'inputs': {}}}},
         mode='default',
@@ -251,8 +259,9 @@ def test_basic_invalid_config_missing_field():
     assert error_data['field']['name'] == 'num'
 
 
-def test_mode_resource_config_works():
+def test_mode_resource_config_works(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='multi_mode_with_resources',
         environment_dict={'resources': {'op': {'config': 2}}},
         mode='add_mode',
@@ -264,6 +273,7 @@ def test_mode_resource_config_works():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='multi_mode_with_resources',
         environment_dict={'resources': {'op': {'config': 2}}},
         mode='mult_mode',
@@ -275,6 +285,7 @@ def test_mode_resource_config_works():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='multi_mode_with_resources',
         environment_dict={'resources': {'op': {'config': {'num_one': 2, 'num_two': 3}}}},
         mode='double_adder',
@@ -286,8 +297,9 @@ def test_mode_resource_config_works():
     assert result.data['isPipelineConfigValid']['pipelineName'] == 'multi_mode_with_resources'
 
 
-def test_missing_resource():
+def test_missing_resource(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='multi_mode_with_resources',
         environment_dict={'resources': {}},
         mode='add_mode',
@@ -301,8 +313,9 @@ def test_missing_resource():
     assert error_data['field']['name'] == 'op'
 
 
-def test_undefined_resource():
+def test_undefined_resource(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='multi_mode_with_resources',
         environment_dict={'resources': {'nope': {}}},
         mode='add_mode',
@@ -316,8 +329,9 @@ def test_undefined_resource():
     }
 
 
-def test_more_complicated_works():
+def test_more_complicated_works(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='more_complicated_nested_config',
         environment_dict={
             'solids': {
@@ -341,9 +355,10 @@ def test_more_complicated_works():
     assert valid_data['pipelineName'] == 'more_complicated_nested_config'
 
 
-def test_multiple_missing_fields():
+def test_multiple_missing_fields(graphql_context):
 
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='more_complicated_nested_config',
         environment_dict={'solids': {'a_solid_with_multilayered_config': {'config': {}}}},
         mode='default',
@@ -362,8 +377,9 @@ def test_multiple_missing_fields():
     assert field_stack(error_data) == ['solids', 'a_solid_with_multilayered_config', 'config']
 
 
-def test_more_complicated_multiple_errors():
+def test_more_complicated_multiple_errors(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='more_complicated_nested_config',
         environment_dict={
             'solids': {
@@ -440,8 +456,9 @@ def test_more_complicated_multiple_errors():
     # TODO: two more errors
 
 
-def test_config_list():
+def test_config_list(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='pipeline_with_list',
         environment_dict={'solids': {'solid_with_list': {'config': [1, 2]}}},
         mode='default',
@@ -454,8 +471,9 @@ def test_config_list():
     assert valid_data['pipelineName'] == 'pipeline_with_list'
 
 
-def test_config_list_invalid():
+def test_config_list_invalid(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='pipeline_with_list',
         environment_dict={'solids': {'solid_with_list': {'config': 'foo'}}},
         mode='default',
@@ -470,8 +488,9 @@ def test_config_list_invalid():
     assert ['solids', 'solid_with_list', 'config'] == field_stack(valid_data['errors'][0])
 
 
-def test_config_list_item_invalid():
+def test_config_list_item_invalid(graphql_context):
     result = execute_config_graphql(
+        graphql_context,
         pipeline_name='pipeline_with_list',
         environment_dict={'solids': {'solid_with_list': {'config': [1, 'foo']}}},
         mode='default',
@@ -515,9 +534,9 @@ def has_config_type(config_types_data, name):
     return False
 
 
-def test_smoke_test_config_type_system():
+def test_smoke_test_config_type_system(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         ALL_CONFIG_TYPES_QUERY,
         {'pipelineName': 'more_complicated_nested_config', 'mode': 'default'},
     )

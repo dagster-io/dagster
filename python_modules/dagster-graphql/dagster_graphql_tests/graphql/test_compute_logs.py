@@ -2,7 +2,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster.core.instance import DagsterInstance
 
-from .utils import define_test_context, sync_execute_get_run_log_data
+from .setup import define_test_context
+from .utils import sync_execute_get_run_log_data
 
 COMPUTE_LOGS_QUERY = '''
   query ComputeLogsQuery($runId: ID!, $stepKey: String!) {
@@ -28,28 +29,30 @@ COMPUTE_LOGS_SUBSCRIPTION = '''
 
 
 def test_get_compute_logs_over_graphql(snapshot):
+    context = define_test_context(instance=DagsterInstance.local_temp())
     payload = sync_execute_get_run_log_data(
-        {'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}}
+        context=context,
+        variables={'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}},
     )
     run_id = payload['run']['runId']
 
     result = execute_dagster_graphql(
-        define_test_context(instance=DagsterInstance.local_temp()),
-        COMPUTE_LOGS_QUERY,
-        variables={'runId': run_id, 'stepKey': 'spew.compute'},
+        context, COMPUTE_LOGS_QUERY, variables={'runId': run_id, 'stepKey': 'spew.compute'},
     )
     compute_logs = result.data['pipelineRunOrError']['computeLogs']
     snapshot.assert_match(compute_logs)
 
 
 def test_compute_logs_subscription_graphql(snapshot):
+    context = define_test_context(instance=DagsterInstance.local_temp())
     payload = sync_execute_get_run_log_data(
-        {'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}}
+        context=context,
+        variables={'executionParams': {'selector': {'name': 'spew_pipeline'}, 'mode': 'default'}},
     )
     run_id = payload['run']['runId']
 
     subscription = execute_dagster_graphql(
-        define_test_context(instance=DagsterInstance.local_temp()),
+        context,
         COMPUTE_LOGS_SUBSCRIPTION,
         variables={'runId': run_id, 'stepKey': 'spew.compute', 'ioType': 'STDOUT', 'cursor': '0'},
     )

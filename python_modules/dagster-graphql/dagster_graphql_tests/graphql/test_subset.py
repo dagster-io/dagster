@@ -2,8 +2,6 @@ import re
 
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_test_context
-
 SCHEMA_OR_ERROR_SUBSET_QUERY = '''
 query EnvironmentQuery($pipelineName: String!, $solidSubset: [String!]){
     environmentSchemaOrError(selector :{ name: $pipelineName, solidSubset: $solidSubset}) {
@@ -47,9 +45,9 @@ def types_dict_of_result(subset_result, top_key):
     }
 
 
-def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name():
+def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         SCHEMA_OR_ERROR_SUBSET_QUERY,
         {'pipelineName': 'csv_hello_world', 'solidSubset': ['nope']},
     )
@@ -60,9 +58,9 @@ def test_csv_hello_world_pipeline_or_error_subset_wrong_solid_name():
     assert '"nope" does not exist' in result.data['environmentSchemaOrError']['message']
 
 
-def test_pipeline_with_invalid_definition_error():
+def test_pipeline_with_invalid_definition_error(graphql_context):
     result = execute_dagster_graphql(
-        define_test_context(),
+        graphql_context,
         SCHEMA_OR_ERROR_SUBSET_QUERY,
         {'pipelineName': 'pipeline_with_invalid_definition_error', 'solidSubset': ['fail_subset'],},
     )

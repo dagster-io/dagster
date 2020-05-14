@@ -1,7 +1,5 @@
 from dagster_graphql.test.utils import execute_dagster_graphql
 
-from .setup import define_test_context
-
 RESOURCE_QUERY = '''
 {
   pipeline(params: { name: "multi_mode_with_resources" }) {
@@ -47,8 +45,8 @@ REQUIRED_RESOURCE_QUERY = '''{
 '''
 
 
-def test_mode_fetch_resources(snapshot):
-    result = execute_dagster_graphql(define_test_context(), RESOURCE_QUERY)
+def test_mode_fetch_resources(graphql_context, snapshot):
+    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data
@@ -62,8 +60,8 @@ def test_mode_fetch_resources(snapshot):
 
 # Warning: If _compute_fields_hash changes, verify that the result.data has the same shape/keys/values
 # as the existing snapshot and then run update snapshot
-def test_required_resources(snapshot):
-    result = execute_dagster_graphql(define_test_context(), REQUIRED_RESOURCE_QUERY)
+def test_required_resources(graphql_context, snapshot):
+    result = execute_dagster_graphql(graphql_context, REQUIRED_RESOURCE_QUERY)
 
     assert not result.errors
     assert result.data

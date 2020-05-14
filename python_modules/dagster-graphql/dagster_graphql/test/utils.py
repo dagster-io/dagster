@@ -6,6 +6,7 @@ from dagster_graphql.implementation.pipeline_execution_manager import (
 from dagster_graphql.schema import create_schema
 from graphql import graphql
 
+from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 
@@ -31,25 +32,28 @@ def execute_dagster_graphql(context, query, variables=None):
     return result
 
 
-def define_context_for_file(python_file, fn_name, instance=None):
+def define_context_for_file(python_file, fn_name, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLInProcessRepositoryContext(
         recon_repo=ReconstructableRepository.for_file(python_file, fn_name),
-        instance=instance or DagsterInstance.ephemeral(),
+        instance=instance,
         execution_manager=SynchronousExecutionManager(),
     )
 
 
-def define_subprocess_context_for_file(python_file, fn_name, instance=None):
+def define_subprocess_context_for_file(python_file, fn_name, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLInProcessRepositoryContext(
         recon_repo=ReconstructableRepository.for_file(python_file, fn_name),
-        instance=instance or DagsterInstance.ephemeral(),
+        instance=instance,
         execution_manager=SubprocessExecutionManager(instance),
     )
 
 
-def define_context_for_repository_yaml(path, instance=None):
+def define_context_for_repository_yaml(path, instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
     return DagsterGraphQLInProcessRepositoryContext(
         recon_repo=ReconstructableRepository.from_yaml(path),
-        instance=instance or DagsterInstance.ephemeral(),
+        instance=instance,
         execution_manager=SynchronousExecutionManager(),
     )

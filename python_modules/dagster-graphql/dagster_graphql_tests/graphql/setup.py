@@ -33,6 +33,7 @@ from dagster import (
     RepositoryDefinition,
     ScheduleDefinition,
     String,
+    check,
     composite_solid,
     daily_schedule,
     hourly_schedule,
@@ -79,10 +80,12 @@ PoorMansDataFrame = PythonObjectDagsterType(
 
 
 def define_test_subprocess_context(instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
     return define_subprocess_context_for_file(__file__, "define_repository", instance)
 
 
-def define_test_context(instance=None):
+def define_test_context(instance):
+    check.inst_param(instance, 'instance', DagsterInstance)
     return define_context_for_file(__file__, "define_repository", instance)
 
 
