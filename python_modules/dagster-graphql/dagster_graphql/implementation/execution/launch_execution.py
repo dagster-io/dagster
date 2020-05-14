@@ -55,7 +55,9 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
 
     ensure_valid_config(external_pipeline, execution_params.mode, execution_params.environment_dict)
 
-    step_keys_to_execute = compute_step_keys_to_execute(graphene_info, execution_params)
+    step_keys_to_execute = compute_step_keys_to_execute(
+        graphene_info, external_pipeline, execution_params
+    )
 
     external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info=graphene_info,

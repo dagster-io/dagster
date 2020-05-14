@@ -2,21 +2,21 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.events import DagsterEventType
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 
+from .external import get_external_execution_plan_or_raise
 from .utils import ExecutionParams
 
 
 def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id):
     check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(execution_plan, 'execution_plan', ExternalExecutionPlan)
     check.opt_str_param(parent_run_id, 'parent_run_id')
 
     if not parent_run_id:
-        return execution_plan.step_keys_to_execute
+        return execution_plan.step_keys_in_plan
 
     parent_run = instance.get_run_by_id(parent_run_id)
     parent_run_logs = instance.all_logs(parent_run_id)
@@ -56,23 +56,24 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
     return to_retry
 
 
-def compute_step_keys_to_execute(graphene_info, execution_params):
+def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_params):
     check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
+    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
     check.inst_param(execution_params, 'execution_params', ExecutionParams)
-
-    from .fetch_pipelines import get_reconstructable_pipeline_from_selector
 
     instance = graphene_info.context.instance
 
-    pipeline = get_reconstructable_pipeline_from_selector(graphene_info, execution_params.selector)
-
     if not execution_params.step_keys and is_resume_retry(execution_params):
         # Get step keys from parent_run_id if it's a resume/retry
-        execution_plan = create_execution_plan(
-            pipeline, execution_params.environment_dict, mode=execution_params.mode,
+        external_execution_plan = get_external_execution_plan_or_raise(
+            graphene_info=graphene_info,
+            external_pipeline=external_pipeline,
+            mode=execution_params.mode,
+            environment_dict=execution_params.environment_dict,
+            step_keys_to_execute=None,
         )
         return get_retry_steps_from_execution_plan(
-            instance, execution_plan, execution_params.execution_metadata.parent_run_id
+            instance, external_execution_plan, execution_params.execution_metadata.parent_run_id
         )
     else:
         return execution_params.step_keys

@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 from dagster import check
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
+from dagster.core.utils import toposort
 
 from .external_data import (
     ExternalPipelineData,
@@ -167,6 +168,14 @@ class ExternalExecutionPlan:
             else set(self._step_index.keys())
         )
 
+        self._deps = None
+        self._topological_steps = None
+        self._topological_step_levels = None
+
+    @property
+    def step_keys_in_plan(self):
+        return list(self._step_keys_in_plan)
+
     def has_step(self, key):
         check.str_param(key, 'key')
         return key in self._step_index
@@ -180,3 +189,44 @@ class ExternalExecutionPlan:
 
     def key_in_plan(self, key):
         return key in self._step_keys_in_plan
+
+    # Everything below this line is a near-copy of the equivalent methods on
+    # ExecutionPlan. We should resolve this, probably eventually by using the
+    # snapshots to support the existing ExecutionPlan methods.
+    # https://github.com/dagster-io/dagster/issues/2462
+    def execution_deps(self):
+        if self._deps is None:
+            deps = OrderedDict()
+
+            for key in self._step_keys_in_plan:
+                deps[key] = set()
+
+            for key in self._step_keys_in_plan:
+                step = self._step_index[key]
+                for step_input in step.inputs:
+                    deps[step.key].update(
+                        {
+                            output_handle.step_key
+                            for output_handle in step_input.upstream_output_handles
+                        }.intersection(self._step_keys_in_plan)
+                    )
+            self._deps = deps
+
+        return self._deps
+
+    def topological_steps(self):
+        if self._topological_steps is None:
+            self._topological_steps = [
+                step for step_level in self.topological_step_levels() for step in step_level
+            ]
+
+        return self._topological_steps
+
+    def topological_step_levels(self):
+        if self._topological_step_levels is None:
+            self._topological_step_levels = [
+                [self._step_index[step_key] for step_key in sorted(step_key_level)]
+                for step_key_level in toposort(self.execution_deps())
+            ]
+
+        return self._topological_step_levels
