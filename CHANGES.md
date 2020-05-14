@@ -10,6 +10,9 @@
 
 - Fixes a bug where using solid subsets when launching pipeline runs would fail config validation.
 - (dagster-gcp) allow multiple "bq_solid_for_queries" solids to co-exist in a pipeline
+- Improve scheduler state reconciliation with dagster-cron scheduler. `dagster schedule` debug comamnd will display
+  issues related to missing crob jobs, extraneous cron jobs, and duplicate cron jobs. Running
+  `dagster schedule up` will fix any issues.
 
 **New**
 

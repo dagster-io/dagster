@@ -56,6 +56,19 @@ def get_schedule_change_set(old_schedules, new_schedule_defs):
     return changeset
 
 
+class SchedulerDebugInfo(
+    namedtuple('SchedulerDebugInfo', 'errors scheduler_config_info scheduler_info schedule_storage')
+):
+    def __new__(cls, errors, scheduler_config_info, scheduler_info, schedule_storage):
+        return super(SchedulerDebugInfo, cls).__new__(
+            cls,
+            errors=check.list_param(errors, 'errors', of_type=str),
+            scheduler_config_info=check.str_param(scheduler_config_info, 'scheduler_config_info'),
+            scheduler_info=check.str_param(scheduler_info, 'scheduler_info'),
+            schedule_storage=check.list_param(schedule_storage, 'schedule_storage', of_type=str),
+        )
+
+
 class SchedulerHandle(object):
     def __init__(
         self, schedule_defs,
@@ -119,6 +132,9 @@ def reconcile_scheduler_state(python_path, repository_path, repository, instance
             instance.stop_schedule(repository, schedule.name)
             instance.start_schedule(repository, schedule.name)
 
+        if schedule.status == ScheduleStatus.STOPPED:
+            instance.stop_schedule(repository, schedule.name)
+
     for schedule_name in schedule_names_to_delete:
         instance.end_schedule(repository, schedule_name)
 
@@ -155,6 +171,15 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         Args:
             schedule_name (string): The schedule to end and delete
+        '''
+
+    @abc.abstractmethod
+    def is_scheduler_job_running(self, repository_name, schedule_name):
+        '''Resume a pipeline schedule.
+
+        Args:
+            repository_name (string): The repository the schedule belongs to
+            schedule_name (string): The name of the schedule to check
         '''
 
     @abc.abstractmethod
