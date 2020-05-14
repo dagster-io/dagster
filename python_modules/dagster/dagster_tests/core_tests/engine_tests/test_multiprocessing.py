@@ -227,3 +227,25 @@ def test_separate_sub_dags():
 
     # the writer and waiter my finish in different orders so just ensure the proceeding chain
     assert order[0:3] == ['noop_1', 'noop_2', 'noop_3']
+
+
+def test_ephemeral_event_log():
+    pipe = reconstructable(define_diamond_pipeline)
+    # override event log to in memory
+    instance = DagsterInstance.local_temp(
+        overrides={
+            'event_log_storage': {
+                'module': 'dagster.core.storage.event_log',
+                'class': 'InMemoryEventLogStorage',
+            }
+        }
+    )
+
+    result = execute_pipeline(
+        pipe,
+        environment_dict={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        instance=instance,
+    )
+    assert result.success
+
+    assert result.result_for_solid('adder').output_value() == 11

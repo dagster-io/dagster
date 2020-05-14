@@ -42,7 +42,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
           class: SqliteRunStorage
           config:
             base_dir: /path/to/dir
-    
+
     The ``base_dir`` param tells the run storage where on disk to store the database.
     '''
 
