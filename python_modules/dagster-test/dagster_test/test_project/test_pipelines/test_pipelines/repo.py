@@ -21,6 +21,20 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.test_utils import nesting_composite_pipeline
+
+
+def celery_mode_defs():
+    from dagster_celery import celery_executor
+    from dagster_celery.executor_k8s import celery_k8s_job_executor
+
+    return [
+        ModeDefinition(
+            system_storage_defs=s3_plus_default_storage_defs,
+            resource_defs={'s3': s3_resource},
+            executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
+        )
+    ]
 
 
 @solid(input_defs=[InputDefinition('word', String)], config={'factor': Int})
@@ -53,18 +67,7 @@ def demo_pipeline():
 
 
 def define_demo_pipeline_celery():
-    from dagster_celery import celery_executor
-    from dagster_celery.executor_k8s import celery_k8s_job_executor
-
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs,
-                resource_defs={'s3': s3_resource},
-                executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
-            )
-        ]
-    )
+    @pipeline(mode_defs=celery_mode_defs())
     def demo_pipeline_celery():
         count_letters(multiply_the_word())
 
@@ -118,9 +121,6 @@ def optional_outputs():
 
 
 def define_long_running_pipeline_celery():
-    from dagster_celery import celery_executor
-    from dagster_celery.executor_k8s import celery_k8s_job_executor
-
     @solid
     def long_running_task(context):
         iterations = 20 * 30  # 20 minutes
@@ -142,21 +142,19 @@ def define_long_running_pipeline_celery():
             )
             time.sleep(60)
 
-    @pipeline(
-        mode_defs=[
-            ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs,
-                resource_defs={'s3': s3_resource},
-                executor_defs=default_executors + [celery_executor, celery_k8s_job_executor],
-            )
-        ]
-    )
+    @pipeline(mode_defs=celery_mode_defs())
     def long_running_pipeline_celery():
         for i in range(10):
             t = long_running_task.alias('first_%d' % i)()
             post_process.alias('post_process_%d' % i)(t)
 
     return long_running_pipeline_celery
+
+
+def define_large_pipeline_celery():
+    return nesting_composite_pipeline(
+        depth=1, num_children=10, mode_defs=celery_mode_defs(), name='large_pipeline_celery'
+    )
 
 
 def define_demo_execution_repo():
@@ -166,6 +164,7 @@ def define_demo_execution_repo():
         name='demo_execution_repo',
         pipeline_dict={
             'demo_pipeline_celery': define_demo_pipeline_celery,
+            'large_pipeline_celery': define_large_pipeline_celery,
             'long_running_pipeline_celery': define_long_running_pipeline_celery,
         },
         pipeline_defs=[demo_pipeline, demo_pipeline_gcs, demo_error_pipeline, optional_outputs,],

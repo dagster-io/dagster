@@ -42,13 +42,13 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
         merge_yamls(
             [
                 os.path.join(test_project_environments_path(), 'env.yaml'),
-                os.path.join(test_project_environments_path(), 'env_filesystem.yaml'),
+                os.path.join(test_project_environments_path(), 'env_s3.yaml'),
             ]
         ),
         get_celery_engine_config(),
     )
 
-    assert 'celery' in environment_dict['execution']
+    assert 'celery-k8s' in environment_dict['execution']
 
     pipeline_name = 'demo_pipeline_celery'
     tags = {'key': 'value'}
@@ -63,7 +63,6 @@ def test_k8s_run_launcher_celery(dagster_instance, helm_namespace):
 
     assert not result.get('errors')
     assert result['data']
-    # This is  not an ideal test but proves that we got celery configured properly.
     assert (
         result['data']['startPipelineExecutionForCreatedRun']['__typename']
         == 'StartPipelineRunSuccess'
