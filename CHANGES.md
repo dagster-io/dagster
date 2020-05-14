@@ -6,11 +6,28 @@
 
 - `Path` is no longer as built-in dagster type.
 
-## 0.7.13 (Upcoming)
+## 0.7.13
 
 **Breaking Changes**
 
 - `dagster pipeline backfill` command no longer takes a `mode` flag. Instead, it uses the mode specified on the `PartitionSetDefinition`. Similarly, the runs created from the backfill also use the `solid_subset` specified on the `PartitionSetDefinition`
+
+**BugFix**
+
+- Fixes a bug where using solid subsets when launching pipeline runs would fail config validation.
+- (dagster-gcp) allow multiple "bq_solid_for_queries" solids to co-exist in a pipeline
+- Improve scheduler state reconciliation with dagster-cron scheduler. `dagster schedule` debug comamnd will display
+  issues related to missing crob jobs, extraneous cron jobs, and duplicate cron jobs. Running
+  `dagster schedule up` will fix any issues.
+
+**New**
+
+- The dagster-airflow package now supports loading Airflow dags without depending on initialized
+  Airflow db
+- Improvements to the longitudinal partitioned schedule view, including live updates, run filtering,
+  and better default states.
+- Added user warning for dagster library packages that are out of sync with the core `dagster`
+  package.
 
 ## 0.7.12 (Latest)
 
