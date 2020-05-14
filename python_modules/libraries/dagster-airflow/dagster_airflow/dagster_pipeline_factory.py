@@ -34,14 +34,15 @@ class DagsterAirflowError(Exception):
     pass
 
 
-def contains_duplicate_task_names(dag_bag):
+def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
     check.inst_param(dag_bag, 'dag_bag', DagBag)
+    check.bool_param(refresh_from_airflow_db, 'refresh_from_airflow_db')
     seen_task_names = set()
 
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
     for dag_id in sorted_dag_ids:
-        dag = dag_bag.get_dag(dag_id)
+        dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
         for task in dag.tasks:
             if task.task_id in seen_task_names:
                 return True
@@ -84,7 +85,7 @@ def make_dagster_repo_from_airflow_dag_bag(
     check.bool_param(refresh_from_airflow_db, 'refresh_from_airflow_db')
     check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
 
-    use_unique_id = contains_duplicate_task_names(dag_bag)
+    use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
 
     pipeline_defs = []
     count = 0
