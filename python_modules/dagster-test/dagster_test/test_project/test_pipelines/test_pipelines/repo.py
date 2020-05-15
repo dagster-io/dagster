@@ -153,7 +153,7 @@ def define_long_running_pipeline_celery():
 
 def define_large_pipeline_celery():
     return nesting_composite_pipeline(
-        depth=1, num_children=10, mode_defs=celery_mode_defs(), name='large_pipeline_celery'
+        depth=1, num_children=6, mode_defs=celery_mode_defs(), name='large_pipeline_celery'
     )
 
 
