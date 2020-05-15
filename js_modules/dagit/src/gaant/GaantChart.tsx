@@ -10,7 +10,11 @@ import { GaantChartTimescale } from "./GaantChartTimescale";
 import { RunFragment } from "../runs/types/RunFragment";
 import { GraphQueryInput } from "../GraphQueryInput";
 import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
-import { IRunMetadataDict, EMPTY_RUN_METADATA } from "../RunMetadataProvider";
+import {
+  IRunMetadataDict,
+  EMPTY_RUN_METADATA,
+  IStepMetadata
+} from "../RunMetadataProvider";
 import {
   buildLayout,
   boxStyleFor,
@@ -120,7 +124,8 @@ export const toGraphQueryItems = weakmapMemoize(
 );
 
 interface GaantChartProps {
-  selectedStep: string | null;
+  selectedSteps: string[];
+  query: string;
   plan: GaantChartExecutionPlanFragment;
   options?: Partial<GaantChartLayoutOptions>;
   metadata?: IRunMetadataDict;
@@ -128,12 +133,13 @@ interface GaantChartProps {
   toolbarLeftActions?: React.ReactChild;
   run?: RunFragment;
 
-  onApplyStepFilter?: (step: string) => void;
+  onClickStep: (step: string) => void;
+  setSelectedSteps: (steps: string[]) => void;
+  setQuery: (value: string) => void;
 }
 
 interface GaantChartState {
   options: GaantChartLayoutOptions;
-  query: string;
 }
 
 export class GaantChart extends React.Component<
@@ -173,7 +179,6 @@ export class GaantChart extends React.Component<
     super(props);
 
     this.state = {
-      query: "*",
       options: {
         ...DEFAULT_OPTIONS,
         ...props.options
@@ -201,26 +206,36 @@ export class GaantChart extends React.Component<
   };
 
   onUpdateQuery = (query: string) => {
-    this.setState({ query });
+    // update query
+    this.props.setQuery(query || "*");
+
+    // update selectedSteps
+    let currSelectedSteps: string[] = [];
+    if (query !== "*" && query) {
+      const graph = toGraphQueryItems(this.props.plan);
+      const graphFiltered = filterByQuery(graph, query);
+      currSelectedSteps = graphFiltered.all.map(node => node.name);
+    }
+    this.props.setSelectedSteps(currSelectedSteps);
   };
 
   onDoubleClickStep = (stepKey: string) => {
     const query = `*${stepKey}*`;
-    this.setState({ query: this.state.query !== query ? query : "*" });
+    this.onUpdateQuery(this.props.query !== query ? query : "*");
   };
 
   render() {
-    const { plan } = this.props;
-    const { query, options } = this.state;
+    const { plan, query } = this.props;
+    const { options } = this.state;
 
     const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, query);
 
     const layout = this.getLayout({
-      nodes: graphFiltered.all,
+      nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
       mode: options.mode
     });
-
+    console.log(options);
     return (
       <GaantChartContainer>
         <OptionsContainer>
@@ -261,6 +276,11 @@ export class GaantChart extends React.Component<
           graph={graph}
           onUpdateQuery={this.onUpdateQuery}
           onDoubleClickStep={this.onDoubleClickStep}
+          onChange={() =>
+            this.updateOptions({
+              hideUnselectedSteps: !options.hideUnselectedSteps
+            })
+          }
         />
       </GaantChartContainer>
     );
@@ -272,6 +292,7 @@ type GaantChartInnerProps = GaantChartProps &
     layout: GaantChartLayout;
     onUpdateQuery: (value: string) => void;
     onDoubleClickStep: (stepName: string) => void;
+    onChange: () => void;
   };
 
 interface TooltipState {
@@ -286,7 +307,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
   const [tooltip, setTooltip] = React.useState<TooltipState | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
-  const { options, metadata } = props;
+  const { options, metadata, selectedSteps } = props;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -354,7 +375,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   };
 
   React.useEffect(() => {
-    const node = layout.boxes.find(b => b.node.name === props.selectedStep);
+    const node = layout.boxes.find(b => selectedSteps.includes(b.node.name));
     if (!node) {
       return;
     }
@@ -362,7 +383,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     const x = (bounds.maxX + bounds.minX) / 2 - viewport.width / 2;
     const y = (bounds.maxY + bounds.minY) / 2 - viewport.height / 2;
     onMoveToViewport({ left: x, top: y }, true);
-  }, [props.selectedStep]); // eslint-disable-line
+  }, [selectedSteps]); // eslint-disable-line
 
   const onUpdateTooltip = (e: React.MouseEvent<any>) => {
     if (!(e.target instanceof HTMLElement)) return;
@@ -387,10 +408,17 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const highlightedMs: number[] = [];
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
-  } else if (props.selectedStep) {
-    const meta = metadata?.steps[props.selectedStep];
-    meta && meta.start && highlightedMs.push(meta.start);
-    meta && meta.end && highlightedMs.push(meta.end);
+  } else if (selectedSteps.length > 0) {
+    const selectedMeta = selectedSteps
+      .map(selectedStep => metadata?.steps[selectedStep])
+      .filter((x): x is IStepMetadata => x !== undefined);
+    const sortedSelectedSteps = selectedMeta.sort((a, b) =>
+      a.start && b.start ? a.start - b.start : 0
+    );
+    const firstMeta = sortedSelectedSteps[0];
+    const lastMeta = sortedSelectedSteps[sortedSelectedSteps.length - 1];
+    if (firstMeta?.start) highlightedMs.push(firstMeta.start);
+    if (lastMeta?.end) highlightedMs.push(lastMeta.end);
   }
 
   const content = (
@@ -416,10 +444,10 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
             metadata={metadata || EMPTY_RUN_METADATA}
             layout={layout}
             hoveredStep={hoveredStep}
-            focusedStep={props.selectedStep}
+            focusedSteps={selectedSteps}
             viewport={viewport}
             setHoveredNodeName={setHoveredNodeName}
-            onApplyStepFilter={props.onApplyStepFilter}
+            onClickStep={props.onClickStep}
             onDoubleClickStep={props.onDoubleClickStep}
           />
         </div>
@@ -439,6 +467,14 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           presets={
             metadata ? interestingQueriesFor(metadata, layout) : undefined
           }
+          className={selectedSteps.length > 0 ? "has-step" : ""}
+        />
+        <Checkbox
+          checked={options.hideUnselectedSteps}
+          label="Hide unselected steps"
+          onChange={props.onChange}
+          inline={true}
+          style={{ marginLeft: 5 }}
         />
       </GraphQueryInputContainer>
     </>
@@ -469,11 +505,11 @@ interface GaantChartViewportContentsProps {
   metadata: IRunMetadataDict;
   layout: GaantChartLayout;
   hoveredStep: string | null;
-  focusedStep: string | null;
+  focusedSteps: string[];
   viewport: GaantViewport;
   setHoveredNodeName: (name: string | null) => void;
   onDoubleClickStep: (step: string) => void;
-  onApplyStepFilter?: (step: string) => void;
+  onClickStep: (step: string) => void;
 }
 
 const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
@@ -481,7 +517,7 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     viewport,
     layout,
     hoveredStep,
-    focusedStep,
+    focusedSteps,
     metadata,
     options
   } = props;
@@ -510,8 +546,10 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         items.push(
           <GaantLine
             darkened={
-              (focusedStep || hoveredStep) === box.node.name ||
-              (focusedStep || hoveredStep) === child.node.name
+              (focusedSteps?.includes(box.node.name) || hoveredStep) ===
+                box.node.name ||
+              (focusedSteps?.includes(child.node.name) || hoveredStep) ===
+                child.node.name
             }
             dotted={childNotDrawn || childWaiting}
             key={`${box.key}-${child.key}-${childIdx}`}
@@ -537,14 +575,14 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         data-tooltip-text={
           box.width < box.node.name.length * 5 ? box.node.name : undefined
         }
-        onClick={() => props.onApplyStepFilter?.(box.node.name)}
-        onDoubleClick={() => props.onDoubleClickStep?.(box.node.name)}
+        onClick={() => props.onClickStep(box.node.name)}
+        onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
         onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
         onMouseLeave={() => props.setHoveredNodeName(null)}
         className={`
             chart-element
             ${useDot ? "dot" : "box"}
-            ${focusedStep === box.node.name && "focused"}
+            ${focusedSteps.includes(box.node.name) && "focused"}
             ${hoveredStep === box.node.name && "hovered"}`}
         style={{
           left: bounds.minX,

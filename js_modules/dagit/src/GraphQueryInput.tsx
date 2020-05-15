@@ -1,6 +1,7 @@
 import * as React from "react";
 import styled from "styled-components/macro";
 import {
+  Colors,
   MenuItem,
   Menu,
   Popover,
@@ -21,6 +22,7 @@ interface GraphQueryInputProps {
   autoFocus?: boolean;
   presets?: { name: string; value: string }[];
   width?: string | number;
+  className?: string;
 
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
@@ -211,6 +213,7 @@ export const GraphQueryInput = React.memo(
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
             style={{ width: props.width || "30vw" }}
+            className={props.className}
           />
         </Popover>
         {props.presets &&
@@ -285,6 +288,11 @@ const GraphQueryInputField = styled(InputGroup)`
   font-size: 14px;
   & > input {
     transition: width 100ms ease-in-out;
+  }
+
+  &.has-step {
+    box-shadow: 0 0 0 2px ${Colors.GOLD3};
+    border-radius: 3px;
   }
 `;
 

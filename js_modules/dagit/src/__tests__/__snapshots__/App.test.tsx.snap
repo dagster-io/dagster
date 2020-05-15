@@ -794,7 +794,7 @@ exports[`renders pipeline page 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
+                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 ekwXhz"
               >
                 <span
                   className="bp3-icon bp3-icon-send-to-graph"
@@ -5162,7 +5162,7 @@ exports[`renders pipeline solid page 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
+                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 ekwXhz"
               >
                 <span
                   className="bp3-icon bp3-icon-send-to-graph"
@@ -11053,7 +11053,7 @@ exports[`renders type page 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
+                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 ekwXhz"
               >
                 <span
                   className="bp3-icon bp3-icon-send-to-graph"
@@ -15421,7 +15421,7 @@ exports[`renders type page 2`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
+                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 ekwXhz"
               >
                 <span
                   className="bp3-icon bp3-icon-send-to-graph"
@@ -19789,7 +19789,7 @@ exports[`renders without error 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 MHdcZ"
+                className="bp3-input-group GraphQueryInput__GraphQueryInputField-sc-9vs20u-0 ekwXhz"
               >
                 <span
                   className="bp3-icon bp3-icon-send-to-graph"

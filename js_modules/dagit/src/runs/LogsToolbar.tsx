@@ -15,12 +15,13 @@ import {
   TokenizingFieldValue,
   SuggestionProvider
 } from "../TokenizingField";
+import { IRunMetadataDict } from "../RunMetadataProvider";
 
 interface ILogsToolbarProps {
   steps: string[];
   filter: LogFilter;
-  selectedStep: string | null;
-  selectedStepState: IStepState;
+  metadata: IRunMetadataDict;
+
   onSetFilter: (filter: LogFilter) => void;
 }
 
@@ -43,13 +44,13 @@ export default class LogsToolbar extends React.PureComponent<
   ILogsToolbarProps
 > {
   render() {
-    const {
-      steps,
-      filter,
-      selectedStep,
-      selectedStepState,
-      onSetFilter
-    } = this.props;
+    const { steps, filter, metadata, onSetFilter } = this.props;
+
+    const selectedStep =
+      filter.values.find(v => v.token === "step")?.value || null;
+    const selectedStepState =
+      (selectedStep && metadata.steps[selectedStep]?.state) ||
+      IStepState.PREPARING;
 
     return (
       <LogsToolbarContainer>
@@ -59,7 +60,6 @@ export default class LogsToolbar extends React.PureComponent<
           onChange={(values: LogFilterValue[]) =>
             onSetFilter({ ...filter, values })
           }
-          className={selectedStep ? "has-step" : ""}
           suggestionProviders={GetFilterProviders(steps)}
           suggestionProvidersFilter={suggestionProvidersFilter}
           loading={false}
@@ -129,10 +129,6 @@ const FilterTokenizingField = styled(TokenizingField)`
   height: 20px;
   min-width: 200px;
   max-width: 800px;
-  &.has-step {
-    box-shadow: 0 0 0 2px ${Colors.GOLD3};
-    border-radius: 3px;
-  }
   &.bp3-tag-input {
     min-height: 26px;
   }
