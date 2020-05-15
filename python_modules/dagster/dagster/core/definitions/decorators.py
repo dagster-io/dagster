@@ -268,9 +268,9 @@ def solid(
     :py:class:`Output` and yield it.
 
     Args:
-        name (str): Name of solid. Must be unique within any :py:class:`PipelineDefinition`
+        name (Optional[str]): Name of solid. Must be unique within any :py:class:`PipelineDefinition`
             using the solid.
-        description (str): Human-readable description of this solid.
+        description (Optional[str]): Human-readable description of this solid.
         input_defs (Optional[List[InputDefinition]]):
             List of input definitions. Inferred from typehints if not provided.
         output_defs (Optional[List[OutputDefinition]]):

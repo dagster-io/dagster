@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from dagster_bash import bash_command_solid, bash_script_solid
+from dagster_bash import bash_command_solid, bash_script_solid, bash_solid
 
-from dagster import Failure, Field, OutputDefinition, composite_solid, execute_solid
+from dagster import Failure, OutputDefinition, composite_solid, execute_solid
 
 
 def test_bash_command_solid():
@@ -16,9 +16,24 @@ def test_bash_command_solid():
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
 
 
+def test_bash_solid():
+
+    result = execute_solid(
+        bash_solid,
+        input_values={'bash_command': 'echo "this is a test message: $MY_ENV_VAR"'},
+        environment_dict={'solids': {'bash_solid': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
+    )
+    assert result.output_values == {'result': 'this is a test message: foobar\n'}
+
+
 def test_bash_command_retcode():
     with pytest.raises(Failure, match='Bash command execution failed'):
-        execute_solid(bash_command_solid('exit 1'))
+        execute_solid(bash_command_solid('exit 1', name='exit_solid'))
+
+
+def test_bash_solid_retcode():
+    with pytest.raises(Failure, match='Bash command execution failed'):
+        execute_solid(bash_solid, input_values={'bash_command': 'exit 1'})
 
 
 def test_bash_command_stream_logs():
@@ -78,19 +93,3 @@ def test_bash_command_solid_overrides():
         environment_dict={'solids': {'foobar': {'config': {'env': {'MY_ENV_VAR': 'foobar'}}}}},
     )
     assert result.output_values == {'result': 'this is a test message: foobar\n'}
-
-    with pytest.raises(TypeError, match='Overriding output_defs for bash solid is not supported'):
-        bash_command_solid(
-            'echo "this is a test message: $MY_ENV_VAR"',
-            name='foobar',
-            description='a description override',
-            output_defs=[OutputDefinition(str, 'bad_output_def')],
-        )
-
-    with pytest.raises(TypeError, match='Overriding config for bash solid is not supported'):
-        bash_command_solid(
-            'echo "this is a test message: $MY_ENV_VAR"',
-            name='foobar',
-            description='a description override',
-            config={'bad_config': Field(str)},
-        )
