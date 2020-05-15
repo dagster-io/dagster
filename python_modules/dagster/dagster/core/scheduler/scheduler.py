@@ -99,7 +99,7 @@ def reconcile_scheduler_state(python_path, repository_path, repository, instance
     for schedule_def in repository.schedule_defs:
         # If a schedule already exists for schedule_def, overwrite bash script and
         # metadata file
-        existing_schedule = instance.get_schedule_by_name(repository, schedule_def.name)
+        existing_schedule = instance.get_schedule_by_name(repository.name, schedule_def.name)
         if existing_schedule:
             # Keep the status, but replace schedule_def, python_path, and repository_path
             schedule = Schedule(
@@ -109,7 +109,7 @@ def reconcile_scheduler_state(python_path, repository_path, repository, instance
                 repository_path,
             )
 
-            instance.update_schedule(repository, schedule)
+            instance.update_schedule(repository.name, schedule)
             schedules_to_restart.append(schedule)
         else:
             schedule = Schedule(
@@ -119,24 +119,24 @@ def reconcile_scheduler_state(python_path, repository_path, repository, instance
                 repository_path,
             )
 
-            instance.add_schedule(repository, schedule)
+            instance.add_schedule(repository.name, schedule)
 
     # Delete all existing schedules that are not in schedule_defs
     schedule_def_names = {s.name for s in repository.schedule_defs}
-    existing_schedule_names = set([s.name for s in instance.all_schedules(repository)])
+    existing_schedule_names = set([s.name for s in instance.all_schedules(repository.name)])
     schedule_names_to_delete = existing_schedule_names - schedule_def_names
 
     for schedule in schedules_to_restart:
         # Restart is only needed if the schedule was previously running
         if schedule.status == ScheduleStatus.RUNNING:
-            instance.stop_schedule(repository, schedule.name)
-            instance.start_schedule(repository, schedule.name)
+            instance.stop_schedule(repository.name, schedule.name)
+            instance.start_schedule(repository.name, schedule.name)
 
         if schedule.status == ScheduleStatus.STOPPED:
-            instance.stop_schedule(repository, schedule.name)
+            instance.stop_schedule(repository.name, schedule.name)
 
     for schedule_name in schedule_names_to_delete:
-        instance.end_schedule(repository, schedule_name)
+        instance.end_schedule(repository.name, schedule_name)
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
@@ -150,26 +150,32 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def start_schedule(self, instance, repository, schedule_name):
+    def start_schedule(self, instance, repository_name, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:
+            instance (Optional[DagsterInstance]): The Dagster instance to use to start the schedule.
+            repository_name (string): The repository the schedule belongs to
             schedule_name (string): The schedule to resume
         '''
 
     @abc.abstractmethod
-    def stop_schedule(self, instance, repository, schedule_name):
+    def stop_schedule(self, instance, repository_name, schedule_name):
         '''Stops an existing pipeline schedule
 
         Args:
+            instance (Optional[DagsterInstance]): The Dagster instance to use to stop the schedule.
+            repository_name (string): The repository the schedule belongs to
             schedule_name (string): The schedule to stop
         '''
 
     @abc.abstractmethod
-    def end_schedule(self, instance, repository, schedule_name):
+    def end_schedule(self, instance, repository_name, schedule_name):
         '''Resume a pipeline schedule.
 
         Args:
+            instance (Optional[DagsterInstance]): The Dagster instance to use to end the schedule.
+            repository_name (string): The repository the schedule belongs to
             schedule_name (string): The schedule to end and delete
         '''
 
@@ -183,8 +189,13 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         '''
 
     @abc.abstractmethod
-    def get_log_path(self, instance, repository, schedule_name):
+    def get_log_path(self, instance, repository_name, schedule_name):
         '''Get path to store logs for schedule
+
+        Args:
+            instance (Optional[DagsterInstance]): The Dagster instance to use.
+            repository_name (string): The repository the schedule belongs to
+            schedule_name (string): The schedule to retrieve the log path for
         '''
 
 

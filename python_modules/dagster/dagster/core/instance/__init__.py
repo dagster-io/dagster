@@ -813,14 +813,14 @@ class DagsterInstance:
 
     # Scheduler
 
-    def start_schedule(self, repository, schedule_name):
-        return self._scheduler.start_schedule(self, repository, schedule_name)
+    def start_schedule(self, repository_name, schedule_name):
+        return self._scheduler.start_schedule(self, repository_name, schedule_name)
 
-    def stop_schedule(self, repository, schedule_name):
-        return self._scheduler.stop_schedule(self, repository, schedule_name)
+    def stop_schedule(self, repository_name, schedule_name):
+        return self._scheduler.stop_schedule(self, repository_name, schedule_name)
 
-    def end_schedule(self, repository, schedule_name):
-        return self._scheduler.end_schedule(self, repository, schedule_name)
+    def end_schedule(self, repository_name, schedule_name):
+        return self._scheduler.end_schedule(self, repository_name, schedule_name)
 
     def scheduler_debug_info(self):
         from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
@@ -879,35 +879,37 @@ class DagsterInstance:
 
     # Schedule Storage
 
-    def create_schedule_tick(self, repository, schedule_tick_data):
-        return self._schedule_storage.create_schedule_tick(repository, schedule_tick_data)
+    def create_schedule_tick(self, repository_name, schedule_tick_data):
+        return self._schedule_storage.create_schedule_tick(repository_name, schedule_tick_data)
 
-    def update_schedule_tick(self, repository, tick):
-        return self._schedule_storage.update_schedule_tick(repository, tick)
+    def update_schedule_tick(self, repository_name, tick):
+        return self._schedule_storage.update_schedule_tick(repository_name, tick)
 
-    def get_schedule_ticks_by_schedule(self, repository, schedule_name):
-        return self._schedule_storage.get_schedule_ticks_by_schedule(repository, schedule_name)
+    def get_schedule_ticks_by_schedule(self, repository_name, schedule_name):
+        return self._schedule_storage.get_schedule_ticks_by_schedule(repository_name, schedule_name)
 
-    def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
-        return self._schedule_storage.get_schedule_tick_stats_by_schedule(repository, schedule_name)
+    def get_schedule_tick_stats_by_schedule(self, repository_name, schedule_name):
+        return self._schedule_storage.get_schedule_tick_stats_by_schedule(
+            repository_name, schedule_name
+        )
 
     def all_schedules_info(self):
         return self._schedule_storage.all_schedules_info()
 
-    def all_schedules(self, repository=None):
-        return self._schedule_storage.all_schedules(repository)
+    def all_schedules(self, repository_name=None):
+        return self._schedule_storage.all_schedules(repository_name)
 
-    def get_schedule_by_name(self, repository, schedule_name):
-        return self._schedule_storage.get_schedule_by_name(repository, schedule_name)
+    def get_schedule_by_name(self, repository_name, schedule_name):
+        return self._schedule_storage.get_schedule_by_name(repository_name, schedule_name)
 
-    def add_schedule(self, repository, schedule):
-        return self._schedule_storage.add_schedule(repository, schedule)
+    def add_schedule(self, repository_name, schedule):
+        return self._schedule_storage.add_schedule(repository_name, schedule)
 
-    def update_schedule(self, repository, schedule):
-        return self._schedule_storage.update_schedule(repository, schedule)
+    def update_schedule(self, repository_name, schedule):
+        return self._schedule_storage.update_schedule(repository_name, schedule)
 
-    def delete_schedule(self, repository, schedule):
-        return self._schedule_storage.delete_schedule(repository, schedule)
+    def delete_schedule(self, repository_name, schedule):
+        return self._schedule_storage.delete_schedule(repository_name, schedule)
 
     def wipe_all_schedules(self):
         if self._scheduler:
@@ -915,5 +917,5 @@ class DagsterInstance:
 
         self._schedule_storage.wipe()
 
-    def log_path_for_schedule(self, repository, schedule_name):
-        return self._scheduler.get_log_path(self, repository, schedule_name)
+    def log_path_for_schedule(self, repository_name, schedule_name):
+        return self._scheduler.get_log_path(self, repository_name, schedule_name)

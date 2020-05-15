@@ -4,7 +4,6 @@ import six
 import sqlalchemy as db
 
 from dagster import check
-from dagster.core.definitions.repository import RepositoryDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import Schedule, ScheduleTick
 from dagster.core.scheduler.scheduler import (
@@ -48,41 +47,41 @@ class SqlScheduleStorage(ScheduleStorage):
         rows = self.execute(query)
         return list(map(lambda r: [r[0], deserialize_json_to_dagster_namedtuple(r[1])], rows))
 
-    def all_schedules(self, repository=None):
-        check.opt_inst_param(repository, 'repository', RepositoryDefinition)
+    def all_schedules(self, repository_name=None):
+        check.opt_str_param(repository_name, 'repository_name')
 
         base_query = db.select([ScheduleTable.c.schedule_body]).select_from(ScheduleTable)
 
-        if repository:
-            query = base_query.where(ScheduleTable.c.repository_name == repository.name)
+        if repository_name:
+            query = base_query.where(ScheduleTable.c.repository_name == repository_name)
         else:
             query = base_query
 
         rows = self.execute(query)
         return self._deserialize_rows(rows)
 
-    def get_schedule_by_name(self, repository, schedule_name):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def get_schedule_by_name(self, repository_name, schedule_name):
+        check.str_param(repository_name, 'repository_name')
         check.str_param(schedule_name, 'schedule_name')
 
         query = (
             db.select([ScheduleTable.c.schedule_body])
             .select_from(ScheduleTable)
-            .where(ScheduleTable.c.repository_name == repository.name)
+            .where(ScheduleTable.c.repository_name == repository_name)
             .where(ScheduleTable.c.schedule_name == schedule_name)
         )
 
         rows = self.execute(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
-    def get_schedule_ticks_by_schedule(self, repository, schedule_name):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def get_schedule_ticks_by_schedule(self, repository_name, schedule_name):
+        check.str_param(repository_name, 'repository_name')
         check.str_param(schedule_name, 'schedule_name')
 
         query = (
             db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
             .select_from(ScheduleTickTable)
-            .where(ScheduleTickTable.c.repository_name == repository.name)
+            .where(ScheduleTickTable.c.repository_name == repository_name)
             .where(ScheduleTickTable.c.schedule_name == schedule_name)
             .order_by(ScheduleTickTable.c.id.desc())
         )
@@ -92,14 +91,14 @@ class SqlScheduleStorage(ScheduleStorage):
             map(lambda r: ScheduleTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
-    def get_schedule_tick_stats_by_schedule(self, repository, schedule_name):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def get_schedule_tick_stats_by_schedule(self, repository_name, schedule_name):
+        check.str_param(repository_name, 'repository_name')
         check.str_param(schedule_name, 'schedule_name')
 
         query = (
             db.select([ScheduleTickTable.c.status, db.func.count()])
             .select_from(ScheduleTickTable)
-            .where(ScheduleTickTable.c.repository_name == repository.name)
+            .where(ScheduleTickTable.c.repository_name == repository_name)
             .where(ScheduleTickTable.c.schedule_name == schedule_name)
             .group_by(ScheduleTickTable.c.status)
         )
@@ -117,14 +116,14 @@ class SqlScheduleStorage(ScheduleStorage):
             ticks_failed=counts.get(ScheduleTickStatus.FAILURE.value, 0),
         )
 
-    def create_schedule_tick(self, repository, schedule_tick_data):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def create_schedule_tick(self, repository_name, schedule_tick_data):
+        check.str_param(repository_name, 'repository_name')
         check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData)
 
         with self.connect() as conn:
             try:
                 tick_insert = ScheduleTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    repository_name=repository.name,
+                    repository_name=repository_name,
                     schedule_name=schedule_tick_data.schedule_name,
                     status=schedule_tick_data.status.value,
                     timestamp=utc_datetime_from_timestamp(schedule_tick_data.timestamp),
@@ -143,8 +142,8 @@ class SqlScheduleStorage(ScheduleStorage):
                     exc,
                 )
 
-    def update_schedule_tick(self, repository, tick):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def update_schedule_tick(self, repository_name, tick):
+        check.str_param(repository_name, 'repository_name')
         check.inst_param(tick, 'tick', ScheduleTick)
 
         with self.connect() as conn:
@@ -159,14 +158,14 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return tick
 
-    def add_schedule(self, repository, schedule):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def add_schedule(self, repository_name, schedule):
+        check.str_param(repository_name, 'repository_name')
         check.inst_param(schedule, 'schedule', Schedule)
 
         with self.connect() as conn:
             try:
                 schedule_insert = ScheduleTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    repository_name=repository.name,
+                    repository_name=repository_name,
                     schedule_name=schedule.name,
                     status=schedule.status.value,
                     schedule_body=serialize_dagster_namedtuple(schedule),
@@ -177,7 +176,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     DagsterInvariantViolationError(
                         'Schedule {schedule_name} for repository {repository_name} is already present '
                         'in storage'.format(
-                            schedule_name=schedule.name, repository_name=repository.name
+                            schedule_name=schedule.name, repository_name=repository_name
                         )
                     ),
                     exc,
@@ -185,21 +184,21 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return schedule
 
-    def update_schedule(self, repository, schedule):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def update_schedule(self, repository_name, schedule):
+        check.str_param(repository_name, 'repository_name')
         check.inst_param(schedule, 'schedule', Schedule)
 
-        if not self.get_schedule_by_name(repository, schedule.name):
+        if not self.get_schedule_by_name(repository_name, schedule.name):
             raise DagsterInvariantViolationError(
                 'Schedule {name} for repository {repository_name} is not present in storage'.format(
-                    name=schedule.name, repository_name=repository.name
+                    name=schedule.name, repository_name=repository_name
                 )
             )
 
         with self.connect() as conn:
             conn.execute(
                 ScheduleTable.update()  # pylint: disable=no-value-for-parameter
-                .where(ScheduleTable.c.repository_name == repository.name)
+                .where(ScheduleTable.c.repository_name == repository_name)
                 .where(ScheduleTable.c.schedule_name == schedule.name)
                 .values(
                     status=schedule.status.value,
@@ -207,21 +206,21 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-    def delete_schedule(self, repository, schedule):
-        check.inst_param(repository, 'repository', RepositoryDefinition)
+    def delete_schedule(self, repository_name, schedule):
+        check.str_param(repository_name, 'repository_name')
         check.inst_param(schedule, 'schedule', Schedule)
 
-        if not self.get_schedule_by_name(repository, schedule.name):
+        if not self.get_schedule_by_name(repository_name, schedule.name):
             raise DagsterInvariantViolationError(
                 'Schedule {name} for repository {repository_name} is not present in storage'.format(
-                    name=schedule.name, repository_name=repository.name
+                    name=schedule.name, repository_name=repository_name
                 )
             )
 
         with self.connect() as conn:
             conn.execute(
                 ScheduleTable.delete()  # pylint: disable=no-value-for-parameter
-                .where(ScheduleTable.c.repository_name == repository.name)
+                .where(ScheduleTable.c.repository_name == repository_name)
                 .where(ScheduleTable.c.schedule_name == schedule.name)
             )
 

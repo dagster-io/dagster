@@ -378,7 +378,7 @@ def test_tick_success(snapshot):
         snapshot.assert_match(schedule_result)
 
         # Check directly against the DB
-        ticks = instance.get_schedule_ticks_by_schedule(repository, schedule_def.name)
+        ticks = instance.get_schedule_ticks_by_schedule(repository.name, schedule_def.name)
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.schedule_name == schedule_def.name
@@ -413,7 +413,7 @@ def test_tick_skip(snapshot):
         assert schedule_result['stats']['ticksSkipped'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository, 'no_config_should_execute')
+        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'no_config_should_execute')
 
         assert len(ticks) == 1
         tick = ticks[0]
@@ -445,7 +445,9 @@ def test_should_execute_scheduler_error(snapshot):
         assert schedule_result['stats']['ticksFailed'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository, 'should_execute_error_schedule')
+        ticks = instance.get_schedule_ticks_by_schedule(
+            repository.name, 'should_execute_error_schedule'
+        )
 
         assert len(ticks) == 1
         tick = ticks[0]
@@ -485,7 +487,7 @@ def test_tags_scheduler_error(snapshot):
         assert schedule_result['stats']['ticksSucceeded'] == 1
         snapshot.assert_match(schedule_result)
 
-        ticks = instance.get_schedule_ticks_by_schedule(repository, 'tags_error_schedule')
+        ticks = instance.get_schedule_ticks_by_schedule(repository.name, 'tags_error_schedule')
 
         assert len(ticks) == 1
         tick = ticks[0]
@@ -521,7 +523,7 @@ def test_enviornment_dict_scheduler_error(snapshot):
         snapshot.assert_match(schedule_result)
 
         ticks = instance.get_schedule_ticks_by_schedule(
-            repository, 'environment_dict_error_schedule'
+            repository.name, 'environment_dict_error_schedule'
         )
 
         assert len(ticks) == 1
@@ -548,7 +550,7 @@ def test_enviornment_dict_scheduler_error_serialize_cauze():
         run_id = result.data['startScheduledExecution']['run']['runId']
 
         ticks = instance.get_schedule_ticks_by_schedule(
-            repository, 'environment_dict_error_schedule'
+            repository.name, 'environment_dict_error_schedule'
         )
 
         assert len(ticks) == 1

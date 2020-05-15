@@ -169,7 +169,7 @@ def test_get_all_schedules():
         )
 
         # Start schedule
-        schedule = instance.start_schedule(repository, "no_config_pipeline_hourly_schedule")
+        schedule = instance.start_schedule(repository.name, "no_config_pipeline_hourly_schedule")
 
         # Query Scheduler + all Schedules
         scheduler_result = execute_dagster_graphql(context, GET_SCHEDULES_QUERY)

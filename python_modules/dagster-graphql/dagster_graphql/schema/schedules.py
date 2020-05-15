@@ -288,12 +288,12 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_logs_path(self, graphene_info):
         instance = graphene_info.context.instance
         repository = graphene_info.context.get_repository_definition()
-        return instance.log_path_for_schedule(repository, self._schedule.name)
+        return instance.log_path_for_schedule(repository.name, self._schedule.name)
 
     def resolve_stats(self, graphene_info):
         repository = graphene_info.context.get_repository_definition()
         stats = graphene_info.context.instance.get_schedule_tick_stats_by_schedule(
-            repository, self._schedule.name
+            repository.name, self._schedule.name
         )
         return graphene_info.schema.type_named('ScheduleTickStatsSnapshot')(stats)
 
@@ -304,7 +304,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
         # TODO: Add cursor limit argument to get_schedule_ticks_by_schedule
         # https://github.com/dagster-io/dagster/issues/2291
         ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
-            repository, self._schedule.name
+            repository.name, self._schedule.name
         )
 
         if not limit:
@@ -325,7 +325,7 @@ class DauphinRunningSchedule(dauphin.ObjectType):
     def resolve_ticks_count(self, graphene_info):
         repository = graphene_info.context.get_repository_definition()
         ticks = graphene_info.context.instance.get_schedule_ticks_by_schedule(
-            repository, self._schedule.name
+            repository.name, self._schedule.name
         )
         return len(ticks)
 
