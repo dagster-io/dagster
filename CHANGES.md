@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.14
+
+**New**
+- Dagit now allows re-executing arbitrary step subset via step selector syntax, regardless of whether
+  the previous pipeline failed or not.
+
 ## 0.7.13
 
 **Breaking Changes**

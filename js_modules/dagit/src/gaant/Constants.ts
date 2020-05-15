@@ -38,6 +38,7 @@ export interface GaantChartLayoutOptions {
   zoom: number; // 1 => 100
   hideWaiting: boolean;
   hideTimedMode: boolean;
+  hideUnselectedSteps: boolean;
 }
 
 export enum GaantChartMode {
@@ -64,5 +65,6 @@ export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
   mode: GaantChartMode.WATERFALL,
   hideWaiting: false,
   hideTimedMode: false,
-  zoom: 1
+  zoom: 1,
+  hideUnselectedSteps: false
 };

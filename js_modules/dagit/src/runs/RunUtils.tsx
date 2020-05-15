@@ -173,10 +173,10 @@ function isRunFragment(
 export function getReexecutionVariables(input: {
   run: RunFragment | RunTableRunFragment;
   envYaml?: string;
-  stepKey?: string;
+  stepKeys?: string[];
   resumeRetry?: boolean;
 }) {
-  const { run, envYaml, stepKey, resumeRetry } = input;
+  const { run, envYaml, stepKeys, resumeRetry } = input;
 
   if (isRunFragment(run)) {
     if (!run || run.pipeline.__typename === "UnknownPipeline") {
@@ -192,12 +192,12 @@ export function getReexecutionVariables(input: {
       }
     };
 
-    // single step re-execution
+    // subset re-execution
     const { executionPlan } = run;
-    if (stepKey && executionPlan) {
-      const step = executionPlan.steps.find(s => s.key === stepKey);
+    if (stepKeys && stepKeys.length > 0 && executionPlan) {
+      const step = executionPlan.steps.find(s => stepKeys.includes(s.key));
       if (!step) return;
-      executionParams["stepKeys"] = [stepKey];
+      executionParams["stepKeys"] = stepKeys;
     }
 
     executionParams["executionMetadata"] = getExecutionMetadata(

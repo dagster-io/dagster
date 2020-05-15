@@ -179,7 +179,7 @@ interface ReexecuteWithDataProps {
   ) => void;
   getReexecutionVariables: (input: {
     run: RunFragment;
-    stepKey?: string;
+    stepKeys?: string[];
     resumeRetry?: boolean;
   }) => StartPipelineReexecutionVariables | undefined;
 }
@@ -200,14 +200,11 @@ const ReexecuteWithData = ({
     LAUNCH_PIPELINE_REEXECUTION_MUTATION
   );
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const selectedStep =
-    logsFilter.values.find(v => v.token === "step")?.value || null;
-
-  const onExecute = async (stepKey?: string, resumeRetry?: boolean) => {
+  const onExecute = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
-      stepKey,
+      stepKeys,
       resumeRetry
     });
     const result = await startPipelineReexecution({ variables });
@@ -215,17 +212,40 @@ const ReexecuteWithData = ({
       openInNewWindow: false
     });
   };
-  const onLaunch = async (stepKey?: string, resumeRetry?: boolean) => {
+  const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
     if (!run || run.pipeline.__typename === "UnknownPipeline") return;
     const variables = getReexecutionVariables({
       run,
-      stepKey,
+      stepKeys,
       resumeRetry
     });
     const result = await launchPipelineReexecution({ variables });
     handleReexecutionResult(run.pipeline.name, result, {
       openInNewWindow: false
     });
+  };
+
+  const [selectedSteps, setSelectedSteps] = React.useState<string[]>([]);
+  const [query, setQuery] = React.useState<string>("*");
+
+  const onClickStep = (stepKey: string) => {
+    if (selectedSteps.length === 1 && selectedSteps[0] === stepKey) {
+      // deselect previously selected single step
+      onSetLogsFilter({
+        ...logsFilter,
+        values: []
+      });
+      setSelectedSteps([]);
+      setQuery("*");
+    } else {
+      // click a single step to select the step and apply log filter
+      onSetLogsFilter({
+        ...logsFilter,
+        values: [{ token: "step", value: stepKey }]
+      });
+      setSelectedSteps([stepKey]);
+      setQuery(stepKey);
+    }
   };
 
   return (
@@ -256,22 +276,21 @@ const ReexecuteWithData = ({
                     artifactsPersisted={run.executionPlan.artifactsPersisted}
                     onExecute={onExecute}
                     onLaunch={onLaunch}
-                    selectedStep={selectedStep}
-                    selectedStepState={
-                      (selectedStep && metadata.steps[selectedStep]?.state) ||
-                      IStepState.PREPARING
-                    }
+                    selectedSteps={selectedSteps}
+                    selectedStepStates={selectedSteps.map(
+                      selectedStep =>
+                        (selectedStep && metadata.steps[selectedStep]?.state) ||
+                        IStepState.PREPARING
+                    )}
                   />
                 }
                 plan={run.executionPlan}
                 metadata={metadata}
-                selectedStep={selectedStep}
-                onApplyStepFilter={stepKey =>
-                  onSetLogsFilter({
-                    ...logsFilter,
-                    values: [{ token: "step", value: stepKey }]
-                  })
-                }
+                selectedSteps={selectedSteps}
+                onClickStep={onClickStep}
+                setSelectedSteps={setSelectedSteps}
+                query={query}
+                setQuery={setQuery}
               />
             ) : (
               <NonIdealState
@@ -286,11 +305,7 @@ const ReexecuteWithData = ({
                 filter={logsFilter}
                 onSetFilter={onSetLogsFilter}
                 steps={Object.keys(metadata.steps)}
-                selectedStep={selectedStep}
-                selectedStepState={
-                  (selectedStep && metadata.steps[selectedStep]?.state) ||
-                  IStepState.PREPARING
-                }
+                metadata={metadata}
               />
               <LogsScrollingTable
                 nodes={filteredNodes}
