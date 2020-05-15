@@ -34,6 +34,9 @@ class DagsterGraphQLContext(six.with_metaclass(abc.ABCMeta)):
     def is_reload_supported(self):
         pass
 
+    def get_external_repository(self):
+        return self._external_repository
+
     def has_external_pipeline(self, name):
         check.str_param(name, 'name')
         return self._external_repository.has_pipeline(name)

@@ -33,6 +33,10 @@ class ExternalRepository:
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
 
+    @property
+    def name(self):
+        return self.external_repository_data.name
+
     def get_pipeline_index(self, pipeline_name):
         return self._pipeline_index_map[pipeline_name]
 
