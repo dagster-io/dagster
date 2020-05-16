@@ -5,7 +5,7 @@ from dagster import EventMetadataEntry, check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import ConfigurableClass
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .launcher_base import RunLauncher
 
@@ -23,10 +23,23 @@ class DaemonRunLauncher(RunLauncher, ConfigurableClass):
         run_launcher:
             module: dagster.core.launcher
             class: DaemonRunLauncher
+            config: {}
     '''
-    def __init__(self):
+    def __init__(self, inst_data=None):
         print('FOOOOOOO INIT')
-        super().__init__(self)
+        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @classmethod
+    def from_config_value(cls, inst_data, config_value):
+        return cls(inst_data=inst_data, **config_value)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
 
     def launch_run(self, instance, run):
         check.inst_param(instance, 'instance', DagsterInstance)
