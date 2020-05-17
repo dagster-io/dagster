@@ -18,7 +18,7 @@ from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import EnvironmentConfig
-from dagster.core.telemetry import telemetry_wrapper
+from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id, make_new_run_id, str_format_list
 from dagster.utils import merge_dicts
 
@@ -280,6 +280,8 @@ def execute_pipeline(
         solid_subset=solid_subset,
         instance=instance,
     )
+
+    log_repo_stats(instance=instance, pipeline=pipeline)
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def,

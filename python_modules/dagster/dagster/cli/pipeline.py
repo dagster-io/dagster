@@ -19,7 +19,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.telemetry import telemetry_wrapper
+from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
@@ -369,6 +369,7 @@ def pipeline_launch_command(env, preset_name, mode, **kwargs):
     pipeline = recon_pipeline_for_cli_args(kwargs)
 
     instance = DagsterInstance.get()
+    log_repo_stats(instance=instance, pipeline=pipeline)
 
     if preset_name:
         if env:
